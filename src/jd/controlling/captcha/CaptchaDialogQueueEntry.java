@@ -1,8 +1,5 @@
 package jd.controlling.captcha;
 
-
- import org.jdownloader.translate.*;
-
 import java.io.File;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -10,7 +7,6 @@ import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.gui.UserIO;
 import jd.gui.swing.dialog.CaptchaDialog;
-import jd.utils.locale.JDL;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.StorageException;
@@ -19,6 +15,7 @@ import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
+import org.jdownloader.translate.JDT;
 
 public class CaptchaDialogQueueEntry extends QueueAction<String, RuntimeException> {
     private final static AtomicLong IDCounter = new AtomicLong(0);
@@ -79,7 +76,7 @@ public class CaptchaDialogQueueEntry extends QueueAction<String, RuntimeExceptio
             if (resp == null) {
                 /* no external response available */
                 if (!e.isCausedByTimeout()) {
-                    String[] options = new String[] { JDT._.captchacontroller_cancel_dialog_allorhost_next(), JDT._.captchacontroller_cancel_dialog_allorhost_cancelhost( captchaController.getHost()), JDT._.captchacontroller_cancel_dialog_allorhost_all() };
+                    String[] options = new String[] { JDT._.captchacontroller_cancel_dialog_allorhost_next(), JDT._.captchacontroller_cancel_dialog_allorhost_cancelhost(captchaController.getHost()), JDT._.captchacontroller_cancel_dialog_allorhost_all() };
                     try {
                         int defSelection = JSonStorage.getPlainStorage("CaptchaController").get("lastCancelOption", 0);
 

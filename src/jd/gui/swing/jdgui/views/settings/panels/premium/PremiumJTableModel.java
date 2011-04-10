@@ -16,8 +16,6 @@
 
 package jd.gui.swing.jdgui.views.settings.panels.premium;
 
-
- import org.jdownloader.gui.translate.*;
 import java.util.ArrayList;
 import java.util.TreeMap;
 
@@ -38,16 +36,17 @@ import jd.gui.swing.jdgui.views.settings.panels.premium.Columns.UsedSpaceColumn;
 import jd.gui.swing.jdgui.views.settings.panels.premium.Columns.UserColumn;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
-import jd.utils.locale.JDL;
+
+import org.jdownloader.gui.translate.T;
 
 public class PremiumJTableModel extends JDTableModel {
 
-    private static final long serialVersionUID = 896539023856191287L;
+    private static final long             serialVersionUID = 896539023856191287L;
 
-    private ArrayList<HostPluginWrapper> plugins;
+    private ArrayList<HostPluginWrapper>  plugins;
     private TreeMap<String, HostAccounts> hosts;
 
-    public static final String IDENT_PREFIX = "jd.gui.swing.jdgui.settings.panels.premium.PremiumJTableModel.";
+    public static final String            IDENT_PREFIX     = "jd.gui.swing.jdgui.settings.panels.premium.PremiumJTableModel.";
 
     public PremiumJTableModel(String configname) {
         super(configname);

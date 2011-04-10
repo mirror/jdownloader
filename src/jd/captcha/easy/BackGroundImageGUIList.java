@@ -16,8 +16,6 @@
 
 package jd.captcha.easy;
 
-
- import jd.captcha.translate.*;
 import java.awt.BorderLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -31,10 +29,10 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 
 import jd.captcha.gui.ImageComponent;
+import jd.captcha.translate.T;
 import jd.gui.swing.GuiRunnable;
 import jd.gui.userio.DummyFrame;
 import jd.nutils.Screen;
-import jd.utils.locale.JDL;
 
 public class BackGroundImageGUIList implements ActionListener {
     public BackGroundImageGUIList(EasyMethodFile methode, JFrame owner) {
@@ -42,11 +40,11 @@ public class BackGroundImageGUIList implements ActionListener {
         this.owner = owner;
     }
 
-    private JFrame owner;
-    private JDialog mainDialog;
-    private JPanel panel, imageBox;
+    private JFrame                 owner;
+    private JDialog                mainDialog;
+    private JPanel                 panel, imageBox;
     private BackGroundImageManager manager;
-    private JButton btExit, btAdd;
+    private JButton                btExit, btAdd;
 
     public void showImages() {
         // Images initialisiert

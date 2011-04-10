@@ -1,7 +1,5 @@
 package org.jdownloader.extensions.infobar;
 
-
- import org.jdownloader.extensions.infobar.translate.*;
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 
@@ -11,13 +9,13 @@ import jd.config.ConfigGroup;
 import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.plugins.AddonPanel;
-import jd.utils.locale.JDL;
 
 import org.appwork.utils.Application;
 import org.jdownloader.extensions.AbstractConfigPanel;
 import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
+import org.jdownloader.extensions.infobar.translate.T;
 
 import com.sun.awt.AWTUtilities;
 
@@ -27,8 +25,6 @@ public class InfoBarExtension extends AbstractExtension {
     public boolean isDefaultEnabled() {
         return true;
     }
-
-    private static final String JDL_PREFIX            = "jd.plugins.optional.infobar.";
 
     private static final String PROPERTY_OPACITY      = "PROPERTY_OPACITY";
 

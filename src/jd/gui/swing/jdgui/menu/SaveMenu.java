@@ -16,11 +16,10 @@
 
 package jd.gui.swing.jdgui.menu;
 
-
- import org.jdownloader.gui.translate.*;
 import jd.gui.swing.jdgui.menu.actions.BackupAction;
 import jd.gui.swing.jdgui.menu.actions.BackupLinkListAction;
-import jd.utils.locale.JDL;
+
+import org.jdownloader.gui.translate.T;
 
 public class SaveMenu extends JStartMenu {
 

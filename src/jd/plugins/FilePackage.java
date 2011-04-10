@@ -16,9 +16,6 @@
 
 package jd.plugins;
 
-
- import org.jdownloader.translate.*;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -33,9 +30,9 @@ import jd.controlling.DownloadController;
 import jd.gui.swing.jdgui.views.downloads.DownloadTable;
 import jd.nutils.io.JDIO;
 import jd.utils.JDUtilities;
-import jd.utils.locale.JDL;
 
 import org.appwork.utils.event.Eventsender;
+import org.jdownloader.translate.JDT;
 
 class FilePackageBroadcaster extends Eventsender<FilePackageListener, FilePackageEvent> {
 

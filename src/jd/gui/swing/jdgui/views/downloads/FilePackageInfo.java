@@ -16,8 +16,6 @@
 
 package jd.gui.swing.jdgui.views.downloads;
 
-
- import org.jdownloader.gui.translate.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.FocusEvent;
@@ -39,46 +37,47 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
-import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
+
+import org.jdownloader.gui.translate.T;
 
 public class FilePackageInfo extends JDCollapser implements ActionListener, FocusListener {
 
     private static final long serialVersionUID = 5410296068527460629L;
 
-    private JPanel panel;
+    private JPanel            panel;
 
-    private JTabbedPane tabbedPane;
+    private JTabbedPane       tabbedPane;
 
-    private JDTextField txtComment;
-    private JDTextField txtCommentDl;
-    private JDTextField txtName;
-    private JDTextField txtNameDl;
-    private JDTextField txtPasswordDl;
-    private JDTextField txtPassword;
-    private JDTextField txtPassword2;
-    private JDTextField txtStatusDl;
-    private JDTextField txtURL;
-    private JDTextField txtPathLabel;
-    private JLabel lblSize;
-    private JLabel lblSizeDl;
-    private JLabel lblHoster;
-    private JLabel lblType;
-    private JLabel lblChunks;
-    private JLabel lblETA;
-    private JLabel lblSpeed;
-    private JLabel lblFiles;
-    private JCheckBox chbPostProcessing;
-    private ComboBrowseFile brwSaveTo;
-    private MultiProgressBar progressBarFilePackage;
-    private MultiProgressBar progressBarDownloadLink;
+    private JDTextField       txtComment;
+    private JDTextField       txtCommentDl;
+    private JDTextField       txtName;
+    private JDTextField       txtNameDl;
+    private JDTextField       txtPasswordDl;
+    private JDTextField       txtPassword;
+    private JDTextField       txtPassword2;
+    private JDTextField       txtStatusDl;
+    private JDTextField       txtURL;
+    private JDTextField       txtPathLabel;
+    private JLabel            lblSize;
+    private JLabel            lblSizeDl;
+    private JLabel            lblHoster;
+    private JLabel            lblType;
+    private JLabel            lblChunks;
+    private JLabel            lblETA;
+    private JLabel            lblSpeed;
+    private JLabel            lblFiles;
+    private JCheckBox         chbPostProcessing;
+    private ComboBrowseFile   brwSaveTo;
+    private MultiProgressBar  progressBarFilePackage;
+    private MultiProgressBar  progressBarDownloadLink;
 
-    private FilePackage fp = null;
-    private DownloadLink downloadLink;
+    private FilePackage       fp               = null;
+    private DownloadLink      downloadLink;
 
-    private boolean hidden = false;
+    private boolean           hidden           = false;
 
-    private transient Thread updater;
+    private transient Thread  updater;
 
     public FilePackageInfo() {
         buildGui();
@@ -155,7 +154,7 @@ public class FilePackageInfo extends JDCollapser implements ActionListener, Focu
         chbPostProcessing.addFocusListener(this);
 
         panel = new JPanel(new MigLayout("ins 5, wrap 3", "[]10[grow,fill]10[]", "[]5[]5[]5[]"));
-        panel.add(lblFiles = new JLabel(T._.gui_fileinfopanel_packagetab_lbl_files( 0)), "spanx, split 3");
+        panel.add(lblFiles = new JLabel(T._.gui_fileinfopanel_packagetab_lbl_files(0)), "spanx, split 3");
         panel.add(progressBarFilePackage = new MultiProgressBar(), "growx, pushx, h 18!");
         panel.add(lblSize = new JLabel("0B/0B"), "alignx right");
         panel.add(new JLabel(T._.gui_fileinfopanel_packagetab_lbl_name()));
@@ -181,8 +180,8 @@ public class FilePackageInfo extends JDCollapser implements ActionListener, Focu
         panel.add(lblChunks = new JLabel(T._.gui_fileinfopanel_linktab_chunks()));
         panel.add(progressBarDownloadLink, "spanx, growx, pushx, split 2, h 18!");
         panel.add(lblSizeDl = new JLabel("0B/0B"), "alignx right");
-        panel.add(lblETA = new JLabel(T._.gui_fileinfopanel_linktab_eta2( "0")));
-        panel.add(lblSpeed = new JLabel(T._.gui_fileinfopanel_linktab_speed( "0 kb")), "skip");
+        panel.add(lblETA = new JLabel(T._.gui_fileinfopanel_linktab_eta2("0")));
+        panel.add(lblSpeed = new JLabel(T._.gui_fileinfopanel_linktab_speed("0 kb")), "skip");
         panel.add(new JLabel(T._.gui_fileinfopanel_linktab_name()));
         panel.add(txtNameDl = new JDTextField(true), "growx, spanx");
         txtNameDl.setEditable(false);
@@ -260,7 +259,7 @@ public class FilePackageInfo extends JDCollapser implements ActionListener, Focu
                             progressBarFilePackage.setMaximums(max);
                             progressBarFilePackage.setValues(values);
                             lblSize.setText(Formatter.formatReadable(fp.getTotalKBLoaded()) + "/" + Formatter.formatReadable(fp.getTotalEstimatedPackageSize()));
-                            lblFiles.setText(T._.gui_fileinfopanel_packagetab_lbl_files( fp.getDownloadLinkList().size()));
+                            lblFiles.setText(T._.gui_fileinfopanel_packagetab_lbl_files(fp.getDownloadLinkList().size()));
                             lblSize.setToolTipText(fp.getTotalKBLoaded() + " / " + fp.getTotalEstimatedPackageSize());
                         }
                         if (downloadLink != null) {
@@ -306,8 +305,8 @@ public class FilePackageInfo extends JDCollapser implements ActionListener, Focu
                                 lblETA.setVisible(false);
                                 lblSpeed.setVisible(false);
                             } else {
-                                lblETA.setText(T._.gui_fileinfopanel_linktab_eta2( Formatter.formatSeconds((downloadLink.getDownloadSize() - downloadLink.getDownloadCurrent()) / downloadLink.getDownloadSpeed())));
-                                lblSpeed.setText(T._.gui_fileinfopanel_linktab_speed( Formatter.formatReadable(Math.max(0, downloadLink.getDownloadSpeed()))));
+                                lblETA.setText(T._.gui_fileinfopanel_linktab_eta2(Formatter.formatSeconds((downloadLink.getDownloadSize() - downloadLink.getDownloadCurrent()) / downloadLink.getDownloadSpeed())));
+                                lblSpeed.setText(T._.gui_fileinfopanel_linktab_speed(Formatter.formatReadable(Math.max(0, downloadLink.getDownloadSpeed()))));
                                 lblSpeed.setVisible(true);
                                 lblETA.setVisible(true);
                             }

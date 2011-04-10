@@ -16,8 +16,6 @@
 
 package jd.gui.swing.jdgui.views.linkgrabber.columns;
 
-
- import org.jdownloader.gui.translate.*;
 import java.awt.Component;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -33,32 +31,33 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkGrabberFilePackage;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
-import jd.utils.locale.JDL;
+
+import org.jdownloader.gui.translate.T;
 
 public class StatusColumn extends JDTableColumn {
 
-    private static final long serialVersionUID = 2228210790952050305L;
+    private static final long      serialVersionUID = 2228210790952050305L;
 
-    private DownloadLink dLink;
+    private DownloadLink           dLink;
     private LinkGrabberFilePackage fp;
-    private String strOnline;
-    private String strOffline;
-    private String strUnchecked;
-    private String strUncheckable;
-    private StringBuilder sb = new StringBuilder();
-    private ImageIcon imgOnline;
-    private ImageIcon imgFailed;
-    private ImageIcon imgPriorityS;
-    private ImageIcon imgPriority1;
-    private ImageIcon imgPriority2;
-    private ImageIcon imgPriority3;
-    private ImageIcon imgUncheckable;
-    private String strPriorityS;
-    private String strPriority1;
-    private String strPriority2;
-    private String strPriority3;
-    private StatusLabel statuspanel;
-    private int counter = 0;
+    private String                 strOnline;
+    private String                 strOffline;
+    private String                 strUnchecked;
+    private String                 strUncheckable;
+    private StringBuilder          sb               = new StringBuilder();
+    private ImageIcon              imgOnline;
+    private ImageIcon              imgFailed;
+    private ImageIcon              imgPriorityS;
+    private ImageIcon              imgPriority1;
+    private ImageIcon              imgPriority2;
+    private ImageIcon              imgPriority3;
+    private ImageIcon              imgUncheckable;
+    private String                 strPriorityS;
+    private String                 strPriority1;
+    private String                 strPriority2;
+    private String                 strPriority3;
+    private StatusLabel            statuspanel;
+    private int                    counter          = 0;
 
     public StatusColumn(String name, JDTableModel table) {
         super(name, table);
@@ -103,9 +102,9 @@ public class StatusColumn extends JDTableColumn {
                 int size = fp.getDownloadLinks().size();
                 if (failedCount > 0) {
                     if (failedCount == size) {
-                        statuspanel.setText(T._.gui_linkgrabber_packageofflinepercent( JDUtilities.getPercent(failedCount, size)), null);
+                        statuspanel.setText(T._.gui_linkgrabber_packageofflinepercent(JDUtilities.getPercent(failedCount, size)), null);
                     } else {
-                        statuspanel.setText(T._.gui_linkgrabber_packageofflinepercent( JDUtilities.getPercent(failedCount, size)) + "/" + T._.gui_linkgrabber_packageonlinepercent( JDUtilities.getPercent(size - failedCount, size)), null);
+                        statuspanel.setText(T._.gui_linkgrabber_packageofflinepercent(JDUtilities.getPercent(failedCount, size)) + "/" + T._.gui_linkgrabber_packageonlinepercent(JDUtilities.getPercent(size - failedCount, size)), null);
                     }
                 } else {
                     statuspanel.setText(T._.gui_linkgrabber_packageonlineall(), null);

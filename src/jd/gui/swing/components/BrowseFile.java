@@ -16,8 +16,6 @@
 
 package jd.gui.swing.components;
 
-
- import org.jdownloader.gui.translate.*;
 import java.awt.LayoutManager;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -28,28 +26,29 @@ import javax.swing.JPanel;
 import javax.swing.JTextField;
 
 import jd.gui.UserIO;
-import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
+
+import org.jdownloader.gui.translate.T;
 
 public class BrowseFile extends JPanel implements ActionListener {
 
-    public static final int FILES_ONLY = UserIO.FILES_ONLY;
+    public static final int   FILES_ONLY            = UserIO.FILES_ONLY;
 
-    public static final int DIRECTORIES_ONLY = UserIO.DIRECTORIES_ONLY;
+    public static final int   DIRECTORIES_ONLY      = UserIO.DIRECTORIES_ONLY;
 
-    public static final int FILES_AND_DIRECTORIES = UserIO.FILES_AND_DIRECTORIES;
+    public static final int   FILES_AND_DIRECTORIES = UserIO.FILES_AND_DIRECTORIES;
 
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID      = 1L;
 
-    private JButton btnBrowse;
+    private JButton           btnBrowse;
 
-    private File currentPath;
+    private File              currentPath;
 
-    private boolean editable = false;
+    private boolean           editable              = false;
 
-    private int fileSelectionMode = BrowseFile.FILES_ONLY;
+    private int               fileSelectionMode     = BrowseFile.FILES_ONLY;
 
-    private JTextField txtInput;
+    private JTextField        txtInput;
 
     public BrowseFile() {
         this(null);

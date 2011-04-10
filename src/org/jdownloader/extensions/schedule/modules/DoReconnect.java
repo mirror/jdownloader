@@ -16,13 +16,11 @@
 
 package org.jdownloader.extensions.schedule.modules;
 
+import jd.controlling.reconnect.Reconnecter;
 
- import org.jdownloader.extensions.schedule.translate.*;
 import org.jdownloader.extensions.schedule.SchedulerModule;
 import org.jdownloader.extensions.schedule.SchedulerModuleInterface;
-
-import jd.controlling.reconnect.Reconnecter;
-import jd.utils.locale.JDL;
+import org.jdownloader.extensions.schedule.translate.T;
 
 @SchedulerModule
 public class DoReconnect implements SchedulerModuleInterface {

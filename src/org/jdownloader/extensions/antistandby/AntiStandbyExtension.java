@@ -16,8 +16,6 @@
 
 package org.jdownloader.extensions.antistandby;
 
-
- import org.jdownloader.extensions.antistandby.translate.*;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.util.ArrayList;
@@ -29,12 +27,12 @@ import jd.gui.swing.jdgui.actions.ToolBarAction;
 import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.nutils.OSDetector;
 import jd.plugins.AddonPanel;
-import jd.utils.locale.JDL;
 
 import org.jdownloader.extensions.AbstractConfigPanel;
 import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
+import org.jdownloader.extensions.antistandby.translate.T;
 
 public class AntiStandbyExtension extends AbstractExtension {
 

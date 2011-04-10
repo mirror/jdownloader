@@ -1,16 +1,14 @@
 package org.jdownloader.extensions.langfileeditor;
 
-
- import org.jdownloader.extensions.langfileeditor.translate.*;
 import jd.gui.swing.components.pieapi.ChartAPIEntity;
 import jd.gui.swing.components.pieapi.PieChartAPI;
 import jd.gui.swing.jdgui.views.InfoPanel;
-import jd.utils.locale.JDL;
+
+import org.jdownloader.extensions.langfileeditor.translate.T;
 
 public class LFEInfoPanel extends InfoPanel {
 
     private static final long   serialVersionUID = 1314727641431663267L;
-    private static final String LOCALE_PREFIX    = "plugins.optional.langfileeditor.";
     private static LFEInfoPanel INSTANCE         = null;
 
     private PieChartAPI         keyChart;

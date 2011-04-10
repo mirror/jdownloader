@@ -1,14 +1,13 @@
 package jd.gui.swing.components.table;
 
-
- import org.jdownloader.gui.translate.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
 import javax.swing.JMenuItem;
 
 import jd.utils.JDTheme;
-import jd.utils.locale.JDL;
+
+import org.jdownloader.gui.translate.T;
 
 public class SortMenuItem extends JMenuItem implements ActionListener {
 

@@ -21,8 +21,6 @@
 
 package jd.gui.swing.jdgui.views.linkgrabber;
 
-
- import org.jdownloader.gui.translate.*;
 import java.util.ArrayList;
 
 import jd.DownloadSettings;
@@ -34,11 +32,11 @@ import jd.controlling.ProgressController;
 import jd.controlling.ProgressControllerEvent;
 import jd.controlling.ProgressControllerListener;
 import jd.plugins.LinkGrabberFilePackage;
-import jd.utils.locale.JDL;
 
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
+import org.jdownloader.gui.translate.T;
 import org.jdownloader.translate.JDT;
 
 public class DownloadAutostart implements LinkGrabberControllerListener {

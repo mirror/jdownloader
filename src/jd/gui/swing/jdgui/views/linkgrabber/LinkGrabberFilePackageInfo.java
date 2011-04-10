@@ -16,8 +16,6 @@
 
 package jd.gui.swing.jdgui.views.linkgrabber;
 
-
- import org.jdownloader.gui.translate.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.FocusEvent;
@@ -34,30 +32,30 @@ import jd.gui.swing.components.JDTextField;
 import jd.plugins.LinkGrabberFilePackage;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
-import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.utils.swing.EDTRunner;
+import org.jdownloader.gui.translate.T;
 
 public class LinkGrabberFilePackageInfo extends JDCollapser implements ActionListener, FocusListener {
 
-    private static final long serialVersionUID = 5410296068527460629L;
+    private static final long      serialVersionUID = 5410296068527460629L;
 
-    private ComboBrowseFile brwSaveTo;
+    private ComboBrowseFile        brwSaveTo;
 
-    private JDTextField txtComment;
+    private JDTextField            txtComment;
 
-    private JDTextField txtName;
+    private JDTextField            txtName;
 
-    private JDTextField txtPassword;
+    private JDTextField            txtPassword;
 
-    private JCheckBox chbPostProcessing;
+    private JCheckBox              chbPostProcessing;
 
-    private JCheckBox chbUseSubdirectory;
+    private JCheckBox              chbUseSubdirectory;
 
-    private LinkGrabberFilePackage fp = null;
+    private LinkGrabberFilePackage fp               = null;
 
-    private JDTextField txtPassword2;
+    private JDTextField            txtPassword2;
 
     public LinkGrabberFilePackageInfo() {
         buildGui();

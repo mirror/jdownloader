@@ -1,20 +1,18 @@
 package jd.gui.swing.jdgui.views.downloads.contextmenu;
 
-
- import org.jdownloader.gui.translate.*;
 import java.awt.event.ActionEvent;
 import java.io.File;
 
 import jd.gui.swing.jdgui.interfaces.ContextMenuAction;
-import jd.utils.locale.JDL;
 
 import org.appwork.utils.os.CrossSystem;
+import org.jdownloader.gui.translate.T;
 
 public class OpenFileAction extends ContextMenuAction {
 
     private static final long serialVersionUID = 1901008532686173167L;
 
-    private final File file;
+    private final File        file;
 
     public OpenFileAction(File file) {
         this.file = file;

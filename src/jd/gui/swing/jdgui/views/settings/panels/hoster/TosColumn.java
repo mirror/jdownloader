@@ -1,7 +1,5 @@
 package jd.gui.swing.jdgui.views.settings.panels.hoster;
 
-
- import org.jdownloader.gui.translate.*;
 import java.awt.Component;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -12,18 +10,18 @@ import javax.swing.SwingConstants;
 
 import jd.HostPluginWrapper;
 import jd.gui.swing.components.linkbutton.JLink;
-import jd.utils.locale.JDL;
 
 import org.appwork.utils.swing.table.ExtColumn;
 import org.appwork.utils.swing.table.ExtTableModel;
 import org.jdesktop.swingx.renderer.JRendererLabel;
+import org.jdownloader.gui.translate.T;
 
 public class TosColumn extends ExtColumn<HostPluginWrapper> implements ActionListener {
 
-    private static final long serialVersionUID = 4600633634774184026L;
+    private static final long    serialVersionUID = 4600633634774184026L;
 
     private final JRendererLabel labelRend;
-    private final JLink labelEdit;
+    private final JLink          labelEdit;
 
     public TosColumn(String name, ExtTableModel<HostPluginWrapper> table) {
         super(name, table);

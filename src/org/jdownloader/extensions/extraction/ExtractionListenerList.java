@@ -16,8 +16,6 @@
 
 package org.jdownloader.extensions.extraction;
 
-
- import org.jdownloader.extensions.extraction.translate.*;
 import java.awt.Color;
 import java.io.File;
 import java.util.logging.Logger;
@@ -30,7 +28,8 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginProgress;
 import jd.utils.JDUtilities;
-import jd.utils.locale.JDL;
+
+import org.jdownloader.extensions.extraction.translate.T;
 
 /**
  * Updates the Extractionprogess for archives in the downloadlist
@@ -39,7 +38,7 @@ import jd.utils.locale.JDL;
  * 
  */
 public class ExtractionListenerList implements ExtractionListener {
-    private Logger     logger;
+    private Logger              logger;
     private ExtractionExtension ex;
 
     ExtractionListenerList(ExtractionExtension ex) {
@@ -51,7 +50,7 @@ public class ExtractionListenerList implements ExtractionListener {
         // Falls der link entfernt wird während dem entpacken
         if (controller.getArchiv().getFirstDownloadLink().getFilePackage() == FilePackage.getDefaultFilePackage() && controller.getProgressController() == null) {
             logger.warning("LINK GOT REMOVED_: " + controller.getArchiv().getFirstDownloadLink());
-            ProgressController progress = new ProgressController(T._.plugins_optional_extraction_progress_extractfile( controller.getArchiv().getFirstDownloadLink().getFileOutput()), 100, ex.getIconKey());
+            ProgressController progress = new ProgressController(T._.plugins_optional_extraction_progress_extractfile(controller.getArchiv().getFirstDownloadLink().getFileOutput()), 100, ex.getIconKey());
             controller.setProgressController(progress);
         }
 
@@ -91,7 +90,7 @@ public class ExtractionListenerList implements ExtractionListener {
             controller.getArchiv().getFirstDownloadLink().requestGuiUpdate();
 
             if (ex.getPluginConfig().getBooleanProperty(ExtractionConstants.CONFIG_KEY_ASK_UNKNOWN_PASS, true)) {
-                String pass = UserIO.getInstance().requestInputDialog(0, T._.plugins_optional_extraction_askForPassword( controller.getArchiv().getFirstDownloadLink().getName()), "");
+                String pass = UserIO.getInstance().requestInputDialog(0, T._.plugins_optional_extraction_askForPassword(controller.getArchiv().getFirstDownloadLink().getName()), "");
                 if (pass == null || pass.length() == 0) {
                     ls.addStatus(LinkStatus.ERROR_POST_PROCESS);
                     ls.setStatusText(T._.plugins_optional_extraction_status_extractfailedpass());
@@ -143,7 +142,7 @@ public class ExtractionListenerList implements ExtractionListener {
                     link.getLinkStatus().removeStatus(LinkStatus.ERROR_ALREADYEXISTS);
                     link.getLinkStatus().addStatus(LinkStatus.ERROR_DOWNLOAD_FAILED);
                     link.getLinkStatus().setValue(LinkStatus.VALUE_FAILED_HASH);
-                    link.getLinkStatus().setErrorMessage(T._.plugins_optional_extraction_crcerrorin( link.getName()));
+                    link.getLinkStatus().setErrorMessage(T._.plugins_optional_extraction_crcerrorin(link.getName()));
                     link.requestGuiUpdate();
                 }
             } else {

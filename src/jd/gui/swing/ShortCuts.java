@@ -25,19 +25,16 @@
 
 package jd.gui.swing;
 
-
- import org.jdownloader.gui.translate.*;
 import java.awt.event.KeyEvent;
 
 import javax.swing.KeyStroke;
 
-import jd.utils.locale.JDL;
+import org.jdownloader.gui.translate.T;
 
 public class ShortCuts {
     /**
      * DO NOT MOVE THIS PREFIX. required by SrcParser in this java file
      */
-    private static final String JDL_PREFIX = "jd.gui.swing.ShortCuts.";
 
     public static String getAcceleratorString(KeyStroke ks) {
         if (ks == null) return null;

@@ -16,9 +16,6 @@
 
 package jd.plugins.download;
 
-
- import org.jdownloader.translate.*;
-
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -48,13 +45,13 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
-import jd.utils.locale.JDL;
 
 import org.appwork.update.updateclient.UpdaterConstants;
 import org.appwork.utils.Regex;
 import org.appwork.utils.net.httpconnection.HTTPConnection.RequestMethod;
 import org.appwork.utils.net.throttledconnection.MeteredThrottledInputStream;
 import org.appwork.utils.speedmeter.AverageSpeedMeter;
+import org.jdownloader.translate.JDT;
 
 abstract public class DownloadInterface {
 
@@ -1204,7 +1201,7 @@ abstract public class DownloadInterface {
         LinkStatus linkstatus = link.getLinkStatus();
         if (block != null) {
             linkstatus.addStatus(LinkStatus.ERROR_ALREADYEXISTS);
-            if (block.getDefaultPlugin() != null) linkstatus.setStatusText(JDT._.system_download_errors_linkisBlocked( block.getHost()));
+            if (block.getDefaultPlugin() != null) linkstatus.setStatusText(JDT._.system_download_errors_linkisBlocked(block.getHost()));
             return true;
         }
         File fileOutput = new File(downloadLink.getFileOutput());
@@ -1278,7 +1275,7 @@ abstract public class DownloadInterface {
             return handleErrors();
         } catch (Exception e) {
             if (e instanceof FileNotFoundException) {
-                this.error(LinkStatus.ERROR_LOCAL_IO, JDT._.download_error_message_localio( e.getMessage()));
+                this.error(LinkStatus.ERROR_LOCAL_IO, JDT._.download_error_message_localio(e.getMessage()));
             } else {
                 JDLogger.exception(e);
             }

@@ -16,17 +16,15 @@
 
 package org.jdownloader.extensions.schedule;
 
-
- import org.jdownloader.extensions.schedule.translate.*;
 import javax.swing.Icon;
 
 import jd.gui.swing.jdgui.views.ClosableView;
 import jd.utils.JDTheme;
-import jd.utils.locale.JDL;
+
+import org.jdownloader.extensions.schedule.translate.T;
 
 public class SchedulerView extends ClosableView {
     private static final long serialVersionUID = -7876057076125402969L;
-    private static final String JDL_PREFIX = "jd.plugins.optional.schedule.SchedulerView.";
 
     public SchedulerView() {
         super();

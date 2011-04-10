@@ -16,8 +16,6 @@
 
 package org.jdownloader.extensions.remotecontrol;
 
-
- import org.jdownloader.extensions.remotecontrol.translate.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.IOException;
@@ -32,13 +30,13 @@ import jd.gui.UserIO;
 import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.plugins.AddonPanel;
 import jd.plugins.OptionalPlugin;
-import jd.utils.locale.JDL;
 
 import org.jdownloader.extensions.AbstractConfigPanel;
 import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
 import org.jdownloader.extensions.interfaces.HttpServer;
+import org.jdownloader.extensions.remotecontrol.translate.T;
 
 /**
  * Alle Ausgaben sollten lediglich eine Zeile lang sein, um die kompatibilität
@@ -83,10 +81,10 @@ public class RemoteControlExtension extends AbstractExtension implements ActionL
             if (activate.isSelected()) {
                 server = initServer();
                 if (server != null) server.start();
-                UserIO.getInstance().requestMessageDialog(T._.plugins_optional_remotecontrol_startedonport2( getName(), subConfig.getIntegerProperty(PARAM_PORT, 10025), subConfig.getIntegerProperty(PARAM_PORT, 10025)));
+                UserIO.getInstance().requestMessageDialog(T._.plugins_optional_remotecontrol_startedonport2(getName(), subConfig.getIntegerProperty(PARAM_PORT, 10025), subConfig.getIntegerProperty(PARAM_PORT, 10025)));
             } else {
                 if (server != null) server.sstop();
-                UserIO.getInstance().requestMessageDialog(T._.plugins_optional_remotecontrol_stopped2( getName()));
+                UserIO.getInstance().requestMessageDialog(T._.plugins_optional_remotecontrol_stopped2(getName()));
             }
         } catch (Exception ex) {
             JDLogger.exception(ex);

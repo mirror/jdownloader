@@ -1,7 +1,5 @@
 package jd.controlling.reconnect.plugins.liveheader;
 
-
- import jd.controlling.reconnect.plugins.liveheader.translate.*;
 import java.util.ArrayList;
 
 import javax.swing.JLabel;
@@ -11,7 +9,7 @@ import javax.swing.JTextField;
 import jd.controlling.reconnect.ReconnectPluginController;
 import jd.controlling.reconnect.ReconnectWizardProgress;
 import jd.controlling.reconnect.RouterUtils;
-import jd.utils.locale.JDL;
+import jd.controlling.reconnect.plugins.liveheader.translate.T;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.utils.swing.dialog.ContainerDialog;
@@ -122,7 +120,7 @@ public class LiveHeaderDetectionWizard {
         for (int i = 0; i < tests.size(); i++) {
             progress.setProgress((i + 1) * 100 / tests.size());
             TestScript test = tests.get(i);
-            progress.setStatusMessage(T._.jd_controlling_reconnect_plugins_liveheader_LiveHeaderDetectionWizard_runTests( (i + 1), tests.size(), test.getManufactor() + " - " + test.getModel()));
+            progress.setStatusMessage(T._.jd_controlling_reconnect_plugins_liveheader_LiveHeaderDetectionWizard_runTests((i + 1), tests.size(), test.getManufactor() + " - " + test.getModel()));
 
             if (test.run(getPlugin())) {
                 // return first Script found

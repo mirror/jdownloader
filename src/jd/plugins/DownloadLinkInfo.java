@@ -1,32 +1,30 @@
 package jd.plugins;
 
-
- import org.jdownloader.translate.*;
-
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
 import jd.nutils.Formatter;
-import jd.utils.locale.JDL;
+
+import org.jdownloader.translate.JDT;
 
 public class DownloadLinkInfo {
 
-    private DownloadLink link = null;
+    private DownloadLink            link               = null;
 
-    private String formattedSize = null;
-    private String formattedLoaded = null;
-    private String formattedRemaining = null;
-    private String dateAdded = null;
-    private String dateFinished = null;
-    private String loadingFrom = null;
-    private String statusString = null;
-    private String formattedWaittime = null;
-    private String progressString = null;
-    private long lastReset = 0;
-    private boolean dateAddedReset = false;
-    private boolean dateFinishedReset = false;
+    private String                  formattedSize      = null;
+    private String                  formattedLoaded    = null;
+    private String                  formattedRemaining = null;
+    private String                  dateAdded          = null;
+    private String                  dateFinished       = null;
+    private String                  loadingFrom        = null;
+    private String                  statusString       = null;
+    private String                  formattedWaittime  = null;
+    private String                  progressString     = null;
+    private long                    lastReset          = 0;
+    private boolean                 dateAddedReset     = false;
+    private boolean                 dateFinishedReset  = false;
 
-    private static SimpleDateFormat dateFormat = null;
+    private static SimpleDateFormat dateFormat         = null;
 
     static {
         try {

@@ -1,15 +1,13 @@
 package jd.gui.swing.jdgui.components.modules;
 
-
- import org.jdownloader.gui.translate.*;
 import jd.controlling.ProgressController;
-import jd.utils.locale.JDL;
 
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.appwork.utils.swing.dialog.ProgressDialog;
 import org.appwork.utils.swing.dialog.ProgressDialog.ProgressGetter;
+import org.jdownloader.gui.translate.T;
 
 public class ProgressControllerDialog {
 

@@ -16,21 +16,17 @@
 
 package org.jdownloader.extensions.langfileeditor.columns;
 
-
- import org.jdownloader.extensions.langfileeditor.translate.*;
-import jd.utils.locale.JDL;
-
 import org.appwork.utils.Regex;
 import org.appwork.utils.swing.table.ExtTableModel;
 import org.appwork.utils.swing.table.columns.ExtTextEditorColumn;
 import org.jdownloader.extensions.langfileeditor.KeyInfo;
 import org.jdownloader.extensions.langfileeditor.LFEGui;
 import org.jdownloader.extensions.langfileeditor.LFETableModel;
+import org.jdownloader.extensions.langfileeditor.translate.T;
 
 public class LanguageColumn extends ExtTextEditorColumn<KeyInfo> {
 
-    private static final long   serialVersionUID = -2305836770033923728L;
-    private static final String JDL_PREFIX       = "jd.plugins.optional.langfileeditor.columns.LanguageColumn.";
+    private static final long serialVersionUID = -2305836770033923728L;
 
     public LanguageColumn(String name, ExtTableModel<KeyInfo> table) {
         super(name, table);
@@ -52,9 +48,9 @@ public class LanguageColumn extends ExtTextEditorColumn<KeyInfo> {
         String match = new Regex(((KeyInfo) obj).getKey(), "gui\\.menu\\.(.*?)\\.accel").getMatch(0);
         if (match != null) {
             StringBuilder toolTip = new StringBuilder();
-            toolTip.append(T._.jd_plugins_optional_langfileeditor_columns_LanguageColumn_tooltip_accelerator( match));
+            toolTip.append(T._.jd_plugins_optional_langfileeditor_columns_LanguageColumn_tooltip_accelerator(match));
             if (new Regex(obj.getLanguage(), "(CONTROL|STRG|UMSCHALT|ALT GR|ALT_GR)").matches()) {
-                toolTip.append(new char[] { ' ', '[' }).append(T._.jd_plugins_optional_langfileeditor_columns_LanguageColumn_tooltip_accelerator_wrong( obj.getLanguage())).append(']');
+                toolTip.append(new char[] { ' ', '[' }).append(T._.jd_plugins_optional_langfileeditor_columns_LanguageColumn_tooltip_accelerator_wrong(obj.getLanguage())).append(']');
             }
             return toolTip.toString();
         }

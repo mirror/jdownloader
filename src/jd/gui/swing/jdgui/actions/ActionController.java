@@ -16,8 +16,6 @@
 
 package jd.gui.swing.jdgui.actions;
 
-
- import org.jdownloader.gui.translate.*;
 import java.awt.event.ActionEvent;
 import java.io.File;
 import java.util.ArrayList;
@@ -55,12 +53,12 @@ import jd.plugins.LinkGrabberFilePackage;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 import jd.utils.WebUpdate;
-import jd.utils.locale.JDL;
 
 import org.appwork.storage.StorageValueChangeEvent;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.event.DefaultEventListener;
 import org.appwork.utils.os.CrossSystem;
+import org.jdownloader.gui.translate.T;
 
 /**
  * Class to control toolbar actions
@@ -184,7 +182,7 @@ public class ActionController {
                 JDController.getInstance().addControlListener(new ConfigPropertyListener(Configuration.PARAM_DOWNLOAD_PAUSE_SPEED) {
                     @Override
                     public void onPropertyChanged(final Property source, final String key) {
-                        setToolTipText(T._.gui_menu_action_break2_desc( JSonWrapper.get("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_PAUSE_SPEED, 10) + ""));
+                        setToolTipText(T._.gui_menu_action_break2_desc(JSonWrapper.get("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_PAUSE_SPEED, 10) + ""));
                     }
                 });
             }
@@ -193,7 +191,7 @@ public class ActionController {
             public void initDefaults() {
                 this.setEnabled(false);
                 this.setType(ToolBarAction.Types.TOGGLE);
-                this.setToolTipText(T._.gui_menu_action_break2_desc( JSonWrapper.get("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_PAUSE_SPEED, 10) + ""));
+                this.setToolTipText(T._.gui_menu_action_break2_desc(JSonWrapper.get("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_PAUSE_SPEED, 10) + ""));
             }
 
             @Override

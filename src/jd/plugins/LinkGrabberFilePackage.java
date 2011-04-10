@@ -16,9 +16,6 @@
 
 package jd.plugins;
 
-
- import org.jdownloader.translate.*;
-
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
@@ -31,9 +28,9 @@ import jd.config.SubConfiguration;
 import jd.controlling.LinkGrabberController;
 import jd.nutils.io.JDIO;
 import jd.utils.JDUtilities;
-import jd.utils.locale.JDL;
 
 import org.appwork.utils.event.Eventsender;
+import org.jdownloader.translate.JDT;
 
 class LinkGrabberFilePackageBroadcaster extends Eventsender<LinkGrabberFilePackageListener, LinkGrabberFilePackageEvent> {
 

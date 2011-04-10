@@ -16,8 +16,6 @@
 
 package org.jdownloader.extensions.schedule;
 
-
- import org.jdownloader.extensions.schedule.translate.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.text.SimpleDateFormat;
@@ -36,12 +34,12 @@ import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.nutils.ClassFinder;
 import jd.pluginloader.VirtualClass;
 import jd.plugins.AddonPanel;
-import jd.utils.locale.JDL;
 
 import org.jdownloader.extensions.AbstractConfigPanel;
 import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
+import org.jdownloader.extensions.schedule.translate.T;
 
 public class ScheduleExtension extends AbstractExtension implements ActionListener {
 

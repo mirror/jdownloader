@@ -16,18 +16,16 @@
 
 package org.jdownloader.extensions.schedule.modules;
 
-
- import org.jdownloader.extensions.schedule.translate.*;
 import java.util.ArrayList;
 
 import jd.controlling.AccountController;
 import jd.plugins.Account;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
-import jd.utils.locale.JDL;
 
 import org.jdownloader.extensions.schedule.SchedulerModule;
 import org.jdownloader.extensions.schedule.SchedulerModuleInterface;
+import org.jdownloader.extensions.schedule.translate.T;
 
 @SchedulerModule
 public class EnablePremiumForHost implements SchedulerModuleInterface {

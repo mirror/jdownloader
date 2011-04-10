@@ -1,8 +1,5 @@
 package jd.controlling.reconnect;
 
-
- import org.jdownloader.translate.*;
-
 import java.awt.Color;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -28,7 +25,6 @@ import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.nutils.Formatter;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
-import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.storage.StorageEvent;
@@ -36,6 +32,7 @@ import org.appwork.storage.StorageKeyAddedEvent;
 import org.appwork.storage.StorageValueChangeEvent;
 import org.appwork.utils.event.DefaultEventListener;
 import org.appwork.utils.swing.EDTRunner;
+import org.jdownloader.translate.JDT;
 
 public class ReconnectPluginConfigGUI extends SwitchPanel implements ActionListener, DefaultEventListener<StorageEvent<?>> {
 

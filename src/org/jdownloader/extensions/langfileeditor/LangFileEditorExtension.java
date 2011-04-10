@@ -16,8 +16,6 @@
 
 package org.jdownloader.extensions.langfileeditor;
 
-
- import org.jdownloader.extensions.langfileeditor.translate.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
@@ -37,13 +35,13 @@ import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.nutils.svn.Subversion;
 import jd.plugins.AddonPanel;
 import jd.utils.JDTheme;
-import jd.utils.locale.JDL;
 
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.extensions.AbstractConfigPanel;
 import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
+import org.jdownloader.extensions.langfileeditor.translate.T;
 
 /**
  * Editor for jDownloader language files. Gets JDL.L() and JDL.LF() entries from

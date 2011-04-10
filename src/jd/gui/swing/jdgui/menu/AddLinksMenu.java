@@ -16,11 +16,10 @@
 
 package jd.gui.swing.jdgui.menu;
 
-
- import org.jdownloader.gui.translate.*;
 import jd.gui.swing.jdgui.menu.actions.AddContainerAction;
 import jd.gui.swing.jdgui.menu.actions.AddUrlAction;
-import jd.utils.locale.JDL;
+
+import org.jdownloader.gui.translate.T;
 
 public class AddLinksMenu extends JStartMenu {
 

@@ -1,15 +1,13 @@
 package jd.gui.swing.jdgui.views.downloads.contextmenu;
 
-
- import org.jdownloader.gui.translate.*;
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 
 import jd.gui.swing.jdgui.interfaces.ContextMenuAction;
 import jd.plugins.DownloadLink;
-import jd.utils.locale.JDL;
 
 import org.appwork.utils.os.CrossSystem;
+import org.jdownloader.gui.translate.T;
 
 public class OpenInBrowserAction extends ContextMenuAction {
 

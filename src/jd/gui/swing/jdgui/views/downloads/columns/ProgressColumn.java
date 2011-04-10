@@ -16,8 +16,6 @@
 
 package jd.gui.swing.jdgui.views.downloads.columns;
 
-
- import org.jdownloader.gui.translate.*;
 import java.awt.Color;
 import java.awt.Component;
 import java.util.ArrayList;
@@ -33,9 +31,9 @@ import jd.gui.swing.jdgui.components.JDProgressBarRender;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
-import jd.utils.locale.JDL;
 
 import org.jdesktop.swingx.renderer.JRendererLabel;
+import org.jdownloader.gui.translate.T;
 
 public class ProgressColumn extends JDTableColumn {
 

@@ -16,8 +16,6 @@
 
 package jd.gui.swing.jdgui.views.downloads;
 
-
- import org.jdownloader.gui.translate.*;
 import java.awt.Color;
 import java.awt.Desktop;
 import java.awt.Point;
@@ -77,9 +75,9 @@ import jd.plugins.FilePackageInfoCache;
 import jd.plugins.LinkStatus;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
-import jd.utils.locale.JDL;
 
 import org.appwork.utils.Application;
+import org.jdownloader.gui.translate.T;
 
 public class DownloadTable extends JDTable implements MouseListener, KeyListener {
 

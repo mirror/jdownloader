@@ -16,8 +16,6 @@
 
 package jd.captcha.easy;
 
-
- import jd.captcha.translate.*;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.FilenameFilter;
@@ -30,6 +28,7 @@ import javax.swing.ImageIcon;
 import jd.captcha.JAntiCaptcha;
 import jd.captcha.easy.load.LoadCaptchas;
 import jd.captcha.pixelgrid.Captcha;
+import jd.captcha.translate.T;
 import jd.captcha.utils.Utilities;
 import jd.gui.UserIO;
 import jd.gui.swing.GuiRunnable;
@@ -38,7 +37,6 @@ import jd.nutils.JDFlags;
 import jd.nutils.JDImage;
 import jd.nutils.io.JDIO;
 import jd.utils.JDUtilities;
-import jd.utils.locale.JDL;
 
 import org.appwork.utils.Regex;
 

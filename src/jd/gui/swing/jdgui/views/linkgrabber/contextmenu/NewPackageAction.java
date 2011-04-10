@@ -1,7 +1,5 @@
 package jd.gui.swing.jdgui.views.linkgrabber.contextmenu;
 
-
- import org.jdownloader.gui.translate.*;
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 
@@ -11,9 +9,9 @@ import jd.gui.swing.jdgui.interfaces.ContextMenuAction;
 import jd.gui.swing.jdgui.views.linkgrabber.LinkgrabberSettings;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkGrabberFilePackage;
-import jd.utils.locale.JDL;
 
 import org.appwork.storage.config.JsonConfig;
+import org.jdownloader.gui.translate.T;
 
 public class NewPackageAction extends ContextMenuAction {
 

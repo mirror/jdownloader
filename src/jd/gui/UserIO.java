@@ -16,8 +16,6 @@
 
 package jd.gui;
 
-
- import org.jdownloader.gui.translate.*;
 import java.awt.Point;
 import java.io.File;
 
@@ -31,13 +29,13 @@ import jd.gui.swing.dialog.ClickPositionDialog;
 import jd.gui.swing.jdgui.GraphicalUserInterfaceSettings;
 import jd.nutils.JDFlags;
 import jd.utils.JDTheme;
-import jd.utils.locale.JDL;
 
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.BinaryLogic;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
+import org.jdownloader.gui.translate.T;
 
 public class UserIO {
 

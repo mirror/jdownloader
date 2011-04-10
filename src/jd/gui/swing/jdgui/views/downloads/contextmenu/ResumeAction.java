@@ -1,7 +1,5 @@
 package jd.gui.swing.jdgui.views.downloads.contextmenu;
 
-
- import org.jdownloader.gui.translate.*;
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 
@@ -9,7 +7,8 @@ import jd.controlling.DownloadWatchDog;
 import jd.controlling.IOEQ;
 import jd.gui.swing.jdgui.interfaces.ContextMenuAction;
 import jd.plugins.DownloadLink;
-import jd.utils.locale.JDL;
+
+import org.jdownloader.gui.translate.T;
 
 public class ResumeAction extends ContextMenuAction {
 

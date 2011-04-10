@@ -16,8 +16,6 @@
 
 package jd.gui.swing.jdgui.views.linkgrabber;
 
-
- import org.jdownloader.gui.translate.*;
 import java.awt.EventQueue;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -60,10 +58,10 @@ import jd.plugins.LinkGrabberFilePackage;
 import jd.plugins.LinkStatus;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
-import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.storage.config.JsonConfig;
+import org.jdownloader.gui.translate.T;
 
 public class LinkGrabberPanel extends SwitchPanel implements ActionListener, LinkCheckListener, ProgressControllerListener, LinkGrabberControllerListener {
 
@@ -281,7 +279,7 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
         new Thread() {
             @Override
             public void run() {
-                Balloon.showIfHidden(T._.gui_config_gui_linkgrabber(), JDTheme.II("gui.images.add", 32, 32), T._.gui_linkgrabber_adding( "" + linkList.size()));
+                Balloon.showIfHidden(T._.gui_config_gui_linkgrabber(), JDTheme.II("gui.images.add", 32, 32), T._.gui_linkgrabber_adding("" + linkList.size()));
                 for (DownloadLink element : linkList) {
                     if (LGINSTANCE.isDupe(element)) continue;
                     addToWaitingList(element);
@@ -421,7 +419,7 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
                 for (LinkGrabberFilePackage fp : fps) {
                     links += fp.getDownloadLinks().size();
                 }
-                Balloon.showIfHidden(T._.gui_config_gui_linkgrabber(), JDTheme.II("gui.images.add", 32, 32), T._.gui_linkgrabber_finished( "" + links, "" + fps.size()));
+                Balloon.showIfHidden(T._.gui_config_gui_linkgrabber(), JDTheme.II("gui.images.add", 32, 32), T._.gui_linkgrabber_finished("" + links, "" + fps.size()));
                 fps = null;
             }
         };

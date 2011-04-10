@@ -16,8 +16,6 @@
 
 package jd.gui.swing.jdgui.menu.actions;
 
-
- import org.jdownloader.gui.translate.*;
 import java.awt.event.ActionEvent;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -34,12 +32,12 @@ import jd.nutils.io.JDFileFilter;
 import jd.nutils.io.JDIO;
 import jd.plugins.FilePackage;
 import jd.utils.JDHexUtils;
-import jd.utils.locale.JDL;
+
+import org.jdownloader.gui.translate.T;
 
 public class BackupLinkListAction extends ThreadedAction {
 
     private static final long serialVersionUID = 823930266263085474L;
-    private static final String JDL_PREFIX = "jd.gui.swing.jdgui.menu.actions.BackupLinkListAction.";
 
     public BackupLinkListAction() {
         super("action.backuplinklist", "gui.images.save");

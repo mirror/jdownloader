@@ -1,7 +1,5 @@
 package jd.controlling.reconnect.plugins.liveheader;
 
-
- import jd.controlling.reconnect.plugins.liveheader.translate.*;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
@@ -38,6 +36,7 @@ import jd.controlling.reconnect.Reconnecter;
 import jd.controlling.reconnect.RouterPlugin;
 import jd.controlling.reconnect.RouterUtils;
 import jd.controlling.reconnect.plugins.liveheader.recorder.Gui;
+import jd.controlling.reconnect.plugins.liveheader.translate.T;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.gui.UserIO;
@@ -49,7 +48,6 @@ import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
 import jd.nutils.io.JDIO;
 import jd.utils.JDUtilities;
-import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.storage.StorageEvent;
@@ -443,7 +441,7 @@ public class LiveHeaderReconnect extends RouterPlugin implements ActionListener,
                 LiveHeaderReconnect.this.updateGUI();
                 progress.setStatus(100);
                 if (ia != null) {
-                    progress.setStatusText(T._.gui_config_routeripfinder_ready( ia.getHostAddress()));
+                    progress.setStatusText(T._.gui_config_routeripfinder_ready(ia.getHostAddress()));
                     progress.doFinalize(3000);
                 } else {
                     progress.setStatusText(T._.gui_config_routeripfinder_notfound());

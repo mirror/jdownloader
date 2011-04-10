@@ -16,8 +16,6 @@
 
 package jd.gui.swing.jdgui.views.settings;
 
-
- import org.jdownloader.gui.translate.*;
 import java.awt.Color;
 
 import javax.swing.Icon;
@@ -27,15 +25,13 @@ import jd.gui.swing.jdgui.GraphicalUserInterfaceSettings;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.gui.swing.jdgui.views.ClosableView;
 import jd.utils.JDTheme;
-import jd.utils.locale.JDL;
 
 import org.appwork.storage.config.JsonConfig;
+import org.jdownloader.gui.translate.T;
 
 public class ConfigurationView extends ClosableView {
 
     private static final long        serialVersionUID = -5607304856678049342L;
-
-    private static final String      IDENT_PREFIX     = "jd.gui.swing.jdgui.views.configurationview.";
 
     private static ConfigurationView INSTANCE         = null;
 

@@ -1,7 +1,5 @@
 package jd.gui.swing.dialog;
 
-
- import org.jdownloader.gui.translate.*;
 import java.awt.event.ActionEvent;
 
 import javax.swing.JComboBox;
@@ -14,30 +12,29 @@ import javax.swing.event.CaretListener;
 
 import jd.controlling.JDLogger;
 import jd.utils.JDTheme;
-import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.utils.BinaryLogic;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.appwork.utils.swing.dialog.AbstractDialog;
 import org.appwork.utils.swing.dialog.Dialog;
+import org.jdownloader.gui.translate.T;
 
 public class ProxyDialog extends AbstractDialog<HTTPProxy> implements CaretListener {
 
-    private static final long   serialVersionUID = 8512889396415100663L;
-    private static final String JDL_PREFIX       = "jd.gui.swing.dialog.ProxyDialog.";
+    private static final long serialVersionUID = 8512889396415100663L;
 
-    private JComboBox           cmbType;
-    private JTextField          txtHost;
-    private JTextField          txtPort;
-    private JTextField          txtUser;
-    private JTextField          txtPass;
+    private JComboBox         cmbType;
+    private JTextField        txtHost;
+    private JTextField        txtPort;
+    private JTextField        txtUser;
+    private JTextField        txtPass;
 
-    private final String[]      types            = new String[] { T._.jd_gui_swing_dialog_ProxyDialog_http(), T._.jd_gui_swing_dialog_ProxyDialog_socks5(), T._.jd_gui_swing_dialog_ProxyDialog_localip() };
-    private JLabel              lblUser;
-    private JLabel              lblPass;
-    private JLabel              lblPort;
-    private JLabel              lblHost;
+    private final String[]    types            = new String[] { T._.jd_gui_swing_dialog_ProxyDialog_http(), T._.jd_gui_swing_dialog_ProxyDialog_socks5(), T._.jd_gui_swing_dialog_ProxyDialog_localip() };
+    private JLabel            lblUser;
+    private JLabel            lblPass;
+    private JLabel            lblPort;
+    private JLabel            lblHost;
 
     public ProxyDialog() {
         super(0, T._.jd_gui_swing_dialog_ProxyDialog_title(), JDTheme.II("gui.images.proxy", 32, 32), null, null);

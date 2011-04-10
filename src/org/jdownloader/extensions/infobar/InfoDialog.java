@@ -1,7 +1,5 @@
 package org.jdownloader.extensions.infobar;
 
-
- import org.jdownloader.extensions.infobar.translate.*;
 import java.awt.DisplayMode;
 import java.awt.Point;
 import java.awt.event.ActionEvent;
@@ -28,14 +26,13 @@ import jd.gui.swing.jdgui.components.speedmeter.SpeedMeterPanel;
 import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.nutils.Formatter;
 import jd.utils.JDTheme;
-import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
+
+import org.jdownloader.extensions.infobar.translate.T;
 
 public class InfoDialog extends JWindow implements ActionListener, MouseListener, MouseMotionListener {
 
-    private static final String JDL_PREFIX = "jd.plugins.optional.infobar.InfoDialog.";
-
-    private static InfoDialog   INSTANCE   = null;
+    private static InfoDialog INSTANCE = null;
 
     public static InfoDialog getInstance(MenuAction action) {
         if (INSTANCE == null) INSTANCE = new InfoDialog(action);

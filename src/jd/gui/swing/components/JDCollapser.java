@@ -16,8 +16,6 @@
 
 package jd.gui.swing.components;
 
-
- import org.jdownloader.gui.translate.*;
 import java.awt.event.ActionEvent;
 
 import javax.swing.BorderFactory;
@@ -30,8 +28,9 @@ import javax.swing.JPanel;
 import jd.gui.swing.jdgui.borders.JDBorderFactory;
 import jd.gui.swing.jdgui.interfaces.DroppedPanel;
 import jd.nutils.JDImage;
-import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
+
+import org.jdownloader.gui.translate.T;
 
 /**
  * class for an infopanel with close button.
@@ -42,11 +41,11 @@ public abstract class JDCollapser extends DroppedPanel {
 
     private static final long serialVersionUID = 6864885344815243560L;
 
-    protected JMenuBar menubar;
-    private JDCloseButton closeButton;
-    protected JLabel menutitle;
+    protected JMenuBar        menubar;
+    private JDCloseButton     closeButton;
+    protected JLabel          menutitle;
 
-    protected JPanel content;
+    protected JPanel          content;
 
     protected JDCollapser() {
         super();
@@ -86,7 +85,7 @@ public abstract class JDCollapser extends DroppedPanel {
             menutitle.setIcon(icon);
         }
 
-        closeButton.setToolTipText(T._.jd_gui_swing_components_JDCollapser_closetooltip( name));
+        closeButton.setToolTipText(T._.jd_gui_swing_components_JDCollapser_closetooltip(name));
     }
 
     abstract public void onClosed();

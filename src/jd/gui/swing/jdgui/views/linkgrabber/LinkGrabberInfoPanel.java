@@ -16,8 +16,6 @@
 
 package jd.gui.swing.jdgui.views.linkgrabber;
 
-
- import org.jdownloader.gui.translate.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
@@ -29,15 +27,14 @@ import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.jdgui.views.InfoPanel;
 import jd.nutils.Formatter;
 import jd.plugins.LinkGrabberFilePackage;
-import jd.utils.locale.JDL;
 
 import org.appwork.storage.config.JsonConfig;
+import org.jdownloader.gui.translate.T;
 
 public class LinkGrabberInfoPanel extends InfoPanel {
 
     private static final long                   serialVersionUID = 2276105693934789404L;
 
-    private static final String                 JDL_PREFIX       = "jd.gui.swing.jdgui.views.info.LinkGrabberInfoPanel.";
     private LinkGrabberController               lgi;
     protected long                              links;
     protected long                              tot;

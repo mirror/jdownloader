@@ -1,16 +1,14 @@
 package org.jdownloader.gui.views.downloads.columns;
 
-
- import org.jdownloader.gui.translate.*;
 import java.text.FieldPosition;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
 import jd.plugins.PackageLinkNode;
-import jd.utils.locale.JDL;
 
 import org.appwork.utils.swing.table.ExtDefaultRowSorter;
 import org.appwork.utils.swing.table.columns.ExtTextColumn;
+import org.jdownloader.gui.translate.T;
 
 public abstract class DateColumn extends ExtTextColumn<PackageLinkNode> {
 

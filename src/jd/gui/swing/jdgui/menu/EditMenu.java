@@ -1,10 +1,8 @@
 package jd.gui.swing.jdgui.menu;
 
-
- import org.jdownloader.gui.translate.*;
 import javax.swing.JMenu;
 
-import jd.utils.locale.JDL;
+import org.jdownloader.gui.translate.T;
 
 public class EditMenu extends JMenu {
 

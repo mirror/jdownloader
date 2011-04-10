@@ -16,9 +16,6 @@
 
 package jd.controlling;
 
-
- import org.jdownloader.translate.*;
-
 import java.net.URL;
 import java.util.ArrayList;
 
@@ -36,10 +33,10 @@ import jd.nutils.nativeintegration.LocalBrowser;
 import jd.parser.html.HTMLParser;
 import jd.plugins.DownloadLink;
 import jd.utils.JDHexUtils;
-import jd.utils.locale.JDL;
 
 import org.appwork.utils.Regex;
 import org.jdownloader.extensions.ExtensionController;
+import org.jdownloader.translate.JDT;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.ContextFactory;
 import org.mozilla.javascript.Scriptable;

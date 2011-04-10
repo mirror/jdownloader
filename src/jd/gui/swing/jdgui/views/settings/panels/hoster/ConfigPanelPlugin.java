@@ -16,8 +16,6 @@
 
 package jd.gui.swing.jdgui.views.settings.panels.hoster;
 
-
- import org.jdownloader.gui.translate.*;
 import java.awt.Color;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -43,7 +41,6 @@ import jd.gui.UserIF;
 import jd.gui.swing.jdgui.menu.PremiumMenu;
 import jd.gui.swing.jdgui.views.settings.ConfigPanel;
 import jd.utils.JDTheme;
-import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.utils.swing.table.ExtTable;
@@ -52,11 +49,11 @@ import org.appwork.utils.swing.table.SelectionHighlighter;
 import org.appwork.utils.swing.table.columns.ExtIconColumn;
 import org.appwork.utils.swing.table.columns.ExtLongColumn;
 import org.appwork.utils.swing.table.columns.ExtTextColumn;
+import org.jdownloader.gui.translate.T;
 
 public class ConfigPanelPlugin extends ConfigPanel implements ActionListener, MouseListener {
 
-    private static final String JDL_PREFIX = "jd.gui.swing.jdgui.settings.panels.ConfigPanelPlugin.";
-
+    @Override
     public String getTitle() {
         return T._.jd_gui_swing_jdgui_settings_panels_ConfigPanelPlugin_plugins_title();
     }

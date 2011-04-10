@@ -16,8 +16,6 @@
 
 package jd.gui.swing.jdgui.views.settings.panels.reconnect;
 
-
- import org.jdownloader.gui.translate.*;
 import javax.swing.Icon;
 import javax.swing.SwingUtilities;
 
@@ -31,17 +29,18 @@ import jd.gui.UserIO;
 import jd.gui.swing.jdgui.views.settings.ConfigPanel;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
-import jd.utils.locale.JDL;
+
+import org.jdownloader.gui.translate.T;
 
 public class Reconnect extends ConfigPanel {
 
-    private static final String JDL_PREFIX       = "jd.gui.swing.jdgui.settings.panels.reconnect.Advanced.";
-    private static final long   serialVersionUID = 3383448498625377495L;
+    private static final long serialVersionUID = 3383448498625377495L;
 
     public static String getIconKey() {
         return "gui.images.reconnect_settings";
     }
 
+    @Override
     public String getTitle() {
         return T._.jd_gui_swing_jdgui_settings_panels_reconnect_Advanced_reconnect_advanced_title();
     }

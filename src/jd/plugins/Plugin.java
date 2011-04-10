@@ -16,9 +16,6 @@
 
 package jd.plugins;
 
-
- import org.jdownloader.translate.*;
-
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
@@ -45,9 +42,9 @@ import jd.http.URLConnectionAdapter;
 import jd.nutils.Formatter;
 import jd.nutils.encoding.Encoding;
 import jd.utils.JDUtilities;
-import jd.utils.locale.JDL;
 
 import org.appwork.utils.Regex;
+import org.jdownloader.translate.JDT;
 
 /**
  * Diese abstrakte Klasse steuert den Zugriff auf weitere Plugins. Alle Plugins

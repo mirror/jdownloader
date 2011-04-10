@@ -16,8 +16,6 @@
 
 package jd.gui.swing.jdgui.views.downloads;
 
-
- import org.jdownloader.gui.translate.*;
 import jd.controlling.DownloadController;
 import jd.gui.swing.components.table.JDTableModel;
 import jd.gui.swing.jdgui.views.downloads.columns.DateAddedColumn;
@@ -32,7 +30,8 @@ import jd.gui.swing.jdgui.views.downloads.columns.SizeColumn;
 import jd.gui.swing.jdgui.views.downloads.columns.StatusColumn;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.utils.locale.JDL;
+
+import org.jdownloader.gui.translate.T;
 
 public class DownloadJTableModel extends JDTableModel {
 

@@ -16,8 +16,6 @@
 
 package jd.captcha;
 
-
- import jd.captcha.translate.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
@@ -28,14 +26,14 @@ import javax.swing.JComboBox;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 
+import jd.captcha.translate.T;
 import jd.captcha.utils.Utilities;
 import jd.gui.swing.components.BrowseFile;
-import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
 public class JACController {
     private static BrowseFile chooser;
-    private static JComboBox methods;
+    private static JComboBox  methods;
 
     public static void showDialog(final boolean isTrain) {
         final JFrame frame = new JFrame();
@@ -99,7 +97,7 @@ public class JACController {
     }
 
     private final JAntiCaptcha jac;
-    private final File path;
+    private final File         path;
 
     public JACController(final File path, final String methode) {
         this.path = path;

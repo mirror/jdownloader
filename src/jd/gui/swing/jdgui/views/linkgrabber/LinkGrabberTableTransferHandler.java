@@ -16,8 +16,6 @@
 
 package jd.gui.swing.jdgui.views.linkgrabber;
 
-
- import org.jdownloader.gui.translate.*;
 import java.awt.Point;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.StringSelection;
@@ -42,20 +40,20 @@ import jd.gui.swing.SwingGui;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkGrabberFilePackage;
 import jd.utils.JDTheme;
-import jd.utils.locale.JDL;
 
 import org.appwork.utils.Regex;
+import org.jdownloader.gui.translate.T;
 
 public class LinkGrabberTableTransferHandler extends TransferHandler {
-    private static final long serialVersionUID = 2560352681437669412L;
-    private static final int DRAG_LINKS = 1;
-    private static final int DRAG_PACKAGES = 2;
+    private static final long     serialVersionUID = 2560352681437669412L;
+    private static final int      DRAG_LINKS       = 1;
+    private static final int      DRAG_PACKAGES    = 2;
 
-    private Object draggingObjects = null;
-    private int draggingType = 0;
+    private Object                draggingObjects  = null;
+    private int                   draggingType     = 0;
 
-    public boolean isDragging = false;
-    private LinkGrabberTable table;
+    public boolean                isDragging       = false;
+    private LinkGrabberTable      table;
     private LinkGrabberController LGINSTANCE;
 
     public LinkGrabberTableTransferHandler(LinkGrabberTable linkgrabberTreeTable) {
@@ -140,7 +138,7 @@ public class LinkGrabberTableTransferHandler extends TransferHandler {
                 if (current instanceof LinkGrabberFilePackage) {
                     /* Links in Package */
                     String Name = ((LinkGrabberFilePackage) current).getName();
-                    popup.add(m = new JMenuItem(T._.gui_table_draganddrop_insertinpackagestart( Name)));
+                    popup.add(m = new JMenuItem(T._.gui_table_draganddrop_insertinpackagestart(Name)));
                     m.setIcon(JDTheme.II("gui.images.go_top", 16, 16));
                     m.addActionListener(new ActionListener() {
                         public void actionPerformed(ActionEvent e) {
@@ -148,7 +146,7 @@ public class LinkGrabberTableTransferHandler extends TransferHandler {
                         }
                     });
 
-                    popup.add(m = new JMenuItem(T._.gui_table_draganddrop_insertinpackageend( Name)));
+                    popup.add(m = new JMenuItem(T._.gui_table_draganddrop_insertinpackageend(Name)));
                     m.setIcon(JDTheme.II("gui.images.go_bottom", 16, 16));
                     m.addActionListener(new ActionListener() {
                         public void actionPerformed(ActionEvent e) {
@@ -159,7 +157,7 @@ public class LinkGrabberTableTransferHandler extends TransferHandler {
                 } else if (current instanceof DownloadLink) {
                     /* Links in Links */
                     String name = ((DownloadLink) current).getName();
-                    popup.add(m = new JMenuItem(T._.gui_table_draganddrop_before( name)));
+                    popup.add(m = new JMenuItem(T._.gui_table_draganddrop_before(name)));
                     m.setIcon(JDTheme.II("gui.images.go_top", 16, 16));
                     m.addActionListener(new ActionListener() {
                         public void actionPerformed(ActionEvent e) {
@@ -167,7 +165,7 @@ public class LinkGrabberTableTransferHandler extends TransferHandler {
                         }
                     });
 
-                    popup.add(m = new JMenuItem(T._.gui_table_draganddrop_after( name)));
+                    popup.add(m = new JMenuItem(T._.gui_table_draganddrop_after(name)));
                     m.setIcon(JDTheme.II("gui.images.go_bottom", 16, 16));
                     m.addActionListener(new ActionListener() {
                         public void actionPerformed(ActionEvent e) {
@@ -185,7 +183,7 @@ public class LinkGrabberTableTransferHandler extends TransferHandler {
                 } else
                     return false;
 
-                popup.add(m = new JMenuItem(T._.gui_table_draganddrop_movepackagebefore( name)));
+                popup.add(m = new JMenuItem(T._.gui_table_draganddrop_movepackagebefore(name)));
                 m.setIcon(JDTheme.II("gui.images.go_top", 16, 16));
                 m.addActionListener(new ActionListener() {
                     public void actionPerformed(ActionEvent e) {
@@ -194,7 +192,7 @@ public class LinkGrabberTableTransferHandler extends TransferHandler {
 
                 });
 
-                popup.add(m = new JMenuItem(T._.gui_table_draganddrop_movepackageend( name)));
+                popup.add(m = new JMenuItem(T._.gui_table_draganddrop_movepackageend(name)));
                 m.setIcon(JDTheme.II("gui.images.go_bottom", 16, 16));
                 m.addActionListener(new ActionListener() {
                     public void actionPerformed(ActionEvent e) {

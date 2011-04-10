@@ -16,8 +16,6 @@
 
 package jd.gui.swing.dialog;
 
-
- import org.jdownloader.gui.translate.*;
 import java.awt.Image;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
@@ -36,11 +34,11 @@ import javax.swing.JTextField;
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.utils.JDTheme;
-import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.utils.swing.dialog.AbstractDialog;
 import org.appwork.utils.swing.dialog.Dialog;
+import org.jdownloader.gui.translate.T;
 
 /**
  * This Dialog is used to display a Inputdialog for the captchas

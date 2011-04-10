@@ -16,9 +16,6 @@
 
 package jd.controlling.reconnect;
 
-
- import org.jdownloader.translate.*;
-
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 
@@ -31,7 +28,6 @@ import jd.controlling.reconnect.ipcheck.IPController;
 import jd.gui.UserIF;
 import jd.gui.UserIO;
 import jd.utils.JDUtilities;
-import jd.utils.locale.JDL;
 
 import org.appwork.controlling.State;
 import org.appwork.controlling.StateMachine;
@@ -43,6 +39,7 @@ import org.appwork.storage.StorageKeyAddedEvent;
 import org.appwork.storage.StorageValueChangeEvent;
 import org.appwork.utils.event.DefaultEventListener;
 import org.appwork.utils.event.DefaultEventSender;
+import org.jdownloader.translate.JDT;
 
 public final class Reconnecter implements StateMachineInterface {
     public static final String         RECONNECT_SUCCESS_COUNTER        = "RECONNECT_SUCCESS_COUNTER";

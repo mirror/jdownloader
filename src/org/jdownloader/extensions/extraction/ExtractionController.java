@@ -16,8 +16,6 @@
 
 package org.jdownloader.extensions.extraction;
 
-
- import org.jdownloader.extensions.extraction.translate.*;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Timer;
@@ -30,7 +28,8 @@ import jd.controlling.PasswordListController;
 import jd.controlling.ProgressController;
 import jd.nutils.jobber.JDRunnable;
 import jd.plugins.DownloadLink;
-import jd.utils.locale.JDL;
+
+import org.jdownloader.extensions.extraction.translate.T;
 
 /**
  * Responsible for the coorect procedure of the extraction process. Contains one

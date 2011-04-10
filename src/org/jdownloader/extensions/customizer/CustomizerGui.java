@@ -16,8 +16,6 @@
 
 package org.jdownloader.extensions.customizer;
 
-
- import org.jdownloader.extensions.customizer.translate.*;
 import java.awt.Color;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -40,17 +38,16 @@ import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.gui.swing.jdgui.views.ViewToolbar;
 import jd.nutils.JDFlags;
 import jd.utils.JDTheme;
-import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.utils.swing.table.ExtRowHighlighter;
 import org.appwork.utils.swing.table.ExtTable;
 import org.appwork.utils.swing.table.SelectionHighlighter;
+import org.jdownloader.extensions.customizer.translate.T;
 
 public class CustomizerGui extends SwitchPanel {
 
     private static final long     serialVersionUID = 7508784076121700378L;
-    private static final String   JDL_PREFIX       = "jd.plugins.optional.customizer.CustomizerGui.";
 
     private final CustomizerTable table;
     private final Property        config;
@@ -111,7 +108,7 @@ public class CustomizerGui extends SwitchPanel {
                 int[] rows = table.getSelectedRows();
                 table.editingStopped(null);
                 if (rows.length == 0) return;
-                if (JDFlags.hasSomeFlags(UserIO.getInstance().requestConfirmDialog(0, T._.action_customize_removesetting_ask( rows.length)), UserIO.RETURN_OK, UserIO.RETURN_DONT_SHOW_AGAIN)) {
+                if (JDFlags.hasSomeFlags(UserIO.getInstance().requestConfirmDialog(0, T._.action_customize_removesetting_ask(rows.length)), UserIO.RETURN_OK, UserIO.RETURN_DONT_SHOW_AGAIN)) {
                     ArrayList<CustomizeSetting> settings = CustomizeSetting.getSettings();
                     for (int i = rows.length - 1; i >= 0; --i) {
                         settings.remove(rows[i]);

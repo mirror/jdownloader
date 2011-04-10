@@ -16,8 +16,6 @@
 
 package jd.gui.swing.jdgui.components;
 
-
- import org.jdownloader.gui.translate.*;
 import java.awt.Color;
 
 import javax.swing.BorderFactory;
@@ -40,8 +38,9 @@ import jd.gui.swing.jdgui.components.premiumbar.PremiumStatus;
 import jd.gui.swing.laf.LookAndFeelController;
 import jd.nutils.Formatter;
 import jd.utils.JDUtilities;
-import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
+
+import org.jdownloader.gui.translate.T;
 
 public class StatusBar extends JPanel implements ChangeListener, ControlListener {
 

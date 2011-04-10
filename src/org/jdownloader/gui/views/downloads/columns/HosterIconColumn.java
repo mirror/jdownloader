@@ -1,7 +1,5 @@
 package org.jdownloader.gui.views.downloads.columns;
 
-
- import org.jdownloader.gui.translate.*;
 import java.awt.Component;
 
 import javax.swing.ImageIcon;
@@ -13,9 +11,9 @@ import jd.plugins.FilePackage;
 import jd.plugins.PackageLinkNode;
 import jd.plugins.PluginForHost;
 import jd.utils.JDTheme;
-import jd.utils.locale.JDL;
 
 import org.appwork.utils.swing.table.ExtColumn;
+import org.jdownloader.gui.translate.T;
 
 public class HosterIconColumn extends ExtColumn<PackageLinkNode> {
 

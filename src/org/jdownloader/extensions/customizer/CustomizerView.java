@@ -16,18 +16,16 @@
 
 package org.jdownloader.extensions.customizer;
 
-
- import org.jdownloader.extensions.customizer.translate.*;
 import javax.swing.Icon;
 
 import jd.plugins.AddonPanel;
 import jd.utils.JDTheme;
-import jd.utils.locale.JDL;
+
+import org.jdownloader.extensions.customizer.translate.T;
 
 public class CustomizerView extends AddonPanel {
 
-    private static final long   serialVersionUID = -8077441680881378656L;
-    private static final String JDL_PREFIX       = "jd.plugins.optional.customizer.CustomizerView.";
+    private static final long serialVersionUID = -8077441680881378656L;
 
     public CustomizerView(PackageCustomizerExtension packageCustomizerExtension) {
         super(packageCustomizerExtension);

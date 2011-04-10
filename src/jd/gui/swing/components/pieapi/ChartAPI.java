@@ -16,8 +16,6 @@
 
 package jd.gui.swing.components.pieapi;
 
-
- import org.jdownloader.gui.translate.*;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.Graphics;
@@ -33,7 +31,8 @@ import javax.swing.JComponent;
 
 import jd.controlling.JDLogger;
 import jd.nutils.encoding.Encoding;
-import jd.utils.locale.JDL;
+
+import org.jdownloader.gui.translate.T;
 
 /**
  * Die ChartAPI greift auf die Google Chart API zurück. Sie funktioniert nur mit
@@ -65,12 +64,12 @@ public abstract class ChartAPI extends JComponent {
         }
     }
 
-    private Logger logger = JDLogger.getLogger();
+    private Logger                          logger   = JDLogger.getLogger();
     private HashMap<String, ChartAPIEntity> collData = new HashMap<String, ChartAPIEntity>();
-    private int width;
-    private int height;
-    protected Image image;
-    private PictureLoader loader;
+    private int                             width;
+    private int                             height;
+    protected Image                         image;
+    private PictureLoader                   loader;
 
     public ChartAPI(int width, int height) {
         this.width = width;

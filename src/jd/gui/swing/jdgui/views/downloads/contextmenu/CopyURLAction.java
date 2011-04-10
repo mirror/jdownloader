@@ -1,7 +1,5 @@
 package jd.gui.swing.jdgui.views.downloads.contextmenu;
 
-
- import org.jdownloader.gui.translate.*;
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -9,11 +7,12 @@ import java.util.HashSet;
 import jd.controlling.ClipboardHandler;
 import jd.gui.swing.jdgui.interfaces.ContextMenuAction;
 import jd.plugins.DownloadLink;
-import jd.utils.locale.JDL;
+
+import org.jdownloader.gui.translate.T;
 
 public class CopyURLAction extends ContextMenuAction {
 
-    private static final long serialVersionUID = -8775747188751533463L;
+    private static final long             serialVersionUID = -8775747188751533463L;
 
     private final ArrayList<DownloadLink> links;
 

@@ -1,18 +1,17 @@
 package jd.gui.swing.jdgui.views.linkgrabber.contextmenu;
 
-
- import org.jdownloader.gui.translate.*;
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 
 import jd.gui.swing.jdgui.interfaces.ContextMenuAction;
 import jd.gui.swing.jdgui.views.linkgrabber.LinkGrabberPanel;
 import jd.plugins.DownloadLink;
-import jd.utils.locale.JDL;
+
+import org.jdownloader.gui.translate.T;
 
 public class CheckStatusAction extends ContextMenuAction {
 
-    private static final long serialVersionUID = -5858369633927419005L;
+    private static final long             serialVersionUID = -5858369633927419005L;
 
     private final ArrayList<DownloadLink> links;
 

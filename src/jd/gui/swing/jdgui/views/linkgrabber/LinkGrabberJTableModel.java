@@ -16,8 +16,6 @@
 
 package jd.gui.swing.jdgui.views.linkgrabber;
 
-
- import org.jdownloader.gui.translate.*;
 import jd.controlling.LinkGrabberController;
 import jd.gui.swing.components.table.JDTableModel;
 import jd.gui.swing.jdgui.views.linkgrabber.columns.FileColumn;
@@ -26,7 +24,8 @@ import jd.gui.swing.jdgui.views.linkgrabber.columns.SizeColumn;
 import jd.gui.swing.jdgui.views.linkgrabber.columns.StatusColumn;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkGrabberFilePackage;
-import jd.utils.locale.JDL;
+
+import org.jdownloader.gui.translate.T;
 
 public class LinkGrabberJTableModel extends JDTableModel {
 

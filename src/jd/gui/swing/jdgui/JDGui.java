@@ -16,8 +16,6 @@
 
 package jd.gui.swing.jdgui;
 
-
- import org.jdownloader.gui.translate.*;
 import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.Frame;
@@ -80,12 +78,12 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
-import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Application;
 import org.appwork.utils.swing.dialog.Dialog;
+import org.jdownloader.gui.translate.T;
 import org.jdownloader.gui.views.DownloadsView;
 
 public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {

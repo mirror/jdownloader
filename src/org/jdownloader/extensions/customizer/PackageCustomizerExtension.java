@@ -16,8 +16,6 @@
 
 package org.jdownloader.extensions.customizer;
 
-
- import org.jdownloader.extensions.customizer.translate.*;
 import java.util.ArrayList;
 
 import javax.swing.ImageIcon;
@@ -29,17 +27,15 @@ import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.plugins.AddonPanel;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkGrabberFilePackage;
-import jd.utils.locale.JDL;
 
 import org.appwork.utils.images.IconIO;
 import org.jdownloader.extensions.AbstractConfigPanel;
 import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
+import org.jdownloader.extensions.customizer.translate.T;
 
 public class PackageCustomizerExtension extends AbstractExtension implements LinkGrabberPackagingEvent {
-
-    private static final String   JDL_PREFIX        = "jd.plugins.optional.customizer.JDPackageCustomizer.";
 
     public static final String    PROPERTY_SETTINGS = "SETTINGS";
 

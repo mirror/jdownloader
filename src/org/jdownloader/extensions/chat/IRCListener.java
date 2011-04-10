@@ -16,23 +16,21 @@
 
 package org.jdownloader.extensions.chat;
 
-
- import org.jdownloader.extensions.chat.translate.*;
 import java.util.TreeMap;
 import java.util.logging.Logger;
 
 import jd.controlling.JDLogger;
 import jd.gui.UserIO;
 import jd.utils.Upload;
-import jd.utils.locale.JDL;
 
+import org.jdownloader.extensions.chat.translate.T;
 import org.schwering.irc.lib.IRCConstants;
 import org.schwering.irc.lib.IRCEventListener;
 import org.schwering.irc.lib.IRCModeParser;
 import org.schwering.irc.lib.IRCUser;
 
 class IRCListener implements IRCEventListener {
-    public static Logger logger = jd.controlling.JDLogger.getLogger();
+    public static Logger        logger = jd.controlling.JDLogger.getLogger();
     private final ChatExtension owner;
 
     public IRCListener(final ChatExtension owner) {
@@ -150,7 +148,7 @@ class IRCListener implements IRCEventListener {
             new Thread(new Runnable() {
 
                 public void run() {
-                    if (UserIO.RETURN_OK == UserIO.getInstance().requestConfirmDialog(0, T._.plugin_optional_jdchat_getlog( user.name))) {
+                    if (UserIO.RETURN_OK == UserIO.getInstance().requestConfirmDialog(0, T._.plugin_optional_jdchat_getlog(user.name))) {
 
                         final String url = Upload.toJDownloader(JDLogger.getLog(), "JDChatuser:\r\n\r\n" + IRCListener.this.owner.getNick());
                         if (url == null) {

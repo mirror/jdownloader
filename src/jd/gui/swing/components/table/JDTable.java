@@ -16,8 +16,6 @@
 
 package jd.gui.swing.components.table;
 
-
- import org.jdownloader.gui.translate.*;
 import java.awt.Dimension;
 import java.awt.Point;
 import java.awt.Rectangle;
@@ -47,15 +45,14 @@ import javax.swing.table.TableColumnModel;
 import jd.config.SubConfiguration;
 import jd.gui.swing.components.JExtCheckBoxMenuItem;
 import jd.gui.swing.jdgui.interfaces.JDMouseAdapter;
-import jd.utils.locale.JDL;
 
 import org.appwork.utils.Application;
 import org.jdesktop.swingx.JXTable;
+import org.jdownloader.gui.translate.T;
 
 public class JDTable extends JXTable {
 
     private static final long      serialVersionUID = -6631229711568284941L;
-    private static final String    JDL_PREFIX       = "jd.gui.swing.components.table.JDTable.";
     private final JDTableModel     model;
     private final SubConfiguration tableconfig;
     private final SortMenuItem     defaultSortMenuItem;

@@ -16,8 +16,6 @@
 
 package jd.captcha.easy;
 
-
- import jd.captcha.translate.*;
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.Image;
@@ -28,9 +26,9 @@ import java.util.Iterator;
 import java.util.Vector;
 
 import jd.captcha.pixelgrid.Captcha;
+import jd.captcha.translate.T;
 import jd.nutils.Colors;
 import jd.nutils.io.JDIO;
-import jd.utils.locale.JDL;
 
 public class ColorTrainer {
     /**
@@ -39,52 +37,52 @@ public class ColorTrainer {
      * foregroundColor2, backgroundColor2 = wahrscheinlich
      * Fordergrund/Hintergrund
      */
-    public static final int foregroundColor1 = 0xff00ff, foregroundColor2 = 0xFF99FF, backgroundColor1 = 0x0000ff, backgroundColor2 = 0x00ffff;
+    public static final int foregroundColor1     = 0xff00ff, foregroundColor2 = 0xFF99FF, backgroundColor1 = 0x0000ff, backgroundColor2 = 0x00ffff;
 
     /**
      * bearbeitetes Captcha
      */
-    public Captcha workingCaptcha;
+    public Captcha          workingCaptcha;
     /**
      * Backup Captcha
      */
-    public Captcha backUpCaptcha;
+    public Captcha          backUpCaptcha;
     /**
      * Ob im Fordergrund oder im hintergrund selektiert wird
      */
-    public boolean foreground = true;
+    public boolean          foreground           = true;
     /**
      * schnelle und performante Selektionsmöglichkeit noch nicht fertig und
      * deswegen vorerst deaktiviert
      */
-    public boolean fastSelection = false;
-    public boolean add = true;
+    public boolean          fastSelection        = false;
+    public boolean          add                  = true;
     /**
      * Zoomfaktor mit dem das Captcha angezeigt wird
      */
-    public int zoom = 400;
+    public int              zoom                 = 400;
     /**
      * Orginal Captcha
      */
-    public Captcha originalCaptcha;
+    public Captcha          originalCaptcha;
     /**
      * Farbtoleranzwert
      */
-    public int threshold = 25;
+    public int              threshold            = 25;
     /**
      * Dieses Bild zeigt die aktuelle Farbinformation an
      */
-    public BufferedImage colorImage = new BufferedImage(28, 28, BufferedImage.TYPE_INT_RGB);
+    public BufferedImage    colorImage           = new BufferedImage(28, 28, BufferedImage.TYPE_INT_RGB);
     /**
      * Liste der Farbpunkte die zum identifizieren von Hintergrund und
      * Fordergrund verwendet werden
      */
-    public Vector<CPoint> colorPointList = new Vector<CPoint>();
-    private Vector<CPoint> colorPointListBackUp = new Vector<CPoint>();
+    public Vector<CPoint>   colorPointList       = new Vector<CPoint>();
+    private Vector<CPoint>  colorPointListBackUp = new Vector<CPoint>();
     /**
      * Farbmodus wird in der Gui über eine Combobox gesetzt
      */
-    public byte colorDifferenceMode = CPoint.LAB_DIFFERENCE;
+    public byte             colorDifferenceMode  = CPoint.LAB_DIFFERENCE;
 
     private void autoSetZoomFaktor() {
         if (originalCaptcha.getWidth() > 200 || originalCaptcha.getHeight() > 100)

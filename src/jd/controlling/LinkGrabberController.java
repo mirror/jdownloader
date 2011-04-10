@@ -16,9 +16,6 @@
 
 package jd.controlling;
 
-
- import org.jdownloader.translate.*;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -35,10 +32,10 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkGrabberFilePackage;
 import jd.plugins.LinkGrabberFilePackageEvent;
 import jd.plugins.LinkGrabberFilePackageListener;
-import jd.utils.locale.JDL;
 
 import org.appwork.utils.Regex;
 import org.appwork.utils.event.Eventsender;
+import org.jdownloader.translate.JDT;
 
 class LinkGrabberControllerBroadcaster extends Eventsender<LinkGrabberControllerListener, LinkGrabberControllerEvent> {
 

@@ -76,7 +76,6 @@ public class SrcParser {
     private String              currentFileName;
     private String              currentContent;
     private ArrayList<String>   pattern = new ArrayList<String>();
-    private File                shortF;
 
     public ArrayList<String> getPattern() {
         return pattern;
@@ -88,9 +87,9 @@ public class SrcParser {
         }
     }
 
-    @SuppressWarnings("unchecked")
     /**
-     * parses an java file and writes all JDL Matches to entries and pattern. this method uses a cache to be faster
+     * parses an java file and writes all JDL Matches to entries and pattern.
+     * this method uses a cache to be faster
      */
     private void parseFile(File file) {
         this.currentFile = file;
@@ -121,11 +120,6 @@ public class SrcParser {
         if (entries.size() > 0) {
 
             File trans = getTranslationPath(file);
-            shortF = new File(trans, "T.java");
-            String name = trans.getParentFile().getName();
-            name = name.substring(0, 1).toUpperCase() + name.substring(1);
-            File interF = new File(trans, name + "Translation.java");
-            String cont = JDIO.readFileToString(file);
             for (LngEntry l : entries) {
 
                 ConvertEntry e = InterfaceCache.get(trans).getMap().get(l.getKey());

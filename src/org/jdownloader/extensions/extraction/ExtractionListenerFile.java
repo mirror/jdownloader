@@ -16,8 +16,6 @@
 
 package org.jdownloader.extensions.extraction;
 
-
- import org.jdownloader.extensions.extraction.translate.*;
 import java.io.File;
 import java.util.logging.Logger;
 
@@ -27,7 +25,8 @@ import jd.gui.UserIO;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.utils.JDUtilities;
-import jd.utils.locale.JDL;
+
+import org.jdownloader.extensions.extraction.translate.T;
 
 /**
  * Updates the Extractionprogess for archives, where the download is not in the
@@ -37,7 +36,7 @@ import jd.utils.locale.JDL;
  * 
  */
 public class ExtractionListenerFile implements ExtractionListener {
-    private Logger     logger;
+    private Logger              logger;
     private ExtractionExtension ex;
 
     ExtractionListenerFile(ExtractionExtension ex) {
@@ -73,7 +72,7 @@ public class ExtractionListenerFile implements ExtractionListener {
             pc.setStatusText(controller.getArchiv().getFirstDownloadLink().getFileOutput() + ": " + T._.plugins_optional_extraction_status_extractfailedpass());
 
             if (ex.getPluginConfig().getBooleanProperty(ExtractionConstants.CONFIG_KEY_ASK_UNKNOWN_PASS, true)) {
-                String pass = UserIO.getInstance().requestInputDialog(0, T._.plugins_optional_extraction_askForPassword( controller.getArchiv().getFirstDownloadLink().getName()), "");
+                String pass = UserIO.getInstance().requestInputDialog(0, T._.plugins_optional_extraction_askForPassword(controller.getArchiv().getFirstDownloadLink().getName()), "");
                 if (pass == null || pass.length() == 0) {
                     ex.onFinished(controller);
                     break;

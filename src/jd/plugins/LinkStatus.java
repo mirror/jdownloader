@@ -16,9 +16,6 @@
 
 package jd.plugins;
 
-
- import org.jdownloader.translate.*;
-
 import java.io.Serializable;
 import java.lang.reflect.Field;
 import java.util.HashMap;
@@ -32,9 +29,9 @@ import jd.nutils.Formatter;
 import jd.nutils.JDFlags;
 import jd.plugins.download.DownloadInterface;
 import jd.utils.JDUtilities;
-import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.StringFormatter;
+import org.jdownloader.translate.JDT;
 
 public class LinkStatus implements Serializable {
 
@@ -329,19 +326,19 @@ public class LinkStatus implements Serializable {
 
         /* ip blocked */
         if (hasStatus(ERROR_IP_BLOCKED) && ProxyController.getInstance().getRemainingIPBlockWaittime(downloadLink.getHost()) > 0) {
-            ret.append(JDT._.gui_download_waittime_status2( Formatter.formatSeconds(getRemainingWaittime() / 1000)));
+            ret.append(JDT._.gui_download_waittime_status2(Formatter.formatSeconds(getRemainingWaittime() / 1000)));
             if (errorMessage != null) return errorMessage + " " + ret.toString();
             return ret.toString();
         }
         /* temp unavail */
         if (hasStatus(ERROR_TEMPORARILY_UNAVAILABLE) && getRemainingWaittime() > 0) {
-            ret.append(JDT._.gui_download_waittime_status2( Formatter.formatSeconds(getRemainingWaittime() / 1000)));
+            ret.append(JDT._.gui_download_waittime_status2(Formatter.formatSeconds(getRemainingWaittime() / 1000)));
             if (errorMessage != null) return errorMessage + " " + ret.toString();
             return ret.toString();
         }
         /* hoster temp unavail */
         if (hasStatus(ERROR_HOSTER_TEMPORARILY_UNAVAILABLE) && ProxyController.getInstance().getRemainingTempUnavailWaittime(downloadLink.getHost()) > 0) {
-            ret.append(JDT._.gui_download_waittime_status2( Formatter.formatSeconds(getRemainingWaittime() / 1000)));
+            ret.append(JDT._.gui_download_waittime_status2(Formatter.formatSeconds(getRemainingWaittime() / 1000)));
             if (errorMessage != null) return errorMessage + " " + ret.toString();
             return ret.toString();
         }

@@ -16,8 +16,6 @@
 
 package jd.gui.swing.jdgui.views.settings.panels.gui;
 
-
- import org.jdownloader.gui.translate.*;
 import java.awt.Component;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -45,11 +43,11 @@ import jd.gui.swing.jdgui.components.toolbar.MainToolBar;
 import jd.gui.swing.jdgui.components.toolbar.ToolBar;
 import jd.gui.swing.jdgui.views.settings.ConfigPanel;
 import jd.utils.JDTheme;
-import jd.utils.locale.JDL;
 
 import org.jdesktop.swingx.JXTable;
 import org.jdesktop.swingx.renderer.DefaultTableRenderer;
 import org.jdesktop.swingx.renderer.JRendererLabel;
+import org.jdownloader.gui.translate.T;
 
 public class ToolbarController extends ConfigPanel {
     private static final ArrayList<String> WHITELIST        = new ArrayList<String>();
@@ -127,7 +125,6 @@ public class ToolbarController extends ConfigPanel {
         WHITELIST.add("action.exit");
     }
     private static final long              serialVersionUID = -7024581410075950497L;
-    private static final String            JDL_PREFIX       = "jd.gui.swing.jdgui.settings.panels.gui.ToolbarController.";
 
     public String getTitle() {
         return T._.jd_gui_swing_jdgui_settings_panels_gui_ToolbarController_toolbarController_title();

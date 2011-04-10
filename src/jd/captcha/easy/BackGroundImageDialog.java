@@ -16,8 +16,6 @@
 
 package jd.captcha.easy;
 
-
- import jd.captcha.translate.*;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
@@ -44,13 +42,13 @@ import javax.swing.WindowConstants;
 import javax.swing.border.TitledBorder;
 
 import jd.captcha.gui.ImageComponent;
+import jd.captcha.translate.T;
 import jd.captcha.utils.Utilities;
 import jd.gui.UserIO;
 import jd.gui.swing.GuiRunnable;
 import jd.nutils.JDHash;
 import jd.nutils.io.JDFileFilter;
 import jd.nutils.io.JDIO;
-import jd.utils.locale.JDL;
 
 public class BackGroundImageDialog implements ActionListener {
 

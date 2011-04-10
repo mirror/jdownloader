@@ -16,9 +16,6 @@
 
 package jd.controlling;
 
-
- import org.jdownloader.translate.*;
-
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -42,9 +39,9 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
-import jd.utils.locale.JDL;
 
 import org.appwork.utils.Regex;
+import org.jdownloader.translate.JDT;
 
 /**
  * Diese Klasse läuft in einem Thread und verteilt den Inhalt der Zwischenablage
@@ -57,30 +54,30 @@ public class DistributeData extends Thread {
     /**
      * Der Logger
      */
-    private static final Logger LOG = JDLogger.getLogger();
+    private static final Logger     LOG                      = JDLogger.getLogger();
 
-    private static final int MAX_DECRYPTER_COUNT = 5;
+    private static final int        MAX_DECRYPTER_COUNT      = 5;
 
     /**
      * Aufruf von Clipboard Überwachung
      */
-    private boolean disableDeepEmergencyScan = false;
+    private boolean                 disableDeepEmergencyScan = false;
 
     /**
      * Die zu verteilenden Daten
      */
-    private String data;
+    private String                  data;
 
     /**
      * keinen Linkgrabber öffnen sondern direkt hinzufügen
      */
-    private boolean hideGrabber;
+    private boolean                 hideGrabber;
 
-    private boolean filterNormalHTTP = false;
-    private final ArrayList<String> foundPasswords = new ArrayList<String>();
+    private boolean                 filterNormalHTTP         = false;
+    private final ArrayList<String> foundPasswords           = new ArrayList<String>();
 
-    private boolean autostart = false;
-    private String url = null;
+    private boolean                 autostart                = false;
+    private String                  url                      = null;
 
     /**
      * @return the url
@@ -437,7 +434,7 @@ public class DistributeData extends Thread {
         if (DecryptPluginWrapper.getDecryptWrapper() == null) return decryptedLinks;
 
         class DThread implements JDRunnable {
-            private final CryptedLink[] decryptableLinks;
+            private final CryptedLink[]    decryptableLinks;
             private final PluginForDecrypt plg;
 
             public DThread(final PluginForDecrypt plg, final CryptedLink[] decryptableLinks) {
@@ -513,7 +510,7 @@ public class DistributeData extends Thread {
                 LOG.warning("No supported links found -> search for links in source code of all urls");
 
                 final String title = JDT._.gui_dialog_deepdecrypt_title();
-                final String message = JDT._.gui_dialog_deepdecrypt_message( txt);
+                final String message = JDT._.gui_dialog_deepdecrypt_message(txt);
                 final int res = UserIO.getInstance().requestConfirmDialog(0, title, message, JDTheme.II("gui.images.search", 32, 32), JDT._.gui_btn_continue(), null);
 
                 if (JDFlags.hasAllFlags(res, UserIO.RETURN_OK)) {
@@ -536,7 +533,7 @@ public class DistributeData extends Thread {
         final StringBuffer sb = new StringBuffer();
         ProgressController pc = null;
         try {
-            pc = new ProgressController(JDT._.gui_addurls_progress( links.length), links.length, null);
+            pc = new ProgressController(JDT._.gui_addurls_progress(links.length), links.length, null);
             int count = 0;
 
             for (final String l : links) {
@@ -544,7 +541,7 @@ public class DistributeData extends Thread {
 
                 try {
                     new URL(l);
-                    pc.setStatusText(JDT._.gui_addurls_progress_get( links.length, l));
+                    pc.setStatusText(JDT._.gui_addurls_progress_get(links.length, l));
 
                     br.openGetConnection(l);
                     if (br.getHttpConnection().isContentDisposition() || (br.getHttpConnection().getContentType() != null && !br.getHttpConnection().getContentType().contains("text"))) {
@@ -566,7 +563,7 @@ public class DistributeData extends Thread {
                     } catch (Throwable e) {
                     }
                 }
-                pc.setStatusText(JDT._.gui_addurls_progress_found( links.length, count));
+                pc.setStatusText(JDT._.gui_addurls_progress_found(links.length, count));
                 pc.increase(1);
             }
             JDLogger.getLogger().info("Found Links " + sb);

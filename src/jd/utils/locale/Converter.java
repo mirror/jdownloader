@@ -95,7 +95,6 @@ public class Converter implements MessageListener {
             }
         }
         content = content.replace("\" + \"", "");
-        int found = content.split("PREFIX").length - 2;
         return content;
 
     }
@@ -166,11 +165,9 @@ public class Converter implements MessageListener {
                     if (content.indexOf("\"" + c.getKey() + "\"") < 0) {
                         System.out.println("error");
                     }
-                    int found;
-                    int matches = content.split("T\\._\\.").length;
                     pat = "JDL\\.L\\(\"" + Pattern.quote(c.getKey()) + "\",\\s\"" + Pattern.quote(defValue) + "\"\\)";
                     content = content.replaceAll(pat, "T._." + key + "()");
-                    found = content.indexOf("\"" + c.getKey() + "\"");
+                    int found = content.indexOf("\"" + c.getKey() + "\"");
                     if (found >= 0) {
                         pat = "JDL\\.LF\\(\"" + Pattern.quote(c.getKey()) + "\",\\s\"" + Pattern.quote(defValue) + "\",";
                         content = content.replaceAll(pat, "T._." + key + "(");

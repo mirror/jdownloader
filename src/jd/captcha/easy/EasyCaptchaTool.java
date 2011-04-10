@@ -16,8 +16,6 @@
 
 package jd.captcha.easy;
 
-
- import jd.captcha.translate.*;
 import java.awt.Dimension;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
@@ -42,6 +40,7 @@ import javax.swing.SpinnerNumberModel;
 import jd.JDInit;
 import jd.captcha.JAntiCaptcha;
 import jd.captcha.easy.load.LoadCaptchas;
+import jd.captcha.translate.T;
 import jd.config.SubConfiguration;
 import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.jdgui.events.EDTEventQueue;
@@ -50,7 +49,6 @@ import jd.gui.swing.laf.LookAndFeelController;
 import jd.gui.userio.DummyFrame;
 import jd.nutils.Screen;
 import jd.utils.JDUtilities;
-import jd.utils.locale.JDL;
 
 public class EasyCaptchaTool {
     public static SubConfiguration config             = SubConfiguration.getConfig("EasyCaptcha");

@@ -1,6 +1,5 @@
 package jd.network.rtmp;
 
-
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
@@ -22,7 +21,7 @@ import org.appwork.utils.Regex;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.nativ.NativeProcess;
-import org.jdownloader.translate.T;
+import org.jdownloader.translate.JDT;
 
 public class RtmpDump extends RTMPDownload {
 

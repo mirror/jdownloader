@@ -16,8 +16,6 @@
 
 package org.jdownloader.extensions.extraction.multi;
 
-
- import org.jdownloader.extensions.extraction.translate.*;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -36,7 +34,6 @@ import jd.nutils.io.Signature;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.utils.JDUtilities;
-import jd.utils.locale.JDL;
 import net.sf.sevenzipjbinding.ArchiveFormat;
 import net.sf.sevenzipjbinding.ExtractOperationResult;
 import net.sf.sevenzipjbinding.IInStream;
@@ -56,6 +53,7 @@ import org.jdownloader.extensions.extraction.DummyDownloadLink;
 import org.jdownloader.extensions.extraction.ExtractionConstants;
 import org.jdownloader.extensions.extraction.ExtractionControllerConstants;
 import org.jdownloader.extensions.extraction.IExtraction;
+import org.jdownloader.extensions.extraction.translate.T;
 
 /**
  * Extracts rar, zip, 7z. tar.gz, tar.bz2.

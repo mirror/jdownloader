@@ -16,8 +16,6 @@
 
 package org.jdownloader.extensions.schedule;
 
-
- import org.jdownloader.extensions.schedule.translate.*;
 import java.awt.Color;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -43,43 +41,43 @@ import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.table.AbstractTableModel;
 
-import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
 import org.jdesktop.swingx.JXTable;
+import org.jdownloader.extensions.schedule.translate.T;
 
 public class AddGui extends JPanel implements ActionListener, ChangeListener, DocumentListener, MouseListener {
 
     private static final long serialVersionUID = 8080132393187788526L;
 
-    private MainGui gui;
+    private MainGui           gui;
     private ScheduleExtension schedule;
-    private MyTableModel tableModel;
-    private JXTable table;
-    private Actions orgact;
-    private JComboBox cboActions;
-    private JButton add;
-    private JTextField parameter;
-    private JButton delete;
-    private JTextField name;
-    private JRadioButton optDate;
-    private JRadioButton optHourly;
-    private JRadioButton optDaily;
-    private JRadioButton optWeekly;
-    private JRadioButton optSpecific;
-    private JSpinner repeathour;
-    private JSpinner repeatminute;
-    private JSpinner day;
-    private JSpinner month;
-    private JSpinner year;
-    private JSpinner hour;
-    private JSpinner minute;
-    private JButton cancel;
-    private JButton save;
-    private JLabel problems;
+    private MyTableModel      tableModel;
+    private JXTable           table;
+    private Actions           orgact;
+    private JComboBox         cboActions;
+    private JButton           add;
+    private JTextField        parameter;
+    private JButton           delete;
+    private JTextField        name;
+    private JRadioButton      optDate;
+    private JRadioButton      optHourly;
+    private JRadioButton      optDaily;
+    private JRadioButton      optWeekly;
+    private JRadioButton      optSpecific;
+    private JSpinner          repeathour;
+    private JSpinner          repeatminute;
+    private JSpinner          day;
+    private JSpinner          month;
+    private JSpinner          year;
+    private JSpinner          hour;
+    private JSpinner          minute;
+    private JButton           cancel;
+    private JButton           save;
+    private JLabel            problems;
 
-    private boolean edit;
-    private Actions editact;
+    private boolean           edit;
+    private Actions           editact;
 
     public AddGui(ScheduleExtension schedule, MainGui gui, Actions act, boolean edit) {
         this.schedule = schedule;

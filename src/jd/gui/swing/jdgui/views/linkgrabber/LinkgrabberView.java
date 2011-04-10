@@ -16,8 +16,6 @@
 
 package jd.gui.swing.jdgui.views.linkgrabber;
 
-
- import org.jdownloader.gui.translate.*;
 import javax.swing.Icon;
 
 import jd.controlling.LinkGrabberController;
@@ -28,15 +26,14 @@ import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.actions.ActionController;
 import jd.gui.swing.jdgui.interfaces.View;
 import jd.utils.JDTheme;
-import jd.utils.locale.JDL;
+
+import org.jdownloader.gui.translate.T;
 
 public class LinkgrabberView extends View {
 
-    private static final long serialVersionUID = -8027069594232979742L;
+    private static final long      serialVersionUID = -8027069594232979742L;
 
-    private static final String IDENT_PREFIX = "jd.gui.swing.jdgui.views.linkgrabberview.";
-
-    private static LinkgrabberView INSTANCE = null;
+    private static LinkgrabberView INSTANCE         = null;
 
     public static LinkgrabberView getInstance() {
         if (INSTANCE == null) INSTANCE = new LinkgrabberView();

@@ -16,8 +16,6 @@
 
 package jd.gui.swing.jdgui.views.downloads.columns;
 
-
- import org.jdownloader.gui.translate.*;
 import java.awt.Component;
 
 import javax.swing.ImageIcon;
@@ -30,32 +28,32 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginProgress;
 import jd.utils.JDTheme;
-import jd.utils.locale.JDL;
+
+import org.jdownloader.gui.translate.T;
 
 public class StatusColumn extends JDTableColumn {
 
-    private static final String JDL_PREFIX = "jd.gui.swing.jdgui.views.downloadview.TableRenderer.";
     private static final long serialVersionUID = 2228210790952050305L;
-    private DownloadLink dLink;
-    private StatusLabel statuspanel;
-    private int counter = 0;
-    private ImageIcon imgFinished;
-    private ImageIcon imgFailed;
-    private ImageIcon imgExtract;
-    private ImageIcon imgPriorityS;
-    private ImageIcon imgPriority2;
-    private ImageIcon imgPriority1;
-    private ImageIcon imgStopMark;
-    private ImageIcon imgPriority3;
-    private String strStopMark;
-    private String strFinished;
-    private String strFailed;
-    private String strPriorityS;
-    private String strPriority1;
-    private String strPriority2;
-    private String strPriority3;
-    private String strExtract;
-    private FilePackage fp;
+    private DownloadLink      dLink;
+    private StatusLabel       statuspanel;
+    private int               counter          = 0;
+    private ImageIcon         imgFinished;
+    private ImageIcon         imgFailed;
+    private ImageIcon         imgExtract;
+    private ImageIcon         imgPriorityS;
+    private ImageIcon         imgPriority2;
+    private ImageIcon         imgPriority1;
+    private ImageIcon         imgStopMark;
+    private ImageIcon         imgPriority3;
+    private String            strStopMark;
+    private String            strFinished;
+    private String            strFailed;
+    private String            strPriorityS;
+    private String            strPriority1;
+    private String            strPriority2;
+    private String            strPriority3;
+    private String            strExtract;
+    private FilePackage       fp;
 
     public StatusColumn(String name, JDTableModel table) {
         super(name, table);

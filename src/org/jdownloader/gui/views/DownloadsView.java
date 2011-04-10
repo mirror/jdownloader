@@ -1,18 +1,15 @@
 package org.jdownloader.gui.views;
 
-
- import org.jdownloader.gui.translate.*;
 import javax.swing.Icon;
 
 import jd.gui.swing.jdgui.interfaces.View;
 import jd.utils.JDTheme;
-import jd.utils.locale.JDL;
+
+import org.jdownloader.gui.translate.T;
 
 public class DownloadsView extends View {
 
-    private static final long   serialVersionUID = 2624923838160423884L;
-
-    private static final String IDENT_PREFIX     = "jd.gui.swing.jdgui.views.downloadview.";
+    private static final long serialVersionUID = 2624923838160423884L;
 
     public DownloadsView() {
         super();

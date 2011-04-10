@@ -16,19 +16,16 @@
 
 package org.jdownloader.extensions.folderwatch;
 
-
- import org.jdownloader.extensions.folderwatch.translate.*;
 import javax.swing.Icon;
 
 import jd.gui.swing.jdgui.views.ClosableView;
 import jd.utils.JDTheme;
-import jd.utils.locale.JDL;
+
+import org.jdownloader.extensions.folderwatch.translate.T;
 
 public class FolderWatchView extends ClosableView {
 
     private static final long serialVersionUID = 5113064941511136310L;
-
-    private static final String JDL_PREFIX = "plugins.optional.folderwatch.view.";
 
     public FolderWatchView() {
         super();

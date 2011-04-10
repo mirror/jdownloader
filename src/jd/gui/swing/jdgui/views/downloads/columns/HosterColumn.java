@@ -16,8 +16,6 @@
 
 package jd.gui.swing.jdgui.views.downloads.columns;
 
-
- import org.jdownloader.gui.translate.*;
 import java.awt.Component;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -33,25 +31,23 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForHost;
 import jd.utils.JDTheme;
-import jd.utils.locale.JDL;
 
 import org.jdesktop.swingx.renderer.JRendererLabel;
+import org.jdownloader.gui.translate.T;
 
 public class HosterColumn extends JDTableColumn {
 
-    private static final String JDL_PREFIX = "jd.gui.swing.jdgui.views.downloadview.TableRenderer.";
-
     private static final long serialVersionUID = 2228210790952050305L;
-    private DownloadLink dLink;
-    private FilePackage fp;
-    private StatusLabel statuspanel;
-    private int counter = 0;
-    private ImageIcon imgResume;
-    private ImageIcon imgPremium;
-    private String strResume;
-    private String strPremium;
+    private DownloadLink      dLink;
+    private FilePackage       fp;
+    private StatusLabel       statuspanel;
+    private int               counter          = 0;
+    private ImageIcon         imgResume;
+    private ImageIcon         imgPremium;
+    private String            strResume;
+    private String            strPremium;
 
-    private JRendererLabel jlr;
+    private JRendererLabel    jlr;
 
     public HosterColumn(String name, JDTableModel table) {
         super(name, table);

@@ -1,7 +1,5 @@
 package jd.gui.swing.jdgui.views.linkgrabber.contextmenu;
 
-
- import org.jdownloader.gui.translate.*;
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 import java.util.Set;
@@ -10,11 +8,12 @@ import jd.controlling.LinkGrabberController;
 import jd.gui.swing.jdgui.interfaces.ContextMenuAction;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkGrabberFilePackage;
-import jd.utils.locale.JDL;
+
+import org.jdownloader.gui.translate.T;
 
 public class SplitHosterAction extends ContextMenuAction {
 
-    private static final long serialVersionUID = 2666013418372344530L;
+    private static final long                       serialVersionUID = 2666013418372344530L;
 
     private final ArrayList<LinkGrabberFilePackage> packages;
 

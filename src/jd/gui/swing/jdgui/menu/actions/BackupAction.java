@@ -16,8 +16,6 @@
 
 package jd.gui.swing.jdgui.menu.actions;
 
-
- import org.jdownloader.gui.translate.*;
 import java.awt.event.ActionEvent;
 import java.io.File;
 
@@ -27,7 +25,8 @@ import jd.gui.swing.jdgui.actions.ThreadedAction;
 import jd.update.JDUpdateUtils;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
-import jd.utils.locale.JDL;
+
+import org.jdownloader.gui.translate.T;
 
 public class BackupAction extends ThreadedAction {
 
@@ -46,9 +45,9 @@ public class BackupAction extends ThreadedAction {
         JDController.getInstance().syncDatabase();
         File backupFile = JDUpdateUtils.backupDataBase();
         if (backupFile == null) {
-            Balloon.show(T._.gui_balloon_backup_title(), JDTheme.II("gui.images.save", 32, 32), T._.gui_backup_finished_failed( JDUtilities.getResourceFile("backup/")));
+            Balloon.show(T._.gui_balloon_backup_title(), JDTheme.II("gui.images.save", 32, 32), T._.gui_backup_finished_failed(JDUtilities.getResourceFile("backup/")));
         } else {
-            Balloon.show(T._.gui_balloon_backup_title(), JDTheme.II("gui.images.save", 32, 32), T._.gui_backup_finished_success( backupFile.getAbsolutePath()));
+            Balloon.show(T._.gui_balloon_backup_title(), JDTheme.II("gui.images.save", 32, 32), T._.gui_backup_finished_success(backupFile.getAbsolutePath()));
         }
     }
 

@@ -16,8 +16,6 @@
 
 package jd.gui.swing.jdgui.views.settings.panels.premium;
 
-
- import org.jdownloader.gui.translate.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
@@ -40,17 +38,17 @@ import jd.gui.swing.jdgui.views.settings.ConfigPanel;
 import jd.nutils.JDFlags;
 import jd.plugins.Account;
 import jd.utils.JDTheme;
-import jd.utils.locale.JDL;
+
+import org.jdownloader.gui.translate.T;
 
 public class Premium extends ConfigPanel implements ActionListener, AccountControllerListener {
 
-    private static final String JDL_PREFIX       = "jd.gui.swing.jdgui.settings.panels.premium.Premium.";
+    private static final long serialVersionUID = -7685744533817989161L;
+    private PremiumTable      internalTable;
+    private JScrollPane       scrollPane;
+    private Timer             updateAsync;
 
-    private static final long   serialVersionUID = -7685744533817989161L;
-    private PremiumTable        internalTable;
-    private JScrollPane         scrollPane;
-    private Timer               updateAsync;
-
+    @Override
     public String getTitle() {
         return T._.jd_gui_swing_jdgui_settings_panels_premium_Premium_title2();
     }
@@ -132,7 +130,7 @@ public class Premium extends ConfigPanel implements ActionListener, AccountContr
                 ArrayList<Account> accs = internalTable.getAllSelectedAccounts();
                 internalTable.editingStopped(null);
                 if (accs.size() == 0) return;
-                if (JDFlags.hasSomeFlags(UserIO.getInstance().requestConfirmDialog(0, T._.action_premiumview_removeacc_ask() + " (" + T._.action_premiumview_removeacc_accs( accs.size()) + ")"), UserIO.RETURN_OK, UserIO.RETURN_DONT_SHOW_AGAIN)) {
+                if (JDFlags.hasSomeFlags(UserIO.getInstance().requestConfirmDialog(0, T._.action_premiumview_removeacc_ask() + " (" + T._.action_premiumview_removeacc_accs(accs.size()) + ")"), UserIO.RETURN_OK, UserIO.RETURN_DONT_SHOW_AGAIN)) {
                     for (Account acc : accs) {
                         AccountController.getInstance().removeAccount((String) null, acc);
                     }

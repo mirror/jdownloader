@@ -16,15 +16,14 @@
 
 package jd.gui.swing.jdgui.views.settings.panels.premium.Columns;
 
-
- import org.jdownloader.gui.translate.*;
 import jd.gui.swing.components.table.JDTableModel;
 import jd.gui.swing.components.table.JDTextTableColumn;
 import jd.gui.swing.jdgui.views.settings.panels.premium.HostAccounts;
 import jd.nutils.Formatter;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
-import jd.utils.locale.JDL;
+
+import org.jdownloader.gui.translate.T;
 
 public class ExpireDateColumn extends JDTextTableColumn {
 

@@ -16,19 +16,16 @@
 
 package jd.plugins;
 
-
- import org.jdownloader.translate.*;
-
-import jd.utils.locale.JDL;
+import org.jdownloader.translate.JDT;
 
 public class DecrypterException extends Exception {
 
     private static final long serialVersionUID = -413359039728789194L;
-    private String errorMessage = null;
+    private String            errorMessage     = null;
 
-    public static String CAPTCHA = JDT._.decrypter_wrongcaptcha();
-    public static String PASSWORD = JDT._.decrypter_wrongpassword();
-    public static String ACCOUNT = JDT._.decrypter_invalidaccount();
+    public static String      CAPTCHA          = JDT._.decrypter_wrongcaptcha();
+    public static String      PASSWORD         = JDT._.decrypter_wrongpassword();
+    public static String      ACCOUNT          = JDT._.decrypter_invalidaccount();
 
     public DecrypterException() {
         this.errorMessage = JDT._.decrypter_unknownerror();

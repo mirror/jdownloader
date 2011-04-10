@@ -16,9 +16,6 @@
 
 package jd.utils;
 
-
- import org.jdownloader.translate.*;
-
 import java.util.ArrayList;
 import java.util.Calendar;
 
@@ -28,9 +25,9 @@ import jd.controlling.JSonWrapper;
 import jd.controlling.reconnect.ipcheck.IPController;
 import jd.nutils.Formatter;
 import jd.plugins.DownloadLink;
-import jd.utils.locale.JDL;
 
 import org.appwork.utils.Application;
+import org.jdownloader.translate.JDT;
 
 /**
  * Diese Klasse stellt Methoden zur Verfügung um in einen String mit

@@ -16,8 +16,6 @@
 
 package org.jdownloader.extensions.schedule;
 
-
- import org.jdownloader.extensions.schedule.translate.*;
 import java.awt.Component;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -31,25 +29,25 @@ import javax.swing.JTabbedPane;
 
 import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
-import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
-public class MainGui extends SwitchPanel implements ActionListener, MouseListener {
-    private static final long serialVersionUID = 3439995751143746593L;
+import org.jdownloader.extensions.schedule.translate.T;
 
-    private static final String JDL_PREFIX = "jd.plugins.optional.schedule.MainGui.";
+public class MainGui extends SwitchPanel implements ActionListener, MouseListener {
+
+    private static final long serialVersionUID = 3439995751143746593L;
 
     private ScheduleExtension schedule;
 
-    private SchedulerTable table;
+    private SchedulerTable    table;
 
-    private JButton add;
+    private JButton           add;
 
-    private JButton delete;
+    private JButton           delete;
 
-    private JButton edit;
+    private JButton           edit;
 
-    private JTabbedPane tabs;
+    private JTabbedPane       tabs;
 
     public MainGui(ScheduleExtension schedule) {
         this.schedule = schedule;

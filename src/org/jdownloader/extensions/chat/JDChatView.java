@@ -16,22 +16,18 @@
 
 package org.jdownloader.extensions.chat;
 
-
- import org.jdownloader.extensions.chat.translate.*;
 import javax.swing.Icon;
-
-import org.jdownloader.extensions.StopException;
 
 import jd.plugins.AddonPanel;
 import jd.utils.JDTheme;
-import jd.utils.locale.JDL;
 
+import org.jdownloader.extensions.StopException;
+import org.jdownloader.extensions.chat.translate.T;
 
 public class JDChatView extends AddonPanel {
 
-    private static final long   serialVersionUID = -7876057076125402969L;
-    private static final String JDL_PREFIX       = "jd.plugins.optional.jdchat.JDChatView.";
-    private ChatExtension       chat;
+    private static final long serialVersionUID = -7876057076125402969L;
+    private ChatExtension     chat;
 
     public JDChatView(ChatExtension chatExtension) {
         super(chatExtension);

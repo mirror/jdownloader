@@ -16,8 +16,6 @@
 
 package jd.gui.swing.jdgui.menu.actions;
 
-
- import org.jdownloader.gui.translate.*;
 import java.awt.event.ActionEvent;
 import java.io.File;
 
@@ -26,7 +24,8 @@ import jd.gui.UserIO;
 import jd.gui.swing.jdgui.actions.ToolBarAction;
 import jd.nutils.io.JDFileFilter;
 import jd.utils.JDUtilities;
-import jd.utils.locale.JDL;
+
+import org.jdownloader.gui.translate.T;
 
 public class AddContainerAction extends ToolBarAction {
 

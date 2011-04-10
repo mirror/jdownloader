@@ -16,19 +16,17 @@
 
 package org.jdownloader.extensions.schedule.columns;
 
-
- import org.jdownloader.extensions.schedule.translate.*;
-import org.jdownloader.extensions.schedule.Actions;
-
 import jd.gui.swing.components.table.JDTableModel;
 import jd.gui.swing.components.table.JDTextTableColumn;
 import jd.nutils.Formatter;
-import jd.utils.locale.JDL;
+
+import org.jdownloader.extensions.schedule.Actions;
+import org.jdownloader.extensions.schedule.translate.T;
 
 public class NextExeColumn extends JDTextTableColumn {
 
     private static final long serialVersionUID = -2945101320574207493L;
-    private long nexttime = 0;
+    private long              nexttime         = 0;
 
     public NextExeColumn(String name, JDTableModel table) {
         super(name, table);

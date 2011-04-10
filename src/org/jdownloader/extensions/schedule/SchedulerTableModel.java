@@ -16,8 +16,8 @@
 
 package org.jdownloader.extensions.schedule;
 
+import jd.gui.swing.components.table.JDTableModel;
 
- import org.jdownloader.extensions.schedule.translate.*;
 import org.jdownloader.extensions.schedule.columns.ActionColumn;
 import org.jdownloader.extensions.schedule.columns.DateColumn;
 import org.jdownloader.extensions.schedule.columns.EnabledColumn;
@@ -25,16 +25,13 @@ import org.jdownloader.extensions.schedule.columns.NameColumn;
 import org.jdownloader.extensions.schedule.columns.NextExeColumn;
 import org.jdownloader.extensions.schedule.columns.RepeatsColumn;
 import org.jdownloader.extensions.schedule.columns.TimeColumn;
-
-import jd.gui.swing.components.table.JDTableModel;
-import jd.utils.locale.JDL;
+import org.jdownloader.extensions.schedule.translate.T;
 
 public class SchedulerTableModel extends JDTableModel {
 
     private static final long serialVersionUID = 4878129559346795192L;
-    private static final String JDL_PREFIX = "jd.plugins.optional.schedule.SchedulerTableModel.";
 
-    private ScheduleExtension schedule = null;
+    private ScheduleExtension schedule         = null;
 
     public SchedulerTableModel(String configname, ScheduleExtension schedule) {
         super(configname);

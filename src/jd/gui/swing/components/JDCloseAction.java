@@ -1,7 +1,5 @@
 package jd.gui.swing.components;
 
-
- import org.jdownloader.gui.translate.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
@@ -10,15 +8,15 @@ import javax.swing.Icon;
 import javax.swing.UIManager;
 
 import jd.utils.JDTheme;
-import jd.utils.locale.JDL;
+
+import org.jdownloader.gui.translate.T;
 
 public class JDCloseAction extends AbstractAction {
 
     private static final long serialVersionUID = -771203720364300914L;
-    private static final String JDL_PREFIX = "jd.gui.swing.components.JDCloseAction.";
-    private int height;
-    private int width;
-    private ActionListener listener;
+    private int               height;
+    private int               width;
+    private ActionListener    listener;
 
     /**
      * Returns the default close icon.

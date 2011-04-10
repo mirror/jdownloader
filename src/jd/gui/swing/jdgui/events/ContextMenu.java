@@ -1,7 +1,5 @@
 package jd.gui.swing.jdgui.events;
 
-
- import org.jdownloader.gui.translate.*;
 import java.awt.Component;
 import java.awt.Point;
 import java.awt.Toolkit;
@@ -23,7 +21,8 @@ import javax.swing.text.JTextComponent;
 
 import jd.gui.swing.jdgui.JDGui;
 import jd.utils.JDTheme;
-import jd.utils.locale.JDL;
+
+import org.jdownloader.gui.translate.T;
 
 public class ContextMenu {
 
@@ -122,7 +121,7 @@ public class ContextMenu {
 
     private static abstract class MenuAbstractAction extends AbstractAction {
 
-        private static final long serialVersionUID = 1L;
+        private static final long      serialVersionUID = 1L;
 
         protected final JTextComponent c;
 

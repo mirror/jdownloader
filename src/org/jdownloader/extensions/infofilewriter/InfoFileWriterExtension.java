@@ -16,8 +16,6 @@
 
 package org.jdownloader.extensions.infofilewriter;
 
-
- import org.jdownloader.extensions.infofilewriter.translate.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
@@ -44,16 +42,14 @@ import jd.plugins.PluginForHost;
 import jd.utils.JDTheme;
 import jd.utils.Replacer;
 import jd.utils.StringUtil;
-import jd.utils.locale.JDL;
 
 import org.jdownloader.extensions.AbstractConfigPanel;
 import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
+import org.jdownloader.extensions.infofilewriter.translate.T;
 
 public class InfoFileWriterExtension extends AbstractExtension implements ActionListener, ControlListener {
-
-    private static final String JDL_PREFIX          = "jd.plugins.optional.JDInfoFileWriter.";
 
     private static final String FILENAME_DEFAULT    = "%LAST_FINISHED_PACKAGE.DOWNLOAD_DIRECTORY%/%LAST_FINISHED_PACKAGE.PACKAGENAME%.info";
 

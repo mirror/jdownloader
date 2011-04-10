@@ -16,9 +16,6 @@
 
 package jd.controlling;
 
-
- import org.jdownloader.translate.*;
-
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -40,7 +37,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.utils.JDUtilities;
-import jd.utils.locale.JDL;
 
 import org.appwork.controlling.State;
 import org.appwork.controlling.StateMachine;
@@ -51,6 +47,7 @@ import org.appwork.shutdown.ShutdownVetoException;
 import org.appwork.shutdown.ShutdownVetoListener;
 import org.appwork.utils.Application;
 import org.appwork.utils.net.throttledconnection.ThrottledConnectionManager;
+import org.jdownloader.translate.JDT;
 
 public class DownloadWatchDog implements DownloadControllerListener, StateMachineInterface, ShutdownVetoListener {
 
@@ -85,8 +82,6 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         /* to set a random stopmark */
         RANDOM
     }
-
-    private static final String                                        JDL_PREFIX            = "jd.controlling.DownloadWatchDog.";
 
     private final LinkedList<SingleDownloadController>                 DownloadControllers   = new LinkedList<SingleDownloadController>();
     private final LinkedList<DownloadLink>                             forcedLinks           = new LinkedList<DownloadLink>();
@@ -672,7 +667,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         /* wait till all downloads are stopped */
         int waitStop = DownloadWatchDog.this.activeDownloads.get();
         if (waitStop > 0) {
-            final ProgressController progress = new ProgressController(JDT._.jd_controlling_DownloadWatchDog_stopping( waitStop), waitStop, null);
+            final ProgressController progress = new ProgressController(JDT._.jd_controlling_DownloadWatchDog_stopping(waitStop), waitStop, null);
             try {
                 while (true) {
                     boolean alive = true;
@@ -787,12 +782,12 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                 if (entry instanceof DownloadLink) {
                     stopMark.setSelected(true);
                     stopMark.setEnabled(true);
-                    stopMark.setToolTipText(JDT._.jd_controlling_DownloadWatchDog_stopmark_downloadlink( ((DownloadLink) entry).getName()));
+                    stopMark.setToolTipText(JDT._.jd_controlling_DownloadWatchDog_stopmark_downloadlink(((DownloadLink) entry).getName()));
                     DownloadController.getInstance().fireDownloadLinkUpdate(entry);
                 } else if (entry instanceof FilePackage) {
                     stopMark.setSelected(true);
                     stopMark.setEnabled(true);
-                    stopMark.setToolTipText(JDT._.jd_controlling_DownloadWatchDog_stopmark_filepackage( ((FilePackage) entry).getName()));
+                    stopMark.setToolTipText(JDT._.jd_controlling_DownloadWatchDog_stopmark_filepackage(((FilePackage) entry).getName()));
                     DownloadController.getInstance().fireDownloadLinkUpdate(((FilePackage) entry).get(0));
                 } else if (entry == STOPMARK.HIDDEN) {
                     stopMark.setSelected(true);
@@ -1072,7 +1067,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                         /* wait till all downloads are stopped */
                         int waitStop = DownloadWatchDog.this.activeDownloads.get();
                         if (waitStop > 0) {
-                            final ProgressController progress = new ProgressController(JDT._.jd_controlling_DownloadWatchDog_stopping( waitStop), waitStop, null);
+                            final ProgressController progress = new ProgressController(JDT._.jd_controlling_DownloadWatchDog_stopping(waitStop), waitStop, null);
                             try {
                                 while (true) {
                                     if ((waitStop = DownloadWatchDog.this.activeDownloads.get()) == 0) break;

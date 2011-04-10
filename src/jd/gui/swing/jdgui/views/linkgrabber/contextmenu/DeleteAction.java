@@ -1,7 +1,5 @@
 package jd.gui.swing.jdgui.views.linkgrabber.contextmenu;
 
-
- import org.jdownloader.gui.translate.*;
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 
@@ -10,11 +8,12 @@ import jd.gui.UserIO;
 import jd.gui.swing.jdgui.interfaces.ContextMenuAction;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkGrabberFilePackage;
-import jd.utils.locale.JDL;
+
+import org.jdownloader.gui.translate.T;
 
 public class DeleteAction extends ContextMenuAction {
 
-    private static final long serialVersionUID = -681500033424874147L;
+    private static final long             serialVersionUID = -681500033424874147L;
 
     private final ArrayList<DownloadLink> links;
 
@@ -37,7 +36,7 @@ public class DeleteAction extends ContextMenuAction {
     public void actionPerformed(ActionEvent e) {
         LinkGrabberController controller = LinkGrabberController.getInstance();
 
-        if (UserIO.isOK(UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.DONT_SHOW_AGAIN_IGNORES_CANCEL, T._.gui_downloadlist_delete() + " (" + T._.gui_downloadlist_delete_size_packagev2( links.size()) + ")"))) {
+        if (UserIO.isOK(UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.DONT_SHOW_AGAIN_IGNORES_CANCEL, T._.gui_downloadlist_delete() + " (" + T._.gui_downloadlist_delete_size_packagev2(links.size()) + ")"))) {
             LinkGrabberFilePackage fp;
             for (DownloadLink link : links) {
                 link.setProperty("removed", true);

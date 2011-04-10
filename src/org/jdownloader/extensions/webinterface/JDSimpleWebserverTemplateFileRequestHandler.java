@@ -16,8 +16,6 @@
 
 package org.jdownloader.extensions.webinterface;
 
-
- import org.jdownloader.extensions.webinterface.translate.*;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -44,10 +42,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.download.DownloadInterface;
 import jd.plugins.download.DownloadInterface.Chunk;
 import jd.utils.JDUtilities;
-import jd.utils.locale.JDL;
 
 import org.appwork.utils.Regex;
 import org.jdownloader.extensions.webinterface.template.Template;
+import org.jdownloader.extensions.webinterface.translate.T;
 
 public class JDSimpleWebserverTemplateFileRequestHandler {
 
@@ -232,11 +230,11 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
             }
             long wait = ProxyController.getInstance().getRemainingTempUnavailWaittime(downloadLink.getHost());
             if (wait > 0) {
-                addEntry(T._.gui_linkinfo_waittime(), T._.gui_linkinfo_secs( wait / 1000));
+                addEntry(T._.gui_linkinfo_waittime(), T._.gui_linkinfo_secs(wait / 1000));
             } else {
                 wait = ProxyController.getInstance().getRemainingIPBlockWaittime(downloadLink.getHost());
                 if (wait > 0) {
-                    addEntry(T._.gui_linkinfo_waittime(), T._.gui_linkinfo_secs( wait / 1000));
+                    addEntry(T._.gui_linkinfo_waittime(), T._.gui_linkinfo_secs(wait / 1000));
                 }
             }
             if (downloadLink.getLinkStatus().isPluginActive()) {

@@ -16,8 +16,6 @@
 
 package jd.gui.swing.jdgui.views.settings.panels;
 
-
- import org.jdownloader.gui.translate.*;
 import javax.swing.Icon;
 
 import jd.config.ConfigContainer;
@@ -27,12 +25,12 @@ import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.gui.swing.jdgui.views.settings.ConfigPanel;
 import jd.utils.JDTheme;
-import jd.utils.locale.JDL;
+
+import org.jdownloader.gui.translate.T;
 
 public class ConfigPanelCaptcha extends ConfigPanel {
 
-    private static final String JDL_PREFIX       = "jd.gui.swing.jdgui.settings.panels.ConfigPanelCaptcha.";
-    private static final long   serialVersionUID = 3383448498625377495L;
+    private static final long serialVersionUID = 3383448498625377495L;
 
     public String getTitle() {
         return T._.jd_gui_swing_jdgui_settings_panels_ConfigPanelCaptcha_captcha_title();

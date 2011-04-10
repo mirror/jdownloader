@@ -1,7 +1,5 @@
 package jd.gui.swing.jdgui.views.downloads.contextmenu;
 
-
- import org.jdownloader.gui.translate.*;
 import java.awt.event.ActionEvent;
 import java.io.File;
 import java.util.ArrayList;
@@ -11,11 +9,12 @@ import jd.gui.swing.jdgui.interfaces.ContextMenuAction;
 import jd.nutils.io.JDFileFilter;
 import jd.plugins.DownloadLink;
 import jd.utils.JDUtilities;
-import jd.utils.locale.JDL;
+
+import org.jdownloader.gui.translate.T;
 
 public class CreateDLCAction extends ContextMenuAction {
 
-    private static final long serialVersionUID = 7244681674979415222L;
+    private static final long             serialVersionUID = 7244681674979415222L;
 
     private final ArrayList<DownloadLink> links;
 

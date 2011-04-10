@@ -16,9 +16,6 @@
 
 package jd.utils;
 
-
- import org.jdownloader.translate.*;
-
 import java.awt.Component;
 import java.awt.Container;
 import java.awt.GridBagConstraints;
@@ -58,11 +55,11 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginsC;
-import jd.utils.locale.JDL;
 
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Application;
 import org.appwork.utils.Regex;
+import org.jdownloader.translate.JDT;
 import org.jdownloader.update.JDUpdater;
 import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
@@ -260,7 +257,7 @@ public class JDUtilities {
 
         if (JDUpdater.getInstance().getWaitingUpdates() > 0) {
             ret.append(new char[] { ' ', '(' });
-            ret.append(JDT._.gui_mainframe_title_updatemessage2( JDUpdater.getInstance().getWaitingUpdates()));
+            ret.append(JDT._.gui_mainframe_title_updatemessage2(JDUpdater.getInstance().getWaitingUpdates()));
             ret.append(')');
         }
 

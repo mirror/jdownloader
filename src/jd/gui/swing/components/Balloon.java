@@ -16,8 +16,6 @@
 
 package jd.gui.swing.components;
 
-
- import org.jdownloader.gui.translate.*;
 import java.awt.Dimension;
 import java.awt.Point;
 import java.awt.event.MouseEvent;
@@ -38,11 +36,11 @@ import jd.gui.swing.jdgui.GraphicalUserInterfaceSettings;
 import jd.gui.swing.jdgui.interfaces.JDMouseAdapter;
 import jd.nutils.JDImage;
 import jd.nutils.Screen;
-import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.storage.config.JsonConfig;
 import org.jdesktop.swingworker.SwingWorker;
+import org.jdownloader.gui.translate.T;
 
 public class Balloon {
     private static final int          MAX       = 5;

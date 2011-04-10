@@ -16,16 +16,14 @@
 
 package jd.gui.swing.jdgui.views.settings.panels;
 
-
- import org.jdownloader.gui.translate.*;
 import javax.swing.ImageIcon;
 
 import jd.gui.swing.jdgui.views.settings.components.Checkbox;
 import jd.gui.swing.jdgui.views.settings.components.FolderChooser;
 import jd.utils.JDTheme;
-import jd.utils.locale.JDL;
 
 import org.jdownloader.extensions.AbstractConfigPanel;
+import org.jdownloader.gui.translate.T;
 import org.jdownloader.translate.JDT;
 
 public class ConfigPanelGeneral extends AbstractConfigPanel {

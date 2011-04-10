@@ -16,8 +16,6 @@
 
 package jd.gui.swing.jdgui.menu;
 
-
- import org.jdownloader.gui.translate.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
@@ -36,15 +34,16 @@ import jd.controlling.AccountControllerListener;
 import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.jdgui.actions.ActionController;
 import jd.plugins.PluginForHost;
-import jd.utils.locale.JDL;
+
+import org.jdownloader.gui.translate.T;
 
 public class PremiumMenu extends JMenu implements ActionListener, AccountControllerListener {
 
-    private static final long serialVersionUID = 5075413754334671773L;
+    private static final long  serialVersionUID = 5075413754334671773L;
 
     private static PremiumMenu INSTANCE;
 
-    private Timer updateAsync;
+    private Timer              updateAsync;
 
     private PremiumMenu() {
         super(T._.gui_menu_premium());
@@ -106,7 +105,7 @@ public class PremiumMenu extends JMenu implements ActionListener, AccountControl
         int entries = 6;
         int menus = ('z' - 'a') / entries + 1;
         JMenu[] jmenus = new JMenu[menus];
-        JMenu num = new JMenu(T._.jd_gui_swing_menu_HosterMenu( "0 - 9"));
+        JMenu num = new JMenu(T._.jd_gui_swing_menu_HosterMenu("0 - 9"));
         this.add(num);
         for (HostPluginWrapper wrapper : hosts) {
             if (!wrapper.isLoaded() || !wrapper.isPremiumEnabled()) continue;
@@ -119,7 +118,7 @@ public class PremiumMenu extends JMenu implements ActionListener, AccountControl
                 if (jmenus[index] == null) {
                     int start = 'a' + index * entries;
                     int end = Math.min('a' + ((1 + index) * entries) - 1, 'z');
-                    jmenus[index] = new JMenu(T._.jd_gui_swing_menu_HosterMenu( new String(new byte[] { (byte) (start) }).toUpperCase() + " - " + new String(new byte[] { (byte) (end) }).toUpperCase()));
+                    jmenus[index] = new JMenu(T._.jd_gui_swing_menu_HosterMenu(new String(new byte[] { (byte) (start) }).toUpperCase() + " - " + new String(new byte[] { (byte) (end) }).toUpperCase()));
                     this.add(jmenus[index]);
                 }
                 menu = jmenus[index];

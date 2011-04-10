@@ -16,19 +16,17 @@
 
 package jd.gui.swing.jdgui.views.downloads;
 
-
- import org.jdownloader.gui.translate.*;
 import jd.controlling.DownloadInformations;
 import jd.controlling.DownloadWatchDog;
 import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.jdgui.views.InfoPanel;
 import jd.nutils.Formatter;
-import jd.utils.locale.JDL;
+
+import org.jdownloader.gui.translate.T;
 
 public class DownloadInfoPanel extends InfoPanel {
 
     private static final long    serialVersionUID = 6127915881119236559L;
-    private static final String  JDL_PREFIX       = "jd.gui.swing.jdgui.views.info.DownloadInfoPanel.";
     private DownloadInformations ds;
     private long                 speed;
 

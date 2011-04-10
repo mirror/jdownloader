@@ -16,8 +16,6 @@
 
 package jd.gui.swing.jdgui.components.premiumbar;
 
-
- import org.jdownloader.gui.translate.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
@@ -46,8 +44,9 @@ import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
-import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
+
+import org.jdownloader.gui.translate.T;
 
 public class PremiumStatus extends JPanel implements AccountControllerListener, ActionListener, MouseListener, ControlListener {
 
@@ -198,19 +197,19 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
                                     bars[ii].setMaximum(10);
                                     bars[ii].setValue(0);
                                     if (special) {
-                                        bars[ii].setToolTipText(T._.gui_premiumstatus_expired_maybetraffic_tooltip( host, accs.size()));
+                                        bars[ii].setToolTipText(T._.gui_premiumstatus_expired_maybetraffic_tooltip(host, accs.size()));
                                     } else {
-                                        bars[ii].setToolTipText(T._.gui_premiumstatus_expired_traffic_tooltip( host, accs.size()));
+                                        bars[ii].setToolTipText(T._.gui_premiumstatus_expired_traffic_tooltip(host, accs.size()));
                                     }
                                 } else if (left > 0) {
                                     bars[ii].setMaximum(max);
                                     bars[ii].setValue(left);
-                                    bars[ii].setToolTipText(T._.gui_premiumstatus_traffic_tooltip( host, accs.size(), Formatter.formatReadable(left)));
+                                    bars[ii].setToolTipText(T._.gui_premiumstatus_traffic_tooltip(host, accs.size(), Formatter.formatReadable(left)));
                                 } else {
                                     /* left < 0 for unlimited */
                                     bars[ii].setMaximum(10);
                                     bars[ii].setValue(10);
-                                    bars[ii].setToolTipText(T._.gui_premiumstatus_unlimited_traffic_tooltip( host));
+                                    bars[ii].setToolTipText(T._.gui_premiumstatus_unlimited_traffic_tooltip(host));
                                 }
                                 ii++;
                                 if (ii >= BARCOUNT) {

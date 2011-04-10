@@ -16,8 +16,6 @@
 
 package jd.gui.swing.jdgui.views.settings.panels.passwords;
 
-
- import org.jdownloader.gui.translate.*;
 import javax.swing.Icon;
 
 import jd.config.ConfigContainer;
@@ -26,12 +24,12 @@ import jd.config.ConfigGroup;
 import jd.controlling.HTACCESSController;
 import jd.gui.swing.jdgui.views.settings.ConfigPanel;
 import jd.utils.JDTheme;
-import jd.utils.locale.JDL;
+
+import org.jdownloader.gui.translate.T;
 
 public class PasswordListHTAccess extends ConfigPanel {
 
-    private static final String JDL_PREFIX = "jd.gui.swing.jdgui.settings.panels.passwords.PasswordListHTAccess.";
-
+    @Override
     public String getTitle() {
         return T._.jd_gui_swing_jdgui_settings_panels_passwords_PasswordListHTAccess_general_title();
     }

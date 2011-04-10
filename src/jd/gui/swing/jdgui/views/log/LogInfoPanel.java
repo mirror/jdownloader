@@ -16,8 +16,6 @@
 
 package jd.gui.swing.jdgui.views.log;
 
-
- import org.jdownloader.gui.translate.*;
 import java.awt.Cursor;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -27,19 +25,19 @@ import javax.swing.JButton;
 
 import jd.gui.swing.jdgui.views.InfoPanel;
 import jd.utils.JDTheme;
-import jd.utils.locale.JDL;
+
+import org.jdownloader.gui.translate.T;
 
 /**
  * The infopanel where the logcontrol buttons are placed.
  */
 public class LogInfoPanel extends InfoPanel implements ActionListener {
+
     private static final long serialVersionUID = -1910950245889164423L;
 
-    private static final String JDL_PREFIX = "jd.gui.swing.jdgui.views.info.LogInfoPanel.";
+    public static final int   ACTION_UPLOAD    = 2;
 
-    public static final int ACTION_UPLOAD = 2;
-
-    private JButton btnUpload;
+    private JButton           btnUpload;
 
     public LogInfoPanel() {
         super("gui.images.taskpanes.log");

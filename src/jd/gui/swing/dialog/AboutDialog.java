@@ -16,8 +16,6 @@
 
 package jd.gui.swing.dialog;
 
-
- import org.jdownloader.gui.translate.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.net.MalformedURLException;
@@ -38,15 +36,14 @@ import jd.nutils.Screen;
 import jd.nutils.io.JDIO;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
-import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
+import org.jdownloader.gui.translate.T;
 import org.jdownloader.update.JDUpdater;
 
 public class AboutDialog extends JDialog {
 
-    private static final long   serialVersionUID = -7647771640756844691L;
-    private static final String JDL_PREFIX       = "jd.gui.swing.components.AboutDialog.";
+    private static final long serialVersionUID = -7647771640756844691L;
 
     public AboutDialog() {
         super(DummyFrame.getDialogParent());

@@ -16,22 +16,19 @@
 
 package jd.gui.swing.jdgui.views.downloads;
 
-
- import org.jdownloader.gui.translate.*;
 import javax.swing.Icon;
 
 import jd.gui.swing.jdgui.actions.ActionController;
 import jd.gui.swing.jdgui.interfaces.View;
 import jd.utils.JDTheme;
-import jd.utils.locale.JDL;
+
+import org.jdownloader.gui.translate.T;
 
 public class DownloadView extends View {
 
-    private static final long serialVersionUID = 2624923838160423884L;
+    private static final long   serialVersionUID = 2624923838160423884L;
 
-    private static final String IDENT_PREFIX = "jd.gui.swing.jdgui.views.downloadview.";
-
-    private static DownloadView INSTANCE = null;
+    private static DownloadView INSTANCE         = null;
 
     private DownloadView() {
         super();

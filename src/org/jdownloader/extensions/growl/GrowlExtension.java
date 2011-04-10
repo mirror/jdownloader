@@ -16,8 +16,6 @@
 
 package org.jdownloader.extensions.growl;
 
-
- import org.jdownloader.extensions.growl.translate.*;
 import java.io.File;
 import java.io.IOException;
 import java.text.DateFormat;
@@ -39,7 +37,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
-import jd.utils.locale.JDL;
 
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
@@ -47,6 +44,7 @@ import org.jdownloader.extensions.AbstractConfigPanel;
 import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
+import org.jdownloader.extensions.growl.translate.T;
 
 public class GrowlExtension extends AbstractExtension implements ControlListener {
 
@@ -110,8 +108,6 @@ public class GrowlExtension extends AbstractExtension implements ControlListener
     public ArrayList<MenuAction> getMenuAction() {
         return null;
     }
-
-    private static final String JDL_PREFIX = "jd.plugins.optional.JDGrowlNotification.";
 
     public AbstractConfigPanel getConfigPanel() {
         return null;

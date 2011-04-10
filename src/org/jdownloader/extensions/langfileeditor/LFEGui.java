@@ -16,8 +16,6 @@
 
 package org.jdownloader.extensions.langfileeditor;
 
-
- import org.jdownloader.extensions.langfileeditor.translate.*;
 import java.awt.Color;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -61,7 +59,6 @@ import jd.nutils.svn.ResolveHandler;
 import jd.nutils.svn.Subversion;
 import jd.utils.JDGeoCode;
 import jd.utils.JDUtilities;
-import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.utils.Regex;
@@ -72,6 +69,7 @@ import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.appwork.utils.swing.table.ExtRowHighlighter;
 import org.appwork.utils.swing.table.ExtTable;
 import org.appwork.utils.swing.table.SelectionHighlighter;
+import org.jdownloader.extensions.langfileeditor.translate.T;
 import org.tmatesoft.svn.core.wc.SVNInfo;
 
 public class LFEGui extends SwitchPanel implements ActionListener {
@@ -81,8 +79,6 @@ public class LFEGui extends SwitchPanel implements ActionListener {
     public static final String            SOURCE_SVN               = "svn://svn.jdownloader.org/jdownloader/trunk/src";
 
     public static final String            LANGUAGE_SVN             = "svn://svn.jdownloader.org/jdownloader/trunk/ressourcen/jd/languages";
-
-    private static final String           LOCALE_PREFIX            = "plugins.optional.langfileeditor.";
 
     private final JSonWrapper             subConfig;
 
@@ -184,7 +180,7 @@ public class LFEGui extends SwitchPanel implements ActionListener {
                 result[0] = result[0].toLowerCase();
                 for (final KeyInfo ki : this.data) {
                     if (ki.getKey().equals(result[0])) {
-                        UserIO.getInstance().requestMessageDialog(T._.plugins_optional_langfileeditor_addKey_error_message( result[0]));
+                        UserIO.getInstance().requestMessageDialog(T._.plugins_optional_langfileeditor_addKey_error_message(result[0]));
                         return;
                     }
                 }
@@ -217,7 +213,7 @@ public class LFEGui extends SwitchPanel implements ActionListener {
 
         } else if (e.getSource() == this.mnuDeleteOld) {
 
-            if (this.numOld > 0 && JDFlags.hasAllFlags(UserIO.getInstance().requestConfirmDialog(UserIO.NO_COUNTDOWN | UserIO.DONT_SHOW_AGAIN | UserIO.DONT_SHOW_AGAIN_IGNORES_CANCEL, T._.plugins_optional_langfileeditor_deleteOld_title(), T._.plugins_optional_langfileeditor_deleteOld_message( this.numOld)), UserIO.RETURN_OK)) {
+            if (this.numOld > 0 && JDFlags.hasAllFlags(UserIO.getInstance().requestConfirmDialog(UserIO.NO_COUNTDOWN | UserIO.DONT_SHOW_AGAIN | UserIO.DONT_SHOW_AGAIN_IGNORES_CANCEL, T._.plugins_optional_langfileeditor_deleteOld_title(), T._.plugins_optional_langfileeditor_deleteOld_message(this.numOld)), UserIO.RETURN_OK)) {
                 this.deleteOldKeys();
             }
 
@@ -722,9 +718,9 @@ public class LFEGui extends SwitchPanel implements ActionListener {
         if (!this.changed) { return; }
         String message;
         if (upload) {
-            message = T._.plugins_optional_langfileeditor_saveChanges_message_upload( this.languageFile);
+            message = T._.plugins_optional_langfileeditor_saveChanges_message_upload(this.languageFile);
         } else {
-            message = T._.plugins_optional_langfileeditor_saveChanges_message( this.languageFile);
+            message = T._.plugins_optional_langfileeditor_saveChanges_message(this.languageFile);
         }
         final int ret = UserIO.getInstance().requestConfirmDialog(UserIO.NO_COUNTDOWN, T._.plugins_optional_langfileeditor_saveChanges(), message, null, T._.gui_btn_yes(), T._.gui_btn_no());
         if (JDFlags.hasAllFlags(ret, UserIO.RETURN_OK)) {
@@ -737,7 +733,7 @@ public class LFEGui extends SwitchPanel implements ActionListener {
 
         Collections.sort(this.data);
 
-        if (this.numOld > 0 && JDFlags.hasAllFlags(UserIO.getInstance().requestConfirmDialog(UserIO.NO_COUNTDOWN | UserIO.DONT_SHOW_AGAIN | UserIO.DONT_SHOW_AGAIN_IGNORES_OK, T._.plugins_optional_langfileeditor_deleteOld_title(), T._.plugins_optional_langfileeditor_deleteOld_message2( this.numOld)), UserIO.RETURN_OK)) {
+        if (this.numOld > 0 && JDFlags.hasAllFlags(UserIO.getInstance().requestConfirmDialog(UserIO.NO_COUNTDOWN | UserIO.DONT_SHOW_AGAIN | UserIO.DONT_SHOW_AGAIN_IGNORES_OK, T._.plugins_optional_langfileeditor_deleteOld_title(), T._.plugins_optional_langfileeditor_deleteOld_message2(this.numOld)), UserIO.RETURN_OK)) {
             this.deleteOldKeys();
         }
 
@@ -770,7 +766,7 @@ public class LFEGui extends SwitchPanel implements ActionListener {
                 }
             }
         } catch (final Exception e) {
-            UserIO.getInstance().requestMessageDialog(T._.plugins_optional_langfileeditor_save_error_message( e.getMessage()));
+            UserIO.getInstance().requestMessageDialog(T._.plugins_optional_langfileeditor_save_error_message(e.getMessage()));
             return;
         }
 
@@ -844,7 +840,7 @@ public class LFEGui extends SwitchPanel implements ActionListener {
                 svn.update(this.dirWorkingCopy, null);
             } catch (final Exception e) {
                 JDLogger.exception(e);
-                UserIO.getInstance().requestMessageDialog(T._.plugins_optional_langfileeditor_error_title(), T._.plugins_optional_langfileeditor_error_updatesource_message( JDLogger.getStackTrace(e)));
+                UserIO.getInstance().requestMessageDialog(T._.plugins_optional_langfileeditor_error_title(), T._.plugins_optional_langfileeditor_error_updatesource_message(JDLogger.getStackTrace(e)));
             }
             if (revert) {
                 try {
@@ -857,7 +853,7 @@ public class LFEGui extends SwitchPanel implements ActionListener {
                 svnLanguageDir.update(this.dirLanguages, null);
             } catch (final Exception e) {
                 JDLogger.exception(e);
-                UserIO.getInstance().requestMessageDialog(T._.plugins_optional_langfileeditor_error_title(), T._.plugins_optional_langfileeditor_error_updatelanguages_message( JDLogger.getStackTrace(e)));
+                UserIO.getInstance().requestMessageDialog(T._.plugins_optional_langfileeditor_error_title(), T._.plugins_optional_langfileeditor_error_updatelanguages_message(JDLogger.getStackTrace(e)));
             }
             svnLanguageDir.dispose();
             svn.dispose();

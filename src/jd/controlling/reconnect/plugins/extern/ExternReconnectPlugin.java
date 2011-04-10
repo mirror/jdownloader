@@ -1,7 +1,5 @@
 package jd.controlling.reconnect.plugins.extern;
 
-
- import jd.controlling.reconnect.plugins.extern.translate.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.BufferedWriter;
@@ -20,10 +18,10 @@ import javax.swing.event.DocumentEvent;
 import jd.controlling.JDLogger;
 import jd.controlling.reconnect.ReconnectException;
 import jd.controlling.reconnect.RouterPlugin;
+import jd.controlling.reconnect.plugins.extern.translate.T;
 import jd.gui.UserIO;
 import jd.gui.swing.components.ComboBrowseFile;
 import jd.utils.JDUtilities;
-import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.utils.os.CrossSystem;

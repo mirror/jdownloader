@@ -16,13 +16,11 @@
 
 package org.jdownloader.extensions.schedule.columns;
 
-
- import org.jdownloader.extensions.schedule.translate.*;
-import org.jdownloader.extensions.schedule.Actions;
-
 import jd.gui.swing.components.table.JDTableModel;
 import jd.gui.swing.components.table.JDTextTableColumn;
-import jd.utils.locale.JDL;
+
+import org.jdownloader.extensions.schedule.Actions;
+import org.jdownloader.extensions.schedule.translate.T;
 
 public class RepeatsColumn extends JDTextTableColumn {
 
@@ -59,7 +57,7 @@ public class RepeatsColumn extends JDTextTableColumn {
             return T._.jd_plugins_optional_schedule_MainGui_MyTableModel_add_weekly();
         }
         int hour = ((Actions) value).getRepeat() / 60;
-        return T._.jd_plugins_optional_schedule_MainGui_MyTableModel_add_interval( hour, ((Actions) value).getRepeat() - (hour * 60));
+        return T._.jd_plugins_optional_schedule_MainGui_MyTableModel_add_interval(hour, ((Actions) value).getRepeat() - (hour * 60));
 
     }
 

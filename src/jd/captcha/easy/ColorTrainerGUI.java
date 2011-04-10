@@ -16,8 +16,6 @@
 
 package jd.captcha.easy;
 
-
- import jd.captcha.translate.*;
 import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Dimension;
@@ -54,22 +52,22 @@ import jd.captcha.JAntiCaptcha;
 import jd.captcha.gui.ImageComponent;
 import jd.captcha.pixelgrid.Captcha;
 import jd.captcha.pixelgrid.PixelGrid;
+import jd.captcha.translate.T;
 import jd.captcha.utils.Utilities;
 import jd.gui.swing.GuiRunnable;
 import jd.gui.userio.DummyFrame;
 import jd.nutils.Screen;
 import jd.utils.JDUtilities;
-import jd.utils.locale.JDL;
 
 public class ColorTrainerGUI {
     private static final long serialVersionUID = 1L;
-    private JPanel panel, images;
-    private ImageComponent ic, icColorImage;
-    private boolean close = true;
-    private JButton back;
-    private JLabel colorState;
-    private JDialog frame;
-    private ColorTrainer colorTrainer = new ColorTrainer();
+    private JPanel            panel, images;
+    private ImageComponent    ic, icColorImage;
+    private boolean           close            = true;
+    private JButton           back;
+    private JLabel            colorState;
+    private JDialog           frame;
+    private ColorTrainer      colorTrainer     = new ColorTrainer();
 
     public ColorTrainerGUI(final JFrame owner) {
         new GuiRunnable<Object>() {
@@ -441,7 +439,7 @@ public class ColorTrainerGUI {
     public static Vector<CPoint> getColors(File folder, String hoster, Vector<CPoint> colorPoints, JFrame owner) {
         JAntiCaptcha jac = new JAntiCaptcha(hoster);
 
-    	File file = new File(JDUtilities.getJDHomeDirectoryFromEnvironment() + "/" + JDUtilities.getJACMethodsDirectory() + jac.getMethodDirName() + "/CPoints.xml");
+        File file = new File(JDUtilities.getJDHomeDirectoryFromEnvironment() + "/" + JDUtilities.getJACMethodsDirectory() + jac.getMethodDirName() + "/CPoints.xml");
         File[] list = folder.listFiles();
         Captcha[] cs = new Captcha[15 < list.length ? 15 : list.length];
         if (colorPoints == null) colorPoints = ColorTrainer.load(file);

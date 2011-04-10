@@ -16,9 +16,6 @@
 
 package jd.plugins;
 
-
- import org.jdownloader.translate.*;
-
 import java.awt.event.ActionEvent;
 import java.awt.image.BufferedImage;
 import java.io.File;
@@ -50,10 +47,10 @@ import jd.nutils.JDImage;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.download.DownloadInterface;
-import jd.utils.locale.JDL;
 
 import org.appwork.utils.Regex;
 import org.appwork.utils.os.CrossSystem;
+import org.jdownloader.translate.JDT;
 
 /**
  * Dies ist die Oberklasse fuer alle Plugins, die von einem Anbieter Dateien
@@ -62,8 +59,6 @@ import org.appwork.utils.os.CrossSystem;
  * @author astaldo
  */
 public abstract class PluginForHost extends Plugin implements FavIconRequestor {
-
-    private static final String JDL_PREFIX = "jd.plugins.PluginsForHost.";
 
     public PluginForHost(final PluginWrapper wrapper) {
         super(wrapper);
@@ -628,7 +623,7 @@ public abstract class PluginForHost extends Plugin implements FavIconRequestor {
         try {
             while (i > 0 && dlc != null && !dlc.isAborted()) {
                 i -= 1000;
-                downloadLink.getLinkStatus().setStatusText(message + JDT._.gui_download_waittime_status2( Formatter.formatSeconds(i / 1000)));
+                downloadLink.getLinkStatus().setStatusText(message + JDT._.gui_download_waittime_status2(Formatter.formatSeconds(i / 1000)));
                 downloadLink.requestGuiUpdate();
                 Thread.sleep(1000);
             }

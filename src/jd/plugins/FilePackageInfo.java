@@ -1,13 +1,11 @@
 package jd.plugins;
 
-
- import org.jdownloader.translate.*;
-
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
 import jd.nutils.Formatter;
-import jd.utils.locale.JDL;
+
+import org.jdownloader.translate.JDT;
 
 public class FilePackageInfo {
 

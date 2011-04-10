@@ -1,7 +1,5 @@
 package jd.gui.swing.jdgui.views.linkgrabber.contextmenu;
 
-
- import org.jdownloader.gui.translate.*;
 import java.awt.event.ActionEvent;
 import java.io.File;
 import java.util.ArrayList;
@@ -10,11 +8,12 @@ import jd.gui.UserIO;
 import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.jdgui.interfaces.ContextMenuAction;
 import jd.plugins.LinkGrabberFilePackage;
-import jd.utils.locale.JDL;
+
+import org.jdownloader.gui.translate.T;
 
 public class PackageDirectoryAction extends ContextMenuAction {
 
-    private static final long serialVersionUID = -7890741664214058627L;
+    private static final long                       serialVersionUID = -7890741664214058627L;
 
     private final ArrayList<LinkGrabberFilePackage> packages;
 

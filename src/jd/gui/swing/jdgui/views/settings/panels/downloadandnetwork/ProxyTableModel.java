@@ -1,7 +1,5 @@
 package jd.gui.swing.jdgui.views.settings.panels.downloadandnetwork;
 
-
- import org.jdownloader.gui.translate.*;
 import java.util.ArrayList;
 
 import javax.swing.Icon;
@@ -11,7 +9,6 @@ import jd.controlling.proxy.ProxyController;
 import jd.controlling.proxy.ProxyEvent;
 import jd.controlling.proxy.ProxyInfo;
 import jd.utils.JDTheme;
-import jd.utils.locale.JDL;
 
 import org.appwork.utils.event.DefaultEventListener;
 import org.appwork.utils.swing.EDTRunner;
@@ -21,6 +18,7 @@ import org.appwork.utils.swing.table.columns.ExtPasswordEditorColumn;
 import org.appwork.utils.swing.table.columns.ExtRadioColumn;
 import org.appwork.utils.swing.table.columns.ExtTextColumn;
 import org.appwork.utils.swing.table.columns.ExtTextEditorColumn;
+import org.jdownloader.gui.translate.T;
 
 public class ProxyTableModel extends ExtTableModel<ProxyInfo> implements DefaultEventListener<ProxyEvent<ProxyInfo>> {
 

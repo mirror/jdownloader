@@ -16,8 +16,6 @@
 
 package jd.gui.swing.components;
 
-
- import org.jdownloader.gui.translate.*;
 import java.awt.Dimension;
 import java.awt.EventQueue;
 import java.awt.event.ActionEvent;
@@ -34,8 +32,9 @@ import javax.swing.filechooser.FileFilter;
 import jd.config.SubConfiguration;
 import jd.gui.UserIO;
 import jd.gui.swing.GuiRunnable;
-import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
+
+import org.jdownloader.gui.translate.T;
 
 public class ComboBrowseFile extends JPanel implements ActionListener {
 

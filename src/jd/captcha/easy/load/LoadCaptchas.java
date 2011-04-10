@@ -16,8 +16,6 @@
 
 package jd.captcha.easy.load;
 
-
- import jd.captcha.translate.*;
 import java.awt.GridLayout;
 import java.awt.Image;
 import java.awt.event.ActionEvent;
@@ -44,6 +42,7 @@ import javax.swing.JSpinner;
 import javax.swing.SpinnerNumberModel;
 
 import jd.captcha.easy.EasyMethodFile;
+import jd.captcha.translate.T;
 import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.components.JDTextField;
 import jd.http.Browser;
@@ -53,28 +52,27 @@ import jd.parser.html.Form;
 import jd.parser.html.HTMLParser;
 import jd.parser.html.InputField;
 import jd.utils.JDUtilities;
-import jd.utils.locale.JDL;
 
 public class LoadCaptchas {
-    private static final long serialVersionUID = 1L;
-    public String host;
-    public boolean opendir = false;
-    private LoadInfo loadinfo;
-    private Browser br = new Browser();
+    private static final long    serialVersionUID = 1L;
+    public String                host;
+    public boolean               opendir          = false;
+    private LoadInfo             loadinfo;
+    private Browser              br               = new Browser();
     {
         br.setFollowRedirects(true);
     }
     private ArrayList<LoadImage> images;
-    private LoadImage selectedImage;
-    private JFrame owner;
-    public int maxHeight = 500;
-    public boolean threaded = false;
-    public int maxWeight = 600;
+    private LoadImage            selectedImage;
+    private JFrame               owner;
+    public int                   maxHeight        = 500;
+    public boolean               threaded         = false;
+    public int                   maxWeight        = 600;
     /**
      * Ordner in den die Bilder geladen werden (default: jdCaptchaFolder/host)
      * 
      */
-    private String dir = null;
+    private String               dir              = null;
 
     /**
      * start aufrufen um den ladeprozess zu initialisieren

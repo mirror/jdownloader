@@ -16,8 +16,6 @@
 
 package org.jdownloader.extensions.shutdown;
 
-
- import org.jdownloader.extensions.shutdown.translate.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.beans.PropertyChangeEvent;
@@ -42,7 +40,6 @@ import jd.nutils.JDFlags;
 import jd.nutils.OSDetector;
 import jd.plugins.AddonPanel;
 import jd.utils.JDUtilities;
-import jd.utils.locale.JDL;
 
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
@@ -50,6 +47,7 @@ import org.jdownloader.extensions.AbstractConfigPanel;
 import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
+import org.jdownloader.extensions.shutdown.translate.T;
 
 public class ShutdownExtension extends AbstractExtension implements ControlListener {
 

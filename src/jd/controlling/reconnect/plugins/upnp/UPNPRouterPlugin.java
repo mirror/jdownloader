@@ -1,7 +1,5 @@
 package jd.controlling.reconnect.plugins.upnp;
 
-
- import jd.controlling.reconnect.plugins.upnp.translate.*;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
@@ -49,9 +47,9 @@ import jd.controlling.reconnect.ipcheck.IPCheckProvider;
 import jd.controlling.reconnect.ipcheck.IPController;
 import jd.controlling.reconnect.ipcheck.InvalidIPRangeException;
 import jd.controlling.reconnect.ipcheck.InvalidProviderException;
+import jd.controlling.reconnect.plugins.upnp.translate.T;
 import jd.gui.UserIO;
 import jd.utils.JDTheme;
-import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.utils.Regex;
@@ -289,7 +287,7 @@ public class UPNPRouterPlugin extends RouterPlugin implements ActionListener, IP
 
                         final ImageIcon icon = JDTheme.II("gui.images.ok", 32, 32);
 
-                        final ConfirmDialog d = new ConfirmDialog(Dialog.BUTTONS_HIDE_CANCEL, T._.jd_controlling_reconnect_plugins_upnp_UPNPRouterPlugin_autoFind_successdialog_title(), T._.jd_controlling_reconnect_plugins_upnp_UPNPRouterPlugin_autoFind_successdialog_message( UPNPRouterPlugin.this.getStorage().get(UpnpRouterDevice.FRIENDLYNAME, null)), icon, null, null);
+                        final ConfirmDialog d = new ConfirmDialog(Dialog.BUTTONS_HIDE_CANCEL, T._.jd_controlling_reconnect_plugins_upnp_UPNPRouterPlugin_autoFind_successdialog_title(), T._.jd_controlling_reconnect_plugins_upnp_UPNPRouterPlugin_autoFind_successdialog_message(UPNPRouterPlugin.this.getStorage().get(UpnpRouterDevice.FRIENDLYNAME, null)), icon, null, null);
 
                         d.setPreferredSize(new Dimension(500, 150));
                         Dialog.getInstance().showDialog(d);
@@ -468,8 +466,8 @@ public class UPNPRouterPlugin extends RouterPlugin implements ActionListener, IP
          * final String data = "<?xml version=\"1.0\"?>\n" +
          * "<s:Envelope xmlns:s=\"http://schemas.xmlsoap.org/soap/envelope/\" s:encodingStyle=\"http://schemas.xmlsoap.org/soap/encoding/\">\n"
          * + " <s:Body>\n  <m:" + command + " xmlns:m=\"" + serviceType +
-         * "\"></m:" + command + ">\n </s:Body>\n</s:Envelope>"; try {
-         * final URL url = new URL(controlUrl); final URLConnection conn =
+         * "\"></m:" + command + ">\n </s:Body>\n</s:Envelope>"; try { final URL
+         * url = new URL(controlUrl); final URLConnection conn =
          * url.openConnection(); conn.setDoOutput(true);
          * conn.addRequestProperty("Content-Type",
          * "text/xml; charset=\"utf-8\""); conn.addRequestProperty("SOAPAction",

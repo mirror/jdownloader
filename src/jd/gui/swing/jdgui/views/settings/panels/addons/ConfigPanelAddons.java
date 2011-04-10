@@ -16,8 +16,6 @@
 
 package jd.gui.swing.jdgui.views.settings.panels.addons;
 
-
- import org.jdownloader.gui.translate.*;
 import java.awt.Color;
 import java.awt.Font;
 import java.util.ArrayList;
@@ -40,7 +38,6 @@ import jd.config.ConfigEntry;
 import jd.config.ConfigGroup;
 import jd.gui.swing.jdgui.views.settings.ConfigPanel;
 import jd.utils.JDTheme;
-import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.utils.swing.table.ExtTable;
@@ -50,12 +47,12 @@ import org.appwork.utils.swing.table.columns.ExtLongColumn;
 import org.appwork.utils.swing.table.columns.ExtTextColumn;
 import org.jdownloader.extensions.AbstractExtensionWrapper;
 import org.jdownloader.extensions.ExtensionController;
+import org.jdownloader.gui.translate.T;
 
 /**
  * @author JD-Team
  */
 public class ConfigPanelAddons extends ConfigPanel {
-    private static final String JDL_PREFIX = "jd.gui.swing.jdgui.settings.panels.ConfigPanelAddons.";
 
     public String getTitle() {
         return T._.jd_gui_swing_jdgui_settings_panels_ConfigPanelAddons_addons_title();
@@ -185,7 +182,7 @@ public class ConfigPanelAddons extends ConfigPanel {
         AbstractExtensionWrapper opw = table.getExtTableModel().getElementAt(row);
         lblName.setIcon(opw._getIcon(24));
         lblName.setText(opw.getName());
-        lblVersion.setText(T._.jd_gui_swing_jdgui_settings_panels_ConfigPanelAddons_version( opw.getVersion()));
+        lblVersion.setText(T._.jd_gui_swing_jdgui_settings_panels_ConfigPanelAddons_version(opw.getVersion()));
         txtDescription.setText(opw.getDescription());
         txtDescription.setCaretPosition(0);
     }

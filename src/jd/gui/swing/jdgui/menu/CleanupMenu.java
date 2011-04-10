@@ -16,15 +16,14 @@
 
 package jd.gui.swing.jdgui.menu;
 
-
- import org.jdownloader.gui.translate.*;
 import jd.gui.swing.jdgui.menu.actions.CleanupDownloads;
 import jd.gui.swing.jdgui.menu.actions.CleanupPackages;
 import jd.gui.swing.jdgui.menu.actions.RemoveDisabledAction;
 import jd.gui.swing.jdgui.menu.actions.RemoveDupesAction;
 import jd.gui.swing.jdgui.menu.actions.RemoveFailedAction;
 import jd.gui.swing.jdgui.menu.actions.RemoveOfflineAction;
-import jd.utils.locale.JDL;
+
+import org.jdownloader.gui.translate.T;
 
 public class CleanupMenu extends JStartMenu {
 

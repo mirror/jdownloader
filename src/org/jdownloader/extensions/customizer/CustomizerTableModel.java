@@ -16,11 +16,7 @@
 
 package org.jdownloader.extensions.customizer;
 
-
- import org.jdownloader.extensions.customizer.translate.*;
 import java.util.ArrayList;
-
-import jd.utils.locale.JDL;
 
 import org.appwork.utils.swing.table.ExtTableModel;
 import org.appwork.utils.swing.table.columns.ExtCheckColumn;
@@ -28,11 +24,11 @@ import org.appwork.utils.swing.table.columns.ExtLongColumn;
 import org.appwork.utils.swing.table.columns.ExtTextEditorColumn;
 import org.jdownloader.extensions.customizer.columns.DLPriorityColumn;
 import org.jdownloader.extensions.customizer.columns.DownloadDirColumn;
+import org.jdownloader.extensions.customizer.translate.T;
 
 public class CustomizerTableModel extends ExtTableModel<CustomizeSetting> {
 
-    private static final long   serialVersionUID = -8877812970684393642L;
-    private static final String JDL_PREFIX       = "jd.plugins.optional.customizer.CustomizerTableModel.";
+    private static final long serialVersionUID = -8877812970684393642L;
 
     public CustomizerTableModel() {
         super("customizer");

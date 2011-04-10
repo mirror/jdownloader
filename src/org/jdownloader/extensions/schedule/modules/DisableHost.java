@@ -16,15 +16,13 @@
 
 package org.jdownloader.extensions.schedule.modules;
 
-
- import org.jdownloader.extensions.schedule.translate.*;
-import org.jdownloader.extensions.schedule.SchedulerModule;
-import org.jdownloader.extensions.schedule.SchedulerModuleInterface;
-
 import jd.gui.swing.jdgui.menu.PremiumMenu;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
-import jd.utils.locale.JDL;
+
+import org.jdownloader.extensions.schedule.SchedulerModule;
+import org.jdownloader.extensions.schedule.SchedulerModuleInterface;
+import org.jdownloader.extensions.schedule.translate.T;
 
 @SchedulerModule
 public class DisableHost implements SchedulerModuleInterface {

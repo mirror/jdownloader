@@ -16,8 +16,6 @@
 
 package jd.gui.swing.jdgui.views.settings.panels.downloadandnetwork;
 
-
- import org.jdownloader.gui.translate.*;
 import javax.swing.Icon;
 
 import jd.config.ConfigContainer;
@@ -29,11 +27,12 @@ import jd.controlling.JSonWrapper;
 import jd.gui.swing.jdgui.views.settings.ConfigPanel;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
-import jd.utils.locale.JDL;
+
+import org.jdownloader.gui.translate.T;
 
 public class General extends ConfigPanel {
-    private static final String JDL_PREFIX = "jd.gui.swing.jdgui.settings.panels.downloadandnetwork.general.";
 
+    @Override
     public String getTitle() {
         return T._.jd_gui_swing_jdgui_settings_panels_downloadandnetwork_general_download_title();
     }

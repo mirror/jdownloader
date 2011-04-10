@@ -16,8 +16,6 @@
 
 package jd.gui.swing.jdgui.views.settings.panels.premium.Columns;
 
-
- import org.jdownloader.gui.translate.*;
 import java.awt.Component;
 
 import javax.swing.BorderFactory;
@@ -29,15 +27,15 @@ import jd.gui.swing.components.table.JDTableModel;
 import jd.gui.swing.jdgui.views.settings.panels.premium.HostAccounts;
 import jd.plugins.Account;
 import jd.utils.JDUtilities;
-import jd.utils.locale.JDL;
 
 import org.jdesktop.swingx.renderer.JRendererLabel;
+import org.jdownloader.gui.translate.T;
 
 public class HosterColumn extends JDTableColumn {
 
-    private static Border leftGap = BorderFactory.createEmptyBorder(0, 30, 0, 0);
+    private static Border     leftGap          = BorderFactory.createEmptyBorder(0, 30, 0, 0);
     private static final long serialVersionUID = -6741644821097309670L;
-    private JRendererLabel jlr;
+    private JRendererLabel    jlr;
 
     public HosterColumn(String name, JDTableModel table) {
         super(name, table);

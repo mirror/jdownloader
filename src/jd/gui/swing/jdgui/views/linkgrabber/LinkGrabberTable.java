@@ -16,8 +16,6 @@
 
 package jd.gui.swing.jdgui.views.linkgrabber;
 
-
- import org.jdownloader.gui.translate.*;
 import java.awt.Color;
 import java.awt.Point;
 import java.awt.Rectangle;
@@ -68,9 +66,9 @@ import jd.plugins.LinkGrabberFilePackage;
 import jd.plugins.LinkStatus;
 import jd.utils.JDTheme;
 import jd.utils.MenuScroller;
-import jd.utils.locale.JDL;
 
 import org.appwork.utils.Application;
+import org.jdownloader.gui.translate.T;
 
 class PropMenuItem extends JMenuItem implements ActionListener {
 

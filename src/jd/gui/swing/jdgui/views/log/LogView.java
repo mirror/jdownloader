@@ -16,8 +16,6 @@
 
 package jd.gui.swing.jdgui.views.log;
 
-
- import org.jdownloader.gui.translate.*;
 import javax.swing.Icon;
 
 import jd.controlling.GarbageController;
@@ -26,21 +24,19 @@ import jd.gui.swing.jdgui.interfaces.SwitchPanelEvent;
 import jd.gui.swing.jdgui.interfaces.SwitchPanelListener;
 import jd.gui.swing.jdgui.views.ClosableView;
 import jd.utils.JDTheme;
-import jd.utils.locale.JDL;
 
 import org.appwork.storage.config.JsonConfig;
+import org.jdownloader.gui.translate.T;
 
 /**
  * The tab for the log.
  */
 public class LogView extends ClosableView {
-    private static final long   serialVersionUID = -4440872942373187410L;
+    private static final long serialVersionUID = -4440872942373187410L;
 
-    private static final String IDENT_PREFIX     = "jd.gui.swing.jdgui.views.log.";
+    private static LogView    INSTANCE         = null;
 
-    private static LogView      INSTANCE         = null;
-
-    private LogInfoPanel        lip;
+    private LogInfoPanel      lip;
 
     /**
      * Logview Singleton

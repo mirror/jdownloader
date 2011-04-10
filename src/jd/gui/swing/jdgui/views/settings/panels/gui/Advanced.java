@@ -16,8 +16,6 @@
 
 package jd.gui.swing.jdgui.views.settings.panels.gui;
 
-
- import org.jdownloader.gui.translate.*;
 import javax.swing.Icon;
 
 import jd.config.ConfigContainer;
@@ -28,13 +26,12 @@ import jd.config.SubConfiguration;
 import jd.gui.swing.jdgui.views.settings.ConfigPanel;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
-import jd.utils.locale.JDL;
+
+import org.jdownloader.gui.translate.T;
 
 public class Advanced extends ConfigPanel {
 
-    private static final long   serialVersionUID = 3383448498625377495L;
-
-    private static final String JDL_PREFIX       = "jd.gui.swing.jdgui.settings.panels.gui.advanced.";
+    private static final long serialVersionUID = 3383448498625377495L;
 
     @Override
     public String getTitle() {

@@ -16,8 +16,6 @@
 
 package jd.gui.swing.jdgui.views.settings.panels.premium.Columns;
 
-
- import org.jdownloader.gui.translate.*;
 import java.awt.Color;
 import java.awt.Component;
 
@@ -29,17 +27,17 @@ import jd.gui.swing.jdgui.views.settings.panels.premium.HostAccounts;
 import jd.nutils.Formatter;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
-import jd.utils.locale.JDL;
 
 import org.jdesktop.swingx.renderer.JRendererLabel;
+import org.jdownloader.gui.translate.T;
 
 public class TrafficLeftColumn extends JDTableColumn {
 
-    private static final long serialVersionUID = -5291590062503352550L;
-    private Color COL_PROGRESS = null;
-    private Color COL_PROGRESS_ERROR = new Color(0xCC3300);
-    private Color COL_PROGRESS_NORMAL;
-    private JRendererLabel jlr;
+    private static final long   serialVersionUID   = -5291590062503352550L;
+    private Color               COL_PROGRESS       = null;
+    private Color               COL_PROGRESS_ERROR = new Color(0xCC3300);
+    private Color               COL_PROGRESS_NORMAL;
+    private JRendererLabel      jlr;
     private JDProgressBarRender progress;
 
     public TrafficLeftColumn(String name, JDTableModel table) {

@@ -16,8 +16,6 @@
 
 package org.jdownloader.extensions.jdtrayicon;
 
-
- import org.jdownloader.extensions.jdtrayicon.translate.*;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 
@@ -26,20 +24,21 @@ import jd.controlling.DownloadWatchDog;
 import jd.gui.swing.components.JWindowTooltip;
 import jd.gui.swing.jdgui.components.JDProgressBar;
 import jd.nutils.Formatter;
-import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
+
+import org.jdownloader.extensions.jdtrayicon.translate.T;
 
 public class TrayIconTooltip extends JWindowTooltip {
 
-    private static final long serialVersionUID = -400023413449818691L;
+    private static final long          serialVersionUID = -400023413449818691L;
 
-    private JLabel lblSpeed;
-    private JLabel lblDlRunning;
-    private JLabel lblDlFinished;
-    private JLabel lblDlTotal;
-    private JDProgressBar prgTotal;
-    private JLabel lblETA;
-    private JLabel lblProgress;
+    private JLabel                     lblSpeed;
+    private JLabel                     lblDlRunning;
+    private JLabel                     lblDlFinished;
+    private JLabel                     lblDlTotal;
+    private JDProgressBar              prgTotal;
+    private JLabel                     lblETA;
+    private JLabel                     lblProgress;
 
     private final DownloadInformations ds;
 

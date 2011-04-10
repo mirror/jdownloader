@@ -1,17 +1,15 @@
 package org.jdownloader.gui.views.downloads.columns;
 
-
- import org.jdownloader.gui.translate.*;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
 
 import jd.plugins.DownloadLink;
 import jd.plugins.PackageLinkNode;
 import jd.utils.JDTheme;
-import jd.utils.locale.JDL;
 
 import org.appwork.utils.swing.table.ExtDefaultRowSorter;
 import org.appwork.utils.swing.table.columns.ExtIconColumn;
+import org.jdownloader.gui.translate.T;
 
 public class PriorityColumn extends ExtIconColumn<PackageLinkNode> {
 

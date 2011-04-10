@@ -16,8 +16,6 @@
 
 package jd.controlling.reconnect.plugins.liveheader.recorder;
 
-
- import jd.controlling.reconnect.plugins.liveheader.translate.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
@@ -38,11 +36,11 @@ import jd.controlling.JDLogger;
 import jd.controlling.reconnect.ReconnectPluginController;
 import jd.controlling.reconnect.ipcheck.IPController;
 import jd.controlling.reconnect.plugins.liveheader.LiveHeaderReconnect;
+import jd.controlling.reconnect.plugins.liveheader.translate.T;
 import jd.gui.UserIO;
 import jd.nutils.JDFlags;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
-import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.utils.Regex;
@@ -195,20 +193,19 @@ public class Gui extends AbstractDialog<Object> {
         }
     }
 
-    private static final long   serialVersionUID   = 1L;
-    private static final String JDL_PREFIX         = "jd.nrouter.recorder.Gui.";
-    private JTextField          routerip;
-    private JCheckBox           rawmode;
-    public boolean              saved              = false;
+    private static final long serialVersionUID   = 1L;
+    private JTextField        routerip;
+    private JCheckBox         rawmode;
+    public boolean            saved              = false;
 
-    public String               ip                 = null;
-    public String               methode            = null;
-    public String               user               = null;
-    public String               pass               = null;
+    public String             ip                 = null;
+    public String             methode            = null;
+    public String             user               = null;
+    public String             pass               = null;
 
-    private static long         CHECK_INTERVAL     = 5000;
+    private static long       CHECK_INTERVAL     = 5000;
 
-    private static long         RECONNECT_DURATION = 0;
+    private static long       RECONNECT_DURATION = 0;
 
     public Gui(final String ip) {
         super(UserIO.NO_COUNTDOWN | UserIO.NO_ICON, T._.gui_config_jdrr_title(), null, T._.gui_btn_start(), T._.gui_btn_cancel());

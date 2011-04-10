@@ -16,8 +16,6 @@
 
 package org.jdownloader.extensions.jdtrayicon;
 
-
- import org.jdownloader.extensions.jdtrayicon.translate.*;
 import java.awt.Color;
 import java.awt.Cursor;
 import java.awt.Dimension;
@@ -53,8 +51,9 @@ import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.actions.ActionController;
 import jd.gui.swing.jdgui.actions.ToolBarAction;
 import jd.utils.JDUtilities;
-import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
+
+import org.jdownloader.extensions.jdtrayicon.translate.T;
 
 public class TrayIconPopup extends JWindow implements MouseListener, ChangeListener {
 

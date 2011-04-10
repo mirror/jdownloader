@@ -1,7 +1,5 @@
 package jd.controlling.reconnect.plugins.batch;
 
-
- import jd.controlling.reconnect.plugins.batch.translate.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
@@ -17,10 +15,10 @@ import javax.swing.event.DocumentEvent;
 import jd.config.SubConfiguration;
 import jd.controlling.reconnect.ReconnectException;
 import jd.controlling.reconnect.RouterPlugin;
+import jd.controlling.reconnect.plugins.batch.translate.T;
 import jd.gui.UserIO;
 import jd.gui.swing.components.ComboBrowseFile;
 import jd.utils.JDUtilities;
-import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.utils.os.CrossSystem;

@@ -16,8 +16,6 @@
 
 package org.jdownloader.extensions.jdpremclient;
 
-
- import org.jdownloader.extensions.jdpremclient.translate.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 
@@ -35,12 +33,12 @@ import jd.plugins.Account;
 import jd.plugins.AddonPanel;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
-import jd.utils.locale.JDL;
 
 import org.jdownloader.extensions.AbstractConfigPanel;
 import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
+import org.jdownloader.extensions.jdpremclient.translate.T;
 
 public class PremiumCompoundExtension extends AbstractExtension {
 

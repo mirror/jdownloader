@@ -16,22 +16,18 @@
 
 package org.jdownloader.extensions.langfileeditor;
 
-
- import org.jdownloader.extensions.langfileeditor.translate.*;
 import java.util.ArrayList;
-
-import jd.utils.locale.JDL;
 
 import org.appwork.utils.swing.table.ExtTableModel;
 import org.appwork.utils.swing.table.columns.ExtTextEditorColumn;
 import org.jdownloader.extensions.langfileeditor.columns.LanguageColumn;
+import org.jdownloader.extensions.langfileeditor.translate.T;
 
 public class LFETableModel extends ExtTableModel<KeyInfo> {
 
-    private static final long   serialVersionUID = -1775792404758292253L;
-    private static final String LOCALE_PREFIX    = "plugins.optional.langfileeditor.";
+    private static final long serialVersionUID = -1775792404758292253L;
 
-    private final LFEGui        gui;
+    private final LFEGui      gui;
 
     public LFETableModel(LFEGui gui) {
         super("lfetable");

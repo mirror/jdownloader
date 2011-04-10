@@ -16,9 +16,9 @@
 
 package org.jdownloader.extensions.folderwatch;
 
-
- import org.jdownloader.extensions.folderwatch.translate.*;
 import java.util.ArrayList;
+
+import jd.gui.swing.components.table.JDTableModel;
 
 import org.jdownloader.extensions.folderwatch.columns.FilenameColumn;
 import org.jdownloader.extensions.folderwatch.columns.FilepathColumn;
@@ -26,14 +26,11 @@ import org.jdownloader.extensions.folderwatch.columns.FiletypeColumn;
 import org.jdownloader.extensions.folderwatch.columns.ImportdateColumn;
 import org.jdownloader.extensions.folderwatch.data.History;
 import org.jdownloader.extensions.folderwatch.data.HistoryEntry;
-
-import jd.gui.swing.components.table.JDTableModel;
-import jd.utils.locale.JDL;
+import org.jdownloader.extensions.folderwatch.translate.T;
 
 public class FolderWatchTableModel extends JDTableModel {
 
-    private static final long   serialVersionUID = 5047870839332563506L;
-    private static final String JDL_PREFIX       = "jd.plugins.optional.folderwatch.tablemodel.";
+    private static final long serialVersionUID = 5047870839332563506L;
 
     public FolderWatchTableModel(String configname) {
         super(configname);

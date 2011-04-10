@@ -1,13 +1,8 @@
 package org.jdownloader.extensions.folderwatch;
 
-
- import org.jdownloader.extensions.folderwatch.translate.*;
 import java.awt.event.ActionEvent;
 
 import javax.swing.JScrollPane;
-
-import org.jdownloader.extensions.folderwatch.data.History;
-import org.jdownloader.extensions.folderwatch.data.HistoryEntry;
 
 import jd.controlling.JSonWrapper;
 import jd.gui.UserIO;
@@ -17,14 +12,15 @@ import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.gui.swing.jdgui.views.InfoPanel;
 import jd.gui.swing.jdgui.views.ViewToolbar;
 import jd.nutils.JDFlags;
-import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
+
+import org.jdownloader.extensions.folderwatch.data.History;
+import org.jdownloader.extensions.folderwatch.data.HistoryEntry;
+import org.jdownloader.extensions.folderwatch.translate.T;
 
 public class FolderWatchPanel extends SwitchPanel {
 
     private static final long           serialVersionUID = -4451556977039313203L;
-
-    private static final String         JDL_PREFIX       = "plugins.optional.folderwatch.panel.";
 
     private static FolderWatchTable     table;
     private static FolderWatchInfoPanel infoPanel;
@@ -32,7 +28,7 @@ public class FolderWatchPanel extends SwitchPanel {
 
     private static FolderWatchPanel     INSTANCE;
 
-    private FolderWatchExtension           owner;
+    private FolderWatchExtension        owner;
 
     private FolderWatchPanel() {
     }

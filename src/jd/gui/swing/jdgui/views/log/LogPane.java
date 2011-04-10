@@ -16,8 +16,6 @@
 
 package jd.gui.swing.jdgui.views.log;
 
-
- import org.jdownloader.gui.translate.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.StringReader;
@@ -32,10 +30,10 @@ import jd.gui.UserIO;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.nutils.encoding.Encoding;
 import jd.utils.Upload;
-import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.utils.os.CrossSystem;
+import org.jdownloader.gui.translate.T;
 
 /**
  * The panel for the log file.

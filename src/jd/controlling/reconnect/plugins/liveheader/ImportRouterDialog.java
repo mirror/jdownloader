@@ -16,8 +16,6 @@
 
 package jd.controlling.reconnect.plugins.liveheader;
 
-
- import jd.controlling.reconnect.plugins.liveheader.translate.*;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
@@ -43,11 +41,11 @@ import javax.swing.event.DocumentListener;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
+import jd.controlling.reconnect.plugins.liveheader.translate.T;
 import jd.gui.UserIO;
 import jd.gui.swing.Factory;
 import jd.nutils.encoding.Encoding;
 import jd.utils.JDTheme;
-import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.utils.swing.dialog.AbstractDialog;

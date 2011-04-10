@@ -16,8 +16,6 @@
 
 package jd.gui.swing.dialog;
 
-
- import org.jdownloader.gui.translate.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
@@ -41,19 +39,17 @@ import jd.plugins.Account;
 import jd.plugins.PluginForHost;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
-import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.utils.swing.dialog.AbstractDialog;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
+import org.jdownloader.gui.translate.T;
 
 public class AccountDialog extends AbstractDialog<Integer> {
 
-    private static final long   serialVersionUID = -2099080199110932990L;
-
-    private static final String JDL_PREFIX       = "jd.gui.swing.components.AccountDialog.";
+    private static final long serialVersionUID = -2099080199110932990L;
 
     public static void showDialog(final PluginForHost pluginForHost) {
         final AccountDialog dialog = new AccountDialog(pluginForHost);

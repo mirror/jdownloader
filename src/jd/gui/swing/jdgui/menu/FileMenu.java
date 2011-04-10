@@ -1,7 +1,5 @@
 package jd.gui.swing.jdgui.menu;
 
-
- import org.jdownloader.gui.translate.*;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 
@@ -10,7 +8,8 @@ import jd.gui.swing.jdgui.menu.actions.RestartAction;
 import jd.gui.swing.jdgui.menu.actions.RestoreAction;
 import jd.gui.swing.jdgui.menu.actions.SettingsAction;
 import jd.nutils.OSDetector;
-import jd.utils.locale.JDL;
+
+import org.jdownloader.gui.translate.T;
 
 public class FileMenu extends JMenu {
 

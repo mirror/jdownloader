@@ -16,8 +16,6 @@
 
 package jd.gui.swing.jdgui.views.settings;
 
-
- import org.jdownloader.gui.translate.*;
 import java.util.ArrayList;
 import java.util.logging.Logger;
 
@@ -38,9 +36,9 @@ import jd.gui.swing.Factory;
 import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.utils.JDTheme;
-import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
+import org.jdownloader.gui.translate.T;
 import org.jdownloader.update.RestartController;
 
 public abstract class ConfigPanel extends SwitchPanel {

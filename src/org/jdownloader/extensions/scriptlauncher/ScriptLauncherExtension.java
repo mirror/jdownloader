@@ -16,8 +16,6 @@
 
 package org.jdownloader.extensions.scriptlauncher;
 
-
- import org.jdownloader.extensions.scriptlauncher.translate.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.BufferedReader;
@@ -32,7 +30,6 @@ import jd.controlling.JDLogger;
 import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.plugins.AddonPanel;
 import jd.utils.JDUtilities;
-import jd.utils.locale.JDL;
 
 import org.appwork.utils.Regex;
 import org.jdownloader.extensions.AbstractConfigPanel;
@@ -42,6 +39,7 @@ import org.jdownloader.extensions.StopException;
 import org.jdownloader.extensions.interfaces.RemoteSupport;
 import org.jdownloader.extensions.remotecontrol.helppage.HelpPage;
 import org.jdownloader.extensions.remotecontrol.helppage.Table;
+import org.jdownloader.extensions.scriptlauncher.translate.T;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 

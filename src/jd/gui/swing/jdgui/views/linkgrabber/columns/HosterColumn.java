@@ -16,8 +16,6 @@
 
 package jd.gui.swing.jdgui.views.linkgrabber.columns;
 
-
- import org.jdownloader.gui.translate.*;
 import java.awt.Component;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -28,17 +26,17 @@ import jd.gui.swing.components.table.JDTableColumn;
 import jd.gui.swing.components.table.JDTableModel;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkGrabberFilePackage;
-import jd.utils.locale.JDL;
 
 import org.jdesktop.swingx.renderer.JRendererLabel;
+import org.jdownloader.gui.translate.T;
 
 public class HosterColumn extends JDTableColumn {
 
-    private static final long serialVersionUID = 2228210790952050305L;
-    private DownloadLink dLink;
+    private static final long      serialVersionUID = 2228210790952050305L;
+    private DownloadLink           dLink;
     private LinkGrabberFilePackage fp;
-    private JRendererLabel jlr;
-    private String strLoadingFrom;
+    private JRendererLabel         jlr;
+    private String                 strLoadingFrom;
 
     public HosterColumn(String name, JDTableModel table) {
         super(name, table);

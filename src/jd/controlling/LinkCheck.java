@@ -16,9 +16,6 @@
 
 package jd.controlling;
 
-
- import org.jdownloader.translate.*;
-
 import java.awt.EventQueue;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -33,9 +30,9 @@ import jd.nutils.jobber.JDRunnable;
 import jd.nutils.jobber.Jobber;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForHost;
-import jd.utils.locale.JDL;
 
 import org.appwork.utils.event.Eventsender;
+import org.jdownloader.translate.JDT;
 
 class LinkCheckBroadcaster extends Eventsender<LinkCheckListener, LinkCheckEvent> {
 

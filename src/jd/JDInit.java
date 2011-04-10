@@ -16,9 +16,6 @@
 
 package jd;
 
-
- import org.jdownloader.translate.*;
-
 import java.awt.event.ActionEvent;
 import java.io.File;
 import java.io.IOException;
@@ -57,7 +54,6 @@ import jd.pluginloader.VirtualDecrypterClass;
 import jd.pluginloader.VirtualHosterClass;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
-import jd.utils.locale.JDL;
 
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.update.updateclient.UpdaterConstants;
@@ -70,6 +66,7 @@ import org.appwork.utils.swing.dialog.ProgressDialog;
 import org.appwork.utils.swing.dialog.ProgressDialog.ProgressGetter;
 import org.jdownloader.extensions.ExtensionController;
 import org.jdownloader.plugins.scanner.PluginScanner;
+import org.jdownloader.translate.JDT;
 import org.lobobrowser.util.OS;
 
 /**
@@ -187,7 +184,7 @@ public class JDInit {
             if (!old.equals(JDUtilities.getRevision())) {
                 JDInit.LOG.info("Detected that JD just got updated");
 
-                final ConfirmDialog dialog = new ConfirmDialog(Dialog.BUTTONS_HIDE_CANCEL, JDT._.system_update_message_title( JDUtilities.getRevision()), JDT._.system_update_message(), null, null, null);
+                final ConfirmDialog dialog = new ConfirmDialog(Dialog.BUTTONS_HIDE_CANCEL, JDT._.system_update_message_title(JDUtilities.getRevision()), JDT._.system_update_message(), null, null, null);
                 dialog.setLeftActions(new AbstractAction(JDT._.system_update_showchangelogv2()) {
 
                     private static final long serialVersionUID = 1L;

@@ -1,18 +1,15 @@
 package jd.controlling.reconnect;
 
-
- import org.jdownloader.translate.*;
-
 import javax.swing.JComponent;
 import javax.swing.JPanel;
 import javax.swing.JTextPane;
 import javax.swing.event.HyperlinkEvent;
 import javax.swing.event.HyperlinkListener;
 
-import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.utils.os.CrossSystem;
+import org.jdownloader.translate.JDT;
 
 public class DummyRouterPlugin extends RouterPlugin {
 

@@ -1,7 +1,5 @@
 package jd.gui.swing.jdgui.views.linkgrabber.contextmenu;
 
-
- import org.jdownloader.gui.translate.*;
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 import java.util.Set;
@@ -9,7 +7,8 @@ import java.util.Set;
 import jd.controlling.LinkGrabberController;
 import jd.gui.swing.jdgui.interfaces.ContextMenuAction;
 import jd.plugins.LinkGrabberFilePackage;
-import jd.utils.locale.JDL;
+
+import org.jdownloader.gui.translate.T;
 
 public class SelectHostAction extends ContextMenuAction {
 

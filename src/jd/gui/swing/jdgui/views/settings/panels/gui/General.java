@@ -16,8 +16,6 @@
 
 package jd.gui.swing.jdgui.views.settings.panels.gui;
 
-
- import org.jdownloader.gui.translate.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
@@ -38,17 +36,17 @@ import jd.utils.locale.JDL;
 import jd.utils.locale.JDLocale;
 
 import org.appwork.utils.swing.dialog.AbstractDialog;
+import org.jdownloader.gui.translate.T;
 
 public class General extends ConfigPanel {
 
-    private static final long   serialVersionUID = 3383448498625377495L;
-
-    private static final String JDL_PREFIX       = "jd.gui.swing.jdgui.settings.panels.gui.General.";
+    private static final long serialVersionUID = 3383448498625377495L;
 
     public static String getIconKey() {
         return "gui.images.config.gui";
     }
 
+    @Override
     public String getTitle() {
         return T._.jd_gui_swing_jdgui_settings_panels_gui_General_gui_title();
     }

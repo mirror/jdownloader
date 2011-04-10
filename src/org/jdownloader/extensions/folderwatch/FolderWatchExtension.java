@@ -16,8 +16,6 @@
 
 package org.jdownloader.extensions.folderwatch;
 
-
- import org.jdownloader.extensions.folderwatch.translate.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
@@ -52,7 +50,6 @@ import jd.nutils.OSDetector;
 import jd.plugins.AddonPanel;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
-import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
 import org.jdownloader.extensions.AbstractConfigPanel;
@@ -63,35 +60,34 @@ import org.jdownloader.extensions.folderwatch.core.FileMonitoring;
 import org.jdownloader.extensions.folderwatch.core.FileMonitoringListener;
 import org.jdownloader.extensions.folderwatch.data.History;
 import org.jdownloader.extensions.folderwatch.data.HistoryEntry;
+import org.jdownloader.extensions.folderwatch.translate.T;
 import org.jdownloader.extensions.interfaces.RemoteSupport;
 import org.jdownloader.extensions.remotecontrol.helppage.HelpPage;
 import org.jdownloader.extensions.remotecontrol.helppage.Table;
 
 public class FolderWatchExtension extends AbstractExtension implements FileMonitoringListener, RemoteSupport, ActionListener {
 
-    private static final String JDL_PREFIX           = "plugins.optional.folderwatch.JDFolderWatch.";
+    private JSonWrapper      subConfig;
 
-    private JSonWrapper         subConfig;
+    private boolean          isEnabled            = false;
 
-    private boolean             isEnabled            = false;
+    private MenuAction       toggleAction;
+    private MenuAction       showGuiAction;
 
-    private MenuAction          toggleAction;
-    private MenuAction          showGuiAction;
+    private FolderWatchPanel historyGui           = null;
+    private FolderWatchView  view                 = null;
 
-    private FolderWatchPanel    historyGui           = null;
-    private FolderWatchView     view                 = null;
+    private Vector<String>   folderlist;
+    private boolean          folderlistHasChanged = false;
 
-    private Vector<String>      folderlist;
-    private boolean             folderlistHasChanged = false;
+    private boolean          isOption_recursive;
+    private boolean          isOption_import;
+    private boolean          isOption_importAndDelete;
+    private boolean          isOption_history;
 
-    private boolean             isOption_recursive;
-    private boolean             isOption_import;
-    private boolean             isOption_importAndDelete;
-    private boolean             isOption_history;
+    private JList            guiFolderList;
 
-    private JList               guiFolderList;
-
-    private FileMonitoring      monitoringThread;
+    private FileMonitoring   monitoringThread;
 
     public AbstractConfigPanel getConfigPanel() {
         return null;
