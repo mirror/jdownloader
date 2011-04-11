@@ -79,7 +79,7 @@ public class Linkgrabber extends ConfigPanel {
 
         container.setGroup(new ConfigGroup(T._.gui_config_gui_linggrabber_ignorelist(), "gui.images.filter"));
 
-        container.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, config, LinkGrabberController.IGNORE_LIST, T._.gui_config_linkgrabber_iognorelist()));
+        container.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, config, LinkGrabberController.IGNORE_LIST, T._.gui_config_linkgrabber_ignorelist()));
         ce.setDefaultValue("#Ignorefiletype 'olo':\r\n\r\n.+?\\.olo\r\n\r\n#Ignore hoster 'examplehost.com':\r\n\r\n.*?examplehost\\.com.*?");
 
         return container;

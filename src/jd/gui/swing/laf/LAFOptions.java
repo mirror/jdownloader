@@ -4,9 +4,14 @@ import org.appwork.storage.Storable;
 
 public class LAFOptions implements Storable {
 
-    private boolean paintStatusbarTopBorder = true;
-    private int     panelBackgroundColor    = -1;
-    private int     panelHeaderColor        = -1;
+    private boolean paintStatusbarTopBorder    = true;
+    private int     panelBackgroundColor       = -1;
+    private int     panelHeaderColor           = -1;
+    private int     panelHeaderForegroundColor = 0;
+
+    public void setPanelHeaderForegroundColor(int panelHeaderForegroundColor) {
+        this.panelHeaderForegroundColor = panelHeaderForegroundColor;
+    }
 
     public void setPanelHeaderColor(int panelHeaderColor) {
         this.panelHeaderColor = panelHeaderColor;
@@ -38,5 +43,9 @@ public class LAFOptions implements Storable {
 
     public int getPanelHeaderColor() {
         return panelHeaderColor;
+    }
+
+    public int getPanelHeaderForegroundColor() {
+        return panelHeaderForegroundColor;
     }
 }

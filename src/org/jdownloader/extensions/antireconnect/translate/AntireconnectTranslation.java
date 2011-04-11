@@ -63,4 +63,25 @@ public interface AntireconnectTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Automaticly disables reconnect features of one ore more network conditions match." })
     String description();
+
+    @Default(lngs = { "en" }, values = { "Enter any URL to do a filter test run..." })
+    String settings_linkgrabber_filter_test_helpurl();
+
+    @Default(lngs = { "en" }, values = { "Enable/Disable" })
+    String settings_linkgrabber_filter_columns_enabled();
+
+    @Default(lngs = { "en" }, values = { "Regular Filter Expression" })
+    String settings_linkgrabber_filter_columns_regex();
+
+    @Default(lngs = { "en" }, values = { "Filter Type" })
+    String settings_linkgrabber_filter_columns_type();
+
+    @Default(lngs = { "en" }, values = { "Filename" })
+    String settings_linkgrabber_filter_types_filename();
+
+    @Default(lngs = { "en" }, values = { "URL" })
+    String settings_linkgrabber_filter_types_url();
+
+    @Default(lngs = { "en" }, values = { "Plugin" })
+    String settings_linkgrabber_filter_types_plugin();
 }

@@ -4,6 +4,7 @@ import javax.swing.DefaultListModel;
 
 import jd.gui.swing.jdgui.views.settings.panels.ConfigPanelCaptcha;
 import jd.gui.swing.jdgui.views.settings.panels.ConfigPanelGeneral;
+import jd.gui.swing.jdgui.views.settings.panels.DownloadControll;
 import jd.gui.swing.jdgui.views.settings.panels.addons.ConfigPanelAddons;
 import jd.gui.swing.jdgui.views.settings.panels.downloadandnetwork.ProxyConfig;
 import jd.gui.swing.jdgui.views.settings.panels.gui.Advanced;
@@ -30,8 +31,11 @@ public class ConfigListModel extends DefaultListModel {
         removeAllElements();
 
         addElement(new ConfigPanelGeneral());
-        addElement(new ProxyConfig());
+
+        addElement(new DownloadControll());
+
         // addElement(new ToolbarController());
+        addElement(new jd.gui.swing.jdgui.views.settings.panels.Linkgrabber());
         addElement(new Linkgrabber());
         addElement(new Advanced());
         addElement(new ConfigPanelCaptcha());
@@ -41,6 +45,7 @@ public class ConfigListModel extends DefaultListModel {
         addElement(new Premium());
         addElement(new ConfigPanelPlugin());
         addElement(new ConfigPanelAddons());
+        addElement(new ProxyConfig());
 
         for (final AbstractExtension plg : ExtensionController.getInstance().getEnabledExtensions()) {
             if ((!plg.hasSettings() && !plg.hasConfigPanel())) {

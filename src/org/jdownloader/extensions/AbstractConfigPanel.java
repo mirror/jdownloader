@@ -33,7 +33,7 @@ public abstract class AbstractConfigPanel extends SwitchPanel {
         JTextArea txt = new JTextArea();
         txt.setEditable(false);
         txt.setLineWrap(true);
-
+        txt.setWrapStyleWord(true);
         txt.setFocusable(false);
         txt.setEnabled(false);
 

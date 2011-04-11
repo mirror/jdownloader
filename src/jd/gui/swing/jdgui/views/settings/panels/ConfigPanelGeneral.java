@@ -20,10 +20,10 @@ import javax.swing.ImageIcon;
 
 import jd.gui.swing.jdgui.views.settings.components.Checkbox;
 import jd.gui.swing.jdgui.views.settings.components.FolderChooser;
-import jd.utils.JDTheme;
 
 import org.jdownloader.extensions.AbstractConfigPanel;
 import org.jdownloader.gui.translate.T;
+import org.jdownloader.images.Theme;
 import org.jdownloader.translate.JDT;
 
 public class ConfigPanelGeneral extends AbstractConfigPanel {
@@ -50,14 +50,14 @@ public class ConfigPanelGeneral extends AbstractConfigPanel {
         downloadFolder = new FolderChooser("downloadfolder");
         subfolder = new Checkbox();
 
-        this.addHeader(T._.gui_config_general_downloaddirectory(), JDTheme.II("gui.images.userhome", 32, 32));
+        this.addHeader(T._.gui_config_general_downloaddirectory(), Theme.getIcon("settings/downloadpath", 32));
         this.addDescription(JDT._.gui_settings_downloadpath_description());
         this.add(downloadFolder);
         this.addPair(T._.gui_config_general_createsubfolders(), subfolder);
 
         /* File Writing */
         autoCRC = new Checkbox();
-        this.addHeader(T._.gui_config_download_write(), JDTheme.II("gui.images.save", 32, 32));
+        this.addHeader(T._.gui_config_download_write(), Theme.getIcon("settings/hashsum", 32));
         this.addDescription(JDT._.gui_settings_filewriting_description());
         this.addPair(T._.gui_config_download_crc(), autoCRC);
 
@@ -65,7 +65,7 @@ public class ConfigPanelGeneral extends AbstractConfigPanel {
 
     @Override
     public ImageIcon getIcon() {
-        return JDTheme.II(getIconKey(), 32, 32);
+        return Theme.getIcon("settings/home", 32);
     }
 
     @Override

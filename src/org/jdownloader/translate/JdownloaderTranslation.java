@@ -620,4 +620,19 @@ public interface JdownloaderTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Incomplete" })
     String downloadlink_status_incomplete();
+
+    @Default(lngs = { "en" }, values = { "Download Managment" })
+    String gui_settings_downloadcontroll_title();
+
+    @Default(lngs = { "en" }, values = { "Connection limits, Download order, Priorities, .... set up the Downloadcontroller details." })
+    String gui_settings_downloadcontroll_description();
+
+    @Default(lngs = { "en" }, values = { "Link Grabber" })
+    String gui_settings_linkgrabber_title();
+
+    @Default(lngs = { "en" }, values = { "The \"Link Grabber\" is used to find mirrors, check link stati, and to order your downloads into packages before downloading." })
+    String gui_settings_linkgrabber_description();
+
+    @Default(lngs = { "en" }, values = { "Set up filters, to ignore files based on their address or filename" })
+    String gui_settings_linkgrabber_filter_description();
 }
