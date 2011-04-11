@@ -22,7 +22,6 @@ import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.RandomUserAgent;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
@@ -80,11 +79,19 @@ public class FilestoreTo extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        String sid = br.getRegex("name=\"sid\" value=\"(.*?)\"").getMatch(0);
-        String fid = new Regex(downloadLink.getDownloadURL(), "filestore\\.to/\\?d=([A-Z0-9]+)").getMatch(0);
+        String gamer = br.getRegex("name=\"downid\" value=\"(.*?)\">").getMatch(0);
+        if (gamer == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        String waittime = br.getRegex("Bitte warte (\\d+) Sekunden und starte dann").getMatch(0);
+        int wait = 10;
+        if (waittime != null) if (Integer.parseInt(waittime) < 61) wait = Integer.parseInt(waittime);
+        sleep(wait * 1001l, downloadLink);
         // If plugin breaks most times this link is changed
-        String ajaxDownload = "http://filestore.to/ajax/download.php?f=" + fid + "&s=" + sid;
+        String ajaxDownload = "http://filestore.to/ajax/download.php?Download=" + gamer;
         br.getPage(ajaxDownload);
+        if (br.containsHTML("(Da hat etwas nicht geklappt|Wartezeit nicht eingehalten|Versuche es erneut)")) {
+            logger.warning("FATAL waittime error!");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         br.setFollowRedirects(true);
         String dllink = br.toString().trim();
         if (!dllink.startsWith("http://")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

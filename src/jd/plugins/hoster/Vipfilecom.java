@@ -57,6 +57,7 @@ public class Vipfilecom extends PluginForHost {
         String downloadURL = downloadLink.getDownloadURL();
         this.setBrowserExclusive();
         br.getHeaders().put("User-Agent", RandomUserAgent.generate());
+        br.setCookie("http://vip-file.com/", "lang", "en");
         br.getPage(downloadURL);
         if (br.containsHTML("(This file not found|\">File not found)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String fileSize = br.getRegex("name=\"sssize\" value=\"(.*?)\"").getMatch(0);
@@ -96,6 +97,7 @@ public class Vipfilecom extends PluginForHost {
     @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         requestFileInformation(downloadLink);
+        br.setCookie("http://vip-file.com/", "lang", "en");
         Form[] allForms = br.getForms();
         if (allForms == null || allForms.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         Form premiumform = null;
@@ -116,6 +118,10 @@ public class Vipfilecom extends PluginForHost {
             ai.setTrafficLeft(trafficLeft);
             ai.setStatus("Premium User");
             account.setAccountInfo(ai);
+        }
+        if (br.containsHTML("(Your premium access is about to be over|Amount of Your points is close to zero\\.)")) {
+            logger.info("Password is wrong!");
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
         String url = Encoding.htmlDecode(br.getRegex(Pattern.compile("Your link to file download\" href=\"(http://.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0));
         if (url == null) {

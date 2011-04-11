@@ -52,9 +52,8 @@ public class UploadStationCom extends PluginForHost {
         br.getHeaders().put("User-Agent", RandomUserAgent.generate());
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("(<h1>File not available</h1>|<b>The file could not be found\\. Please check the download link)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        Regex fileInfo = br.getRegex("<div class=\"download_item\">(.*?) \\(([\\d+\\.]+ [A-Za-z]{1,8})\\)</div>");
-        String filename = fileInfo.getMatch(0);
-        String filesize = fileInfo.getMatch(1);
+        String filename = br.getRegex("<div class=\"download_item\">(.*?)</div>").getMatch(0);
+        String filesize = br.getRegex("<div><span>File size: <b>(.*?)</b>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setName(filename.trim());
         link.setDownloadSize(SizeFormatter.getSize(filesize));
