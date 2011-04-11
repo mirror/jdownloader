@@ -43,7 +43,7 @@ import jd.plugins.PluginForHost;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "megavideo.com" }, urls = { "http://[\\w\\.]*?megavideo\\.com/(.*?(v|d)=|v/)[a-zA-Z0-9]+" }, flags = { 2 })
 public class MegaVideo extends PluginForHost {
 
-    private static String agent = RandomUserAgent.generate();
+    private static String       agent     = RandomUserAgent.generate();
     private final static Object LOGINLOCK = new Object();
 
     public MegaVideo(PluginWrapper wrapper) {
@@ -69,7 +69,7 @@ public class MegaVideo extends PluginForHost {
 
     public String getDownloadID(DownloadLink link) throws MalformedURLException {
         String url = link.getDownloadURL().replace("/v/", "/?v=");
-        HashMap<String, String> p = Request.parseQuery(url);
+        HashMap<String, String> p = Request.parseQuery(Encoding.htmlDecode(url));
         String ret = p.get("v");
         if (ret == null) {
             try {

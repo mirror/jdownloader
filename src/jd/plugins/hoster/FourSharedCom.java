@@ -51,9 +51,11 @@ public class FourSharedCom extends PluginForHost {
     public void correctDownloadLink(final DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replaceAll("\\.viajd", ".com"));
         if (link.getDownloadURL().contains(".com/download")) {
+            boolean fixLink = true;
             try {
                 final Browser br = new Browser();
                 br.getHeaders().put("User-Agent", agent);
+                br.setFollowRedirects(false);
                 br.getPage(link.getDownloadURL());
                 final String newLink = br.getRedirectLocation();
                 if (newLink != null) {
@@ -63,8 +65,15 @@ public class FourSharedCom extends PluginForHost {
                     } else {
                         link.setUrlDownload(newLink);
                     }
+                    fixLink = false;
                 }
             } catch (final Throwable e) {
+            }
+            if (fixLink) {
+                String id = new Regex(link.getDownloadURL(), ".com/download/(.*?)/").getMatch(0);
+                if (id != null) {
+                    link.setUrlDownload("http://www.4shared.com/file/" + id);
+                }
             }
         } else {
             link.setUrlDownload(link.getDownloadURL().replaceAll("red.com/(get|audio|video)", "red.com/file").replace("account/", ""));
@@ -77,16 +86,18 @@ public class FourSharedCom extends PluginForHost {
         final AccountInfo ai = new AccountInfo();
         br.forceDebug(true);
         login(account);
-        final String redirect = br.getRegex("top.location = \"(.*?)\"").getMatch(0);
+        final String redirect = br.getRegex("loginRedirect\":\"(http.*?)\"").getMatch(0);
         br.setFollowRedirects(true);
         br.getPage(redirect);
         final String[] dat = br.getRegex("Bandwidth\\:.*?<div class=\"quotacount\">(.+?)\\% of (.*?)</div>").getRow(0);
-        ai.setTrafficMax(SizeFormatter.getSize(dat[1]));
-        ai.setTrafficLeft((long) (ai.getTrafficMax() * (100.0 - Float.parseFloat(dat[0])) / 100.0));
+        if (dat != null && dat.length == 2) {
+            ai.setTrafficMax(SizeFormatter.getSize(dat[1]));
+            ai.setTrafficLeft((long) (ai.getTrafficMax() * (100.0 - Float.parseFloat(dat[0])) / 100.0));
+        }
         final String accountDetails = br.getRegex("(/account/myAccount.jsp\\?sId=[^\"]+)").getMatch(0);
         br.getPage(accountDetails);
-        final String expire = br.getRegex("<td>Expiration Date:</td>.*?<td>(.*?)<span").getMatch(0).trim();
-        ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy-MM-dd", Locale.UK));
+        final String expire = br.getRegex("<td>Expiration Date:</td>.*?<td>(.*?)<span").getMatch(0);
+        ai.setValidUntil(TimeFormatter.getMilliSeconds(expire.trim(), "yyyy-MM-dd", Locale.UK));
         return ai;
     }
 
@@ -200,9 +211,9 @@ public class FourSharedCom extends PluginForHost {
     public void login(final Account account) throws IOException, PluginException {
         setBrowserExclusive();
         br.getHeaders().put("User-Agent", agent);
-        br.getHeaders().put("4langcookie", "en");
-        br.getPage("http://www.4shared.com/login.jsp");
-        br.postPage("http://www.4shared.com/index.jsp", "afp=&afu=&df=&rdf=&cff=&login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&openid=");
+        br.getPage("http://www.4shared.com/");
+        br.setCookie("http://www.4shared.com", "4langcookie", "en");
+        br.postPage("http://www.4shared.com/login", "callback=jsonp" + System.currentTimeMillis() + "&login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&remember=false&doNotRedirect=true");
         final String premlogin = br.getCookie("http://www.4shared.com", "premiumLogin");
         if (premlogin == null || !premlogin.contains("true")) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE); }
         if (br.getCookie("http://www.4shared.com", "Password") == null || br.getCookie("http://www.4shared.com", "Login") == null) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE); }
@@ -213,7 +224,7 @@ public class FourSharedCom extends PluginForHost {
         try {
             setBrowserExclusive();
             br.getHeaders().put("User-Agent", agent);
-            br.setCookie("4shared.com", "4langcookie", "en");
+            br.setCookie("http://www.4shared.com", "4langcookie", "en");
             br.setFollowRedirects(true);
             br.getPage(downloadLink.getDownloadURL());
             // need password?

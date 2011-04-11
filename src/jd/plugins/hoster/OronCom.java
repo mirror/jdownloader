@@ -210,6 +210,22 @@ public class OronCom extends PluginForHost {
                     }
                 }
                 if (dllink == null) {
+                    if (br.containsHTML("different IPs to download in") && br.containsHTML("You're not allowed to download")) {
+                        String error = br.getRegex("err\">(You've used.*?different.*?)</font>").getMatch(0);
+                        if (error != null) {
+                            logger.warning(error);
+                        } else {
+                            logger.warning(br.toString());
+                        }
+                        logger.severe("Premium Account " + account.getUser() + ": Traffic Limit reached,retry in 1 hour");
+                        account.setTempDisabled(true);
+                        try {
+                            account.setTmpDisabledIntervalv3(60 * 60 * 1000l);
+                        } catch (final Throwable e) {
+                        }
+                        account.getAccountInfo().setTrafficLeft(0);
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Too many different IPs used!", 30 * 60 * 1000l);
+                    }
                     if (br.containsHTML("You have reached the download")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
                     logger.warning("Final downloadlink (String is \"dllink\" regex didn't match!");
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

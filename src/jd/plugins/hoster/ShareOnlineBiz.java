@@ -255,10 +255,7 @@ public class ShareOnlineBiz extends PluginForHost {
         }
         /* no free slot */
         if (br.containsHTML("No free slots for free users") || br.getURL().contains("failure/full")) {
-            if (downloadLink.getLinkStatus().getRetryCount() >= getMaxRetries()) {
-                /* reset counter this error does not cause plugin to stop */
-                downloadLink.getLinkStatus().setRetryCount(0);
-            }
+            downloadLink.getLinkStatus().setRetryCount(0);
             if (server != -1) {
                 synchronized (noFreeSlot) {
                     noFreeSlot.put(server, System.currentTimeMillis());

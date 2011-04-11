@@ -117,7 +117,7 @@ public class MultiShareCz extends PluginForHost {
         br.getPage(link.getDownloadURL());
         String fileid = new Regex(link.getDownloadURL(), "/stahnout/(\\d+)/").getMatch(0);
         String dllink = "http://www.multishare.cz/html/download_premium.php?ID=" + fileid;
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
         if (dl.getConnection().getContentType() != null && dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

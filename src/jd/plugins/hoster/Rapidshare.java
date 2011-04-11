@@ -16,7 +16,6 @@
 
 package jd.plugins.hoster;
 
-import java.awt.event.ActionEvent;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.util.ArrayList;
@@ -30,8 +29,6 @@ import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.controlling.DownloadWatchDog;
 import jd.controlling.JDLogger;
-import jd.gui.swing.jdgui.actions.ToolBarAction.Types;
-import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
 import jd.http.Request;
@@ -111,30 +108,25 @@ public class Rapidshare extends PluginForHost {
 
     }
 
-    private static final String                       WAIT_HOSTERFULL         = "WAIT_HOSTERFULL";
+    private static final String             WAIT_HOSTERFULL        = "WAIT_HOSTERFULL";
 
-    private static final String                       SSL_CONNECTION          = "SSL_CONNECTION2";
+    private static final String             SSL_CONNECTION         = "SSL_CONNECTION2";
 
-    private static final String                       HTTPS_WORKAROUND        = "HTTPS_WORKAROUND";
+    private static final String             HTTPS_WORKAROUND       = "HTTPS_WORKAROUND";
 
-    private static final Object                       LOCK                    = new Object();
+    private static final Object             LOCK                   = new Object();
 
-    private static final ArrayList<Account>           RESET_WAITING_ACCOUNTS  = new ArrayList<Account>();
+    private static final ArrayList<Account> RESET_WAITING_ACCOUNTS = new ArrayList<Account>();
 
-    private static final Boolean                      HTMLWORKAROUND          = new Boolean(false);
+    private static final Boolean            HTMLWORKAROUND         = new Boolean(false);
 
-    private static long                               RS_API_WAIT             = 0;
+    private static long                     RS_API_WAIT            = 0;
 
-    private static final String                       COOKIEPROP              = "cookiesv2";
-    private static final Object                       menuLock                = new Object();
+    private static final String             COOKIEPROP             = "cookiesv2";
 
-    private static final HashMap<Integer, MenuAction> menuActionMap           = new HashMap<Integer, MenuAction>();
+    private static final Account            dummyAccount           = new Account("TRAFSHARE", "TRAFSHARE");
 
-    private static final Account                      dummyAccount            = new Account("TRAFSHARE", "TRAFSHARE");
-
-    private static final String                       PROPERTY_ONLY_HAPPYHOUR = "PROPERTY_ONLY_HAPPYHOUR";
-
-    private static final String                       PRE_RESOLVE             = "PRE_RESOLVE2";
+    private static final String             PRE_RESOLVE            = "PRE_RESOLVE2";
 
     /* returns file id of link */
     private static String getID(final String link) {
@@ -145,40 +137,15 @@ public class Rapidshare extends PluginForHost {
         return ret;
     }
 
-    private String         selectedServer = null;
+    private String         accName      = null;
 
-    private String         accName        = null;
-
-    private static boolean updateNeeded   = false;
+    private static boolean updateNeeded = false;
 
     public Rapidshare(final PluginWrapper wrapper) {
         super(wrapper);
         this.setConfigElements();
         this.enablePremium("http://rapidshare.com/premium.html");
         this.setMaxConnections(30);
-    }
-
-    @Override
-    public void actionPerformed(final ActionEvent e) {
-        if (e.getID() == 32767) {
-            final MenuAction happyHourAction = Rapidshare.menuActionMap.get(e.getID());
-            /* sync menuaction and property */
-            if (happyHourAction != null) {
-                this.getPluginConfig().setProperty(Rapidshare.PROPERTY_ONLY_HAPPYHOUR, !this.getPluginConfig().getBooleanProperty(Rapidshare.PROPERTY_ONLY_HAPPYHOUR, false));
-                happyHourAction.setSelected(this.getPluginConfig().getBooleanProperty(Rapidshare.PROPERTY_ONLY_HAPPYHOUR, false));
-                if (this.getPluginConfig().getBooleanProperty(Rapidshare.PROPERTY_ONLY_HAPPYHOUR, false) == false) {
-                    synchronized (Rapidshare.RESET_WAITING_ACCOUNTS) {
-                        for (final Account acc : Rapidshare.RESET_WAITING_ACCOUNTS) {
-                            acc.setTempDisabled(false);
-                        }
-                        Rapidshare.RESET_WAITING_ACCOUNTS.clear();
-                    }
-                }
-                this.getPluginConfig().save();
-            }
-        } else {
-            super.actionPerformed(e);
-        }
     }
 
     /**
@@ -348,26 +315,6 @@ public class Rapidshare extends PluginForHost {
     }
 
     @Override
-    public ArrayList<MenuAction> createMenuitems() {
-        final ArrayList<MenuAction> ret = super.createMenuitems();
-        synchronized (Rapidshare.menuLock) {
-            if (ret != null) {
-                /* here we can add it every time */
-                MenuAction happyHourAction = Rapidshare.menuActionMap.get(32767);
-                if (happyHourAction == null) {
-                    happyHourAction = new MenuAction("rsHappyHour", 32767);
-                    happyHourAction.setType(Types.TOGGLE);
-                    happyHourAction.setActionListener(this);
-                    happyHourAction.setSelected(this.getPluginConfig().getBooleanProperty(Rapidshare.PROPERTY_ONLY_HAPPYHOUR, false));
-                    Rapidshare.menuActionMap.put(32767, happyHourAction);
-                }
-                ret.add(happyHourAction);
-            }
-        }
-        return ret;
-    }
-
-    @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         try {
             this.login(account, true);
@@ -440,11 +387,7 @@ public class Rapidshare extends PluginForHost {
 
     @Override
     public String getSessionInfo() {
-        if (this.accName != null && this.selectedServer != null) {
-            return this.accName + " @ " + this.selectedServer;
-        } else if (this.selectedServer != null) {
-            return this.selectedServer;
-        } else if (this.accName != null) { return this.accName; }
+        if (this.accName != null) { return this.accName; }
         return super.getSessionInfo();
     }
 
@@ -564,7 +507,6 @@ public class Rapidshare extends PluginForHost {
             this.dl.startDownload();
         } finally {
             if (!downloadLink.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
-                this.selectedServer = null;
                 this.accName = null;
             }
         }
@@ -607,33 +549,8 @@ public class Rapidshare extends PluginForHost {
             this.accName = account.getUser();
             /* synchronized check of account, package handling */
             synchronized (Rapidshare.LOCK) {
-                /*
-                 * accout got tempdisabled by another plugin instance, no need
-                 * to check again
-                 */
-                if (account.isTempDisabled()) {
-                    synchronized (Rapidshare.RESET_WAITING_ACCOUNTS) {
-                        if (!Rapidshare.RESET_WAITING_ACCOUNTS.contains(account)) {
-                            Rapidshare.RESET_WAITING_ACCOUNTS.add(account);
-                        }
-                    }
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-                }
                 this.br = this.login(account, false);
-                /* check for happy hour */
-                final boolean happyhour = Integer.parseInt(account.getStringProperty("happyhours", "0")) == 1 ? true : false;
-                /* only download while happyHour */
-                if (!happyhour && this.getPluginConfig().getBooleanProperty(Rapidshare.PROPERTY_ONLY_HAPPYHOUR, false)) {
-                    synchronized (Rapidshare.RESET_WAITING_ACCOUNTS) {
-                        if (!Rapidshare.RESET_WAITING_ACCOUNTS.contains(account)) {
-                            Rapidshare.RESET_WAITING_ACCOUNTS.add(account);
-                        }
-                    }
-                    account.setTempDisabled(true);
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Wait for Happy Hour!", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-                }
             }
-
             this.br.setFollowRedirects(false);
             this.br.setAcceptLanguage(Plugin.ACCEPT_LANGUAGE);
             RSLink link = null;
@@ -722,7 +639,6 @@ public class Rapidshare extends PluginForHost {
             this.dl.startDownload();
         } finally {
             if (!downloadLink.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
-                this.selectedServer = null;
                 this.accName = null;
                 // rs api does not return 416 error for bad ranges
                 if ((JDL.L("download.error.message.rangeheaderparseerror", "Unexpected rangeheader format:") + "null").equals(downloadLink.getLinkStatus().getErrorMessage())) {
@@ -769,24 +685,8 @@ public class Rapidshare extends PluginForHost {
              */
             HashMap<String, String> cookies = account.getGenericProperty(Rapidshare.COOKIEPROP, (HashMap<String, String>) null);
             boolean cookieLogin = false;
-            final Long lastUpdate = account.getGenericProperty("lastUpdate", new Long(0));
-            if (cookies != null && forceRefresh == false && lastUpdate != 0) {
-                if (!this.getPluginConfig().getBooleanProperty(Rapidshare.PROPERTY_ONLY_HAPPYHOUR, false)) {
-                    /*
-                     * no upgrade warning and no happy hour check, so we can use
-                     * cookie
-                     */
-                    cookieLogin = true;
-
-                } else {
-                    /* last updateCheck, wait at least 5 mins for hh check */
-                    final Long timeout = 5 * 60 * 1000l;
-                    if (lastUpdate + timeout > System.currentTimeMillis()) {
-                        cookieLogin = true;
-                    } else {
-                        cookieLogin = false;
-                    }
-                }
+            if (cookies != null && forceRefresh == false) {
+                cookieLogin = true;
             }
             /* cookie login or not? */
             if (cookieLogin && cookies != null && cookies.get("enc") != null && cookies.get("enc").length() != 0) {
@@ -829,8 +729,6 @@ public class Rapidshare extends PluginForHost {
                 cookies = new HashMap<String, String>();
                 cookies.put("enc", cookie);
                 account.setProperty(Rapidshare.COOKIEPROP, cookies);
-                /* update lastUpdate timer */
-                account.setProperty("lastUpdate", new Long(System.currentTimeMillis()));
             }
             // put all accountproperties
             for (final String[] m : br.getRegex("(\\w+)=([^\r^\n]+)").getMatches()) {
@@ -942,29 +840,21 @@ public class Rapidshare extends PluginForHost {
             account.setAccountInfo(ai);
         }
         /* let hoster report traffic limit reached! */
-        ai.setSpecialTraffic(true);
+        // ai.setSpecialTraffic(true);
         /* reset expired flag */
         ai.setExpired(false);
         ai.setValidUntil(-1);
         account.setValid(true);
+        ai.setUnlimitedTraffic();
         try {
             final String[][] matches = br.getRegex("(\\w+)=([^\r^\n]+)").getMatches();
             final HashMap<String, String> data = this.getMap(matches);
-            long autoTraffic = 0;
             final long rapids = Long.parseLong(data.get("rapids"));
-            boolean notenoughrapids = false;
-            if ("1".equals(data.get("autorefill"))) {
-                if (rapids > 280) {
-                    autoTraffic = 10000000000l * (rapids / 280);
-                } else {
-                    notenoughrapids = true;
-                }
-            }
-            ai.setTrafficLeft(Long.parseLong(data.get("tskb")) * 1000l + autoTraffic);
             /* account infos */
             ai.setFilesNum(Long.parseLong(data.get("curfiles")));
             ai.setPremiumPoints(Long.parseLong(data.get("rapids")));
             ai.setUsedSpace(Long.parseLong(data.get("curspace")));
+            boolean autoextend = "1".equals(data.get("autoextend"));
             final String billedUntilTime = data.get("billeduntil");
             final String serverTimeString = data.get("servertime");
             long nextBill = 0;
@@ -972,15 +862,29 @@ public class Rapidshare extends PluginForHost {
                 /* next billing in */
                 nextBill = Long.parseLong(billedUntilTime) - Long.parseLong(serverTimeString);
                 if (nextBill <= 0) {
-                    ai.setStatus("No RapidPro");
+                    String possible = "";
+                    if (autoextend) {
+                        long days = (rapids / 495) * 30;
+                        if (days > 0) {
+                            possible = "(enough rapids for " + days + " days RapidPro left)";
+                        }
+                    }
+                    ai.setStatus("No RapidPro" + possible);
                     ai.setExpired(true);
                     account.setValid(false);
                 } else {
+                    if (autoextend) {
+                        long days = (rapids / 495) * 30;
+                        if (days > 0) {
+                            nextBill = nextBill + (days * 24 * 60);
+                        }
+                    }
                     final String left = Formatter.formatSeconds(nextBill, false);
-                    ai.setStatus((notenoughrapids ? "(Not enough rapids for autorefill)" : "") + "Valid for " + left);
+                    ai.setValidUntil((Long.parseLong(serverTimeString) + nextBill) * 1000l);
+                    ai.setStatus("Valid for " + left);
                 }
             }
-        } catch (final Exception e) {
+        } catch (final Throwable e) {
             logger.severe("RS-API change detected, please inform support!");
         }
 

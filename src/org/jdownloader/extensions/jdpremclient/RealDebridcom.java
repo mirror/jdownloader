@@ -318,7 +318,7 @@ public class RealDebridcom extends PluginForHost implements JDPremInterface {
             String hosts = null;
             try {
                 page = br.getPage("http://www.real-debrid.com/lib/api/account.php?login=" + username + "&pass=" + pass);
-                hosts = br.getPage("http://www.real-debrid.com/lib/api/hosters.php");
+                hosts = br.getPage("http://www.real-debrid.com/lib/api/hosters.php?login=" + username);
             } catch (Exception e) {
                 account.setTempDisabled(true);
                 account.setValid(true);
