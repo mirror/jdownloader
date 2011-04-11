@@ -1,6 +1,7 @@
 package org.jdownloader.images;
 
 import java.io.File;
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 
@@ -10,7 +11,9 @@ import jd.gui.swing.jdgui.GuiConfig;
 
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Application;
+import org.appwork.utils.IO;
 import org.appwork.utils.images.IconIO;
+import org.appwork.utils.logging.Log;
 
 /**
  * New JDownloader Icon Theme Support
@@ -75,6 +78,17 @@ public class Theme {
         sb.append(path);
         sb.append(ext);
         return sb.toString();
+    }
+
+    public static String getText(String string) {
+        URL url = getURL("", string, "");
+        if (url == null) return null;
+        try {
+            return IO.readURLToString(url);
+        } catch (IOException e) {
+            Log.exception(e);
+        }
+        return null;
     }
 
 }
