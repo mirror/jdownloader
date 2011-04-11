@@ -17,8 +17,6 @@ import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
 import org.jdownloader.extensions.infobar.translate.T;
 
-import com.sun.awt.AWTUtilities;
-
 public class InfoBarExtension extends AbstractExtension {
 
     @Override
@@ -61,7 +59,11 @@ public class InfoBarExtension extends AbstractExtension {
 
             @Override
             public Object runSave() {
-                AWTUtilities.setWindowOpacity(infoDialog, (float) (newValue / 100.0));
+                try {
+                    com.sun.awt.AWTUtilities.setWindowOpacity(infoDialog, (float) (newValue / 100.0));
+                } catch (final Throwable e) {
+                    e.printStackTrace();
+                }
                 return null;
             }
 
