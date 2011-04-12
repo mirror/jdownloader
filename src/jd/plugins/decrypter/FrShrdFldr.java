@@ -52,7 +52,10 @@ public class FrShrdFldr extends PluginForDecrypt {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         br.setFollowRedirects(true);
-        br.setCookie(getHost(), "4langcookie", "en");
+        try {
+            br.setCookie(getHost(), "4langcookie", "en");
+        } catch (final Throwable e) {
+        }
         String pass = "";
 
         // check for password
@@ -133,7 +136,7 @@ public class FrShrdFldr extends PluginForDecrypt {
                 name = "4shared - Folder";
             }
             final FilePackage fp = FilePackage.getInstance();
-            fp.setName(name);
+            fp.setName(Encoding.htmlDecode(name));
             // change to listview
             if (br.containsHTML("(fbContainer|thumbdiv)")) {
                 br.getPage("http://" + br.getHost() + burl + "&ajax=true&changedir=" + subDir[j - 1] + "&homemode=8&viewMode=1&random=" + RANDOM);
@@ -154,12 +157,12 @@ public class FrShrdFldr extends PluginForDecrypt {
                 // scan page
 
                 for (String dl : links) {
-                    final String[] dlTmp = dl.split("\n");
+                    String tmp = dl;
                     String dlName = null;
                     String dlSize = null;
-                    dl = new Regex(dlTmp[1], "href=\"javascript:openNewWindow\\('(.*?)'").getMatch(0);
-                    dlName = new Regex(dlTmp[2], "/>(.*?)</a>").getMatch(0);
-                    dlSize = new Regex(dlTmp[5], ">(.*?)</td>").getMatch(0);
+                    dl = new Regex(tmp, "href=\"javascript:openNewWindow\\('(.*?)'").getMatch(0);
+                    dlName = new Regex(tmp, "/>(.*?)</a>").getMatch(0);
+                    dlSize = new Regex(tmp, "FileSize.*?>(.*?)</td>").getMatch(0);
                     if (dl == null | dlName == null | dlSize == null) {
                         continue;
                     }

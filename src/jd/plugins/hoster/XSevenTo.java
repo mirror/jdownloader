@@ -102,23 +102,23 @@ public class XSevenTo extends PluginForHost {
             ai.setStatus("Premium User");
             try {
                 account.setMaxSimultanDownloads(-1);
-            } catch (Exception e) {
+            } catch (Throwable e) {
 
             }
         } else {
             try {
                 account.setMaxSimultanDownloads(1);
-            } catch (Exception e) {
+            } catch (Throwable e) {
 
             }
             ai.setStatus("Registered (free) User");
         }
-        String points = br.getRegex("upoints\".*?>([0-9.]*?)<").getMatch(0);
+        String points = br.getRegex("upoints\".*?>([0-9\\.]*?)<").getMatch(0);
         if (points != null) {
-            long p = Long.parseLong(points.replaceFirst("\\.", ""));
+            long p = Long.parseLong(points.trim().replaceFirst("\\.", ""));
             ai.setPremiumPoints(p);
         }
-        String money = br.getRegex("id=\"balance\">([0-9.]+)").getMatch(0);
+        String money = br.getRegex("id=\"balance\">([0-9\\.,]+)").getMatch(0);
         if (money != null) ai.setAccountBalance(money);
         String remaining = br.getRegex("class=\"aT aR\">.*?\">(.*?)<").getMatch(0);
         String trafficNow = br.getRegex("buyTraffic.*?TrafficNow.*?class=\"aT aR\">.*?\">(.*?)<").getMatch(0);
