@@ -38,6 +38,7 @@ public class UploadStationComFolder extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.getPage(parameter);
+        if (br.containsHTML(">File name \\(Total 0 file\\)")) return decryptedLinks;
         if (br.containsHTML("(>File name \\(Total 0 file\\)|>The URL you entered cannot be found on the server|<b><b>We are sorry\\.\\.\\.|<h1>Uploadstation \\- Page not found</h1>)")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
         String[] links = br.getRegex("<div class=\"col col1\"><a href=\"(http://.*?)\"").getColumn(0);
         if (links == null || links.length == 0) links = br.getRegex("\"(http://(www\\.)?uploadstation\\.com/file/[A-Za-z0-9]+)\"").getColumn(0);
