@@ -48,7 +48,7 @@ public class Vid2CCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("<title> Most Recent Videos \\- Free Sex Adult Videos - Vid2C</title>") || br.getURL().equals("http://www.vid2c.com/videos/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("<title> Most Recent Videos \\- Free Sex Adult Videos - Vid2C</title>") || !br.containsHTML("SWFObject") || br.getURL().equals("http://www.vid2c.com/videos/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<div class=\"left span\\-630\">[\t\n\r ]+<h1>(.*?)</h1").getMatch(0);
         if (filename == null) filename = br.getRegex("<title>(.*?)\\- Free Porn Videos and Sex Movies at Vid2C Porn Tube</title>").getMatch(0);
         DLLINK = br.getRegex("VID=\\d+%26file=(http://.*?)(\\'|\")").getMatch(0);

@@ -62,10 +62,18 @@ public class DeGroopsYahooCom extends PluginForDecrypt {
         synchronized (LOCK) {
             if (!getUserLogin()) return null;
             br.getPage(parameter);
+            if (br.containsHTML("login\\.yahoo\\.com/login")) {
+                this.getPluginConfig().setProperty("cookies", Property.NULL);
+                this.getPluginConfig().save();
+                logger.warning("Cookies not valid anymore, retrying!");
+                decryptedLinks.add(createDownloadlink(parameter));
+                return decryptedLinks;
+            }
             br.setFollowRedirects(false);
             if (parameter.contains("/files/")) {
                 // Handling for file/folderlinks and their names(because they
                 // aren't always correect in the links
+                String fpName = br.getRegex("\\&gt;[\t\n\r ]+(?!<a href=)(.*?) </h4>").getMatch(0);
                 String[][] allLinks = br.getRegex("class=\"title\">[\t\n\r ]+<a href=\"(.*?)\">(.*?)</a>").getMatches();
                 if (allLinks == null || allLinks.length == 0) {
                     logger.warning("Failed to find the finallink(s) for link: " + parameter);
@@ -77,6 +85,13 @@ public class DeGroopsYahooCom extends PluginForDecrypt {
                         dl = createDownloadlink("http://de.groups.yahoo.com" + aLink[0]);
                     } else {
                         dl = createDownloadlink("directhttp://" + aLink[0]);
+                        if (fpName != null) {
+                            FilePackage fp = FilePackage.getInstance();
+                            fp.setName(fpName.trim());
+                            dl.setFilePackage(fp);
+                        } else {
+                            logger.warning("fpName regex failed...");
+                        }
                         dl.setFinalFileName(aLink[1]);
                     }
                     decryptedLinks.add(dl);

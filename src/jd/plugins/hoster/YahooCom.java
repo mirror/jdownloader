@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.util.HashMap;
 
 import jd.PluginWrapper;
+import jd.config.Property;
 import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
@@ -125,13 +126,18 @@ public class YahooCom extends PluginForHost {
         requestFileInformation(link);
         login(account, false);
         br.getPage(link.getDownloadURL());
+        if (br.containsHTML("login\\.yahoo\\.com/login")) {
+            logger.warning("Cookies not valid anymore, retrying!");
+            account.setProperty("cookies", Property.NULL);
+            throw new PluginException(LinkStatus.ERROR_RETRY);
+        }
         String finallink = br.getRegex("class=\"ygrp-photos-body-image\" style=\"height: \\d+px;\"><img src=\"(http://.*?)\"").getMatch(0);
         if (finallink == null) finallink = br.getRegex("\"(http://xa\\.yimg\\.com/kq/groups/\\d+/.*?)\"").getMatch(0);
         if (finallink == null) {
             logger.warning("finallink is null...");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, finallink, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, finallink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
