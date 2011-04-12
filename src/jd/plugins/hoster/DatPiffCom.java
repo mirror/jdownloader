@@ -24,14 +24,14 @@ import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "datpiff.com" }, urls = { "http://(www\\.)?datpiff\\.com/.*?-download\\.php\\?id=[a-z0-9]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "datpiff.com" }, urls = { "http://(www\\.)?datpiff\\.com/(.*?\\-download\\.php\\?id=[a-z0-9]+|[A-Za-z0-9\\-_]+\\.\\d+\\.html)" }, flags = { 2 })
 public class DatPiffCom extends PluginForHost {
 
     public DatPiffCom(PluginWrapper wrapper) {
@@ -48,6 +48,15 @@ public class DatPiffCom extends PluginForHost {
     private static final String ONLYREGISTEREDUSERTEXT = "Only downloadable for registered users";
     private static final String MAINPAGE               = "http://www.datpiff.com/";
 
+    public void correctDownloadLink(DownloadLink link) throws IOException {
+        if (!link.getDownloadURL().contains("-download.php")) {
+            br.getPage(link.getDownloadURL());
+            String downID = br.getRegex("openMixtape\\( \\'(.*?)\\'").getMatch(0);
+            if (downID == null) downID = br.getRegex("mixtapePlayer\\.swf\\?mid=(.*?)\"").getMatch(0);
+            if (downID != null) link.setUrlDownload("http://www.datpiff.com/pop-mixtape-download.php?id=" + downID);
+        }
+    }
+
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
@@ -58,6 +67,10 @@ public class DatPiffCom extends PluginForHost {
             return AvailableStatus.TRUE;
         }
         if (br.containsHTML("(>Download Unavailable<|>A zip file has not yet been generated<)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (!link.getDownloadURL().contains("-download.php")) {
+            logger.warning("downID not found, link is broken!");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         String filename = br.getRegex("<title>Download Mixtape \\&quot;(.*?)\\&quot;</title>").getMatch(0);
         if (filename == null) filename = br.getRegex("<span>Download Mixtape<em>(.*?)</em></span>").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
