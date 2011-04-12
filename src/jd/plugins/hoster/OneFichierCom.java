@@ -20,23 +20,27 @@ import java.io.IOException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
+import jd.http.RandomUserAgent;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "1fichier.com" }, urls = { "http://[a-z0-9]+\\.(dl4free\\.com|alterupload\\.com|cjoint\\.net|desfichiers\\.com|dfichiers\\.com|megadl\\.fr|mesfichiers\\.org|piecejointe\\.net|pjointe\\.com|tenvoi\\.com|1fichier\\.com)/" }, flags = { 2 })
 public class OneFichierCom extends PluginForHost {
+
+    private final String ua = RandomUserAgent.generate();
 
     public OneFichierCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -68,6 +72,7 @@ public class OneFichierCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
+        prepareBrowser(br);
         br.setFollowRedirects(false);
         br.setCustomCharset("utf-8");
         br.getPage(link.getDownloadURL());
@@ -101,17 +106,19 @@ public class OneFichierCom extends PluginForHost {
     }
 
     public void doFree(DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
         String passCode = null;
         // Their limit is just very short so a 30 second waittime for all
         // downloads will remove the limit
-        if (br.containsHTML("(/>Téléchargements en cours|>veuillez patienter avant de télécharger un autre fichier|>You already downloading some files|>Please wait a few seconds before downloading new ones)")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many simultan downloads", 45 * 1000l);
-        String dllink = null;
+        String dllink = br.getRedirectLocation();
+        if (dllink != null && br.containsHTML("(/>Téléchargements en cours|>veuillez patienter avant de télécharger un autre fichier|>You already downloading some files|>Please wait a few seconds before downloading new ones)")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many simultan downloads", 45 * 1000l);
+
         if (br.containsHTML(PASSWORDTEXT)) {
             passCode = handlePassword(downloadLink, passCode);
             dllink = br.getRedirectLocation();
         } else {
-            dllink = br.getRegex("<br/>\\&nbsp;<br/>\\&nbsp;<br/>\\&nbsp;[\t\n\r ]+<a href=\"(http://.*?)\"").getMatch(0);
+            if (dllink == null) {
+                dllink = br.getRegex("<br/>\\&nbsp;<br/>\\&nbsp;<br/>\\&nbsp;[\t\n\r ]+<a href=\"(http://.*?)\"").getMatch(0);
+            }
         }
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         /* server has issues with range requests ->result in broken file */
@@ -128,6 +135,7 @@ public class OneFichierCom extends PluginForHost {
 
     private void login(Account account) throws Exception {
         this.setBrowserExclusive();
+        prepareBrowser(br);
         br.postPage(PREMIUMPAGE, "mail=" + Encoding.urlEncode(account.getUser()) + " &pass=" + Encoding.urlEncode(account.getPass()) + "&secure=on&Login=Login");
         if (br.getCookie(MAINPAGE, "SID") == null || br.getCookie(MAINPAGE, "SID").equals("")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
@@ -166,19 +174,37 @@ public class OneFichierCom extends PluginForHost {
         return ai;
     }
 
+    private void prepareBrowser(final Browser br) {
+        try {
+            if (br == null) { return; }
+            br.getHeaders().put("User-Agent", "Mozilla/5.0 (X11; U; Linux x86_64; en-US; rv:1.9.2.16) Gecko/20110323 Ubuntu/10.10 (maverick) Firefox/3.6.16");
+            br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
+            br.getHeaders().put("Accept-Language", "en-us,en;q=0.5");
+            br.getHeaders().put("Pragma", null);
+            br.getHeaders().put("Cache-Control", null);
+        } catch (Throwable e) {
+            /* setCookie throws exception in 09580 */
+        }
+    }
+
     @Override
     public void handlePremium(DownloadLink link, Account account) throws Exception {
         String passCode = null;
         requestFileInformation(link);
         login(account);
+        Browser brold = br;
+        br = new Browser();
+        prepareBrowser(br);
+        br.setCookie("https://www.1fichier.com", "SID", brold.getCookie("https://www.1fichier.com", "SID"));
         br.setFollowRedirects(false);
+        sleep(10 * 1000l, link);
         br.getPage(link.getDownloadURL().replace("en/index.html", ""));
         if (maxPrem.get() == 5) {
             doFree(link);
         } else {
             if (br.containsHTML(PASSWORDTEXT)) passCode = handlePassword(link, passCode);
             String dllink = br.getRedirectLocation();
-            if (br.containsHTML("(/>Téléchargements en cours|>veuillez patienter avant de télécharger un autre fichier|>You already downloading some files|>Please wait a few seconds before downloading new ones)")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many simultan downloads", 45 * 1000l);
+            if (dllink != null && br.containsHTML("(/>Téléchargements en cours|>veuillez patienter avant de télécharger un autre fichier|>You already downloading some files|>Please wait a few seconds before downloading new ones)")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many simultan downloads", 45 * 1000l);
             if (dllink == null) {
                 logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
