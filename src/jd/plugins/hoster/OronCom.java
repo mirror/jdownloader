@@ -66,7 +66,7 @@ public class OronCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setCookie("http://oron.com", "lang", "english");
         br.setDebug(true);
-        br.getPage("http://oron.com/login.html");
+        br.getPage("http://oron.com/login");
         Form loginform = br.getForm(0);
         if (loginform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         loginform.put("login", Encoding.urlEncode(account.getUser()));
