@@ -48,6 +48,7 @@ public class TubeThumbsCom extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
+        br.setDebug(true);
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("(<TITLE>404 Not Found</TITLE>|H1>Not Found</H1>|was not found on this server\\.<P>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<div id=\"video\">[\t\n\r ]+<h1>(.*?)</h1>").getMatch(0);
@@ -85,7 +86,9 @@ public class TubeThumbsCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
+        // More chunks (and resume) are possible but not all of their servers
+        // allow it
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
