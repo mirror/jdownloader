@@ -596,7 +596,7 @@ public class DirectHTTP extends PluginForHost {
                  * if we already tried htmlRedirect or not exactly one link
                  * found, throw File not available
                  */
-                if (follow.size() != 1 || downloadLink.getBooleanProperty("htmlRedirect", false)) { return AvailableStatus.FALSE; }
+                if (follow.size() != 1 || downloadLink.getBooleanProperty("htmlRedirect", false)) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
                 /* found one valid url */
                 downloadLink.setUrlDownload(follow.get(0).trim());
                 /* we set property here to avoid loops */
@@ -607,7 +607,13 @@ public class DirectHTTP extends PluginForHost {
             }
             return AvailableStatus.TRUE;
         } catch (final PluginException e2) {
-            throw e2;
+            /* try referer set by flashgot and check if it works then */
+            if (downloadLink.getBooleanProperty("tryoldref", false) == false && downloadLink.getStringProperty("referer", null) != null) {
+                downloadLink.setProperty("tryoldref", true);
+                return this.requestFileInformation(downloadLink);
+            } else {
+                throw e2;
+            }
         } catch (final Exception e) {
             JDLogger.exception(e);
         } finally {
@@ -655,6 +661,13 @@ public class DirectHTTP extends PluginForHost {
         if (downloadLink.getStringProperty("refURL", null) != null) {
             /* refURL is for internal use */
             br.getHeaders().put("Referer", downloadLink.getStringProperty("refURL", null));
+        }
+        /*
+         * try the referer set by flashgot, maybe it works
+         */
+        if (downloadLink.getBooleanProperty("tryoldref", false) && downloadLink.getStringProperty("referer", null) != null) {
+            /* refURL is for internal use */
+            br.getHeaders().put("Referer", downloadLink.getStringProperty("referer", null));
         }
         if (downloadLink.getStringProperty("cookies", null) != null) {
             br.getCookies(downloadLink.getDownloadURL()).add(Cookies.parseCookies(downloadLink.getStringProperty("cookies", null), Browser.getHost(downloadLink.getDownloadURL()), null));

@@ -331,7 +331,8 @@ public class HotFileCom extends PluginForHost {
                 dl_url = br.getRegex("table id=\"download_file\".*?<a href=\"(.*?)\"").getMatch(0);/* polish */
             }
             if (dl_url == null) {
-                if (!br.containsHTML("Click here to download")) { throw new PluginException(LinkStatus.ERROR_CAPTCHA); }
+                if (!br.containsHTML("(Click here to download)")) { throw new PluginException(LinkStatus.ERROR_CAPTCHA); }
+                new Throwable().printStackTrace();
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             br.setFollowRedirects(true);

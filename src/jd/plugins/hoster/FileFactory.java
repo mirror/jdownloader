@@ -30,11 +30,11 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -368,6 +368,7 @@ public class FileFactory extends PluginForHost {
                 if (i == 3) { throw e; }
             }
         }
+        if (this.br.containsHTML("This file has been deleted.")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (this.br.containsHTML(FileFactory.NOT_AVAILABLE) && !this.br.containsHTML("there are currently no free download slots")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (this.br.containsHTML(FileFactory.SERVER_DOWN)) {

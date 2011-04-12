@@ -42,7 +42,12 @@ public class BdngCm extends PluginForDecrypt {
         String parameter = param.toString();
         parameter = parameter.replaceAll("\\.com/\\w\\w/", "\\.com/de/");
         br.setCookiesExclusive(true);
-        br.clearCookies(br.getHost());
+        try {
+            br.getCookies("http://www.badongo.com").clear();
+            br.clearCookies(br.getHost());
+        } catch (final Throwable e) {
+            /* catch error in old 09581 stable */
+        }
         br.setCookie("http://www.badongo.com", "badongoL", "de");
         br.setFollowRedirects(false);
         br.getPage(parameter);
