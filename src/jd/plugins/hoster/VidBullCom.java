@@ -242,12 +242,12 @@ public class VidBullCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        doFree(downloadLink, true, -2);
+        doFree(downloadLink, true, 1);
     }
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 1;
+        return 2;
     }
 
     private void waitTime(long timeBefore, DownloadLink downloadLink) throws PluginException {
