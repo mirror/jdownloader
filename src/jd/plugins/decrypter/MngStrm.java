@@ -8,6 +8,7 @@ import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
@@ -34,24 +35,21 @@ public class MngStrm extends PluginForDecrypt {
         for (String page : pages) {
             if (done.contains(page)) continue;
             done.add(page);
+            System.out.println("---- " + page);
         }
         progress.setRange(done.size());
         for (String page : done) {
-            br.getPage("http://mangastream.com" + page);
-            String pageNr = new Regex(page, ".+/(\\d+)$").getMatch(0);
-            String picUrl = br.getRegex("<img src=\"(http://.*?mangastream.com/manga/\\d+/\\d+/.*?\\.(jpg|png))\"").getMatch(0);
-            String ext = br.getRegex("<img src=\"(http://.*?mangastream.com/manga/\\d+/\\d+/.*?\\.(jpg|png))\"").getMatch(1);
-            if (picUrl != null) {
-                DownloadLink link = createDownloadlink("directhttp://" + picUrl);
-                link.setAvailable(true);
-                link.setFinalFileName(title.trim() + "_Page_" + pageNr + "." + ext);
-                decryptedLinks.add(link);
-            }
+            DownloadLink link = createDownloadlink("mangastream://" + page);
+            link.setAvailableStatus(AvailableStatus.TRUE);
+            link.setFinalFileName(title.trim() + " – page " + new Regex(page, ".+/(\\d+)$").getMatch(0) + ".png");
+            decryptedLinks.add(link);
+
             progress.increase(1);
         }
         FilePackage fp = FilePackage.getInstance();
         fp.setName(title.trim());
         fp.addLinks(decryptedLinks);
+
         return decryptedLinks;
     }
 }
