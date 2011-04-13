@@ -18,16 +18,13 @@ package jd.plugins.decrypter;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.gui.swing.components.Balloon;
 import jd.nutils.encoding.Encoding;
-import jd.nutils.nativeintegration.LocalBrowser;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
@@ -72,21 +69,25 @@ public class RsLrCm extends PluginForDecrypt {
 
         br.getPage(parameter);
 
-        if (isExternInterfaceActive()) {
-
-            // CNL Dummy
-            if ((System.currentTimeMillis() - LATEST_OPENED_CNL_TIME) > 60 * 1000 && !CNL_URL_MAP.containsKey(parameter)) {
-                if (br.getRegex("\\<\\!\\-\\- cnl \\-\\-\\>").matches()) {
-                    LATEST_OPENED_CNL_TIME = System.currentTimeMillis();
-
-                    LocalBrowser.openDefaultURL(new URL(parameter.substring(0, parameter.lastIndexOf(".")) + "-jd.html"));
-                    CNL_URL_MAP.put(parameter, Boolean.TRUE);
-                    Balloon.show(JDL.L("jd.controlling.CNL2.checkText.title", "Click'n'Load"), null, JDL.L("jd.controlling.CNL2.checkText.message", "Click'n'Load URL opened"));
-                    return decryptedLinks;
-
-                }
-            }
-        }
+        // if (isExternInterfaceActive()) {
+        //
+        // // CNL Dummy
+        // if ((System.currentTimeMillis() - LATEST_OPENED_CNL_TIME) > 60 * 1000
+        // && !CNL_URL_MAP.containsKey(parameter)) {
+        // if (br.getRegex("\\<\\!\\-\\- cnl \\-\\-\\>").matches()) {
+        // LATEST_OPENED_CNL_TIME = System.currentTimeMillis();
+        //
+        // LocalBrowser.openDefaultURL(new URL(parameter.substring(0,
+        // parameter.lastIndexOf(".")) + "-jd.html"));
+        // CNL_URL_MAP.put(parameter, Boolean.TRUE);
+        // Balloon.show(JDL.L("jd.controlling.CNL2.checkText.title",
+        // "Click'n'Load"), null, JDL.L("jd.controlling.CNL2.checkText.message",
+        // "Click'n'Load URL opened"));
+        // return decryptedLinks;
+        //
+        // }
+        // }
+        // }
         if (parameter.indexOf("/link-") != -1) {
             String link = br.getRegex("<frame.*?src=\"(.*?)\".*?>").getMatch(0);
             if (link == null) return null;
