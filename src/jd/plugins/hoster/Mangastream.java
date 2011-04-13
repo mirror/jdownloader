@@ -34,7 +34,7 @@ public class Mangastream extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 20;
+        return 2;
     }
 
     @Override
