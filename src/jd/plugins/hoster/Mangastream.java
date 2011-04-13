@@ -2,15 +2,14 @@ package jd.plugins.hoster;
 
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.net.URL;
 
 import javax.imageio.ImageIO;
 
 import jd.PluginWrapper;
+import jd.http.URLConnectionAdapter;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -34,6 +33,11 @@ public class Mangastream extends PluginForHost {
     }
 
     @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return 20;
+    }
+
+    @Override
     public String getAGBLink() {
         return "http://mangastream.com/content/privacy";
     }
@@ -51,49 +55,37 @@ public class Mangastream extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
 
-        try {
-            final URL url = new URL("http://mangastream.com" + downloadLink.getDownloadURL().substring(14));
-            final BufferedReader reader = new BufferedReader(new InputStreamReader(url.openStream()));
-            BufferedImage buffer = null;
-            String line;
-            boolean a = false; // Set to true when we get the dimensions of the
-            // whole picture, we do not get get an exception
-            // if the page is ill-formed
-            Graphics2D g = null;
+        // We load the page
+        br.getURL("http://mangastream.com" + downloadLink.getDownloadURL().substring(14));
 
-            downloadLink.getLinkStatus().setStatusText("Working...");
-            downloadLink.getLinkStatus().setStatus(LinkStatus.PLUGIN_IN_PROGRESS);
-            while ((line = reader.readLine()) != null) {
-                if (line.contains("<div style=\"position:relative;width:")) {
-                    // Data about the whole picture. Should be matched before
-                    // the others and only once
+        // We create the final picture based on the informations of the page
+        Regex sizes = br.getRegex("<div style=\"position:relative;width:(\\d+)px;height:(\\d+)px\">");
+        int width = Integer.parseInt(sizes.getMatch(0));
+        int height = Integer.parseInt(sizes.getMatch(1));
+        BufferedImage buffer = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g = buffer.createGraphics();
+        sizes = null;
 
-                    int width = Integer.parseInt(line.split(":")[2].split("px")[0]);
-                    int height = Integer.parseInt(line.split(":")[3].split("px")[0]);
-                    buffer = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
-                    g = buffer.createGraphics();
-                    a = true;
-                } else if (a && line.contains("<div style=\"position:absolute;z-index:")) {
-                    // A chunk of the whole picture
+        downloadLink.getLinkStatus().setStatusText("Working...");
+        downloadLink.getLinkStatus().setStatus(LinkStatus.PLUGIN_IN_PROGRESS);
+        // We get every chunk of the image
+        String[][] chunksData = br.getRegex("<div style=\"position:absolute;z-index:\\d+;width:\\d+px;height:\\d+px;top:(\\d+)px;left:(\\d+)px\"><a href=\"/read/.+?\"><img src=\"(http://img.mangastream.com/m/\\d+/\\d+/\\w+.(jpg|png))\" border=\"0\" /></a></div>").getMatches();
 
-                    URL src = new URL(line.split("<img src=\"")[1].split("\"")[0]);
-                    BufferedImage chunk = ImageIO.read(src);
-                    int offset_left = Integer.parseInt(line.split("left:")[1].split("px")[0]);
-                    int offset_top = Integer.parseInt(line.split("top:")[1].split("px")[0]);
+        for (String[] chunkData : chunksData) {
+            int offsetTop = Integer.parseInt(chunkData[0]);
+            int offsetLeft = Integer.parseInt(chunkData[1]);
 
-                    g.drawImage(chunk, offset_left, offset_top, null);
+            URLConnectionAdapter con = br.openGetConnection(chunkData[2]);
+            BufferedImage chunk = ImageIO.read(con.getInputStream());
 
-                } else if (a && line.contains("</div>")) {
-                    // The end of the picture. Should be matched after the
-                    // others and only once
-                    boolean success = ImageIO.write(buffer, "PNG", new File(downloadLink.getFileOutput()));
-                    downloadLink.getLinkStatus().setStatusText(success ? "Finished" : "Error saving the file");
-                    downloadLink.getLinkStatus().setStatus(success ? LinkStatus.FINISHED : LinkStatus.ERROR_LOCAL_IO);
-                    return;
-                }
-            }
-        } catch (final Exception e) {
-            e.printStackTrace();
+            // We paint the chunk on the picture
+            g.drawImage(chunk, offsetLeft, offsetTop, null);
         }
+
+        boolean success = ImageIO.write(buffer, "PNG", new File(downloadLink.getFileOutput()));
+        downloadLink.getLinkStatus().setStatusText(success ? "Finished" : "Error saving the file");
+        downloadLink.getLinkStatus().setStatus(success ? LinkStatus.FINISHED : LinkStatus.ERROR_LOCAL_IO);
+        return;
+
     }
 }
