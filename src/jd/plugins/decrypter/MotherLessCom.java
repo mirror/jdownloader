@@ -36,8 +36,6 @@ public class MotherLessCom extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private static final String REPLACE = "motherlessmedia";
-
     public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String fpName = parameter.getStringProperty("package");
@@ -62,7 +60,6 @@ public class MotherLessCom extends PluginForDecrypt {
             String parm = parameter.toString();
             String filelink = br.getRegex("s1\\.addParam\\(\\'flashvars\\',\\'file=(http://.*?\\.flv/[a-z0-9]+/[A-Z0-9]+\\.flv)").getMatch(0);
             if (filelink != null) {
-                filelink = filelink.replace(REPLACE, "motherless");
                 filelink = filelink.replace("motherless", "motherlessvideos");
             }
             if (filelink == null) {
@@ -133,7 +130,6 @@ public class MotherLessCom extends PluginForDecrypt {
                 }
             }
         }
-        if (finallink != null) finallink = finallink.replace(REPLACE, "motherless");
         return finallink;
     }
 }
