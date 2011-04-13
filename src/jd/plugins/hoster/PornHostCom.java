@@ -20,15 +20,19 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pornhost.com" }, urls = { "http://[\\w\\.]*?GhtjGEuzrjTU\\.com/([0-9]+/[0-9]+\\.html|[0-9]+)" }, flags = { 0 })
 public class PornHostCom extends PluginForHost {
+
+    private String ending = null;
 
     public PornHostCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -61,7 +65,7 @@ public class PornHostCom extends PluginForHost {
                 if (filename == null) filename = br.getRegex("\"http://file[0-9]+\\.pornhost\\.com/.*?/(.*?)\"").getMatch(0);
             }
         }
-        String ending = br.getRegex("<label>download this file</label>.*?<a href=\".*?\">.*?(\\..*?)</a>").getMatch(0);
+        ending = br.getRegex("<label>download this file</label>.*?<a href=\".*?\">.*?(\\..*?)</a>").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (ending != null && ending.length() > 1) {
             downloadLink.setName(filename.trim() + ending);
@@ -90,7 +94,19 @@ public class PornHostCom extends PluginForHost {
         if (dllink == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         dllink = Encoding.urlDecode(dllink, true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
-        dl.setAllowFilenameFromURL(true);
+        try {
+            dl.setAllowFilenameFromURL(false);
+            String name = Plugin.getFileNameFromHeader(dl.getConnection());
+            if (ending != null && ending.length() <= 1) {
+                String name2 = downloadLink.getName();
+                name = new Regex(name, ".+?(\\..{1,4})").getMatch(0);
+                if (name != null) {
+                    name2 = name2 + name;
+                    downloadLink.setFinalFileName(name2);
+                }
+            }
+        } catch (final Throwable e) {
+        }
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

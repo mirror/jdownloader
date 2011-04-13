@@ -153,7 +153,7 @@ public class FileFactory extends PluginForHost {
             ai.setTrafficLeft(ai.getTrafficMax() - SizeFormatter.getSize(loaded));
         } else {
             max = this.br.getRegex("You can now download up to(.*?)in").getMatch(0);
-            ai.setTrafficMax(SizeFormatter.getSize(max));
+            ai.setTrafficLeft(SizeFormatter.getSize(max));
         }
         this.br.getPage("http://www.filefactory.com/reward/summary.php");
         final String points = this.br.getMatch("Available reward points.*?class=\"amount\">(.*?) points");
