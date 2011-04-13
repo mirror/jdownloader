@@ -17,7 +17,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision: 1 $", interfaceVersion = 2, names = { "mangastream.com" }, urls = { "mangastream:///read/.*?/\\d+/\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mangastream.com" }, urls = { "mangastream:///read/.*?/\\d+/\\d+" }, flags = { 0 })
 public class Mangastream extends PluginForHost {
 
     public Mangastream(PluginWrapper wrapper) {
@@ -75,11 +75,19 @@ public class Mangastream extends PluginForHost {
             int offsetTop = Integer.parseInt(chunkData[0]);
             int offsetLeft = Integer.parseInt(chunkData[1]);
 
-            URLConnectionAdapter con = br.openGetConnection(chunkData[2]);
-            BufferedImage chunk = ImageIO.read(con.getInputStream());
+            URLConnectionAdapter con = null;
+            try {
+                con = br.openGetConnection(chunkData[2]);
+                BufferedImage chunk = ImageIO.read(con.getInputStream());
 
-            // We paint the chunk on the picture
-            g.drawImage(chunk, offsetLeft, offsetTop, null);
+                // We paint the chunk on the picture
+                g.drawImage(chunk, offsetLeft, offsetTop, null);
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (final Throwable e) {
+                }
+            }
         }
 
         boolean success = ImageIO.write(buffer, "PNG", new File(downloadLink.getFileOutput()));
