@@ -41,7 +41,7 @@ import jd.plugins.PluginForHost;
 
 import org.w3c.dom.Document;
 
-@HostPlugin(revision = "$Revision: 13393 $", interfaceVersion = 2, names = { "rtl-now.rtl.de", "voxnow.de", "superrtlnow.de" }, urls = { "http://rtl-now\\.rtl\\.de/\\w+\\.php\\?(container_id=.+|player=.+|film_id=.+)", "http://www\\.voxnow\\.de/\\w+\\.php\\?(container_id=.+|player=.+|film_id=.+)", "http://www\\.superrtlnow\\.de/\\w+\\.php\\?(container_id=.+|player=.+|film_id=.+)" }, flags = { PluginWrapper.DEBUG_ONLY, PluginWrapper.DEBUG_ONLY, PluginWrapper.DEBUG_ONLY })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rtl-now.rtl.de", "voxnow.de", "superrtlnow.de" }, urls = { "http://rtl-now\\.rtl\\.de/\\w+\\.php\\?(container_id=.+|player=.+|film_id=.+)", "http://www\\.voxnow\\.de/\\w+\\.php\\?(container_id=.+|player=.+|film_id=.+)", "http://www\\.superrtlnow\\.de/\\w+\\.php\\?(container_id=.+|player=.+|film_id=.+)" }, flags = { PluginWrapper.DEBUG_ONLY, PluginWrapper.DEBUG_ONLY, PluginWrapper.DEBUG_ONLY })
 public class RTLnowDe extends PluginForHost {
 
     public RTLnowDe(final PluginWrapper wrapper) {
