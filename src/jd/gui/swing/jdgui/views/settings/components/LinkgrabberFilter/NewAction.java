@@ -21,6 +21,7 @@ public class NewAction extends AbstractAction {
     }
 
     public void actionPerformed(ActionEvent e) {
+
     }
 
 }

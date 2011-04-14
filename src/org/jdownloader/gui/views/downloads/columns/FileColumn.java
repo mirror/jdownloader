@@ -1,10 +1,9 @@
 package org.jdownloader.gui.views.downloads.columns;
 
-import java.awt.Component;
 
 import javax.swing.BorderFactory;
 import javax.swing.ImageIcon;
-import javax.swing.JTable;
+import javax.swing.JComponent;
 import javax.swing.border.Border;
 
 import jd.plugins.DownloadLink;
@@ -14,6 +13,7 @@ import jd.utils.JDTheme;
 
 import org.appwork.utils.swing.renderer.RenderLabel;
 import org.appwork.utils.swing.table.ExtColumn;
+import org.appwork.utils.swing.table.ExtTable;
 
 public class FileColumn extends ExtColumn<PackageLinkNode> {
 
@@ -62,7 +62,7 @@ public class FileColumn extends ExtColumn<PackageLinkNode> {
     public void setValue(Object value, PackageLinkNode object) {
     }
 
-    public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+    public JComponent getRendererComponent(ExtTable<E> table, E value, boolean isSelected, boolean hasFocus, int row, int column) {
         if (value instanceof FilePackage) {
             fp = (FilePackage) value;
             jlr.setText(fp.getName());

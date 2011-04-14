@@ -21,7 +21,7 @@ import java.util.ArrayList;
 import org.appwork.utils.swing.table.ExtTableModel;
 import org.appwork.utils.swing.table.columns.ExtCheckColumn;
 import org.appwork.utils.swing.table.columns.ExtLongColumn;
-import org.appwork.utils.swing.table.columns.ExtTextEditorColumn;
+import org.appwork.utils.swing.table.columns.ExtTextColumn;
 import org.jdownloader.extensions.customizer.columns.DLPriorityColumn;
 import org.jdownloader.extensions.customizer.columns.DownloadDirColumn;
 import org.jdownloader.extensions.customizer.translate.T;
@@ -35,7 +35,7 @@ public class CustomizerTableModel extends ExtTableModel<CustomizeSetting> {
     }
 
     protected void initColumns() {
-        this.addColumn(new ExtTextEditorColumn<CustomizeSetting>(T._.jd_plugins_optional_customizer_CustomizerTableModel_name(), this) {
+        this.addColumn(new ExtTextColumn<CustomizeSetting>(T._.jd_plugins_optional_customizer_CustomizerTableModel_name(), this) {
 
             private static final long serialVersionUID = -8945184634371898061L;
 
@@ -80,7 +80,7 @@ public class CustomizerTableModel extends ExtTableModel<CustomizeSetting> {
             }
 
         });
-        this.addColumn(new ExtTextEditorColumn<CustomizeSetting>(T._.jd_plugins_optional_customizer_CustomizerTableModel_regex(), this) {
+        this.addColumn(new ExtTextColumn<CustomizeSetting>(T._.jd_plugins_optional_customizer_CustomizerTableModel_regex(), this) {
 
             private static final long serialVersionUID = 4211754232119068701L;
 
@@ -130,7 +130,7 @@ public class CustomizerTableModel extends ExtTableModel<CustomizeSetting> {
             }
 
         });
-        this.addColumn(new ExtTextEditorColumn<CustomizeSetting>(T._.jd_plugins_optional_customizer_CustomizerTableModel_packageName(), this) {
+        this.addColumn(new ExtTextColumn<CustomizeSetting>(T._.jd_plugins_optional_customizer_CustomizerTableModel_packageName(), this) {
 
             private static final long serialVersionUID = 7315104566941756777L;
 
@@ -206,7 +206,7 @@ public class CustomizerTableModel extends ExtTableModel<CustomizeSetting> {
             }
 
         });
-        this.addColumn(new ExtTextEditorColumn<CustomizeSetting>(T._.jd_plugins_optional_customizer_CustomizerTableModel_password(), this) {
+        this.addColumn(new ExtTextColumn<CustomizeSetting>(T._.jd_plugins_optional_customizer_CustomizerTableModel_password(), this) {
 
             private static final long serialVersionUID = 6345445804247730821L;
 

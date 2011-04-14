@@ -70,10 +70,10 @@ public interface AntireconnectTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Enable/Disable" })
     String settings_linkgrabber_filter_columns_enabled();
 
-    @Default(lngs = { "en" }, values = { "Regular Filter Expression" })
+    @Default(lngs = { "en" }, values = { "Filter" })
     String settings_linkgrabber_filter_columns_regex();
 
-    @Default(lngs = { "en" }, values = { "Filter Type" })
+    @Default(lngs = { "en" }, values = { "Type" })
     String settings_linkgrabber_filter_columns_type();
 
     @Default(lngs = { "en" }, values = { "Filename" })
@@ -84,4 +84,10 @@ public interface AntireconnectTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Plugin" })
     String settings_linkgrabber_filter_types_plugin();
+
+    @Default(lngs = { "en" }, values = { "Advanced Mode (Filter is a full Regular Expression)" })
+    String settings_linkgrabber_filter_columns_advanced();
+
+    @Default(lngs = { "en" }, values = { "Case sensitivy (Filter is case sensitive)" })
+    String settings_linkgrabber_filter_columns_case();
 }

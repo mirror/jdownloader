@@ -19,9 +19,9 @@ public class FilterTable extends ExtTable<LinkFilter> {
     public FilterTable() {
         super(new FilterTableModel("FilterTable"));
         this.setSelectionBackground(Color.BLUE);
-        this.setShowVerticalLines(false);
-        this.setShowGrid(false);
-        this.setShowHorizontalLines(false);
+        this.setShowVerticalLines(true);
+        this.setShowGrid(true);
+        this.setShowHorizontalLines(true);
         this.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
         this.setRowHeight(22);
 

@@ -1,17 +1,17 @@
 package jd.gui.swing.jdgui.views.settings.panels.hoster;
 
-import java.awt.Component;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.net.URL;
 
-import javax.swing.JTable;
+import javax.swing.JComponent;
 import javax.swing.SwingConstants;
 
 import jd.HostPluginWrapper;
 import jd.gui.swing.components.linkbutton.JLink;
 
 import org.appwork.utils.swing.table.ExtColumn;
+import org.appwork.utils.swing.table.ExtTable;
 import org.appwork.utils.swing.table.ExtTableModel;
 import org.jdesktop.swingx.renderer.JRendererLabel;
 import org.jdownloader.gui.translate.T;
@@ -43,7 +43,7 @@ public class TosColumn extends ExtColumn<HostPluginWrapper> implements ActionLis
     }
 
     @Override
-    public Component getTableCellEditorComponent(JTable table, Object value, boolean isSelected, int row, int column) {
+    public JComponent getEditorComponent(ExtTable<HostPluginWrapper> table, HostPluginWrapper value, boolean isSelected, int row, int column) {
         try {
             String url = ((HostPluginWrapper) value).getPlugin().getAGBLink();
             if (url == null || url.length() == 0) {
@@ -57,7 +57,7 @@ public class TosColumn extends ExtColumn<HostPluginWrapper> implements ActionLis
     }
 
     @Override
-    public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+    public JComponent getRendererComponent(ExtTable<HostPluginWrapper> table, HostPluginWrapper value, boolean isSelected, boolean hasFocus, int row, int column) {
         return labelRend;
     }
 

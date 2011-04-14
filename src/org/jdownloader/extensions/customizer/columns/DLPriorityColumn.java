@@ -16,14 +16,14 @@
 
 package org.jdownloader.extensions.customizer.columns;
 
-import java.awt.Component;
 
 import javax.swing.JComboBox;
-import javax.swing.JTable;
+import javax.swing.JComponent;
 
 import jd.gui.swing.jdgui.views.downloads.DownloadTable;
 
 import org.appwork.utils.swing.table.ExtColumn;
+import org.appwork.utils.swing.table.ExtTable;
 import org.appwork.utils.swing.table.ExtTableModel;
 import org.jdesktop.swingx.renderer.JRendererLabel;
 import org.jdownloader.extensions.customizer.CustomizeSetting;
@@ -66,13 +66,13 @@ public class DLPriorityColumn extends ExtColumn<CustomizeSetting> {
     }
 
     @Override
-    public Component getTableCellEditorComponent(JTable table, Object value, boolean isSelected, int row, int column) {
+    public JComponent getEditorComponent(ExtTable<E> table, E value, boolean isSelected, int row, int column) {
         prio.setSelectedIndex(((CustomizeSetting) value).getDLPriority() + 1);
         return prio;
     }
 
     @Override
-    public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+    public JComponent getRendererComponent(ExtTable<E> table, E value, boolean isSelected, boolean hasFocus, int row, int column) {
         jlr.setText(prioDescs[((CustomizeSetting) value).getDLPriority() + 1]);
         return jlr;
     }

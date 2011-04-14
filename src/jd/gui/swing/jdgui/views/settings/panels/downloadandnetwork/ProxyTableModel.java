@@ -17,7 +17,7 @@ import org.appwork.utils.swing.table.columns.ExtCheckColumn;
 import org.appwork.utils.swing.table.columns.ExtPasswordEditorColumn;
 import org.appwork.utils.swing.table.columns.ExtRadioColumn;
 import org.appwork.utils.swing.table.columns.ExtTextColumn;
-import org.appwork.utils.swing.table.columns.ExtTextEditorColumn;
+import org.appwork.utils.swing.table.columns.ExtTextColumn;
 import org.jdownloader.gui.translate.T;
 
 public class ProxyTableModel extends ExtTableModel<ProxyInfo> implements DefaultEventListener<ProxyEvent<ProxyInfo>> {
@@ -74,7 +74,7 @@ public class ProxyTableModel extends ExtTableModel<ProxyInfo> implements Default
             }
 
         });
-        this.addColumn(new ExtTextEditorColumn<ProxyInfo>(T._.gui_column_user(), this) {
+        this.addColumn(new ExtTextColumn<ProxyInfo>(T._.gui_column_user(), this) {
 
             private static final long serialVersionUID = -7209180150340921804L;
 

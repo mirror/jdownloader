@@ -18,13 +18,13 @@ package org.jdownloader.extensions.langfileeditor.columns;
 
 import org.appwork.utils.Regex;
 import org.appwork.utils.swing.table.ExtTableModel;
-import org.appwork.utils.swing.table.columns.ExtTextEditorColumn;
+import org.appwork.utils.swing.table.columns.ExtTextColumn;
 import org.jdownloader.extensions.langfileeditor.KeyInfo;
 import org.jdownloader.extensions.langfileeditor.LFEGui;
 import org.jdownloader.extensions.langfileeditor.LFETableModel;
 import org.jdownloader.extensions.langfileeditor.translate.T;
 
-public class LanguageColumn extends ExtTextEditorColumn<KeyInfo> {
+public class LanguageColumn extends ExtTextColumn<KeyInfo> {
 
     private static final long serialVersionUID = -2305836770033923728L;
 

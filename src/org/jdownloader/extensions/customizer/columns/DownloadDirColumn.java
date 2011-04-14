@@ -16,14 +16,15 @@
 
 package org.jdownloader.extensions.customizer.columns;
 
-import java.awt.Component;
 
-import javax.swing.JTable;
+import javax.swing.JComponent;
+
 
 import jd.gui.swing.components.BrowseFile;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.utils.swing.table.ExtColumn;
+import org.appwork.utils.swing.table.ExtTable;
 import org.appwork.utils.swing.table.ExtTableModel;
 import org.jdesktop.swingx.renderer.JRendererLabel;
 import org.jdownloader.extensions.customizer.CustomizeSetting;
@@ -68,13 +69,13 @@ public class DownloadDirColumn extends ExtColumn<CustomizeSetting> {
     }
 
     @Override
-    public Component getTableCellEditorComponent(JTable table, Object value, boolean isSelected, int row, int column) {
+    public JComponent getEditorComponent(ExtTable<E> table, E value, boolean isSelected, int row, int column) {
         file.setText(((CustomizeSetting) value).getDownloadDir());
         return file;
     }
 
     @Override
-    public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+    public JComponent getRendererComponent(ExtTable<E> table, E value, boolean isSelected, boolean hasFocus, int row, int column) {
         jlr.setText(((CustomizeSetting) value).getDownloadDir());
         return jlr;
     }

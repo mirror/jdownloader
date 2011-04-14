@@ -1,9 +1,8 @@
 package org.jdownloader.gui.views.downloads.columns;
 
-import java.awt.Component;
 
 import javax.swing.ImageIcon;
-import javax.swing.JTable;
+import javax.swing.JComponent;
 
 import jd.gui.swing.jdgui.components.StatusLabel;
 import jd.plugins.DownloadLink;
@@ -13,6 +12,7 @@ import jd.plugins.PluginForHost;
 import jd.utils.JDTheme;
 
 import org.appwork.utils.swing.table.ExtColumn;
+import org.appwork.utils.swing.table.ExtTable;
 import org.jdownloader.gui.translate.T;
 
 public class HosterIconColumn extends ExtColumn<PackageLinkNode> {
@@ -63,7 +63,7 @@ public class HosterIconColumn extends ExtColumn<PackageLinkNode> {
     public void setValue(Object value, PackageLinkNode object) {
     }
 
-    public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+    public JComponent getRendererComponent(ExtTable<E> table, E value, boolean isSelected, boolean hasFocus, int row, int column) {
         if (value instanceof FilePackage) {
             statuspanel.setText("FilePackage", null);
         } else {

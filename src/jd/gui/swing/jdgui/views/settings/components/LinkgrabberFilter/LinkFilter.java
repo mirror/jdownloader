@@ -8,6 +8,25 @@ public class LinkFilter {
     }
 
     private boolean enabled;
+    private boolean fullRegex;
+
+    public boolean isFullRegex() {
+        return fullRegex;
+    }
+
+    public void setFullRegex(boolean fullRegex) {
+        this.fullRegex = fullRegex;
+    }
+
+    public boolean isCaseSensitive() {
+        return caseSensitive;
+    }
+
+    public void setCaseSensitive(boolean caseSensitive) {
+        this.caseSensitive = caseSensitive;
+    }
+
+    private boolean caseSensitive;
 
     public Types getType() {
         return type;
