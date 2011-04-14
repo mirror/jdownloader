@@ -1,6 +1,5 @@
 package org.jdownloader.gui.views.downloads.columns;
 
-
 import javax.swing.ImageIcon;
 import javax.swing.JComponent;
 
@@ -63,7 +62,7 @@ public class HosterIconColumn extends ExtColumn<PackageLinkNode> {
     public void setValue(Object value, PackageLinkNode object) {
     }
 
-    public JComponent getRendererComponent(ExtTable<E> table, E value, boolean isSelected, boolean hasFocus, int row, int column) {
+    public JComponent getRendererComponent(ExtTable<PackageLinkNode> table, PackageLinkNode value, boolean isSelected, boolean hasFocus, int row, int column) {
         if (value instanceof FilePackage) {
             statuspanel.setText("FilePackage", null);
         } else {

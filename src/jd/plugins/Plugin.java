@@ -20,7 +20,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
 import java.net.URL;
-import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Random;
@@ -33,7 +32,6 @@ import jd.HostPluginWrapper;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.SubConfiguration;
-import jd.controlling.JDLogger;
 import jd.controlling.JDPluginLogger;
 import jd.event.ControlEvent;
 import jd.gui.swing.jdgui.menu.MenuAction;
@@ -43,7 +41,7 @@ import jd.nutils.Formatter;
 import jd.nutils.encoding.Encoding;
 import jd.utils.JDUtilities;
 
-import org.appwork.utils.Regex;
+import org.appwork.utils.net.httpconnection.HTTPConnectionUtils;
 import org.jdownloader.translate.JDT;
 
 /**
@@ -86,103 +84,7 @@ public abstract class Plugin implements ActionListener {
     }
 
     public static String getFileNameFromDispositionHeader(String header) {
-        // http://greenbytes.de/tech/tc2231/
-        if (header == null) { return null; }
-        final String orgheader = header;
-        String contentdisposition = header;
-
-        String filename = null;
-        for (int i = 0; i < 2; i++) {
-            if (contentdisposition.contains("filename*")) {
-                /* Codierung default */
-                /*
-                 * Content-Disposition: attachment;filename==?UTF-8?B?
-                 * RGF2aWQgR3VldHRhIC0gSnVzdCBBIExpdHRsZSBNb3JlIExvdmUgW2FMYnlsb3ZlciBYLUNsdXNpdiBSZW1peF0uTVAz
-                 * ?=
-                 */
-                /* remove fallback, in case RFC 2231/5987 appear */
-                contentdisposition = contentdisposition.replaceAll("filename=.*?;", "");
-                contentdisposition = contentdisposition.replaceAll("filename\\*", "filename");
-                final String format = new Regex(contentdisposition, ".*?=[ \"']*(.+)''").getMatch(0);
-                if (format == null) {
-                    JDLogger.getLogger().severe("Content-Disposition: invalid format: " + header);
-                    filename = null;
-                    return filename;
-                }
-                contentdisposition = contentdisposition.replaceAll(format + "''", "");
-                filename = new Regex(contentdisposition, "filename.*?=[ ]*\"(.+)\"").getMatch(0);
-                if (filename == null) {
-                    filename = new Regex(contentdisposition, "filename.*?=[ ]*'(.+)'").getMatch(0);
-                }
-                if (filename == null) {
-                    header = header.replaceAll("=", "=\"") + "\"";
-                    header = header.replaceAll(";\"", "\"");
-                    contentdisposition = header;
-                } else {
-                    try {
-                        filename = URLDecoder.decode(filename, format);
-                    } catch (final Exception e) {
-                        JDLogger.getLogger().severe("Content-Disposition: could not decode filename: " + header);
-                        filename = null;
-                        return filename;
-                    }
-                }
-            } else if (new Regex(contentdisposition, "=\\?.*?\\?.*?\\?.*?\\?=").matches()) {
-                /*
-                 * Codierung Encoded Words, TODO: Q-Encoding und mehrfach
-                 * tokens, aber noch nicht in freier Wildbahn gesehen
-                 */
-                final String tokens[][] = new Regex(contentdisposition, "=\\?(.*?)\\?(.*?)\\?(.*?)\\?=").getMatches();
-                if (tokens.length == 1 && tokens[0].length == 3 && tokens[0][1].trim().equalsIgnoreCase("B")) {
-                    /* Base64 Encoded */
-                    try {
-                        filename = URLDecoder.decode(Encoding.Base64Decode(tokens[0][2].trim()), tokens[0][0].trim());
-                    } catch (final Exception e) {
-                        JDLogger.getLogger().severe("Content-Disposition: could not decode filename: " + header);
-                        filename = null;
-                        return filename;
-                    }
-                }
-            } else if (new Regex(contentdisposition, "=\\?.*?\\?.*?\\?=").matches()) {
-                /* Unicode Format wie es 4Shared nutzt */
-                final String tokens[][] = new Regex(contentdisposition, "=\\?(.*?)\\?(.*?)\\?=").getMatches();
-                if (tokens.length == 1 && tokens[0].length == 2) {
-                    try {
-                        contentdisposition = new String(tokens[0][1].trim().getBytes("ISO-8859-1"), tokens[0][0].trim());
-                        continue;
-                    } catch (final Exception e) {
-                        JDLogger.getLogger().severe("Content-Disposition: could not decode filename: " + header);
-                        filename = null;
-                        return filename;
-                    }
-                }
-            } else {
-                /* ohne Codierung */
-                filename = new Regex(contentdisposition, "filename.*?=[ ]*\"(.+)\"").getMatch(0);
-                if (filename == null) {
-                    filename = new Regex(contentdisposition, "filename.*?=[ ]*'(.+)'").getMatch(0);
-                }
-                if (filename == null) {
-                    header = header.replaceAll("=", "=\"") + "\"";
-                    header = header.replaceAll(";\"", "\"");
-                    contentdisposition = header;
-                }
-            }
-            if (filename != null) {
-                break;
-            }
-        }
-        if (filename != null) {
-            filename = filename.trim();
-            if (filename.startsWith("\"")) {
-                JDLogger.getLogger().info("Using Workaround for broken filename header!");
-                filename = filename.substring(1);
-            }
-        }
-        if (filename == null) {
-            JDLogger.getLogger().severe("Content-Disposition: could not parse header: " + orgheader);
-        }
-        return filename;
+        return HTTPConnectionUtils.getFileNameFromDispositionHeader(header);
     }
 
     /**

@@ -16,9 +16,7 @@
 
 package org.jdownloader.extensions.customizer.columns;
 
-
 import javax.swing.JComponent;
-
 
 import jd.gui.swing.components.BrowseFile;
 import net.miginfocom.swing.MigLayout;
@@ -69,13 +67,13 @@ public class DownloadDirColumn extends ExtColumn<CustomizeSetting> {
     }
 
     @Override
-    public JComponent getEditorComponent(ExtTable<E> table, E value, boolean isSelected, int row, int column) {
+    public JComponent getEditorComponent(ExtTable<CustomizeSetting> table, CustomizeSetting value, boolean isSelected, int row, int column) {
         file.setText(((CustomizeSetting) value).getDownloadDir());
         return file;
     }
 
     @Override
-    public JComponent getRendererComponent(ExtTable<E> table, E value, boolean isSelected, boolean hasFocus, int row, int column) {
+    public JComponent getRendererComponent(ExtTable<CustomizeSetting> table, CustomizeSetting value, boolean isSelected, boolean hasFocus, int row, int column) {
         jlr.setText(((CustomizeSetting) value).getDownloadDir());
         return jlr;
     }
