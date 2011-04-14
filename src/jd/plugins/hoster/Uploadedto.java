@@ -261,6 +261,10 @@ public class Uploadedto extends PluginForHost {
         Browser brc = br.cloneBrowser();
         brc.getPage("http://uploaded.to/js/download.js");
         String recaptcha = brc.getRegex("Recaptcha\\.create\\(\"(.*?)\"").getMatch(0);
+        if (recaptcha == null) {
+            logger.severe(brc.toString());
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
         jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
         rc.setId(recaptcha.trim());

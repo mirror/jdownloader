@@ -21,7 +21,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
-import jd.http.RandomUserAgent;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -39,8 +38,6 @@ import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "1fichier.com" }, urls = { "http://[a-z0-9]+\\.(dl4free\\.com|alterupload\\.com|cjoint\\.net|desfichiers\\.com|dfichiers\\.com|megadl\\.fr|mesfichiers\\.org|piecejointe\\.net|pjointe\\.com|tenvoi\\.com|1fichier\\.com)/" }, flags = { 2 })
 public class OneFichierCom extends PluginForHost {
-
-    private final String ua = RandomUserAgent.generate();
 
     public OneFichierCom(PluginWrapper wrapper) {
         super(wrapper);

@@ -381,8 +381,8 @@ public class TbCm extends PluginForDecrypt {
             br = this.br;
         }
         br.setFollowRedirects(true);
-        /* the cookie and the user-agent makes html5 available */
-        br.setCookie("youtube.com", "PREF", "f2=40000000");
+        /* this cookie makes html5 available and skip controversy check */
+        br.setCookie("youtube.com", "PREF", "f2=40100000");
         br.getHeaders().put("User-Agent", "Wget/1.12");
         br.getPage(video);
         final String VIDEOID = new Regex(video, "watch\\?v=([\\w_-]+)").getMatch(0);

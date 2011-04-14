@@ -31,12 +31,12 @@ import jd.parser.html.HTMLParser;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -395,6 +395,7 @@ public class FileCrownCom extends PluginForHost {
                     }
                 }
             }
+            if (dllink == null) dllink = new Regex(BRBEFORE, "link:.*?<br>.*?a href=\"(http.*?)\"").getMatch(0);
         }
         return dllink;
     }

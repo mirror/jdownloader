@@ -20,6 +20,7 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 
 import jd.PluginWrapper;
+import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -110,6 +111,11 @@ public class ZomgUploadCom extends PluginForHost {
         if (br.containsHTML("File not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         Form[] forms = br.getForms();
         if (forms == null || forms.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        String formFix = br.getRegex("fname.*?value=\"(.*?)\"").getMatch(0);
+        if (formFix != null) {
+            /* workaround for old browser bug, in 09581 stable */
+            forms[0].put("fname", Encoding.urlEncode(formFix));
+        }
         forms[0].remove("method_premium");
         br.submitForm(forms[0]);
         String filename = br.getRegex("<tr><td align=right><b>Filename:</b></td><td nowrap>(.*?)</b></td></tr>").getMatch(0);

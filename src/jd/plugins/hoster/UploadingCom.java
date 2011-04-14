@@ -42,15 +42,15 @@ import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploading.com" }, urls = { "http://[\\w\\.]*?uploading\\.com/files/(get/)?\\w+" }, flags = { 2 })
 public class UploadingCom extends PluginForHost {
-    private static int simultanpremium = 1;
-    private static final Object PREMLOCK = new Object();
+    private static int          simultanpremium = 1;
+    private static final Object PREMLOCK        = new Object();
     // private String otherUseragent =
     // "Mozilla/5.0 (Windows; U; Windows NT 6.0; chrome://global/locale/intl.properties; rv:1.8.1.12) Gecko/2008102920  Firefox/3.0.0";
-    private String userAgent = RandomUserAgent.generate();
-    private boolean free = false;
-    private static final String FILEIDREGEX = "name=\"file_id\" value=\"(.*?)\"";
-    private static final String CODEREGEX = "uploading\\.com/files/get/(.+)";
-    private static final Object LOCK = new Object();
+    private String              userAgent       = RandomUserAgent.generate();
+    private boolean             free            = false;
+    private static final String FILEIDREGEX     = "name=\"file_id\" value=\"(.*?)\"";
+    private static final String CODEREGEX       = "uploading\\.com/files/get/(.+)";
+    private static final Object LOCK            = new Object();
 
     public UploadingCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -279,6 +279,33 @@ public class UploadingCom extends PluginForHost {
         dl.startDownload();
     }
 
+    public AvailableStatus fileCheck(DownloadLink downloadLink) throws PluginException, IOException {
+        br.getPage(downloadLink.getDownloadURL());
+        if (br.containsHTML("but due to abuse or through deletion by")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("file was removed")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+
+        String filesize = br.getRegex("File size: <b>(.*?)</b>").getMatch(0);
+        String filename = br.getRegex(">Download(.*?)for free on uploading.com").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex(">File download</h2><br/>.*?<h2>(.*?)</h2>").getMatch(0);
+            if (filename == null) {
+                // Last try to get the filename, if this
+                String fname = new Regex(downloadLink.getDownloadURL(), "uploading\\.com/files/\\w+/([a-zA-Z0-9 ._]+)").getMatch(0);
+                fname = fname.replace(" ", "_");
+                if (br.containsHTML(fname)) {
+                    filename = fname;
+                }
+
+            }
+        }
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        downloadLink.setName(filename.trim());
+        if (filesize != null) {
+            downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.trim()));
+        }
+        return AvailableStatus.TRUE;
+    }
+
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
         setBrowserExclusive();
@@ -288,14 +315,14 @@ public class UploadingCom extends PluginForHost {
         br.setCookie("http://www.uploading.com/", "language", "1");
         br.setCookie("http://www.uploading.com/", "setlang", "en");
         br.setCookie("http://www.uploading.com/", "_lang", "en");
-        checkLinks(new DownloadLink[] { downloadLink });
-        if (!downloadLink.isAvailabilityStatusChecked()) {
-            downloadLink.setAvailableStatus(AvailableStatus.UNCHECKABLE);
-        } else if (!downloadLink.isAvailable()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        return downloadLink.getAvailableStatus();
+        return fileCheck(downloadLink);
     }
 
     public boolean checkLinks(DownloadLink[] urls) {
+        if (true) {
+            /* linkcheck api broken at the moment */
+            return false;
+        }
         if (urls == null || urls.length == 0) { return false; }
         try {
             ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();

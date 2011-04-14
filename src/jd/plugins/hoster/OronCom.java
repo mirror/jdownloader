@@ -43,7 +43,8 @@ import org.appwork.utils.formatter.TimeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "oron.com" }, urls = { "http://[\\w\\.]*?oron\\.com/[a-z0-9]{12}" }, flags = { 2 })
 public class OronCom extends PluginForHost {
 
-    private static AtomicInteger maxPrem = new AtomicInteger(1);
+    private static AtomicInteger maxPrem            = new AtomicInteger(1);
+    private boolean              showAccountCaptcha = false;
 
     public OronCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -72,6 +73,27 @@ public class OronCom extends PluginForHost {
         loginform.put("login", Encoding.urlEncode(account.getUser()));
         loginform.put("password", Encoding.urlEncode(account.getPass()));
         br.submitForm(loginform);
+        if (br.containsHTML("recaptcha_challenge_field")) {
+            /* too many logins result in recaptcha login */
+            if (showAccountCaptcha == false) {
+                AccountInfo ai = account.getAccountInfo();
+                if (ai != null) {
+                    ai.setStatus("Logout/Login in Browser please!");
+                }
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            } else {
+                PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+                jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+                rc.parse();
+                rc.load();
+                File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+                DownloadLink dummyLink = new DownloadLink(null, "Account", "oron.com", "http://oron.com", true);
+                String c = getCaptchaCode(cf, dummyLink);
+                rc.getForm().put("login", Encoding.urlEncode(account.getUser()));
+                rc.getForm().put("password", Encoding.urlEncode(account.getPass()));
+                rc.setCode(c);
+            }
+        }
         br.getPage("http://oron.com/?op=my_account");
         if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         if (!br.containsHTML("Premium Account expires") && !br.containsHTML("Upgrade to premium")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -84,6 +106,7 @@ public class OronCom extends PluginForHost {
         /* reset maxPrem workaround on every fetchaccount info */
         maxPrem.set(1);
         try {
+            showAccountCaptcha = true;
             login(account);
         } catch (PluginException e) {
             account.setValid(false);
