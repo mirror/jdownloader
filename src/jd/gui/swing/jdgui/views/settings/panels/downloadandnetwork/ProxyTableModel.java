@@ -17,7 +17,6 @@ import org.appwork.utils.swing.table.columns.ExtCheckColumn;
 import org.appwork.utils.swing.table.columns.ExtPasswordEditorColumn;
 import org.appwork.utils.swing.table.columns.ExtRadioColumn;
 import org.appwork.utils.swing.table.columns.ExtTextColumn;
-import org.appwork.utils.swing.table.columns.ExtTextColumn;
 import org.jdownloader.gui.translate.T;
 
 public class ProxyTableModel extends ExtTableModel<ProxyInfo> implements DefaultEventListener<ProxyEvent<ProxyInfo>> {

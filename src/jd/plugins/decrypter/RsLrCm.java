@@ -19,7 +19,6 @@ package jd.plugins.decrypter;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
@@ -38,11 +37,9 @@ import jd.utils.locale.JDL;
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rs-layer.com" }, urls = { "http://[\\w\\.]*?rs-layer\\.com/(.+)\\.html" }, flags = { 0 })
 public class RsLrCm extends PluginForDecrypt {
 
-    private static Pattern                  linkPattern            = Pattern.compile("onclick=\"getFile\\('([^;]*)'\\)", Pattern.CASE_INSENSITIVE);
-    private static String                   strCaptchaPattern      = "<img src=\"(captcha-[^\"]*\\.png)\" ";
-    private Pattern                         patternSupported       = Pattern.compile("http://[\\w\\.]*?rs-layer\\.com/(.+)\\.html", Pattern.CASE_INSENSITIVE);
-    private static long                     LATEST_OPENED_CNL_TIME = 0;
-    private static HashMap<String, Boolean> CNL_URL_MAP            = new HashMap<String, Boolean>();
+    private static Pattern linkPattern       = Pattern.compile("onclick=\"getFile\\('([^;]*)'\\)", Pattern.CASE_INSENSITIVE);
+    private static String  strCaptchaPattern = "<img src=\"(captcha-[^\"]*\\.png)\" ";
+    private Pattern        patternSupported  = Pattern.compile("http://[\\w\\.]*?rs-layer\\.com/(.+)\\.html", Pattern.CASE_INSENSITIVE);
 
     public RsLrCm(PluginWrapper wrapper) {
         super(wrapper);

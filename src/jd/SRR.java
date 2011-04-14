@@ -2,12 +2,9 @@ package jd;
 
 import java.awt.Color;
 import java.awt.Component;
-import java.text.DateFormat;
-import java.text.NumberFormat;
 
 import javax.swing.JLabel;
 import javax.swing.JTable;
-import javax.swing.border.Border;
 import javax.swing.table.TableCellRenderer;
 
 public class SRR extends JLabel implements TableCellRenderer {
@@ -137,14 +134,15 @@ public class SRR extends JLabel implements TableCellRenderer {
     // public void firePropertyChange(String s, boolean flag, boolean flag1) {
     // }
 
-    private static final long    serialVersionUID = 9059722839161202006L;
-    private static final boolean JAVA5            = System.getProperty("java.version").startsWith("1.5.");
-    private Border               noFocusBorder;
-    private Border               focusBorder;
-    private NumberFormat         numberFormat;
-    private DateFormat           dateFormat;
-    private Color                alternateColor;
-    private boolean              colorCachingEnabled;
-    private Color                unselectedForeground;
-    private Color                unselectedBackground;
+    private static final long serialVersionUID = 9059722839161202006L;
+    // private static final boolean JAVA5 =
+    // System.getProperty("java.version").startsWith("1.5.");
+    // private Border noFocusBorder;
+    // private Border focusBorder;
+    // private NumberFormat numberFormat;
+    // private DateFormat dateFormat;
+    // private Color alternateColor;
+    // private boolean colorCachingEnabled;
+    // private Color unselectedForeground;
+    // private Color unselectedBackground;
 }

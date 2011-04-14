@@ -30,7 +30,6 @@ import jd.controlling.JSonWrapper;
 import jd.gui.UserIO;
 import jd.gui.swing.jdgui.JDGuiConstants;
 import jd.gui.swing.jdgui.views.settings.ConfigPanel;
-import jd.gui.swing.laf.LookAndFeelController;
 import jd.utils.JDTheme;
 import jd.utils.locale.JDL;
 import jd.utils.locale.JDLocale;
@@ -77,11 +76,16 @@ public class General extends ConfigPanel {
         ce.setDefaultValue(JDL.DEFAULT_LOCALE);
         ce.setPropertyType(PropertyType.NEEDS_RESTART);
 
-        if (LookAndFeelController.getInstance().getSupportedLookAndFeels().length > 1) {
-            look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, this.subConfig, LookAndFeelController.PARAM_PLAF, LookAndFeelController.getInstance().getSupportedLookAndFeels(), T._.gui_config_gui_plaf()));
-            ce.setDefaultValue(LookAndFeelController.getInstance().getPlaf());
-            ce.setPropertyType(PropertyType.NEEDS_RESTART);
-        }
+        // if
+        // (LookAndFeelController.getInstance().getSupportedLookAndFeels().length
+        // > 1) {
+        // look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX,
+        // this.subConfig, LookAndFeelController.PARAM_PLAF,
+        // LookAndFeelController.getInstance().getSupportedLookAndFeels(),
+        // T._.gui_config_gui_plaf()));
+        // ce.setDefaultValue(LookAndFeelController.getInstance().getPlaf());
+        // ce.setPropertyType(PropertyType.NEEDS_RESTART);
+        // }
 
         look.setGroup(new ConfigGroup(T._.gui_config_gui_feel(), "gui.images.configuration"));
         // look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER,
