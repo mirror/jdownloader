@@ -47,17 +47,17 @@ public class OrgasmCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        final String playpath = br.getRegex("videoPath=(.*?)&").getMatch(0);
-        final String url = br.getRegex("pod=(.*?)&").getMatch(0);
+        String playpath = br.getRegex("file: \"(.*?)\",").getMatch(0);
+        final String url = br.getRegex("streamer: \"(.*?)\",").getMatch(0);
         if (playpath == null || url == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-        final String dllink = "rtmp://" + url + "/simplevideostreaming";
+        playpath = playpath.replace("med", "high");
 
-        dl = new RTMPDownload(this, downloadLink, dllink + playpath + "high");
+        dl = new RTMPDownload(this, downloadLink, url + playpath);
         final RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
 
         rtmp.setResume(false); // resume not working
-        rtmp.setPlayPath(playpath + "high");
-        rtmp.setUrl(dllink);
+        rtmp.setPlayPath(playpath);
+        rtmp.setUrl(url);
         rtmp.setSwfUrl("http://flash.orgasm.com/player.swf");
 
         ((RTMPDownload) dl).startDownload();
@@ -71,7 +71,7 @@ public class OrgasmCom extends PluginForHost {
         if (br.containsHTML("Movie Not Found")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         String filename = br.getRegex("playerHeader\">(.*?)</div>").getMatch(0);
         if (filename == null) {
-            filename = dllink.substring(dllink.lastIndexOf("/"));
+            filename = br.getRegex("title: \"(.*?)\"").getMatch(0);
         }
         if (filename == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         downloadLink.setName(filename.trim() + ".flv");
