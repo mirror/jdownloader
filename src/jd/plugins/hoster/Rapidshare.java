@@ -473,7 +473,6 @@ public class Rapidshare extends PluginForHost {
             /** TODO: Umbauen auf jd.plugins.BrowserAdapter.openDownload(br,...) **/
             // Download
             this.dl = new RAFDownload(this, downloadLink, request);
-            br.getPage(url)
             URLConnectionAdapter con;
             try {
                 // connect() throws an exception if there is a location header
