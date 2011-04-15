@@ -153,7 +153,10 @@ public class FrShrdFldr extends PluginForDecrypt {
                 if (subDir.length == 1) {
                     progress.increase(1);
                 }
-                final String[] links = br.getRegex("ml_file(.*?)File</td>.*?<.*?title").getColumn(0);
+                String[] links = br.getRegex("ml_file(.*?)File</td>.*?<.*?title").getColumn(0);
+                if (links.length == 0) {
+                    links = br.getRegex("ml_file(.*?)title=").getColumn(0);
+                }
                 // scan page
 
                 for (String dl : links) {
