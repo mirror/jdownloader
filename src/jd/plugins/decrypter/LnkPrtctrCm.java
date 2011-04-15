@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.parser.html.Form;
+import jd.parser.html.Form.MethodType;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -62,6 +63,7 @@ public class LnkPrtctrCm extends PluginForDecrypt {
             if (link == null || link.length() < 10) {
                 Form form = br.getForm(0);
                 if (form != null) {
+                    form.setMethod(MethodType.GET);
                     br.setFollowRedirects(false);
                     br.submitForm(form);
                 }
