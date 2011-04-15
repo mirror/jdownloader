@@ -66,7 +66,7 @@ public class BitLoadCom extends PluginForHost {
         br.getHeaders().put("User-Agent", agent);
         br.setCookie("http://www.bitload.com", "locale", "de");
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML(">Datei nicht gefunden")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("(>Datei nicht gefunden|>Die Datei wurde aufgrund von Urheberrechtsverletzung von unseren Servern entfernt)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         Regex nameAndSize = br.getRegex("Ihre Datei <strong>(.*?) \\((\\d+,\\d+ .*?)\\)</strong> wird angefordert");
         String filename = nameAndSize.getMatch(0);
         if (filename == null) filename = br.getRegex("Sie möchten <strong>(.*?)</strong> schauen <br/>").getMatch(0);
