@@ -22,11 +22,11 @@ import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -85,10 +85,11 @@ public class ZidduCom extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(Url);
         if (br.getRedirectLocation() != null && (br.getRedirectLocation().contains("errortracking") || br.getRedirectLocation().contains("notfound"))) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = Encoding.htmlDecode(br.getRegex("textblue14\">(.*?)</span>").getMatch(0));
+        String filename = br.getRegex("top\\.document\\.title=\"Download (.*?) in Ziddu\"").getMatch(0);
+        if (filename == null) filename = br.getRegex("download/\\d+/(.*?)\\.html").getMatch(0);
         String filesize = br.getRegex("File\\sSize\\s:.*normal12black\">(.*?)\\s+</span>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        downloadLink.setName(filename);
+        downloadLink.setName(Encoding.htmlDecode(filename));
         downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
         br.setFollowRedirects(false);
         return AvailableStatus.TRUE;

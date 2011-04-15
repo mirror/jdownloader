@@ -23,12 +23,12 @@ import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.FilePackage;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imagefap.com" }, urls = { "http://[\\w\\.]*?imagefap.com/image.php\\?id=.*(&pgid=.*&gid=.*&page=.*)?" }, flags = { 0 })
 public class ImageFap extends PluginForHost {
@@ -88,15 +88,14 @@ public class ImageFap extends PluginForHost {
                 downloadLink.setUrlDownload(br.getRedirectLocation());
                 br.getPage(downloadLink.getDownloadURL());
             }
-            String picture_name = new Regex(br, Pattern.compile("<td bgcolor='#FCFFE0' width=\"100\">Filename</td>.*?<td bgcolor=\\'#FCFFE0\\'>(.*?)</td>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
-            String galleryName = downloadLink.getStringProperty("galleryname");
-            if (galleryName == null) {
-                galleryName = br.getRegex("<title>Porn pics of (.*?) \\(Page 1\\)</title>").getMatch(0);
-                if (galleryName == null) {
-                    galleryName = br.getRegex("<font face=\"verdana\" color=\"white\" size=\"4\"><b>(.*?)</b></font>").getMatch(0);
-                    if (galleryName == null) galleryName = br.getRegex("<td bgcolor=\\'#FCFFE0\\'><a href=\"/gallery\\.php\\?gid=\\d+\">(.*?)</a></td>").getMatch(0);
-                }
+            if (br.containsHTML("(>The image you are trying to access does not exist|<title> \\(Picture 1\\) uploaded by  on ImageFap\\.com</title>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            String picture_name = br.getRegex("<title>(.*?) in gallery").getMatch(0);
+            if (picture_name == null) {
+                picture_name = "";
+            } else {
+                picture_name = " - " + picture_name;
             }
+            String galleryName = getGalleryName(downloadLink);
             String authorsName = downloadLink.getStringProperty("authorsname");
             if (authorsName == null) {
                 authorsName = br.getRegex("<b><font size=\"4\" color=\"#CC0000\">(.*?)\\'s gallery</font></b>").getMatch(0);
@@ -112,9 +111,9 @@ public class ImageFap extends PluginForHost {
             galleryName = galleryName.trim();
             authorsName = authorsName.trim();
             if (orderid != null) {
-                downloadLink.setFinalFileName(authorsName + " - " + galleryName + " - " + orderid + " - " + picture_name);
+                downloadLink.setFinalFileName(authorsName + " - " + galleryName + " - " + orderid + picture_name);
             } else {
-                downloadLink.setFinalFileName(authorsName + " - " + galleryName + " - " + picture_name);
+                downloadLink.setFinalFileName(authorsName + " - " + galleryName + picture_name);
             }
             /* only set filepackage if not set yet */
             try {
@@ -150,22 +149,20 @@ public class ImageFap extends PluginForHost {
         String pfilename = downloadLink.getName();
         br.getPage(downloadLink.getDownloadURL());
         br.setDebug(true);
-        String picture_name = new Regex(br, Pattern.compile("<td bgcolor='#FCFFE0' width=\"100\">Filename</td>.*?<td bgcolor='#FCFFE0'>(.*?)</td>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
-        if (picture_name == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String gallery_name = new Regex(br, Pattern.compile("<a href=\"gallery\\.php\\?gid=\\d+\"><font face=verdana size=3>(.*?)uploaded", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
-        if (gallery_name != null) {
-            gallery_name = gallery_name.trim();
-        }
-        String imagelink = br.getRegex("\"(http://pic-e\\.imagefap\\.com/images/full/\\d+/\\d+/\\d+.*?)\"").getMatch(0);
+        String gallery_name = getGalleryName(downloadLink);
+        String imagelink = br.getRegex("\"(http://fap\\.to/images/full/\\d+/\\d+/.*?)\"").getMatch(0);
         if (imagelink == null) {
-            String returnID = new Regex(br, Pattern.compile("return lD\\('(\\S+?)'\\);", Pattern.CASE_INSENSITIVE)).getMatch(0);
+            String returnID = new Regex(br, Pattern.compile("return lD\\(\\'(\\S+?)\\'\\);", Pattern.CASE_INSENSITIVE)).getMatch(0);
             if (returnID != null) imagelink = DecryptLink(returnID);
             if (imagelink == null) {
                 imagelink = br.getRegex("onclick=\"OnPhotoClick\\(\\);\" src=\"(http://.*?)\"").getMatch(0);
+                if (imagelink == null) imagelink = br.getRegex("href=\"#\" onclick=\"javascript:window\\.open\\(\\'(http://.*?)\\'\\)").getMatch(0);
             }
         }
         if (imagelink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        if (gallery_name != null) downloadLink.addSubdirectory(gallery_name);
+        // Only set subdirectory if it wasn't set before or we'll get subfolders
+        // in subfolders which is bad
+        if (gallery_name != null && downloadLink.getSubdirectory() == null) downloadLink.addSubdirectory(gallery_name);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, imagelink);
         if (dl.getConnection().getResponseCode() == 404) {
             dl.getConnection().disconnect();
@@ -175,8 +172,21 @@ public class ImageFap extends PluginForHost {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        if (!pfilename.endsWith(new Regex(imagelink, "(\\.[A-Za-z0-9]+)$").getMatch(0))) pfilename += new Regex(imagelink, "(\\.[A-Za-z0-9]+)$").getMatch(0);
         downloadLink.setFinalFileName(pfilename);
         dl.startDownload();
+    }
+
+    private String getGalleryName(DownloadLink dl) {
+        String galleryName = dl.getStringProperty("galleryname");
+        if (galleryName == null) {
+            galleryName = br.getRegex("<title>Porn pics of (.*?) \\(Page 1\\)</title>").getMatch(0);
+            if (galleryName == null) {
+                galleryName = br.getRegex("<font face=\"verdana\" color=\"white\" size=\"4\"><b>(.*?)</b></font>").getMatch(0);
+                if (galleryName == null) galleryName = br.getRegex("<td bgcolor=\\'#FCFFE0\\'><a href=\"/gallery\\.php\\?gid=\\d+\">(.*?)</a></td>").getMatch(0);
+            }
+        }
+        return galleryName;
     }
 
     public int getMaxSimultanFreeDownloadNum() {

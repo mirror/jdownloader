@@ -21,6 +21,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -82,6 +83,8 @@ public class MgfpCm extends PluginForDecrypt {
             logger.warning("Author's name could not be found!");
             return null;
         }
+        galleryName = Encoding.htmlDecode(galleryName);
+        authorsName = Encoding.htmlDecode(authorsName);
         THISID = new Regex(parameter, "imagefap\\.com/pictures/(\\d+)/").getMatch(0);
         boolean done = false;
         int currentLastPages = 0;

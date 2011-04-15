@@ -26,7 +26,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filesmonster.com" }, urls = { "http://[\\w\\.\\d]*?filesmonster\\.com/download.php\\?id=[A-Za-z0-9_-]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filesmonster.com" }, urls = { "http://[\\w\\.\\d]*?filesmonster\\.com/(download.php\\?id=[A-Za-z0-9_-]+|dl/.*?/free/)" }, flags = { 0 })
 public class FilesMonsterDecrypter extends PluginForDecrypt {
 
     public FilesMonsterDecrypter(PluginWrapper wrapper) {
@@ -37,6 +37,8 @@ public class FilesMonsterDecrypter extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setFollowRedirects(false);
         String parameter = param.toString();
+        String fid = new Regex(parameter, "filesmonster\\.com/dl/(.*?)/free/").getMatch(0);
+        if (fid != null) parameter = "http://filesmonster.com/download.php?id=" + fid;
         br.getPage(parameter);
         // Is the file offline ? If so, let's stop here and just add it to the
         // downloadlist so the user can see the status
