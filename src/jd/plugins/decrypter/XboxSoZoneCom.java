@@ -17,6 +17,7 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.Random;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -51,7 +52,9 @@ public class XboxSoZoneCom extends PluginForDecrypt {
         String host = new Regex(parameter, "(http://.*?\\.com)").getMatch(0);
         for (String finallink : links) {
             DownloadLink finaldownloadlink = createDownloadlink(host + finallink);
-            finaldownloadlink.setName(String.valueOf(System.currentTimeMillis()));
+            finaldownloadlink.setName(String.valueOf(new Random().nextInt(100000)));
+            // Needed to download it later
+            finaldownloadlink.setProperty("mainlink", parameter);
             decryptedLinks.add(finaldownloadlink);
         }
         if (fpName != null) {
