@@ -19,7 +19,6 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
-import jd.crypt.JDCrypt;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -29,49 +28,53 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.utils.JDHexUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "madthumbs.com" }, urls = { "http://(www\\.)?madthumbs\\.com/videos/[\\w-]+/[\\w-]+/\\d+" }, flags = { 0 })
-public class MadThumbsCom extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pornerbros.com" }, urls = { "http://(www\\.)?pornerbros\\.com/\\d+/[\\w-]+\\.html" }, flags = { 0 })
+public class PornerBrosCom extends PluginForHost {
 
     private String DLLINK = null;
-    private String KEY    = "YTk3OWNjMTdjZjk2NjE5MzEzNjJiOTBlMmU5Yjc2MmM=";
 
-    public MadThumbsCom(PluginWrapper wrapper) {
+    public PornerBrosCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     @Override
     public String getAGBLink() {
-        return "http://www.madthumbs.com/legal/terms_of_use";
+        return "http://www.pornerbros.com/terms.html";
+    }
+
+    private String decryptUrl(String encrypted) {
+        char[] c = new char[encrypted.length() / 2];
+        for (int i = 0, j = 0; i < encrypted.length(); i += 2, j++) {
+            c[j] = (char) ((encrypted.codePointAt(i) - 65) * 16 + (encrypted.codePointAt(i + 1) - 65));
+        }
+        return String.valueOf(c);
     }
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
-        br.setFollowRedirects(false);
         br.getPage(downloadLink.getDownloadURL());
 
-        if (br.containsHTML("var vid_title = \"\"")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("var vid_title = \"(.*?)\"").getMatch(0);
-        if (filename == null) filename = br.getRegex("content=\"(.*?) \\- Madthumbs\\.com\"").getMatch(0);
+        if (br.containsHTML("<title>404 - Not Found</title>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("<title>(.*?)(\\.)?</title>").getMatch(0);
+        if (filename == null) filename = br.getRegex("<h1>(.*?)(\\.)?</h1>").getMatch(0);
+        filename = filename.trim().replaceAll("\\.$", "");
+        String paramUrl = br.getRegex("name=\"FlashVars\" value=\"xmlfile=(.*?)\"").getMatch(0);
+        if (paramUrl == null || filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
 
-        String[] param = br.getRegex("flowplayer\\((.*?)\\)\\;").getMatch(0).replaceAll("\n|\\s|'", "").split(",");
-        if (param == null || param.length == 0 || param.length < 4 || filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        br.getPage(paramUrl);
+        String urlCipher = br.getRegex("file=\"(.*?)\"").getMatch(0);
+        if (urlCipher == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
 
-        // Generate hashvalue
-        String hash = null;
-        try {
-            hash = JDCrypt.decrypt(JDHexUtils.getByteArray(param[3]), JDHexUtils.getByteArray(Encoding.Base64Decode(KEY)), JDHexUtils.getByteArray(param[2]));
-        } catch (final Throwable e) {
-        }
-        if (hash == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        DLLINK = decryptUrl(urlCipher);
+        if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
 
-        DLLINK = Encoding.htmlDecode(param[1]) + "&hash=" + hash.trim();
-        downloadLink.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".flv");
+        String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
+        if (ext == null) ext = ".flv";
+
+        downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
         Browser br2 = br.cloneBrowser();
-        // In case the link redirects to the finallink
-        br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
             con = br2.openGetConnection(DLLINK);

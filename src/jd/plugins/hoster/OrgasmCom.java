@@ -58,7 +58,7 @@ public class OrgasmCom extends PluginForHost {
         rtmp.setResume(false); // resume not working
         rtmp.setPlayPath(playpath);
         rtmp.setUrl(url);
-        rtmp.setSwfUrl("http://flash.orgasm.com/player.swf");
+        rtmp.setSwfUrl("http://flash.orgasm.com/playerv4.swf");
 
         ((RTMPDownload) dl).startDownload();
     }
