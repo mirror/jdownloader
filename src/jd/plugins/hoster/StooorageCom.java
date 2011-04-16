@@ -19,11 +19,11 @@ package jd.plugins.hoster;
 import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "stooorage.com" }, urls = { "http://[\\w\\.]*?stooorage\\.com/(show|images)/\\d+/.+" }, flags = { 0 })
 public class StooorageCom extends PluginForHost {
@@ -46,9 +46,15 @@ public class StooorageCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink link) throws Exception {
         requestFileInformation(link);
-        String url = br.getRegex("src=\"(http://www.stooorage.com/images/.*?)\"").getMatch(0);
+        String url = br.getRegex("\"(http://(www\\.)?img\\d+\\.stooorage\\.com/images/.*?)\"").getMatch(0);
+        if (url == null) url = br.getRegex("<div style=\"margin-left:50px;margin-right:50px;\"><img src=\"(http://.*?)\"").getMatch(0);
         if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, url, true, 1);
+        if (dl.getConnection().getContentType().contains("html")) {
+            logger.warning("The finallink doesn't seem to be a file...");
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl.startDownload();
     }
 
@@ -57,7 +63,7 @@ public class StooorageCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(parameter.getDownloadURL());
-        if (br.containsHTML("Picture doesn't exist")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("Picture doesn\\'t exist")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String name = new Regex(parameter.getDownloadURL(), "/show/\\d+/(.+)").getMatch(0);
         if (name == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         parameter.setName(name);
