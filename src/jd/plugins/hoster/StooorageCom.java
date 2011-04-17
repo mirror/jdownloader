@@ -47,7 +47,7 @@ public class StooorageCom extends PluginForHost {
     public void handleFree(DownloadLink link) throws Exception {
         requestFileInformation(link);
         String url = br.getRegex("\"(http://(www\\.)?img\\d+\\.stooorage\\.com/images/.*?)\"").getMatch(0);
-        if (url == null) url = br.getRegex("<div style=\"margin-left:50px;margin-right:50px;\"><img src=\"(http://.*?)\"").getMatch(0);
+        if (url == null) url = br.getRegex("<div style=\"margin\\-left:50px;margin\\-right:50px;\"><img src=\"(http://.*?)\"").getMatch(0);
         if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, url, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {

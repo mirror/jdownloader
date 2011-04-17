@@ -64,7 +64,7 @@ public class UploadStationCom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         // Works like fileserve.com, they use the same scripts
         requestFileInformation(downloadLink);
-        this.handleErrors(br);
+        this.handleErrors(br, downloadLink);
         final String fileId = this.br.getRegex("uploadstation\\.com/file/([a-zA-Z0-9]+)").getMatch(0);
         this.br.setFollowRedirects(false);
         // Not needed(yet)
@@ -81,9 +81,10 @@ public class UploadStationCom extends PluginForHost {
         br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         br2.postPage(downloadLink.getDownloadURL(), "checkDownload=check");
         if (!br2.containsHTML("success\":\"showCaptcha\"")) {
-            logger.info("There seems to be an error, no captcha is shown!");
             handleCaptchaErrors(br2, downloadLink);
-            handleErrors(br2);
+            handleErrors(br2, downloadLink);
+            logger.info("There seems to be an error, no captcha is shown!");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         Boolean failed = true;
         for (int i = 0; i <= 10; i++) {
@@ -118,7 +119,7 @@ public class UploadStationCom extends PluginForHost {
         }
         if (failed) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         handleCaptchaErrors(br2, downloadLink);
-        handleErrors(br2);
+        handleErrors(br2, downloadLink);
         this.br.postPage(downloadLink.getDownloadURL(), "downloadLink=wait");
         // Ticket Time
         if (!this.br.getHttpConnection().isOK()) {
@@ -140,7 +141,7 @@ public class UploadStationCom extends PluginForHost {
         this.br.postPage(downloadLink.getDownloadURL(), "download=normal");
         final String dllink = this.br.getRedirectLocation();
         if (dllink == null) {
-            this.handleErrors(br);
+            this.handleErrors(br, downloadLink);
             logger.warning("dllink is null...");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -153,7 +154,7 @@ public class UploadStationCom extends PluginForHost {
         if (this.dl.getConnection().getContentType().contains("html")) {
             logger.info("The finallink doesn't seem to be a file...");
             this.br.followConnection();
-            this.handleErrors(br);
+            this.handleErrors(br, downloadLink);
             logger.warning("Unexpected error at the last step...");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -161,9 +162,15 @@ public class UploadStationCom extends PluginForHost {
         this.dl.startDownload();
     }
 
-    private void handleErrors(Browser br2) throws PluginException {
+    private void handleErrors(Browser br2, DownloadLink link) throws PluginException, IOException {
         logger.info("Handling errors...");
-        String waittime = br.getRegex("<h1>You need to wait (\\d+) seconds to download next file<br>").getMatch(0);
+        boolean limitReached = false;
+        if (br2.containsHTML("\"fail\":\"timeLimit\"")) {
+            br2.postPage(link.getDownloadURL(), "checkDownload=showError&errorType=timeLimit");
+            limitReached = true;
+        }
+        String waittime = br2.getRegex("<h1>You need to wait (\\d+) seconds to download next file").getMatch(0);
+        if (waittime == null && limitReached) waittime = "300";
         if (waittime != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(waittime) * 1001l);
         if (br.containsHTML("To remove download restriction, please choose your suitable plan as below</h1>")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 30 * 60 * 1000l);
     }
@@ -182,10 +189,6 @@ public class UploadStationCom extends PluginForHost {
             br2.postPage(downloadLink.getDownloadURL(), "checkDownload=showError&errorType=" + fail + "&waitTime=" + waittime);
             // Just an additional check
             if (br2.containsHTML("Please retry later\\.<") || br2.containsHTML(">Your IP has failed the captcha too many times")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Too many wrong captcha attempts!", 10 * 60 * 1000l);
-        } else if (fail != null) {
-            // This coiuld be a limit message which appears after posting this,
-            // it should then be handled with handleErrors
-            br2.postPage(downloadLink.getDownloadURL(), "checkDownload=showError&errorType=" + fail);
         }
     }
 

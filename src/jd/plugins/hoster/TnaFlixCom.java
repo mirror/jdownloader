@@ -19,36 +19,24 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
-import jd.config.ConfigContainer;
-import jd.config.ConfigEntry;
+import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
-import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tnaflix.com" }, urls = { "http://[\\w\\.]*?tnaflix\\.com/(view_video\\.php\\?viewkey=[a-z0-9]+|.*?video\\d+)" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tnaflix.com" }, urls = { "http://[\\w\\.]*?tnaflix\\.com/(view_video\\.php\\?viewkey=[a-z0-9]+|.*?video\\d+)" }, flags = { 0 })
 public class TnaFlixCom extends PluginForHost {
 
     public TnaFlixCom(PluginWrapper wrapper) {
         super(wrapper);
-        setConfigElements();
     }
 
     @Override
     public String getAGBLink() {
         return "http://www.tnaflix.com/terms.php";
-    }
-
-    private static final String FORMAT   = "WAIT1";
-    private static final String MP4REGEX = "\"(http://cdn[\\w\\.\\-]*?tnaflix\\.com/tnamp4/[a-z0-9]+/.*?\\.mp4\\?key=[a-z0-9]+)\"";
-    private static final String FLVREGEX = "\"(http://cdn[\\w\\.\\-]*?tnaflix\\.com/tnadl/[a-z0-9]+/.*?\\.flv\\?key=[a-z0-9]+)\"";
-
-    private void setConfigElements() {
-        ConfigEntry cond = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FORMAT, JDL.L("plugins.hoster.tnaflixcom.selectformat", "Prefer mp4 videos (download mp4 if available)")).setDefaultValue(false);
-        config.addEntry(cond);
     }
 
     @Override
@@ -75,51 +63,24 @@ public class TnaFlixCom extends PluginForHost {
             }
         }
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        filename = filename.trim();
-        String format = "flv";
-        if (getPluginConfig().getBooleanProperty(FORMAT, false)) format = "mp4";
-        if (!filename.endsWith(".")) {
-            downloadLink.setName(filename + "." + format);
-        } else {
-            downloadLink.setName(filename + format);
-        }
+        downloadLink.setFinalFileName(filename.trim() + ".flv");
         return AvailableStatus.TRUE;
     }
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        boolean preferMp4 = getPluginConfig().getBooleanProperty(FORMAT, false);
-        preferMp4 = true;
-        String dllink = null;
-        if (preferMp4) {
-            logger.info("Prefer mp4 is enabled");
-            dllink = br.getRegex(MP4REGEX).getMatch(0);
-        } else {
-            logger.info("Prefer mp4 is not enabled");
-            dllink = br.getRegex(FLVREGEX).getMatch(0);
-        }
-        if (dllink == null) {
-            logger.info("Selected format could not be found, tryng to find a downloadlink for the other format.");
-            if (preferMp4) {
-                dllink = br.getRegex(FLVREGEX).getMatch(0);
-            } else {
-                dllink = br.getRegex(MP4REGEX).getMatch(0);
-            }
-            if (dllink == null) {
-                logger.warning("dllink could not be found");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-        }
-        dllink = dllink.replace("amp;", "");
+        String configLink = br.getRegex("addVariable\\(\\'config\\', \\'(http.*?)\\'").getMatch(0);
+        if (configLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        br.getPage(Encoding.htmlDecode(configLink));
+        String dllink = br.getRegex("<file>(http://.*?)</file>").getMatch(0);
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dllink = Encoding.htmlDecode(dllink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if ((dl.getConnection().getContentType().contains("html"))) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        String ending = ".flv";
-        if (dllink.contains("/tnamp4/")) ending = ".mp4";
-        downloadLink.setFinalFileName(downloadLink.getName().replaceAll("(\\.flv|\\.mp4)", ending));
         dl.startDownload();
     }
 
