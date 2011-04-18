@@ -31,13 +31,13 @@ import org.appwork.utils.formatter.TimeFormatter;
 
 public class LinkSnappycom extends PluginForHost implements JDPremInterface {
 
-    private boolean proxyused = false;
-    private String infostring = null;
-    private PluginForHost plugin = null;
-    private static boolean counted = false;
-    private static boolean enabled = false;
+    private boolean                  proxyused    = false;
+    private String                   infostring   = null;
+    private PluginForHost            plugin       = null;
+    private static boolean           counted      = false;
+    private static boolean           enabled      = false;
     private static ArrayList<String> premiumHosts = new ArrayList<String>();
-    private static final Object LOCK = new Object();
+    private static final Object      LOCK         = new Object();
 
     public LinkSnappycom(PluginWrapper wrapper) {
         super(wrapper);
@@ -207,7 +207,7 @@ public class LinkSnappycom extends PluginForHost implements JDPremInterface {
         if (genlink != null) {
             /* try saved link first */
             try {
-                dl = jd.plugins.BrowserAdapter.openDownload(br, link, genlink, resumePossible(this.getHost()), 1);
+                dl = jd.plugins.BrowserAdapter.openDownload(br, link, genlink, resumePossible(this.getHost()), -10);
                 if (dl.getConnection().isContentDisposition()) {
                     savedLinkValid = true;
                 }
@@ -224,8 +224,8 @@ public class LinkSnappycom extends PluginForHost implements JDPremInterface {
         }
         if (savedLinkValid == false) {
             /* generate new downloadlink */
-            String postData = "genLinks={\"links\" : \"" + Encoding.urlEncode(link.getDownloadURL()) + "\", \"Kcookies\" : \"" + br.getCookie("www.linksnappy.com", "lseSavePass") + "\"}";
-            String response = br.postPageRaw("http://linksnappy.com/lseAPI.php", postData);
+            String postData = "genLinks={\"link\" : \"" + Encoding.urlEncode(link.getDownloadURL()) + "\", \"Kcookies\" : \"" + br.getCookie("www.linksnappy.com", "lseSavePass") + "\"}";
+            String response = br.postPageRaw("http://gen.linksnappy.com/genAPI.php", postData);
             response = response.replaceAll("\\\\/", "/");
             String status = new Regex(response, "status\":\"(.*?)\"").getMatch(0);
             // String error = new Regex(response, "error\":(.*?)}").getMatch(0);
@@ -233,7 +233,7 @@ public class LinkSnappycom extends PluginForHost implements JDPremInterface {
             if ("FAILED".equalsIgnoreCase(status)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             if ("OK".equalsIgnoreCase(status) && genlink != null) {
                 br.setFollowRedirects(true);
-                dl = jd.plugins.BrowserAdapter.openDownload(br, link, genlink, resumePossible(this.getHost()), 1);
+                dl = jd.plugins.BrowserAdapter.openDownload(br, link, genlink, resumePossible(this.getHost()), -10);
             } else {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -314,11 +314,12 @@ public class LinkSnappycom extends PluginForHost implements JDPremInterface {
                 }
             }
             try {
-                br.postPage("http://www.linksnappy.com/members/index.php?act=login", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&submit=Login");
+                this.br.postPage("http://www.linksnappy.com/members/index.php?act=login", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&submit=Login");
             } catch (final Exception e) {
+                e.printStackTrace();
             }
             boolean invalid = false;
-            final String premCookie = this.br.getCookie("www.linksnappy.com", "lseSavePass");
+            final String premCookie = this.br.getCookie("http://www.linksnappy.com", "lseSavePass");
             if (this.br.containsHTML("Wrong username and")) {
                 invalid = true;
             }
