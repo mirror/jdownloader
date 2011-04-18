@@ -51,7 +51,7 @@ public class YouPornDeutschCom extends PluginForHost {
         br.setCustomCharset("utf-8");
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("(\">This video cannot be found|<title>Youporn auf Deutsch</title>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<div class=\"left span-630\">[\t\n\r ]+<h1>(.*?)</h1>").getMatch(0);
+        String filename = br.getRegex("<div class=\"left span\\-630\">[\t\n\r ]+<h1>(.*?)</h1>").getMatch(0);
         if (filename == null) filename = br.getRegex("<title>(.*?) \\- Pornofilm \\- Youporn auf Deutsch</title>").getMatch(0);
         br.getPage("http://www.youporn-deutsch.com/media/player/config.php?vkey=" + new Regex(downloadLink.getDownloadURL(), "youporn\\-deutsch\\.com/video/(\\d+)").getMatch(0));
         DLLINK = br.getRegex("<src>(http://.*?)</src>").getMatch(0);
