@@ -21,11 +21,11 @@ import java.io.IOException;
 import jd.PluginWrapper;
 import jd.http.RandomUserAgent;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -71,6 +71,7 @@ public class SlingFileCom extends PluginForHost {
             filename = br.getRegex("class=\"title\">(.*?)</span>").getMatch(0);
         }
         String filesize = br.getRegex("class=\"maintitle\">Downloading</span><span class=\"title\">.*?</span></div>[\n\r\t ]+<p>(.*?)\\. File uploaded ").getMatch(0);
+        if (filesize == null) filesize = br.getRegex("Downloading.*?</span>.*?<p>([0-9\\. GMB]+)").getMatch(0);
         if (filesize == null || filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         downloadLink.setName(filename.trim());
         downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
@@ -98,7 +99,7 @@ public class SlingFileCom extends PluginForHost {
         String c = getCaptchaCode(cf, downloadLink);
         rc.setCode(c);
         if (br.containsHTML("api.recaptcha.net")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-        String dllink = br.getRegex("'(http://sf\\d+\\.slingfile\\.com/gdl/[a-z0-9]+/[a-z0-9]+/[a-z0-9]+/[a-z0-9]+/.*?)'").getMatch(0);
+        String dllink = br.getRegex("(http://sf[0-9\\-].*?.slingfile\\.com/gdl/[a-z0-9]+/[a-z0-9]+/[a-z0-9]+/[a-z0-9]+/.*?)('|\")").getMatch(0);
         if (dllink == null) dllink = br.getRegex("location\\.href='(http://.*?)'").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
