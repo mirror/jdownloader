@@ -34,7 +34,7 @@ import jd.plugins.PluginForHost;
 public class DuckLoad extends PluginForHost {
 
     private static final String UA        = RandomUserAgent.generate();
-    private boolean             isPremium = true;
+    private boolean             isPremium = false;
 
     public DuckLoad(final PluginWrapper wrapper) {
         super(wrapper);

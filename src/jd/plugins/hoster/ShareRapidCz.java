@@ -24,11 +24,11 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
@@ -65,6 +65,7 @@ public class ShareRapidCz extends PluginForHost {
         if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         form.put("login", Encoding.urlEncode(account.getUser()));
         form.put("pass1", Encoding.urlEncode(account.getPass()));
+        form.remove("remember");
         br.submitForm(form);
         if (!br.containsHTML("Kredit:</td>")) br.getPage("http://share-rapid.com/mujucet/");
         if (!br.containsHTML("Kredit:</td>")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -135,7 +136,7 @@ public class ShareRapidCz extends PluginForHost {
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return 1;
+        return 3;
     }
 
     @Override

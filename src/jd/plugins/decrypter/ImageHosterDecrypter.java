@@ -59,9 +59,17 @@ public class ImageHosterDecrypter extends PluginForDecrypt {
                 FilePackage fp = FilePackage.getInstance();
                 fp.setName(name);
                 String pages[] = br.getRegex("class=\"pagination_(current|link)\">(\\d+)<").getColumn(1);
-                for (String page : pages) {
-                    br.getPage(parameter + "/" + page);
-                    if (br.containsHTML("The gallery you are looking for")) continue;
+                if (pages != null && pages.length > 0) {
+                    for (String page : pages) {
+                        br.getPage(parameter + "/" + page);
+                        if (br.containsHTML("The gallery you are looking for")) continue;
+                        String links[] = br.getRegex("'(http://[\\w\\.]*?imagebam\\.com/image/[a-z0-9]+)'").getColumn(0);
+                        for (String link : links) {
+                            DownloadLink dl = createDownloadlink(Encoding.htmlDecode(link));
+                            decryptedLinks.add(dl);
+                        }
+                    }
+                } else {
                     String links[] = br.getRegex("'(http://[\\w\\.]*?imagebam\\.com/image/[a-z0-9]+)'").getColumn(0);
                     for (String link : links) {
                         DownloadLink dl = createDownloadlink(Encoding.htmlDecode(link));
