@@ -26,12 +26,12 @@ import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "motherless.com" }, urls = { "http://([\\w\\.]*?|members\\.)(motherless\\.com/(movies|thumbs).*|(premium)?motherlesspictures(media)?\\.com/[a-zA-Z0-9/.]+|(premium)?motherlessvideos\\.com/[a-zA-Z0-9/.]+)" }, flags = { 2 })
 public class MotherLessCom extends PluginForHost {
@@ -67,7 +67,9 @@ public class MotherLessCom extends PluginForHost {
         try {
             con = br.openGetConnection(parameter.getDownloadURL());
             if (con.getContentType().contains("html")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            parameter.setName(Plugin.getFileNameFromHeader(con));
+            String name = Plugin.getFileNameFromHeader(con);
+            String name2 = new Regex(name, "/([^/].*?\\.flv)").getMatch(0);
+            parameter.setName(name2);
             parameter.setDownloadSize(con.getLongContentLength());
             return AvailableStatus.TRUE;
         } finally {

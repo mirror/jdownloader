@@ -457,7 +457,7 @@ public class Rapidshare extends PluginForHost {
 
             this.sleep(Long.parseLong(wait) * 1000l, downloadLink);
 
-            final String directurl = "http://" + host + "/cgi-bin/rsapi.cgi?sub=download_v1&dlauth=" + auth + "&bin=1&fileid=" + link.getId() + "&filename=" + link.getName();
+            final String directurl = "http://" + host + "/cgi-bin/rsapi.cgi?sub=download_v1&dlauth=" + auth + "&bin=1&noflvheader=1&fileid=" + link.getId() + "&filename=" + link.getName();
 
             logger.finest("Direct-Download: Server-Selection not available!");
             Request request = this.br.createGetRequest(directurl);
@@ -573,7 +573,7 @@ public class Rapidshare extends PluginForHost {
                     JDLogger.exception(e);
                 }
             }
-            final String directurl = prtotcol + "://" + host + "/cgi-bin/rsapi.cgi?sub=download_v1&bin=1&fileid=" + link.getId() + "&filename=" + link.getName() + "&cookie=" + account.getProperty("cookie");
+            final String directurl = prtotcol + "://" + host + "/cgi-bin/rsapi.cgi?sub=download_v1&bin=1&noflvheader=1&fileid=" + link.getId() + "&filename=" + link.getName() + "&cookie=" + account.getProperty("cookie");
 
             request = this.br.createGetRequest(directurl);
 

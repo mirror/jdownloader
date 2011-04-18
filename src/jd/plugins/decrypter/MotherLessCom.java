@@ -68,7 +68,7 @@ public class MotherLessCom extends PluginForDecrypt {
             if (filelink == null) return null;
             DownloadLink dlink = createDownloadlink(filelink);
             dlink.setBrowserUrl(parm);
-            String finalName = new Regex(filelink, "([A-Za-z0-9]+\\.flv)$").getMatch(0);
+            String finalName = new Regex(filelink, "/([A-Za-z0-9]+\\.flv)").getMatch(0);
             if (finalName != null) dlink.setFinalFileName(finalName);
             decryptedLinks.add(dlink);
         } else if (!br.containsHTML("<strong>Uploaded</strong>")) {

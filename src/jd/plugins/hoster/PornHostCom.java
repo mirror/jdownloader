@@ -100,7 +100,7 @@ public class PornHostCom extends PluginForHost {
             if (ending != null && ending.length() <= 1) {
                 String name2 = downloadLink.getName();
                 name = new Regex(name, ".+?(\\..{1,4})").getMatch(0);
-                if (name != null) {
+                if (name != null && !name2.endsWith(name)) {
                     name2 = name2 + name;
                     downloadLink.setFinalFileName(name2);
                 }
