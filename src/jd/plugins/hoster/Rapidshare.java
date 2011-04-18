@@ -754,9 +754,10 @@ public class Rapidshare extends PluginForHost {
         if (account != null && useSSL()) {
             req = req.replaceFirst("http:", "https:");
         }
+        boolean follow = br.isFollowingRedirects();
         try {
+            br.setFollowRedirects(true);
             br.getPage(req);
-
         } catch (final BrowserException e) {
             if (e.getConnection() != null && !req.startsWith("https")) {
                 switch (e.getConnection().getResponseCode()) {
@@ -771,6 +772,8 @@ public class Rapidshare extends PluginForHost {
             } else {
                 throw e;
             }
+        } finally {
+            br.setFollowRedirects(follow);
         }
 
     }
