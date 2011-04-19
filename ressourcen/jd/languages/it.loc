@@ -462,7 +462,6 @@ plugins.hoster.soundcloudcom.status.previewavailable = Anteprima scaricabile
 plugins.hoster.speedysharecom.errors.only4premium = Disponibile solo per utenti premium
 plugins.hoster.speedysharecom.password = Inserire password:
 plugins.hoster.tabnetua.only4resteredusers = Questo file è scaricabile solo da utenti registrati!
-plugins.hoster.tnaflixcom.selectformat = Pereferire MP4 se disponibile
 plugins.hoster.tube8com.setting.prefervideosformobilephones = VIdeo preferiti per cellulari (formato 3gp)
 plugins.hoster.u115com.undermaintenance = Temporaneamente indisponibile
 plugins.hoster.uhotfilecom.errors.404 = Errore server. Riprovare più tardi
