@@ -28,12 +28,12 @@ import org.appwork.utils.Regex;
 
 public class AllDebridcom extends PluginForHost implements JDPremInterface {
 
-    private boolean proxyused = false;
-    private String infostring = null;
-    private PluginForHost plugin = null;
-    private static boolean enabled = false;
+    private boolean                  proxyused    = false;
+    private String                   infostring   = null;
+    private PluginForHost            plugin       = null;
+    private static boolean           enabled      = false;
     private static ArrayList<String> premiumHosts = new ArrayList<String>();
-    private static final Object LOCK = new Object();
+    private static final Object      LOCK         = new Object();
 
     public AllDebridcom(PluginWrapper wrapper) {
         super(wrapper);
@@ -43,7 +43,7 @@ public class AllDebridcom extends PluginForHost implements JDPremInterface {
 
     @Override
     public String getAGBLink() {
-        if (plugin == null) return "http://www.alldebrid.com/api.php?action=tos";
+        if (plugin == null) return "http://www.alldebrid.com/tos/";
         return plugin.getAGBLink();
     }
 

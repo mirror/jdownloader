@@ -35,7 +35,7 @@ public class MngStrm extends PluginForDecrypt {
         for (String page : pages) {
             if (done.contains(page)) continue;
             done.add(page);
-            System.out.println("---- " + page);
+            // System.out.println("---- " + page);
         }
         progress.setRange(done.size());
         for (String page : done) {

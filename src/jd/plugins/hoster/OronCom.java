@@ -132,7 +132,11 @@ public class OronCom extends PluginForHost {
                 account.setValid(false);
                 return ai;
             } else {
-                ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", null));
+                /*
+                 * one day more as we want the account be valid on expire day
+                 * too
+                 */
+                ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", null) + (24 * 60 * 60 * 1000l));
             }
             ai.setStatus("Premium User");
             try {
