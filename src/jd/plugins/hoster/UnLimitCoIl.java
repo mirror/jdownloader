@@ -104,9 +104,9 @@ public class UnLimitCoIl extends PluginForHost {
         if (loginForm == null) loginForm = br.getFormbyProperty("id", "frmLogin");
         if (loginForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         loginForm.put("phoneNumber", account.getPass());
-        // More than 2 chunks are possible for some links but cause trouble for
-        // others so 2 should work for all
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, loginForm, true, -2);
+        // chunks are broken at the moment, response contains invalid
+        // content-range
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, loginForm, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
