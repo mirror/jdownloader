@@ -28,12 +28,12 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -62,6 +62,7 @@ public class OronCom extends PluginForHost {
     private static final String COOKIE_HOST        = "http://oron.com";
     private static final String ONLY4PREMIUMERROR0 = "The file status can only be queried by Premium Users";
     private static final String ONLY4PREMIUMERROR1 = "This file can only be downloaded by Premium Users";
+    private static final String FILEINCOMPLETE     = "File incomplete on server, please contact oron support!";
 
     private void login(Account account) throws Exception {
         this.setBrowserExclusive();
@@ -276,11 +277,10 @@ public class OronCom extends PluginForHost {
         }
         // This hoster has a bad traffic-system, every
         // downloadlink-generation will remove the full size of the
-        // file(s)
-        // from the users account even if he doesn't download the file
-        // after
-        // generating a link
+        // file(s) from the users account even if he doesn't download the file
+        // after generating a link
         link.setProperty("finaldownloadlink", dllink);
+        if (dl.getConnection().getContentLength() == 7) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.oroncom.fileincomplete", FILEINCOMPLETE));
         dl.startDownload();
     }
 
@@ -371,6 +371,7 @@ public class OronCom extends PluginForHost {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        if (dl.getConnection().getContentLength() == 7) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.oroncom.fileincomplete", FILEINCOMPLETE));
         dl.startDownload();
     }
 

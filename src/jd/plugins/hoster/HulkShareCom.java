@@ -22,7 +22,11 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.regex.Pattern;
 
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
+
 import jd.PluginWrapper;
+import jd.controlling.JDLogger;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -30,11 +34,11 @@ import jd.parser.html.HTMLParser;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -55,7 +59,7 @@ public class HulkShareCom extends PluginForHost {
     }
 
     private static final String COOKIE_HOST = "http://hulkshare.com";
-    public boolean nopremium = false;
+    public boolean              nopremium   = false;
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
@@ -81,6 +85,9 @@ public class HulkShareCom extends PluginForHost {
                         filename = br.getRegex("Filename.*?nowrap.*?>(.*?)</td").getMatch(0);
                         if (filename == null) {
                             filename = br.getRegex("File Name.*?nowrap>(.*?)</td").getMatch(0);
+                            if (filename == null) {
+                                filename = br.getRegex("CLASS=\"dingo\"><b>(.*?)</b></P>").getMatch(0);
+                            }
                         }
                     }
                 }
@@ -91,6 +98,9 @@ public class HulkShareCom extends PluginForHost {
             filesize = br.getRegex("\\(([0-9]+ bytes)\\)").getMatch(0);
             if (filesize == null) {
                 filesize = br.getRegex("</font>[ ]+\\((.*?)\\)(.*?)</font>").getMatch(0);
+                if (filesize == null) {
+                    filesize = br.getRegex("<b>Size:</b> (.*?)<br />").getMatch(0);
+                }
             }
         }
         if (filename == null) {
@@ -298,13 +308,19 @@ public class HulkShareCom extends PluginForHost {
         dl.startDownload();
     }
 
-    private String getLink() {
+    private String getLink() throws Exception {
         String dllink = br.getRegex("dotted #bbb;padding.*?<a href=\"(.*?)\"").getMatch(0);
         if (dllink == null) {
             dllink = br.getRegex("This direct link will be available for your IP.*?href=\"(http.*?)\"").getMatch(0);
             if (dllink == null) {
                 dllink = br.getRegex("Download: <a href=\"(.*?)\"").getMatch(0);
-                if (dllink == null) dllink = br.getRegex("\"(http://[0-9\\.]+/d/[a-z0-9]+/.*?)\"").getMatch(0);
+                if (dllink == null) {
+                    dllink = br.getRegex("\"(http://[0-9\\.]+/d/[a-z0-9]+/.*?)\"").getMatch(0);
+                    if (dllink == null) {
+                        String jsCrap = br.getRegex("style=\"width: 360px; height: 100px; margin: 0 10px; overflow: auto; float: left;\">[\t\n\r ]+<script language=\"JavaScript\">[\t\n\r ]+function [A-Za-z0-9]+\\(\\)[\t\n\r ]+\\{(.*?)window\\.").getMatch(0);
+                        if (jsCrap != null) dllink = execJS(jsCrap);
+                    }
+                }
             }
         }
         return dllink;
@@ -493,6 +509,20 @@ public class HulkShareCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable via premium");
             }
         }
+    }
+
+    private String execJS(final String fun) throws Exception {
+        Object result = new Object();
+        final ScriptEngineManager manager = new ScriptEngineManager();
+        final ScriptEngine engine = manager.getEngineByName("javascript");
+        try {
+            result = engine.eval(fun);
+        } catch (final Exception e) {
+            JDLogger.exception(e);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        if (result == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        return result.toString();
     }
 
     @Override

@@ -31,26 +31,26 @@ import jd.parser.html.HTMLParser;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filecrown.com" }, urls = { "http://(www\\.)?filecrown\\.com/[a-z0-9]{12}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filecrown.com" }, urls = { "http://(www\\.)?filecrown\\.com/[a-z0-9]{12}" }, flags = { 2 })
 public class FileCrownCom extends PluginForHost {
 
     public FileCrownCom(PluginWrapper wrapper) {
         super(wrapper);
-        // this.enablePremium(COOKIE_HOST + "/premium.html");
+        this.enablePremium(COOKIE_HOST + "/premium.html");
     }
 
-    // XfileSharingProBasic Version 2.1.1.1
+    // XfileSharingProBasic Version 2.1.1.1, added filesize and dllink regex
     @Override
     public String getAGBLink() {
         return COOKIE_HOST + "/tos.html";
@@ -94,6 +94,9 @@ public class FileCrownCom extends PluginForHost {
             filesize = new Regex(BRBEFORE, "<small>\\((.*?)\\)</small>").getMatch(0);
             if (filesize == null) {
                 filesize = new Regex(BRBEFORE, "</font>[ ]+\\((.*?)\\)(.*?)</font>").getMatch(0);
+                if (filesize == null) {
+                    filesize = new Regex(BRBEFORE, "<b>Size:</b></td><td>(.*?)</td></tr>").getMatch(0);
+                }
             }
         }
         if (filename == null || filename.equals("")) {
@@ -256,8 +259,8 @@ public class FileCrownCom extends PluginForHost {
         br.getPage(COOKIE_HOST + "/?op=my_account");
         doSomething();
         if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-        if (!BRBEFORE.contains("Premium-Account expire") && !BRBEFORE.contains("Upgrade to premium") && !br.containsHTML(">Renew premium<")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-        if (!BRBEFORE.contains("Premium-Account expire") && !br.containsHTML(">Renew premium<")) NOPREMIUM = true;
+        if (!BRBEFORE.contains("Premium expire in") && !BRBEFORE.contains("Upgrade to premium") && !br.containsHTML(">Renew premium<")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        if (!BRBEFORE.contains("Premium expire in") && !br.containsHTML(">Renew premium<")) NOPREMIUM = true;
     }
 
     @Override
@@ -269,7 +272,7 @@ public class FileCrownCom extends PluginForHost {
             account.setValid(false);
             return ai;
         }
-        String space = br.getRegex(Pattern.compile("<td>Used space:</td>.*?<td.*?b>([0-9\\.]+) of [0-9\\.]+ (Mb|GB)</b>", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
+        String space = br.getRegex(Pattern.compile("<td>Used space(:)?</td>.*?<td.*?b>([0-9\\.]+) of [0-9\\.]+ (Mb|GB)</b>", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(1);
         if (space != null) ai.setUsedSpace(space.trim() + " Mb");
         String points = br.getRegex(Pattern.compile("<td>You have collected:</td.*?b>(.*?)premium points", Pattern.CASE_INSENSITIVE)).getMatch(0);
         if (points != null) {
@@ -290,6 +293,7 @@ public class FileCrownCom extends PluginForHost {
         }
         if (!NOPREMIUM) {
             String expire = new Regex(BRBEFORE, "<td>Premium-Account expire:</td>.*?<td>(.*?)</td>").getMatch(0);
+            if (expire == null) expire = new Regex(BRBEFORE, "<TD>Premium expire in</TD><TD><b>(.*?)</b></TD>").getMatch(0);
             if (expire == null) {
                 ai.setExpired(true);
                 account.setValid(false);
@@ -337,7 +341,7 @@ public class FileCrownCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             logger.info("Final downloadlink = " + dllink + " starting the download...");
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, -2);
             if (passCode != null) {
                 link.setProperty("pass", passCode);
             }
@@ -353,7 +357,8 @@ public class FileCrownCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return -1;
+        // 6*2 connections = max, one download can't use more than 2 connections
+        return 6;
     }
 
     private void waitTime(long timeBefore, DownloadLink downloadLink) throws PluginException {
@@ -390,8 +395,14 @@ public class FileCrownCom extends PluginForHost {
                 if (dllink == null) {
                     dllink = new Regex(BRBEFORE, "Download: <a href=\"(.*?)\"").getMatch(0);
                     if (dllink == null) {
-                        String crypted = br.getRegex("p}\\((.*?)\\.split\\('\\|'\\)").getMatch(0);
-                        if (crypted != null) dllink = decodeDownloadLink(crypted);
+                        dllink = new Regex(BRBEFORE, "<tr><td>[\t\n\r ]+<center>[\t\n\r ]+<a href=\"(http://.*?)\"").getMatch(0);
+                        if (dllink == null) {
+                            dllink = new Regex(BRBEFORE, "\"(http://\\d+\\.\\d+\\.\\d+\\.\\d+:\\d+/d/[a-z0-9]+/.*?)\"").getMatch(0);
+                            if (dllink == null) {
+                                String crypted = br.getRegex("p}\\((.*?)\\.split\\('\\|'\\)").getMatch(0);
+                                if (crypted != null) dllink = decodeDownloadLink(crypted);
+                            }
+                        }
                     }
                 }
             }
