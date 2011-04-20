@@ -64,7 +64,6 @@ public class DrTuberCom extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.setDebug(true);
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("(This video cannot be found\\.|Are you sure you typed in the correct url\\?<)") || br.getURL().contains("missing=true")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         String filename = br.getRegex("<title>(.*?) - DrTuber\\.com</title>").getMatch(0);
@@ -79,7 +78,7 @@ public class DrTuberCom extends PluginForHost {
         br.getHeaders().put("Accept-Language", "de-de,de;q=0.8,en-us;q=0.5,en;q=0.3");
         String continueLink = br.getRegex("addVariable\\(\\'config\\', \\'(/.*?)\\'\\);").getMatch(0);
         if (continueLink == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-        continueLink = "http://drtuber.com" + Encoding.htmlDecode(continueLink) + "&pkey=" + JDHash.getMD5(vKey + Encoding.Base64Decode("ZnJVejg4cnVmUmE2cjM="));
+        continueLink = "http://drtuber.com" + Encoding.htmlDecode(continueLink) + "&pkey=" + JDHash.getMD5(vKey + Encoding.Base64Decode("NEx1Y1I0YVN0bHVXMW8="));
         br.getPage(continueLink);
         DLLINK = br.getRegex("<video_file>(http://.*?\\.flv)</video_file>").getMatch(0);
         if (filename == null || DLLINK == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
