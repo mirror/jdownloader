@@ -30,8 +30,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
+import jd.utils.locale.JDL;
 
-import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "euroshare.eu" }, urls = { "http://(www\\.)?euroshare\\.(eu|sk)/file/\\d+/.+" }, flags = { 2 })
@@ -67,6 +67,7 @@ public class EuroShareEu extends PluginForHost {
         requestFileInformation(downloadLink);
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML(TOOMANYSIMULTANDOWNLOADS)) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Too many simultan downloads", 10 * 60 * 1000l);
+        if (br.containsHTML("(>Všetky sloty pre Free užívateľov sú obsadené|Skúste prosím neskôr\\.<br)")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.euroshareeu.nofreeslots", "No free slots available"), 5 * 60 * 1000l);
         br.setFollowRedirects(false);
         String dllink = br.getRegex("iba jeden súbor\\.<a href=\"(http://.*?)\"").getMatch(0);
         if (dllink == null) dllink = br.getRegex("\"(http://euroshare\\.eu/download/\\d+/.*?/\\d+/.*?)\"").getMatch(0);
@@ -146,7 +147,7 @@ public class EuroShareEu extends PluginForHost {
             StringBuilder sb = new StringBuilder();
             while (true) {
                 sb.delete(0, sb.capacity());
-                sb.append("data=");
+                sb.append("links=");
                 links.clear();
                 while (true) {
                     /* we test 100 links at once */
@@ -154,7 +155,6 @@ public class EuroShareEu extends PluginForHost {
                     links.add(urls[index]);
                     index++;
                 }
-                br.getPage("http://euroshare.eu/link-checker");
                 int c = 0;
                 for (DownloadLink dl : links) {
                     /*
@@ -172,18 +172,18 @@ public class EuroShareEu extends PluginForHost {
                         logger.warning("Euroshare.eu availablecheck is broken!");
                         return false;
                     }
-                    String regexForThisLink = "(" + linkWithoutHttp + "</a><br /><div class=\"small\">(Súbor existuje \\| .*?|Súbor neexistuje)</div>)";
-                    String theData = br.getRegex(regexForThisLink).getMatch(0);
+                    Regex regexForThisLink = br.getRegex("\"(http://(www\\.)?euroshare\\.eu" + linkWithoutHttp + "\">http://(www\\.)?euroshare\\.sk" + linkWithoutHttp + "</a></td>[\t\n\r ]+<td class=\"velikost\"><img src=\"images/ok\\.png\")");
+                    String theData = regexForThisLink.getMatch(0);
+                    if (theData == null) theData = br.getRegex("(\">http://(www\\.)?euroshare\\.eu" + linkWithoutHttp + "</td>[\t\n\r ]+<td class=\"velikost\"><img src=\"images/zrusit-nahravani\\.jpg\")").getMatch(0);
                     if (theData == null) {
                         logger.warning("Euroshare.eu availablecheck is broken!");
                         return false;
                     }
-                    String filename = new Regex(theData, "/file/\\d+/(.*?)(</a>)?<br />").getMatch(0);
-                    String filesize = new Regex(theData, "class=\"small\">Súbor existuje \\| Veľkosť (.*?)</div>").getMatch(0);
-                    if (!theData.contains("Súbor existuje") || theData.contains("Súbor neexistuje")) {
+                    String filename = new Regex(theData, "/file/\\d+/(.*?)\"").getMatch(0);
+                    if (!theData.contains("images/ok.png") || theData.contains("zrusit-nahravani.jpg")) {
                         dl.setAvailable(false);
                         continue;
-                    } else if (filename == null || filesize == null) {
+                    } else if (filename == null) {
                         logger.warning("Euroshare.eu availablecheck is broken!");
                         dl.setAvailable(false);
                         continue;
@@ -191,7 +191,6 @@ public class EuroShareEu extends PluginForHost {
                         dl.setAvailable(true);
                     }
                     dl.setName(filename);
-                    dl.setDownloadSize(SizeFormatter.getSize(filesize));
                 }
                 if (index == urls.length) break;
             }

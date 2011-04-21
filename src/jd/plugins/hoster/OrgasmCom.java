@@ -20,12 +20,13 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.network.rtmp.url.RtmpUrlConnection;
+import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "orgasm.com" }, urls = { "http://(www\\.)?orgasm\\.com/movies/.+" }, flags = { PluginWrapper.DEBUG_ONLY })
 public class OrgasmCom extends PluginForHost {
@@ -74,7 +75,7 @@ public class OrgasmCom extends PluginForHost {
             filename = br.getRegex("title: \"(.*?)\"").getMatch(0);
         }
         if (filename == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-        downloadLink.setName(filename.trim() + ".flv");
+        downloadLink.setName(Encoding.htmlDecode(filename.trim()) + ".flv");
         return AvailableStatus.TRUE;
     }
 
