@@ -285,6 +285,7 @@ public class FileFactory extends PluginForHost {
                 }
                 if (waittime > 0) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waittime); }
             }
+            if (this.br.containsHTML("All free download slots are in use.")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "All free download slots are in use.", 10 * 60 * 1000l);
             if (this.br.containsHTML("You are currently downloading too many files at once")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1000l); }
             this.checkErrors();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

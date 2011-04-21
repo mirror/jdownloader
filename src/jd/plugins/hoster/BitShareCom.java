@@ -232,6 +232,8 @@ public class BitShareCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         /* max 15 connections at all */
+        // Remove new line
+        dllink = dllink.trim();
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, -3);
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The final dllink seems not to be a file!");
