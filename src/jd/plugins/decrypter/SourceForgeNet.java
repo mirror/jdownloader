@@ -41,14 +41,14 @@ public class SourceForgeNet extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.setFollowRedirects(true);
-        // Test if we already hav a direct link here
+        // Test if we already have a direct link here
         URLConnectionAdapter con = br.openGetConnection(parameter);
         if (con.getContentType().contains("html")) {
             br.followConnection();
             if (br.containsHTML("(Error 404|The page you were looking for cannot be found|could not be found or is not available)")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
             String link = null;
-            if (parameter.contains("/files/extras/") || parameter.contains("prdownloads.sourceforge.net")) {
-                link = br.getRegex("Please use this <a href=\"(.*?)\"").getMatch(0);
+            if (parameter.contains("/files/extras/") || parameter.contains("prdownloads.sourceforge.net") || parameter.contains("/download")) {
+                link = br.getRegex("Please use this([\n\t\r ]+)?<a href=\"(.*?)\"").getMatch(1);
                 if (link == null) link = br.getRegex("\"(http://downloads\\.sourceforge\\.net/project/.*?/extras/.*?/.*?use_mirror=.*?)\"").getMatch(0);
             } else {
                 String continuelink = br.getRegex("href=\"(http://sourceforge\\.net/projects/[A-Za-z0-9_-]+/files/.*?/download)\"").getMatch(0);
@@ -60,12 +60,16 @@ public class SourceForgeNet extends PluginForDecrypt {
                 }
                 link = new Regex(Encoding.htmlDecode(br.toString()), "Please use this([\t\n\r ]+)?<a href=\"(http://.*?)\"").getMatch(1);
             }
-            if (link == null) return null;
-            String urlPart = new Regex(link, "(http://downloads\\.sourceforge\\.net/project/.*?)http://sourceforge\\.net/").getMatch(0);
+            if (link == null) {
+                logger.warning("Decrypter broken, link: " + parameter);
+                return null;
+            }
+            link = Encoding.htmlDecode(link);
+            String urlPart = new Regex(link, "(http://downloads\\.sourceforge\\.net/project/.*?)(http://sourceforge\\.net/|\\?r=)").getMatch(0);
             String secondUrlPart = new Regex(link, "(\\&ts=\\d+\\&use_mirror=.+)").getMatch(0);
             if (urlPart == null || secondUrlPart == null) return null;
             br.setFollowRedirects(false);
-            link = urlPart + secondUrlPart;
+            link = urlPart + "?r=" + secondUrlPart;
             String finallink = null;
             boolean failed = true;
             for (int i = 0; i <= 5; i++) {
