@@ -38,7 +38,7 @@ public class LnkSafeMe extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private static final String PASSWORDFAILED  = ">Bad Password, try again";
+    private static final String PASSWORDFAILED  = ">Incorrect Password, please try again";
     private static final String RECAPTCHAFAILED = "incorrect-captcha-sol";
     private static final String LINKREGEX       = "(d/[a-z0-9]+)(<|\")";
     private static final String MAINPAGE        = "http://linksafe.me/";
@@ -51,7 +51,7 @@ public class LnkSafeMe extends PluginForDecrypt {
         if (parameter.contains("/d/")) {
             String finallink = br.getRedirectLocation();
             if (finallink == null) {
-                finallink = br.getRegex("window.location=\"(http:.*?)\"").getMatch(0);
+                finallink = br.getRegex("window\\.location=\"(http.*?)\"").getMatch(0);
             }
             if (finallink == null) return null;
             decryptedLinks.add(createDownloadlink(finallink));
@@ -98,7 +98,7 @@ public class LnkSafeMe extends PluginForDecrypt {
                 br.getPage(MAINPAGE + dl);
                 String finallink = br.getRedirectLocation();
                 if (finallink == null) {
-                    finallink = br.getRegex("window.location=\"(http:.*?)\"").getMatch(0);
+                    finallink = br.getRegex("window\\.location=\"(http.*?)\"").getMatch(0);
                 }
                 if (finallink == null) return null;
                 decryptedLinks.add(createDownloadlink(finallink));

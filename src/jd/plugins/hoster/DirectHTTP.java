@@ -37,12 +37,12 @@ import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -236,11 +236,19 @@ public class DirectHTTP extends PluginForHost {
             // <textarea name="recaptcha_challenge_field" rows="3"
             // cols="40"></textarea>\n <input type="hidden"
             // name="recaptcha_response_field" value="manual_challenge"/>
-            this.form.put("recaptcha_challenge_field", this.challenge);
-            this.form.put("recaptcha_response_field", Encoding.urlEncode(code));
+            this.prepareForm(code);
             this.br.submitForm(this.form);
             this.tries++;
             return this.br;
+        }
+
+        public void prepareForm(final String code) throws PluginException {
+            if (this.challenge == null || code == null) {
+                JDLogger.getLogger().severe("Recaptcha Module fail: challenge or code equals null!");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            this.form.put("recaptcha_challenge_field", this.challenge);
+            this.form.put("recaptcha_response_field", Encoding.urlEncode(code));
         }
 
         public void setForm(final Form form) {

@@ -28,12 +28,12 @@ import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.parser.html.HTMLParser;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -52,11 +52,11 @@ public class SixYbhUploadCom extends PluginForHost {
         return COOKIE_HOST + "/tos.html";
     }
 
-    private String brbefore = "";
+    private String              brbefore      = "";
     private static final String PASSWORDTEXT0 = "<br><b>Password:</b> <input";
     private static final String PASSWORDTEXT1 = "<br><b>Passwort:</b> <input";
-    private static final String COOKIE_HOST = "http://6ybh-upload.com";
-    public boolean nopremium = false;
+    private static final String COOKIE_HOST   = "http://6ybh-upload.com";
+    public boolean              nopremium     = false;
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
@@ -65,11 +65,11 @@ public class SixYbhUploadCom extends PluginForHost {
         br.setCookie(COOKIE_HOST, "lang", "english");
         br.getPage(link.getDownloadURL());
         doSomething();
-        if (brbefore.contains("No such file") || brbefore.contains("No such user exist") || brbefore.contains("File not found") || brbefore.contains(">File Not Found<")) {
+        if (new Regex(brbefore, "(No such file|File not found|>File Not Found<|>The file was removed by|Reason (of|for) deletion:\n)").matches()) {
             logger.warning("file is 99,99% offline, throwing \"file not found\" now...");
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("You have requested.*?http://.*?[a-z0-9]{12}/(.*?)</font>").getMatch(0);
+        String filename = new Regex(brbefore, "You have requested.*?http://(www\\.)?" + COOKIE_HOST.replace("http://", "") + "/[a-z0-9]{12}/(.*?)</font>").getMatch(1);
         if (filename == null) {
             filename = new Regex(brbefore, "fname\" value=\"(.*?)\"").getMatch(0);
             if (filename == null) {
