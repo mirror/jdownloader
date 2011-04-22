@@ -374,6 +374,7 @@ plugins.hoster.depositfilescom.errors.allslotsbusy = Tutti gli slot di download 
 plugins.hoster.depositfilescom.errors.limitreached = Limite download raggiunto
 plugins.hoster.ehowcom.hdavailable = Download disponibile in HD
 plugins.hoster.ehowcom.hdnotavailable = Download disponibile solo in SD
+plugins.hoster.euroshareeu.nofreeslots = Nessuno slot gratuito disponibile
 plugins.hoster.extabitcom.errors.nomirror = Errore server. Riprovare più tardi
 plugins.hoster.extabitcom.errors.only4premium = Questo file è disponibile solo per gli utenti Premium 
 plugins.hoster.extabitcom.errors.tempunavailable = Temporaneamente non disponibile
