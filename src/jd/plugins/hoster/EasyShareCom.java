@@ -30,11 +30,11 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -55,7 +55,7 @@ public class EasyShareCom extends PluginForHost {
         return "http://www.easy-share.com/tos.html";
     }
 
-    private static final String MAINPAGE = "http://www.easy-share.com/";
+    private static final String MAINPAGE     = "http://www.easy-share.com/";
     private static final String FILENOTFOUND = "Requested file is deleted";
 
     private void login(Account account) throws Exception {
@@ -145,7 +145,7 @@ public class EasyShareCom extends PluginForHost {
         if (br.containsHTML(FILENOTFOUND)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML("There is another download in progress from your IP")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 15 * 60 * 1000l);
         if (br.containsHTML("You need a premium membership to download this file")) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.host.errormsg.only4premium", "Only downloadable for premium users!"));
-        String wait = br.getRegex("w='(\\d+)'").getMatch(0);
+        String wait = br.getRegex("w=\\'(\\d+)\\'").getMatch(0);
         int waittime = 0;
         if (wait != null) waittime = Integer.parseInt(wait.trim());
         if (waittime > 90 && (longwait == null || longwait == true)) {
@@ -161,7 +161,6 @@ public class EasyShareCom extends PluginForHost {
                  */
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waittime * 1000l);
             } else {
-
                 if (br.getRegex("Recaptcha.create\\(\"(.*?)\"").getMatch(0) == null) {
                     sleep(waittime * 1000l, downloadLink);
                 }

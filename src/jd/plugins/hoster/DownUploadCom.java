@@ -1,18 +1,18 @@
-//    jDownloader - Downloadmanager
-//    Copyright (C) 2011  JD-Team support@jdownloader.org
+//jDownloader - Downloadmanager
+//Copyright (C) 2011  JD-Team support@jdownloader.org
 //
-//    This program is free software: you can redistribute it and/or modify
-//    it under the terms of the GNU General Public License as published by
-//    the Free Software Foundation, either version 3 of the License, or
-//    (at your option) any later version.
+//This program is free software: you can redistribute it and/or modify
+//it under the terms of the GNU General Public License as published by
+//the Free Software Foundation, either version 3 of the License, or
+//(at your option) any later version.
 //
-//    This program is distributed in the hope that it will be useful,
-//    but WITHOUT ANY WARRANTY; without even the implied warranty of
-//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-//    GNU General Public License for more details.
+//This program is distributed in the hope that it will be useful,
+//but WITHOUT ANY WARRANTY; without even the implied warranty of
+//MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+//GNU General Public License for more details.
 //
-//    You should have received a copy of the GNU General Public License
-//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+//You should have received a copy of the GNU General Public License
+//along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package jd.plugins.hoster;
 
@@ -42,18 +42,16 @@ import jd.utils.JDUtilities;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ForDevsToPlayWith.com" }, urls = { "http://(www\\.)?ForDevsToPlayWith\\.com/[a-z0-9]{12}" }, flags = { 0 })
-public class XFileSharingProBasic extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "downupload.com" }, urls = { "http://(www\\.)?downupload\\.com/[a-z0-9]{12}" }, flags = { 2 })
+public class DownUploadCom extends PluginForHost {
 
-    public XFileSharingProBasic(PluginWrapper wrapper) {
+    public DownUploadCom(PluginWrapper wrapper) {
         super(wrapper);
-        // this.enablePremium(COOKIE_HOST + "/premium.html");
+        this.enablePremium(COOKIE_HOST + "/premium.html");
     }
 
-    // XfileSharingProBasic Version 2.3.0.0
-    // This is only for developers to easily implement hosters using the
-    // "xfileshare(pro)" script (more informations can be found on
-    // xfilesharing.net)!
+    // XfileSharingProBasic Version 2.3.0.0, improved errorhandling for spanish
+    // language
     @Override
     public String getAGBLink() {
         return COOKIE_HOST + "/tos.html";
@@ -61,7 +59,7 @@ public class XFileSharingProBasic extends PluginForHost {
 
     private String              BRBEFORE     = "";
     private static final String PASSWORDTEXT = "(<br><b>Password:</b> <input|<br><b>Passwort:</b> <input)";
-    private static final String COOKIE_HOST  = "http://ForDevsToPlayWith.com";
+    private static final String COOKIE_HOST  = "http://downupload.com";
     public boolean              NOPREMIUM    = false;
 
     @Override
@@ -229,19 +227,19 @@ public class XFileSharingProBasic extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        doFree(downloadLink, true, 0);
+        doFree(downloadLink, true, -2);
     }
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        return 1;
     }
 
     private void login(Account account) throws Exception {
         this.setBrowserExclusive();
         br.setCookie(COOKIE_HOST, "lang", "english");
         br.getPage(COOKIE_HOST + "/login.html");
-        Form loginform = br.getForm(0);
+        Form loginform = br.getForm(1);
         if (loginform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         loginform.put("login", Encoding.urlEncode(account.getUser()));
         loginform.put("password", Encoding.urlEncode(account.getPass()));
@@ -263,6 +261,7 @@ public class XFileSharingProBasic extends PluginForHost {
             return ai;
         }
         String space = br.getRegex(Pattern.compile("<td>Used space:</td>.*?<td.*?b>([0-9\\.]+) of [0-9\\.]+ (Mb|GB)</b>", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
+        if (space == null) space = br.getRegex(Pattern.compile(">Espacio utilizado:</span> <em>(.*?) of 0 GB</em></li>", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
         if (space != null) ai.setUsedSpace(space.trim() + " Mb");
         String points = br.getRegex(Pattern.compile("<td>You have collected:</td.*?b>(.*?)premium points", Pattern.CASE_INSENSITIVE)).getMatch(0);
         if (points != null) {
@@ -282,7 +281,8 @@ public class XFileSharingProBasic extends PluginForHost {
             ai.setUnlimitedTraffic();
         }
         if (!NOPREMIUM) {
-            String expire = new Regex(BRBEFORE, "<td>Premium-Account expire:</td>.*?<td>(.*?)</td>").getMatch(0);
+            String expire = new Regex(BRBEFORE, "<td>Premium\\-Account expire:</td>.*?<td>(.*?)</td>").getMatch(0);
+            if (expire == null) expire = new Regex(BRBEFORE, "Premium\\-Account expire: <b>(.*?)</b>").getMatch(0);
             if (expire == null) {
                 ai.setExpired(true);
                 account.setValid(false);
@@ -308,7 +308,7 @@ public class XFileSharingProBasic extends PluginForHost {
         br.getPage(link.getDownloadURL());
         doSomething();
         if (NOPREMIUM) {
-            doFree(link, true, 0);
+            doFree(link, true, -2);
         } else {
             String dllink = br.getRedirectLocation();
             if (dllink == null) {
@@ -329,7 +329,7 @@ public class XFileSharingProBasic extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             logger.info("Final downloadlink = " + dllink + " starting the download...");
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, -10);
             if (passCode != null) {
                 link.setProperty("pass", passCode);
             }
@@ -352,7 +352,12 @@ public class XFileSharingProBasic extends PluginForHost {
         int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000) - 1;
         // Ticket Time
         String ttt = new Regex(BRBEFORE, "countdown\">.*?(\\d+).*?</span>").getMatch(0);
-        if (ttt == null) ttt = new Regex(BRBEFORE, "id=\"countdown_str\".*?<span id=\".*?\">.*?(\\d+).*?</span").getMatch(0);
+        if (ttt == null) {
+            ttt = new Regex(BRBEFORE, "id=\"countdown_str\".*?<span id=\".*?\">.*?(\\d+).*?</span").getMatch(0);
+            if (ttt == null) {
+                ttt = new Regex(BRBEFORE, "<span>Por favor, espere <sup id=\"[\\w]+\">(\\d+)</sup> Segundos</span>").getMatch(0);
+            }
+        }
         if (ttt != null) {
             int tt = Integer.parseInt(ttt);
             tt -= passedTime;
@@ -418,13 +423,13 @@ public class XFileSharingProBasic extends PluginForHost {
             if (BRBEFORE.contains("\">Skipped countdown<")) throw new PluginException(LinkStatus.ERROR_FATAL, "Fatal countdown error (countdown skipped)");
         }
         // Some waittimes...
-        if (BRBEFORE.contains("You have to wait")) {
+        if (new Regex(BRBEFORE, "(>Tienes que esperar|You have to wait)").matches()) {
             int minutes = 0, seconds = 0, hours = 0;
-            String tmphrs = new Regex(BRBEFORE, "You have to wait.*?\\s+(\\d+)\\s+hours?").getMatch(0);
+            String tmphrs = new Regex(BRBEFORE, "(You have to wait|Tienes que esperar).*?\\s+(\\d+)\\s+hours?").getMatch(1);
             if (tmphrs != null) hours = Integer.parseInt(tmphrs);
-            String tmpmin = new Regex(BRBEFORE, "You have to wait.*?\\s+(\\d+)\\s+minutes?").getMatch(0);
+            String tmpmin = new Regex(BRBEFORE, "(You have to wait|Tienes que esperar).*?\\s+(\\d+)\\s+minutes?").getMatch(1);
             if (tmpmin != null) minutes = Integer.parseInt(tmpmin);
-            String tmpsec = new Regex(BRBEFORE, "You have to wait.*?\\s+(\\d+)\\s+seconds?").getMatch(0);
+            String tmpsec = new Regex(BRBEFORE, "(You have to wait|Tienes que esperar).*?\\s+(\\d+)\\s+seconds?").getMatch(1);
             if (tmpsec != null) seconds = Integer.parseInt(tmpsec);
             int waittime = ((3600 * hours) + (60 * minutes) + seconds + 1) * 1000;
             if (waittime != 0) {
@@ -435,7 +440,7 @@ public class XFileSharingProBasic extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
             }
         }
-        if (BRBEFORE.contains("You have reached the download-limit")) {
+        if (new Regex(BRBEFORE, "(>Has sobrepasado el limite de Descargas Gratuitas|You have reached the download\\-limit)").matches()) {
             String tmphrs = new Regex(BRBEFORE, "\\s+(\\d+)\\s+hours?").getMatch(0);
             String tmpmin = new Regex(BRBEFORE, "\\s+(\\d+)\\s+minutes?").getMatch(0);
             String tmpsec = new Regex(BRBEFORE, "\\s+(\\d+)\\s+seconds?").getMatch(0);
@@ -456,8 +461,9 @@ public class XFileSharingProBasic extends PluginForHost {
         if (BRBEFORE.contains("You're using all download slots for IP")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l); }
         if (BRBEFORE.contains("Error happened when generating Download Link")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error!", 10 * 60 * 1000l);
         // Errorhandling for only-premium links
-        if (new Regex(BRBEFORE, "( can download files up to |Upgrade your account to download bigger files|>Upgrade your account to download larger files|>The file You requested  reached max downloads limit for Free Users|Please Buy Premium To download this file<|This file reached max downloads limit)").matches()) {
+        if (new Regex(BRBEFORE, "(Solo puedes descargar archivos de hasta| can download files up to |Upgrade your account to download bigger files|>Upgrade your account to download larger files|>The file You requested  reached max downloads limit for Free Users|Please Buy Premium To download this file<|This file reached max downloads limit)").matches()) {
             String filesizelimit = new Regex(BRBEFORE, "You can download files up to(.*?)only").getMatch(0);
+            if (filesizelimit == null) filesizelimit = new Regex(BRBEFORE, "Solo puedes descargar archivos de hasta (.*?) solamente").getMatch(0);
             if (filesizelimit != null) {
                 filesizelimit = filesizelimit.trim();
                 logger.warning("As free user you can download files up to " + filesizelimit + " only");

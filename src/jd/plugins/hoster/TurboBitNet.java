@@ -26,11 +26,11 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -51,6 +51,8 @@ public class TurboBitNet extends PluginForHost {
     public String getAGBLink() {
         return "http://turbobit.net/rules";
     }
+
+    private static final String RECAPTCHATEXT = "api\\.recaptcha\\.net";
 
     public void correctDownloadLink(DownloadLink link) {
         String freeId = new Regex(link.getDownloadURL(), "download/free/([a-z0-9]+)").getMatch(0);
@@ -99,7 +101,7 @@ public class TurboBitNet extends PluginForHost {
         if (id == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.getPage("http://turbobit.net/download/free/" + id);
         if (br.containsHTML("(Попробуйте повторить через|The limit of connection was succeeded for your|Try to repeat after)")) {
-            String waittime = br.getRegex("<span id='timeout'>(\\d+)</span></h1>").getMatch(0);
+            String waittime = br.getRegex("<span id=\\'timeout\\'>(\\d+)</span></h1>").getMatch(0);
             int wait = 0;
             if (waittime != null) wait = Integer.parseInt(waittime);
             if (wait < 31) {
@@ -115,7 +117,7 @@ public class TurboBitNet extends PluginForHost {
             logger.warning("captchaform equals null!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (br.containsHTML("api.recaptcha.net")) {
+        if (br.containsHTML(RECAPTCHATEXT)) {
             logger.info("Handling Re Captcha");
             String theId = new Regex(br.toString(), "challenge\\?k=(.*?)\"").getMatch(0);
             if (theId == null) {
@@ -131,18 +133,18 @@ public class TurboBitNet extends PluginForHost {
             String c = getCaptchaCode(null, cf, downloadLink);
             rc.getForm().setAction(downloadLink.getDownloadURL() + "#");
             rc.setCode(c);
-            if (br.containsHTML("api.recaptcha.net")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            if (br.containsHTML(RECAPTCHATEXT)) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         } else {
             logger.info("Handling normal captchas");
             String captchaUrl = br.getRegex("\"(http://turbobit\\.net/captcha/.*?)\"").getMatch(0);
             if (captchaUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             for (int i = 1; i <= 3; i++) {
-                String captchaCode = getCaptchaCode(captchaUrl, downloadLink);
+                String captchaCode = getCaptchaCode("recaptcha", captchaUrl, downloadLink);
                 captchaform.put("captcha_response", captchaCode);
                 br.submitForm(captchaform);
-                if (br.containsHTML("updateTime: function()")) break;
+                if (br.containsHTML("updateTime: function\\(\\)")) break;
             }
-            if (!br.containsHTML("updateTime: function()")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            if (!br.containsHTML("updateTime: function\\(\\)")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         }
         // Ticket Time
         String ttt = new Regex(br.toString(), "limit: (\\d+),").getMatch(0);
@@ -154,7 +156,7 @@ public class TurboBitNet extends PluginForHost {
         sleep(tt * 1001, downloadLink);
         br.getPage("http://turbobit.net/download/timeout/" + id);
 
-        String downloadUrl = br.getRegex("<a href='(.*?)'>").getMatch(0);
+        String downloadUrl = br.getRegex("<a href=\\'(.*?)\\'>").getMatch(0);
         if (downloadUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadUrl, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
@@ -191,7 +193,7 @@ public class TurboBitNet extends PluginForHost {
         String expire = br.getRegex("<u>(Turbo Access|Turbo Zugang)</u> to(.*?)<a").getMatch(1);
         if (expire == null) {
             expire = br.getRegex("<u>Турбо доступ</u> до(.*?)<a").getMatch(0);
-            if (expire == null) expire = br.getRegex("<img src='/img/icon/yesturbo\\.png'> <u>.{5,20}</u> .{1,5} (.*?) <a href='/turbo'>").getMatch(0);
+            if (expire == null) expire = br.getRegex("<img src=\\'/img/icon/yesturbo\\.png\\'> <u>.{5,20}</u> .{1,5} (.*?) <a href=\\'/turbo\\'>").getMatch(0);
         }
         if (expire == null) {
             ai.setExpired(true);

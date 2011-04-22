@@ -27,7 +27,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mixcloud.com" }, urls = { "http://(www\\.)?mixcloud\\.com/.*?/[A-Za-z0-9_-]+/" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mixcloud.com" }, urls = { "http://(www\\.)?mixcloud\\.com/.*?/[A-Za-z0-9_\\-]+/" }, flags = { 0 })
 public class MxCloudCom extends PluginForDecrypt {
 
     public MxCloudCom(PluginWrapper wrapper) {
@@ -38,8 +38,9 @@ public class MxCloudCom extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.getPage(parameter);
+        String theName = br.getRegex("class=\"cloudcast\\-title\">(.*?)</h1>").getMatch(0);
         br.getPage("http://www.mixcloud.com/api/1/cloudcast/" + new Regex(parameter, "mixcloud\\.com/(.*?/[A-Za-z0-9_-]+)/").getMatch(0) + ".json");
-        String theName = br.getRegex("base_links\\&amp;utm_term=cloudcast_link\\\\\" style=\\\\\"color:#02a0c7; font-weight:bold;\\\\\">(.*?)</a>").getMatch(0);
+        if (theName == null) theName = br.getRegex("color:#02a0c7; font-weight:bold;\\\\\\\">(.*?)</a>").getMatch(0);
         if (theName == null) return null;
         String sets[] = br.getRegex("\\[[\t\n\r ]+(\".*?\")[\t\n\r ]+\\]").getColumn(0);
         if (sets == null || sets.length == 0) return null;
