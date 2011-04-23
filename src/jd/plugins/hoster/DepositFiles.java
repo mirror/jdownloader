@@ -155,7 +155,7 @@ public class DepositFiles extends PluginForHost {
                         dl.setAvailable(false);
                     } else {
                         dl.setAvailable(true);
-                        dl.setFinalFileName(infos[hit][1].trim());
+                        dl.setFinalFileName(infos[hit][1].trim().replace("_", " "));
                         dl.setDownloadSize(SizeFormatter.getSize(infos[hit][2]));
                     }
                 }
