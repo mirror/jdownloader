@@ -64,6 +64,8 @@ public class BitLoadCom extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.getHeaders().put("User-Agent", agent);
+        // Servers are often slow
+        br.setReadTimeout(120 * 1000);
         br.setCookie("http://www.bitload.com", "locale", "de");
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("(>Datei nicht gefunden|>Die Datei wurde aufgrund von Urheberrechtsverletzung von unseren Servern entfernt)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
