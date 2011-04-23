@@ -67,7 +67,6 @@ public class GameTrailersCom extends PluginForDecrypt {
                     if (configPage == null) return null;
                     br.getPage("http://www.gametrailers.com" + Encoding.htmlDecode(configPage));
                     String infoPage = br.getRegex("<player>.*?<feed>(.*?)</feed>").getMatch(0);
-                    System.out.print(br.toString());
                     if (infoPage == null) return null;
                     infoPage = infoPage.trim().replace("amp;", "");
                     br.getPage(infoPage);
