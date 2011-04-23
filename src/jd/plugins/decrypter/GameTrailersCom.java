@@ -28,7 +28,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gametrailers.com" }, urls = { "http://[\\w\\.]*?gametrailers\\.com/(video|user-movie)/.*?/[0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gametrailers.com" }, urls = { "http://[\\w\\.]*?gametrailers\\.com/(video|user\\-movie)/.*?/[0-9]+" }, flags = { 0 })
 public class GameTrailersCom extends PluginForDecrypt {
 
     public GameTrailersCom(PluginWrapper wrapper) {
@@ -54,7 +54,10 @@ public class GameTrailersCom extends PluginForDecrypt {
         if (damnedIDs == null || damnedIDs.size() == 0) return null;
         for (String damnedID : damnedIDs) {
             Browser br2 = br.cloneBrowser();
-            br2.getPage("http://www.gametrailers.com/neo/?page=xml.mediaplayer.Mediagen&movieId=" + damnedID);
+            if (parameter.contains("user-movie"))
+                br2.getPage("http://www.gametrailers.com/neo/?page=xml.mediaplayer.Mediagen&movieId=" + damnedID + "&hd=1&um=1");
+            else
+                br2.getPage("http://www.gametrailers.com/neo/?page=xml.mediaplayer.Mediagen&movieId=" + damnedID);
             String finallink = br2.getRegex("<src>(.*?)</src>").getMatch(0);
             if (finallink != null) {
                 // If we got the wrong link it's a long way to get the real
@@ -64,6 +67,7 @@ public class GameTrailersCom extends PluginForDecrypt {
                     if (configPage == null) return null;
                     br.getPage("http://www.gametrailers.com" + Encoding.htmlDecode(configPage));
                     String infoPage = br.getRegex("<player>.*?<feed>(.*?)</feed>").getMatch(0);
+                    System.out.print(br.toString());
                     if (infoPage == null) return null;
                     infoPage = infoPage.trim().replace("amp;", "");
                     br.getPage(infoPage);
