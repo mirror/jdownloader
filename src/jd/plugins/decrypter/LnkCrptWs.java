@@ -50,76 +50,77 @@ public class LnkCrptWs extends PluginForDecrypt {
         super(wrapper);
     }
 
+    @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
-        this.setBrowserExclusive();
-        this.br.getHeaders().put("User-Agent", RandomUserAgent.generate());
+        setBrowserExclusive();
+        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
         final String containerId = new Regex(parameter, "dir/([a-zA-Z0-9]+)").getMatch(0);
-        this.br.setReadTimeout(150000);
+        br.setReadTimeout(150000);
         // logger.info("br.ReadTimeout " + br.getReadTimeout());
         try {
-            this.br.getPage("http://linkcrypt.ws/dir/" + containerId);
+            br.getPage("http://linkcrypt.ws/dir/" + containerId);
         } catch (final Exception e) {
             if (Utilities.isLoggerActive()) {
-                this.logger.severe("Error Server: " + e.getLocalizedMessage());
+                logger.severe("Error Server: " + e.getLocalizedMessage());
             }
             throw e;
         }
-        if (this.br.containsHTML("Error 404 - Ordner nicht gefunden")) { throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore.")); }
+        if (br.containsHTML("Error 404 - Ordner nicht gefunden")) { throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore.")); }
         // check for a password. STore latest password in DB
-        Form password = this.br.getForm(0);
-        if ((password != null) && password.hasInputFieldByName("password")) {
+        Form password = br.getForm(0);
+        if (password != null && password.hasInputFieldByName("password")) {
             // Password Protected
-            String latestPassword = this.getPluginConfig().getStringProperty("PASSWORD");
+            String latestPassword = getPluginConfig().getStringProperty("PASSWORD");
             if (latestPassword != null) {
                 password.put("password", latestPassword);
-                this.br.submitForm(password);
+                br.submitForm(password);
             }
             // no defaultpassword, or defaultpassword is wrong
-            password = this.br.getForm(0);
-            if ((password != null) && password.hasInputFieldByName("password")) {
+            password = br.getForm(0);
+            if (password != null && password.hasInputFieldByName("password")) {
                 latestPassword = PluginUtils.askPassword(this);
                 password.put("password", latestPassword);
-                this.br.setDebug(true);
-                this.br.submitForm(password);
-                password = this.br.getForm(0);
-                if ((password != null) && password.hasInputFieldByName("password")) { throw new DecrypterException(DecrypterException.PASSWORD); }
-                this.getPluginConfig().setProperty("PASSWORD", latestPassword);
-                this.getPluginConfig().save();
+                br.setDebug(true);
+                br.submitForm(password);
+                password = br.getForm(0);
+                if (password != null && password.hasInputFieldByName("password")) { throw new DecrypterException(DecrypterException.PASSWORD); }
+                getPluginConfig().setProperty("PASSWORD", latestPassword);
+                getPluginConfig().save();
             }
         }
         // Different captcha types
         boolean valid = true;
-        if (this.br.containsHTML("CaptX|ColorX|TextX")) {
+        if (br.containsHTML("CaptX|ColorX|TextX")) {
             final int max_attempts = 3;
             for (int attempts = 0; attempts < max_attempts; attempts++) {
-                if (valid && (attempts > 0)) {
+                if (valid && attempts > 0) {
                     break;
                 }
-                final Form[] captchas = this.br.getForms();
+                final Form[] captchas = br.getForms();
                 String url = null;
                 for (final Form captcha : captchas) {
-                    if ((captcha != null) && this.br.containsHTML("CaptX|ColorX|TextX")) {
+                    if (captcha != null && br.containsHTML("CaptX|ColorX|TextX")) {
                         url = captcha.getRegex("src=\"([^\"]*\\.php\\?secid=[^\"]*)\"[^>]*style=\"cursor:(?![^>]*display[^>]*none)").getMatch(0);
                         if (url == null) {
                             url = captcha.getRegex("style=\"cursor:(?![^>]*display[^>]*none)src=\"([^\"]*\\.php\\?secid=[^\"]*)\"").getMatch(1);
                         }
-                        if ((url == null) && (captcha != null) && !captcha.hasInputFieldByName("key")) {
+                        if (url == null && captcha != null && !captcha.hasInputFieldByName("key")) {
                             url = captcha.getRegex("src=\"(.*?secid.*?)\"").getMatch(0);
                         }
                         if (url != null) {
                             valid = false;
                             final String capDescription = captcha.getRegex("<b>(.*?)</b>").getMatch(0);
                             final File file = this.getLocalCaptchaFile();
-                            this.br.cloneBrowser().getDownload(file, url);
+                            br.cloneBrowser().getDownload(file, url);
                             // progress.setInitials(String.valueOf(max_attempts
                             // - attempts));
                             final Point p = UserIO.getInstance().requestClickPositionDialog(file, "LinkCrypt.ws | " + String.valueOf(max_attempts - attempts), capDescription);
                             captcha.put("x", p.x + "");
                             captcha.put("y", p.y + "");
-                            this.br.submitForm(captcha);
-                            if (!this.br.containsHTML("CaptX|ColorX|TextX") && this.br.containsHTML("eval")) {
+                            br.submitForm(captcha);
+                            if (!br.containsHTML("CaptX|ColorX|TextX")) {
                                 valid = true;
                             }
                         }
@@ -130,7 +131,7 @@ public class LnkCrptWs extends PluginForDecrypt {
         }
         if (!valid) { throw new DecrypterException(DecrypterException.CAPTCHA); }
         // Look for containers
-        final String[] containers = this.br.getRegex("eval\\((.*?\\,\\{\\}\\))\\)").getColumn(0);
+        final String[] containers = br.getRegex("eval\\((.*?\\,\\{\\}\\))\\)").getColumn(0);
         final HashMap<String, String> map = new HashMap<String, String>();
         for (String c : containers) {
             Context cx = null;
@@ -142,7 +143,7 @@ public class LnkCrptWs extends PluginForDecrypt {
                 final String code = Context.toString(result);
                 // System.out.println(code);
                 String[] row = new Regex(code, "href=\"([^\"]+)\"[^>]*>.*?<img.*?image/(.*?)\\.").getRow(0);
-                if ((row == null) && this.br.containsHTML("dlc.png")) {
+                if (row == null && br.containsHTML("dlc.png")) {
                     row = new Regex(code, "href=\"(http.*?)\".*?(dlc)").getRow(0);
                 }
                 if (row != null) {
@@ -160,44 +161,44 @@ public class LnkCrptWs extends PluginForDecrypt {
             if (!container.exists()) {
                 container.createNewFile();
             }
-            this.br.cloneBrowser().getDownload(container, map.get("dlc"));
+            br.cloneBrowser().getDownload(container, map.get("dlc"));
         } else if (map.containsKey("cnl")) {
             container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".dlc", true);
             if (!container.exists()) {
                 container.createNewFile();
             }
-            this.br.cloneBrowser().getDownload(container, map.get("cnl").replace("dlc://", "http://"));
+            br.cloneBrowser().getDownload(container, map.get("cnl").replace("dlc://", "http://"));
         } else if (map.containsKey("ccf")) {
             container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".ccf", true);
             if (!container.exists()) {
                 container.createNewFile();
             }
-            this.br.cloneBrowser().getDownload(container, map.get("ccf"));
+            br.cloneBrowser().getDownload(container, map.get("ccf"));
         } else if (map.containsKey("rsdf")) {
             container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".rsdf", true);
             if (!container.exists()) {
                 container.createNewFile();
             }
-            this.br.cloneBrowser().getDownload(container, map.get("rsdf"));
+            br.cloneBrowser().getDownload(container, map.get("rsdf"));
         }
         if (container != null) {
             // container available
-            this.logger.info("Container found: " + container);
+            logger.info("Container found: " + container);
             decryptedLinks.addAll(JDUtilities.getController().getContainerLinks(container));
             container.delete();
             if (decryptedLinks.size() > 0) { return decryptedLinks; }
         }
         /* we have to open the normal page for weblinks */
-        if (this.br.containsHTML("BlueHeadLine.*?>(Weblinks)<")) {
-            this.br.getPage("http://linkcrypt.ws/dir/" + containerId);
+        if (br.containsHTML("BlueHeadLine.*?>(Weblinks)<")) {
+            br.getPage("http://linkcrypt.ws/dir/" + containerId);
             // IF container decryption failed, try webdecryption
-            final Form[] forms = this.br.getForms();
+            final Form[] forms = br.getForms();
             progress.setRange(forms.length - 8);
             for (final Form form : forms) {
                 Browser clone;
-                if ((form.getInputField("key") != null) && (form.getInputField("key").getValue() != null) && (form.getInputField("key").getValue().length() > 0)) {
+                if (form.getInputField("key") != null && form.getInputField("key").getValue() != null && form.getInputField("key").getValue().length() > 0) {
                     progress.increase(1);
-                    clone = this.br.cloneBrowser();
+                    clone = br.cloneBrowser();
                     clone.submitForm(form);
                     final String[] srcs = clone.getRegex("<iframe.*?src\\s*?=\\s*?\"?([^\"> ]{20,})\"?\\s?").getColumn(0);
                     found_out_pl: for (String col : srcs) {
@@ -224,7 +225,7 @@ public class LnkCrptWs extends PluginForDecrypt {
                                         versch = Encoding.Base64Decode(versch);
                                         versch = Encoding.htmlDecode(versch);
                                         if (versch != null) {
-                                            decryptedLinks.add(this.createDownloadlink(versch));
+                                            decryptedLinks.add(createDownloadlink(versch));
                                         }
                                     }
                                 }
@@ -236,7 +237,7 @@ public class LnkCrptWs extends PluginForDecrypt {
             }
         }
         if (decryptedLinks.size() == 0) {
-            this.logger.warning("Decrypter out of date for link: " + parameter);
+            logger.warning("Decrypter out of date for link: " + parameter);
             return null;
         }
         return decryptedLinks;
