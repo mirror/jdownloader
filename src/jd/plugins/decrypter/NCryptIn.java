@@ -42,14 +42,17 @@ import jd.plugins.hoster.DirectHTTP;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
+import org.appwork.utils.Regex;
+
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ncrypt.in" }, urls = { "http://(www\\.)?(ncrypt\\.in/folder\\-.+|urlcrypt\\.com/open\\-[A-Za-z0-9]+)" }, flags = { 0 })
 public class NCryptIn extends PluginForDecrypt {
 
-    private static final String             RECAPTCHA      = "recaptcha/api/challenge";
-    private static final String             OTHERCAPTCHA   = "\"(/temp/anicaptcha/\\d+\\.gif)\"";
-    private static final String             PASSWORDTEXT   = "password";
-    private static final String             PASSWORDFAILED = "<td class=\"error\">&bull; Das Passwort ist ung\\&uuml;ltig";
-    private static HashMap<String, Boolean> CNL_URL_MAP    = new HashMap<String, Boolean>();
+    private final String                   RECAPTCHA      = "recaptcha/api/challenge";
+    private final String                   OTHERCAPTCHA   = "/temp/anicaptcha/\\d+\\.gif";
+    private final String                   PASSWORDTEXT   = "password";
+    private final String                   PASSWORDFAILED = "<td class=\"error\">&bull; Das Passwort ist ung\\&uuml;ltig";
+    private final HashMap<String, Boolean> CNL_URL_MAP    = new HashMap<String, Boolean>();
+    private String                         aBrowser       = "";
 
     public NCryptIn(final PluginWrapper wrapper) {
         super(wrapper);
@@ -61,11 +64,12 @@ public class NCryptIn extends PluginForDecrypt {
         br.setFollowRedirects(true);
         final String parameter = param.toString().replace("open-", "folder-").replace("urlcrypt.com/", "ncrypt.in/");
         br.getPage(parameter);
+        haveFun();
         if (br.getURL().contains("error=crypted_id_invalid")) { throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore.")); }
         // Handle Captcha and/or password
         Form allForm = null;
-        for (final Form tempForm : br.getForms()) {
-            if (tempForm.getStringProperty("name").equals("protected") && tempForm.getAction() != null) {
+        for (final Form tempForm : Form.getForms(aBrowser)) {
+            if (tempForm.getStringProperty("name").equals("protected")) {
                 allForm = tempForm;
                 break;
             }
@@ -84,16 +88,17 @@ public class NCryptIn extends PluginForDecrypt {
                         rc.getForm().put(PASSWORDTEXT, passCode);
                     }
                     rc.setCode(c);
-                    if (br.containsHTML(RECAPTCHA)) {
+                    haveFun();
+                    if (new Regex(aBrowser, RECAPTCHA).matches()) {
                         continue;
                     }
                     break;
                 }
-                if (br.containsHTML(PASSWORDFAILED)) { throw new DecrypterException(DecrypterException.PASSWORD); }
-                if (br.containsHTML(RECAPTCHA)) { throw new DecrypterException(DecrypterException.CAPTCHA); }
-            } else if (allForm.containsHTML("captcha") && !allForm.containsHTML("recaptcha_challenge")) {
+                if (new Regex(aBrowser, PASSWORDFAILED).matches()) { throw new DecrypterException(DecrypterException.PASSWORD); }
+                if (new Regex(aBrowser, RECAPTCHA).matches()) { throw new DecrypterException(DecrypterException.CAPTCHA); }
+            } else if (allForm.containsHTML(OTHERCAPTCHA) && !allForm.containsHTML("recaptcha_challenge")) {
                 for (int i = 0; i <= 3; i++) {
-                    final String captchaLink = br.getRegex(OTHERCAPTCHA).getMatch(0);
+                    final String captchaLink = new Regex(aBrowser, OTHERCAPTCHA).getMatch(-1);
                     if (captchaLink == null) { return null; }
 
                     final File captchaFile = this.getLocalCaptchaFile(".gif");
@@ -112,22 +117,25 @@ public class NCryptIn extends PluginForDecrypt {
                         allForm.put(PASSWORDTEXT, passCode);
                     }
                     br.submitForm(allForm);
-                    if (br.containsHTML(OTHERCAPTCHA)) {
+                    haveFun();
+                    if (new Regex(aBrowser, OTHERCAPTCHA).matches()) {
                         continue;
                     }
                     break;
                 }
-                if (br.containsHTML(PASSWORDFAILED)) { throw new DecrypterException(DecrypterException.PASSWORD); }
-                if (br.getRegex(OTHERCAPTCHA).getMatch(0) != null) { throw new DecrypterException(DecrypterException.CAPTCHA); }
-            } else if (br.containsHTML(PASSWORDTEXT)) {
+                if (new Regex(aBrowser, PASSWORDFAILED).matches()) { throw new DecrypterException(DecrypterException.PASSWORD); }
+                if (new Regex(aBrowser, OTHERCAPTCHA).matches()) { throw new DecrypterException(DecrypterException.CAPTCHA); }
+            } else if (allForm.containsHTML(PASSWORDTEXT)) {
                 for (int i = 0; i <= 3; i++) {
-                    br.postPage(parameter, "password=" + getPassword(param) + "&submit_protected=Best%C3%A4tigen...+&submit_protected=Best%C3%A4tigen...+");
-                    if (br.containsHTML(PASSWORDFAILED)) {
+                    allForm.put(PASSWORDTEXT, getPassword(param));
+                    br.submitForm(allForm);
+                    haveFun();
+                    if (new Regex(aBrowser, PASSWORDFAILED).matches()) {
                         continue;
                     }
                     break;
                 }
-                if (br.containsHTML(PASSWORDFAILED)) { throw new DecrypterException(DecrypterException.PASSWORD); }
+                if (new Regex(aBrowser, PASSWORDFAILED).matches()) { throw new DecrypterException(DecrypterException.PASSWORD); }
             }
         }
         String fpName = br.getRegex("<h1>(.*?)<img").getMatch(0);
@@ -190,6 +198,27 @@ public class NCryptIn extends PluginForDecrypt {
     private String getPassword(final CryptedLink param) throws DecrypterException {
         final String passCode = Plugin.getUserInput(null, param);
         return passCode;
+    }
+
+    public void haveFun() throws Exception {
+        final ArrayList<String> someStuff = new ArrayList<String>();
+        final ArrayList<String> regexStuff = new ArrayList<String>();
+        regexStuff.add("(<!--.*?-->)");
+        regexStuff.add("(type=\"hidden\".*?(name=\".*?\")?.*?value=\".*?\")");
+        regexStuff.add("display:none;\">(.*?)</(div|span)>");
+        regexStuff.add("(<div class=\"hidden\" id=\"error_box\">.*?</div>)");
+        for (final String aRegex : regexStuff) {
+            aBrowser = br.toString();
+            final String replaces[] = br.getRegex(aRegex).getColumn(0);
+            if (replaces != null && replaces.length != 0) {
+                for (final String dingdang : replaces) {
+                    someStuff.add(dingdang);
+                }
+            }
+        }
+        for (final String gaMing : someStuff) {
+            aBrowser = aBrowser.replace(gaMing, "");
+        }
     }
 
     private ArrayList<DownloadLink> loadcontainer(String theLink) throws IOException, PluginException {
