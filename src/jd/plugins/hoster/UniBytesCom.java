@@ -24,11 +24,11 @@ import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
@@ -159,11 +159,13 @@ public class UniBytesCom extends PluginForHost {
         if (aa != null) {
             AccountInfo ai = new AccountInfo();
             String expireDate = br.getRegex("Ваш VIP-аккаунт действителен до ([0-9\\.]+)\\.<br/><br/><a").getMatch(0);
-            if (expireDate != null)
+            if (expireDate != null) {
                 ai.setValidUntil(TimeFormatter.getMilliSeconds(expireDate, "dd.MM.yyyy", null));
-            else
+            } else {
                 ai.setExpired(true);
+            }
             account.setAccountInfo(ai);
+            if (ai.isExpired()) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
         String dllink = br.getRegex("style=\"text-align:center; padding:50px 0;\"><a href=\"(http.*?)\"").getMatch(0);
         dllink = null;
