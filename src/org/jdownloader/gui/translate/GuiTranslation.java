@@ -1182,4 +1182,13 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Enable all" })
     String settings_linkgrabber_filter_action_enable_all();
+
+    @Default(lngs = { "en" }, values = { "Miscellaneous" })
+    String gui_config_various();
+
+    @Default(lngs = { "en" }, values = { "Auto open Link Containers (dlc,ccf,...)" })
+    String gui_config_simple_container();
+
+    @Default(lngs = { "en" }, values = { "Size of Captcha Dialogs" })
+    String gui_config_barrierfree_captchasize();
 }

@@ -44,11 +44,14 @@ public class ConfigPanelGeneral extends AbstractConfigPanel {
 
     private Checkbox          autoCRC;
 
+    private Checkbox          simpleContainer;
+
     public ConfigPanelGeneral() {
         super();
 
         downloadFolder = new FolderChooser("downloadfolder");
         subfolder = new Checkbox();
+        simpleContainer = new Checkbox();
 
         this.addHeader(T._.gui_config_general_downloaddirectory(), Theme.getIcon("settings/downloadpath", 32));
         this.addDescription(JDT._.gui_settings_downloadpath_description());
@@ -61,6 +64,17 @@ public class ConfigPanelGeneral extends AbstractConfigPanel {
         this.addDescription(JDT._.gui_settings_filewriting_description());
         this.addPair(T._.gui_config_download_crc(), autoCRC);
 
+        // container.setGroup(new ConfigGroup(T._.gui_config_gui_container(),
+        // "gui.images.container"));
+        //
+        // container.addEntry(ce = new
+        // ConfigEntry(ConfigContainer.TYPE_CHECKBOX,
+        // JDUtilities.getConfiguration(), Configuration.PARAM_RELOADCONTAINER,
+        // T._.gui_config_reloadcontainer()));
+        // ce.setDefaultValue(true);
+
+        this.addHeader(T._.gui_config_various(), Theme.getIcon("settings/settings", 32));
+        this.addPair(T._.gui_config_simple_container(), simpleContainer);
     }
 
     @Override

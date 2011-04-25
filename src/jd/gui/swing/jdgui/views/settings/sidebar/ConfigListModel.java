@@ -2,16 +2,13 @@ package jd.gui.swing.jdgui.views.settings.sidebar;
 
 import javax.swing.DefaultListModel;
 
-import jd.gui.swing.jdgui.views.settings.panels.ConfigPanelCaptcha;
+import jd.gui.swing.jdgui.views.settings.panels.BarrierFree;
 import jd.gui.swing.jdgui.views.settings.panels.ConfigPanelGeneral;
 import jd.gui.swing.jdgui.views.settings.panels.DownloadControll;
+import jd.gui.swing.jdgui.views.settings.panels.Logins;
 import jd.gui.swing.jdgui.views.settings.panels.addons.ConfigPanelAddons;
 import jd.gui.swing.jdgui.views.settings.panels.downloadandnetwork.ProxyConfig;
-import jd.gui.swing.jdgui.views.settings.panels.gui.Advanced;
-import jd.gui.swing.jdgui.views.settings.panels.gui.Linkgrabber;
 import jd.gui.swing.jdgui.views.settings.panels.hoster.ConfigPanelPlugin;
-import jd.gui.swing.jdgui.views.settings.panels.passwords.PasswordList;
-import jd.gui.swing.jdgui.views.settings.panels.passwords.PasswordListHTAccess;
 import jd.gui.swing.jdgui.views.settings.panels.premium.Premium;
 import jd.gui.swing.jdgui.views.settings.panels.reconnect.Reconnect;
 
@@ -36,12 +33,12 @@ public class ConfigListModel extends DefaultListModel {
 
         // addElement(new ToolbarController());
         addElement(new jd.gui.swing.jdgui.views.settings.panels.Linkgrabber());
-        addElement(new Linkgrabber());
-        addElement(new Advanced());
-        addElement(new ConfigPanelCaptcha());
+
+        addElement(new BarrierFree());
+
         addElement(new Reconnect());
-        addElement(new PasswordList());
-        addElement(new PasswordListHTAccess());
+
+        addElement(new Logins());
         addElement(new Premium());
         addElement(new ConfigPanelPlugin());
         addElement(new ConfigPanelAddons());

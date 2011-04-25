@@ -635,4 +635,22 @@ public interface JdownloaderTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Set up filters, to ignore files based on their address or filename" })
     String gui_settings_linkgrabber_filter_description();
+
+    @Default(lngs = { "en" }, values = { "Accessibility" })
+    String gui_settings_barrierfree_title();
+
+    @Default(lngs = { "en" }, values = { "All options here help to make JDownloader usable by people of all abilities and disabilities." })
+    String gui_settings_barrierfree_description();
+
+    @Default(lngs = { "en" }, values = { "Credentials" })
+    String gui_settings_logins_title();
+
+    @Default(lngs = { "en" }, values = { "Premium Accounts" })
+    String gui_settings_logins_premium();
+
+    @Default(lngs = { "en" }, values = { "HTTP Credentials" })
+    String gui_settings_logins_htaccess();
+
+    @Default(lngs = { "en" }, values = { "FTP Credentials" })
+    String gui_settings_logins_ftp();
 }

@@ -62,9 +62,6 @@ public class ConfigPanelCaptcha extends ConfigPanel {
         container.addEntry(ce1 = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, SubConfiguration.getConfig("JAC"), Configuration.PARAM_CAPTCHA_JAC_DISABLE, T._.gui_config_captcha_jac_disable()).setDefaultValue(false));
         container.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, SubConfiguration.getConfig("JAC"), Configuration.AUTOTRAIN_ERROR_LEVEL, T._.gui_config_captcha_train_level(), 0, 100, 5).setDefaultValue(95).setEnabledCondidtion(ce1, false));
 
-        container.setGroup(new ConfigGroup(T._.gui_config_gui_barrierfree(), "gui.images.barrierfree"));
-        container.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, SubConfiguration.getConfig("JAC"), Configuration.PARAM_CAPTCHA_SIZE, T._.jd_gui_swing_jdgui_settings_panels_ConfigPanelCaptcha_captchaSize(), 50, 200, 5).setDefaultValue(100));
-
         return container;
     }
 }
