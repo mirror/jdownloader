@@ -62,7 +62,6 @@ public class FilterColumn extends ExtCompoundColumn<LinkFilter> {
                 return ret;
             }
 
-            @Override
             public boolean isEnabled(LinkFilter obj) {
                 return true;
             }
@@ -72,12 +71,10 @@ public class FilterColumn extends ExtCompoundColumn<LinkFilter> {
                 return true;
             }
 
-            @Override
             public boolean isSortable(LinkFilter obj) {
                 return true;
             }
 
-            @Override
             public void setValue(Object value, LinkFilter object) {
 
                 object.setRegex(options[(Integer) value].getHost());

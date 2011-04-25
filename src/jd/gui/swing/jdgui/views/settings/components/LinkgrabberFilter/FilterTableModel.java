@@ -108,7 +108,6 @@ public class FilterTableModel extends ExtTableModel<LinkFilter> {
                 return value.getType().ordinal();
             }
 
-            @Override
             public boolean isEnabled(LinkFilter obj) {
                 return obj.isEnabled();
             }
@@ -128,7 +127,6 @@ public class FilterTableModel extends ExtTableModel<LinkFilter> {
                 return false;
             }
 
-            @Override
             public boolean isSortable(LinkFilter obj) {
                 return true;
             }
@@ -138,7 +136,6 @@ public class FilterTableModel extends ExtTableModel<LinkFilter> {
                 return true;
             }
 
-            @Override
             public void setValue(Object value, LinkFilter object) {
                 Types nValue = LinkFilter.Types.values()[(Integer) value];
                 if (object.getType() == LinkFilter.Types.PLUGIN && nValue != LinkFilter.Types.PLUGIN) {

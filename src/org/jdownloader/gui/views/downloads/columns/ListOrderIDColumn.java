@@ -20,7 +20,6 @@ public class ListOrderIDColumn extends ExtLongColumn<PackageLinkNode> {
         return value.getListOrderID();
     }
 
-    @Override
     public boolean isSortable(PackageLinkNode obj) {
         return true;
     }

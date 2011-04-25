@@ -52,7 +52,7 @@ import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 import de.savemytube.flv.FLV;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "youtube.com" }, urls = { "http://[\\w\\.]*?youtube\\.com/(watch.*?v=|view_play_list\\?p=|playlist\\?p=|.*?g/c/|.*?grid/user/)[a-z-_A-Z0-9]+(.*?page=\\d+)?" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "youtube.com" }, urls = { "http://[\\w\\.]*?youtube\\.com/(watch.*?v=|view_play_list\\?p=|playlist\\?p=|.*?g/c/|.*?grid/user/|v/)[a-z-_A-Z0-9]+(.*?page=\\d+)?" }, flags = { 0 })
 public class TbCm extends PluginForDecrypt {
 
     public static enum DestinationFormat {
@@ -182,9 +182,13 @@ public class TbCm extends PluginForDecrypt {
         if (parameter.contains("watch#")) {
             parameter = parameter.replace("watch#", "watch?");
         }
+        if (parameter.contains("v/")) {
+            String id = new Regex(parameter, "v/([a-z_A-Z0-9]+)").getMatch(0);
+            if (id != null) parameter = "http://www.youtube.com/watch?v=" + id;
+        }
         if (parameter.contains("view_play_list") || parameter.contains("playlist") || parameter.contains("g/c/") || parameter.contains("grid/user/")) {
             if (parameter.contains("g/c/") || parameter.contains("grid/user/")) {
-                String id = new Regex(parameter, "g/c/([a-zA-Z0-9]+)").getMatch(0);
+                String id = new Regex(parameter, "g/c/([a-z_A-Z0-9]+)").getMatch(0);
                 if (id == null) id = new Regex(parameter, "grid/user/([a-z_A-Z0-9]+)").getMatch(0);
                 if (id != null) parameter = "http://www.youtube.com/view_play_list?p=" + id;
             }
