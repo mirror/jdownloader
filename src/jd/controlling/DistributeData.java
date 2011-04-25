@@ -552,7 +552,10 @@ public class DistributeData extends Thread {
                         /* parse webpage for links */
                         br.followConnection();
                         DistributeData internSearch = new DistributeData(br.toString());
-                        String baseUrl = new Regex(l, "(.+/)").getMatch(0);
+                        String baseUrl = new Regex(l, "(.+)(/|$)").getMatch(0);
+                        if (baseUrl != null && !baseUrl.endsWith("/")) {
+                            baseUrl = baseUrl + "/";
+                        }
                         internSearch.setUrl(baseUrl);
                         ArrayList<DownloadLink> internLinks = internSearch.findLinks();
                         ret.addAll(internLinks);
