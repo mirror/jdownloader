@@ -17,18 +17,16 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
-import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
-import jd.parser.html.Form;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fileshaker.com" }, urls = { "http://[\\w\\.]*?fileshaker\\.com/.+" }, flags = { 0 })
 public class FileshakerCom extends PluginForHost {
@@ -45,49 +43,28 @@ public class FileshakerCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
-        String url = downloadLink.getDownloadURL();
         br.setFollowRedirects(true);
-        br.getPage(url);
-        if (!br.getURL().equals("http://www.fileshaker.com/")) {
-            String downloadName = Encoding.htmlDecode(br.getRegex(Pattern.compile("<br><br>File: (.*)<br><br>", Pattern.CASE_INSENSITIVE)).getMatch(0));
-            if (downloadName == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            downloadLink.setName(downloadName.trim());
-            return AvailableStatus.TRUE;
+        br.getPage(downloadLink.getDownloadURL());
+        if (br.containsHTML("Sorry, File not found\\!")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        // Sometimes the page is buggy, filename is not shown but download works
+        String filename = br.getRegex("<div class=\"file\\-name\\-text\">(.*?) \\- \\d+").getMatch(0);
+        if (filename != null) {
+            downloadLink.setName(Encoding.htmlDecode(filename.trim()));
+        } else {
+            logger.info("Filename not found for link: " + downloadLink.getDownloadURL());
         }
-        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        return AvailableStatus.TRUE;
     }
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-        /* Nochmals das File überprüfen */
         requestFileInformation(downloadLink);
-        Form captchaForm = null;
-        URLConnectionAdapter con = null;
-        boolean valid = false;
-
-        for (int i = 0; i <= 5; i++) {
-            captchaForm = br.getForm(0);
-            String captchaUrl = br.getRegex("(securimage/securimage_show\\.php\\?sid=[0-9a-z]{32})\"").getMatch(0);
-            if (captchaForm == null || captchaUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            captchaUrl = "http://www.fileshaker.com/" + captchaUrl;
-            String code = getCaptchaCode(captchaUrl, downloadLink);
-            captchaForm.put("code", code);
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, captchaForm, false, 1);
-            con = dl.getConnection();
-
-            if (!dl.getConnection().getContentType().contains("html")) {
-                valid = true;
-                break;
-            } else {
-                con.disconnect();
-                br.getPage(downloadLink.getDownloadURL());
-            }
-
-        }
-
-        if (valid == false) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-        if (con.getResponseCode() != 200 && con.getResponseCode() != 206) {
-            con.disconnect();
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, "http://www.fileshaker.com/download/do_download", "key=" + new Regex(downloadLink.getDownloadURL(), "fileshaker\\.com/(.*?)").getMatch(0), false, 1);
+        if (dl.getConnection().getResponseCode() != 200 && dl.getConnection().getResponseCode() != 206 || dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            // This should never happen
+            if (br.containsHTML(">Log in to your Account<")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Too many simultan downloads", 5 * 60 * 1000l);
+            dl.getConnection().disconnect();
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 5 * 60 * 1000l);
         }
         dl.startDownload();
@@ -95,7 +72,7 @@ public class FileshakerCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 10;
+        return -1;
     }
 
     @Override
