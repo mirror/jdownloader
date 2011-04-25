@@ -109,6 +109,7 @@ public class DateiTo extends PluginForHost {
         br.postPage("http://api.datei.to/", "info=jdPremDown&Username=" + Encoding.urlEncode(account.getUser()) + "&Password=" + Encoding.urlEncode(account.getPass()) + "&datei=" + new Regex(downloadLink.getDownloadURL(), "datei\\.to/datei/(.*?)\\.html").getMatch(0));
         String dlUrl = br.toString();
         if (dlUrl == null || !dlUrl.startsWith("http") || dlUrl.length() > 500 || dlUrl.contains("no file")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        dlUrl = dlUrl.trim();
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlUrl, true, 0);
         br.setFollowRedirects(true);
         if (dl.getConnection() == null || dl.getConnection().getContentType().contains("html")) {
