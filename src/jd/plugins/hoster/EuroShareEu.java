@@ -86,6 +86,7 @@ public class EuroShareEu extends PluginForHost {
         br.setCustomCharset("utf-8");
         br.postPage("http://euroshare.eu/login", "login=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
         // There are no cookies so we can only check via text on the website
+        if (br.containsHTML("Zabudli ste heslo?")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         if (!br.containsHTML(">Ste úspešne prihlásený<") || br.containsHTML(">Nesprávne prihlasovacie meno alebo heslo")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
 
