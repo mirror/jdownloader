@@ -52,16 +52,11 @@ import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 import de.savemytube.flv.FLV;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "youtube.com" }, urls = { "http://[\\w\\.]*?youtube\\.com/(watch.*?v=[a-z-_A-Z0-9]+|(view_play_list|playlist)\\?p=[a-z-_A-Z0-9]+(.*?page=\\d+)?)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "youtube.com" }, urls = { "http://[\\w\\.]*?youtube\\.com/(watch.*?v=|view_play_list\\?p=|playlist\\?p=|.*?g/c/|.*?grid/user/)[a-z-_A-Z0-9]+(.*?page=\\d+)?" }, flags = { 0 })
 public class TbCm extends PluginForDecrypt {
 
     public static enum DestinationFormat {
-        AUDIOMP3("Audio (MP3)", new String[] { ".mp3" }),
-        VIDEOFLV("Video (FLV)", new String[] { ".flv" }),
-        VIDEOMP4("Video (MP4)", new String[] { ".mp4" }),
-        VIDEOWEBM("Video (Webm)", new String[] { ".webm" }),
-        VIDEO3GP("Video (3GP)", new String[] { ".3gp" }),
-        UNKNOWN("Unknown (unk)", new String[] { ".unk" }),
+        AUDIOMP3("Audio (MP3)", new String[] { ".mp3" }), VIDEOFLV("Video (FLV)", new String[] { ".flv" }), VIDEOMP4("Video (MP4)", new String[] { ".mp4" }), VIDEOWEBM("Video (Webm)", new String[] { ".webm" }), VIDEO3GP("Video (3GP)", new String[] { ".3gp" }), UNKNOWN("Unknown (unk)", new String[] { ".unk" }),
 
         VIDEOIPHONE("Video (IPhone)", new String[] { ".mp4" });
 
@@ -187,7 +182,12 @@ public class TbCm extends PluginForDecrypt {
         if (parameter.contains("watch#")) {
             parameter = parameter.replace("watch#", "watch?");
         }
-        if (parameter.contains("view_play_list") || parameter.contains("playlist")) {
+        if (parameter.contains("view_play_list") || parameter.contains("playlist") || parameter.contains("g/c/") || parameter.contains("grid/user/")) {
+            if (parameter.contains("g/c/") || parameter.contains("grid/user/")) {
+                String id = new Regex(parameter, "g/c/([a-zA-Z0-9]+)").getMatch(0);
+                if (id == null) id = new Regex(parameter, "grid/user/([a-z_A-Z0-9]+)").getMatch(0);
+                if (id != null) parameter = "http://www.youtube.com/view_play_list?p=" + id;
+            }
             parameter = parameter.replaceFirst("playlist\\?", "view_play_list?");
             this.br.getPage(parameter);
             this.addVideosCurrentPage(decryptedLinks);
