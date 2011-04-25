@@ -44,6 +44,7 @@ public class YunFileCom extends PluginForHost {
 
     private static final String MAINPAGE = "http://yunfile.com/";
 
+    // Works like MountFileCom and HowFileCom
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();

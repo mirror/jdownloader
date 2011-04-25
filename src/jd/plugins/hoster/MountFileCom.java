@@ -22,11 +22,11 @@ import jd.PluginWrapper;
 import jd.http.RandomUserAgent;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
@@ -48,6 +48,7 @@ public class MountFileCom extends PluginForHost {
 
     private static final String MAINPAGE = "http://mountfile.com/";
 
+    // Works like HowFileCom and YunFileCom
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
