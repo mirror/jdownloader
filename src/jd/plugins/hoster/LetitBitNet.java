@@ -94,7 +94,7 @@ public class LetitBitNet extends PluginForHost {
         br.setDebug(true);
         br.setCookie("http://letitbit.net/", "lang", "en");
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("(<br>File not found<br />|Запрашиваемый файл не найден<br>|Request file .*? Deleted)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("(<title>404</title>|<br>File not found<br />|Запрашиваемый файл не найден<br>|>Запрашиваемая вами страница не существует\\!<|Request file .*? Deleted)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         // /* set english language */
         // br.postPage(downloadLink.getDownloadURL(),
         // "en.x=10&en.y=8&vote_cr=en");
