@@ -27,19 +27,19 @@ import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vimeo.com" }, urls = { "http://(www\\.)?vimeo\\.com/[0-9]+" }, flags = { 2 })
 public class VimeoCom extends PluginForHost {
     private static final String MAINPAGE = "http://www.vimeo.com";
-    static private final String AGB = "http://www.vimeo.com/terms";
-    private String clipData;
-    private String finalURL;
-    private static final Object LOCK = new Object();
+    static private final String AGB      = "http://www.vimeo.com/terms";
+    private String              clipData;
+    private String              finalURL;
+    private static final Object LOCK     = new Object();
 
     public VimeoCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -57,7 +57,9 @@ public class VimeoCom extends PluginForHost {
         String clipID = br.getRegex("targ_clip_id:   (\\d+)").getMatch(0);
         this.clipData = br.getPage("/moogaloop/load/clip:" + clipID + "/local?param_force_embed=0&param_clip_id=" + clipID + "&param_show_portrait=0&param_multimoog=&param_server=vimeo.com&param_show_title=0&param_autoplay=0&param_show_byline=0&param_color=00ADEF&param_fullscreen=1&param_md5=0&param_context_id=&context_id=null");
         String title = getClipData("caption");
-        String dlURL = "/moogaloop/play/clip:" + getClipData("clip_id") + "/" + getClipData("request_signature") + "/" + getClipData("request_signature_expires") + "/?q=" + (getClipData("isHD").equals("1") ? "hd" : "sd");
+        String clipId = getClipData("clip_id");
+        if (clipId == null) clipId = getClipData("nodeId");
+        String dlURL = "/moogaloop/play/clip:" + clipId + "/" + getClipData("request_signature") + "/" + getClipData("request_signature_expires") + "/?q=" + (getClipData("isHD").equals("1") ? "hd" : "sd");
         br.setFollowRedirects(false);
         br.getPage(dlURL);
         this.finalURL = br.getRedirectLocation();
