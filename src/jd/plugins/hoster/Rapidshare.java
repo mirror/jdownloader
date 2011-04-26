@@ -221,7 +221,7 @@ public class Rapidshare extends PluginForHost {
                     return false;
                 }
 
-                final String[][] matches = this.br.getRegex("([^\n^\r^,]+),([^,]+),([^,]+),([^,]+),([^,]+),([^,]+),([^\n^\r]+)").getMatches();
+                final String[][] matches = this.br.getRegex("([^\n^\r^,]+),([^,]+),([^,]+),([^,]+),([^,]+),([^,]+),([^\n^\r]*)").getMatches();
                 int i = 0;
                 boolean doretry = false;
                 for (final DownloadLink u : checkurls) {
