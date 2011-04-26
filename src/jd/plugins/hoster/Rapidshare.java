@@ -232,7 +232,7 @@ public class Rapidshare extends PluginForHost {
                     }
                     u.setDownloadSize(Long.parseLong(matches[i][2]));
                     u.setFinalFileName(matches[i][1]);
-                    if (!"MD5NOTFOUND".equalsIgnoreCase(matches[i][6])) {
+                    if (matches[i][6].trim().length() == 32) {
                         u.setMD5Hash(matches[i][6]);
                     } else {
                         u.setMD5Hash(null);
@@ -560,7 +560,7 @@ public class Rapidshare extends PluginForHost {
             this.queryAPI(this.br, prtotcol + "://api.rapidshare.com/cgi-bin/rsapi.cgi?sub=download_v1&try=1&fileid=" + link.getId() + "&filename=" + link.getName() + "&cookie=" + account.getProperty("cookie"), account);
             this.handleErrors(this.br);
 
-            String host = this.br.getRegex("DL:(.*?),0,0,0").getMatch(0);
+            String host = this.br.getRegex("DL:(.*?),").getMatch(0);
 
             // this might bypass some isps limit restrictions on rapidshare host
             // names
