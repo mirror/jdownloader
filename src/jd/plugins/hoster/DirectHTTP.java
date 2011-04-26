@@ -56,15 +56,16 @@ public class DirectHTTP extends PluginForHost {
 
     public static class Recaptcha {
 
-        private static final int MAX_TRIES = 10;
-        private final Browser    br;
-        private String           challenge;
-        private String           server;
-        private String           captchaAddress;
-        private String           id;
-        private Browser          rcBr;
-        private Form             form;
-        private int              tries     = 0;
+        private static final int    MAX_TRIES = 10;
+        private final Browser       br;
+        private String              challenge;
+        private String              server;
+        private String              captchaAddress;
+        private String              id;
+        private Browser             rcBr;
+        private Form                form;
+        private int                 tries     = 0;
+        private static final String IDREGEX   = "\\?k=([A-Za-z0-9%_\\+\\- ]+)\"";
 
         public Recaptcha(final Browser br) {
             this.br = br;
@@ -102,6 +103,11 @@ public class DirectHTTP extends PluginForHost {
 
         public int getTries() {
             return this.tries;
+        }
+
+        public void findID() throws PluginException {
+            this.id = this.br.getRegex(IDREGEX).getMatch(0);
+            if (this.id == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
 
         public synchronized void handleAuto(final Plugin plg, final DownloadLink downloadLink) throws Exception {
@@ -190,7 +196,7 @@ public class DirectHTTP extends PluginForHost {
                 } else {
                     this.id = this.form.getRegex("k=(.*?)\"").getMatch(0);
                     if (this.id == null || this.id.equals("") || this.id.contains("\\")) {
-                        this.id = this.br.getRegex("\\?k=([A-Za-z0-9%_\\+\\- ]+)\"").getMatch(0);
+                        this.id = this.br.getRegex(IDREGEX).getMatch(0);
                     }
                     if (this.id == null || this.id.equals("")) {
                         JDLogger.getLogger().warning("reCaptcha ID couldn't be found...");

@@ -29,11 +29,11 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
@@ -116,7 +116,8 @@ public class FourSharedCom extends PluginForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
 
-        String url = br.getRegex("<a href=\"(http://[\\w\\.]*?4shared(-china)?\\.com/get[^\\;\"]*).*?\" class=\".*?dbtn.*?\" tabindex=\"1\"").getMatch(0);
+        String url = br.getRegex("<a href=\"(http://(www\\.)?4shared(\\-china)?\\.com/get[^\\;\"]*).*?\" class=\".*?dbtn.*?\" tabindex=\"1\"").getMatch(0);
+        if (url == null) url = br.getRegex("\"(http://(www\\.)?4shared\\.com/get/[A-Za-z0-9]+/.*?)\"").getMatch(0);
         if (url == null) {
             /* maybe directdownload */
             url = br.getRegex("startDownload.*?window\\.location.*?(http://.*?)\"").getMatch(0);
@@ -127,9 +128,9 @@ public class FourSharedCom extends PluginForHost {
             if (url == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         } else {
             br.getPage(url);
-            url = br.getRegex("id='divDLStart'( )?>.*?<a href='(.*?)'").getMatch(1);
+            url = br.getRegex("id=\\'divDLStart\\'( )?>.*?<a href=\\'(.*?)\\'").getMatch(1);
             if (url == null) {
-                url = br.getRegex("('|\")(http://dc[0-9]+\\.4shared(-china)?\\.com/download/[a-zA-Z0-9]+/.*?\\?tsid=\\d+-\\d+-[a-z0-9]+)('|\")").getMatch(1);
+                url = br.getRegex("(\\'|\")(http://dc[0-9]+\\.4shared(-china)?\\.com/download/[a-zA-Z0-9]+/.*?\\?tsid=\\d+-\\d+-[a-z0-9]+)(\\'|\")").getMatch(1);
             }
             if (url == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
             if (url.contains("linkerror.jsp")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }

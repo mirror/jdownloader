@@ -16,6 +16,7 @@
 
 package jd.plugins.hoster;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Random;
@@ -23,12 +24,15 @@ import java.util.Random;
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
+import jd.parser.html.Form.MethodType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
+import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
@@ -39,7 +43,8 @@ public class PiggyShareCom extends PluginForHost {
         super(wrapper);
     }
 
-    private static final String FILEIDREGEX = "piggyshare\\.com/file/(.+)";
+    private static final String FILEIDREGEX   = "piggyshare\\.com/file/(.+)";
+    private static final String CAPTCHAFAILED = "statusText:\"Given words are incorrect\\!\"";
 
     @Override
     public String getAGBLink() {
@@ -52,18 +57,40 @@ public class PiggyShareCom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         String addedLink = downloadLink.getDownloadURL();
-        // Directly go to the waittime, we don't even have to access the
-        // downloadlink
+        br.getPage(addedLink);
+        PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+        jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+        rc.findID();
         br.getPage("http://piggyshare.com/download/~starttimer/" + new Regex(addedLink, FILEIDREGEX).getMatch(0) + "/" + new Random().nextInt(1000000000));
         handleErrors();
-        int wait = 60;
-        String waittime = br.getRegex("id=\\\\\"timeToDownload\\\\\">(\\d+)</b>").getMatch(0);
-        if (waittime != null) wait = Integer.parseInt(waittime);
-        sleep(wait * 1001l, downloadLink);
-        br.getPage("http://piggyshare.com/download/~stoptimer/" + new Regex(addedLink, FILEIDREGEX).getMatch(0) + "/" + new Random().nextInt(1000000000));
+        long timeBefore = System.currentTimeMillis();
+        Form reCaptchaForm = new Form();
+        reCaptchaForm.setMethod(MethodType.POST);
+        reCaptchaForm.setAction("http://piggyshare.com/download/~download");
+        rc.setForm(reCaptchaForm);
+        for (int i = 0; i <= 5; i++) {
+            rc.load();
+            File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+            String c = getCaptchaCode(cf, downloadLink);
+            // Only wait on first attempt
+            if (i == 0) {
+                waitTime(timeBefore, downloadLink);
+                br.getPage("http://piggyshare.com/download/~stoptimer/" + new Regex(addedLink, FILEIDREGEX).getMatch(0) + "/" + new Random().nextInt(1000000000));
+                if (!br.containsHTML("status:\"ok\"")) {
+                    logger.warning("Something might have gone wrong...");
+                    logger.warning(br.toString());
+                }
+            }
+            rc.setCode(c);
+            if (br.containsHTML(CAPTCHAFAILED)) {
+                rc.reload();
+                continue;
+            }
+            break;
+        }
         handleErrors();
-        String dllink = br.getRegex("dl.png\" alt=\"\" /> <a href=\\\\\"(http://.*?)\\\\\"").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("\"(http://st\\d+\\.piggyshare\\.com/download/[a-z0-9]+/[a-z0-9]+/[a-z0-9]+/.*?)\\\\\"").getMatch(0);
+        String dllink = br.getRegex("status:\"ok\", statusText:\"(http://.*?)\"").getMatch(0);
+        if (dllink == null) dllink = br.getRegex("\"(http://st\\d+\\.piggyshare\\.com/download/[a-z0-9]+/[a-z0-9]+/[a-z0-9]+/.*?)\"").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
@@ -71,6 +98,17 @@ public class PiggyShareCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    private void waitTime(long timeBefore, DownloadLink downloadLink) throws PluginException {
+        int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000) - 1;
+        // Ticket Time
+        int tt = 60;
+        String ttt = br.getRegex("id=\\\\\"timeToDownload\\\\\">(\\d+)</b>").getMatch(0);
+        if (ttt != null) tt = Integer.parseInt(ttt);
+        tt -= passedTime;
+        logger.info("Waittime detected, waiting " + ttt + " - " + passedTime + " seconds from now on...");
+        if (tt > 0) sleep(tt * 1001l, downloadLink);
     }
 
     public boolean checkLinks(DownloadLink[] urls) {
@@ -143,6 +181,11 @@ public class PiggyShareCom extends PluginForHost {
         if (br.containsHTML(">ERROR:</b> You are waiting to download another file")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many simultan downloads", 30 * 1000l);
         String reconnectWaittime = br.getRegex("> You need to wait (\\d+) minutes in order to download another file").getMatch(0);
         if (reconnectWaittime != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(reconnectWaittime) * 60 * 1001l);
+        if (br.containsHTML(CAPTCHAFAILED)) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        if (br.containsHTML("statusText:\"Your download link has expired\\!\"")) {
+            logger.info("Downloadlink expired, retrying...");
+            throw new PluginException(LinkStatus.ERROR_RETRY, "Downloadlink expired");
+        }
     }
 
     @Override
