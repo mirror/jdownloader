@@ -33,10 +33,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "grooveshark.com" }, urls = { "http://(listen\\.grooveshark\\.viajd/(#/)?.+|grooveshark\\.viajd/song/\\d+)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "grooveshark.com" }, urls = { "http://(grooveshark\\.viajd/(#/)?.+|grooveshark\\.viajd/song/\\d+)" }, flags = { 0 })
 public class GrooveShark extends PluginForHost {
 
-    private static final String LISTEN  = "http://listen.grooveshark.com/";
+    private static final String LISTEN  = "http://grooveshark.com/";
     private static final String COWBELL = "http://cowbell.grooveshark.com/";
     private static final String USERID  = UUID.randomUUID().toString().toUpperCase();
 
@@ -138,7 +138,7 @@ public class GrooveShark extends PluginForHost {
         songID = br.getRegex("SongID\":\"(\\d+)\"").getMatch(0);
         // get streamKey
         br.getHeaders().put("Content-Type", "application/json");
-        br.getHeaders().put("Referer", "http://listen.grooveshark.com/JSQueue.swf?20101203.14");
+        br.getHeaders().put("Referer", "http://grooveshark.com/JSQueue.swf?20101203.14");
         br.getHeaders().put("x-flash-version", "10,1,53,64");
         String streamKey = "{\"parameters\":{" + country + ",\"prefetch\":true,\"songID\":" + songID + ",\"mobile\":false},\"header\":{\"privacy\":0,\"token\":\"" + getToken("getStreamKeyFromSongIDEx", secretKey) + "\",\"session\":\"" + sid + "\"," + country + ",\"uuid\":\"" + GrooveShark.USERID + "\",\"client\":\"jsqueue\",\"clientRevision\":\"20101012.36\"},\"method\":\"getStreamKeyFromSongIDEx\"}";
         br.postPageRaw(GrooveShark.COWBELL + "more.php?getStreamKeyFromSongIDEx", streamKey);

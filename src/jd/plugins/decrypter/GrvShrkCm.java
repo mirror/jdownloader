@@ -37,10 +37,10 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "grooveshark.com" }, urls = { "http://listen\\.grooveshark\\.com/(#/)?.+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "grooveshark.com" }, urls = { "http://grooveshark\\.com/(#/)?.+" }, flags = { 0 })
 public class GrvShrkCm extends PluginForDecrypt {
 
-    private static final String LISTEN = "http://listen.grooveshark.com/";
+    private static final String LISTEN = "http://grooveshark.com/";
     private static final String USERID = UUID.randomUUID().toString().toUpperCase();
     private String              userID;
     private String              userName;
@@ -61,8 +61,8 @@ public class GrvShrkCm extends PluginForDecrypt {
 
     private ArrayList<DownloadLink> decryptFavourites(final String parameter, final ProgressController progress) throws IOException {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        userID = new Regex(parameter, "listen.grooveshark.com/#/user/.*?/(\\d+)/").getMatch(0);
-        userName = new Regex(parameter, "listen.grooveshark.com/#/user/(.*?)/(\\d+)/").getMatch(0);
+        userID = new Regex(parameter, "grooveshark.com/#/user/.*?/(\\d+)/").getMatch(0);
+        userName = new Regex(parameter, "grooveshark.com/#/user/(.*?)/(\\d+)/").getMatch(0);
         br.getPage(parameter);
         final String country = br.getRegex(Pattern.compile("\"country(.*?)}", Pattern.UNICODE_CASE)).getMatch(-1);
         final String method = "getFavorites";
