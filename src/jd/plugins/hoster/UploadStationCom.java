@@ -29,11 +29,11 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -49,11 +49,12 @@ public class UploadStationCom extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://uploadstation.com/premium.php";
+        return "http://www.uploadstation.com/toc.php";
     }
 
     private static final String FILEOFFLINE = "(<h1>File not available</h1>|<b>The file could not be found\\. Please check the download link)";
     public static String        agent       = RandomUserAgent.generate();
+    private boolean             ispremium   = false;
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
@@ -192,13 +193,17 @@ public class UploadStationCom extends PluginForHost {
         ai.setUnlimitedTraffic();
         String expire = br.getRegex("Expiry date: (\\d+\\-\\d+\\-\\d+)").getMatch(0);
         if (expire == null) {
-            ai.setExpired(true);
-            account.setValid(false);
-            return ai;
+            // ai.setExpired(true);
+            this.ispremium = false;
+            ai.setStatus("Free User");
+            account.setMaxSimultanDownloads(1);
+            account.setValid(true);
         } else {
+            this.ispremium = true;
+            account.setMaxSimultanDownloads(-1);
             ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy-MM-dd", null));
+            ai.setStatus("Premium User");
         }
-        ai.setStatus("Premium User");
         return ai;
     }
 
@@ -206,21 +211,25 @@ public class UploadStationCom extends PluginForHost {
     public void handlePremium(DownloadLink link, Account account) throws Exception {
         requestFileInformation(link);
         login(account);
-        br.setFollowRedirects(false);
-        br.getPage(link.getDownloadURL());
-        String dllink = br.getRedirectLocation();
-        if (dllink == null) {
-            if (br.containsHTML(FILEOFFLINE)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            logger.warning("The final dllink seems not to be a file!");
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
+
+        if (this.ispremium) {
+            br.setFollowRedirects(false);
+            br.getPage(link.getDownloadURL());
+            String dllink = br.getRedirectLocation();
+            if (dllink == null) {
+                if (br.containsHTML(FILEOFFLINE)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+            if (dl.getConnection().getContentType().contains("html")) {
+                logger.warning("The final dllink seems not to be a file!");
+                br.followConnection();
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            dl.startDownload();
+        } else
+            this.handleFree(link);
     }
 
     @Override
