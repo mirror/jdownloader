@@ -77,11 +77,10 @@ public class FileFactory extends PluginForHost {
 
     @Override
     public boolean checkLinks(final DownloadLink[] urls) {
-        if (true) return false;
         if (urls == null || urls.length == 0) { return false; }
         try {
             final Browser br = new Browser();
-            br.setHeader("Accept-Encoding", "");
+            this.br.getHeaders().put("Accept-Encoding", "");
             br.forceDebug(true);
             final StringBuilder sb = new StringBuilder();
             br.setCookiesExclusive(true);
@@ -344,7 +343,7 @@ public class FileFactory extends PluginForHost {
 
     private void login(final Account account) throws Exception {
         this.setBrowserExclusive();
-        br.setHeader("Accept-Encoding", "");
+        this.br.getHeaders().put("Accept-Encoding", "");
         this.br.setFollowRedirects(true);
         this.br.getPage("http://filefactory.com");
         final Form login = this.br.getForm(0);
@@ -357,7 +356,7 @@ public class FileFactory extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
-        br.setHeader("Accept-Encoding", "");
+        this.br.getHeaders().put("Accept-Encoding", "");
         this.br.getHeaders().put("User-Agent", RandomUserAgent.generateFF());
         this.br.setFollowRedirects(true);
         for (int i = 0; i < 4; i++) {
