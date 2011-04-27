@@ -69,7 +69,7 @@ public class UploadStationCom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         // Works like fileserve.com, they use the same scripts
         requestFileInformation(downloadLink);
-        br.getPage(downloadLink.getBrowserUrl());
+        br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML(FILEOFFLINE)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         this.handleErrors(br, downloadLink);
         final String fileId = this.br.getRegex("uploadstation\\.com/file/([a-zA-Z0-9]+)").getMatch(0);
@@ -97,6 +97,7 @@ public class UploadStationCom extends PluginForHost {
         for (int i = 0; i <= 10; i++) {
             final String id = this.br.getRegex("var reCAPTCHA_publickey=\\'(.*?)\\';").getMatch(0);
             if ((!br.containsHTML("api\\.recaptcha\\.net") && !br.containsHTML("\"javascript:Recaptcha\\.reload")) || id == null) {
+                if (br.containsHTML("blogspot\\.com")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l);
                 handleCaptchaErrors(br2, downloadLink);
                 logger.warning("id or fileId is null or the browser doesn't contain the reCaptcha text...");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -231,7 +232,8 @@ public class UploadStationCom extends PluginForHost {
         // Works nearly 100% like the fileserve.com linkcheck
         if (urls == null || urls.length == 0) { return false; }
         try {
-            br.setCustomCharset("utf-8");
+            Browser checkbr = new Browser();
+            checkbr.setCustomCharset("utf-8");
             final ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
             int index = 0;
             final StringBuilder sb = new StringBuilder();
@@ -262,7 +264,7 @@ public class UploadStationCom extends PluginForHost {
                     sb.append(Encoding.urlEncode(dl.getDownloadURL()));
                     c++;
                 }
-                this.br.postPage("http://www.uploadstation.com/check-links.php", sb.toString());
+                checkbr.postPage("http://www.uploadstation.com/check-links.php", sb.toString());
                 for (final DownloadLink dl : links) {
                     final String linkpart = new Regex(dl.getDownloadURL(), "(uploadstation\\.com/file/.+)").getMatch(0);
                     if (linkpart == null) {
@@ -270,7 +272,7 @@ public class UploadStationCom extends PluginForHost {
                         return false;
                     }
                     final String regexForThisLink = "(<td>http://(www\\.)" + linkpart + "([\r\n\t]+)?</td>[\r\n\t ]+<td>.*?</td>[\r\n\t ]+<td>.*?</td>[\r\n\t ]+<td>(Available|Not available)(\\&nbsp;)?(<img|</td>))";
-                    final String theData = this.br.getRegex(regexForThisLink).getMatch(0);
+                    final String theData = checkbr.getRegex(regexForThisLink).getMatch(0);
                     if (theData == null) {
                         logger.warning("Uploadstation availablecheck is broken!");
                         return false;

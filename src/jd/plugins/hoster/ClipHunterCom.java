@@ -26,11 +26,11 @@ import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 import org.appwork.utils.Regex;
 
@@ -83,26 +83,22 @@ public class ClipHunterCom extends PluginForHost {
         setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.getURL().contains("error/missing")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-
+        if (br.getURL().contains("error/missing") || br.containsHTML("(>Ooops, This Video is not available|>This video was removed and is no longer available at our site|<title></title>)")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         String filename = br.getRegex("<title>(.*?) -.*?</title>").getMatch(0);
         final String jsUrl = br.getRegex("<script.*src=\"(http://s\\.gexo.*?player\\.js)\"").getMatch(0);
         final String encryptedUrl = br.getRegex("var pl_fiji_p = '(.*?)'").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("<h1 style=\"font-size: 2em;\">(.*?) </h1>").getMatch(0);
         }
-        if (filename == null || jsUrl == null || encryptedUrl == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-
+        if (filename == null || jsUrl == null || encryptedUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         // parse decryptalgo
         final Browser br2 = br.cloneBrowser();
         br2.getPage(jsUrl);
         String decryptAlgo = new Regex(br2, "decrypt\\:function(.*?)\\}\\;\\$\\(document").getMatch(0);
         if (decryptAlgo == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         decryptAlgo = "function decrypt" + decryptAlgo + ";";
-
         DLLINK = decryptUrl(decryptAlgo, encryptedUrl);
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".mp4");
-
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;

@@ -25,11 +25,11 @@ import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
@@ -38,7 +38,7 @@ public class LoadTo extends PluginForHost {
 
     public LoadTo(PluginWrapper wrapper) {
         super(wrapper);
-        this.setStartIntervall(5000l);
+        this.setStartIntervall(10000l);
     }
 
     @Override
