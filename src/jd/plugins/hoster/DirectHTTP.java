@@ -37,12 +37,12 @@ import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -592,8 +592,15 @@ public class DirectHTTP extends PluginForHost {
             }
             /* if final filename already set, do not change */
             if (downloadLink.getFinalFileName() == null) {
-                downloadLink.setFinalFileName(Plugin.getFileNameFromHeader(urlConnection));
+                /* restore filename from property */
+                if (downloadLink.getStringProperty("fixName", null) != null) {
+                    downloadLink.setFinalFileName(downloadLink.getStringProperty("fixName", null));
+                } else {
+                    downloadLink.setFinalFileName(Plugin.getFileNameFromHeader(urlConnection));
+                }
             }
+            /* save filename in property so we can restore in reset case */
+            downloadLink.setProperty("fixName", downloadLink.getFinalFileName());
             downloadLink.setDownloadSize(urlConnection.getLongContentLength());
             this.contentType = urlConnection.getContentType();
             if (this.contentType.startsWith("text/html") && downloadLink.getBooleanProperty(DirectHTTP.TRY_ALL, false) == false) {
@@ -647,6 +654,9 @@ public class DirectHTTP extends PluginForHost {
     public void resetDownloadlink(final DownloadLink link) {
         link.setProperty(DirectHTTP.NORESUME, false);
         link.setProperty(DirectHTTP.NOCHUNKS, false);
+        if (link.getStringProperty("fixName", null) != null) {
+            link.setFinalFileName(link.getStringProperty("fixName", null));
+        }
     }
 
     @Override
