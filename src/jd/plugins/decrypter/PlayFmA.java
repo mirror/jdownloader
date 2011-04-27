@@ -49,6 +49,9 @@ public class PlayFmA extends PluginForDecrypt {
         for (final String p : pages) {
             finalPages.add(p);
         }
+        if (finalPages == null || finalPages.size() == 0) {
+            finalPages.add("1");
+        }
         progress.setRange(finalPages.size());
         for (final String page : finalPages) {
             progress.increase(1);
@@ -56,7 +59,9 @@ public class PlayFmA extends PluginForDecrypt {
             for (final String match : matches) {
                 song.add(match);
             }
-            br.getPage("http://www.play.fm" + page);
+            if (!page.equals("1")) {
+                br.getPage("http://www.play.fm" + page);
+            }
         }
         if (song == null || song.size() == 0) { return null; }
 
