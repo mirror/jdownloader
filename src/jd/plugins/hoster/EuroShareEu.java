@@ -25,11 +25,11 @@ import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.TimeFormatter;
@@ -84,10 +84,13 @@ public class EuroShareEu extends PluginForHost {
     private void login(Account account) throws Exception {
         this.setBrowserExclusive();
         br.setCustomCharset("utf-8");
-        br.postPage("http://euroshare.eu/login", "login=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
+        br.getPage("http://euroshare.eu/");
+        br.postPage("http://euroshare.eu/", "login=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
         // There are no cookies so we can only check via text on the website
-        if (br.containsHTML("Zabudli ste heslo?")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-        if (!br.containsHTML(">Ste úspešne prihlásený<") || br.containsHTML(">Nesprávne prihlasovacie meno alebo heslo")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        if (!br.containsHTML(">Môj profil<")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        if (br.containsHTML(">Nesprávne prihlasovacie meno alebo heslo")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        br.getPage("http://euroshare.eu/my-profile");
+        if (br.containsHTML("Nemáte premium účet")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
 
     @Override
@@ -99,15 +102,16 @@ public class EuroShareEu extends PluginForHost {
             account.setValid(false);
             return ai;
         }
-        br.getPage("http://euroshare.eu/my-profile");
+
         ai.setUnlimitedTraffic();
-        String expire = br.getRegex(">Premium účet do</td>[\t\n\r ]+<td width=\"70%\"><input type=\"text\" name=\"premium\" value=\"(.*?)\"").getMatch(0);
+        String expire = br.getRegex(">Premium účet do<.*?type=\"text\" name=\"premium\" value=\"(.*?)\"").getMatch(0);
         if (expire == null) {
             ai.setExpired(true);
             account.setValid(false);
             return ai;
         } else {
-            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy-MM-dd HH:mm:ss", null));
+            account.setValid(true);
+            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd.MM.yyyy", null) + (1000l * 60 * 60 * 24));
         }
         ai.setStatus("Premium User");
         return ai;

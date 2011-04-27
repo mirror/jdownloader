@@ -68,6 +68,7 @@ public class SrnnksCategory extends PluginForDecrypt {
             return ret;
         }
         IdNamePair[] categories = parseCategories();
+        if (categories.length == 0) return ret;
         int res = UserIO.getInstance().requestComboDialog(0, "Bitte Kategorie auswählen", "Bitte die gewünschte Staffel auswählen", categories, 0, null, null, null, null);
         if (res < 0) return ret;
 
