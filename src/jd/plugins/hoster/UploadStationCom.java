@@ -19,6 +19,7 @@ package jd.plugins.hoster;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -42,6 +43,8 @@ import org.appwork.utils.formatter.TimeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploadstation.com" }, urls = { "http://(www\\.)?uploadstation\\.com/file/[A-Za-z0-9]+" }, flags = { 2 })
 public class UploadStationCom extends PluginForHost {
 
+    private static AtomicInteger maxDls = new AtomicInteger(-1);
+
     public UploadStationCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://uploadstation.com/premium.php");
@@ -58,7 +61,6 @@ public class UploadStationCom extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
-        this.br.getHeaders().put("User-Agent", agent);
         this.checkLinks(new DownloadLink[] { link });
         if (!link.isAvailabilityStatusChecked()) {
             link.setAvailableStatus(AvailableStatus.UNCHECKABLE);
@@ -70,6 +72,8 @@ public class UploadStationCom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         // Works like fileserve.com, they use the same scripts
         requestFileInformation(downloadLink);
+        br.setCustomCharset("utf-8");
+        br.getHeaders().put("User-Agent", agent);
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML(FILEOFFLINE)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         this.handleErrors(br, downloadLink);
@@ -84,6 +88,7 @@ public class UploadStationCom extends PluginForHost {
         // }
         // captchaJSPage = "http://uploadstation.com" + captchaJSPage;
         final Browser br2 = this.br.cloneBrowser();
+        br2.getHeaders().put("User-Agent", agent);
         br2.setCustomCharset("utf-8");
         // br2.getPage(captchaJSPage);
         br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
@@ -173,6 +178,8 @@ public class UploadStationCom extends PluginForHost {
 
     private void login(Account account) throws Exception {
         this.setBrowserExclusive();
+        br.setCustomCharset("utf-8");
+        br.getHeaders().put("User-Agent", agent);
         br.postPage("http://uploadstation.com/login.php", "loginUserName=" + Encoding.urlEncode(account.getUser()) + "&loginUserPassword=" + Encoding.urlEncode(account.getPass()) + "&autoLogin=on&recaptcha_response_field=&recaptcha_challenge_field=&recaptcha_shortencode_field=&loginFormSubmit=Login");
         if (br.getCookie("http://uploadstation.com/", "cookie") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
@@ -196,11 +203,19 @@ public class UploadStationCom extends PluginForHost {
             // ai.setExpired(true);
             this.ispremium = false;
             ai.setStatus("Free User");
-            account.setMaxSimultanDownloads(1);
+            try {
+                maxDls.set(1);
+                account.setMaxSimultanDownloads(1);
+            } catch (final Throwable noin09581Stable) {
+            }
             account.setValid(true);
         } else {
             this.ispremium = true;
-            account.setMaxSimultanDownloads(-1);
+            try {
+                maxDls.set(-1);
+                account.setMaxSimultanDownloads(-1);
+            } catch (final Throwable noin09581Stable) {
+            }
             ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy-MM-dd", null));
             ai.setStatus("Premium User");
         }
@@ -211,7 +226,6 @@ public class UploadStationCom extends PluginForHost {
     public void handlePremium(DownloadLink link, Account account) throws Exception {
         requestFileInformation(link);
         login(account);
-
         if (this.ispremium) {
             br.setFollowRedirects(false);
             br.getPage(link.getDownloadURL());
@@ -228,13 +242,14 @@ public class UploadStationCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             dl.startDownload();
-        } else
+        } else {
             this.handleFree(link);
+        }
     }
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return -1;
+        return maxDls.get();
     }
 
     public boolean checkLinks(final DownloadLink[] urls) {
@@ -242,6 +257,7 @@ public class UploadStationCom extends PluginForHost {
         if (urls == null || urls.length == 0) { return false; }
         try {
             Browser checkbr = new Browser();
+            checkbr.getHeaders().put("User-Agent", agent);
             checkbr.setCustomCharset("utf-8");
             final ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
             int index = 0;
