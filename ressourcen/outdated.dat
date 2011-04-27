@@ -560,3 +560,5 @@ jd/plugins/decrypter/PrtctTOg.class
 jd/captcha/methods/prtctt
 jd/plugins/hoster/ImzUploadCom.class
 jd/plugins/decrypter/Mg1280CmFldr.class
+jd/plugins/decrypter/LstFmDe.class
+jd/plugins/hoster/LastFm.class

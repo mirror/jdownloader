@@ -16,7 +16,10 @@
 
 package jd.plugins.hoster;
 
-import java.io.IOException;
+import javax.script.Invocable;
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
+import javax.script.ScriptException;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -29,18 +32,34 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "play.fm" }, urls = { "http://(www\\.)?play\\.fm/(recording/\\w+|(recordings)?#play_\\d+)" }, flags = { 0 })
-public class PlayFm extends PluginForHost {
+import org.appwork.utils.Regex;
+
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cliphunter.com" }, urls = { "http://(www\\.)?cliphunter\\.com/w/\\d+/\\w+" }, flags = { 0 })
+public class ClipHunterCom extends PluginForHost {
 
     private String DLLINK = null;
 
-    public PlayFm(final PluginWrapper wrapper) {
+    public ClipHunterCom(final PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    public String decryptUrl(final String fun, final String value) throws Exception {
+        Object result = new Object();
+        final ScriptEngineManager manager = new ScriptEngineManager();
+        final ScriptEngine engine = manager.getEngineByName("javascript");
+        final Invocable inv = (Invocable) engine;
+        try {
+            engine.eval(fun);
+            result = inv.invokeFunction("decrypt", value);
+        } catch (final ScriptException e) {
+            e.printStackTrace();
+        }
+        return (String) result;
     }
 
     @Override
     public String getAGBLink() {
-        return "http://www.orgasm.com/termsconditions.php";
+        return "http://www.cliphunter.com/terms/";
     }
 
     @Override
@@ -51,7 +70,7 @@ public class PlayFm extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, false, 30);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, false, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -60,27 +79,30 @@ public class PlayFm extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         setBrowserExclusive();
-        final String id = downloadLink.getDownloadURL().substring(downloadLink.getDownloadURL().lastIndexOf("_") + 1);
-        if (id == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        br.setFollowRedirects(true);
+        br.getPage(downloadLink.getDownloadURL());
+        if (br.getURL().contains("error/missing")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
 
-        br.getPage("http://www.play.fm/flexRead/recording?rec%5Fid=" + id);
-
-        if (br.containsHTML("var vid_title = \"\"")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-        String filename = br.getRegex("<title><!\\[CDATA\\[(.*?)\\]\\]></title>").getMatch(0);
-        final String highBitrate = br.getRegex("<file_id>(.*?)</file_id>").getMatch(0);
-        final String fileId1 = br.getRegex("<file_id>(.*?)</file_id>").getMatch(0, 1);
-        final String url = br.getRegex("<url>(.*?)</url>").getMatch(0);
-        final String uuid = br.getRegex("<uuid>(.*?)</uuid>").getMatch(0);
+        String filename = br.getRegex("<title>(.*?) -.*?</title>").getMatch(0);
+        final String jsUrl = br.getRegex("<script.*src=\"(http://s\\.gexo.*?player\\.js)\"").getMatch(0);
+        final String encryptedUrl = br.getRegex("var pl_fiji_p = '(.*?)'").getMatch(0);
         if (filename == null) {
-            filename = br.getRegex("content=\"(.*?) \\- Madthumbs\\.com\"").getMatch(0);
+            filename = br.getRegex("<h1 style=\"font-size: 2em;\">(.*?) </h1>").getMatch(0);
         }
-        if (filename == null || highBitrate == null || fileId1 == null || url == null || uuid == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        if (filename == null || jsUrl == null || encryptedUrl == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
 
-        DLLINK = "http://" + url + "/public/" + highBitrate + "/offset/0/sh/" + uuid + "/rec/" + id + "/jingle/" + fileId1 + "/loc/";
-        downloadLink.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".wav");
+        // parse decryptalgo
         final Browser br2 = br.cloneBrowser();
+        br2.getPage(jsUrl);
+        String decryptAlgo = new Regex(br2, "decrypt\\:function(.*?)\\}\\;\\$\\(document").getMatch(0);
+        if (decryptAlgo == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        decryptAlgo = "function decrypt" + decryptAlgo + ";";
+
+        DLLINK = decryptUrl(decryptAlgo, encryptedUrl);
+        downloadLink.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".mp4");
+
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
