@@ -152,7 +152,7 @@ public class PiggyShareCom extends PluginForHost {
                     if (br.containsHTML("piggyshare\\.com/file/" + fileid + "\"")) {
                         dl.setAvailable(false);
                     } else {
-                        Regex regexForThisLink = br.getRegex("\"<b>([\\w\\.]+)</b> \\(<b>([A-Za-z0-9\\. ]+)</b>\\)<br/><span style=\\\\\"color:gray\\\\\">http://piggyshare\\.com/file/" + fileid + "([\n\t\r]+)?</span><br/>\"");
+                        Regex regexForThisLink = br.getRegex("\"<b>([A-Za-z0-9\\._\\- ]+)</b> \\(<b>([A-Za-z0-9\\. ]+)</b>\\)<br/><span style=\\\\\"color:gray\\\\\">http://piggyshare\\.com/file/" + fileid + "([\n\t\r]+)?</span><br/>\"");
                         String filename = regexForThisLink.getMatch(0);
                         String filesize = regexForThisLink.getMatch(1);
                         if (filename == null || filesize == null) {
