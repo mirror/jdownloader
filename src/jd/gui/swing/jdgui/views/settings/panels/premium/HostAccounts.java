@@ -58,4 +58,7 @@ public class HostAccounts {
         this.traffic = traffic;
     }
 
+    public void setHasAccountInfos(boolean b) {
+    }
+
 }

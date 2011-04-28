@@ -90,4 +90,37 @@ public interface AntireconnectTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Case sensitivy (Filter is case sensitive)" })
     String settings_linkgrabber_filter_columns_case();
+
+    @Default(lngs = { "en" }, values = { "Enabled" })
+    String premiumaccounttablemodel_column_enabled();
+
+    @Default(lngs = { "en" }, values = { "Hoster" })
+    String premiumaccounttablemodel_column_hoster();
+
+    @Default(lngs = { "en" }, values = { "Account" })
+    String premiumaccounttablemodel_account();
+
+    @Default(lngs = { "en" }, values = { "Username" })
+    String premiumaccounttablemodel_column_user();
+
+    @Default(lngs = { "en" }, values = { "Password" })
+    String premiumaccounttablemodel_column_password();
+
+    @Default(lngs = { "en" }, values = { "Expire Date" })
+    String premiumaccounttablemodel_column_expiredate();
+
+    @Default(lngs = { "en" }, values = { "Download Traffic left" })
+    String premiumaccounttablemodel_column_trafficleft();
+
+    @Default(lngs = { "en" }, values = { "" })
+    String premiumaccounttablemodel_column_trafficleft_invalid();
+
+    @Default(lngs = { "en" }, values = { "" })
+    String premiumaccounttablemodel_column_trafficleft_unchecked();
+
+    @Default(lngs = { "en" }, values = { "Unlimited" })
+    String premiumaccounttablemodel_column_trafficleft_unlimited();
+
+    @Default(lngs = { "en" }, values = { "Actions" })
+    String premiumaccounttablemodel_column_actions();
 }

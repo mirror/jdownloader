@@ -28,15 +28,15 @@ import java.awt.event.MouseMotionListener;
 public class TrayMouseAdapter implements MouseListener, MouseMotionListener {
 
     private TrayExtension deligate;
-    private boolean mouseover;
-    private Thread mouseLocationObserver;
+    private boolean       mouseover;
+    private Thread        mouseLocationObserver;
     // private TrayIcon trayIcon;
-    private Point min;
-    private Point max;
-    private Dimension size;
-    private MouseEvent lastEvent;
-    private Component dummy;
-    private static int TOOLTIP_DELAY = 1000;
+    private Point         min;
+    private Point         max;
+    private Dimension     size;
+    private MouseEvent    lastEvent;
+    private Component     dummy;
+    private static int    TOOLTIP_DELAY = 1000;
 
     public TrayMouseAdapter(TrayExtension lightTray, TrayIcon trayIcon) {
         deligate = lightTray;
@@ -120,6 +120,10 @@ public class TrayMouseAdapter implements MouseListener, MouseMotionListener {
     }
 
     public void mouseMoved(MouseEvent e) {
+        if (e == null || e.getPoint() == null) {
+            // workaround. It seems like sometimes e.getPoint()==null
+            return;
+        }
         lastEvent = e;
         /**
          * the more the user moves over the tray, the better we know it's

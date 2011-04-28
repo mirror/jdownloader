@@ -645,12 +645,19 @@ public interface JdownloaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Credentials" })
     String gui_settings_logins_title();
 
-    @Default(lngs = { "en" }, values = { "Premium Accounts" })
-    String gui_settings_logins_premium();
-
     @Default(lngs = { "en" }, values = { "HTTP Credentials" })
     String gui_settings_logins_htaccess();
 
     @Default(lngs = { "en" }, values = { "FTP Credentials" })
     String gui_settings_logins_ftp();
+
+    @Default(lngs = { "en" }, values = { "Account Manager" })
+    String gui_settings_premium_title();
+
+    @Default(lngs = { "en" }, values = { "Enter and manage all your Premium/Gold/Platin accounts." })
+    String gui_settings_premium_description();
+
+    @Default(lngs = { "en" }, values = { "Account %s1@%s2" })
+    String pluginforhost_infogenerator_title(String user, String hoster);
+
 }

@@ -86,7 +86,7 @@ public class PremiumJTableModel extends JDTableModel {
                 list.add(ha);
                 traffic = 0;
                 gotenabled = false;
-                ha.hasAccountInfos(false);
+                ha.setHasAccountInfos(false);
                 for (Account acc : accs) {
                     list.add(acc);
                     if (acc.isEnabled()) gotenabled = true;

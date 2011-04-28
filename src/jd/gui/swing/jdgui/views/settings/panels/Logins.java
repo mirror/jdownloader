@@ -18,7 +18,7 @@ package jd.gui.swing.jdgui.views.settings.panels;
 
 import javax.swing.ImageIcon;
 
-import net.miginfocom.swing.MigLayout;
+import jd.gui.swing.jdgui.views.settings.panels.accountmanager.AccountManager;
 
 import org.jdownloader.extensions.AbstractConfigPanel;
 import org.jdownloader.images.Theme;
@@ -26,27 +26,21 @@ import org.jdownloader.translate.JDT;
 
 public class Logins extends AbstractConfigPanel {
 
-    private SettingsTabbedPane tabbed;
-
     public String getTitle() {
-        return JDT._.gui_settings_logins_title();
+        return JDT._.gui_settings_premium_title();
     }
 
     public Logins() {
         super();
-        setLayout(new MigLayout("ins 0, wrap 1", "[grow,fill]", "[grow,fill]"));
-        tabbed = new SettingsTabbedPane();
-        add(tabbed);
-        tabbed.addTab(new PremiumTab(), Theme.getIcon("settings/premium", 20), JDT._.gui_settings_logins_premium());
-        tabbed.addTab(new PremiumTab(), Theme.getIcon("settings/users", 20), JDT._.gui_settings_logins_htaccess());
-        tabbed.addTab(new PremiumTab(), Theme.getIcon("settings/users_ftp", 20), JDT._.gui_settings_logins_ftp());
-        // add(new PremiumTab());
+        this.addHeader(getTitle(), Theme.getIcon("settings/premium", 32));
+        this.addDescription(JDT._.gui_settings_premium_description());
 
+        add(AccountManager.getInstance());
     }
 
     @Override
     public ImageIcon getIcon() {
-        return Theme.getIcon("settings/logins", 32);
+        return Theme.getIcon("settings/premium", 32);
     }
 
     @Override

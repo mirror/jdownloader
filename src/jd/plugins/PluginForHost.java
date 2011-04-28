@@ -22,6 +22,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Map.Entry;
 
 import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
@@ -456,6 +457,30 @@ public abstract class PluginForHost extends Plugin implements FavIconRequestor {
     }
 
     public abstract void handleFree(DownloadLink link) throws Exception;
+
+    /**
+     * By overriding this method, a plugin is able to return a
+     * HostPluginInfoGenerator. <br>
+     * <b>Attention: Until next stable update, we have to return Object
+     * here.</b>
+     * 
+     * @return
+     */
+    // @Override DO NEVER USE OVERRIDE ON THIS METHOD BEFORE NEXT STABLE UPDATE.
+    public Object getInfoGenerator(Account account) {
+        AccountInfo ai = account.getAccountInfo();
+        if (ai == null || ai.getProperties().size() == 0) return null;
+        KeyValueInfoGenerator ret = new KeyValueInfoGenerator(JDT._.pluginforhost_infogenerator_title(account.getUser(), account.getHoster()));
+        for (Entry<String, Object> es : ai.getProperties().entrySet()) {
+            String key = es.getKey();
+            Object value = es.getValue();
+
+            if (value != null) {
+                ret.addPair(key, value.toString());
+            }
+        }
+        return ret;
+    }
 
     public void handle(final DownloadLink downloadLink, final Account account) throws Exception {
         final TransferStatus transferStatus = downloadLink.getTransferStatus();

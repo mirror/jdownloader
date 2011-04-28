@@ -1191,4 +1191,25 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Size of Captcha Dialogs" })
     String gui_config_barrierfree_captchasize();
+
+    @Default(lngs = { "en" }, values = { "Add" })
+    String settings_accountmanager_add();
+
+    @Default(lngs = { "en" }, values = { "Buy" })
+    String settings_accountmanager_buy();
+
+    @Default(lngs = { "en" }, values = { "Refresh" })
+    String settings_accountmanager_refresh();
+
+    @Default(lngs = { "en" }, values = { "Delete" })
+    String settings_accountmanager_delete();
+
+    @Default(lngs = { "en" }, values = { "Renew / Buy new Account" })
+    String settings_accountmanager_renew();
+
+    @Default(lngs = { "en" }, values = { "Premiumzone" })
+    String settings_accountmanager_premiumzone();
+
+    @Default(lngs = { "en" }, values = { "Account Information" })
+    String settings_accountmanager_info();
 }
