@@ -41,8 +41,9 @@ import jd.utils.JDUtilities;
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "relink.us", "relink.us" }, urls = { "http://[\\w\\.]*?relink\\.us/(go\\.php\\?id=[\\w]+|f/[\\w]+)", "http://[\\w\\.]*?relink\\.us/view\\.php\\?id=\\w+" }, flags = { PluginWrapper.CNL_2, PluginWrapper.CNL_2 })
 public class Rlnks extends PluginForDecrypt {
 
-    ProgressController   progress;
-    private final String PASSWORDTEXT = "password";
+    ProgressController          progress;
+    private final String        PASSWORDTEXT = "password";
+    private static final String ua           = RandomUserAgent.generate();
 
     public Rlnks(final PluginWrapper wrapper) {
         super(wrapper);
@@ -69,7 +70,7 @@ public class Rlnks extends PluginForDecrypt {
         final String parameter = param.toString();
         setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
+        br.getHeaders().put("User-Agent", ua);
         final String page = br.getPage(parameter);
 
         // Handle Captcha and/or password
@@ -105,8 +106,6 @@ public class Rlnks extends PluginForDecrypt {
             if (allForm != null && allForm.getRegex("captcha").matches()) { throw new DecrypterException(DecrypterException.CAPTCHA); }
         }
 
-        if (!br.containsHTML("download.php\\?id=[a-f0-9]+")) { return null; }
-
         progress.setRange(0);
         /* use cnl2 button if available */
         if (br.containsHTML("cnl2.swf")) {
@@ -122,6 +121,7 @@ public class Rlnks extends PluginForDecrypt {
                 }
             }
         }
+        if (!br.containsHTML("download.php\\?id=[a-f0-9]+") && !br.containsHTML("getFile\\(")) { return null; }
         if (!decryptContainer(page, parameter, "dlc", decryptedLinks)) {
             if (!decryptContainer(page, parameter, "ccf", decryptedLinks)) {
                 decryptContainer(page, parameter, "rsdf", decryptedLinks);

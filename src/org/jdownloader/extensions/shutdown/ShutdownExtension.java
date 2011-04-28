@@ -107,6 +107,7 @@ public class ShutdownExtension extends AbstractExtension implements ControlListe
             /* modern windows versions */
         case OSDetector.OS_WINDOWS_2000:
         case OSDetector.OS_WINDOWS_NT:
+        case OSDetector.OS_WINDOWS_SERVER_2008:
             /* not so modern windows versions */
             if (getPluginConfig().getBooleanProperty(CONFIG_FORCESHUTDOWN, false)) {
                 /* force shutdown */
