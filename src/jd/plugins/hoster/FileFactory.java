@@ -25,6 +25,7 @@ import java.util.regex.Pattern;
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.RandomUserAgent;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
 import jd.plugins.Account;
@@ -33,6 +34,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
@@ -55,6 +57,8 @@ public class FileFactory extends PluginForHost {
     private static final String LOGIN_ERROR   = "The email or password you have entered is incorrect";
     private static final String SERVER_DOWN   = "server hosting the file you are requesting is currently down";
     private static final String CAPTCHALIMIT  = "<p>We have detected several recent attempts to bypass our free download restrictions originating from your IP Address";
+
+    private String              dlUrl         = null;
 
     public FileFactory(final PluginWrapper wrapper) {
         super(wrapper);
@@ -237,42 +241,48 @@ public class FileFactory extends PluginForHost {
     }
 
     public void handleFree0(final DownloadLink parameter) throws Exception {
-        this.checkErrors();
-        String urlWithFilename = null;
-        if (this.br.containsHTML("recaptcha_ajax.js")) {
-            urlWithFilename = this.handleRecaptcha(this.br, parameter);
-        } else {
-            urlWithFilename = this.getUrl();
-        }
-        if (urlWithFilename == null) {
-            logger.warning("getUrl is broken!");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        this.br.setFollowRedirects(true);
-        this.br.getPage(urlWithFilename);
-        String wait = this.br.getRegex("class=\"countdown\">(\\d+)</span>").getMatch(0);
         long waittime;
-        if (wait != null) {
-            waittime = Long.parseLong(wait) * 1000l;
-            if (waittime > 60000) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waittime); }
-        }
-        this.checkErrors();
-        final String downloadUrl = this.getUrl();
-        if (downloadUrl == null) {
-            logger.warning("getUrl is broken!");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
+        if (dlUrl != null) {
+            logger.finer("DIRECT free-download");
+            this.br.setFollowRedirects(true);
+            this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, parameter, dlUrl, true, 1);
+        } else {
+            this.checkErrors();
+            String urlWithFilename = null;
+            if (this.br.containsHTML("recaptcha_ajax.js")) {
+                urlWithFilename = this.handleRecaptcha(this.br, parameter);
+            } else {
+                urlWithFilename = this.getUrl();
+            }
+            if (urlWithFilename == null) {
+                logger.warning("getUrl is broken!");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            this.br.setFollowRedirects(true);
+            this.br.getPage(urlWithFilename);
+            String wait = this.br.getRegex("class=\"countdown\">(\\d+)</span>").getMatch(0);
+            if (wait != null) {
+                waittime = Long.parseLong(wait) * 1000l;
+                if (waittime > 60000) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waittime); }
+            }
+            this.checkErrors();
+            String downloadUrl = this.getUrl();
+            if (downloadUrl == null) {
+                logger.warning("getUrl is broken!");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
 
-        wait = this.br.getRegex("class=\"countdown\">(\\d+)</span>").getMatch(0);
-        waittime = 60 * 1000l;
-        if (wait != null) {
-            waittime = Long.parseLong(wait) * 1000l;
+            wait = this.br.getRegex("class=\"countdown\">(\\d+)</span>").getMatch(0);
+            waittime = 60 * 1000l;
+            if (wait != null) {
+                waittime = Long.parseLong(wait) * 1000l;
+            }
+            if (waittime > 60000l) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waittime); }
+            waittime += 1000;
+            this.sleep(waittime, parameter);
+            this.br.setFollowRedirects(true);
+            this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, parameter, downloadUrl);
         }
-        if (waittime > 60000l) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waittime); }
-        waittime += 1000;
-        this.sleep(waittime, parameter);
-        this.br.setFollowRedirects(true);
-        this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, parameter, downloadUrl);
         // Prüft ob content disposition header da sind
         if (this.dl.getConnection().isContentDisposition()) {
             this.dl.startDownload();
@@ -365,8 +375,19 @@ public class FileFactory extends PluginForHost {
             } catch (final Exception e) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
+            URLConnectionAdapter con = null;
             try {
-                this.br.getPage(downloadLink.getDownloadURL());
+                dlUrl = null;
+                con = this.br.openGetConnection(downloadLink.getDownloadURL());
+                if (con.isContentDisposition()) {
+                    downloadLink.setFinalFileName(Plugin.getFileNameFromHeader(con));
+                    downloadLink.setDownloadSize(con.getLongContentLength());
+                    con.disconnect();
+                    dlUrl = downloadLink.getDownloadURL();
+                    return AvailableStatus.TRUE;
+                } else {
+                    br.followConnection();
+                }
                 break;
             } catch (final Exception e) {
                 if (i == 3) { throw e; }

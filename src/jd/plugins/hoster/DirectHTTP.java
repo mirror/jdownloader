@@ -590,18 +590,7 @@ public class DirectHTTP extends PluginForHost {
                 urlConnection.disconnect();
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            /* if final filename already set, do not change */
-            if (downloadLink.getFinalFileName() == null) {
-                /* restore filename from property */
-                if (downloadLink.getStringProperty("fixName", null) != null) {
-                    downloadLink.setFinalFileName(downloadLink.getStringProperty("fixName", null));
-                } else {
-                    downloadLink.setFinalFileName(Plugin.getFileNameFromHeader(urlConnection));
-                }
-            }
-            /* save filename in property so we can restore in reset case */
-            downloadLink.setProperty("fixName", downloadLink.getFinalFileName());
-            downloadLink.setDownloadSize(urlConnection.getLongContentLength());
+
             this.contentType = urlConnection.getContentType();
             if (this.contentType.startsWith("text/html") && downloadLink.getBooleanProperty(DirectHTTP.TRY_ALL, false) == false) {
                 /* jd does not want to download html content! */
@@ -626,6 +615,18 @@ public class DirectHTTP extends PluginForHost {
             } else {
                 urlConnection.disconnect();
             }
+            /* if final filename already set, do not change */
+            if (downloadLink.getFinalFileName() == null) {
+                /* restore filename from property */
+                if (downloadLink.getStringProperty("fixName", null) != null) {
+                    downloadLink.setFinalFileName(downloadLink.getStringProperty("fixName", null));
+                } else {
+                    downloadLink.setFinalFileName(Plugin.getFileNameFromHeader(urlConnection));
+                }
+            }
+            /* save filename in property so we can restore in reset case */
+            downloadLink.setProperty("fixName", downloadLink.getFinalFileName());
+            downloadLink.setDownloadSize(urlConnection.getLongContentLength());
             return AvailableStatus.TRUE;
         } catch (final PluginException e2) {
             /* try referer set by flashgot and check if it works then */
