@@ -183,6 +183,7 @@ public class OronCom extends PluginForHost {
             } else {
                 dllink = br.getRedirectLocation();
                 if (dllink == null) {
+                    if (br.containsHTML("File could not be found due to its possible expiration")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
                     if (br.containsHTML("You have reached the download")) {
                         String errormessage = "You have reached the download limit!";
                         errormessage = br.getRegex("class=\"err\">(.*?)<br>").getMatch(0);
@@ -203,6 +204,7 @@ public class OronCom extends PluginForHost {
                         logger.info("Put password \"" + passCode + "\" entered by user in the DLForm.");
                     }
                     br.submitForm(DLForm);
+                    if (br.containsHTML("File could not be found due to its possible expiration")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
                     // Premium also got limits...
                     if (br.containsHTML("You have reached the download-limit")) {
                         String tmphrs = br.getRegex("\\s+(\\d+)\\s+hours?").getMatch(0);
@@ -466,6 +468,7 @@ public class OronCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable via premium");
             }
         }
+        if (brbefore.contains("File could not be found due to its possible expiration")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
     }
 
     @Override

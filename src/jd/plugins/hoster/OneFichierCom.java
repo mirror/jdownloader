@@ -35,6 +35,7 @@ import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "1fichier.com" }, urls = { "http://[a-z0-9]+\\.(dl4free\\.com|alterupload\\.com|cjoint\\.net|desfichiers\\.com|dfichiers\\.com|megadl\\.fr|mesfichiers\\.org|piecejointe\\.net|pjointe\\.com|tenvoi\\.com|1fichier\\.com)/" }, flags = { 2 })
 public class OneFichierCom extends PluginForHost {
@@ -148,11 +149,14 @@ public class OneFichierCom extends PluginForHost {
             account.setValid(false);
             return ai;
         }
-        br.getPage("https://www.1fichier.com/en/console/details.pl");
         account.setValid(true);
-        String availabletraffic = br.getRegex("<br/>Your account have (.*?) of direct download credits").getMatch(0);
-        if (availabletraffic != null && !availabletraffic.equals("0.00000 GB")) {
-            ai.setTrafficLeft(SizeFormatter.getSize(availabletraffic));
+        br.getPage("http://www.1fichier.com/en/console/abo.pl");
+        String premUntil = br.getRegex("subscribed to our advanced services to (\\d+/\\d+/\\d+)").getMatch(0);
+        if (premUntil != null) {
+            account.setValid(true);
+            ai.setStatus("Premium User");
+            ai.setValidUntil(TimeFormatter.getMilliSeconds(premUntil, "dd/MM/yyyy", null) + (24 * 60 * 60 * 1000l));
+            ai.setUnlimitedTraffic();
             try {
                 maxPrem.set(-1);
                 account.setMaxSimultanDownloads(-1);

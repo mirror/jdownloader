@@ -187,6 +187,8 @@ public class UploadStationCom extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
+        /* reset maxPrem workaround on every fetchaccount info */
+        maxDls.set(1);
         try {
             login(account);
         } catch (PluginException e) {

@@ -17,6 +17,7 @@
 package jd.plugins.hoster;
 
 import jd.PluginWrapper;
+import jd.http.RandomUserAgent;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
 import jd.parser.html.HTMLParser;
@@ -33,6 +34,8 @@ import org.appwork.utils.formatter.SizeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "upload.ge" }, urls = { "http://[\\w\\.]*?upload\\.ge/((\\?d|download\\.php\\?id)=[A-Z0-9]+|((en|ru|fr|es)/)?file/[0-9]+/)" }, flags = { 0 })
 public class UploadGe extends PluginForHost {
 
+    private final String ua = RandomUserAgent.generate();
+
     public UploadGe(PluginWrapper wrapper) {
         super(wrapper);
         this.setStartIntervall(10000l);
@@ -47,7 +50,7 @@ public class UploadGe extends PluginForHost {
     }
 
     private static final String COOKIE_HOST = "http://upload.ge";
-    private static final String IPBLOCKED = "(You have got max allowed bandwidth size per hour|You have got max allowed download sessions from the same IP)";
+    private static final String IPBLOCKED   = "(You have got max allowed bandwidth size per hour|You have got max allowed download sessions from the same IP)";
 
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL() + "&setlang=en");
@@ -59,6 +62,7 @@ public class UploadGe extends PluginForHost {
         br.setFollowRedirects(true);
         br.setCookie(COOKIE_HOST, "mfh_mylang", "en");
         br.setCookie(COOKIE_HOST, "yab_mylang", "en");
+        br.getHeaders().put("User-Agent", ua);
         br.getPage(parameter.getDownloadURL());
         if (br.containsHTML("(Your requested file is not found|No file found)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<b>File name:</b></td>[\r\t\n ]+<td align=[\r\t\n ]+width=[\r\t\n ]+>(.*?)</td>").getMatch(0);
@@ -80,7 +84,7 @@ public class UploadGe extends PluginForHost {
         }
         if (filename == null || filename.matches("")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         parameter.setFinalFileName(filename.trim());
-        if (filesize != null) parameter.setDownloadSize(SizeFormatter.getSize(filesize));
+        if (filesize != null) parameter.setDownloadSize(SizeFormatter.getSize(filesize.trim()));
         return AvailableStatus.TRUE;
     }
 
