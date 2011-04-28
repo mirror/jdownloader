@@ -28,9 +28,10 @@ import org.jdownloader.translate.JDT;
 
 public class DownloadControll extends AbstractConfigPanel {
 
-    private Spinner  maxSimPerHost;
-    private ComboBox remove;
-    private ComboBox ifFileExists;
+    private static final long serialVersionUID = 1L;
+    private Spinner           maxSimPerHost;
+    private ComboBox          remove;
+    private ComboBox          ifFileExists;
 
     public String getTitle() {
         return JDT._.gui_settings_downloadcontroll_title();

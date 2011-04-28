@@ -26,6 +26,8 @@ import org.jdownloader.translate.JDT;
 
 public class Logins extends AbstractConfigPanel {
 
+    private static final long serialVersionUID = -7963763730328793139L;
+
     public String getTitle() {
         return JDT._.gui_settings_premium_title();
     }

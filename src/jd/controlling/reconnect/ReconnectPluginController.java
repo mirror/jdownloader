@@ -30,10 +30,10 @@ import jd.controlling.reconnect.plugins.liveheader.LiveHeaderReconnect;
 import jd.nutils.io.JDFileFilter;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
+import jd.utils.locale.JDL;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.Storage;
-import org.appwork.utils.locale.Loc;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
@@ -128,8 +128,8 @@ public class ReconnectPluginController {
         // first try all plugins that have an automode
         this.storage.put("AUTOFIND", true);
 
-        final ConfirmDialog cDialog = new ConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, Loc.L("jd.controlling.reconnect.ReconnectPluginController.autoFind.title", "Reconnect Wizard"), Loc.L("jd.controlling.reconnect.ReconnectPluginController.autoFind.message", "This wizard will help yout to find the correct reconnection settings for your internet connection.\r\nYou can start this wizard at any later time from the file->settings->reconection panel.\r\n\r\nContinue now?"), null, null, null);
-        cDialog.setLeftActions(new AbstractAction(Loc.L("jd.controlling.reconnect.ReconnectPluginController.autoFind.more", " ... read more")) {
+        final ConfirmDialog cDialog = new ConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, JDL.L("jd.controlling.reconnect.ReconnectPluginController.autoFind.title", "Reconnect Wizard"), JDL.L("jd.controlling.reconnect.ReconnectPluginController.autoFind.message", "This wizard will help yout to find the correct reconnection settings for your internet connection.\r\nYou can start this wizard at any later time from the file->settings->reconection panel.\r\n\r\nContinue now?"), null, null, null);
+        cDialog.setLeftActions(new AbstractAction(JDL.L("jd.controlling.reconnect.ReconnectPluginController.autoFind.more", " ... read more")) {
 
             private static final long serialVersionUID = 1L;
 
@@ -166,9 +166,9 @@ public class ReconnectPluginController {
                         if (Thread.currentThread().isInterrupted()) throw new InterruptedException();
                         if (plg.hasAutoDetection()) {
                             System.err.println("Start " + plg);
-                            this.setStatusMessage(Loc.LF("jd.controlling.reconnect.ReconnectPluginController.autoFind.progressGetter.status", "...testing %s", plg.getName()));
+                            this.setStatusMessage(JDL.LF("jd.controlling.reconnect.ReconnectPluginController.autoFind.progressGetter.status", "...testing %s", plg.getName()));
                             final int time = plg.runAutoDetection(this);
-                            this.setStatusMessage(Loc.LF("jd.controlling.reconnect.ReconnectPluginController.autoFind.progressGetter.status", "...testing %s", plg.getName()));
+                            this.setStatusMessage(JDL.LF("jd.controlling.reconnect.ReconnectPluginController.autoFind.progressGetter.status", "...testing %s", plg.getName()));
 
                             this.setProgress(-1);
                             if (time >= 0 && time < fastest) {
@@ -189,14 +189,14 @@ public class ReconnectPluginController {
                         if (Thread.currentThread().isInterrupted()) throw new InterruptedException();
                         if (plg.hasDetectionWizard()) {
                             System.err.println("Start " + plg);
-                            this.setStatusMessage(Loc.LF("jd.controlling.reconnect.ReconnectPluginController.autoFind.progressGetter.status", "...testing %s", plg.getName()));
+                            this.setStatusMessage(JDL.LF("jd.controlling.reconnect.ReconnectPluginController.autoFind.progressGetter.status", "...testing %s", plg.getName()));
 
                             if (plg.runDetectionWizard(this) > 0) {
 
                                 ReconnectPluginController.this.setActivePlugin(plg);
                                 return;
                             }
-                            this.setStatusMessage(Loc.LF("jd.controlling.reconnect.ReconnectPluginController.autoFind.progressGetter.status", "...testing %s", plg.getName()));
+                            this.setStatusMessage(JDL.LF("jd.controlling.reconnect.ReconnectPluginController.autoFind.progressGetter.status", "...testing %s", plg.getName()));
 
                             this.setProgress(-1);
                         }
@@ -206,7 +206,7 @@ public class ReconnectPluginController {
                 }
             }
 
-        }, 0, Loc.L("jd.controlling.reconnect.ReconnectPluginController.autoFind.title", "Reconnect Wizard"), Loc.L("jd.controlling.reconnect.ReconnectPluginController.autoFind.progressdialog.message", "JDownloader now tries to find the correct settings to perform a reconnect.\r\nThis might take a few minutes. Please be patient!"), null) {
+        }, 0, JDL.L("jd.controlling.reconnect.ReconnectPluginController.autoFind.title", "Reconnect Wizard"), JDL.L("jd.controlling.reconnect.ReconnectPluginController.autoFind.progressdialog.message", "JDownloader now tries to find the correct settings to perform a reconnect.\r\nThis might take a few minutes. Please be patient!"), null) {
             /**
              * 
              */
@@ -228,7 +228,7 @@ public class ReconnectPluginController {
         if (this.getActivePlugin() != DummyRouterPlugin.getInstance()) {
 
             try {
-                Dialog.getInstance().showConfirmDialog(Dialog.BUTTONS_HIDE_CANCEL, Loc.L("jd.controlling.reconnect.ReconnectPluginController.autoFind.title", "Reconnect Wizard"), Loc.LF("jd.controlling.reconnect.ReconnectPluginController.autoFind.success", "Successful!\r\nJDownloader performs the reconnect by using '%s'.", this.getActivePlugin().getName()), JDTheme.II("gui.images.ok", 32, 32), null, null);
+                Dialog.getInstance().showConfirmDialog(Dialog.BUTTONS_HIDE_CANCEL, JDL.L("jd.controlling.reconnect.ReconnectPluginController.autoFind.title", "Reconnect Wizard"), JDL.LF("jd.controlling.reconnect.ReconnectPluginController.autoFind.success", "Successful!\r\nJDownloader performs the reconnect by using '%s'.", this.getActivePlugin().getName()), JDTheme.II("gui.images.ok", 32, 32), null, null);
             } catch (DialogClosedException e1) {
                 e1.printStackTrace();
             } catch (DialogCanceledException e1) {
@@ -237,9 +237,9 @@ public class ReconnectPluginController {
         } else {
 
             this.setActivePlugin(restore);
-            final ConfirmDialog conDialog = new ConfirmDialog(Dialog.BUTTONS_HIDE_CANCEL, Loc.L("jd.controlling.reconnect.ReconnectPluginController.autoFind.title", "Reconnect Wizard"), Loc.L("jd.controlling.reconnect.ReconnectPluginController.autoFind.failed", "Failed!\r\nJDownloader could not find working reconnect settings for your connection.\r\nPlease contact Support for further help."), JDTheme.II("gui.images.bad", 32, 32), null, null);
+            final ConfirmDialog conDialog = new ConfirmDialog(Dialog.BUTTONS_HIDE_CANCEL, JDL.L("jd.controlling.reconnect.ReconnectPluginController.autoFind.title", "Reconnect Wizard"), JDL.L("jd.controlling.reconnect.ReconnectPluginController.autoFind.failed", "Failed!\r\nJDownloader could not find working reconnect settings for your connection.\r\nPlease contact Support for further help."), JDTheme.II("gui.images.bad", 32, 32), null, null);
 
-            conDialog.setLeftActions(new AbstractAction(Loc.L("jd.controlling.reconnect.ReconnectPluginController.autoFind.support", "Support")) {
+            conDialog.setLeftActions(new AbstractAction(JDL.L("jd.controlling.reconnect.ReconnectPluginController.autoFind.support", "Support")) {
 
                 private static final long serialVersionUID = 1L;
 

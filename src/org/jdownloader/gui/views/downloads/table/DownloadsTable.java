@@ -14,6 +14,8 @@ import org.appwork.utils.swing.table.SelectionHighlighter;
 
 public class DownloadsTable extends ExtTable<PackageLinkNode> {
 
+    private static final long serialVersionUID = 8843600834248098174L;
+
     public DownloadsTable(final ExtTableModel<PackageLinkNode> tableModel) {
         super(tableModel);
         this.setShowVerticalLines(false);

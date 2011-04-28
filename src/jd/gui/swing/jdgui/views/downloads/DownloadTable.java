@@ -517,7 +517,7 @@ public class DownloadTable extends JDTable implements MouseListener, KeyListener
             final int indexfp = DownloadController.getInstance().indexOf(fp);
             for (int index = 0; index <= indexfp; index++) {
                 final FilePackage fp2 = packages.get(index);
-                fp.setExpanded(cur);
+                fp2.setExpanded(cur);
             }
         }
             break;
@@ -526,7 +526,7 @@ public class DownloadTable extends JDTable implements MouseListener, KeyListener
             final int indexfp = DownloadController.getInstance().indexOf(fp);
             for (int index = indexfp; index < packages.size(); index++) {
                 final FilePackage fp2 = packages.get(index);
-                fp.setExpanded(cur);
+                fp2.setExpanded(cur);
             }
         }
             break;

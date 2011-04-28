@@ -29,6 +29,7 @@ import org.jdownloader.translate.JDT;
 
 public class Linkgrabber extends AbstractConfigPanel {
 
+    private static final long serialVersionUID = 1L;
     private Checkbox          checkLinks;
     private Checkbox          cnl;
     private Checkbox          rename;

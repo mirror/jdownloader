@@ -16,15 +16,16 @@ import org.jdownloader.gui.translate.T;
 
 public class HosterIconColumn extends ExtColumn<PackageLinkNode> {
 
-    private StatusLabel  statuspanel = null;
-    private DownloadLink dLink       = null;
-    private int          counter     = 0;
-    private ImageIcon    imgResume;
-    private ImageIcon    imgPremium;
-    private String       strResume;
-    private String       strPremium;
-    private ImageIcon    imgMissing;
-    private String       strMissing;
+    private static final long serialVersionUID = 8856394990447477484L;
+    private StatusLabel       statuspanel      = null;
+    private DownloadLink      dLink            = null;
+    private int               counter          = 0;
+    private ImageIcon         imgResume;
+    private ImageIcon         imgPremium;
+    private String            strResume;
+    private String            strPremium;
+    private ImageIcon         imgMissing;
+    private String            strMissing;
 
     public HosterIconColumn() {
         super("HosterIcon", null);

@@ -5,11 +5,11 @@ import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 
 import jd.http.Browser;
+import jd.utils.locale.JDL;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.Storage;
 import org.appwork.utils.Hash;
-import org.appwork.utils.locale.Loc;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
@@ -79,7 +79,7 @@ public class CodeVerifier {
             }
         }
         if (state != State.TRUSTED && state != State.USER_DECIDED_TRUSTED) {
-            final ConfirmDialog dialog = new ConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, "Unknown author", Loc.LF("jd.controlling.CodeVerifier.isJarAllowed.message", "The file %s is not an offical part of JDownloader.\r\n\r\nDo only accept and load it, if you trust the author or content provider!\r\nLoad this file?", file.getName()), null, null, null) {
+            final ConfirmDialog dialog = new ConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, "Unknown author", JDL.LF("jd.controlling.CodeVerifier.isJarAllowed.message", "The file %s is not an offical part of JDownloader.\r\n\r\nDo only accept and load it, if you trust the author or content provider!\r\nLoad this file?", file.getName()), null, null, null) {
 
                 private static final long serialVersionUID = 1L;
 
@@ -94,7 +94,7 @@ public class CodeVerifier {
             Integer ret;
             try {
                 ret = Dialog.getInstance().showDialog(dialog);
-                ret = Dialog.getInstance().showConfirmDialog(0, Loc.LF("jd.controlling.CodeVerifier.isJarAllowed.rlymessage", "The untrusted file %s will be loaded now.\r\nAre you sure that you want to load this file?", file.getName()));
+                ret = Dialog.getInstance().showConfirmDialog(0, JDL.LF("jd.controlling.CodeVerifier.isJarAllowed.rlymessage", "The untrusted file %s will be loaded now.\r\nAre you sure that you want to load this file?", file.getName()));
 
             } catch (DialogClosedException e) {
                 state = State.USER_DECIDED_NOT_TRUSTED;

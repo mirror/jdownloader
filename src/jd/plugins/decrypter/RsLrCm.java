@@ -149,11 +149,11 @@ public class RsLrCm extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    private boolean isExternInterfaceActive() {
-        // DO NOT check for the plugin here. compatzibility reasons to 0.9*
-        // better: check port 9666 for a httpserver
-
-        return true;
-    }
+    // private boolean isExternInterfaceActive() {
+    // // DO NOT check for the plugin here. compatzibility reasons to 0.9*
+    // // better: check port 9666 for a httpserver
+    //
+    // return true;
+    // }
 
 }

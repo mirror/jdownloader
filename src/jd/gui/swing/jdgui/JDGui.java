@@ -392,13 +392,13 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
         this.mainFrame.add(this.toolBar, "dock NORTH");
     }
 
-    private void openSettings() {
-        final ConfigurationView config = ConfigurationView.getInstance();
-        if (!this.mainTabbedPane.contains(config)) {
-            this.mainTabbedPane.addTab(config);
-        }
-        this.mainTabbedPane.setSelectedComponent(config);
-    }
+    // private void openSettings() {
+    // final ConfigurationView config = ConfigurationView.getInstance();
+    // if (!this.mainTabbedPane.contains(config)) {
+    // this.mainTabbedPane.addTab(config);
+    // }
+    // this.mainTabbedPane.setSelectedComponent(config);
+    // }
 
     @Override
     public void requestPanel(final Panels panel, final Object param) {

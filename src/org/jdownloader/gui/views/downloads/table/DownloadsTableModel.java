@@ -21,6 +21,8 @@ import org.jdownloader.gui.views.downloads.columns.SizeColumn;
 
 public class DownloadsTableModel extends ExtTableModel<PackageLinkNode> {
 
+    private static final long serialVersionUID = -198189279671615981L;
+
     public DownloadsTableModel() {
         super("downloadstable");
     }

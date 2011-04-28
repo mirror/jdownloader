@@ -27,7 +27,8 @@ import org.jdownloader.translate.JDT;
 
 public class BarrierFree extends AbstractConfigPanel {
 
-    private Spinner captchaSize;
+    private static final long serialVersionUID = 1L;
+    private Spinner           captchaSize;
 
     public String getTitle() {
         return JDT._.gui_settings_barrierfree_title();

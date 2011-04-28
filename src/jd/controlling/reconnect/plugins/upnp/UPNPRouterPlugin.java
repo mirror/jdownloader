@@ -50,10 +50,10 @@ import jd.controlling.reconnect.ipcheck.InvalidProviderException;
 import jd.controlling.reconnect.plugins.upnp.translate.T;
 import jd.gui.UserIO;
 import jd.utils.JDTheme;
+import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.utils.Regex;
-import org.appwork.utils.locale.Loc;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
@@ -111,9 +111,7 @@ public class UPNPRouterPlugin extends RouterPlugin implements ActionListener, IP
 
                 }
 
-            }, 0, Loc.L("jd.controlling.reconnect.plugins.upnp.UPNPRouterPlugin.actionPerformed.wizard.title", "UPNP Router Wizard"),
-
-            Loc.L("jd.controlling.reconnect.plugins.upnp.UPNPRouterPlugin.actionPerformed.wizard.find.message", "Scanning all network interfaces"), null);
+            }, 0, JDL.L("jd.controlling.reconnect.plugins.upnp.UPNPRouterPlugin.actionPerformed.wizard.title", "UPNP Router Wizard"), JDL.L("jd.controlling.reconnect.plugins.upnp.UPNPRouterPlugin.actionPerformed.wizard.find.message", "Scanning all network interfaces"), null);
             dialog.setPreferredSize(new Dimension(500, 150));
             try {
                 Dialog.getInstance().showDialog(dialog);
@@ -143,9 +141,7 @@ public class UPNPRouterPlugin extends RouterPlugin implements ActionListener, IP
                         final ArrayList<UpnpRouterDevice> devices = UPNPRouterPlugin.this.scanDevices();
                         if (devices.size() == 0) return;
                         if (Thread.currentThread().isInterrupted()) { return; }
-                        final int ret = UserIO.getInstance().requestComboDialog(UserIO.NO_COUNTDOWN, Loc.L("jd.controlling.reconnect.plugins.upnp.UPNPRouterPlugin.actionPerformed.wizard.title", "UPNP Router Wizard"),
-
-                        Loc.L("jd.controlling.reconnect.plugins.upnp.UPNPRouterPlugin.actionPerformed.wizard.find.message", "Scanning all network interfaces"), devices.toArray(new HashMap[] {}), 0, null, null, null, new DefaultListCellRenderer() {
+                        final int ret = UserIO.getInstance().requestComboDialog(UserIO.NO_COUNTDOWN, JDL.L("jd.controlling.reconnect.plugins.upnp.UPNPRouterPlugin.actionPerformed.wizard.title", "UPNP Router Wizard"), JDL.L("jd.controlling.reconnect.plugins.upnp.UPNPRouterPlugin.actionPerformed.wizard.find.message", "Scanning all network interfaces"), devices.toArray(new HashMap[] {}), 0, null, null, null, new DefaultListCellRenderer() {
 
                             private static final long serialVersionUID = 3607383089555373774L;
 
@@ -271,9 +267,7 @@ public class UPNPRouterPlugin extends RouterPlugin implements ActionListener, IP
 
                         }
 
-                    }, 0, Loc.L("jd.controlling.reconnect.plugins.upnp.UPNPRouterPlugin.actionPerformed.wizard.title", "UPNP Router Wizard"),
-
-                    Loc.L("jd.controlling.reconnect.plugins.upnp.UPNPRouterPlugin.actionPerformed.wizard.test.message", "Testing each network devices for reconnect and IP change features."), null);
+                    }, 0, JDL.L("jd.controlling.reconnect.plugins.upnp.UPNPRouterPlugin.actionPerformed.wizard.title", "UPNP Router Wizard"), JDL.L("jd.controlling.reconnect.plugins.upnp.UPNPRouterPlugin.actionPerformed.wizard.test.message", "Testing each network devices for reconnect and IP change features."), null);
                     dialog.setPreferredSize(new Dimension(500, 150));
                     Dialog.getInstance().showDialog(dialog);
 

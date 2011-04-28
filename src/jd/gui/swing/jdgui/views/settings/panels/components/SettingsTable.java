@@ -17,6 +17,8 @@ import org.appwork.utils.swing.table.ExtTableModel;
 
 public class SettingsTable<T> extends ExtTable<T> {
 
+    private static final long serialVersionUID = -9181860215412270250L;
+
     public SettingsTable(ExtTableModel<T> tableModel) {
         super(tableModel);
         this.setShowVerticalLines(true);
