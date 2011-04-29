@@ -20,16 +20,13 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
-import jd.parser.html.Form;
+import jd.http.Browser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rs.hoerbuch.in" }, urls = { "http://(rs\\.)?hoerbuch\\.in/([A-Za-z0-9_-]+|download_\\d+)(\\.html|/.+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hoerbuch.in" }, urls = { "http://[\\w\\.]*?hoerbuch\\.in/protection/folder_\\d+\\.html" }, flags = { 0 })
 public class RsHrbchn extends PluginForDecrypt {
 
     public RsHrbchn(PluginWrapper wrapper) {
@@ -42,58 +39,20 @@ public class RsHrbchn extends PluginForDecrypt {
         passwords.add("www.hoerbuch.in");
         String parameter = param.toString();
         br.getPage(parameter);
-        if (parameter.contains("hoerbuch.in/download_")) {
-            String password = br.getRegex("<B>Passwort:</B> (.*?) \\| <B>Uploader").getMatch(0);
-            if (password != null && !passwords.contains(password)) passwords.add(password);
-            String fpName = br.getRegex("\">Download von \"<b>(.*?)</b>").getMatch(0);
-            String[] allLinks = br.getRegex("\"http://(www\\.)?hoerbuch\\.in/cj/out\\.php\\?pct=\\d+\\&url=(http://rs\\.hoerbuch\\.in/.*?)\"").getColumn(1);
-            if (allLinks == null || allLinks.length == 0) allLinks = br.getRegex("(http://rs\\.hoerbuch\\.in/([A-Za-z0-9-]+/)?(\\d+/)?[A-Za-z0-9_\\.-]+)\"").getColumn(0);
-            if (allLinks == null || allLinks.length == 0) return null;
-            progress.setRange(allLinks.length);
-            for (String singleLink : allLinks) {
-                br.getPage(singleLink);
-                String finallink = getSingleLink(singleLink);
-                if (finallink == null) {
-                    if (br.containsHTML("(<title>404 Not Found</title>|<h1>Not Found</h1>)")) {
-                        logger.info("Found a broken link on mainlink: " + singleLink);
-                        logger.info("Found a broken link on detailed link: " + singleLink);
-                        continue;
-                    }
-                    logger.warning("Error happened during decryption loop for mainlink: " + parameter);
-                    logger.warning("Error happened during decryption loop for detailed link: " + singleLink);
-                    return null;
+        String links[] = br.getRegex("on.png.*?href=\"(http.*?)\"").getColumn(0);
+        for (String link : links) {
+            if (link.contains("in/protection")) {
+                Browser brc = br.cloneBrowser();
+                brc.setFollowRedirects(false);
+                brc.getPage(link);
+                if (brc.getRedirectLocation() != null) {
+                    decryptedLinks.add(this.createDownloadlink(brc.getRedirectLocation()));
                 }
-                if (finallink.contains("ul.to")) finallink = finallink.replace("ul.to", "uploaded.to");
-                DownloadLink dl = createDownloadlink(finallink);
-                dl.setSourcePluginPasswordList(passwords);
-                decryptedLinks.add(dl);
-                progress.increase(1);
+            } else {
+                decryptedLinks.add(this.createDownloadlink(link));
             }
-            if (fpName != null) {
-                FilePackage fp = FilePackage.getInstance();
-                fp.setName(Encoding.htmlDecode(fpName.trim()));
-                fp.addLinks(decryptedLinks);
-            }
-        } else {
-            String dLink = getSingleLink(parameter);
-            if (dLink == null) return null;
-            DownloadLink dl = createDownloadlink(dLink);
-            dl.setSourcePluginPasswordList(passwords);
-            decryptedLinks.add(dl);
         }
         return decryptedLinks;
-    }
-
-    private String getSingleLink(String parameter) {
-        Form form = br.getForm(0);
-        if (form == null) return null;
-        String dLink;
-        if (form.hasInputFieldByName("uri")) {
-            dLink = "http://rapidshare." + new Regex(parameter, "in/(\\w{2,3})-").getMatch(0) + Encoding.htmlDecode(form.getInputFieldByName("uri").getValue());
-        } else {
-            dLink = form.getAction(null);
-        }
-        return dLink;
     }
 
 }
