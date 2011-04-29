@@ -177,25 +177,42 @@ public class UploadStationCom extends PluginForHost {
     }
 
     private void login(Account account) throws Exception {
+        /* reset maxPrem workaround on every fetchaccount info */
+        maxDls.set(1);
         this.setBrowserExclusive();
         br.setCustomCharset("utf-8");
         br.getHeaders().put("User-Agent", agent);
         br.postPage("http://uploadstation.com/login.php", "loginUserName=" + Encoding.urlEncode(account.getUser()) + "&loginUserPassword=" + Encoding.urlEncode(account.getPass()) + "&autoLogin=on&recaptcha_response_field=&recaptcha_challenge_field=&recaptcha_shortencode_field=&loginFormSubmit=Login");
         if (br.getCookie("http://uploadstation.com/", "cookie") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        br.getPage("http://uploadstation.com/dashboard.php");
+        String expire = br.getRegex("Expiry date: (\\d+\\-\\d+\\-\\d+)").getMatch(0);
+        if (expire == null) {
+            // ai.setExpired(true);
+            this.ispremium = false;
+            try {
+                maxDls.set(1);
+                account.setMaxSimultanDownloads(1);
+            } catch (final Throwable noin09581Stable) {
+            }
+        } else {
+            this.ispremium = true;
+            try {
+                maxDls.set(-1);
+                account.setMaxSimultanDownloads(-1);
+            } catch (final Throwable noin09581Stable) {
+            }
+        }
     }
 
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
-        /* reset maxPrem workaround on every fetchaccount info */
-        maxDls.set(1);
         try {
             login(account);
         } catch (PluginException e) {
             account.setValid(false);
             return ai;
         }
-        br.getPage("http://uploadstation.com/dashboard.php");
         String filesUploaded = br.getRegex(">Files Uploaded</div>[\t\n\r ]+<div class=\"box_des\"><span>(\\d+) </span>").getMatch(0);
         if (filesUploaded != null) ai.setFilesNum(Integer.parseInt(filesUploaded));
         account.setValid(true);
@@ -210,7 +227,6 @@ public class UploadStationCom extends PluginForHost {
                 account.setMaxSimultanDownloads(1);
             } catch (final Throwable noin09581Stable) {
             }
-            account.setValid(true);
         } else {
             this.ispremium = true;
             try {
