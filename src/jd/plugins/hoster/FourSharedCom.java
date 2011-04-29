@@ -117,7 +117,7 @@ public class FourSharedCom extends PluginForHost {
         requestFileInformation(downloadLink);
 
         String url = br.getRegex("<a href=\"(http://(www\\.)?4shared(\\-china)?\\.com/get[^\\;\"]*).*?\" class=\".*?dbtn.*?\" tabindex=\"1\"").getMatch(0);
-        if (url == null) url = br.getRegex("\"(http://(www\\.)?4shared\\.com/get/[A-Za-z0-9]+/.*?)\"").getMatch(0);
+        if (url == null) url = br.getRegex("\"(http://(www\\.)?4shared\\.com/get/[A-Za-z0-9\\-_]+/.*?)\"").getMatch(0);
         if (url == null) {
             /* maybe directdownload */
             url = br.getRegex("startDownload.*?window\\.location.*?(http://.*?)\"").getMatch(0);
