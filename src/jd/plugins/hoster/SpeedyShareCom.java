@@ -46,7 +46,7 @@ public class SpeedyShareCom extends PluginForHost {
         return "http://www.speedyshare.com/terms.php";
     }
 
-    private static final String PREMIUMONLY = ">This paraticular file can only be downloaded after you purchase";
+    private static final String PREMIUMONLY     = ">This paraticular file can only be downloaded after you purchase";
     private static final String PREMIUMONLYTEXT = "Only downloadable for premium users";
 
     @Override
@@ -75,6 +75,15 @@ public class SpeedyShareCom extends PluginForHost {
         if (br.containsHTML("The one-hour limit has been reached. Wait")) {
             String wait[] = br.getRegex("id=minwait1>(\\d+):(\\d+)</span> minutes").getRow(0);
             long waittime = 1000l * 60 * Long.parseLong(wait[0]) + 1000 * Long.parseLong(wait[1]);
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waittime);
+        }
+        if (br.containsHTML("One hour download limit reached. Wait")) {
+            long waittime = 30 * 60 * 1000l;
+            String wait[] = br.getRegex("One hour download limit reached.*?id=wait.*?>(\\d+):(\\d+)<").getRow(0);
+            try {
+                waittime = 1000l * 60 * Long.parseLong(wait[0]) + 1000 * Long.parseLong(wait[1]);
+            } catch (final Throwable e) {
+            }
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waittime);
         }
         if (br.containsHTML(PREMIUMONLY)) throw new PluginException(LinkStatus.ERROR_FATAL, PREMIUMONLYTEXT);
