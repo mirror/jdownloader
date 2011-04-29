@@ -56,6 +56,7 @@ public class PlayFmA extends PluginForDecrypt {
         for (final String page : finalPages) {
             progress.increase(1);
             final String[] matches = br.getRegex("#play_\\d+").getColumn(-1);
+            if (matches == null || matches.length == 0) { return null; }
             for (final String match : matches) {
                 song.add(match);
             }
@@ -74,6 +75,5 @@ public class PlayFmA extends PluginForDecrypt {
         }
 
         return decryptedLinks;
-
     }
 }

@@ -70,6 +70,9 @@ public class NCryptIn extends PluginForDecrypt {
         Form allForm = null;
         for (final Form tempForm : Form.getForms(aBrowser)) {
             if (tempForm.getStringProperty("name").equals("protected")) {
+                if (!tempForm.getRegex("<input type=\"submit\"").matches()) {
+                    continue;
+                }
                 allForm = tempForm;
                 break;
             }
@@ -207,6 +210,7 @@ public class NCryptIn extends PluginForDecrypt {
         regexStuff.add("(type=\"hidden\".*?(name=\".*?\")?.*?value=\".*?\")");
         regexStuff.add("display:none;\">(.*?)</(div|span)>");
         regexStuff.add("(<div class=\"hidden\" id=\"error_box\">.*?</div>)");
+        regexStuff.add("(<div class=\"\\w+\">.*?</div>)");
         for (final String aRegex : regexStuff) {
             aBrowser = br.toString();
             final String replaces[] = br.getRegex(aRegex).getColumn(0);

@@ -43,7 +43,7 @@ public class PlayFm extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://www.orgasm.com/termsconditions.php";
+        return "http://www.play.fm/terms";
     }
 
     @Override
@@ -65,21 +65,25 @@ public class PlayFm extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         setBrowserExclusive();
-        final String id = new Regex(downloadLink.getDownloadURL(), "(\\d+)").getMatch(-1);
+        String id = new Regex(downloadLink.getDownloadURL(), "(\\d+)").getMatch(-1);
         if (id == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
 
         br.getPage(MAINPAGE + "/flexRead/recording?rec%5Fid=" + id);
+        if (br.containsHTML("Sorry, we are down for maintenance")) { throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Sorry, we are down for maintenance", 5 * 60 * 1000l); }
+        if (br.containsHTML("<error>")) {
+            br.getPage(downloadLink.getDownloadURL());
+            id = br.getRegex("<a class=\"playlink btn btn_play btn_light\".*?href=\"#play_(\\d+)\">").getMatch(0);
+            br.getPage(MAINPAGE + "/flexRead/recording?rec%5Fid=" + id);
+        }
 
         if (br.containsHTML("var vid_title = \"\"")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         if (br.containsHTML("<error>")) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-        String filename = br.getRegex("<title><!\\[CDATA\\[(.*?)\\]\\]></title>").getMatch(0);
+        final String filename = br.getRegex("<title><!\\[CDATA\\[(.*?)\\]\\]></title>").getMatch(0);
         final String highBitrate = br.getRegex("<file_id>(.*?)</file_id>").getMatch(0);
         final String fileId1 = br.getRegex("<file_id>(.*?)</file_id>").getMatch(0, 1);
         final String url = br.getRegex("<url>(.*?)</url>").getMatch(0);
         final String uuid = br.getRegex("<uuid>(.*?)</uuid>").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("content=\"(.*?) \\- Madthumbs\\.com\"").getMatch(0);
-        }
+
         if (filename == null || highBitrate == null || fileId1 == null || url == null || uuid == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
 
         DLLINK = "http://" + url + "/public/" + highBitrate + "/offset/0/sh/" + uuid + "/rec/" + id + "/jingle/" + fileId1 + "/loc/";
