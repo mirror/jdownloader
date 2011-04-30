@@ -1,4 +1,3 @@
-c:.programmi.jdownloader_nightly.tmp.lfe.src.org.jdownloader.extensions.abstractextension = Estensioen astratta
 convert.progress.convertingto = converti in
 convert.progress.unknownintype = Formato sconosciuto
 download.error.message.rangeheaderparseerror = Formato non previsto intervallo header:
