@@ -27,12 +27,12 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -135,9 +135,9 @@ public class FileSonicCom extends PluginForHost {
                     if (hit == null || hit.contains("status>NOT_AVAILABLE")) {
                         dllink.setAvailable(false);
                     } else {
-                        String name = new Regex(hit, "filename>(.*?)></filename").getMatch(0);
+                        String name = new Regex(hit, "filename>(.*?)</filename").getMatch(0);
                         if (name.startsWith("<![CDATA")) {
-                            name = new Regex(name, "CDATA\\[(.*?)\\]\\]$").getMatch(0);
+                            name = new Regex(name, "CDATA\\[(.*?)\\]\\]>").getMatch(0);
                         }
                         String size = new Regex(hit, "size>(\\d+)</size").getMatch(0);
                         dllink.setAvailable(true);
