@@ -34,6 +34,7 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vip-file.com" }, urls = { "http://[\\w\\.]*?vip-file\\.com/download(lib)?/.*?/.*?\\.html" }, flags = { 2 })
 public class Vipfilecom extends PluginForHost {
@@ -119,18 +120,29 @@ public class Vipfilecom extends PluginForHost {
             ai.setStatus("Premium User");
             account.setAccountInfo(ai);
         }
+        String expireDate = br.getRegex(">Period of validity:</acronym> (.*?) \\[<acronym").getMatch(0);
+        if (expireDate != null) {
+            AccountInfo ai = account.getAccountInfo();
+            if (ai == null) ai = new AccountInfo();
+            ai.setValidUntil(TimeFormatter.getMilliSeconds(expireDate, "yyyy-MM-dd", null));
+            ai.setStatus("Premium User");
+            account.setAccountInfo(ai);
+        }
         if (br.containsHTML("(Your premium access is about to be over|Amount of Your points is close to zero\\.)")) {
             logger.info("Password is wrong!");
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
         String url = Encoding.htmlDecode(br.getRegex(Pattern.compile("Your link to file download\" href=\"(http://.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0));
         if (url == null) {
-            url = br.getRegex("Mirror to file download\" href=\"(http://[0-9\\.]+/.*?)\"").getMatch(0);
+            url = br.getRegex("Mirror for file download\" href=\"(http://[0-9\\.]+/.*?)\"").getMatch(0);
             if (url == null) {
-                url = br.getRegex("\"(http://[0-9\\.]+/downloadp\\d+/.*?/vip-file\\.com/[0-9\\.]+/.*?)\"").getMatch(0);
+                url = br.getRegex("\"(http://[0-9\\.]+/(s)?downloadp\\d+/.*?/vip-file\\.com/[0-9\\.]+/.*?)\"").getMatch(0);
             }
             if (url == null) {
                 url = br.getRegex("\"(http://[0-9\\.]+/[^/].*?download[^/].*?\\d+/.*?/vip-file\\.com/[0-9\\.]+/.*?)\"").getMatch(0);
+                if (url == null) {
+                    url = br.getRegex("\"(http://[0-9\\.]+/(s)?downloadp\\d+/vip\\d+/.*?)\"").getMatch(0);
+                }
             }
         }
         if (url == null && br.containsHTML("(Wrong password|>This password expired<)")) {
