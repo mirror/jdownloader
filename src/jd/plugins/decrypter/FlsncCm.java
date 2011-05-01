@@ -11,8 +11,6 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filesonic.com" }, urls = { "http://[\\w\\.]*?filesonic\\..*?/.*?folder/[0-9a-z]+" }, flags = { 0 })
 public class FlsncCm extends PluginForDecrypt {
 
@@ -23,6 +21,7 @@ public class FlsncCm extends PluginForDecrypt {
     }
 
     private synchronized String getDomain() {
+        logger.info("getDomain");
         if (geoDomain != null) return geoDomain;
         String defaultDomain = "http://www.filesonic.com";
         try {
@@ -47,6 +46,7 @@ public class FlsncCm extends PluginForDecrypt {
     }
 
     private synchronized String getDomainAPI() {
+        logger.info("getDomainAPI");
         try {
             Browser br = new Browser();
             br.setFollowRedirects(true);
@@ -61,37 +61,42 @@ public class FlsncCm extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+        logger.info("decryptIt");
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
+        logger.info("parameter: " + parameter);
         String id = new Regex(parameter, "/(folder/[0-9a-z]+)").getMatch(0);
+        logger.info("id: " + id);
         if (id == null) return null;
-        parameter = getDomain() + "/en/" + id;
+        parameter = getDomain() + "/" + id;
+        logger.info("parameter: " + parameter);
         boolean failed = false;
         br.getPage(parameter);
         if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
         if (br.containsHTML(">No links to show<")) return decryptedLinks;
         if (br.containsHTML("(Folder do not exist<|>The requested folder do not exist or was deleted by the owner|>If you want, you can contact the owner of the referring site to tell him about this mistake)")) return decryptedLinks;
-        String[] links = br.getRegex("<td width=\"70%\" align=\"left\" valign=\"top\">(.*?)</tr>").getColumn(0);
+        String[] links = br.getRegex("\"(" + getDomain() + "/file/[^\"]+)\"").getColumn(0);
         if (links == null || links.length == 0) {
             failed = true;
             links = br.getRegex("<td><a href=\"(http://.*?)\"").getColumn(0);
             if (links == null || links.length == 0) links = br.getRegex("\"(http://[^/\" ]*?filesonic\\..*?/[^\" ]*?file/\\d+/.*?)\"").getColumn(0);
         }
+        logger.info("links.length: " + links.length);
         if (links == null || links.length == 0) return null;
         progress.setRange(links.length);
         for (String data : links) {
+            logger.info("data: " + data);
             if (failed) {
                 if (!data.contains("/folder/")) decryptedLinks.add(createDownloadlink(data));
             } else {
                 String filename = new Regex(data, "filesonic\\..*?/.*?file/.*?/(.*?)\"").getMatch(0);
-                String filesize = new Regex(data, "valign=\"top\">.*?\\|.*?\\|.*?\\|.*?\\|(.*?)\\(.*?</td>").getMatch(0);
-                String dlink = new Regex(data, "href=\"(http.*?)\"").getMatch(0);
-                if (dlink == null) return null;
-                DownloadLink aLink = createDownloadlink(dlink);
+                DownloadLink aLink = createDownloadlink(data);
                 if (filename != null) aLink.setName(filename.trim());
-                if (filesize != null) aLink.setDownloadSize(SizeFormatter.getSize(filesize.trim()));
-                if (filename != null && filesize != null) aLink.setAvailable(true);
-                if (!dlink.contains("/folder/")) decryptedLinks.add(createDownloadlink(dlink));
+                if (filename != null) aLink.setAvailable(true);
+                if (!data.contains("/folder/")) {
+                    decryptedLinks.add(createDownloadlink(data));
+                    logger.info("dlink: " + data);
+                }
             }
             progress.increase(1);
         }
