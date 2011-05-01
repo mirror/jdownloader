@@ -562,3 +562,4 @@ jd/plugins/hoster/ImzUploadCom.class
 jd/plugins/decrypter/Mg1280CmFldr.class
 jd/plugins/decrypter/LstFmDe.class
 jd/plugins/hoster/LastFm.class
+jd/plugins/hoster/MujSouborCz.class
