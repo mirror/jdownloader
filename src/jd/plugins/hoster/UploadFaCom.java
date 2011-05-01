@@ -46,7 +46,8 @@ public class UploadFaCom extends PluginForHost {
         // this.enablePremium(COOKIE_HOST + "/premium.html");
     }
 
-    // XfileSharingProBasic Version 2.3.0.0
+    // XfileSharingProBasic Version 2.3.0.0, added extra errorhandling, don't
+    // set finalfilename
     @Override
     public String getAGBLink() {
         return COOKIE_HOST + "/tos.html";
@@ -79,6 +80,7 @@ public class UploadFaCom extends PluginForHost {
                         filename = new Regex(BRBEFORE, "Filename.*?nowrap.*?>(.*?)</td").getMatch(0);
                         if (filename == null) {
                             filename = new Regex(BRBEFORE, "File Name.*?nowrap>(.*?)</td").getMatch(0);
+                            if (filename == null) filename = new Regex(BRBEFORE, "<Title>Download (.*?)</Title>").getMatch(0);
                         }
                     }
                 }
@@ -100,7 +102,7 @@ public class UploadFaCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         filename = filename.replaceAll("(</b>|<b>|\\.html)", "");
-        link.setFinalFileName(filename.trim());
+        link.setName(filename.trim());
         if (filesize != null && !filesize.equals("")) {
             logger.info("Filesize found, filesize = " + filesize);
             link.setDownloadSize(SizeFormatter.getSize(filesize));
@@ -349,6 +351,7 @@ public class UploadFaCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable via premium");
             }
         }
+        if (new Regex(BRBEFORE, "(Refresh this page in some minutes\\.<|>This server is in maintenance mode)").matches()) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server in maintenance mode", 60 * 60 * 1000l);
     }
 
     private String decodeDownloadLink(String s) {

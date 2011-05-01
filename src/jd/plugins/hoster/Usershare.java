@@ -53,6 +53,7 @@ public class Usershare extends PluginForHost {
     private static final String PASSWORDTEXT0 = "<br><b>Password:</b> <input";
     private static final String PASSWORDTEXT1 = "<br><b>Passwort:</b> <input";
     private static String       AGENT         = RandomUserAgent.generate();
+    private static final String FILEIDREGEX   = "usershare\\.net/([a-z0-9]{12})";
 
     @Override
     public String getAGBLink() {
@@ -438,12 +439,12 @@ public class Usershare extends PluginForHost {
                      * anything else
                      */
                     if (c > 0) sb.append("%0D%0A");
-                    sb.append(Encoding.urlEncode(dl.getDownloadURL()));
+                    sb.append("http://usershare.net/" + new Regex(dl.getDownloadURL(), FILEIDREGEX).getMatch(0));
                     c++;
                 }
                 br.postPage("http://www.usershare.net/checkfiles.html", "op=checkfiles&process=Check+URLs&list=" + sb.toString());
                 for (DownloadLink dl : links) {
-                    String linkpart = new Regex(dl.getDownloadURL().replaceAll("(http://|www\\.)", ""), "usershare\\.net/(.+)").getMatch(0);
+                    String linkpart = new Regex(dl.getDownloadURL(), FILEIDREGEX).getMatch(0);
                     if (linkpart == null) {
                         logger.warning("Usershare availablecheck is broken!");
                         return false;

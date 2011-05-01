@@ -22,11 +22,11 @@ import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filestage.to" }, urls = { "http://(www\\.)?filestage\\.to/watch/[a-z0-9]+/" }, flags = { 0 })
 public class FileStageTo extends PluginForHost {
@@ -48,8 +48,8 @@ public class FileStageTo extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         if (br.getURL().contains("download_failed")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("addVariable\\(\"title\", \"(.*?)\"\\)").getMatch(0);
-        DLLINK = br.getRegex("addVariable\\(\"file\", \"(http://.*?)\"\\)").getMatch(0);
+        String filename = br.getRegex("\"title\": \"(.*?)\"").getMatch(0);
+        DLLINK = br.getRegex("\\'file\\': \"(http://.*?)\"").getMatch(0);
         if (DLLINK == null) DLLINK = br.getRegex("\"(http://w\\d+\\.filestage\\.to/movie/[a-z0-9]+/[a-z0-9]+/[a-z0-9]+\\.mp4)\"").getMatch(0);
         if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         filename = filename.trim();

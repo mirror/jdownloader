@@ -20,7 +20,6 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
-import jd.http.RandomUserAgent;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
@@ -53,7 +52,8 @@ public class FilestoreTo extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
-        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
+        // All other browsers seem to be blocked
+        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows; U; Windows NT 6.1; de; rv:1.9.2.16) Gecko/20110319 Firefox/3.6.16");
         String url = downloadLink.getDownloadURL();
         String downloadName = null;
         String downloadSize = null;
@@ -64,8 +64,8 @@ public class FilestoreTo extends PluginForHost {
                 continue;
             }
             if (!br.containsHTML("<strong>Download-Datei wurde nicht gefunden</strong")) {
-                downloadName = Encoding.htmlDecode(br.getRegex("\">Dateiname:</td>.*?<td colspan=\"2\" style=\"color:.*?;\">(.*?)</td>").getMatch(0));
-                downloadSize = (br.getRegex("\">Dateigr\\&ouml;\\&szlig;e:</td>.*?<td width=\"\\d+\" style=\".*?\">(.*?)</td>").getMatch(0));
+                downloadName = Encoding.htmlDecode(br.getRegex("<td colspan=\"2\" style=\"font\\-weight:bold; color:#DD0000;\">(.*?)</td>").getMatch(0));
+                downloadSize = br.getRegex("<td width=\"220\" style=\"font\\-weight:bold;\">(.*?)</td>").getMatch(0);
                 if (downloadName != null) {
                     downloadLink.setName(downloadName);
                     if (downloadSize != null) downloadLink.setDownloadSize(SizeFormatter.getSize(downloadSize.replaceAll(",", "\\.")));
