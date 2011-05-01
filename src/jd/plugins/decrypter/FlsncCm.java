@@ -21,7 +21,6 @@ public class FlsncCm extends PluginForDecrypt {
     }
 
     private synchronized String getDomain() {
-        logger.info("getDomain");
         if (geoDomain != null) return geoDomain;
         String defaultDomain = "http://www.filesonic.com";
         try {
@@ -46,7 +45,6 @@ public class FlsncCm extends PluginForDecrypt {
     }
 
     private synchronized String getDomainAPI() {
-        logger.info("getDomainAPI");
         try {
             Browser br = new Browser();
             br.setFollowRedirects(true);
@@ -61,15 +59,11 @@ public class FlsncCm extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        logger.info("decryptIt");
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-        logger.info("parameter: " + parameter);
         String id = new Regex(parameter, "/(folder/[0-9a-z]+)").getMatch(0);
-        logger.info("id: " + id);
         if (id == null) return null;
         parameter = getDomain() + "/" + id;
-        logger.info("parameter: " + parameter);
         boolean failed = false;
         br.getPage(parameter);
         if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
@@ -81,11 +75,9 @@ public class FlsncCm extends PluginForDecrypt {
             links = br.getRegex("<td><a href=\"(http://.*?)\"").getColumn(0);
             if (links == null || links.length == 0) links = br.getRegex("\"(http://[^/\" ]*?filesonic\\..*?/[^\" ]*?file/\\d+/.*?)\"").getColumn(0);
         }
-        logger.info("links.length: " + links.length);
         if (links == null || links.length == 0) return null;
         progress.setRange(links.length);
         for (String data : links) {
-            logger.info("data: " + data);
             if (failed) {
                 if (!data.contains("/folder/")) decryptedLinks.add(createDownloadlink(data));
             } else {
@@ -93,10 +85,7 @@ public class FlsncCm extends PluginForDecrypt {
                 DownloadLink aLink = createDownloadlink(data);
                 if (filename != null) aLink.setName(filename.trim());
                 if (filename != null) aLink.setAvailable(true);
-                if (!data.contains("/folder/")) {
-                    decryptedLinks.add(createDownloadlink(data));
-                    logger.info("dlink: " + data);
-                }
+                if (!data.contains("/folder/")) decryptedLinks.add(createDownloadlink(data));
             }
             progress.increase(1);
         }
