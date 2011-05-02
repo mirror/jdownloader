@@ -22,6 +22,7 @@ import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -46,6 +47,12 @@ public class GameTrailersCom extends PluginForDecrypt {
             if (videoTitle == null) {
                 videoTitle = br.getRegex("var gamename = \"(.*?)\"").getMatch(0);
             }
+        }
+        String title = new Regex(videoTitle, "(.+?) - ").getMatch(0);
+        String subject = new Regex(videoTitle, ".*? - (.+)").getMatch(0);
+        if (title != null && subject != null) {
+            /* reformat the filename */
+            videoTitle = subject + " - " + title;
         }
         String hdid = br.getRegex("class=\"hdButton\"><a href=\"/video/.*?/(\\d+)\\?type").getMatch(0);
         if (hdid != null) damnedIDs.add(hdid);
@@ -79,7 +86,10 @@ public class GameTrailersCom extends PluginForDecrypt {
                 }
                 String[] extensions = { "flv", "mov", "wmv", "mp4" };
                 for (String ext : extensions) {
-
+                    if (parameter.contains("user-movie") && !"flv".equals(ext)) {
+                        /* user movies only have flv files */
+                        continue;
+                    }
                     if (ext.equals("mp4") && finallink.contains("_hd")) continue;
 
                     DownloadLink dl = createDownloadlink("directhttp://" + finallink.replace(".flv", "." + ext));
