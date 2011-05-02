@@ -286,11 +286,6 @@ public class Rapidshare extends PluginForHost {
                         u.getLinkStatus().setStatusText(JDL.L("plugin.host.rapidshare.status.directdownload", "Direct Download(secured)"));
                         u.getLinkStatus().setErrorMessage(null);
                         break;
-                    case 53:
-                        u.setAvailable(true);
-                        u.getLinkStatus().setStatusText(JDL.L("plugin.host.rapidshare.status.directdownload", "Direct Download(secured,connected)"));
-                        u.getLinkStatus().setErrorMessage(null);
-                        break;
                     case 2:
                         u.setAvailable(true);
                         u.getLinkStatus().setStatusText(JDL.L("plugin.host.rapidshare.status.directdownload", "Direct Download"));
