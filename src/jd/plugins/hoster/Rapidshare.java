@@ -61,19 +61,39 @@ public class Rapidshare extends PluginForHost {
                  * remove html ending, because rs now checks the complete
                  * filename
                  */
-                ret.name = new Regex(ret.url, "files/\\d+/(.*?)(\\.html?|$)").getMatch(0);
-
+                ret.name = new Regex(ret.url, "files/\\d+/(.*?/)?(.*?)(\\.html?|$)").getMatch(1);
+                ret.secMD5 = new Regex(ret.url, "files/\\d+/t(.*?)-(.*?)/").getMatch(1);
+                ret.secTim = new Regex(ret.url, "files/\\d+/t(.*?)-(.*?)/").getMatch(0);
             } else {
-                ret.name = new Regex(ret.url, "files/\\d+/(.*?)$").getMatch(0);
+                ret.name = new Regex(ret.url, "files/\\d+/(.*?/)?(.*?)$").getMatch(1);
+                ret.secMD5 = new Regex(ret.url, "files/\\d+/t(.*?)-(.*?)/").getMatch(1);
+                ret.secTim = new Regex(ret.url, "files/\\d+/t(.*?)-(.*?)/").getMatch(0);
             }
             return ret;
         }
 
-        private int          id;
+        /**
+         * @return the secTim
+         */
+        public String getSecTimout() {
+            return secTim;
+        }
 
-        private String       name;
+        private int    id;
 
-        private String       url;
+        private String name;
+
+        private String url;
+
+        private String secMD5;
+        private String secTim;
+
+        /**
+         * @return the secMD5
+         */
+        public String getSecMD5() {
+            return secMD5;
+        }
 
         private DownloadLink link;
 
@@ -256,6 +276,21 @@ public class Rapidshare extends PluginForHost {
                         u.getLinkStatus().setStatusText("");
                         u.getLinkStatus().setErrorMessage(null);
                         break;
+                    case 51:
+                        u.setAvailable(true);
+                        u.getLinkStatus().setStatusText(JDL.L("plugin.host.rapidshare.status.directdownload", "Direct Download(normal)"));
+                        u.getLinkStatus().setErrorMessage(null);
+                        break;
+                    case 52:
+                        u.setAvailable(true);
+                        u.getLinkStatus().setStatusText(JDL.L("plugin.host.rapidshare.status.directdownload", "Direct Download(secured)"));
+                        u.getLinkStatus().setErrorMessage(null);
+                        break;
+                    case 53:
+                        u.setAvailable(true);
+                        u.getLinkStatus().setStatusText(JDL.L("plugin.host.rapidshare.status.directdownload", "Direct Download(secured,connected)"));
+                        u.getLinkStatus().setErrorMessage(null);
+                        break;
                     case 2:
                         u.setAvailable(true);
                         u.getLinkStatus().setStatusText(JDL.L("plugin.host.rapidshare.status.directdownload", "Direct Download"));
@@ -372,10 +407,10 @@ public class Rapidshare extends PluginForHost {
         String name;
         if (link.getProperty("htmlworkaround", null) == null) {
             /* remove html ending, because rs now checks the complete filename */
-            name = new Regex(link.getDownloadURL(), "files/\\d+/(.*?)(\\.html?|$)").getMatch(0);
+            name = new Regex(link.getDownloadURL(), "files/\\d+/(.*?/)?(.*?)(\\.html?|$)").getMatch(1);
 
         } else {
-            name = new Regex(link.getDownloadURL(), "files/\\d+/(.*?)$").getMatch(0);
+            name = new Regex(link.getDownloadURL(), "files/\\d+/(.*?/)?(.*?)$").getMatch(1);
         }
 
         return name;
@@ -446,8 +481,15 @@ public class Rapidshare extends PluginForHost {
                 /* invalid link format */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-
-            this.queryAPI(this.br, "http://api.rapidshare.com/cgi-bin/rsapi.cgi?sub=download_v1&try=1&fileid=" + link.getId() + "&filename=" + link.getName(), null);
+            String query = "http://api.rapidshare.com/cgi-bin/rsapi.cgi?sub=download_v1&try=1&fileid=" + link.getId() + "&filename=" + link.getName();
+            /* needed for secured links */
+            if (link.getSecMD5() != null) {
+                query += "&seclinkmd5=" + link.getSecMD5();
+            }
+            if (link.getSecTimout() != null) {
+                query += "&seclinktimeout=" + link.getSecTimout();
+            }
+            this.queryAPI(this.br, query, null);
             this.handleErrors(this.br);
             // RS URL wird aufgerufen
             // this.br.getPage(link);
@@ -457,8 +499,14 @@ public class Rapidshare extends PluginForHost {
 
             this.sleep(Long.parseLong(wait) * 1000l, downloadLink);
 
-            final String directurl = "http://" + host + "/cgi-bin/rsapi.cgi?sub=download_v1&dlauth=" + auth + "&bin=1&noflvheader=1&fileid=" + link.getId() + "&filename=" + link.getName();
-
+            String directurl = "http://" + host + "/cgi-bin/rsapi.cgi?sub=download_v1&dlauth=" + auth + "&bin=1&noflvheader=1&fileid=" + link.getId() + "&filename=" + link.getName();
+            /* needed for secured links */
+            if (link.getSecMD5() != null) {
+                directurl += "&seclinkmd5=" + link.getSecMD5();
+            }
+            if (link.getSecTimout() != null) {
+                directurl += "&seclinktimeout=" + link.getSecTimout();
+            }
             logger.finest("Direct-Download: Server-Selection not available!");
             Request request = this.br.createGetRequest(directurl);
 
@@ -556,8 +604,15 @@ public class Rapidshare extends PluginForHost {
                 /* invalid link format */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-
-            this.queryAPI(this.br, prtotcol + "://api.rapidshare.com/cgi-bin/rsapi.cgi?sub=download_v1&try=1&fileid=" + link.getId() + "&filename=" + link.getName() + "&cookie=" + account.getProperty("cookie"), account);
+            String query = prtotcol + "://api.rapidshare.com/cgi-bin/rsapi.cgi?sub=download_v1&try=1&fileid=" + link.getId() + "&filename=" + link.getName() + "&cookie=" + account.getProperty("cookie");
+            /* needed for secured links */
+            if (link.getSecMD5() != null) {
+                query += "&seclinkmd5=" + link.getSecMD5();
+            }
+            if (link.getSecTimout() != null) {
+                query += "&seclinktimeout=" + link.getSecTimout();
+            }
+            this.queryAPI(this.br, query, account);
             this.handleErrors(this.br);
 
             String host = this.br.getRegex("DL:(.*?),").getMatch(0);
@@ -573,8 +628,14 @@ public class Rapidshare extends PluginForHost {
                     JDLogger.exception(e);
                 }
             }
-            final String directurl = prtotcol + "://" + host + "/cgi-bin/rsapi.cgi?sub=download_v1&bin=1&noflvheader=1&fileid=" + link.getId() + "&filename=" + link.getName() + "&cookie=" + account.getProperty("cookie");
-
+            String directurl = prtotcol + "://" + host + "/cgi-bin/rsapi.cgi?sub=download_v1&bin=1&noflvheader=1&fileid=" + link.getId() + "&filename=" + link.getName() + "&cookie=" + account.getProperty("cookie");
+            /* needed for secured links */
+            if (link.getSecMD5() != null) {
+                directurl += "&seclinkmd5=" + link.getSecMD5();
+            }
+            if (link.getSecTimout() != null) {
+                directurl += "&seclinktimeout=" + link.getSecTimout();
+            }
             request = this.br.createGetRequest(directurl);
 
             try {
