@@ -25,12 +25,12 @@ import jd.plugins.download.DownloadInterface;
 
 public class ReHostto extends PluginForHost implements JDPremInterface {
 
-    private boolean proxyused = false;
-    private String infostring = null;
-    private PluginForHost plugin = null;
-    private static boolean enabled = false;
+    private boolean                  proxyused    = false;
+    private String                   infostring   = null;
+    private PluginForHost            plugin       = null;
+    private static boolean           enabled      = false;
     private static ArrayList<String> premiumHosts = new ArrayList<String>();
-    private static final Object LOCK = new Object();
+    private static final Object      LOCK         = new Object();
 
     public ReHostto(PluginWrapper wrapper) {
         super(wrapper);
@@ -197,7 +197,7 @@ public class ReHostto extends PluginForHost implements JDPremInterface {
             br.postPage("http://rehost.to/process_download.php", "user=cookie&pass=" + long_ses + "&dl=" + url);
             if (br.getRedirectLocation() == null) continue;
             br.setFollowRedirects(true);
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, br.getRedirectLocation(), resumePossible(this.getHost()), 1);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, br.getRedirectLocation(), resumePossible(this.getHost()), -5);
             if (dl.getConnection().getResponseCode() == 404) {
                 /* file offline */
                 dl.getConnection().disconnect();
@@ -380,6 +380,7 @@ public class ReHostto extends PluginForHost implements JDPremInterface {
             if (hoster.contains("fileserve.com")) return true;
             if (hoster.contains("bitshare.com")) return true;
             if (hoster.contains("hotfile.com")) return true;
+            if (hoster.contains("depositfiles.com")) return true;
         }
         return false;
     }

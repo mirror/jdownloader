@@ -256,6 +256,7 @@ public class OronCom extends PluginForHost {
                         account.getAccountInfo().setTrafficLeft(0);
                         throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Too many different IPs used!", 30 * 60 * 1000l);
                     }
+                    if (br.containsHTML("err\">Expired session<\"")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 15 * 60 * 1000l);
                     if (br.containsHTML("You have reached the download")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
                     logger.warning("Final downloadlink (String is \"dllink\" regex didn't match!");
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

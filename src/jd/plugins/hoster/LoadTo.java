@@ -25,11 +25,11 @@ import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
@@ -51,9 +51,21 @@ public class LoadTo extends PluginForHost {
         Browser.setRequestIntervalLimitGlobal(getHost(), 500);
     }
 
+    /* TODO: remove me after 0.9xx public */
+    private void workAroundTimeOut(Browser br) {
+        try {
+            if (br != null) {
+                br.setConnectTimeout(30000);
+                br.setReadTimeout(120000);
+            }
+        } catch (Throwable e) {
+        }
+    }
+
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
+        workAroundTimeOut(br);
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("Can't find file")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = Encoding.htmlDecode(br.getRegex("<head><title>(.*?) // Load.to Uploadservice</title>").getMatch(0));
@@ -75,6 +87,10 @@ public class LoadTo extends PluginForHost {
         br.setFollowRedirects(true);
         br.setDebug(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, linkurl, "", true, 1);
+        try {
+            dl.setReadTimeout(60000);
+        } catch (final Throwable e) {
+        }
         URLConnectionAdapter con = dl.getConnection();
         /* Überprüfung auf serverprobleme, nach 6 versuchen geben wir auf */
         if (con.getContentType().contains("html")) {
