@@ -34,7 +34,6 @@ public class Lctr2GoUHH extends PluginForDecrypt {
         }
         ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
         links.add(createDownloadlink("directhttp://" + url));
-        progress.setFinished();
         return links;
     }
 }
