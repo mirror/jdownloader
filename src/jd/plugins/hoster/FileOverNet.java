@@ -18,11 +18,18 @@ package jd.plugins.hoster;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.HashMap;
 
 import jd.PluginWrapper;
+import jd.http.Cookie;
+import jd.http.Cookies;
+import jd.http.RandomUserAgent;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.parser.html.Form.MethodType;
+import jd.plugins.Account;
+import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
@@ -32,12 +39,14 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fileover.net" }, urls = { "http(s)?://(www\\.)?fileover\\.net/\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fileover.net" }, urls = { "http(s)?://(www\\.)?fileover\\.net/\\d+" }, flags = { 2 })
 public class FileOverNet extends PluginForHost {
 
     public FileOverNet(PluginWrapper wrapper) {
         super(wrapper);
+        this.enablePremium("http://fileover.net/premium");
     }
 
     @Override
@@ -49,10 +58,14 @@ public class FileOverNet extends PluginForHost {
         link.setUrlDownload(link.getDownloadURL().replace("https://", "http://"));
     }
 
+    private static final String MAINPAGE = "http://fileover.net/";
+    private static final Object LOCK     = new Object();
+
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
+        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
         br.getPage(link.getDownloadURL());
         if (br.getURL().contains("/deleted/") || br.containsHTML("(<title>No such file \\| Fileover\\.Net\\! \\- Error</title>|>No such file<|The following file is unavailable\\.|>Not found or deleted by a user\\.<)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<h2 style=\"text\\-align: center; padding: 0 50px 10px 50px; word\\-wrap: break\\-word;\">(.*?)</h2>").getMatch(0);
@@ -116,6 +129,91 @@ public class FileOverNet extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    @SuppressWarnings("unchecked")
+    private void login(Account account, boolean force) throws Exception {
+        // Multiple downloads only work when saving cookies, i think they block
+        // users on too many logins!
+        synchronized (LOCK) {
+            this.setBrowserExclusive();
+            br.setCookiesExclusive(false);
+            final Object ret = account.getProperty("cookies", null);
+            boolean acmatch = account.getUser().matches(account.getStringProperty("name", account.getUser()));
+            if (acmatch) acmatch = account.getPass().matches(account.getStringProperty("pass", account.getPass()));
+            if (acmatch && ret != null && ret instanceof HashMap<?, ?>) {
+                final HashMap<String, String> cookies = (HashMap<String, String>) ret;
+                if (cookies.containsKey("SSL") && account.isValid() && !force) {
+                    for (final String key : cookies.keySet()) {
+                        this.br.setCookie(MAINPAGE, key, cookies.get(key));
+                    }
+                    return;
+                }
+            }
+            br.postPage(MAINPAGE + "api/users/login/", "email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+            if (br.getCookie(MAINPAGE, "hash") == null || br.getCookie(MAINPAGE, "email") == null || br.getCookie(MAINPAGE, "sess") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            // Save cookies
+            final HashMap<String, String> cookies = new HashMap<String, String>();
+            final Cookies add = this.br.getCookies(MAINPAGE);
+            for (final Cookie c : add.getCookies()) {
+                cookies.put(c.getKey(), c.getValue());
+            }
+            account.setProperty("name", account.getUser());
+            account.setProperty("pass", account.getPass());
+            account.setProperty("cookies", cookies);
+        }
+    }
+
+    @Override
+    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+        AccountInfo ai = new AccountInfo();
+        try {
+            login(account, true);
+        } catch (PluginException e) {
+            account.setValid(false);
+            return ai;
+        }
+        br.getPage(MAINPAGE + "user/account");
+        ai.setUnlimitedTraffic();
+        // <p>Mon, 30 May 2011 15:39:10 +0000</p>
+        String expire = br.getRegex("<h2>Expires</h2>[\t\n\r ]+<p>[A-Za-z]+, (.*?) (\\+|\\-)\\d+</p>").getMatch(0);
+        if (expire == null) {
+            ai.setExpired(true);
+            account.setValid(false);
+            return ai;
+        } else {
+            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", null));
+        }
+        ai.setStatus("Premium User");
+        if (!br.containsHTML("<h2>Active</h2>[\t\n\r ]+<p>Yes</p>")) account.setValid(false);
+        account.setValid(true);
+        return ai;
+    }
+
+    @Override
+    public void handlePremium(DownloadLink link, Account account) throws Exception {
+        requestFileInformation(link);
+        login(account, false);
+        br.setFollowRedirects(false);
+        br.getPage(link.getDownloadURL());
+        if (br.getRedirectLocation() == null) br.getPage(link.getDownloadURL());
+        String dllink = br.getRedirectLocation();
+        if (dllink == null) {
+            logger.warning("Final downloadlink is null...");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+        if (dl.getConnection().getContentType().contains("html")) {
+            logger.warning("The final dllink seems not to be a file!");
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
+    }
+
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        return -1;
     }
 
     @Override
