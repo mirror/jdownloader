@@ -123,7 +123,7 @@
   "controller_status_containererror" : "Container error",
   "gui_linkgrabber_waitinguserio" : "Waiting for user input",
   "plugins_hoster_nopremiumsupport" : "Plugin has no Premium method!",
-  "gui_autostart" : "Autostart downloads in few secounds...",
+  "gui_autostart" : "Autostart downloads in few seconds...",
   "replacer_checksum" : "Last finished File: Checksum (SHA1/MD5) if set by hoster",
   "downloadlink_status_error_retry" : "Unknown error",
   "gui_config_reconnect_showcase_message_none" : "(Not tested yet)",

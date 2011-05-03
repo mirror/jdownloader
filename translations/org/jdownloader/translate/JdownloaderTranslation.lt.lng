@@ -103,7 +103,7 @@
   "gui_linkgrabber_waitinguserio" : "Waiting for user input",
   "controller_status_containererror" : "Container Error",
   "plugins_hoster_nopremiumsupport" : "Plugin has no Premium Method!",
-  "gui_autostart" : "Autostart downloads in few secounds...",
+  "gui_autostart" : "Autostart downloads in few seconds...",
   "downloadlink_status_error_retry" : "Unknown error, retrying",
   "gui_config_reconnect_showcase_message_none" : "Not tested yet",
   "container_message_created" : "Created with",

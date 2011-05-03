@@ -105,7 +105,6 @@ public class PremiumCompoundExtension extends AbstractExtension {
             if (!init) {
                 /* init our new plugins */
                 premShareHosts.put("jdownloader.org", "PremShare");
-                premShareHosts.put("speedload.cx", "SpeedLoadcx");
                 premShareHosts.put("multishare.cz", "MultiShare");
                 premShareHosts.put("linksnappy.com", "LinkSnappycom");
                 premShareHosts.put("rehost.to", "ReHostto");
