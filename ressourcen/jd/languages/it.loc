@@ -433,7 +433,6 @@ plugins.hoster.megarapideu.busyoroffline = File non disponibile o server occupat
 plugins.hoster.megasharescom.errors.allslotsfilled = Verifica impossibile: tutti gli slot sono occupati
 plugins.hoster.megasharescom.errors.alreadyloading = Verifica impossibile: file già in caricamento
 plugins.hoster.megasharescom.errors.passwordprotected = Download protetto da password
-plugins.hoster.mujsouborcz.errors.only4premium = Disponibile solo per utenti premium
 plugins.hoster.netload.downloadpassword_question = Protetto da password. Inserire password per %s
 plugins.hoster.netload.errors.downloadpassword_wrong = La password del link è errata
 plugins.hoster.netloadin.errors.captchanotfound = Captcha non trovato
