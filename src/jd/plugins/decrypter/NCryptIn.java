@@ -63,8 +63,8 @@ public class NCryptIn extends PluginForDecrypt {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString().replace("open-", "folder-").replace("urlcrypt.com/", "ncrypt.in/");
         if (parameter.contains("ncrypt.in/link")) {
-            String finallink = decryptSingle(parameter);
-            if (finallink == null) return null;
+            final String finallink = decryptSingle(parameter);
+            if (finallink == null) { return null; }
             decryptedLinks.add(createDownloadlink(finallink));
         } else {
             br.setFollowRedirects(true);
@@ -75,7 +75,7 @@ public class NCryptIn extends PluginForDecrypt {
             Form allForm = null;
             for (final Form tempForm : Form.getForms(aBrowser)) {
                 if (tempForm.getStringProperty("name").equals("protected")) {
-                    if (!tempForm.getRegex("<input type=\"submit\"").matches()) {
+                    if (!tempForm.getRegex("name=\"submit_protected\"").matches()) {
                         continue;
                     }
                     allForm = tempForm;
@@ -186,7 +186,7 @@ public class NCryptIn extends PluginForDecrypt {
                     return null;
                 }
                 progress.setRange(links.length);
-                for (String singleLink : links) {
+                for (final String singleLink : links) {
                     final String finallink = decryptSingle(singleLink);
                     if (finallink == null) { return null; }
                     decryptedLinks.add(createDownloadlink(finallink));
@@ -202,16 +202,16 @@ public class NCryptIn extends PluginForDecrypt {
         return decryptedLinks;
     }
 
+    private String decryptSingle(final String dcrypt) throws IOException {
+        br.setFollowRedirects(false);
+        br.getPage(dcrypt.replace("link-", "frame-"));
+        final String finallink = br.getRedirectLocation();
+        return finallink;
+    }
+
     private String getPassword(final CryptedLink param) throws DecrypterException {
         final String passCode = Plugin.getUserInput(null, param);
         return passCode;
-    }
-
-    private String decryptSingle(String dcrypt) throws IOException {
-        br.setFollowRedirects(false);
-        br.getPage(dcrypt.replace("link-", "frame-"));
-        String finallink = br.getRedirectLocation();
-        return finallink;
     }
 
     public void haveFun() throws Exception {
