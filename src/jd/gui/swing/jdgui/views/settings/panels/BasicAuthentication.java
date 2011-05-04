@@ -18,35 +18,36 @@ package jd.gui.swing.jdgui.views.settings.panels;
 
 import javax.swing.ImageIcon;
 
-import jd.gui.swing.jdgui.views.settings.panels.accountmanager.AccountManager;
+import jd.gui.swing.jdgui.views.settings.panels.basicauthentication.BasicAuthenticationPanel;
 
 import org.jdownloader.extensions.AbstractConfigPanel;
 import org.jdownloader.images.Theme;
 import org.jdownloader.translate.JDT;
 
-public class Logins extends AbstractConfigPanel {
+public class BasicAuthentication extends AbstractConfigPanel {
 
     private static final long serialVersionUID = -7963763730328793139L;
 
     public String getTitle() {
-        return JDT._.gui_settings_premium_title();
+        return JDT._.gui_settings_basicauth_title();
     }
 
-    public Logins() {
+    public BasicAuthentication() {
         super();
-        this.addHeader(getTitle(), Theme.getIcon("settings/premium", 32));
-        this.addDescription(JDT._.gui_settings_premium_description());
+        this.addHeader(getTitle(), Theme.getIcon("settings/basicauth", 32));
+        this.addDescription(JDT._.gui_settings_basicauth_description());
 
-        add(AccountManager.getInstance());
+        add(BasicAuthenticationPanel.getInstance());
     }
 
     @Override
     public ImageIcon getIcon() {
-        return Theme.getIcon("settings/premium", 32);
+        return Theme.getIcon("settings/basicauth", 32);
     }
 
     @Override
     protected void onShow() {
+        BasicAuthenticationPanel.getInstance().update();
     }
 
     @Override

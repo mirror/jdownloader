@@ -75,11 +75,13 @@ public class FilterColumn extends ExtCompoundColumn<LinkFilter> {
                 return true;
             }
 
-            public void setValue(Object value, LinkFilter object) {
+            @Override
+            protected void setSelectedIndex(int value, LinkFilter object) {
 
-                object.setRegex(options[(Integer) value].getHost());
+                object.setRegex(options[value].getHost());
 
             }
+
         };
 
         final ListCellRenderer def = combo.getRenderer();

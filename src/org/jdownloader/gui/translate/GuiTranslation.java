@@ -1212,4 +1212,10 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Account Information" })
     String settings_accountmanager_info();
+
+    @Default(lngs = { "en" }, values = { "Add" })
+    String settings_auth_add();
+
+    @Default(lngs = { "en" }, values = { "Delete" })
+    String settings_auth_delete();
 }

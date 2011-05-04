@@ -136,8 +136,9 @@ public class FilterTableModel extends ExtTableModel<LinkFilter> {
                 return true;
             }
 
-            public void setValue(Object value, LinkFilter object) {
-                Types nValue = LinkFilter.Types.values()[(Integer) value];
+            @Override
+            protected void setSelectedIndex(int value, LinkFilter object) {
+                Types nValue = LinkFilter.Types.values()[value];
                 if (object.getType() == LinkFilter.Types.PLUGIN && nValue != LinkFilter.Types.PLUGIN) {
                     HostPluginWrapper conv = map.get(object.getRegex());
                     if (conv != null) {
@@ -153,7 +154,9 @@ public class FilterTableModel extends ExtTableModel<LinkFilter> {
                     }
                 }
                 object.setType(nValue);
+
             }
+
         });
         this.addColumn(new FilterColumn());
 

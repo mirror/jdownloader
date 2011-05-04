@@ -123,4 +123,31 @@ public interface AntireconnectTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Actions" })
     String premiumaccounttablemodel_column_actions();
+
+    @Default(lngs = { "en" }, values = { "Host/URL" })
+    String authtablemodel_column_host();
+
+    @Default(lngs = { "en" }, values = { "Use Logins" })
+    String authtablemodel_column_enabled();
+
+    @Default(lngs = { "en" }, values = { "Username" })
+    String authtablemodel_column_username();
+
+    @Default(lngs = { "en" }, values = { "Servertype" })
+    String authtablemodel_column_type();
+
+    @Default(lngs = { "en" }, values = { "http://" })
+    String authtablemodel_column_type_http();
+
+    @Default(lngs = { "en" }, values = { "ftp://" })
+    String authtablemodel_column_type_ftp();
+
+    @Default(lngs = { "en" }, values = { "Password" })
+    String authtablemodel_column_password();
+
+    @Default(lngs = { "en" }, values = { "...enter Domain here" })
+    String authtablemodel_column_host_help();
+
+    @Default(lngs = { "en" }, values = { "...enter Username here" })
+    String authtablemodel_column_username_help();
 }

@@ -52,7 +52,7 @@ public class ContextMenuListener implements MouseListener {
         JPopupMenu popup = new JPopupMenu();
         ArrayList<LinkFilter> selected = table.getExtTableModel().getSelectedObjects();
         popup.add(new JMenuItem(new NewAction(table)));
-        popup.add(new JMenuItem(new RemoveAction(table)));
+        popup.add(new JMenuItem(new RemoveAction(selected)));
         popup.add(new JMenuItem(new EnableAction(table)));
         popup.add(new JMenuItem(new DisableAction(table)));
         popup.add(new JSeparator());

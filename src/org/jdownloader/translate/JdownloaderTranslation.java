@@ -660,4 +660,9 @@ public interface JdownloaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Account %s1@%s2" })
     String pluginforhost_infogenerator_title(String user, String hoster);
 
+    @Default(lngs = { "en" }, values = { "Basic Authentication" })
+    String gui_settings_basicauth_title();
+
+    @Default(lngs = { "en" }, values = { "Add HTTP and FTP credentials here. Basic Authentication can be used for basic logins which do not need an extra Plugin.\r\n\r\nUse the Account Manager for Premium/Gold/Platin Accounts!" })
+    String gui_settings_basicauth_description();
 }

@@ -2,14 +2,14 @@ package jd.gui.swing.jdgui.views.settings.sidebar;
 
 import javax.swing.DefaultListModel;
 
+import jd.gui.swing.jdgui.views.settings.panels.AccountManagerSettings;
 import jd.gui.swing.jdgui.views.settings.panels.BarrierFree;
+import jd.gui.swing.jdgui.views.settings.panels.BasicAuthentication;
 import jd.gui.swing.jdgui.views.settings.panels.ConfigPanelGeneral;
 import jd.gui.swing.jdgui.views.settings.panels.DownloadControll;
-import jd.gui.swing.jdgui.views.settings.panels.Logins;
 import jd.gui.swing.jdgui.views.settings.panels.addons.ConfigPanelAddons;
 import jd.gui.swing.jdgui.views.settings.panels.downloadandnetwork.ProxyConfig;
 import jd.gui.swing.jdgui.views.settings.panels.hoster.ConfigPanelPlugin;
-import jd.gui.swing.jdgui.views.settings.panels.premium.Premium;
 import jd.gui.swing.jdgui.views.settings.panels.reconnect.Reconnect;
 
 import org.jdownloader.extensions.AbstractExtension;
@@ -36,10 +36,11 @@ public class ConfigListModel extends DefaultListModel {
 
         addElement(new BarrierFree());
 
-        addElement(new Reconnect());
+        addElement(new AccountManagerSettings());
+        addElement(new BasicAuthentication());
 
-        addElement(new Logins());
-        addElement(new Premium());
+        addElement(new Reconnect());
+        // addElement(new Premium());
         addElement(new ConfigPanelPlugin());
         addElement(new ConfigPanelAddons());
         addElement(new ProxyConfig());
