@@ -808,10 +808,8 @@ public class Rapidshare extends PluginForHost {
         }
         boolean follow = br.isFollowingRedirects();
         try {
-            br.setFollowRedirects(false);
+            br.setFollowRedirects(true);
             br.getPage(req);
-            String red = br.getRedirectLocation();
-            if (red != null) br.getPage(red);
         } catch (final BrowserException e) {
             if (e.getConnection() != null && !req.startsWith("https")) {
                 switch (e.getConnection().getResponseCode()) {
@@ -819,8 +817,6 @@ public class Rapidshare extends PluginForHost {
                 case 502:
                     req = "https" + req.substring(4);
                     br.getPage(req);
-                    String red = br.getRedirectLocation();
-                    if (red != null) br.getPage(red);
                     break;
                 default:
                     throw e;

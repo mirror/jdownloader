@@ -21,21 +21,28 @@ import java.io.IOException;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
+import jd.nutils.encoding.Encoding;
+import jd.plugins.Account;
+import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tube8.com" }, urls = { "http://[\\w\\.]*?tube8\\.com/.*?/.*?/[0-9]+" }, flags = { 2 })
 public class Tube8Com extends PluginForHost {
 
+    private boolean setEx = true;
+
     public Tube8Com(PluginWrapper wrapper) {
         super(wrapper);
         setConfigElements();
+        this.enablePremium("http://www.tube8.com/signin.html");
     }
 
     private static final String mobile = "mobile";
@@ -53,8 +60,52 @@ public class Tube8Com extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
+        final AccountInfo ai = new AccountInfo();
+        try {
+            this.login(account, this.br);
+        } catch (final PluginException e) {
+            account.setValid(false);
+            return ai;
+        }
+        /* only support for free accounts at the moment */
+        ai.setUnlimitedTraffic();
+        ai.setStatus("Account ok");
+        account.setValid(true);
+        return ai;
+    }
+
+    private void login(Account account, Browser br) throws IOException, PluginException {
+        if (br == null) {
+            br = new Browser();
+        }
         this.setBrowserExclusive();
+        boolean follow = br.isFollowingRedirects();
+        try {
+            br.setFollowRedirects(true);
+            br.postPage("http://www.tube8.com/ajax/login.php", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+            if (br.containsHTML("invalid") || br.containsHTML("0\\|")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        } finally {
+            br.setFollowRedirects(follow);
+        }
+    }
+
+    @Override
+    public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
+        login(account, br);
+        setEx = false;
+        requestFileInformation(downloadLink);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
+    }
+
+    @Override
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+        if (setEx) this.setBrowserExclusive();
         br.setFollowRedirects(false);
         br.getPage(downloadLink.getDownloadURL());
         if (br.getRedirectLocation() != null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
