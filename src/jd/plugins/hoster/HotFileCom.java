@@ -38,12 +38,12 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -307,7 +307,8 @@ public class HotFileCom extends PluginForHost {
                 }
                 // Reconnect if the waittime is too big!
                 if (sleeptime > 100 * 1000l) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, sleeptime); }
-                this.sleep(sleeptime, link);
+                /* 2secs more as extra buffer */
+                this.sleep(sleeptime + 2000, link);
                 submit(br, form);
                 // captcha
                 if (!br.containsHTML("Click here to download")) {
@@ -332,7 +333,7 @@ public class HotFileCom extends PluginForHost {
             }
             if (dl_url == null) {
                 if (!br.containsHTML("(Click here to download)")) { throw new PluginException(LinkStatus.ERROR_CAPTCHA); }
-                new Throwable().printStackTrace();
+                if (br.containsHTML("name=waithash")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError,Waittime again", 30 * 1000l);
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             br.setFollowRedirects(true);

@@ -37,12 +37,12 @@ import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -144,6 +144,7 @@ public class DirectHTTP extends PluginForHost {
                 // recaptcha stil found. so it is not solved yet
                 return false;
             } catch (final Exception e) {
+                JDLogger.getLogger().severe(e.toString());
                 return true;
             }
         }
