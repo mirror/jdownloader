@@ -16,17 +16,13 @@
 
 package jd.plugins.hoster;
 
-import java.util.Random;
-
 import jd.PluginWrapper;
-import jd.parser.Regex;
-import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
@@ -63,7 +59,6 @@ public class Indowebster extends PluginForHost {
     @Override
     public void handleFree(DownloadLink link) throws Exception {
         requestFileInformation(link);
-        br.forceDebug(true);
         String ad_url = br.getRegex("<div style=\"float:left;margin-left:5px;\"><a href=\"(download=.*?)\" class=\"tn_button1\">DOWNLOAD").getMatch(0);
         if (ad_url == null) ad_url = br.getRegex("\"(download=.*?\\&do=[A-Za-z0-9]+)\"").getMatch(0);
         if (ad_url == null) {
@@ -71,19 +66,11 @@ public class Indowebster extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         br.getPage("http://www.indowebster.com/" + ad_url);
-        Form dlForm = br.getFormbyProperty("name", "form1");
-        if (dlForm == null) {
-            logger.warning("dlForm is null...");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dlForm.remove("button");
-        dlForm.put("button.x", Integer.toString(new Random().nextInt(10)));
-        dlForm.put("button.y", Integer.toString(new Random().nextInt(10)));
-        br.submitForm(dlForm);
-        String dllink = br.getHttpConnection().getHeaderField("refresh");
-        dllink = new Regex(dllink, "url=(.*?)$").getMatch(0);
+        String dllink = br.getRegex("id=\"link\\-download\" align=\"center\"><a href=\"(http://.*?)\"").getMatch(0);
+        dllink = br.getRegex("\"(http://www\\d+\\.indowebster\\.com/.*?)\"").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
+        dllink = dllink.trim();
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             if (br.containsHTML("But Our Download Server Can be Accessed from Indonesia Only")) throw new PluginException(LinkStatus.ERROR_FATAL, "Download Server Can be Accessed from Indonesia Only");

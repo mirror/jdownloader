@@ -68,30 +68,41 @@ public class YunFileCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        String waittime = br.getRegex("id=\"down_interval\" style=\"font-size: 28px; color: green;\">(\\d+)</span> 分钟</span>").getMatch(0);
-        if (waittime != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(waittime) * 60 * 1001l);
+        checkErrors();
         String userid = new Regex(downloadLink.getDownloadURL(), "yunfile\\.com/file/(.*?)/").getMatch(0);
         String fileid = new Regex(downloadLink.getDownloadURL(), "yunfile\\.com/file/.*?/(.+)").getMatch(0);
         if (userid == null || fileid == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        // sleep(35 * 1000l, downloadLink);
+        // Waittime is still skippable
+        // int wait = 30;
+        // String shortWaittime =
+        // br.getRegex("id=wait_span style=\"font\\-size: 28px; color: green;\">(\\d+)</span>").getMatch(0);
+        // if (shortWaittime != null) wait = Integer.parseInt(shortWaittime);
+        // sleep(wait * 1001l, downloadLink);
         br.getPage("http://yunfile.com/file/down/" + userid + "/" + fileid + ".html");
         String vid = br.getRegex("name=\"vid\" value=\"(.*?)\"").getMatch(0);
         String vid1 = br.getRegex("setCookie\\(\"vid1\", \"(.*?)\"").getMatch(0);
         String vid2 = br.getRegex("setCookie\\(\"vid2\", \"(.*?)\"").getMatch(0);
-        String action = br.getRegex("id=\"down_from\" action=\"(http://.*?)\" method=\"post\"").getMatch(0);
-        if (action == null) action = br.getRegex("\"(http://dl\\d+\\.yunfile\\.com/view)\"").getMatch(0);
+        String action = br.getRegex("id=\"down_from\"([\t\n\r ]+)?action=\"(http://.*?)\" method=\"post\"").getMatch(1);
+        if (action == null) action = br.getRegex("\"(http://dl\\d+\\.yunfile\\.com/file/downfile/[a-z0-9]+/[a-z0-9]+/[a-z0-9]+)\"").getMatch(0);
         if (vid == null || vid1 == null || vid2 == null || action == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         // Those cookies are important, no downloadstart without them!
         br.setCookie(MAINPAGE, "vid1", vid1);
         br.setCookie(MAINPAGE, "vid2", vid2);
+        br.setFollowRedirects(true);
         String postData = "module=fileService&action=downfile&userId=" + userid + "&fileId=" + fileid + "&vid=" + vid;
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, action, postData, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
+            checkErrors();
             if (br.getURL().contains("yunfile.com/file/" + userid + "/" + fileid)) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 30 * 60 * 1000l);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    private void checkErrors() throws NumberFormatException, PluginException {
+        String waittime = br.getRegex("id=\"down_interval\" style=\"font-size: 28px; color: green;\">(\\d+)</span> 分钟</span>").getMatch(0);
+        if (waittime != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(waittime) * 60 * 1001l);
     }
 
     @Override
