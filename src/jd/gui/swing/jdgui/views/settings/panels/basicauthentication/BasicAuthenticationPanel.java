@@ -41,7 +41,7 @@ public class BasicAuthenticationPanel extends JPanel implements SettingsComponen
     }
 
     public String getConstraints() {
-        return "wmin 10,height 60:n:n";
+        return "wmin 10,height 60:n:n,pushy,growy";
     }
 
     public boolean isMultiline() {

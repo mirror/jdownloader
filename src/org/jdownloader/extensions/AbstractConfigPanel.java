@@ -29,7 +29,7 @@ public abstract class AbstractConfigPanel extends SwitchPanel {
         super(new MigLayout("ins 15, wrap 2", "[][grow,fill]", "[]"));
     }
 
-    protected void addDescription(String description) {
+    protected JTextArea addDescription(String description) {
         JTextArea txt = new JTextArea();
         txt.setEditable(false);
         txt.setLineWrap(true);
@@ -40,6 +40,7 @@ public abstract class AbstractConfigPanel extends SwitchPanel {
         txt.setText(description);
         add(txt, "gaptop 0,spanx,growx,pushx,gapleft 37,gapbottom 5,wmin 10");
         add(new JSeparator(), "gapleft 37,spanx,growx,pushx,gapbottom 5");
+        return txt;
     }
 
     protected void addTopHeader(String name, ImageIcon icon) {

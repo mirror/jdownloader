@@ -2,6 +2,7 @@ package jd.controlling.reconnect;
 
 import java.util.logging.Logger;
 
+import javax.swing.ImageIcon;
 import javax.swing.JComponent;
 
 import jd.config.Configuration;
@@ -49,6 +50,8 @@ public abstract class RouterPlugin {
      * @return Config GUI for this plugin
      */
     public abstract JComponent getGUI();
+
+    public abstract ImageIcon getIcon16();
 
     /**
      * Returns a UNIQUE ID for this plugin.This ID should NEVER change

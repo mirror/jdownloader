@@ -43,7 +43,7 @@ public class AccountManager extends JPanel implements SettingsComponent {
     }
 
     public String getConstraints() {
-        return "wmin 10,height 60:n:n";
+        return "wmin 10,height 60:n:n,growy,pushy";
     }
 
     public boolean isMultiline() {

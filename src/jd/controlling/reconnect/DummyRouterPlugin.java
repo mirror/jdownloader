@@ -1,5 +1,6 @@
 package jd.controlling.reconnect;
 
+import javax.swing.ImageIcon;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
 import javax.swing.JTextPane;
@@ -9,6 +10,7 @@ import javax.swing.event.HyperlinkListener;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.utils.os.CrossSystem;
+import org.jdownloader.images.Theme;
 import org.jdownloader.translate.JDT;
 
 public class DummyRouterPlugin extends RouterPlugin {
@@ -19,13 +21,15 @@ public class DummyRouterPlugin extends RouterPlugin {
         return DummyRouterPlugin.INSTANCE;
     }
 
-    private DummyRouterPlugin() {
+    private ImageIcon icon;
 
+    private DummyRouterPlugin() {
+        icon = Theme.getIcon("delete", 16);
     }
 
     @Override
     public JComponent getGUI() {
-        final JPanel p = new JPanel(new MigLayout("ins 15,wrap 1", "[grow,fill]", "[][grow,fill]"));
+        final JPanel p = new JPanel(new MigLayout("ins 0,wrap 1", "[grow,fill]", "[][grow,fill]"));
         final JTextPane text = new JTextPane();
         text.setContentType("text/html");
         text.addHyperlinkListener(new HyperlinkListener() {
@@ -41,7 +45,7 @@ public class DummyRouterPlugin extends RouterPlugin {
         text.setBackground(null);
         text.setOpaque(false);
         text.putClientProperty("Synthetica.opaque", Boolean.FALSE);
-        text.setText(JDT._.jd_controlling_reconnect_plugins_DummyRouterPlugin_getGUI());
+        text.setText(JDT._.jd_controlling_reconnect_plugins_DummyRouterPlugin_getGUI2());
         p.add(text);
         return p;
     }
@@ -66,4 +70,8 @@ public class DummyRouterPlugin extends RouterPlugin {
 
     }
 
+    @Override
+    public ImageIcon getIcon16() {
+        return icon;
+    }
 }

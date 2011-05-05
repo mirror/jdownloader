@@ -168,8 +168,8 @@ public interface JdownloaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Waiting for user input" })
     String gui_linkgrabber_waitinguserio();
 
-    @Default(lngs = { "en" }, values = { "<b><u>No Reconnect selected</u></b><br/><p>Reconnection is an advanced approach for skipping long waits that some hosts impose on free users. <br>It is not helpful while using a premium account.</p><p>Read more about Reconnect <a href='http://board.jdownloader.org/showthread.php?t=16450'>here</a></p>" })
-    String jd_controlling_reconnect_plugins_DummyRouterPlugin_getGUI();
+    @Default(lngs = { "en" }, values = { "<b><u>No Reconnect selected</u></b><br/><p>Reconnection is an advanced approach for skipping long waits that some hosts impose on free users. <br>It is not helpful while using a premium account.</p><p>Read more about Reconnect <a href='http://support.jdownloader.org/index.php?_m=knowledgebase&_a=viewarticle&kbarticleid=1'>here</a></p>" })
+    String jd_controlling_reconnect_plugins_DummyRouterPlugin_getGUI2();
 
     @Default(lngs = { "en" }, values = { "<b>%s1<b><hr>File not found" })
     String ballon_download_fnf_message(Object s1);
@@ -665,4 +665,16 @@ public interface JdownloaderTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Add HTTP and FTP credentials here. Basic Authentication can be used for basic logins which do not need an extra Plugin.\r\n\r\nUse the Account Manager for Premium/Gold/Platin Accounts!" })
     String gui_settings_basicauth_description();
+
+    @Default(lngs = { "en" }, values = { "Reconnect" })
+    String gui_settings_reconnect_title();
+
+    @Default(lngs = { "en" }, values = { "Reconnection helps you to avoid waittimes. Click [here] for details" })
+    String gui_settings_reconnect_description();
+
+    @Default(lngs = { "en" }, values = { "http://support.jdownloader.org/index.php?_m=knowledgebase&_a=viewarticle&kbarticleid=1" })
+    String gui_settings_reconnect_description_url();
+
+    @Default(lngs = { "en" }, values = { "Reconnect Wizard" })
+    String reconnectmanager_wizard();
 }

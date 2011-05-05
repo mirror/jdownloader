@@ -3,6 +3,7 @@ package jd.controlling.reconnect.plugins.batch;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
+import javax.swing.ImageIcon;
 import javax.swing.JComponent;
 import javax.swing.JFileChooser;
 import javax.swing.JLabel;
@@ -24,6 +25,7 @@ import net.miginfocom.swing.MigLayout;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.TextComponentChangeListener;
+import org.jdownloader.images.Theme;
 
 /**
  * Plugin to use an extern tool for reconnection
@@ -46,8 +48,11 @@ public class ExternBatchReconnectPlugin extends RouterPlugin implements ActionLi
 
     private JTextPane           txtBatch;
 
+    private ImageIcon           icon;
+
     public ExternBatchReconnectPlugin() {
         super();
+        icon = Theme.getIcon("batch", 16);
     }
 
     public void actionPerformed(final ActionEvent e) {
@@ -65,7 +70,7 @@ public class ExternBatchReconnectPlugin extends RouterPlugin implements ActionLi
     @Override
     public JComponent getGUI() {
 
-        final JPanel p = new JPanel(new MigLayout("ins 15,wrap 2", "[][grow,fill]", "[][][grow,fill][]"));
+        final JPanel p = new JPanel(new MigLayout("ins 0,wrap 2", "[][grow,fill]", "[][][grow,fill][]"));
         this.txtCommand = new JTextField();
 
         this.txtBatch = new JTextPane();
@@ -207,6 +212,11 @@ public class ExternBatchReconnectPlugin extends RouterPlugin implements ActionLi
 
         };
 
+    }
+
+    @Override
+    public ImageIcon getIcon16() {
+        return icon;
     }
 
 }

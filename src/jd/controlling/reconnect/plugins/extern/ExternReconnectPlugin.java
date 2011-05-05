@@ -6,6 +6,7 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 
+import javax.swing.ImageIcon;
 import javax.swing.JCheckBox;
 import javax.swing.JComponent;
 import javax.swing.JFileChooser;
@@ -27,6 +28,7 @@ import net.miginfocom.swing.MigLayout;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.TextComponentChangeListener;
+import org.jdownloader.images.Theme;
 
 /**
  * Plugin to use an extern tool for reconnection
@@ -49,8 +51,16 @@ public class ExternReconnectPlugin extends RouterPlugin implements ActionListene
 
     private ComboBrowseFile     browse;
 
+    private ImageIcon           icon;
+
     public ExternReconnectPlugin() {
         super();
+        icon = Theme.getIcon("console", 16);
+    }
+
+    @Override
+    public ImageIcon getIcon16() {
+        return icon;
     }
 
     public void actionPerformed(final ActionEvent e) {
@@ -97,7 +107,7 @@ public class ExternReconnectPlugin extends RouterPlugin implements ActionListene
     @Override
     public JComponent getGUI() {
 
-        final JPanel p = new JPanel(new MigLayout("ins 15,wrap 2", "[][grow,fill]", "[][][grow,fill][]"));
+        final JPanel p = new JPanel(new MigLayout("ins 0,wrap 2", "[][grow,fill]", "[][][grow,fill][]"));
         this.browse = new ComboBrowseFile(this.getID());
         this.browse.setEditable(true);
         this.browse.setFileSelectionMode(UserIO.FILES_ONLY);

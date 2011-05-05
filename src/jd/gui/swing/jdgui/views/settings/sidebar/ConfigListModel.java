@@ -7,6 +7,7 @@ import jd.gui.swing.jdgui.views.settings.panels.BarrierFree;
 import jd.gui.swing.jdgui.views.settings.panels.BasicAuthentication;
 import jd.gui.swing.jdgui.views.settings.panels.ConfigPanelGeneral;
 import jd.gui.swing.jdgui.views.settings.panels.DownloadControll;
+import jd.gui.swing.jdgui.views.settings.panels.ReconnectSettings;
 import jd.gui.swing.jdgui.views.settings.panels.addons.ConfigPanelAddons;
 import jd.gui.swing.jdgui.views.settings.panels.downloadandnetwork.ProxyConfig;
 import jd.gui.swing.jdgui.views.settings.panels.hoster.ConfigPanelPlugin;
@@ -33,8 +34,8 @@ public class ConfigListModel extends DefaultListModel {
 
         // addElement(new ToolbarController());
         addElement(new jd.gui.swing.jdgui.views.settings.panels.Linkgrabber());
-
-        addElement(new BarrierFree());
+        addElement(new ReconnectSettings());
+        addElement(new Reconnect());
 
         addElement(new AccountManagerSettings());
         addElement(new BasicAuthentication());
@@ -44,7 +45,7 @@ public class ConfigListModel extends DefaultListModel {
         addElement(new ConfigPanelPlugin());
         addElement(new ConfigPanelAddons());
         addElement(new ProxyConfig());
-
+        addElement(new BarrierFree());
         for (final AbstractExtension plg : ExtensionController.getInstance().getEnabledExtensions()) {
             if ((!plg.hasSettings() && !plg.hasConfigPanel())) {
                 continue;

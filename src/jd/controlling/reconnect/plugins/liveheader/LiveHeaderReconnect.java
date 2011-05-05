@@ -16,6 +16,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import javax.swing.AbstractAction;
+import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
@@ -63,6 +64,7 @@ import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.appwork.utils.swing.dialog.InputDialog;
+import org.jdownloader.images.Theme;
 import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
@@ -101,10 +103,16 @@ public class LiveHeaderReconnect extends RouterPlugin implements ActionListener,
     private JTextField              txtIP;
     private JButton                 btnEditScript;
 
-    private JTextField              txtName;
+    @Override
+    public ImageIcon getIcon16() {
+        return icon;
+    }
 
-    protected static final Logger   LOG = JDLogger.getLogger();
-    public static final String      ID  = "httpliveheader";
+    private JTextField            txtName;
+    private ImageIcon             icon;
+
+    protected static final Logger LOG = JDLogger.getLogger();
+    public static final String    ID  = "httpliveheader";
 
     /**
      * DO NOT REMOVE THIS OR REPLACE BY Regex.getLines()
@@ -117,6 +125,7 @@ public class LiveHeaderReconnect extends RouterPlugin implements ActionListener,
 
     public LiveHeaderReconnect() {
         super();
+        this.icon = Theme.getIcon("modem", 16);
 
         // only listen to system to autosend script
         JDController.getInstance().addControlListener(this);
@@ -428,7 +437,7 @@ public class LiveHeaderReconnect extends RouterPlugin implements ActionListener,
 
             @Override
             public void runInEDT() {
-                final ProgressController progress = new ProgressController(T._.gui_config_routeripfinder_featchIP(), 100, null);
+                final ProgressController progress = new ProgressController(100, T._.gui_config_routeripfinder_featchIP(), (ImageIcon) null);
 
                 LiveHeaderReconnect.this.txtIP.setText(T._.gui_config_routeripfinder_featchIP());
 
@@ -457,7 +466,7 @@ public class LiveHeaderReconnect extends RouterPlugin implements ActionListener,
 
     @Override
     public JComponent getGUI() {
-        final JPanel p = new JPanel(new MigLayout("ins 15,wrap 3", "[][][grow,fill]", "[]"));
+        final JPanel p = new JPanel(new MigLayout("ins 0,wrap 3", "[][][grow,fill]", "[]"));
         this.btnAuto = new JButton("Send Router Settings");
         this.btnAuto.addActionListener(this);
 

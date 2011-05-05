@@ -19,6 +19,7 @@ package jd.controlling;
 import java.awt.Color;
 
 import javax.swing.Icon;
+import javax.swing.ImageIcon;
 
 import jd.event.ControlEvent;
 import jd.event.MessageEvent;
@@ -89,6 +90,11 @@ public class ProgressController implements MessageListener, Comparable<ProgressC
     }
 
     public ProgressController(Type type, String name, String statusText, long max, String iconKey) {
+        this(type, name, statusText, max, JDTheme.II(iconKey, ICONSIZE, ICONSIZE));
+
+    }
+
+    public ProgressController(Type type, String name, String statusText, long max, ImageIcon icon19px) {
         this.name = name;
         this.type = type;
         id = idCounter++;
@@ -97,9 +103,13 @@ public class ProgressController implements MessageListener, Comparable<ProgressC
         currentValue = 0;
         finished = false;
         progresscolor = null;
-        this.icon = JDTheme.II(iconKey, ICONSIZE, ICONSIZE);
+        this.icon = icon19px;
         fireChanges();
         broadcaster = new ProgressControllerBroadcaster();
+    }
+
+    public ProgressController(int max, String statusText, ImageIcon icon19px) {
+        this(Type.NORMAL, statusText, statusText, max, icon19px);
     }
 
     public String getName() {
