@@ -46,7 +46,7 @@ import jd.gui.swing.jdgui.components.premiumbar.PremiumStatus;
 import jd.gui.swing.jdgui.views.downloads.DownloadLinksPanel;
 import jd.gui.swing.jdgui.views.linkgrabber.LinkGrabberPanel;
 import jd.gui.swing.jdgui.views.settings.JDLabelListRenderer;
-import jd.gui.swing.jdgui.views.settings.panels.addons.ConfigPanelAddons;
+import jd.gui.swing.jdgui.views.settings.panels.addons.ExtensionManager;
 import jd.gui.swing.jdgui.views.settings.panels.passwords.PasswordList;
 import jd.nutils.JDFlags;
 import jd.plugins.LinkGrabberFilePackage;
@@ -571,7 +571,7 @@ public class ActionController {
 
             @Override
             public void onAction(final ActionEvent e) {
-                SwingGui.getInstance().requestPanel(UserIF.Panels.CONFIGPANEL, ConfigPanelAddons.class);
+                SwingGui.getInstance().requestPanel(UserIF.Panels.CONFIGPANEL, ExtensionManager.class);
             }
         };
         new ToolBarAction("premiumMenu.toggle", "gui.images.config.tip") {

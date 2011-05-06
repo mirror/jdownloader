@@ -480,8 +480,8 @@ public interface JdownloaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "[convert failed]" })
     String gui_downloadlink_errorpostprocess3();
 
-    @Default(lngs = { "en" }, values = { "Change IP" })
-    String gui_config_reconnect_showcase_reconnect();
+    @Default(lngs = { "en" }, values = { "Start Test" })
+    String gui_config_reconnect_showcase_reconnect2();
 
     @Default(lngs = { "en" }, values = { "Connecting..." })
     String gui_download_create_connection();
@@ -677,4 +677,13 @@ public interface JdownloaderTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Reconnect Wizard" })
     String reconnectmanager_wizard();
+
+    @Default(lngs = { "en" }, values = { "Reconnect Method" })
+    String gui_settings_reconnect_title_method();
+
+    @Default(lngs = { "en" }, values = { "Test Settings" })
+    String gui_settings_reconnect_title_test();
+
+    @Default(lngs = { "en" }, values = { "Extension Modules" })
+    String gui_settings_extensions_description();
 }

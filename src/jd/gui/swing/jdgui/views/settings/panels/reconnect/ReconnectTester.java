@@ -4,7 +4,6 @@ import java.awt.Color;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
-import javax.swing.Box;
 import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.SwingConstants;
@@ -14,6 +13,7 @@ import jd.controlling.JDLogger;
 import jd.controlling.JSonWrapper;
 import jd.controlling.ProgressController;
 import jd.controlling.reconnect.Reconnecter;
+import jd.controlling.reconnect.ipcheck.IP;
 import jd.controlling.reconnect.ipcheck.IPController;
 import jd.gui.swing.jdgui.views.settings.components.SettingsComponent;
 import jd.nutils.Formatter;
@@ -40,7 +40,7 @@ public class ReconnectTester extends MigPanel implements SettingsComponent, Acti
     private JLabel            lblBeforeIP;
 
     public ReconnectTester() {
-        super("ins 0, wrap 6", "[]5[right]20[right]20[right]20[right]20[right]", "[][]");
+        super("ins 0, wrap 6", "[]5[right]20[right]20[right]20[right]20[right]", "[fill]");
         this.initComponents();
         this.layoutComponents();
         this.fill();
@@ -51,34 +51,34 @@ public class ReconnectTester extends MigPanel implements SettingsComponent, Acti
 
     private void layoutComponents() {
 
-        add(this.btnTest, "spanx,shrinkx, aligny top,wrap");
+        add(this.btnTest, "spany 2,pushy,growy");
 
         add(this.lblDuration);
 
         add(this.lblTime);
+        JLabel lbl = new JLabel(JDT._.gui_config_reconnect_showcase_currentip());
+        lbl.setEnabled(false);
+        add(lbl);
+        add(this.lblCurrentIP, "growx,pushx");
 
-        add(new JLabel(JDT._.gui_config_reconnect_showcase_currentip()));
-        add(this.lblCurrentIP);
-        add(Box.createGlue(), "spany,pushx,growx");
         add(this.lblSuccessIcon, "spany,alignx right");
 
         add(this.lblStatusMessage, "spanx 2");
 
         add(this.lblBeforeIpLabel);
 
-        add(this.lblBeforeIP);
+        add(this.lblBeforeIP, "growx,pushx");
 
     }
 
     private void initComponents() {
-        this.btnTest = new JButton(JDT._.gui_config_reconnect_showcase_reconnect());
+        this.btnTest = new JButton(JDT._.gui_config_reconnect_showcase_reconnect2());
         this.btnTest.setIcon(Theme.getIcon("play", 20));
         this.btnTest.addActionListener(this);
 
         this.lblDuration = new JLabel(JDT._.gui_config_reconnect_showcase_time());
         this.lblDuration.setEnabled(false);
         this.lblTime = new JLabel("---");
-        this.lblTime.setEnabled(false);
         this.lblCurrentIP = new JLabel("---");
 
         this.lblSuccessIcon = new JLabel(Theme.getIcon("ok", 32));
@@ -92,7 +92,6 @@ public class ReconnectTester extends MigPanel implements SettingsComponent, Acti
         this.lblBeforeIpLabel.setEnabled(false);
 
         this.lblBeforeIP = new JLabel("---");
-        this.lblBeforeIP.setEnabled(false);
 
     }
 
@@ -101,7 +100,7 @@ public class ReconnectTester extends MigPanel implements SettingsComponent, Acti
     }
 
     public String getConstraints() {
-        return "wmin 10,height 60:n:n";
+        return "wmin 10,height 30:n:n";
     }
 
     public void actionPerformed(final ActionEvent e) {
@@ -114,7 +113,7 @@ public class ReconnectTester extends MigPanel implements SettingsComponent, Acti
         JDLogger.addHeader("Reconnect Testing");
 
         final ProgressController progress = new ProgressController(100, JDT._.gui_warning_reconnect_pleaseWait(), Theme.getIcon("settings/reconnect", 20));
-
+        btnTest.setEnabled(false);
         Log.L.info("Start Reconnect");
         this.lblStatusMessage.setText(JDT._.gui_warning_reconnect_running());
         this.lblStatusMessage.setEnabled(true);
@@ -156,58 +155,79 @@ public class ReconnectTester extends MigPanel implements SettingsComponent, Acti
         new Thread() {
             @Override
             public void run() {
-                JDUtilities.getConfiguration().setProperty(Configuration.PARAM_RETRIES, 0);
-                if (Reconnecter.getInstance().forceReconnect()) {
-                    if (JSonWrapper.get("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) {
-                        progress.setStatusText(JDT._.gui_warning_reconnectunknown());
+                try {
+                    JDUtilities.getConfiguration().setProperty(Configuration.PARAM_RETRIES, 0);
+                    if (Reconnecter.getInstance().forceReconnect()) {
+                        if (JSonWrapper.get("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) {
+                            progress.setStatusText(JDT._.gui_warning_reconnectunknown());
+                        } else {
+                            progress.setStatusText(JDT._.gui_warning_reconnectSuccess());
+                        }
+                        new EDTRunner() {
+
+                            @Override
+                            protected void runInEDT() {
+                                if (JSonWrapper.get("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) {
+                                    lblStatusMessage.setText(JDT._.gui_warning_reconnectunknown());
+                                } else {
+                                    lblStatusMessage.setText(JDT._.gui_warning_reconnectSuccess());
+                                }
+                                lblSuccessIcon.setIcon(Theme.getIcon("true", 32));
+                                lblSuccessIcon.setEnabled(true);
+                                lblStatusMessage.setEnabled(true);
+                                if (JSonWrapper.get("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) {
+                                    lblCurrentIP.setText("?");
+                                } else {
+                                    lblCurrentIP.setText(IPController.getInstance().fetchIP().toString());
+                                }
+                            }
+
+                        };
                     } else {
-                        progress.setStatusText(JDT._.gui_warning_reconnectSuccess());
+                        progress.setStatusText(JDT._.gui_warning_reconnectFailed());
+                        progress.setColor(Color.RED);
+                        new EDTRunner() {
+
+                            @Override
+                            protected void runInEDT() {
+                                lblStatusMessage.setText(JDT._.gui_warning_reconnectFailed());
+                                lblSuccessIcon.setIcon(Theme.getIcon("false", 32));
+                                lblSuccessIcon.setEnabled(true);
+                                if (JSonWrapper.get("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) {
+                                    lblCurrentIP.setText("?");
+                                } else {
+                                    lblCurrentIP.setText(IPController.getInstance().fetchIP().toString());
+                                }
+                            }
+
+                        };
                     }
+                    timer.interrupt();
+                    progress.setStatus(100);
+                    progress.doFinalize(5000);
+                    JDUtilities.getConfiguration().setProperty(Configuration.PARAM_RETRIES, retries);
+                } finally {
                     new EDTRunner() {
 
                         @Override
                         protected void runInEDT() {
-                            if (JSonWrapper.get("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) {
-                                lblStatusMessage.setText(JDT._.gui_warning_reconnectunknown());
-                            } else {
-                                lblStatusMessage.setText(JDT._.gui_warning_reconnectSuccess());
-                            }
-                            lblSuccessIcon.setIcon(Theme.getIcon("true", 32));
-                            lblSuccessIcon.setEnabled(true);
-                            lblStatusMessage.setEnabled(true);
-                            if (JSonWrapper.get("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) {
-                                lblCurrentIP.setText("?");
-                            } else {
-                                lblCurrentIP.setText(IPController.getInstance().fetchIP().toString());
-                            }
+                            btnTest.setEnabled(true);
                         }
-
-                    };
-                } else {
-                    progress.setStatusText(JDT._.gui_warning_reconnectFailed());
-                    progress.setColor(Color.RED);
-                    new EDTRunner() {
-
-                        @Override
-                        protected void runInEDT() {
-                            lblStatusMessage.setText(JDT._.gui_warning_reconnectFailed());
-                            lblSuccessIcon.setIcon(Theme.getIcon("false", 32));
-                            lblSuccessIcon.setEnabled(true);
-                            if (JSonWrapper.get("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) {
-                                lblCurrentIP.setText("?");
-                            } else {
-                                lblCurrentIP.setText(IPController.getInstance().fetchIP().toString());
-                            }
-                        }
-
                     };
                 }
-                timer.interrupt();
-                progress.setStatus(100);
-                progress.doFinalize(5000);
-                JDUtilities.getConfiguration().setProperty(Configuration.PARAM_RETRIES, retries);
             }
         }.start();
+    }
+
+    public void updateCurrentIP(final IP ip) {
+
+        new EDTRunner() {
+
+            @Override
+            protected void runInEDT() {
+                lblCurrentIP.setText(ip.toString());
+            }
+        };
     }
 
 }

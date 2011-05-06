@@ -16,10 +16,10 @@ import jd.controlling.proxy.ProxyInfo;
 import jd.gui.swing.jdgui.views.settings.ConfigPanel;
 import jd.utils.JDTheme;
 
-import org.appwork.utils.images.IconIO;
 import org.appwork.utils.swing.table.ExtTable;
 import org.appwork.utils.swing.table.SelectionHighlighter;
 import org.jdownloader.extensions.AbstractConfigPanel;
+import org.jdownloader.images.Theme;
 import org.jdownloader.translate.JDT;
 
 public class ProxyConfig extends AbstractConfigPanel {
@@ -39,7 +39,7 @@ public class ProxyConfig extends AbstractConfigPanel {
     public ProxyConfig() {
         super();
 
-        this.addHeader(getTitle(), IconIO.getImageIcon(ProxyConfig.class.getResource("/org/jdownloader/img/proxy.png"), 32));
+        this.addHeader(getTitle(), Theme.getIcon("proxy", 32));
         this.addDescription(JDT._.gui_settings_proxy_description());
 
         table = new ExtTable<ProxyInfo>(new ProxyTableModel(), "proxyTable") {
@@ -62,8 +62,8 @@ public class ProxyConfig extends AbstractConfigPanel {
         this.add(sp, "gapleft 37,growx, pushx,spanx,pushy,growy");
         JToolBar toolbar = new JToolBar();
         toolbar.setFloatable(false);
-        btnAdd = new JButton(JDT._.basics_add(), IconIO.getImageIcon(ProxyConfig.class.getResource("/org/jdownloader/img/add.png"), 20));
-        btnRemove = new JButton(JDT._.basics_remove(), IconIO.getImageIcon(ProxyConfig.class.getResource("/org/jdownloader/img/remove.png"), 20));
+        btnAdd = new JButton(JDT._.basics_add(), Theme.getIcon("add", 20));
+        btnRemove = new JButton(JDT._.basics_remove(), Theme.getIcon("delete", 20));
         btnAdd.addActionListener(new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {

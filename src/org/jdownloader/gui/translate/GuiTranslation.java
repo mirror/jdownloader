@@ -1218,4 +1218,10 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Delete" })
     String settings_auth_delete();
+
+    @Default(lngs = { "en" }, values = { "Enabled/Disabled" })
+    String extensiontablemodel_column_enabled();
+
+    @Default(lngs = { "en" }, values = { "Extension Modules" })
+    String extensionManager_title();
 }

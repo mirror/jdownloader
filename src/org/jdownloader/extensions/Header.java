@@ -13,10 +13,11 @@ public class Header extends JPanel {
      * 
      */
     private static final long serialVersionUID = 1L;
+    private JLabel            label;
 
     public Header(String name, ImageIcon icon) {
         super(new MigLayout("ins 0", "[]10[grow,fill]"));
-        JLabel label = new JLabel("<html><u><b>" + name + "</b></u></html>");
+        label = new JLabel("<html><u><b>" + name + "</b></u></html>");
         label.setIcon(icon);
         label.setIconTextGap(5);
         label.setBorder(null);
@@ -24,6 +25,14 @@ public class Header extends JPanel {
         add(label);
         add(new JSeparator());
         setOpaque(false);
+    }
+
+    public void setIcon(ImageIcon _getIcon) {
+        label.setIcon(_getIcon);
+    }
+
+    public void setText(String name) {
+        label.setText("<html><u><b>" + name + "</b></u></html>");
     }
 
 }

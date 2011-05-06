@@ -7,6 +7,7 @@ import java.awt.Rectangle;
 import javax.swing.ImageIcon;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
+import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
 import javax.swing.JTextArea;
 
@@ -112,6 +113,10 @@ public abstract class AbstractConfigPanel extends SwitchPanel {
                 con += "," + ((SettingsComponent) comp).getConstraints();
             }
             super.add(comp, con);
+            return comp;
+
+        } else if (comp instanceof JScrollPane) {
+            super.add(comp, "gapleft 37,spanx,growx,pushx,height 60:n:n");
             return comp;
         } else {
             super.add(comp, "growx, pushx,spanx");

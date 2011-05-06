@@ -8,10 +8,9 @@ import jd.gui.swing.jdgui.views.settings.panels.BasicAuthentication;
 import jd.gui.swing.jdgui.views.settings.panels.ConfigPanelGeneral;
 import jd.gui.swing.jdgui.views.settings.panels.DownloadControll;
 import jd.gui.swing.jdgui.views.settings.panels.ReconnectSettings;
-import jd.gui.swing.jdgui.views.settings.panels.addons.ConfigPanelAddons;
+import jd.gui.swing.jdgui.views.settings.panels.addons.ExtensionManager;
 import jd.gui.swing.jdgui.views.settings.panels.downloadandnetwork.ProxyConfig;
 import jd.gui.swing.jdgui.views.settings.panels.hoster.ConfigPanelPlugin;
-import jd.gui.swing.jdgui.views.settings.panels.reconnect.Reconnect;
 
 import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionController;
@@ -35,16 +34,14 @@ public class ConfigListModel extends DefaultListModel {
         // addElement(new ToolbarController());
         addElement(new jd.gui.swing.jdgui.views.settings.panels.Linkgrabber());
         addElement(new ReconnectSettings());
-        addElement(new Reconnect());
-
+        addElement(new ProxyConfig());
         addElement(new AccountManagerSettings());
         addElement(new BasicAuthentication());
 
-        addElement(new Reconnect());
         // addElement(new Premium());
         addElement(new ConfigPanelPlugin());
-        addElement(new ConfigPanelAddons());
-        addElement(new ProxyConfig());
+        addElement(new ExtensionManager());
+
         addElement(new BarrierFree());
         for (final AbstractExtension plg : ExtensionController.getInstance().getEnabledExtensions()) {
             if ((!plg.hasSettings() && !plg.hasConfigPanel())) {

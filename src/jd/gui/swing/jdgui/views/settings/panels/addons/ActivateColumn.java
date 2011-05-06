@@ -31,9 +31,9 @@ import org.jdownloader.translate.JDT;
 public class ActivateColumn extends ExtCheckColumn<AbstractExtensionWrapper> {
 
     private static final long       serialVersionUID = 658156218405204887L;
-    private final ConfigPanelAddons addons;
+    private final ExtensionManager addons;
 
-    public ActivateColumn(String name, ExtTableModel<AbstractExtensionWrapper> table, ConfigPanelAddons addons) {
+    public ActivateColumn(String name, ExtTableModel<AbstractExtensionWrapper> table, ExtensionManager addons) {
         super(name, table);
 
         this.addons = addons;
