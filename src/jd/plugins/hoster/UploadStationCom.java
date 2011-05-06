@@ -55,9 +55,10 @@ public class UploadStationCom extends PluginForHost {
         return "http://www.uploadstation.com/toc.php";
     }
 
-    private static final String FILEOFFLINE = "(<h1>File not available</h1>|<b>The file could not be found\\. Please check the download link)";
-    public static String        agent       = RandomUserAgent.generate();
-    private boolean             ispremium   = false;
+    private static final String FILEOFFLINE        = "(<h1>File not available</h1>|<b>The file could not be found\\. Please check the download link)";
+    public static String        agent              = RandomUserAgent.generate();
+    private boolean             isRegistered       = false;
+    private static long         LAST_FREE_DOWNLOAD = 0l;
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
@@ -93,6 +94,12 @@ public class UploadStationCom extends PluginForHost {
         // br2.getPage(captchaJSPage);
         br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         br2.postPage(downloadLink.getDownloadURL(), "checkDownload=check");
+
+        if (br2.containsHTML("\"fail\":\"timeLimit\"")) {
+            handleErrors(br2, downloadLink);
+            br2.postPage(downloadLink.getDownloadURL(), "checkDownload=check");
+        }
+
         if (!br2.containsHTML("success\":\"showCaptcha\"")) {
             handleCaptchaErrors(br2, downloadLink);
             handleErrors(br2, downloadLink);
@@ -173,6 +180,7 @@ public class UploadStationCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.setFilenameFix(true);
+        UploadStationCom.LAST_FREE_DOWNLOAD = System.currentTimeMillis();
         this.dl.startDownload();
     }
 
@@ -188,14 +196,13 @@ public class UploadStationCom extends PluginForHost {
         String expire = br.getRegex("Expiry date: (\\d+\\-\\d+\\-\\d+)").getMatch(0);
         if (expire == null) {
             // ai.setExpired(true);
-            this.ispremium = false;
+            this.isRegistered = true;
             try {
                 maxDls.set(1);
                 account.setMaxSimultanDownloads(1);
             } catch (final Throwable noin09581Stable) {
             }
         } else {
-            this.ispremium = true;
             try {
                 maxDls.set(-1);
                 account.setMaxSimultanDownloads(-1);
@@ -220,7 +227,7 @@ public class UploadStationCom extends PluginForHost {
         String expire = br.getRegex("Expiry date: (\\d+\\-\\d+\\-\\d+)").getMatch(0);
         if (expire == null) {
             // ai.setExpired(true);
-            this.ispremium = false;
+            this.isRegistered = true;
             ai.setStatus("Free User");
             try {
                 maxDls.set(1);
@@ -228,7 +235,6 @@ public class UploadStationCom extends PluginForHost {
             } catch (final Throwable noin09581Stable) {
             }
         } else {
-            this.ispremium = true;
             try {
                 maxDls.set(-1);
                 account.setMaxSimultanDownloads(-1);
@@ -244,7 +250,7 @@ public class UploadStationCom extends PluginForHost {
     public void handlePremium(DownloadLink link, Account account) throws Exception {
         requestFileInformation(link);
         login(account);
-        if (this.ispremium) {
+        if (!this.isRegistered) {
             br.setFollowRedirects(false);
             br.getPage(link.getDownloadURL());
             String dllink = br.getRedirectLocation();
@@ -361,7 +367,14 @@ public class UploadStationCom extends PluginForHost {
         }
         String waittime = br2.getRegex("<h1>You need to wait (\\d+) seconds to download next file").getMatch(0);
         if (waittime == null && limitReached) waittime = "300";
-        if (waittime != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(waittime) * 1001l);
+        if (waittime != null) {
+            long wait = (Integer.parseInt(waittime) * 1000l + 5000) - (System.currentTimeMillis() - UploadStationCom.LAST_FREE_DOWNLOAD);
+
+            if (this.isRegistered)
+                this.sleep(wait, link);
+            else
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, wait);
+        }
         if (br.containsHTML("To remove download restriction, please choose your suitable plan as below</h1>")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 30 * 60 * 1000l);
     }
 
