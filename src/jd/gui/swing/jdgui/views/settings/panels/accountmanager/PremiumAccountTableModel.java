@@ -165,7 +165,7 @@ public class PremiumAccountTableModel extends ExtTableModel<Account> {
 
             @Override
             protected void setStringValue(String value, Account object) {
-                super.setStringValue(value, object);
+                object.setUser(value);
             }
 
             @Override
@@ -201,7 +201,7 @@ public class PremiumAccountTableModel extends ExtTableModel<Account> {
 
             @Override
             protected void setStringValue(String value, Account object) {
-                System.out.println(value);
+                object.setPass(value);
             }
         });
 

@@ -23,11 +23,8 @@ import java.util.regex.Pattern;
 import jd.PluginWrapper;
 import jd.gui.UserIO;
 import jd.http.Browser;
-import jd.http.Request;
-import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
-import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -37,7 +34,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.download.RAFDownload;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -45,28 +41,10 @@ import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "netload.in" }, urls = { "http://[\\w\\.]*?netload\\.in/[^(http://)].+" }, flags = { 2 })
 public class Netloadin extends PluginForHost {
-    static private final String AGB_LINK = "http://netload.in/index.php?id=13";
+    static private final String AGB_LINK   = "http://netload.in/index.php?id=13";
 
-    static private final String CAPTCHA_WRONG = "Sicherheitsnummer nicht eingegeben";
-
-    static private final String DOWNLOAD_CAPTCHA = "download_captcha.tpl";
-    static private final String DOWNLOAD_LIMIT = "download_limit.tpl";
-    static private final String DOWNLOAD_START = "download_load.tpl";
-    static private final String DOWNLOAD_STARTXMAS = "download_load_xmas.tpl";
-    static private final String DOWNLOAD_STARTXMAS2 = "download_load_xmas2.tpl";
-    private String LINK_PASS = null;
-
-    static private final Pattern DOWNLOAD_WAIT_TIME = Pattern.compile("countdown\\(([0-9]*),'change", Pattern.CASE_INSENSITIVE);
-
-    static private final String FILE_DAMAGED = "(Die Datei wurde Opfer einer defekten Festplatte|Diese Datei liegt auf einem Server mit einem technischen Defekt|This Server is currently in maintenance work)";
-
-    static private final String FILE_NOT_FOUND = "Die Datei konnte leider nicht gefunden werden";
-
-    static private final String LIMIT_REACHED = "share/images/download_limit_go_on.gif";
-    static private final String NEW_HOST_URL = "<a class=\"Orange_Link\" href=\"(.*?)\" >Alternativ klicke hier\\.<\\/a>";
-
-    static public final Object LOGINLOCK = new Object();
-    private boolean showDialog = false;
+    static public final Object  LOGINLOCK  = new Object();
+    private boolean             showDialog = false;
 
     private static String getID(String link) {
         String id = new Regex(link, "\\/datei([a-zA-Z0-9]+)").getMatch(0);
@@ -99,185 +77,65 @@ public class Netloadin extends PluginForHost {
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-        try {
-            setBrowserExclusive();
-            workAroundTimeOut(br);
-            requestFileInformation(downloadLink);
-            br.setDebug(true);
-            LinkStatus linkStatus = downloadLink.getLinkStatus();
-            this.setBrowserExclusive();
-            br.getPage("http://netload.in/index.php?lang=de");
-            br.setFollowRedirects(true);
-            br.getPage(downloadLink.getDownloadURL());
-            br.setFollowRedirects(false);
-            checkPassword(downloadLink);
-
-            if (linkStatus.isFailed()) return;
-            if (br.containsHTML("download_fast_link")) {
-                handleFastLink(downloadLink);
-                return;
-            }
-            String url = br.getRegex(Pattern.compile("<div class=\"Free_dl\">.*?<a href=\"(.*?)\"", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
-            if (br.containsHTML(FILE_NOT_FOUND)) {
-                linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
-                return;
-            }
-            if (br.containsHTML("We occurred an unexpected error")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 30 * 60 * 1000l);
-            if (br.containsHTML("Im Link ist ein Schreibfehler")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            if (br.containsHTML(FILE_DAMAGED)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.netloadin.errors.fileondmgserver", "File on damaged server"), 20 * 60 * 1000l);
-            if ((!br.containsHTML(DOWNLOAD_START) && !br.containsHTML(DOWNLOAD_STARTXMAS) && !br.containsHTML(DOWNLOAD_STARTXMAS2)) || url == null) {
-                linkStatus.setErrorMessage(JDL.L("plugins.hoster.netloadin.errors.dlnotfound", "Download link not found"));
-                logger.severe(br.toString());
-                linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_DEFECT);
-                return;
-            }
-            url = url.replaceAll("\\&amp\\;", "&");
-            br.getPage(url);
-            if (br.containsHTML(FILE_DAMAGED)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.netloadin.errors.fileondmgserver", "File on damaged server"), 20 * 60 * 1000l);
-
-            if (!br.containsHTML(DOWNLOAD_CAPTCHA)) {
-                linkStatus.setErrorMessage(JDL.L("plugins.hoster.netloadin.errors.captchanotfound", "Captcha not found"));
-                linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_DEFECT);
-                return;
-            }
-
-            String captchaURL = br.getRegex("<img style=\".*?\" src=\"(.*?)\" alt=\"Sicherheitsbild\" \\/>").getMatch(0);
-            Form[] forms = br.getForms();
-            Form captchaPost = forms[0];
-            captchaPost.setAction("index.php?id=10");
-            if (captchaURL == null) {
-                if (br.containsHTML("download_load.tpl")) {
-                    linkStatus.addStatus(LinkStatus.ERROR_RETRY);
-                    return;
-                }
-                linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_DEFECT);
-                return;
-            }
-
-            captchaPost.put("captcha_check", getCaptchaCode(captchaURL, downloadLink));
-            br.submitForm(captchaPost);
-            handleErrors(downloadLink);
-
-            String finalURL = br.getRegex(NEW_HOST_URL).getMatch(0);
-            sleep(20000, downloadLink);
-            logger.info("used serverurl: " + finalURL);
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finalURL);
-            try {
-                /* remove next major update */
-                /* workaround for broken timeout in 0.9xx public */
-                dl.getConnection().setConnectTimeout(30000);
-                dl.getConnection().setReadTimeout(120000);
-            } catch (Throwable e) {
-            }
-            dl.startDownload();
-        } catch (IOException e) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 5 * 60 * 1000l);
-        }
-    }
-
-    private void handleErrors(DownloadLink downloadLink) throws Exception {
-        if (br.containsHTML(FILE_NOT_FOUND)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        if (br.containsHTML("Im Link ist ein Schreibfehler")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        if (br.containsHTML(FILE_DAMAGED)) {
-            logger.warning("File is on a damaged server");
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.netloadin.errors.fileondmgserver", "File on damaged server"), 20 * 60 * 1000l);
-
-        }
-        if (br.containsHTML("Datenbank Fehler")) {
-            logger.warning("Database Error");
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 20 * 60 * 1000l);
-
-        }
-
-        if (br.containsHTML(LIMIT_REACHED) || br.containsHTML(DOWNLOAD_LIMIT)) {
-            String wait = new Regex(br.getRequest().getHtmlCode(), DOWNLOAD_WAIT_TIME).getMatch(0);
-            long waitTime = 0;
-            if (wait != null) {
-                waitTime = Long.parseLong(wait);
-                waitTime = waitTime * 10L;
-            }
-            if (waitTime == 0) {
-                logger.finest("Waittime was 0");
-                sleep(30000l, downloadLink);
-
-                throw new PluginException(LinkStatus.ERROR_RETRY);
-
-            }
-
-            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waitTime);
-
-        }
-        if (br.containsHTML(CAPTCHA_WRONG)) {
-
-        throw new PluginException(LinkStatus.ERROR_CAPTCHA); }
-        if (br.containsHTML("download_unknown_server_data")) {
-            logger.info("File is not uploaded completly");
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 60 * 2000l);
-
-        }
-        if (br.containsHTML("unknown_file_data")) {
-            logger.info("unknown_file_data");
-            throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.netloadin.errors.damagedfile", "Damaged file"));
-
-        }
-
-    }
-
-    private void handleFastLink(DownloadLink downloadLink) throws Exception {
-        br.forceDebug(true);
-        String url = br.getRegex("<a class=\"download_fast_link\" href=\"(.*?)\">Start Free Download</a>").getMatch(0);
-
-        url = Encoding.htmlDecode(url);
-        url = "http://netload.in/" + url;
-
-        sleep(10000, downloadLink);
-        br.setFollowRedirects(false);
-        br.getPage(url);
-        if (br.getRedirectLocation() != null) {
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, br.getRedirectLocation());
-            try {
-                /* remove next major update */
-                /* workaround for broken timeout in 0.9xx public */
-                dl.getConnection().setConnectTimeout(30000);
-                dl.getConnection().setReadTimeout(120000);
-            } catch (Throwable e) {
-            }
-            dl.startDownload();
+        setBrowserExclusive();
+        workAroundTimeOut(br);
+        requestFileInformation(downloadLink);
+        br.setDebug(true);
+        this.setBrowserExclusive();
+        String ID = getID(downloadLink.getDownloadURL());
+        br.getPage("http://netload.in/json/datei" + ID + ".htm");
+        checkPassword(downloadLink, br);
+        checkLimit(downloadLink, br);
+        String url = br.getRegex("link\":\"(http.*?)\"").getMatch(0);
+        if (url != null) {
+            url = url.replaceAll("\\\\/", "/");
         } else {
-            handleErrors(downloadLink);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        try {
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, false, 1);
+            try {
+                /* remove next major update */
+                /* workaround for broken timeout in 0.9xx public */
+                dl.getConnection().setConnectTimeout(30000);
+                dl.getConnection().setReadTimeout(120000);
+            } catch (Throwable e) {
+            }
+            dl.startDownload();
+        } finally {
+            logger.info("used serverurl: " + url);
+        }
 
     }
 
-    private void checkPassword(DownloadLink downloadLink) throws Exception {
-        if (!br.containsHTML("download_password")) return;
-        String pass = downloadLink.getStringProperty("pass", LINK_PASS);
-
-        // falls das pw schon gesetzt und gespeichert wurde.. versucht er es
-        // damit
-        if (pass != null && br.containsHTML("download_password")) {
-            Form[] forms = br.getForms();
-            Form pw = forms[forms.length - 1];
-            pw.put("password", pass);
-            br.submitForm(pw);
+    private void checkPassword(DownloadLink downloadLink, Browser br) throws Exception {
+        String state = br.getRegex("state\":\"(.*?)\"").getMatch(0);
+        if (!"failpass".equalsIgnoreCase(state)) return;
+        String ID = getID(downloadLink.getDownloadURL());
+        String pass = downloadLink.getStringProperty("pass", null);
+        if (pass == null) {
+            pass = Plugin.getUserInput(JDL.LF("plugins.hoster.netload.downloadPassword_question", "Password protected. Enter Password for %s", downloadLink.getName()), downloadLink);
         }
-        // ansonsten 3 abfrageversuche
-        int maxretries = 3;
-        while (br.containsHTML("download_password") && maxretries-- >= 0) {
-            Form[] forms = br.getForms();
-            Form pw = forms[forms.length - 1];
-            pw.put("password", pass = Plugin.getUserInput(JDL.LF("plugins.hoster.netload.downloadPassword_question", "Password protected. Enter Password for %s", downloadLink.getName()), downloadLink));
-            br.submitForm(pw);
-        }
-        // falls falsch abbruch
-        if (br.containsHTML("download_password")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.netload.errors.downloadPassword_wrong", "Link password is wrong"), 20 * 60 * 1000l);
-
-        }
-        // richtiges pw... wird gesoeichert
-        if (pass != null) {
+        br.getPage("http://netload.in/json/datei" + ID + ".htm?password=" + Encoding.urlEncode(pass));
+        state = br.getRegex("state\":\"(.*?)\"").getMatch(0);
+        if ("failpass".equalsIgnoreCase(state)) {
+            downloadLink.setProperty("pass", null);
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Password wrong");
+        } else {
             downloadLink.setProperty("pass", pass);
-            LINK_PASS = pass;
+        }
+    }
+
+    private void checkLimit(DownloadLink downloadLink, Browser br) throws Exception {
+        String state = br.getRegex("state\":\"(.*?)\"").getMatch(0);
+        String countdown = br.getRegex("countdown\":(\\d+)").getMatch(0);
+        if (countdown == null) return;
+        if ("limitexceeded".equalsIgnoreCase(state)) {
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(countdown) * 1000l);
+        } else if ("ok".equalsIgnoreCase(state)) {
+            this.sleep(Integer.parseInt(countdown) * 1000l, downloadLink);
+        } else {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
     }
 
@@ -362,83 +220,18 @@ public class Netloadin extends PluginForHost {
             logger.severe("no cookie!");
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
-        boolean resume = true;
-        int chunks = 0;
-        if (downloadLink.getBooleanProperty("nochunk", false) == true) {
-            resume = false;
-            chunks = 1;
-        }
-        String url = null;
+        String ID = getID(downloadLink.getDownloadURL());
+        br.getPage("http://netload.in/json/datei" + ID + ".htm");
+        checkPassword(downloadLink, br);
         workAroundTimeOut(br);
-        br.openGetConnection(downloadLink.getDownloadURL());
-        Request con;
+        String url = br.getRegex("link\":\"(http.*?)\"").getMatch(0);
+        if (url != null) {
+            url = url.replaceAll("\\\\/", "/");
+        } else {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         try {
-            if (br.getRedirectLocation() == null) {
-                Thread.sleep(1000);
-                br.followConnection();
-                checkPassword(downloadLink);
-                handleErrors(downloadLink);
-                if (br.containsHTML("We occurred an unexpected error")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 30 * 60 * 1000l);
-                url = br.getRedirectLocation();
-                if (url == null) url = br.getRegex("<a class=\"Orange_Link\" href=\"(.*?)\" >Alternativ klicke hier.<\\/a>").getMatch(0);
-                if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, JDL.L("plugins.hoster.netloadin.errors.dlnotfound", "Download link not found"));
-
-                con = br.createRequest(url);
-                try {
-                    /* remove next major update */
-                    /* workaround for broken timeout in 0.9xx public */
-                    con.setConnectTimeout(30000);
-                    con.setReadTimeout(120000);
-                } catch (Throwable e) {
-                }
-                /**
-                 * TODO: Umbauen auf
-                 * jd.plugins.BrowserAdapter.openDownload(br,...)
-                 **/
-                dl = RAFDownload.download(downloadLink, con, resume, chunks);
-                // dl.headFake(null);
-                dl.setFirstChunkRangeless(true);
-                URLConnectionAdapter connection = dl.connect(br);
-                for (int i = 0; i < 10 && (!connection.isOK()); i++) {
-                    try {
-                        con = br.createRequest(url);
-                        try {
-                            /* remove next major update */
-                            /* workaround for broken timeout in 0.9xx public */
-                            con.setConnectTimeout(30000);
-                            con.setReadTimeout(120000);
-                        } catch (Throwable e) {
-                        }
-                        dl = RAFDownload.download(downloadLink, con, resume, chunks);
-                        connection = dl.connect(br);
-                    } catch (Exception e) {
-                        try {
-                            Thread.sleep(150);
-                        } catch (InterruptedException e2) {
-                        }
-                    }
-                }
-            } else {
-                url = br.getRedirectLocation();
-                con = br.createGetRequest(null);
-                try {
-                    /* remove next major update */
-                    /* workaround for broken timeout in 0.9xx public */
-                    con.setConnectTimeout(30000);
-                    con.setReadTimeout(120000);
-                } catch (Throwable e) {
-                }
-                dl = RAFDownload.download(downloadLink, con, resume, chunks);
-                // dl.headFake(null);
-                dl.setFirstChunkRangeless(true);
-                dl.connect(br);
-            }
-            if (!dl.getConnection().isContentDisposition() && dl.getConnection().getResponseCode() != 206 && dl.getConnection().getResponseCode() != 416) {
-                // Serverfehler
-                if (br.followConnection() == null) throw new PluginException(LinkStatus.ERROR_RETRY, JDL.L("plugins.hoster.netloadin.errors.couldnotfollow", "Server: could not follow the link"));
-                checkPassword(downloadLink);
-                handleErrors(downloadLink);
-            }
+            dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, url, true, 0);
             try {
                 /* remove next major update */
                 /* workaround for broken timeout in 0.9xx public */
