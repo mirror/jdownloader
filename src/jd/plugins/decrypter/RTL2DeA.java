@@ -54,6 +54,7 @@ public class RTL2DeA extends PluginForDecrypt {
         final String parameter = param.toString();
         setBrowserExclusive();
         br.getPage(parameter);
+        final String alternativeName = br.getRegex("<title>RTL2 \\- (.*?) Player</title>").getMatch(0);
         final String vipyId = br.getRegex("vipy_id\\s+:\\s+(\\d+),").getMatch(0);
         if (vipyId == null) { return null; }
         final HashMap<String, String> parameterMap = new HashMap<String, String>();
@@ -80,7 +81,11 @@ public class RTL2DeA extends PluginForDecrypt {
                     continue;
                 }
                 final FilePackage fp = FilePackage.getInstance();
-                fp.setName(xPath.evaluate("/metadaten/ad_level", doc) + "_" + entry.getValue());
+                String fpName = xPath.evaluate("/metadaten/ad_level", doc) + "_" + entry.getValue();
+                if (alternativeName != null)
+                    fp.setName(fpName.replace("Unbekannt_", alternativeName + "_"));
+                else
+                    fp.setName(fpName);
                 for (int i = 0; i < title.getLength(); i++) {
                     final DownloadLink dlLink = createDownloadlink(name.item(i).getTextContent());
                     dlLink.setName(title.item(i).getTextContent().replace("\"", "") + ".flv");
