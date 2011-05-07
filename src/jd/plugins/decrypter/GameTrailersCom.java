@@ -97,9 +97,9 @@ public class GameTrailersCom extends PluginForDecrypt {
                         // correct title without "HD" or "SD"
                         videoTitle = videoTitle.trim().replaceAll(" [SH]D ?", " ");
                         if (finallink.contains("_hd")) {
-                            dl.setFinalFileName(videoTitle + "[HD-" + ext.toUpperCase() + "]." + ext);
+                            dl.setFinalFileName(videoTitle + " [HD-" + ext.toUpperCase() + "]." + ext);
                         } else {
-                            dl.setFinalFileName(videoTitle + "[SD-" + ext.toUpperCase() + "]." + ext);
+                            dl.setFinalFileName(videoTitle + " [SD-" + ext.toUpperCase() + "]." + ext);
                         }
                     }
                     decryptedLinks.add(dl);
