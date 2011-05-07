@@ -35,7 +35,7 @@ import jd.utils.JDHexUtils;
 import org.appwork.utils.Regex;
 import org.appwork.utils.encoding.Base64;
 
-@HostPlugin(revision = "$Revision: 12299 $", interfaceVersion = 2, names = { "viddler.com" }, urls = { "http://(www\\.)?viddler.com/explore/\\w+/videos/\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "viddler.com" }, urls = { "http://(www\\.)?viddler\\.com/(explore/\\w+/videos/\\d+|(player|simple)/\\w+(/)?(.+)?)" }, flags = { 0 })
 public class VddlrCm extends PluginForHost {
 
     private static String       DLURL = null;
@@ -56,8 +56,11 @@ public class VddlrCm extends PluginForHost {
         byte bLen = 0x00;
         final byte[] b = new byte[] { 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x1b, 0x76, 0x69, 0x64, 0x64, 0x6c, 0x65, 0x72, 0x47, 0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0x2e, 0x67, 0x65, 0x74, 0x56, 0x69, 0x64, 0x65, 0x6f, 0x49, 0x6e, 0x66, 0x6f, 0x00, 0x02, 0x2f, 0x31, 0x00, 0x00, 0x00 };
         final byte[] b1 = new byte[] { bLen, 0x0a, 0x00, 0x00, 0x00, 0x03, 0x02, 0x00, (byte) key.length() };
-        final byte[] b2 = new byte[] { 0x02, 0x00, (byte) value.length() };
-        final String postdata = new String(b1) + new String(key.getBytes()) + new String(b2) + new String(value.getBytes()) + new String(new byte[] { 0x05 });
+        String postdata = new String(b1) + new String(key.getBytes()) + new String(new byte[] { 0x05, 0x05 });
+        if (value != null) {
+            final byte[] b2 = new byte[] { 0x02, 0x00, (byte) value.length() };
+            postdata = new String(b1) + new String(key.getBytes()) + new String(b2) + new String(value.getBytes()) + new String(new byte[] { 0x05 });
+        }
         bLen = (byte) postdata.length();
         return new String(b) + postdata;
     }
@@ -130,25 +133,26 @@ public class VddlrCm extends PluginForHost {
 
     private AvailableStatus requestVideo(final DownloadLink downloadLink) throws IOException, PluginException {
         setBrowserExclusive();
-        br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("Video not found")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-        String filename = Encoding.htmlDecode(br.getRegex("title=\"(.*?)\"").getMatch(0, 3));
-        if (filename == null) {
-            filename = br.getRegex("<title>(.*?),.*?</title>").getMatch(0);
-        }
-        if (filename == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-        if (downloadLink.getDownloadURL().contains("highlight")) {
-            downloadLink.setName(filename.trim() + ".mp4");
-        } else {
-            downloadLink.setName(filename.trim() + ".flv");
-        }
+        final String dllink = downloadLink.getDownloadURL();
+        String filename = null, key = null, value = null;
 
-        final String keys = br.getRegex("addVariable\\((.*?)\\)").getMatch(0);
-        final String key = new Regex(keys, "key=(.*?)&").getMatch(0);
-        final String value = new Regex(keys, "viewToken=(.*?)&").getMatch(0);
+        if (!new Regex(dllink, "/(player|simple)/").matches()) {
+            br.getPage(dllink);
+            if (br.containsHTML("Video not found")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+            filename = Encoding.htmlDecode(br.getRegex("title=\"(.*?)\"").getMatch(0, 3));
+            if (filename == null) {
+                filename = br.getRegex("<title>(.*?),.*?</title>").getMatch(0);
+            }
+            final String keys = br.getRegex("addVariable\\((.*?)\\)").getMatch(0);
+            key = new Regex(keys, "key=(.*?)&").getMatch(0);
+            value = new Regex(keys, "viewToken=(.*?)&").getMatch(0);
+        } else {
+            key = new Regex(dllink, "(player|simple)/(\\w+)/?").getMatch(1);
+            value = null;
+        }
+        if (key == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
 
         final String postdata = getAMFRequest(key, value);
-
         final String url = "http://www.viddler.com/amfgateway.action";
         br.getHeaders().put("Content-Type", "application/x-amf");
         br.postPageRaw(url, postdata);
@@ -156,14 +160,16 @@ public class VddlrCm extends PluginForHost {
         final byte[] raw = br.toString().getBytes();
         if (raw == null || raw.length == 0) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         for (int i = 0; i < raw.length; i++) {
-            if (raw[i] < 32 || raw[i] > 176) {
+            if (raw[i] < 32 || raw[i] > 127) {
                 raw[i] = 35; // #
             }
         }
-
-        final String path = new Regex(new String(raw), "path.*?([a-z0-9]+)##type").getMatch(0);
+        if (filename == null) {
+            filename = new Regex(new String(raw), "title[#]+(.*?)[#]+trackbacksCnt").getMatch(0);
+        }
+        final String path = new Regex(new String(raw), "path[#]+\\??(.*?)[#]+type").getMatch(0);
         DLURL = getLink(path);
-        if (DLURL == null || !br.containsHTML("onResult")) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        if (DLURL == null || !br.containsHTML("onResult") || filename == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         downloadLink.setName(filename + ".flv");
         return AvailableStatus.TRUE;
     }
