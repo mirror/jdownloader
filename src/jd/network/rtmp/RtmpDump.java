@@ -116,7 +116,10 @@ public class RtmpDump extends RTMPDownload {
 
             rtmpConnection.connect();
 
-            final File tmpFile = new File(downloadLink.getFileOutput().replaceAll("\\s", "_") + ".part");
+            File tmpFile = new File(downloadLink.getFileOutput() + ".part");
+            if (!CrossSystem.isWindows()) {
+                tmpFile = new File(downloadLink.getFileOutput().replaceAll("\\s", "_") + ".part");
+            }
             String line = "", error = "";
             long iSize = 0;
             long before = 0;

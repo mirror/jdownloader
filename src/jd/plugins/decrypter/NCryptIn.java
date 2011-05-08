@@ -217,11 +217,12 @@ public class NCryptIn extends PluginForDecrypt {
     public void haveFun() throws Exception {
         final ArrayList<String> someStuff = new ArrayList<String>();
         final ArrayList<String> regexStuff = new ArrayList<String>();
-        regexStuff.add("(<!--.*?-->)");
-        regexStuff.add("(type=\"hidden\".*?(name=\".*?\")?.*?value=\".*?\")");
-        regexStuff.add("display:none;\">(.*?)</(div|span)>");
-        regexStuff.add("(<div class=\"hidden\" id=\"error_box\">.*?</div>)");
-        regexStuff.add("(<div class=\"\\w+\">.*?</div>)");
+        // regexStuff.add("(<!--.*?-->)");
+        // regexStuff.add("(type=\"hidden\".*?(name=\".*?\")?.*?value=\".*?\")");
+        // regexStuff.add("display:none;\">(.*?)</(div|span)>");
+        // regexStuff.add("(<div class=\"hidden\" id=\"error_box\">.*?</div>)");
+        // regexStuff.add("(<div class=\"\\w+\">.*?</div>)");
+        regexStuff.add("(<form name=\"protected\".*?style=\"display:none;\">.*?</form>)");
         for (final String aRegex : regexStuff) {
             aBrowser = br.toString();
             final String replaces[] = br.getRegex(aRegex).getColumn(0);
