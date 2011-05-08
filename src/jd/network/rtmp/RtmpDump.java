@@ -86,12 +86,19 @@ public class RtmpDump extends RTMPDownload {
     public boolean start(final RtmpUrlConnection rtmpConnection) throws Exception {
         if (CrossSystem.isWindows()) {
             RTMPDUMP = JDUtilities.getResourceFile("tools/Windows/rtmpdump/rtmpdump.exe").getAbsolutePath();
-        } else if (CrossSystem.isLinux() || CrossSystem.isMac()) {
-            RTMPDUMP = "/usr/bin/rtmpdump";
+        } else if (CrossSystem.isLinux()) {
+            RTMPDUMP = JDUtilities.getResourceFile("tools/linux/rtmpdump/rtmpdump").getAbsolutePath();
+        } else if (CrossSystem.isMac()) {
+            RTMPDUMP = JDUtilities.getResourceFile("tools/mac/rtmpdump/rtmpdump").getAbsolutePath();
+        } else {
+            return false;
         }
         if (!new File(RTMPDUMP).exists()) {
             if (CrossSystem.isLinux() || CrossSystem.isMac()) {
-                RTMPDUMP = "/usr/local/bin/rtmpdump";
+                RTMPDUMP = "/usr/bin/rtmpdump";
+                if (!new File(RTMPDUMP).exists()) {
+                    RTMPDUMP = "/usr/local/bin/rtmpdump";
+                }
             }
         }
         if (!new File(RTMPDUMP).exists()) { throw new PluginException(LinkStatus.ERROR_FATAL, "Error " + RTMPDUMP + " not found!"); }
@@ -109,20 +116,23 @@ public class RtmpDump extends RTMPDownload {
 
             rtmpConnection.connect();
 
-            final File tmp = new File(downloadLink.getFileOutput() + ".part");
-            String line = "";
-            String error = "";
+            final File tmpFile = new File(downloadLink.getFileOutput().replaceAll("\\s", "_") + ".part");
+            String line = "", error = "";
             long iSize = 0;
             long before = 0;
             long lastTime = System.currentTimeMillis();
             long bytesLoaded = 0l;
 
             String cmd = rtmpConnection.getCommandLineParameter();
-            if (CrossSystem.isWindows() && String.valueOf(tmp).length() >= 260) {
+            if (CrossSystem.isWindows()) {
                 // MAX_PATH Fix --> \\?\ + Path
-                cmd += " -o \"\\\\?\\" + String.valueOf(tmp) + "\"";
-            } else {
-                cmd += " -o \"" + String.valueOf(tmp) + "\"";
+                if (String.valueOf(tmpFile).length() >= 260) {
+                    cmd += " -o \"\\\\?\\" + String.valueOf(tmpFile) + "\"";
+                } else {
+                    cmd += " -o \"" + String.valueOf(tmpFile) + "\"";
+                }
+            } else if (CrossSystem.isLinux() || CrossSystem.isMac()) {
+                cmd = cmd.replaceAll("\"", "") + " -o " + String.valueOf(tmpFile);
             }
 
             if (cmd.contains(" -e ")) {
@@ -191,8 +201,8 @@ public class RtmpDump extends RTMPDownload {
             if (line != null && line.toLowerCase().contains("download complete")) {
                 downloadLink.setDownloadSize(bytesLoaded);
                 logger.finest("no errors : rename");
-                if (!tmp.renameTo(new File(downloadLink.getFileOutput()))) {
-                    logger.severe("Could not rename file " + new File(downloadLink.getFileOutput() + ".part") + " to " + downloadLink.getFileOutput());
+                if (!tmpFile.renameTo(new File(downloadLink.getFileOutput()))) {
+                    logger.severe("Could not rename file " + tmpFile + " to " + downloadLink.getFileOutput());
                     error(LinkStatus.ERROR_LOCAL_IO, JDT._.system_download_errors_couldnotrename());
                 }
                 downloadLink.getLinkStatus().addStatus(LinkStatus.FINISHED);

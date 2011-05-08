@@ -20,6 +20,7 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.network.rtmp.url.RtmpUrlConnection;
+import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -55,27 +56,37 @@ public class FourTubeCom extends PluginForHost {
         final String type = br.getRegex("<type>(.*?)</type>").getMatch(0);
         final String token = br.getRegex("<token>(.*?)</token>").getMatch(0);
         final String url = br.getRegex("<streamer>(.*?)</streamer>").getMatch(0);
-        if (playpath == null || url == null || type == null || token == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        if (playpath == null || type == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
 
-        dl = new RTMPDownload(this, downloadLink, url + "/" + playpath);
-        final RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
+        if (!playpath.startsWith("http")) {
+            dl = new RTMPDownload(this, downloadLink, url + "/" + playpath);
+            final RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
 
-        final String host = url.substring(0, url.lastIndexOf("/") + 1);
-        final String app = url.replace(host, "");
-        if (host == null || app == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+            final String host = url.substring(0, url.lastIndexOf("/") + 1);
+            final String app = url.replace(host, "");
+            if (host == null || app == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
 
-        if (app.equals("vod/")) {
-            rtmp.setLive(true);
+            if (app.equals("vod/")) {
+                rtmp.setLive(true);
+            } else {
+                rtmp.setResume(true);
+            }
+            rtmp.setToken(token);
+            rtmp.setPlayPath(playpath);
+            rtmp.setApp(app);
+            rtmp.setUrl(host + app);
+            rtmp.setSwfUrl("http://www.4tube.com/player2.swf");
+
+            ((RTMPDownload) dl).startDownload();
         } else {
-            rtmp.setResume(true);
+            br.setFollowRedirects(true);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, Encoding.htmlDecode(playpath), true, 0);
+            if (dl.getConnection().getContentType().contains("html")) {
+                br.followConnection();
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            dl.startDownload();
         }
-        rtmp.setToken(token);
-        rtmp.setPlayPath(playpath);
-        rtmp.setApp(app);
-        rtmp.setUrl(host + app);
-        rtmp.setSwfUrl("http://www.4tube.com/player2.swf");
-
-        ((RTMPDownload) dl).startDownload();
     }
 
     @Override
