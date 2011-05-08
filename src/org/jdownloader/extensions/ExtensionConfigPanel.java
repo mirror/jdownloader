@@ -2,6 +2,8 @@ package org.jdownloader.extensions;
 
 import javax.swing.ImageIcon;
 
+import org.jdownloader.gui.settings.AbstractConfigPanel;
+
 public abstract class ExtensionConfigPanel<T extends AbstractExtension> extends AbstractConfigPanel {
 
     private static final long serialVersionUID = 1L;

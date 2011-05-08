@@ -19,8 +19,8 @@ import jd.plugins.OptionalPlugin;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.Regex;
-import org.jdownloader.extensions.AbstractConfigPanel;
 import org.jdownloader.extensions.AbstractExtension;
+import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
 
@@ -37,7 +37,7 @@ public class LecturnityDownloaderExtension extends AbstractExtension implements 
 
     private Browser            br;
 
-    public AbstractConfigPanel getConfigPanel() {
+    public ExtensionConfigPanel getConfigPanel() {
         return null;
     }
 

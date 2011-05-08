@@ -32,8 +32,8 @@ import jd.gui.swing.jdgui.interfaces.SwitchPanelListener;
 import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.plugins.AddonPanel;
 
-import org.jdownloader.extensions.AbstractConfigPanel;
 import org.jdownloader.extensions.AbstractExtension;
+import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
 import org.jdownloader.extensions.jdpremserv.gui.JDPremServGui;
@@ -44,7 +44,7 @@ public class PremServExtension extends AbstractExtension implements ActionListen
 
     private JDPremServGui tab;
 
-    public AbstractConfigPanel getConfigPanel() {
+    public ExtensionConfigPanel getConfigPanel() {
         return null;
     }
 

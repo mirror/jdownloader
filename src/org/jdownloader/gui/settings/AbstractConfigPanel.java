@@ -1,4 +1,4 @@
-package org.jdownloader.extensions;
+package org.jdownloader.gui.settings;
 
 import java.awt.Component;
 import java.awt.Dimension;
@@ -20,6 +20,7 @@ import net.miginfocom.swing.MigLayout;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
+import org.jdownloader.extensions.Header;
 import org.jdownloader.translate.JDT;
 
 public abstract class AbstractConfigPanel extends SwitchPanel {

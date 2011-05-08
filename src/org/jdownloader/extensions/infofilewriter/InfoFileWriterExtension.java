@@ -43,8 +43,8 @@ import jd.utils.JDTheme;
 import jd.utils.Replacer;
 import jd.utils.StringUtil;
 
-import org.jdownloader.extensions.AbstractConfigPanel;
 import org.jdownloader.extensions.AbstractExtension;
+import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
 import org.jdownloader.extensions.infofilewriter.translate.T;
@@ -74,7 +74,7 @@ public class InfoFileWriterExtension extends AbstractExtension implements Action
 
     private JSonWrapper         subConfig           = null;
 
-    public AbstractConfigPanel getConfigPanel() {
+    public ExtensionConfigPanel getConfigPanel() {
         return null;
     }
 

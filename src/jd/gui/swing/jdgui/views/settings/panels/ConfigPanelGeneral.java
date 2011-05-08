@@ -21,7 +21,7 @@ import javax.swing.ImageIcon;
 import jd.gui.swing.jdgui.views.settings.components.Checkbox;
 import jd.gui.swing.jdgui.views.settings.components.FolderChooser;
 
-import org.jdownloader.extensions.AbstractConfigPanel;
+import org.jdownloader.gui.settings.AbstractConfigPanel;
 import org.jdownloader.gui.translate.T;
 import org.jdownloader.images.Theme;
 import org.jdownloader.translate.JDT;

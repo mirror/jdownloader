@@ -40,8 +40,8 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
-import org.jdownloader.extensions.AbstractConfigPanel;
 import org.jdownloader.extensions.AbstractExtension;
+import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
 import org.jdownloader.extensions.growl.translate.T;
@@ -109,7 +109,7 @@ public class GrowlExtension extends AbstractExtension implements ControlListener
         return null;
     }
 
-    public AbstractConfigPanel getConfigPanel() {
+    public ExtensionConfigPanel getConfigPanel() {
         return null;
     }
 

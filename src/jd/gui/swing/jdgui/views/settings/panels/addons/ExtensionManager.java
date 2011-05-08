@@ -23,8 +23,8 @@ import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
 import org.appwork.utils.swing.table.ExtTable;
-import org.jdownloader.extensions.AbstractConfigPanel;
 import org.jdownloader.extensions.AbstractExtensionWrapper;
+import org.jdownloader.gui.settings.AbstractConfigPanel;
 import org.jdownloader.gui.translate.T;
 import org.jdownloader.images.Theme;
 import org.jdownloader.translate.JDT;

@@ -32,22 +32,27 @@ import jd.gui.swing.laf.LookAndFeelController;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.utils.ColorUtils;
-import org.jdownloader.extensions.AbstractConfigPanel;
+import org.jdownloader.extensions.AbstractExtensionWrapper;
+import org.jdownloader.gui.settings.AbstractConfigPanel;
 
 public class TreeRenderer extends JPanel implements ListCellRenderer {
 
-    private static final long serialVersionUID = -3927390875702401200L;
+    private static final long          serialVersionUID = -3927390875702401200L;
 
-    private final Font        orgFont;
-    private final Font        boldFont;
+    public static Dimension            DIMENSION        = new Dimension(0, 55);
 
-    private JLabel            lbl;
+    private final Font                 orgFont;
+    private final Font                 boldFont;
 
-    private Color             f;
+    private JLabel                     lbl;
 
-    private Color             a;
+    private Color                      f;
 
-    private Color             b2;
+    private Color                      a;
+
+    private Color                      b2;
+
+    private ExtensionPanelListRenderer extension;
 
     public TreeRenderer() {
         super(new MigLayout("ins 0 ,wrap 1", "[grow,fill]", "[]"));
@@ -75,17 +80,21 @@ public class TreeRenderer extends JPanel implements ListCellRenderer {
         setOpaque(false);
         setBackground(null);
         lbl.setBackground(null);
-
+        extension = new ExtensionPanelListRenderer();
         // this.setPreferredSize(new Dimension(200, 60));
     }
 
     public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
-        if (value instanceof AbstractConfigPanel) {
+        if (value instanceof AbstractExtensionWrapper) {
+            return extension.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+
+        } else if (value instanceof AbstractConfigPanel) {
             AbstractConfigPanel te = (AbstractConfigPanel) value;
 
             setText(te.getTitle());
             setIcon(te.getIcon());
-
+        } else if (value instanceof ExtensionHeader) {
+            return ((ExtensionHeader) value);
         } else {
             ConfigPanel te = (ConfigPanel) value;
 
@@ -117,7 +126,7 @@ public class TreeRenderer extends JPanel implements ListCellRenderer {
 
     @Override
     public Dimension getPreferredSize() {
-        return new Dimension((int) (super.getPreferredSize().width), 55);
+        return TreeRenderer.DIMENSION;
     }
 
     private void setIcon(Icon icon) {

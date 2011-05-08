@@ -35,8 +35,8 @@ import jd.nutils.ClassFinder;
 import jd.pluginloader.VirtualClass;
 import jd.plugins.AddonPanel;
 
-import org.jdownloader.extensions.AbstractConfigPanel;
 import org.jdownloader.extensions.AbstractExtension;
+import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
 import org.jdownloader.extensions.schedule.translate.T;
@@ -59,7 +59,7 @@ public class ScheduleExtension extends AbstractExtension implements ActionListen
 
     public static final Object                  LOCK    = new Object();
 
-    public AbstractConfigPanel getConfigPanel() {
+    public ExtensionConfigPanel getConfigPanel() {
         return null;
     }
 

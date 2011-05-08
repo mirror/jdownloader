@@ -205,7 +205,7 @@ public abstract class AbstractExtension {
 
     }
 
-    public abstract AbstractConfigPanel getConfigPanel();
+    public abstract ExtensionConfigPanel getConfigPanel();
 
     public abstract boolean hasConfigPanel();
 

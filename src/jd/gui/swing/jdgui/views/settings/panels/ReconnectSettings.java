@@ -23,7 +23,7 @@ import jd.controlling.reconnect.ipcheck.IPController;
 import jd.gui.swing.jdgui.views.settings.panels.reconnect.ReconnectManager;
 import jd.gui.swing.jdgui.views.settings.panels.reconnect.ReconnectTester;
 
-import org.jdownloader.extensions.AbstractConfigPanel;
+import org.jdownloader.gui.settings.AbstractConfigPanel;
 import org.jdownloader.images.Theme;
 import org.jdownloader.translate.JDT;
 

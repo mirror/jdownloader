@@ -686,4 +686,7 @@ public interface JdownloaderTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Extension Modules" })
     String gui_settings_extensions_description();
+
+    @Default(lngs = { "en" }, values = { "Enabled/Disable this Extension" })
+    String settings_sidebar_tooltip_enable_extension();
 }

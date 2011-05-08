@@ -62,8 +62,8 @@ import jd.plugins.AddonPanel;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.Application;
-import org.jdownloader.extensions.AbstractConfigPanel;
 import org.jdownloader.extensions.AbstractExtension;
+import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
 import org.jdownloader.extensions.jdtrayicon.translate.T;
@@ -207,7 +207,7 @@ public class TrayExtension extends AbstractExtension implements MouseListener, M
 
     private Timer               disableAlwaysonTop;
 
-    public AbstractConfigPanel getConfigPanel() {
+    public ExtensionConfigPanel getConfigPanel() {
         return null;
     }
 

@@ -37,8 +37,8 @@ import jd.plugins.AddonPanel;
 import jd.utils.JDTheme;
 
 import org.appwork.utils.os.CrossSystem;
-import org.jdownloader.extensions.AbstractConfigPanel;
 import org.jdownloader.extensions.AbstractExtension;
+import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
 import org.jdownloader.extensions.langfileeditor.translate.T;
@@ -59,7 +59,7 @@ public class LangFileEditorExtension extends AbstractExtension implements Action
     private String               user;
     private String               pass;
 
-    public AbstractConfigPanel getConfigPanel() {
+    public ExtensionConfigPanel getConfigPanel() {
         return null;
     }
 

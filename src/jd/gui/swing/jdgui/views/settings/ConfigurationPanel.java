@@ -21,7 +21,7 @@ public class ConfigurationPanel extends SwitchPanel implements ListSelectionList
     private GuiConfig         cfg;
 
     public ConfigurationPanel() {
-        super(new MigLayout("ins 0", "[150!,grow,fill][grow,fill]", "[grow,fill]"));
+        super(new MigLayout("ins 0", "[200!,grow,fill][grow,fill]", "[grow,fill]"));
         sidebar = new ConfigSidebar();
 
         add(sidebar, "");
@@ -66,6 +66,7 @@ public class ConfigurationPanel extends SwitchPanel implements ListSelectionList
     }
 
     private void setContent(SwitchPanel selectedPanel) {
+        if (selectedPanel == null) return;
         if (panel != null) {
             panel.setHidden();
             panel.setVisible(false);

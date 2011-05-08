@@ -18,7 +18,7 @@ import jd.utils.JDTheme;
 
 import org.appwork.utils.swing.table.ExtTable;
 import org.appwork.utils.swing.table.SelectionHighlighter;
-import org.jdownloader.extensions.AbstractConfigPanel;
+import org.jdownloader.gui.settings.AbstractConfigPanel;
 import org.jdownloader.images.Theme;
 import org.jdownloader.translate.JDT;
 

@@ -1,5 +1,9 @@
 package jd.gui.swing.jdgui.views.settings.sidebar;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+
 import javax.swing.DefaultListModel;
 
 import jd.gui.swing.jdgui.views.settings.panels.AccountManagerSettings;
@@ -8,11 +12,10 @@ import jd.gui.swing.jdgui.views.settings.panels.BasicAuthentication;
 import jd.gui.swing.jdgui.views.settings.panels.ConfigPanelGeneral;
 import jd.gui.swing.jdgui.views.settings.panels.DownloadControll;
 import jd.gui.swing.jdgui.views.settings.panels.ReconnectSettings;
-import jd.gui.swing.jdgui.views.settings.panels.addons.ExtensionManager;
 import jd.gui.swing.jdgui.views.settings.panels.downloadandnetwork.ProxyConfig;
 import jd.gui.swing.jdgui.views.settings.panels.hoster.ConfigPanelPlugin;
 
-import org.jdownloader.extensions.AbstractExtension;
+import org.jdownloader.extensions.AbstractExtensionWrapper;
 import org.jdownloader.extensions.ExtensionController;
 
 public class ConfigListModel extends DefaultListModel {
@@ -28,7 +31,6 @@ public class ConfigListModel extends DefaultListModel {
         removeAllElements();
 
         addElement(new ConfigPanelGeneral());
-
         addElement(new DownloadControll());
 
         // addElement(new ToolbarController());
@@ -40,18 +42,25 @@ public class ConfigListModel extends DefaultListModel {
 
         // addElement(new Premium());
         addElement(new ConfigPanelPlugin());
-        addElement(new ExtensionManager());
+        // addElement(new ExtensionManager());
 
         addElement(new BarrierFree());
-        for (final AbstractExtension plg : ExtensionController.getInstance().getEnabledExtensions()) {
-            if ((!plg.hasSettings() && !plg.hasConfigPanel())) {
-                continue;
+        boolean first = true;
+        ArrayList<AbstractExtensionWrapper> pluginsOptional = ExtensionController.getInstance().getExtensions();
+        Collections.sort(pluginsOptional, new Comparator<AbstractExtensionWrapper>() {
+
+            public int compare(AbstractExtensionWrapper o1, AbstractExtensionWrapper o2) {
+                return o1.getName().compareTo(o2.getName());
             }
-            if (plg.hasConfigPanel()) {
-                addElement(plg.getConfigPanel());
-            } else {
-                addElement(AddonConfig.getInstance(plg.getSettings(), "", true));
+        });
+        for (final AbstractExtensionWrapper plg : pluginsOptional) {
+
+            if (first) {
+                addElement(new ExtensionHeader());
             }
+            first = false;
+            addElement(plg);
+
         }
     }
 

@@ -18,9 +18,11 @@ package jd.gui.swing.jdgui.views.settings.sidebar;
 
 import java.awt.AlphaComposite;
 import java.awt.Color;
+import java.awt.Cursor;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Point;
+import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
@@ -34,9 +36,18 @@ import javax.swing.event.ListSelectionListener;
 import jd.controlling.JDController;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
+import jd.gui.UserIO;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
+import jd.gui.swing.jdgui.menu.AddonsMenu;
+import jd.gui.swing.jdgui.menu.WindowMenu;
 import jd.gui.swing.laf.LookAndFeelController;
 import net.miginfocom.swing.MigLayout;
+
+import org.appwork.utils.swing.dialog.Dialog;
+import org.jdownloader.extensions.AbstractExtensionWrapper;
+import org.jdownloader.extensions.StartException;
+import org.jdownloader.extensions.StopException;
+import org.jdownloader.translate.JDT;
 
 public class ConfigSidebar extends JPanel implements ControlListener, MouseMotionListener, MouseListener {
 
@@ -57,16 +68,20 @@ public class ConfigSidebar extends JPanel implements ControlListener, MouseMotio
 
             @Override
             protected void paintComponent(Graphics g) {
-
+                super.paintComponent(g);
                 if (mouse != null) {
                     final Graphics2D g2 = (Graphics2D) g;
                     final AlphaComposite ac5 = AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.1f);
                     g2.setComposite(ac5);
-                    g2.fillRect(0, (mouse.y / 50) * 50, list.getWidth(), 50);
+                    int index = locationToIndex(mouse);
+                    if (getModel().getElementAt(index) instanceof ExtensionHeader) { return; }
+                    Point p = indexToLocation(index);
+                    g2.fillRect(0, p.y, list.getWidth(), 55);
 
                     g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f));
+
                 }
-                super.paintComponent(g);
+
             }
 
             // public Dimension getPreferredScrollableViewportSize() {
@@ -97,9 +112,101 @@ public class ConfigSidebar extends JPanel implements ControlListener, MouseMotio
         list.addMouseListener(this);
         list.setModel(new ConfigListModel());
         list.setCellRenderer(new TreeRenderer());
+
         list.setOpaque(false);
         list.setBackground(null);
+        list.addMouseListener(new MouseAdapter() {
 
+            @Override
+            public void mouseClicked(MouseEvent e) {
+
+            }
+
+            @Override
+            public void mousePressed(MouseEvent e) {
+                int index = list.locationToIndex(e.getPoint());
+                if (list.getModel().getElementAt(index) instanceof AbstractExtensionWrapper) {
+                    Point point = list.indexToLocation(index);
+                    int x = e.getPoint().x - point.x;
+                    int y = e.getPoint().y - point.y;
+                    if (x > 3 && x < 18) {
+                        if (y > 3 && y < 18) {
+
+                            AbstractExtensionWrapper object = ((AbstractExtensionWrapper) list.getModel().getElementAt(index));
+                            boolean value = !((AbstractExtensionWrapper) list.getModel().getElementAt(index))._isEnabled();
+                            if (value == object._isEnabled()) return;
+                            if (value) {
+                                try {
+                                    object._setEnabled(true);
+
+                                    if (object._getExtension().getGUI() != null) {
+                                        int ret = UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN, object.getName(), JDT._.gui_settings_extensions_show_now(object.getName()));
+
+                                        if (UserIO.isOK(ret)) {
+                                            // activate panel
+                                            object._getExtension().getGUI().setActive(true);
+                                            // bring panel to front
+                                            object._getExtension().getGUI().toFront();
+
+                                        }
+                                    }
+                                } catch (StartException e1) {
+                                    Dialog.getInstance().showExceptionDialog(JDT._.dialog_title_exception(), e1.getMessage(), e1);
+                                } catch (StopException e1) {
+                                    e1.printStackTrace();
+                                }
+                            } else {
+                                try {
+
+                                    object._setEnabled(false);
+                                } catch (StartException e1) {
+                                    e1.printStackTrace();
+                                } catch (StopException e1) {
+                                    Dialog.getInstance().showExceptionDialog(JDT._.dialog_title_exception(), e1.getMessage(), e1);
+                                }
+                            }
+                            /*
+                             * we save enabled/disabled status here, plugin must
+                             * be running when enabled
+                             */
+
+                            AddonsMenu.getInstance().update();
+                            WindowMenu.getInstance().update();
+                            // ConfigSidebar.getInstance(null).updateAddons();
+                            // addons.updateShowcase();
+
+                            list.repaint();
+                        }
+                    }
+                }
+            }
+
+        });
+        list.addMouseMotionListener(new MouseAdapter() {
+
+            @Override
+            public void mouseMoved(MouseEvent e) {
+                int index = list.locationToIndex(e.getPoint());
+                if (list.getModel().getElementAt(index) instanceof AbstractExtensionWrapper) {
+                    Point point = list.indexToLocation(index);
+                    int x = e.getPoint().x - point.x;
+                    int y = e.getPoint().y - point.y;
+                    if (x > 3 && x < 18 && y > 3 && y < 18) {
+
+                        list.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+                        list.setToolTipText(JDT._.settings_sidebar_tooltip_enable_extension());
+                    } else {
+                        list.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
+                        if (list.getModel().getElementAt(index) instanceof AbstractExtensionWrapper) {
+                            list.setToolTipText(((AbstractExtensionWrapper) list.getModel().getElementAt(index)).getDescription());
+
+                        } else {
+                            list.setToolTipText(null);
+                        }
+                    }
+                }
+            }
+        });
         setBackground(null);
         setOpaque(false);
         JScrollPane sp;
@@ -199,6 +306,7 @@ public class ConfigSidebar extends JPanel implements ControlListener, MouseMotio
     }
 
     public SwitchPanel getSelectedPanel() {
+        if (!(list.getSelectedValue() instanceof SwitchPanel)) return null;
         return (SwitchPanel) list.getSelectedValue();
     }
 

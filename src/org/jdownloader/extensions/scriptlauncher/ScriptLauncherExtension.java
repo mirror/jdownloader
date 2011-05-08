@@ -32,8 +32,8 @@ import jd.plugins.AddonPanel;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.Regex;
-import org.jdownloader.extensions.AbstractConfigPanel;
 import org.jdownloader.extensions.AbstractExtension;
+import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
 import org.jdownloader.extensions.interfaces.RemoteSupport;
@@ -55,7 +55,7 @@ public class ScriptLauncherExtension extends AbstractExtension implements Remote
 
     private static final String              ADD_CHECKBOX = "ADD_CHECKBOX";
 
-    public AbstractConfigPanel getConfigPanel() {
+    public ExtensionConfigPanel getConfigPanel() {
         return null;
     }
 
