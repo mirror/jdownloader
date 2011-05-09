@@ -34,6 +34,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
+import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
@@ -115,36 +116,51 @@ public class FourSharedCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-
-        String url = br.getRegex("<a href=\"(http://(www\\.)?4shared(\\-china)?\\.com/get[^\\;\"]*).*?\" class=\".*?dbtn.*?\" tabindex=\"1\"").getMatch(0);
-        if (url == null) url = br.getRegex("\"(http://(www\\.)?4shared\\.com/get/[A-Za-z0-9\\-_]+/.*?)\"").getMatch(0);
+        String url = null;
+        // If file isn't available for freeusers we can still try to get the
+        // streamlink
+        if (br.containsHTML("In order to download files bigger that 500MB you need to login at 4shared")) {
+            logger.info("Original file not available for freeusers, trying to find streamlink...");
+            url = br.getRegex("var (flvLink|streamerLink) = \\'(http://.*?)\\'").getMatch(1);
+            if (url == null) {
+                url = br.getRegex("\\'(http://dc\\d+\\.4shared(\\-china)?\\.com/.*?)\\'").getMatch(0);
+            }
+            if (url == null) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.foursharedcom.only4premium", "Files over 500MB are only downloadable for premiumusers!"));
+            // New link, new extension
+            downloadLink.setName(downloadLink.getName().replace(downloadLink.getName().substring(downloadLink.getName().length() - 4, downloadLink.getName().length()), url.substring(url.length() - 4, url.length())));
+        }
         if (url == null) {
-            /* maybe directdownload */
-            url = br.getRegex("startDownload.*?window\\.location.*?(http://.*?)\"").getMatch(0);
+            url = br.getRegex("<a href=\"(http://(www\\.)?4shared(\\-china)?\\.com/get[^\\;\"]*).*?\" class=\".*?dbtn.*?\" tabindex=\"1\"").getMatch(0);
+            if (url == null) url = br.getRegex("\"(http://(www\\.)?4shared(\\-china)?\\.com/get/[A-Za-z0-9\\-_]+/.*?)\"").getMatch(0);
             if (url == null) {
-                /* maybe picture download */
-                url = br.getRegex("<a href=\"(http://dc\\d+\\.4shared(-china)?\\.com/download/.*?)\" class=\".*?dbtn.*?\" tabindex=\"1\"").getMatch(0);
+                /* maybe directdownload */
+                url = br.getRegex("startDownload.*?window\\.location.*?(http://.*?)\"").getMatch(0);
+                if (url == null) {
+                    /* maybe picture download */
+                    url = br.getRegex("\"(http://dc\\d+\\.4shared(\\-china)?\\.com/download/[A-Za-z0-9]+/.*?)\"").getMatch(0);
+                }
+                if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            } else {
+                br.getPage(url);
+                if (url == null) {
+                    url = br.getRegex("id=\\'divDLStart\\'( )?>.*?<a href=\\'(.*?)\\'").getMatch(1);
+                    if (url == null) {
+                        url = br.getRegex("(\\'|\")(http://dc[0-9]+\\.4shared(-china)?\\.com/download/[a-zA-Z0-9]+/.*?\\?tsid=\\d+-\\d+-[a-z0-9]+)(\\'|\")").getMatch(1);
+                    }
+                }
+                if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                if (url.contains("linkerror.jsp")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                // Ticket Time
+                final String ttt = br.getRegex(" var c = (\\d+);").getMatch(0);
+                int tt = 40;
+                if (ttt != null) {
+                    logger.info("Waittime detected, waiting " + ttt.trim() + " seconds from now on...");
+                    tt = Integer.parseInt(ttt);
+                }
+                sleep(tt * 1000l, downloadLink);
             }
-            if (url == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-        } else {
-            br.getPage(url);
-            url = br.getRegex("id=\\'divDLStart\\'( )?>.*?<a href=\\'(.*?)\\'").getMatch(1);
-            if (url == null) {
-                url = br.getRegex("(\\'|\")(http://dc[0-9]+\\.4shared(-china)?\\.com/download/[a-zA-Z0-9]+/.*?\\?tsid=\\d+-\\d+-[a-z0-9]+)(\\'|\")").getMatch(1);
-            }
-            if (url == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-            if (url.contains("linkerror.jsp")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-            // Ticket Time
-            final String ttt = br.getRegex(" var c = (\\d+);").getMatch(0);
-            int tt = 40;
-            if (ttt != null) {
-                logger.info("Waittime detected, waiting " + ttt.trim() + " seconds from now on...");
-                tt = Integer.parseInt(ttt);
-            }
-            sleep(tt * 1000l, downloadLink);
         }
         br.setDebug(true);
-
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, false, 1);
         if (br.getURL().contains("401waitm")) { throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many simultan downloads", 5 * 60 * 1000l); }
         final String error = new Regex(dl.getConnection().getURL(), "\\?error(.*)").getMatch(0);
@@ -153,7 +169,7 @@ public class FourSharedCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_RETRY, error);
         }
         String pass = downloadLink.getStringProperty("pass");
-        if (!dl.getConnection().isContentDisposition()) {
+        if (!dl.getConnection().isContentDisposition() && dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             if (br.containsHTML("enter a password to access")) {
                 final Form form = br.getFormbyProperty("name", "theForm");
@@ -173,7 +189,7 @@ public class FourSharedCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
-        if (!dl.getConnection().isContentDisposition()) {
+        if (!dl.getConnection().isContentDisposition() && dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             handleFreeErrors();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
