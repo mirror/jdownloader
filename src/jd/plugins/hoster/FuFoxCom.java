@@ -22,16 +22,16 @@ import java.io.InterruptedIOException;
 import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fufox.com" }, urls = { "http://[\\w\\.]*?fufox\\.com/\\?d=[A-Za-z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fufox.net", "fufox.com" }, urls = { "http://(www\\.)?fufox\\.(com|net)/\\?d=[A-Za-z0-9]+", "fhejt7wehrtijrthUNUSED_REGEX" }, flags = { 0, 0 })
 public class FuFoxCom extends PluginForHost {
 
     private static final String CAPTCHATEXT = "code\\.php";
@@ -43,6 +43,10 @@ public class FuFoxCom extends PluginForHost {
     @Override
     public String getAGBLink() {
         return "http://www.fufox.com/cgu.html";
+    }
+
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("fufox.com/", "fufox.net/"));
     }
 
     @Override
@@ -63,7 +67,7 @@ public class FuFoxCom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         if (!br.containsHTML(CAPTCHATEXT)) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        br.postPage(downloadLink.getDownloadURL(), "code=" + getCaptchaCode("http://www.fufox.com/code.php", downloadLink));
+        br.postPage(downloadLink.getDownloadURL(), "code=" + getCaptchaCode("http://www.fufox.net/code.php", downloadLink));
         if (br.containsHTML(CAPTCHATEXT)) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         Regex allData = br.getRegex("onclick=\"timingout2?\\(\\'(\\d+)\\',\\'(.*?)\\',\\'(.*?)\\',\\'(.*?)\\',\\'(.*?)\\'\\);");
         String name = allData.getMatch(1);

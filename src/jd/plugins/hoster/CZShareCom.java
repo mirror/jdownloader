@@ -26,11 +26,11 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -43,37 +43,33 @@ public class CZShareCom extends PluginForHost {
 
     public CZShareCom(PluginWrapper wrapper) {
         super(wrapper);
-        enablePremium("http://czshare.com/create_user.php");
+        this.enablePremium("http://czshare.com/create_user.php");
     }
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        if (br.containsHTML("IP adresy bohu")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 15 * 60 * 1000);
-        if (!br.containsHTML("value=\"FREE download\"")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.CZShareCom.nofreeslots", "No free slots available"), 60 * 1000);
-        Form down = br.getFormBySubmitvalue("FREE+download");
-        if (down == null) br.getFormbyProperty("action", Encoding.urlEncode("http://czshare.com/trust_me.php"));
-        if (down == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (br.containsHTML(">Z vaší IP adresy bohužel momentálně probíhá stahování jiného souboru")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, JDL.L("plugins.hoster.czsharecom.ipalreadydownloading", "IP already downloading"), 15 * 60 * 1000);
+        if (!br.containsHTML("Stáhnout FREE</span></a><a href=\"/download\\.php\\?id=")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.CZShareCom.nofreeslots", "No free slots available"), 60 * 1000);
+        br.setFollowRedirects(false);
+        String freeLink = br.getRegex("allowTransparency=\"true\"></iframe><a href=\"(/.*?)\"").getMatch(0);
+        if (freeLink == null) freeLink = br.getRegex("\"(/download\\.php\\?id=\\d+\\&code=.*?)\"").getMatch(0);
+        if (freeLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        br.getPage("http://czshare.com" + freeLink);
+        Form down = br.getForm(0);
+        String captchaUrl = br.getRegex("action=\"free\\.php\" method=\"post\">[\t\n\r ]+<img src=\"(.*?)\"").getMatch(0);
+        if (captchaUrl == null) captchaUrl = br.getRegex("\"(captcha\\.php\\?ticket=.*?\\&id=\\d+)\"").getMatch(0);
+        if (down == null || captchaUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        down.remove(null);
+        captchaUrl = "http://czshare.com/" + captchaUrl;
+        String code = getCaptchaCode(captchaUrl, downloadLink);
+        down.put("captchastring", code);
         br.submitForm(down);
-        down = null;
-        if (br.containsHTML("Chyba 6 / Error 6")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000);
-        br.setFollowRedirects(true);
-        String freepage = br.getRegex("form action=\"(.*?)\"").getMatch(0);
-        String freesubmit = br.getRegex("type=\"submit\" value=\"(.*?)\"").getMatch(0);
-        String freeid = br.getRegex("name=\"id\" value=\"(.*?)\"").getMatch(0);
-        String freefile = br.getRegex("name=\"file\" value=\"(.*?)\"").getMatch(0);
-        String freeticket = br.getRegex("name=\"ticket\" value=\"(.*?)\"").getMatch(0);
-        String dlurl = "http://czshare.com/" + freepage + "?id=" + freeid + "&file=" + freefile + "&ticket=" + freeticket + "&captchastring=CAPTCHACODEGOESHERE&submit=" + freesubmit;
-        String captchaurl = br.getRegex("img src=\"(captcha\\.php\\?ticket=.*?)\"").getMatch(0);
-        captchaurl = "http://czshare.com/" + captchaurl;
-        String code = getCaptchaCode(captchaurl, downloadLink);
-        dlurl = dlurl.replace("CAPTCHACODEGOESHERE", code);
-        br.getPage(dlurl);
         if (br.containsHTML("Chyba 6 / Error 6")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000);
         if (br.containsHTML("Nesouhlasi kontrolni kod")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-        Form down2 = br.getFormbyProperty("name", "pre_download_form");
-        if (down2 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, down2, false, 1);
+        String dllink = br.getRedirectLocation();
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             if (br.containsHTML("Soubor je dočasně nedostupný\\.")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
@@ -172,13 +168,15 @@ public class CZShareCom extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setCustomCharset("utf-8");
+        br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("Soubor nenalezen")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = Encoding.htmlDecode(br.getRegex("souboru:</strong></span>\\s<span[^>]*><strong>(.*?)</strong>").getMatch(0));
-        String filesize = br.getRegex("Velikost:</td>\\s+<td[^>]*>(.*?)</td>").getMatch(0);
+        if (br.getURL().contains("/error.php?co=4") || br.containsHTML("Omluvte, prosím, výpadek databáze\\. Na opravě pracujeme")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = Encoding.htmlDecode(br.getRegex("<div class=\"left\\-col\">[\t\n\r ]+<h1>(.*?)<span>\\&nbsp;</span></h1>").getMatch(0));
+        if (filename == null) filename = Encoding.htmlDecode(br.getRegex("<title>(.*?) CZshare\\.com download</title>").getMatch(0));
+        String filesize = br.getRegex("Velikost: (.*?)<br").getMatch(0);
         if (filename == null || filesize == null || filesize.equals("0 B")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(filename.trim());
-        downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
+        downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.replace(",", ".")));
         return AvailableStatus.TRUE;
     }
 
