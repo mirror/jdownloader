@@ -3,11 +3,9 @@ package jd.network.rtmp;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.InterruptedIOException;
 import java.lang.reflect.Field;
-import java.util.Scanner;
 
 import jd.network.rtmp.url.RtmpUrlConnection;
 import jd.plugins.DownloadLink;
@@ -39,26 +37,10 @@ public class RtmpDump extends RTMPDownload {
 
     private void getProcessId() {
         try {
-            if (CrossSystem.isWindows()) {
-                final Process proc = Runtime.getRuntime().exec("tasklist.exe /NH /FI \"IMAGENAME eq rtmpdump.exe\"");
-                final InputStream procOutput = proc.getInputStream();
-                if (proc.waitFor() == 0) {
-                    final Scanner sc = new Scanner(procOutput);
-                    if (sc.hasNext()) {
-                        sc.next();
-                        if (sc.hasNextInt()) {
-                            PID = sc.nextInt();
-                        } else {
-                            PID = -1;
-                        }
-                    }
-                }
-            } else if (CrossSystem.isLinux() || CrossSystem.isMac()) {
-                final Field pidField = p.getClass().getDeclaredField("pid");
-                pidField.setAccessible(true);
-                PID = pidField.getInt(p);
-            }
-        } catch (final Exception ex) {
+            final Field pidField = p.getClass().getDeclaredField("pid");
+            pidField.setAccessible(true);
+            PID = pidField.getInt(p);
+        } catch (final Exception e) {
             PID = -1;
         }
     }
@@ -67,18 +49,8 @@ public class RtmpDump extends RTMPDownload {
         getProcessId();
         if (PID >= 0) {
             try {
-                if (CrossSystem.isWindows()) {
-                    String line = "";
-                    final Process kill = Runtime.getRuntime().exec(JDUtilities.getResourceFile("tools/Windows/rtmpdump/SendSignal.exe").getAbsolutePath() + " " + PID);
-                    final InputStreamReader r = new InputStreamReader(kill.getInputStream());
-                    final BufferedReader SendSignalOutput = new BufferedReader(r);
-                    while ((line = SendSignalOutput.readLine()) != null) {
-                        System.out.println(line);
-                    }
-                } else if (CrossSystem.isLinux() || CrossSystem.isMac()) {
-                    Runtime.getRuntime().exec("kill -SIGINT " + String.valueOf(PID));
-                }
-            } catch (final Exception localException) {
+                Runtime.getRuntime().exec("kill -SIGINT " + String.valueOf(PID));
+            } catch (final Exception e1) {
             }
         }
     }
@@ -118,7 +90,7 @@ public class RtmpDump extends RTMPDownload {
 
             File tmpFile = new File(downloadLink.getFileOutput() + ".part");
             if (!CrossSystem.isWindows()) {
-                tmpFile = new File(downloadLink.getFileOutput().replaceAll("\\s", "_") + ".part");
+                tmpFile = new File(downloadLink.getFileOutput().replaceAll("\\s", "\\\\s") + ".part");
             }
             String line = "", error = "";
             long iSize = 0;
@@ -134,7 +106,7 @@ public class RtmpDump extends RTMPDownload {
                 } else {
                     cmd += " -o \"" + String.valueOf(tmpFile) + "\"";
                 }
-            } else if (CrossSystem.isLinux() || CrossSystem.isMac()) {
+            } else {
                 cmd = cmd.replaceAll("\"", "") + " -o " + String.valueOf(tmpFile);
             }
 
