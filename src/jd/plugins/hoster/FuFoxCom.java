@@ -52,6 +52,8 @@ public class FuFoxCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
+        // Convert old links to new ones
+        correctDownloadLink(link);
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("<b>Il y a une erreur dans l'url de cette page\\.</b>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<b>Nom du fichier</b> : (.*?) <br").getMatch(0);
