@@ -25,11 +25,11 @@ import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
@@ -144,7 +144,7 @@ public class BitLoadCom extends PluginForHost {
         if (space != null) ai.setUsedSpace(space.trim().replace(",", "."));
         account.setValid(true);
         ai.setUnlimitedTraffic();
-        String expire = br.getRegex("\">Premium gültig bis <strong>(.*?)</strong>").getMatch(0);
+        String expire = br.getRegex("\">Premium g.*?ltig bis <strong>(.*?)</strong>").getMatch(0);
         if (expire == null) {
             ai.setExpired(true);
             account.setValid(false);

@@ -354,6 +354,7 @@ public class DecrypterForRedirectServicesWithoutDirectRedirects extends PluginFo
             if (parameter.contains("blog/")) {
                 finallink = br.getRegex("var variables = .*?file.*?hqv:.*?\"riptide(/pro.*?)\"").getMatch(0);
                 if (finallink != null) finallink = "http://cdn.riptide-mtvn.com" + finallink;
+                if (finallink == null) finallink = br.getRegex("(http://cdn.riptide-mtvn.com.*?\\.mp3)").getMatch(0);
                 finalfilename = new Regex(parameter, "blog/\\d+/\\d+/(.+)").getMatch(0);
                 if (finalfilename != null) {
                     if (finalfilename != null && finallink != null) finalfilename += finallink.substring(finallink.length() - 4, finallink.length());

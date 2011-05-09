@@ -26,7 +26,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rapidshare.com" }, urls = { "http://[\\w\\.]*?rapidshare\\.com/(users/[A-Z0-9]+(\\&pw=.+)?|#!linklist\\|[A-Z0-9]+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rapidshare.com" }, urls = { "https?://[\\w\\.]*?rapidshare\\.com/(users/[A-Z0-9]+(\\&pw=.+)?|#!linklist\\|[A-Z0-9]+)" }, flags = { 0 })
 public class RpdshrCmFldr extends PluginForDecrypt {
 
     private ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -37,8 +37,8 @@ public class RpdshrCmFldr extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         String parameter = param.toString();
-        String id = new Regex(parameter, "http://[\\w\\.]*?rapidshare\\.com/users/([A-Z0-9]+)(\\&pw=.+)?").getMatch(0);
-        if (id == null) id = new Regex(parameter, "http://[\\w\\.]*?rapidshare\\.com/#!linklist\\|([A-Z0-9]+)").getMatch(0);
+        String id = new Regex(parameter, "https?://[\\w\\.]*?rapidshare\\.com/users/([A-Z0-9]+)(\\&pw=.+)?").getMatch(0);
+        if (id == null) id = new Regex(parameter, "https?://[\\w\\.]*?rapidshare\\.com/#!linklist\\|([A-Z0-9]+)").getMatch(0);
         String page = br.getPage("http://rapidshare.com/cgi-bin/rsapi.cgi?sub=viewlinklist_v1&linklist=" + id + "&cbf=RSAPIDispatcher&cbid=1");
         page = page.replaceAll("\\\\\"", "\"");
         String links[][] = new Regex(page, "\"(\\d+)\",\"(\\d+)\",\"(\\d+)\",\"(.*?)\",\"(\\d+)\"").getMatches();

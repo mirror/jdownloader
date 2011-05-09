@@ -4,6 +4,8 @@ import java.awt.event.ActionEvent;
 
 import javax.swing.AbstractAction;
 
+import jd.gui.swing.jdgui.actions.ActionController;
+
 import org.jdownloader.gui.translate.T;
 import org.jdownloader.images.Theme;
 
@@ -21,7 +23,7 @@ public class NewAction extends AbstractAction {
     }
 
     public void actionPerformed(ActionEvent e) {
-        System.out.println("klick");
+        ActionController.getToolBarAction("action.premiumview.addacc").actionPerformed(new ActionEvent(this, 0, "addaccount"));
     }
 
 }
