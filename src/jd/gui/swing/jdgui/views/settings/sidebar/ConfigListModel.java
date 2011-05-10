@@ -15,13 +15,11 @@ import jd.gui.swing.jdgui.views.settings.panels.ReconnectSettings;
 import jd.gui.swing.jdgui.views.settings.panels.downloadandnetwork.ProxyConfig;
 import jd.gui.swing.jdgui.views.settings.panels.hoster.ConfigPanelPlugin;
 
-import org.appwork.storage.config.ConfigEventListener;
-import org.appwork.storage.config.ConfigInterface;
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.extensions.AbstractExtensionWrapper;
 import org.jdownloader.extensions.ExtensionController;
 
-public class ConfigListModel extends DefaultListModel implements ConfigEventListener {
+public class ConfigListModel extends DefaultListModel {
 
     private static final long serialVersionUID = -204494527404304349L;
 
@@ -66,12 +64,8 @@ public class ConfigListModel extends DefaultListModel implements ConfigEventList
             }
             first = false;
             addElement(plg);
-            plg.getStore().addListener(this);
 
         }
     }
 
-    public void onConfigValueModified(ConfigInterface config, String key, Object newValue) {
-        this.fireContentsChanged(this, 0, this.getSize() - 1);
-    }
 }

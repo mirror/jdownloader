@@ -23,13 +23,15 @@ import org.jdownloader.translate.JDT;
  */
 public class AbstractExtensionWrapper implements Storable {
 
-    private Class<AbstractExtension> clazz;
+    private Class<AbstractExtension<?>> clazz;
 
-    private boolean                  settings;
+    private boolean                     settings;
 
-    public static AbstractExtensionWrapper create(String id, Class<AbstractExtension> cls) throws StartException, InstantiationException, IllegalAccessException, IOException {
+    private String                      configInterface;
+
+    public static AbstractExtensionWrapper create(String id, Class<AbstractExtension<?>> cls) throws StartException, InstantiationException, IllegalAccessException, IOException {
         AbstractExtensionWrapper ret = new AbstractExtensionWrapper();
-        AbstractExtension plg = (AbstractExtension) cls.newInstance();
+        AbstractExtension<?> plg = (AbstractExtension<?>) cls.newInstance();
 
         ret.clazz = cls;
         String path = "tmp/extensioncache/" + id + ".png";
@@ -47,6 +49,7 @@ public class AbstractExtensionWrapper implements Storable {
         ret.version = plg.getVersion();
         ret.windowsRunnable = plg.isWindowsRunnable();
         ret.extension = plg;
+        ret.configInterface = plg.getConfigClass().getName();
         ret.author = plg.getAuthor();
         plg.init();
 
@@ -64,19 +67,27 @@ public class AbstractExtensionWrapper implements Storable {
         return ret;
     }
 
+    public String getConfigInterface() {
+        return extension == null ? configInterface : extension.getConfigClass().getName();
+    }
+
+    public void setConfigInterface(String configInterface) {
+        this.configInterface = configInterface;
+    }
+
     public boolean isSettings() {
-        return settings;
+        return extension == null ? settings : extension.hasConfigPanel();
     }
 
     public void setSettings(boolean settings) {
         this.settings = settings;
     }
 
-    private String            author;
+    private String               author;
 
-    private String            description;
-    private AbstractExtension extension = null;
-    private String            lng;
+    private String               description;
+    private AbstractExtension<?> extension = null;
+    private String               lng;
 
     public String getLng() {
         return lng;
@@ -109,7 +120,7 @@ public class AbstractExtensionWrapper implements Storable {
      * 
      * @return
      */
-    public AbstractExtension _getExtension() {
+    public AbstractExtension<?> _getExtension() {
         return extension;
     }
 
@@ -207,7 +218,7 @@ public class AbstractExtensionWrapper implements Storable {
      */
     public void init() throws InstantiationException, IllegalAccessException, ClassNotFoundException, StartException {
         if (extension != null) return;
-        AbstractExtension plg = (AbstractExtension) _getClazz().newInstance();
+        AbstractExtension<?> plg = (AbstractExtension<?>) _getClazz().newInstance();
 
         plg.init();
         extension = plg;
@@ -223,7 +234,7 @@ public class AbstractExtensionWrapper implements Storable {
     public boolean _isEnabled() {
         if (extension == null) {
             // not init yet. check storage to return if we have to init it
-            return getStore().isEnabled();
+            return _getSettings().isEnabled();
         } else {
             return extension.isEnabled();
         }
@@ -236,7 +247,7 @@ public class AbstractExtensionWrapper implements Storable {
      * 
      * @return
      */
-    private Class<? extends AbstractExtension> _getClazz() {
+    private Class<? extends AbstractExtension<?>> _getClazz() {
 
         return clazz;
 
@@ -256,7 +267,7 @@ public class AbstractExtensionWrapper implements Storable {
     public void _setEnabled(boolean b) throws StartException, StopException {
 
         if (extension == null) {
-            getStore().setEnabled(b);
+            _getSettings().setEnabled(b);
             if (b) {
                 try {
                     init();
@@ -271,8 +282,13 @@ public class AbstractExtensionWrapper implements Storable {
     }
 
     @SuppressWarnings("unchecked")
-    public ExtensionConfigInterface getStore() {
-        return AbstractExtension.createStore((Class<? extends AbstractExtension<?>>) _getClazz());
+    public ExtensionConfigInterface _getSettings() {
+        try {
+            return AbstractExtension.createStore((Class<? extends AbstractExtension<?>>) _getClazz(), (Class<? extends ExtensionConfigInterface>) Class.forName(this.getConfigInterface()));
+        } catch (Throwable e) {
+            e.printStackTrace();
+            return null;
+        }
     }
 
     /**
@@ -281,7 +297,7 @@ public class AbstractExtensionWrapper implements Storable {
      * 
      * @param cls
      */
-    public void _setClazz(Class<AbstractExtension> cls) {
+    public void _setClazz(Class<AbstractExtension<?>> cls) {
         clazz = cls;
     }
 

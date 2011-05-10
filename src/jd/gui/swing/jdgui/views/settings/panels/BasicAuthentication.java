@@ -46,11 +46,11 @@ public class BasicAuthentication extends AbstractConfigPanel {
     }
 
     @Override
-    protected void onShow() {
-        BasicAuthenticationPanel.getInstance().update();
+    public void save() {
     }
 
     @Override
-    protected void onHide() {
+    public void updateContents() {
+        BasicAuthenticationPanel.getInstance().update();
     }
 }

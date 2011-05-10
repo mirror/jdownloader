@@ -3,6 +3,7 @@ package org.jdownloader.gui.settings;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Rectangle;
+import java.util.ArrayList;
 
 import javax.swing.ImageIcon;
 import javax.swing.JComponent;
@@ -25,10 +26,12 @@ import org.jdownloader.translate.JDT;
 
 public abstract class AbstractConfigPanel extends SwitchPanel {
 
-    private static final long serialVersionUID = -8483438886830392777L;
+    private static final long  serialVersionUID = -8483438886830392777L;
+    private ArrayList<Pair<?>> pairs;
 
     public AbstractConfigPanel() {
         super(new MigLayout("ins 15, wrap 2", "[][grow,fill]", "[]"));
+        pairs = new ArrayList<Pair<?>>();
     }
 
     protected JTextArea addDescription(String description) {
@@ -68,15 +71,19 @@ public abstract class AbstractConfigPanel extends SwitchPanel {
 
     public abstract String getTitle();
 
-    public void addPair(String name, SettingsComponent comp) {
+    public <T extends SettingsComponent> Pair<T> addPair(String name, T comp) {
 
-        add(createLabel(name), "gapleft 37,aligny " + (comp.isMultiline() ? "top" : "center"));
+        JLabel lbl;
+        add(lbl = createLabel(name), "gapleft 37,aligny " + (comp.isMultiline() ? "top" : "center"));
 
         String con = "pushx,growy";
         if (comp.getConstraints() != null) {
             con += "," + comp.getConstraints();
         }
         add((JComponent) comp, con);
+        Pair<T> p = new Pair<T>(lbl, comp);
+        pairs.add(p);
+        return p;
 
     }
 
@@ -87,6 +94,24 @@ public abstract class AbstractConfigPanel extends SwitchPanel {
 
     public int getScrollableBlockIncrement(final Rectangle visibleRect, final int orientation, final int direction) {
         return Math.max(visibleRect.height * 9 / 10, 1);
+    }
+
+    @Override
+    protected void onShow() {
+        updateContents();
+        for (Pair p : pairs) {
+            p.update();
+        }
+
+    }
+
+    public abstract void save();
+
+    public abstract void updateContents();
+
+    @Override
+    protected void onHide() {
+        save();
     }
 
     public boolean getScrollableTracksViewportHeight() {

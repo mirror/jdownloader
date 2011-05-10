@@ -87,17 +87,17 @@ public class ExtensionManager extends AbstractConfigPanel {
     }
 
     @Override
-    protected void onShow() {
+    public String getTitle() {
+        return T._.extensionManager_title();
     }
 
     @Override
-    protected void onHide() {
+    public void save() {
         table.getSelectionModel().setSelectionInterval(0, 0);
     }
 
     @Override
-    public String getTitle() {
-        return T._.extensionManager_title();
+    public void updateContents() {
     }
 
 }

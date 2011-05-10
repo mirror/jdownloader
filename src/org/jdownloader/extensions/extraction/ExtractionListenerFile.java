@@ -71,7 +71,7 @@ public class ExtractionListenerFile implements ExtractionListener {
         case ExtractionConstants.WRAPPER_PASSWORD_NEEDED_TO_CONTINUE:
             pc.setStatusText(controller.getArchiv().getFirstDownloadLink().getFileOutput() + ": " + T._.plugins_optional_extraction_status_extractfailedpass());
 
-            if (ex.getPluginConfig().getBooleanProperty(ExtractionConstants.CONFIG_KEY_ASK_UNKNOWN_PASS, true)) {
+            if (ex.getSettings().isAskForUnknownPasswordsEnabled()) {
                 String pass = UserIO.getInstance().requestInputDialog(0, T._.plugins_optional_extraction_askForPassword(controller.getArchiv().getFirstDownloadLink().getName()), "");
                 if (pass == null || pass.length() == 0) {
                     ex.onFinished(controller);
@@ -124,7 +124,7 @@ public class ExtractionListenerFile implements ExtractionListener {
 
             pc.setStatusText(controller.getArchiv().getFirstDownloadLink().getFileOutput() + ": " + T._.plugins_optional_extraction_status_extractok());
 
-            if (ex.getPluginConfig().getBooleanProperty(ExtractionConstants.CONFIG_KEY_REMOVE_INFO_FILE, false)) {
+            if (ex.getSettings().isDeleteInfoFilesAfterExtraction()) {
                 File fileOutput = new File(controller.getArchiv().getFirstDownloadLink().getFileOutput());
                 File infoFiles = new File(fileOutput.getParentFile(), fileOutput.getName().replaceFirst("(?i)(\\.pa?r?t?\\.?[0-9]+\\.rar|\\.rar)$", "") + ".info");
                 if (infoFiles.exists() && infoFiles.delete()) {

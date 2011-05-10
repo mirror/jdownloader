@@ -50,10 +50,10 @@ public class BarrierFree extends AbstractConfigPanel {
     }
 
     @Override
-    protected void onShow() {
+    public void save() {
     }
 
     @Override
-    protected void onHide() {
+    public void updateContents() {
     }
 }

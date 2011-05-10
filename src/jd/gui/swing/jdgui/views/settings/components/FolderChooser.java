@@ -37,8 +37,18 @@ public class FolderChooser extends JPanel implements SettingsComponent, ActionLi
         add(btn);
     }
 
+    @Override
+    public void setEnabled(boolean enabled) {
+        txt.setEnabled(enabled);
+        btn.setEnabled(enabled);
+    }
+
     public String getConstraints() {
         return null;
+    }
+
+    public void setText(String text) {
+        txt.setText(text);
     }
 
     public void actionPerformed(ActionEvent e) {

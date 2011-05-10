@@ -31,6 +31,7 @@ import javax.swing.JList;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.ScrollPaneConstants;
+import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
 import jd.controlling.JDController;
@@ -43,15 +44,19 @@ import jd.gui.swing.jdgui.menu.WindowMenu;
 import jd.gui.swing.laf.LookAndFeelController;
 import net.miginfocom.swing.MigLayout;
 
+import org.appwork.storage.config.ConfigEventListener;
+import org.appwork.storage.config.ConfigInterface;
 import org.appwork.utils.logging.Log;
+import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.AbstractExtensionWrapper;
+import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
 import org.jdownloader.translate.JDT;
 
-public class ConfigSidebar extends JPanel implements ControlListener, MouseMotionListener, MouseListener {
+public class ConfigSidebar extends JPanel implements ControlListener, MouseMotionListener, MouseListener, ConfigEventListener {
 
     private static final long serialVersionUID = 6456662020047832983L;
 
@@ -117,73 +122,7 @@ public class ConfigSidebar extends JPanel implements ControlListener, MouseMotio
 
         list.setOpaque(false);
         list.setBackground(null);
-        list.addMouseListener(new MouseAdapter() {
 
-            @Override
-            public void mouseClicked(MouseEvent e) {
-
-            }
-
-            @Override
-            public void mousePressed(MouseEvent e) {
-                int index = list.locationToIndex(e.getPoint());
-                if (list.getModel().getElementAt(index) instanceof AbstractExtensionWrapper) {
-                    Point point = list.indexToLocation(index);
-                    int x = e.getPoint().x - point.x;
-                    int y = e.getPoint().y - point.y;
-                    if (x > 3 && x < 18) {
-                        if (y > 3 && y < 18) {
-
-                            AbstractExtensionWrapper object = ((AbstractExtensionWrapper) list.getModel().getElementAt(index));
-                            boolean value = !((AbstractExtensionWrapper) list.getModel().getElementAt(index))._isEnabled();
-                            if (value == object._isEnabled()) return;
-                            if (value) {
-                                try {
-                                    object._setEnabled(true);
-
-                                    if (object._getExtension().getGUI() != null) {
-                                        int ret = UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN, object.getName(), JDT._.gui_settings_extensions_show_now(object.getName()));
-
-                                        if (UserIO.isOK(ret)) {
-                                            // activate panel
-                                            object._getExtension().getGUI().setActive(true);
-                                            // bring panel to front
-                                            object._getExtension().getGUI().toFront();
-
-                                        }
-                                    }
-                                } catch (StartException e1) {
-                                    Dialog.getInstance().showExceptionDialog(JDT._.dialog_title_exception(), e1.getMessage(), e1);
-                                } catch (StopException e1) {
-                                    e1.printStackTrace();
-                                }
-                            } else {
-                                try {
-
-                                    object._setEnabled(false);
-                                } catch (StartException e1) {
-                                    e1.printStackTrace();
-                                } catch (StopException e1) {
-                                    Dialog.getInstance().showExceptionDialog(JDT._.dialog_title_exception(), e1.getMessage(), e1);
-                                }
-                            }
-                            /*
-                             * we save enabled/disabled status here, plugin must
-                             * be running when enabled
-                             */
-
-                            AddonsMenu.getInstance().update();
-                            WindowMenu.getInstance().update();
-                            // ConfigSidebar.getInstance(null).updateAddons();
-                            // addons.updateShowcase();
-
-                            list.repaint();
-                        }
-                    }
-                }
-            }
-
-        });
         list.addMouseMotionListener(new MouseAdapter() {
 
             @Override
@@ -221,7 +160,16 @@ public class ConfigSidebar extends JPanel implements ControlListener, MouseMotio
         }
         sp.setBorder(null);
         sp.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
-        // add(new JScrollPane());
+        list.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
+
+            public void valueChanged(ListSelectionEvent e) {
+                SwitchPanel op = getSelectedPanel();
+                if (op instanceof ExtensionConfigPanel) {
+                    ((ExtensionConfigPanel<?>) op).getExtension().getSettings().removeListener(ConfigSidebar.this);
+                    ((ExtensionConfigPanel<?>) op).getExtension().getSettings().addListener(ConfigSidebar.this);
+                }
+            }
+        });
 
     }
 
@@ -290,8 +238,62 @@ public class ConfigSidebar extends JPanel implements ControlListener, MouseMotio
     }
 
     public void mousePressed(MouseEvent e) {
-        // mouse = null;
-        // list.repaint();
+
+        int index = list.locationToIndex(e.getPoint());
+        if (list.getModel().getElementAt(index) instanceof AbstractExtensionWrapper) {
+            Point point = list.indexToLocation(index);
+            int x = e.getPoint().x - point.x;
+            int y = e.getPoint().y - point.y;
+            if (x > 3 && x < 18) {
+                if (y > 3 && y < 18) {
+
+                    AbstractExtensionWrapper object = ((AbstractExtensionWrapper) list.getModel().getElementAt(index));
+                    boolean value = !((AbstractExtensionWrapper) list.getModel().getElementAt(index))._isEnabled();
+                    if (value == object._isEnabled()) return;
+                    if (value) {
+                        try {
+                            object._setEnabled(true);
+
+                            if (object._getExtension().getGUI() != null) {
+                                int ret = UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN, object.getName(), JDT._.gui_settings_extensions_show_now(object.getName()));
+
+                                if (UserIO.isOK(ret)) {
+                                    // activate panel
+                                    object._getExtension().getGUI().setActive(true);
+                                    // bring panel to front
+                                    object._getExtension().getGUI().toFront();
+
+                                }
+                            }
+                        } catch (StartException e1) {
+                            Dialog.getInstance().showExceptionDialog(JDT._.dialog_title_exception(), e1.getMessage(), e1);
+                        } catch (StopException e1) {
+                            e1.printStackTrace();
+                        }
+                    } else {
+                        try {
+
+                            object._setEnabled(false);
+                        } catch (StartException e1) {
+                            e1.printStackTrace();
+                        } catch (StopException e1) {
+                            Dialog.getInstance().showExceptionDialog(JDT._.dialog_title_exception(), e1.getMessage(), e1);
+                        }
+                    }
+                    /*
+                     * we save enabled/disabled status here, plugin must be
+                     * running when enabled
+                     */
+
+                    AddonsMenu.getInstance().update();
+                    WindowMenu.getInstance().update();
+                    // ConfigSidebar.getInstance(null).updateAddons();
+                    // addons.updateShowcase();
+
+                    list.repaint();
+                }
+            }
+        }
     }
 
     public void mouseReleased(MouseEvent e) {
@@ -334,5 +336,15 @@ public class ConfigSidebar extends JPanel implements ControlListener, MouseMotio
             return null;
         }
 
+    }
+
+    public void onConfigValueModified(ConfigInterface config, String key, Object newValue) {
+        new EDTRunner() {
+
+            @Override
+            protected void runInEDT() {
+                repaint();
+            }
+        };
     }
 }

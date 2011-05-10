@@ -25,14 +25,13 @@ public class CaptchaPushConfigPanel extends ExtensionConfigPanel<CaptchaPushExte
         brokerTopic = new TextInput();
     }
 
-    @Override
-    protected void onShow() {
-        brokerHost.setText(config.getBrokerHost());
-        brokerTopic.setText(config.getBrokerTopic());
+    protected void layoutPanel() {
+        addPair("Host of the Broker:", brokerHost);
+        addPair("Topic of the Broker:", brokerTopic);
     }
 
     @Override
-    protected void onHide() {
+    public void save() {
         boolean changes = false;
         if (!brokerHost.getText().equals(config.getBrokerHost())) {
             config.setBrokerHost(brokerHost.getText());
@@ -46,9 +45,10 @@ public class CaptchaPushConfigPanel extends ExtensionConfigPanel<CaptchaPushExte
         if (changes) showRestartRequiredMessage();
     }
 
-    protected void layoutPanel() {
-        addPair("Host of the Broker:", brokerHost);
-        addPair("Topic of the Broker:", brokerTopic);
+    @Override
+    public void updateContents() {
+        brokerHost.setText(config.getBrokerHost());
+        brokerTopic.setText(config.getBrokerTopic());
     }
 
 }

@@ -19,8 +19,6 @@ package org.jdownloader.extensions.extraction;
 import java.util.List;
 import java.util.logging.Logger;
 
-import jd.config.ConfigContainer;
-import jd.controlling.JSonWrapper;
 import jd.plugins.DownloadLink;
 
 /**
@@ -33,8 +31,8 @@ public abstract class IExtraction {
 
     protected Archive              archive;
     protected ExtractionController controller;
-    protected JSonWrapper          config;
     protected Logger               logger;
+    protected ExtractionConfig     config;
 
     /**
      * Sets the {@link Archive} which should be extracted.
@@ -59,11 +57,11 @@ public abstract class IExtraction {
     /**
      * Sets the pluginconfiguration.
      * 
-     * @param config
+     * @param extractionConfig
      *            The configuration.
      */
-    public final void setConfig(JSonWrapper config) {
-        this.config = config;
+    public final void setConfig(ExtractionConfig extractionConfig) {
+        this.config = extractionConfig;
     }
 
     /**
@@ -135,14 +133,6 @@ public abstract class IExtraction {
      * @return False if it's not possible to extract that archive.
      */
     public abstract boolean prepare();
-
-    /**
-     * Sets a configuration.
-     * 
-     * @param config
-     * @param subConfig
-     */
-    public abstract void initConfig(ConfigContainer config, JSonWrapper subConfig);
 
     /**
      * Returns the archivename of an {@link Archive}.

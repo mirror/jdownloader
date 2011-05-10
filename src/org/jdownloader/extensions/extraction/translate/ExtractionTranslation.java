@@ -34,7 +34,7 @@ public interface ExtractionTranslation extends TranslateInterface {
     String plugins_optional_extraction_multi_priority_high();
 
     @Default(lngs = { "en" }, values = { "Overwrite existing files?" })
-    String gui_config_extraction_overwrite();
+    String settings_overwrite();
 
     @Default(lngs = { "en" }, values = { "Extract failed" })
     String plugins_optional_extraction_status_extractfailed();
@@ -75,20 +75,20 @@ public interface ExtractionTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Opening archive" })
     String plugins_optional_extraction_status_openingarchive();
 
-    @Default(lngs = { "en" }, values = { "Use customized extract path" })
+    @Default(lngs = { "en" }, values = { "Extract" })
     String gui_config_extraction_use_extractto();
 
     @Default(lngs = { "en" }, values = { "Extract: failed (CRC in %s1)" })
     String plugins_optional_extraction_crcerrorin(Object s1);
 
-    @Default(lngs = { "en" }, values = { "Subpath" })
-    String gui_config_extraction_subpath();
+    @Default(lngs = { "en" }, values = { "Subfolder pattern" })
+    String settings_subpath();
 
-    @Default(lngs = { "en" }, values = { "Only use subpath if archive contains more than x files" })
-    String gui_config_extraction_subpath_minnum();
+    @Default(lngs = { "en" }, values = { "... only if archive contains >" })
+    String settings_subpath_minnum();
 
-    @Default(lngs = { "en" }, values = { "Use subpath" })
-    String gui_config_extraction_use_subpath();
+    @Default(lngs = { "en" }, values = { "Create Subfolder" })
+    String settings_use_subpath();
 
     @Default(lngs = { "en" }, values = { "Delete Infofile after extraction" })
     String gui_config_extraction_remove_infofile();
@@ -102,8 +102,8 @@ public interface ExtractionTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Extract failed (CRC error)" })
     String plugins_optional_extraction_status_extractfailedcrc();
 
-    @Default(lngs = { "en" }, values = { "Only use subpath if the files of the archive are in not in one folder" })
-    String gui_config_extraction_subpath_no_folder();
+    @Default(lngs = { "en" }, values = { "... only if >1 folders/files" })
+    String settings_subpath_no_folder();
 
     @Default(lngs = { "en" }, values = { "Deep-Extraction" })
     String gui_config_extraction_deep_extract();
@@ -121,11 +121,29 @@ public interface ExtractionTranslation extends TranslateInterface {
     String plugins_optional_extraction_status_queued();
 
     @Default(lngs = { "en" }, values = { "Delete archives after suc. extraction?" })
-    String gui_config_extraction_remove_after_extract();
+    String settings_remove_after_extract();
 
     @Default(lngs = { "en" }, values = { "Subfolder settings" })
     String plugins_optional_extraction_config_subfolder();
 
     @Default(lngs = { "en" }, values = { "Password for %s1?" })
     String plugins_optional_extraction_askForPassword(Object s1);
+
+    @Default(lngs = { "en" }, values = { "Extract destination folder" })
+    String settings_extractto();
+
+    @Default(lngs = { "en" }, values = { "Extract to the following folder" })
+    String settings_extract_to_archive_folder();
+
+    @Default(lngs = { "en" }, values = { "Extract to" })
+    String settings_extract_to_path();
+
+    @Default(lngs = { "en" }, values = { "Do not use a subfolder if all files in the archive already are  packed in one folder." })
+    String settings_subpath_no_folder_tt();
+
+    @Default(lngs = { "en" }, values = { "Miscellaneous" })
+    String settings_various();
+
+    @Default(lngs = { "en" }, values = { "files" })
+    String files();
 }

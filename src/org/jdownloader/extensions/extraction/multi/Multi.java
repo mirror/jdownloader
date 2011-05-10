@@ -25,10 +25,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.regex.Pattern;
 
-import jd.config.ConfigContainer;
-import jd.config.ConfigEntry;
-import jd.config.ConfigGroup;
-import jd.controlling.JSonWrapper;
 import jd.nutils.io.FileSignatures;
 import jd.nutils.io.Signature;
 import jd.plugins.DownloadLink;
@@ -49,11 +45,11 @@ import net.sf.sevenzipjbinding.simple.ISimpleInArchiveItem;
 import org.appwork.utils.Regex;
 import org.appwork.utils.formatter.StringFormatter;
 import org.jdownloader.extensions.extraction.Archive;
+import org.jdownloader.extensions.extraction.CPUPriority;
 import org.jdownloader.extensions.extraction.DummyDownloadLink;
 import org.jdownloader.extensions.extraction.ExtractionConstants;
 import org.jdownloader.extensions.extraction.ExtractionControllerConstants;
 import org.jdownloader.extensions.extraction.IExtraction;
-import org.jdownloader.extensions.extraction.translate.T;
 
 /**
  * Extracts rar, zip, 7z. tar.gz, tar.bz2.
@@ -62,7 +58,6 @@ import org.jdownloader.extensions.extraction.translate.T;
  * 
  */
 public class Multi extends IExtraction {
-    private static final String      PRIORITY           = "PRIORITY";
 
     private static final String      PatternRar         = "(?i).*\\.rar$";
     private static final String      PatternRarMulti    = "(?i).*\\.pa?r?t?\\.?\\d+.rar$";
@@ -335,7 +330,7 @@ public class Multi extends IExtraction {
     @Override
     public void extract() {
         try {
-            int priority = config.getIntegerProperty(PRIORITY);
+            CPUPriority priority = config.getCPUPriority();
 
             for (ISimpleInArchiveItem item : inArchive.getSimpleInterface().getArchiveItems()) {
                 // Skip 0 Byte files (folders)
@@ -501,12 +496,10 @@ public class Multi extends IExtraction {
                 archive.setType(a.getType());
             }
 
-            String f = config.getStringProperty(ExtractionConstants.CONFIG_KEY_MATCHER, null);
-
-            if (f != null && f.length() > 0) {
-                String[] entries = Regex.getLines(f);
+            String[] entries = config.getBlacklistPatterns();
+            if (entries != null) {
                 for (String entry : entries) {
-                    if (!entry.startsWith("#") && entry.trim().length() != 0) {
+                    if (entry.trim().length() != 0) {
                         filter.add(entry.trim());
                     }
                 }
@@ -584,13 +577,6 @@ public class Multi extends IExtraction {
         }
 
         return true;
-    }
-
-    public void initConfig(ConfigContainer config, JSonWrapper subConfig) {
-        config.setGroup(new ConfigGroup(T._.plugins_optional_extraction_multi_config(), "gui.images.addons.unrar"));
-
-        String[] priorities = new String[] { T._.plugins_optional_extraction_multi_priority_high(), T._.plugins_optional_extraction_multi_priority_middle(), T._.plugins_optional_extraction_multi_priority_low() };
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, subConfig, PRIORITY, priorities, T._.plugins_optional_extraction_multi_priority()).setDefaultValue(0));
     }
 
     @Override

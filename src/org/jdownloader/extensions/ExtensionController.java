@@ -40,11 +40,11 @@ public class ExtensionController {
         return ExtensionController.INSTANCE;
     }
 
-    private HashMap<Class<AbstractExtension>, AbstractExtensionWrapper> map;
-    private ArrayList<AbstractExtensionWrapper>                         list;
-    private HashMap<String, AbstractExtensionWrapper>                   cache;
-    private File                                                        cacheFile;
-    private boolean                                                     cacheChanged;
+    private HashMap<Class<AbstractExtension<?>>, AbstractExtensionWrapper> map;
+    private ArrayList<AbstractExtensionWrapper>                            list;
+    private HashMap<String, AbstractExtensionWrapper>                      cache;
+    private File                                                           cacheFile;
+    private boolean                                                        cacheChanged;
 
     /**
      * Create a new instance of ExtensionController. This is a singleton class.
@@ -52,7 +52,7 @@ public class ExtensionController {
      */
     private ExtensionController() {
 
-        map = new HashMap<Class<AbstractExtension>, AbstractExtensionWrapper>();
+        map = new HashMap<Class<AbstractExtension<?>>, AbstractExtensionWrapper>();
         list = new ArrayList<AbstractExtensionWrapper>();
         JDController.getInstance().addControlListener(new ControlListener() {
 
@@ -116,7 +116,7 @@ public class ExtensionController {
 
                                     if (AbstractExtension.class.isAssignableFrom(clazz)) {
 
-                                        initModule((Class<AbstractExtension>) clazz);
+                                        initModule((Class<AbstractExtension<?>>) clazz);
                                         continue main;
                                     }
 
@@ -178,7 +178,7 @@ public class ExtensionController {
 
                     if (AbstractExtension.class.isAssignableFrom(cls)) {
                         loaded = true;
-                        initModule((Class<AbstractExtension>) cls);
+                        initModule((Class<AbstractExtension<?>>) cls);
                         continue main;
                     }
                 } catch (IllegalArgumentException e) {
@@ -195,7 +195,7 @@ public class ExtensionController {
 
     }
 
-    private void initModule(Class<AbstractExtension> cls) throws InstantiationException, IllegalAccessException, StartException, IOException, ClassNotFoundException {
+    private void initModule(Class<AbstractExtension<?>> cls) throws InstantiationException, IllegalAccessException, StartException, IOException, ClassNotFoundException {
 
         AbstractExtensionWrapper cached = getCache(cls);
 
@@ -208,7 +208,7 @@ public class ExtensionController {
 
     }
 
-    private AbstractExtensionWrapper getCache(Class<AbstractExtension> cls) throws StartException, InstantiationException, IllegalAccessException, IOException {
+    private AbstractExtensionWrapper getCache(Class<AbstractExtension<?>> cls) throws StartException, InstantiationException, IllegalAccessException, IOException {
         String id = cls.getName().substring(27);
         // File cache = Application.getResource("tmp/extensioncache/" + id +
         // ".json");
@@ -218,9 +218,12 @@ public class ExtensionController {
         AbstractExtensionWrapper cached = cache.get(id);
 
         int v = AbstractExtension.readVersion(cls);
-        if (cached != null && (cached.getVersion() != v || !cached.getLng().equals(JDT.getLanguage()))) {
-            // update cache
-            cached = null;
+        if (cached != null) {
+            cached._setClazz(cls);
+            if (cached.getVersion() != v || !cached.getLng().equals(JDT.getLanguage()) || cached._getSettings() == null) {
+                // update cache
+                cached = null;
+            }
         }
         if (cached == null) {
             Log.L.info("Update Cache " + cache);

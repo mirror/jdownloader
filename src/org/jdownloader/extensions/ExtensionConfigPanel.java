@@ -1,5 +1,6 @@
 package org.jdownloader.extensions;
 
+import java.awt.Component;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
@@ -14,21 +15,21 @@ public abstract class ExtensionConfigPanel<T extends AbstractExtension> extends 
 
     private static final long serialVersionUID = 1L;
 
-    private T                 extension;
+    protected T               extension;
 
     private Header            header;
 
     public ExtensionConfigPanel(T plg, boolean clean) {
         super();
         this.extension = plg;
-        plg.getStore().addListener(this);
+        plg.getSettings().addListener(this);
         if (!clean) {
             header = new Header(plg.getName(), plg.getIcon(32), new ActionListener() {
 
                 public void actionPerformed(ActionEvent e) {
                     try {
                         extension.setEnabled(header.isHeaderEnabled());
-
+                        updateHeaders(header.isHeaderEnabled());
                     } catch (Exception e1) {
                         e1.printStackTrace();
                         Dialog.getInstance().showExceptionDialog("Error", e1.getMessage(), e1);
@@ -36,6 +37,7 @@ public abstract class ExtensionConfigPanel<T extends AbstractExtension> extends 
                 }
             });
             add(header, "spanx,growx,pushx");
+
             header.setEnabled(plg.isEnabled());
             if (plg.getDescription() != null) {
                 addDescription(plg.getDescription());
@@ -46,13 +48,28 @@ public abstract class ExtensionConfigPanel<T extends AbstractExtension> extends 
 
     public void onConfigValueModified(ConfigInterface config, String key, Object newValue) {
         if ("enabled".equals(key)) {
-            header.setHeaderEnabled((Boolean) newValue);
+            updateHeaders((Boolean) newValue);
+
         }
     }
 
     public ExtensionConfigPanel(T plg) {
         this(plg, false);
 
+    }
+
+    @Override
+    protected void onShow() {
+        super.onShow();
+        updateHeaders(extension.isEnabled());
+    }
+
+    private void updateHeaders(boolean b) {
+        for (Component c : this.getComponents()) {
+            if (c instanceof Header) {
+                ((Header) c).setHeaderEnabled(b);
+            }
+        }
     }
 
     @Override
@@ -63,14 +80,6 @@ public abstract class ExtensionConfigPanel<T extends AbstractExtension> extends 
     @Override
     public String getTitle() {
         return extension.getName();
-    }
-
-    @Override
-    protected void onShow() {
-    }
-
-    @Override
-    protected void onHide() {
     }
 
     public T getExtension() {

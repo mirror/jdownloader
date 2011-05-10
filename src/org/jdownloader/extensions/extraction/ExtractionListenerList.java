@@ -89,7 +89,7 @@ public class ExtractionListenerList implements ExtractionListener {
         case ExtractionConstants.WRAPPER_PASSWORD_NEEDED_TO_CONTINUE:
             controller.getArchiv().getFirstDownloadLink().requestGuiUpdate();
 
-            if (ex.getPluginConfig().getBooleanProperty(ExtractionConstants.CONFIG_KEY_ASK_UNKNOWN_PASS, true)) {
+            if (ex.getSettings().isAskForUnknownPasswordsEnabled()) {
                 String pass = UserIO.getInstance().requestInputDialog(0, T._.plugins_optional_extraction_askForPassword(controller.getArchiv().getFirstDownloadLink().getName()), "");
                 if (pass == null || pass.length() == 0) {
                     ls.addStatus(LinkStatus.ERROR_POST_PROCESS);

@@ -53,8 +53,11 @@ public class ReconnectSettings extends AbstractConfigPanel {
     }
 
     @Override
-    protected void onShow() {
+    public void save() {
+    }
 
+    @Override
+    public void updateContents() {
         new Thread() {
             @Override
             public void run() {
@@ -63,9 +66,5 @@ public class ReconnectSettings extends AbstractConfigPanel {
 
             }
         }.start();
-    }
-
-    @Override
-    protected void onHide() {
     }
 }

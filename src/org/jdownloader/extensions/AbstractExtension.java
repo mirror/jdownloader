@@ -106,12 +106,22 @@ public abstract class AbstractExtension<T extends ExtensionConfigInterface> {
 
             @Override
             protected void onShow() {
-                cp.setShown();
+
             }
 
             @Override
             protected void onHide() {
+
+            }
+
+            @Override
+            public void save() {
                 cp.setHidden();
+            }
+
+            @Override
+            public void updateContents() {
+                cp.setShown();
             }
         };
 
@@ -126,7 +136,7 @@ public abstract class AbstractExtension<T extends ExtensionConfigInterface> {
      * 
      * @return
      */
-    public T getStore() {
+    public T getSettings() {
         return store;
     }
 
@@ -212,17 +222,28 @@ public abstract class AbstractExtension<T extends ExtensionConfigInterface> {
      */
     @SuppressWarnings("unchecked")
     private T buildStore() {
+
+        return JsonConfig.create(Application.getResource("cfg/" + getClass().getName()), getConfigClass());
+
+    }
+
+    /**
+     * returns the config interface class for this extension
+     * 
+     * @return
+     */
+    @SuppressWarnings("unchecked")
+    public Class<T> getConfigClass() {
         Type type = getClass().getGenericSuperclass();
         if (type instanceof ParameterizedTypeImpl) {
-            Class<T> configInterface = (Class<T>) ((ParameterizedTypeImpl) type).getActualTypeArguments()[0];
-            return JsonConfig.create(Application.getResource("cfg/" + getClass().getName()), configInterface);
+            return (Class<T>) ((ParameterizedTypeImpl) type).getActualTypeArguments()[0];
         } else {
             throw new RuntimeException("Bad Extension Definition. Please add Generic ConfigClass: class " + getClass().getSimpleName() + " extends AbstractExtension<" + getClass().getSimpleName() + "Config>{... with 'public interface " + getClass().getSimpleName() + "Config extends ExtensionConfigInterface{...");
         }
     }
 
-    public static ExtensionConfigInterface createStore(Class<? extends AbstractExtension<?>> class1) {
-        return JsonConfig.create(Application.getResource("cfg/" + class1.getName()), ExtensionConfigInterface.class);
+    public static ExtensionConfigInterface createStore(Class<? extends AbstractExtension<?>> class1, Class<? extends ExtensionConfigInterface> interfaceClass) {
+        return JsonConfig.create(Application.getResource("cfg/" + class1.getName()), interfaceClass);
     }
 
     protected abstract void initExtension() throws StartException;

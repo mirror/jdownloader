@@ -36,16 +36,17 @@ public class ChatConfigPanel extends ExtensionConfigPanel<ChatExtension> {
         perform = new TextArea();
     }
 
-    @Override
-    protected void onShow() {
-        nick.setText(config.getNick());
-        userColors.setSelected(config.isUserColorEnabled());
-        userPosition.setSelectedIndex(config.getUserListPosition());
-        perform.setText(config.getPerformOnLoginCommands());
+    protected void layoutPanel() {
+
+        addPair(T._.settings_nick(), nick);
+        addPair(T._.settings_enabled_userlist_colors(), userColors);
+        addPair(T._.settings_userlist_position(), userPosition);
+        addPair(T._.settings_perform(), perform);
+
     }
 
     @Override
-    protected void onHide() {
+    public void save() {
         boolean changes = false;
         if (!nick.getText().equals(config.getNick())) {
             config.setNick(nick.getText());
@@ -64,12 +65,13 @@ public class ChatConfigPanel extends ExtensionConfigPanel<ChatExtension> {
         if (changes) showRestartRequiredMessage();
     }
 
-    protected void layoutPanel() {
+    @Override
+    public void updateContents() {
 
-        addPair(T._.settings_nick(), nick);
-        addPair(T._.settings_enabled_userlist_colors(), userColors);
-        addPair(T._.settings_userlist_position(), userPosition);
-        addPair(T._.settings_perform(), perform);
+        nick.setText(config.getNick());
+        userColors.setSelected(config.isUserColorEnabled());
+        userPosition.setSelectedIndex(config.getUserListPosition());
+        perform.setText(config.getPerformOnLoginCommands());
 
     }
 

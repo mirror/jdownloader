@@ -21,11 +21,12 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 
-import org.jdownloader.extensions.extraction.ExtractionController;
-import org.jdownloader.extensions.extraction.ExtractionControllerConstants;
-
 import net.sf.sevenzipjbinding.ISequentialOutStream;
 import net.sf.sevenzipjbinding.SevenZipException;
+
+import org.jdownloader.extensions.extraction.CPUPriority;
+import org.jdownloader.extensions.extraction.ExtractionController;
+import org.jdownloader.extensions.extraction.ExtractionControllerConstants;
 
 /**
  * Gets the decrypted bytes and writes it into the file.
@@ -36,11 +37,11 @@ import net.sf.sevenzipjbinding.SevenZipException;
 class MultiCallback implements ISequentialOutStream {
     private FileOutputStream     fos = null;
     private ExtractionController con;
-    private int                  priority;
+    private CPUPriority          priority;
 
-    MultiCallback(File file, ExtractionController con, int priority, boolean shouldCrc) throws FileNotFoundException {
+    MultiCallback(File file, ExtractionController con, CPUPriority priority2, boolean shouldCrc) throws FileNotFoundException {
         this.con = con;
-        this.priority = priority;
+        this.priority = priority2;
 
         fos = new FileOutputStream(file, true);
     }
@@ -51,11 +52,11 @@ class MultiCallback implements ISequentialOutStream {
 
             con.getArchiv().setExtracted(con.getArchiv().getExtracted() + data.length);
 
-            if (priority > 0) {
+            if (priority != null) {
                 try {
-                    if (priority == 1) {
+                    if (priority == CPUPriority.NORMAL) {
                         Thread.sleep(100);
-                    } else if (priority == 2) {
+                    } else if (priority == CPUPriority.LOW) {
                         Thread.sleep(200);
                     }
                 } catch (InterruptedException e) {

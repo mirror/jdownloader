@@ -71,7 +71,7 @@ public abstract class AddonPanel extends ClosableView {
             @Override
             protected void runInEDT() {
 
-                extension.getStore().setGuiEnabled(b);
+                extension.getSettings().setGuiEnabled(b);
 
                 if (b) {
                     SwingGui.getInstance().setContent(AddonPanel.this, false);
@@ -122,7 +122,7 @@ public abstract class AddonPanel extends ClosableView {
      * Restores gui after startup
      */
     public void restore() {
-        if (this.isKeepGuiEnabledStatusAcrossSessions() && extension.getStore().isGuiEnabled()) {
+        if (this.isKeepGuiEnabledStatusAcrossSessions() && extension.getSettings().isGuiEnabled()) {
             setActive(true);
 
         }

@@ -6,4 +6,9 @@ public interface SettingsComponent {
 
     boolean isMultiline();
 
+    void setEnabled(boolean b);
+
+    boolean isEnabled();
+
+    public void setToolTipText(String text);
 }

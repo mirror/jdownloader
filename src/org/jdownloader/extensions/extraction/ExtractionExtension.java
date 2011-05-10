@@ -28,12 +28,8 @@ import java.util.Timer;
 import javax.swing.JViewport;
 import javax.swing.filechooser.FileFilter;
 
-import jd.config.ConfigContainer;
-import jd.config.ConfigEntry;
-import jd.config.ConfigGroup;
 import jd.controlling.JDController;
 import jd.controlling.JDLogger;
-import jd.controlling.JSonWrapper;
 import jd.controlling.ProgressController;
 import jd.controlling.SingleDownloadController;
 import jd.event.ControlEvent;
@@ -88,7 +84,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
 
     private final ArrayList<Archive>     archives                = new ArrayList<Archive>();
 
-    private ExtensionConfigPanel         configPanel;
+    private ExtractionConfigPanel        configPanel;
 
     public ExtractionExtension() throws StartException {
         super(T._.name());
@@ -140,7 +136,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
         archive.getFirstDownloadLink().getLinkStatus().setErrorMessage(null);
         File dl = this.getExtractToPath(archive.getFirstDownloadLink());
 
-        archive.setOverwriteFiles(this.getPluginConfig().getBooleanProperty(ExtractionConstants.CONFIG_KEY_OVERWRITE, true));
+        archive.setOverwriteFiles(getSettings().isOverwriteExistingFilesEnabled());
         archive.setExtractTo(dl);
 
         ExtractionController controller = new ExtractionController(archive, logger);
@@ -154,10 +150,10 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
             controller.addExtractionListener(new ExtractionListenerList(this));
         }
 
-        controller.setRemoveAfterExtract(this.getPluginConfig().getBooleanProperty(ExtractionConstants.CONFIG_KEY_REMVE_AFTER_EXTRACT, false));
+        controller.setRemoveAfterExtract(getSettings().isDeleteArchiveFilesAfterExtraction());
 
         archive.setActive(true);
-        extractor.setConfig(getPluginConfig());
+        extractor.setConfig(getSettings());
 
         controller.fireEvent(ExtractionConstants.WRAPPER_STARTED);
         queue.add(controller);
@@ -185,10 +181,13 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
         if (link instanceof DummyDownloadLink) return new File(link.getFileOutput()).getParentFile();
         String path;
 
-        if (!getPluginConfig().getBooleanProperty(ExtractionConstants.CONFIG_KEY_USE_EXTRACT_PATH, false)) {
+        if (!getSettings().isCustomExtractionPathEnabled()) {
             path = new File(link.getFileOutput()).getParent();
         } else {
-            path = this.getPluginConfig().getStringProperty(ExtractionConstants.CONFIG_KEY_UNPACKPATH, JDUtilities.getDefaultDownloadDirectory());
+            path = getSettings().getCustomExtractionPath();
+            if (path == null) {
+                path = JDUtilities.getDefaultDownloadDirectory();
+            }
         }
 
         return new File(path);
@@ -248,14 +247,11 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
      */
     @SuppressWarnings("unchecked")
     private void actionPerformedOnMenuItem(MenuAction source) {
-        JSonWrapper cfg = this.getPluginConfig();
+
         ArrayList<DownloadLink> dlinks = (ArrayList<DownloadLink>) source.getProperty(MENU_LINKS);
         ArrayList<FilePackage> fps = (ArrayList<FilePackage>) source.getProperty(MENU_PACKAGES);
         switch (source.getActionID()) {
-        case 1:
-            cfg.setProperty("ACTIVATED", !cfg.getBooleanProperty("ACTIVATED", true));
-            cfg.save();
-            break;
+
         case EXTRACT_LINK:
             if (dlinks == null) return;
             for (DownloadLink link : dlinks) {
@@ -350,58 +346,20 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
         }
     }
 
-    protected void initSettings(ConfigContainer config) {
-        ConfigEntry ce, conditionEntry;
-        final JSonWrapper subConfig = getPluginConfig();
-
-        config.setGroup(new ConfigGroup(getName(), getIconKey()));
-
-        config.addEntry(conditionEntry = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, ExtractionConstants.CONFIG_KEY_USE_EXTRACT_PATH, T._.gui_config_extraction_use_extractto()).setDefaultValue(false));
-        config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_BROWSEFOLDER, subConfig, ExtractionConstants.CONFIG_KEY_UNPACKPATH, T._.gui_config_extraction_path()));
-        ce.setDefaultValue(JDUtilities.getDefaultDownloadDirectory());
-        ce.setEnabledCondidtion(conditionEntry, true);
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, ExtractionConstants.CONFIG_KEY_REMVE_AFTER_EXTRACT, T._.gui_config_extraction_remove_after_extract()).setDefaultValue(false));
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, ExtractionConstants.CONFIG_KEY_OVERWRITE, T._.gui_config_extraction_overwrite()).setDefaultValue(false));
-
-        config.setGroup(new ConfigGroup(T._.plugins_optional_extraction_config_advanced(), getIconKey()));
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, ExtractionConstants.CONFIG_KEY_ASK_UNKNOWN_PASS, T._.gui_config_extraction_ask_path()).setDefaultValue(true));
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, ExtractionConstants.CONFIG_KEY_DEEP_EXTRACT, T._.gui_config_extraction_deep_extract()).setDefaultValue(true));
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, ExtractionConstants.CONFIG_KEY_REMOVE_INFO_FILE, T._.gui_config_extraction_remove_infofile()).setDefaultValue(false));
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, subConfig, ExtractionConstants.CONFIG_KEY_ADDITIONAL_SPACE, T._.gui_config_extraction_additional_space(), 1, 2048, 1).setDefaultValue(512));
-
-        config.setGroup(new ConfigGroup(T._.plugins_optional_extraction_config_subfolder(), getIconKey()));
-        config.addEntry(conditionEntry = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, ExtractionConstants.CONFIG_KEY_USE_SUBPATH, T._.gui_config_extraction_use_subpath()).setDefaultValue(false));
-        config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, subConfig, ExtractionConstants.CONFIG_KEY_SUBPATH, T._.gui_config_extraction_subpath()));
-        ce.setDefaultValue("%PACKAGENAME%");
-        ce.setEnabledCondidtion(conditionEntry, true);
-        config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, subConfig, ExtractionConstants.CONFIG_KEY_SUBPATH_MINNUM, T._.gui_config_extraction_subpath_minnum(), 0, 1000, 1).setDefaultValue(0));
-        ce.setEnabledCondidtion(conditionEntry, true);
-        config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, ExtractionConstants.CONFIG_KEY_SUBPATH_NO_FOLDER, T._.gui_config_extraction_subpath_no_folder()).setDefaultValue(false));
-        ce.setEnabledCondidtion(conditionEntry, true);
-
-        config.setGroup(new ConfigGroup(T._.plugins_optional_extraction_config_matcher_title(), getIconKey()));
-        config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, subConfig, ExtractionConstants.CONFIG_KEY_MATCHER, ""));
-        ce.setDefaultValue("#Ignore filetype 'xyz':\r\n\r\n.xyz\r\n\r\n#Ignore folder 'abc':\r\n\r\n/abc/\r\n\r\n#One exclude each line\r\n\r\n");
-
-        for (IExtraction extractor : extractors) {
-            extractor.initConfig(config, subConfig);
-        }
-    }
-
     /**
      * Sets the extractionpath with subpahts.
      * 
      * @param controller
      */
     void assignRealDownloadDir(ExtractionController controller) {
-        Boolean usesub = this.getPluginConfig().getBooleanProperty(ExtractionConstants.CONFIG_KEY_USE_SUBPATH, false);
+        Boolean usesub = getSettings().isSubpathEnabled();
         if (usesub) {
-            if (this.getPluginConfig().getIntegerProperty(ExtractionConstants.CONFIG_KEY_SUBPATH_MINNUM, 0) > controller.getArchiv().getNumberOfFiles()) { return; }
-            if (this.getPluginConfig().getBooleanProperty(ExtractionConstants.CONFIG_KEY_SUBPATH_NO_FOLDER, false)) {
+            if (getSettings().getSubPathFilesTreshold() > controller.getArchiv().getNumberOfFiles()) { return; }
+            if (getSettings().isSubpathEnabledIfAllFilesAreInAFolder()) {
                 if (controller.getArchiv().isNoFolder()) { return; }
             }
 
-            String path = this.getPluginConfig().getStringProperty(ExtractionConstants.CONFIG_KEY_SUBPATH, "%PACKAGENAME%");
+            String path = getSettings().getSubPath();
             DownloadLink link = controller.getArchiv().getFirstDownloadLink();
 
             try {
@@ -530,7 +488,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
             }
             break;
         case ControlEvent.CONTROL_ON_FILEOUTPUT:
-            if (this.getPluginConfig().getBooleanProperty(ExtractionConstants.CONFIG_KEY_DEEP_EXTRACT, true)) {
+            if (getSettings().isDeepExtractionEnabled()) {
                 try {
                     File[] list = (File[]) event.getParameter();
                     for (File archiveStartFile : list) {
@@ -707,9 +665,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
             }
         };
 
-        ConfigContainer cc = new ConfigContainer(getName());
-        initSettings(cc);
-        configPanel = createPanelFromContainer(cc);
+        configPanel = new ExtractionConfigPanel(this);
 
     }
 
@@ -740,16 +696,8 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
 
     @Override
     public ArrayList<MenuAction> getMenuAction() {
-        ArrayList<MenuAction> menu = new ArrayList<MenuAction>();
 
-        MenuAction m;
-        menu.add(m = new MenuAction("optional.extraction.menu.toggle", 1));
-        m.setActionListener(this);
-        m.setSelected(this.getPluginConfig().getBooleanProperty("ACTIVATED", true));
-        menu.add(new MenuAction(Types.SEPARATOR));
-        menu.add(menuAction);
-
-        return menu;
+        return null;
     }
 
     @Override

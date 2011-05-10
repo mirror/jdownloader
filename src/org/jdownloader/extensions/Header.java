@@ -22,12 +22,14 @@ public class Header extends JPanel {
     private static final long serialVersionUID = 1L;
     private JLabel            label;
     private JCheckBox         enabled;
+    private JLabel            iconLabel;
 
     public Header(String name, ImageIcon icon) {
-        super(new MigLayout("ins 0", "[]10[grow,fill]"));
+        super(new MigLayout("ins 0", "[35!]5[]10[grow,fill]"));
+        iconLabel = new JLabel(icon);
+        add(iconLabel, "alignx right");
         label = new JLabel("<html><u><b>" + name + "</b></u></html>");
-        label.setIcon(icon);
-        label.setIconTextGap(5);
+
         label.setBorder(null);
 
         add(label);
@@ -36,10 +38,11 @@ public class Header extends JPanel {
     }
 
     public Header(String name, ImageIcon icon, ActionListener listener) {
-        super(new MigLayout("ins 0", "[]10[grow,fill]10[]2[]"));
+        super(new MigLayout("ins 0", "[35!]5[]10[grow,fill]10[]2[]"));
+        iconLabel = new JLabel(icon);
+        add(iconLabel, "alignx right");
         label = new JLabel("<html><u><b>" + name + "</b></u></html>");
-        label.setIcon(icon);
-        label.setIconTextGap(5);
+
         label.setBorder(null);
 
         add(label);
@@ -60,10 +63,12 @@ public class Header extends JPanel {
 
     public void setHeaderEnabled(boolean isEnabled) {
         label.setEnabled(isEnabled);
-
+        iconLabel.setEnabled(isEnabled);
         // do not fire events of nothing changed
-        if (enabled.isSelected() == isEnabled) return;
-        enabled.setSelected(isEnabled);
+        if (enabled != null) {
+            if (enabled.isSelected() == isEnabled) return;
+            enabled.setSelected(isEnabled);
+        }
 
     }
 
@@ -72,7 +77,7 @@ public class Header extends JPanel {
     }
 
     public void setIcon(ImageIcon _getIcon) {
-        label.setIcon(_getIcon);
+        iconLabel.setIcon(_getIcon);
     }
 
     public void setText(String name) {
