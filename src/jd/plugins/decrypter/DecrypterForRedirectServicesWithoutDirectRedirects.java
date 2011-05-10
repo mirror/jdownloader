@@ -65,8 +65,14 @@ public class DecrypterForRedirectServicesWithoutDirectRedirects extends PluginFo
             if (parameter.contains("filespart.com/go")) {
                 finallink = br.getRedirectLocation();
             } else {
-                finallink = br.getRegex("href=\"(/go/.*?\\.html)\"").getMatch(0);
-                if (finallink != null) finallink = "http://filespart.com" + finallink;
+                String[] gos = br.getRegex("href=\"(/go/.*?\\.html)\"").getColumn(0);
+                if (gos != null) {
+                    for (String go : gos) {
+                        DownloadLink dl = createDownloadlink("http://filespart.com" + go);
+                        decryptedLinks.add(dl);
+                    }
+                    return decryptedLinks;
+                }
             }
         } else if (parameter.contains("adf.ly/") || parameter.contains("9.bb/")) {
             if (parameter.contains("9.bb/") && br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
