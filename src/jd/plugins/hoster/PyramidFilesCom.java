@@ -137,12 +137,11 @@ public class PyramidFilesCom extends PluginForHost {
             }
             long timeBefore = System.currentTimeMillis();
             boolean password = false;
-            boolean recaptcha = false;
             if (BRBEFORE.contains(PASSWORDTEXT0) || BRBEFORE.contains(PASSWORDTEXT1)) {
                 password = true;
                 logger.info("The downloadlink seems to be password protected.");
             }
-
+            boolean wait = true;
             /* Captcha START */
             if (BRBEFORE.contains(";background:#ccc;text-align")) {
                 logger.info("Detected captcha method \"plaintext captchas\" for this host");
@@ -191,33 +190,23 @@ public class PyramidFilesCom extends PluginForHost {
                 logger.info("Detected captcha method \"Re Captcha\" for this host");
                 PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
                 jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
-                rc.parse();
+                rc.findID();
+                rc.setForm(DLForm);
                 rc.load();
                 File cf = rc.downloadCaptcha(getLocalCaptchaFile());
                 String c = getCaptchaCode(cf, downloadLink);
-                if (password) {
-                    passCode = handlePassword(passCode, rc.getForm(), downloadLink);
-                }
-                recaptcha = true;
-                // waitTime(timeBefore, downloadLink);
-                rc.setCode(c);
+                rc.prepareForm(c);
+                DLForm = rc.getForm();
                 logger.info("Put captchacode " + c + " obtained by captcha metod \"Re Captcha\" in the form and submitted it.");
-                dllink = br.getRedirectLocation();
             }
             /* Captcha END */
 
-            // If the hoster uses Re Captcha the form has already been sent
-            // before
-            // here so here it's checked. Most hosters don't use Re Captcha so
-            // usually recaptcha is false
-            if (!recaptcha) {
-                if (password) {
-                    passCode = handlePassword(passCode, DLForm, downloadLink);
-                }
-                waitTime(timeBefore, downloadLink);
-                br.submitForm(DLForm);
-                logger.info("Submitted DLForm");
+            if (password) {
+                passCode = handlePassword(passCode, DLForm, downloadLink);
             }
+            if (wait) waitTime(timeBefore, downloadLink);
+            br.submitForm(DLForm);
+            logger.info("Submitted DLForm");
             doSomething();
             checkErrors(downloadLink, true, passCode);
             dllink = getDllink();

@@ -51,16 +51,15 @@ public class CnnT extends PluginForDecrypt {
             String captchaCode = getCaptchaCode(captchaUrl, param);
             captchaForm.put("sicherheitscode", captchaCode);
             br.submitForm(captchaForm);
-
             if (br.containsHTML("Der Sicherheitscode ist falsch!")) {
                 /* Falscher Captcha, Seite neu laden */
                 br.getPage(parameter);
             } else {
                 valid = true;
                 String finallink = br.getRegex("URL=(.*?)\"").getMatch(0);
-                decryptedLinks.add(createDownloadlink(finallink));
+                if (finallink != null) decryptedLinks.add(createDownloadlink(finallink));
                 String links[] = br.getRegex("<a target=\"_blank\" href=\"(.*?)\">").getColumn(0);
-                if (links != null && links.length == 0) {
+                if (links != null && links.length != 0) {
                     for (String link : links) {
                         decryptedLinks.add(createDownloadlink(link));
                     }

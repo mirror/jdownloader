@@ -19,9 +19,14 @@ package jd.plugins.hoster;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Random;
 import java.util.regex.Pattern;
 
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
+
 import jd.PluginWrapper;
+import jd.controlling.JDLogger;
 import jd.http.RandomUserAgent;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -68,6 +73,8 @@ public class Usershare extends PluginForHost {
     @Override
     public void handleFree(DownloadLink link) throws Exception {
         requestFileInformation(link);
+        String passCode = null;
+        checkErrors(link, false, passCode, false);
         if (br.containsHTML("\"download1\"")) {
             logger.info("Sending Freeform....");
             Form freeform = null;
@@ -85,7 +92,6 @@ public class Usershare extends PluginForHost {
             wait(link);
             br.submitForm(freeform);
         }
-        String passCode = null;
         String linkurl = br.getRegex("\"(http://\\d+\\.\\d+\\.\\d+\\.\\d+:\\d+/d/[a-z0-9]+/.*?)\"").getMatch(0);
         if (linkurl == null) {
             checkErrors(link, false, passCode, false);
@@ -115,11 +121,36 @@ public class Usershare extends PluginForHost {
                 checkErrors(link, true, passCode, false);
                 linkurl = getDllink();
             } else {
-                Form dlform = br.getFormbyProperty("name", "F1");
+                Form dlform = null;
+                Form[] forms = br.getForms();
+                if (forms == null || forms.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                for (Form singleForm : forms)
+                    if (singleForm.containsHTML(link.getName())) {
+                        dlform = singleForm;
+                        break;
+                    }
                 if (dlform == null) {
                     logger.warning("dlform is null...");
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
+                dlform.setAction(link.getDownloadURL());
+                dlform.remove("method_premium");
+                String cryptedScript = br.getRegex("p\\}\\((.*?)\\.split\\('\\|'\\)").getMatch(0);
+                if (cryptedScript == null) {
+                    logger.warning("cryptedScript is null");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                String date = unpackJS(cryptedScript);
+                if (date == null) {
+                    logger.warning("date is null #1");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                date = execJS(date);
+                if (date == null) {
+                    logger.warning("date is null #2");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                dlform.put("date", date);
                 if (password) {
                     logger.info("The downloadlink seems to be password protected.");
                     passCode = handlePassword(passCode, dlform, link);
@@ -128,14 +159,15 @@ public class Usershare extends PluginForHost {
                 }
                 // Ticket Time
                 wait(link);
-                String ttt = br.getRegex("countdown\">.*?(\\d+).*?</span>").getMatch(0);
-                if (ttt == null) ttt = br.getRegex("id=\"countdown_str\".*?<span id=\".*?\">.*?(\\d+).*?</span").getMatch(0);
-                if (ttt != null) {
-                    int tt = Integer.parseInt(ttt);
-                    logger.info("Waittime detected, waiting " + ttt + " seconds from now on...");
-                    if (tt > 0) sleep(tt * 1001l, link);
-                }
                 br.submitForm(dlform);
+                Form finalForm = br.getFormbyProperty("name", "F1");
+                if (finalForm != null) {
+                    logger.info("Sending final form...");
+                    finalForm.setAction(link.getDownloadURL());
+                    finalForm.put("x", Integer.toString(new Random().nextInt(100)));
+                    finalForm.put("y", Integer.toString(new Random().nextInt(100)));
+                    br.submitForm(finalForm);
+                }
                 checkErrors(link, true, passCode, false);
                 linkurl = br.getRedirectLocation();
                 if (linkurl == null) linkurl = getDllink();
@@ -156,6 +188,43 @@ public class Usershare extends PluginForHost {
         dl.startDownload();
     }
 
+    private String unpackJS(String s) {
+        String decoded = null;
+
+        try {
+            Regex params = new Regex(s, "\\'(.*?[^\\\\])\\',(\\d+),(\\d+),\\'(.*?)\\'");
+
+            String p = params.getMatch(0).replaceAll("\\\\", "");
+            int a = Integer.parseInt(params.getMatch(1));
+            int c = Integer.parseInt(params.getMatch(2));
+            String[] k = params.getMatch(3).split("\\|");
+
+            while (c != 0) {
+                c--;
+                if (k[c].length() != 0) p = p.replaceAll("\\b" + Integer.toString(c, a) + "\\b", k[c]);
+            }
+
+            decoded = p;
+        } catch (Exception e) {
+        }
+        return decoded;
+    }
+
+    private String execJS(String fun) throws Exception {
+        Object result = new Object();
+        final ScriptEngineManager manager = new ScriptEngineManager();
+        final ScriptEngine engine = manager.getEngineByName("javascript");
+        fun = fun.replace("window.document.getElementById('date').", "");
+        try {
+            result = engine.eval(fun);
+        } catch (final Exception e) {
+            JDLogger.exception(e);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        if (result == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        return result.toString();
+    }
+
     private void wait(DownloadLink link) throws PluginException {
         String ttt = br.getRegex("countdown\">.*?(\\d+).*?</span>").getMatch(0);
         if (ttt == null) ttt = br.getRegex("id=\"countdown_str\".*?<span id=\".*?\">.*?(\\d+).*?</span").getMatch(0);
@@ -170,6 +239,9 @@ public class Usershare extends PluginForHost {
         String linkurl = br.getRegex("\"(http://[a-zA-Z0-9]+\\.usershare\\.net/files/.*?/.*?/.*?)\"").getMatch(0);
         if (linkurl == null) {
             linkurl = br.getRegex("href=\"(http://[0-9]+\\..*?:[0-9]+/d/.*?/.*?)\"").getMatch(0);
+            if (linkurl == null) {
+                linkurl = br.getRegex("</td></tr></table>[\t\n\r ]+<br>[\t\n\r ]+<a href=\"(http://.*?)\"").getMatch(0);
+            }
         }
         return linkurl;
     }
@@ -463,14 +535,12 @@ public class Usershare extends PluginForHost {
         return true;
     }
 
-    // private String getFileID(String dlurl) {
-    // Regex fileidregex = new Regex(dlurl, COOKIE_HOST.replace("http://", "") +
-    // "/" + "(.*?)/(.*?)");
-    // String fileid = fileidregex.getMatch(1);
-    // if (fileid == null || !fileid.matches("[a-z0-9]+{12}")) fileid =
-    // fileidregex.getMatch(0);
-    // return fileid;
-    // }
+    private String getFileID(String dlurl) {
+        Regex fileidregex = new Regex(dlurl, COOKIE_HOST.replace("http://", "") + "/" + "(.*?)/(.*?)");
+        String fileid = fileidregex.getMatch(1);
+        if (fileid == null || !fileid.matches("[a-z0-9]+{12}")) fileid = fileidregex.getMatch(0);
+        return fileid;
+    }
 
     @Override
     public void reset() {

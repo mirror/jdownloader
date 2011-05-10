@@ -23,11 +23,11 @@ import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pornerbros.com" }, urls = { "http://(www\\.)?pornerbros\\.com/\\d+/[\\w-]+\\.html" }, flags = { 0 })
 public class PornerBrosCom extends PluginForHost {
@@ -60,10 +60,9 @@ public class PornerBrosCom extends PluginForHost {
         if (br.containsHTML("<title>404 - Not Found</title>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<title>(.*?)(\\.)?</title>").getMatch(0);
         if (filename == null) filename = br.getRegex("<h1>(.*?)(\\.)?</h1>").getMatch(0);
-        filename = filename.trim().replaceAll("\\.$", "");
         String paramUrl = br.getRegex("name=\"FlashVars\" value=\"xmlfile=(.*?)?(http://.*?)\"").getMatch(1);
         if (paramUrl == null || filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-
+        filename = filename.trim().replaceAll("\\.$", "");
         br.getPage(paramUrl);
         String urlCipher = br.getRegex("file=\"(.*?)\"").getMatch(0);
         if (urlCipher == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

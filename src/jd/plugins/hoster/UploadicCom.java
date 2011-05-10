@@ -227,7 +227,6 @@ public class UploadicCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        // Max 1 connections at all
         return 1;
     }
 

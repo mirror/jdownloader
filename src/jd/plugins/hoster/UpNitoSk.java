@@ -31,11 +31,11 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
@@ -227,8 +227,8 @@ public class UpNitoSk extends PluginForHost {
         if (whySoComplicated != null) {
             this.br.getPage(whySoComplicated);
         }
-        if (this.br.containsHTML("location.href='/notfound.php'")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-        if (this.br.containsHTML("Nemozete tolkokrat za sebou stahovat ten isty subor!")) { return AvailableStatus.UNCHECKABLE; }
+        if (this.br.containsHTML("location\\.href=\\'/notfound\\.php\\'")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (this.br.containsHTML("Nemozete tolkokrat za sebou stahovat ten isty subor!")) return AvailableStatus.UNCHECKABLE;
         String filename = this.br.getRegex("Ahoj, chystáš sa stiahnuť súbor.*?>(.*?)</em>").getMatch(0);
         if (filename == null) {
             filename = this.br.getRegex("<strong style=\"color: #663333;\">(.*?)</strong>").getMatch(0);
@@ -237,8 +237,9 @@ public class UpNitoSk extends PluginForHost {
             }
         }
         final String filesize = this.br.getRegex("Veľkosť:</strong>(.*?)<br>").getMatch(0);
-        if ((filename == null) || (filesize == null)) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-        link.setName(filename.trim());
+        if ((filename == null) || (filesize == null)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        // Set final filename here because server sometimes sends wrong names
+        link.setFinalFileName(filename.trim());
         link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
     }

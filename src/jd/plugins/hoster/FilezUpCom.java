@@ -239,12 +239,12 @@ public class FilezUpCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        doFree(downloadLink, true, 0, false);
+        doFree(downloadLink, false, 1, false);
     }
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        return 5;
     }
 
     private void login(Account account) throws Exception {
@@ -317,7 +317,7 @@ public class FilezUpCom extends PluginForHost {
         br.setFollowRedirects(false);
         br.getPage(link.getDownloadURL());
         if (NOPREMIUM) {
-            doFree(link, true, 0, true);
+            doFree(link, false, 1, true);
         } else {
             String dllink = br.getRedirectLocation();
             if (dllink == null) {
