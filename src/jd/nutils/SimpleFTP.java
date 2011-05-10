@@ -658,7 +658,9 @@ public class SimpleFTP {
         RandomAccessFile fos = null;
         Socket dataSocket = null;
         try {
-            dataSocket = new Socket(pasv.getHostName(), pasv.getPort());
+            dataSocket = new Socket();
+            dataSocket.setSoTimeout(30 * 1000);
+            dataSocket.connect(new InetSocketAddress(pasv.getHostName(), pasv.getPort()), 30 * 1000);
             input = new MeteredThrottledInputStream(dataSocket.getInputStream(), new AverageSpeedMeter());
             fos = new RandomAccessFile(file, "rw");
             if (resumePosition > 0) {
