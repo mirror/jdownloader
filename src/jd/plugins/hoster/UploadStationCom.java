@@ -368,7 +368,7 @@ public class UploadStationCom extends PluginForHost {
         String waittime = br2.getRegex("<h1>You need to wait (\\d+) seconds to download next file").getMatch(0);
         if (waittime == null && limitReached) waittime = "300";
         if (waittime != null) {
-            long wait = (Integer.parseInt(waittime) * 1000l + 5000) - (System.currentTimeMillis() - UploadStationCom.LAST_FREE_DOWNLOAD);
+            long wait = (UploadStationCom.LAST_FREE_DOWNLOAD == 0 ? (Integer.parseInt(waittime) * 1001l) : (Integer.parseInt(waittime) * 1000l + 5000) - (System.currentTimeMillis() - UploadStationCom.LAST_FREE_DOWNLOAD));
 
             if (this.isRegistered)
                 this.sleep(wait, link);
