@@ -16,6 +16,7 @@
 
 package org.jdownloader.extensions;
 
+import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.logging.Logger;
 
@@ -26,8 +27,9 @@ import jd.config.Property;
 import jd.config.SubConfiguration;
 import jd.controlling.JSonWrapper;
 import jd.gui.swing.jdgui.menu.MenuAction;
+import jd.gui.swing.jdgui.views.settings.sidebar.AddonConfig;
 import jd.plugins.AddonPanel;
-import jd.plugins.PlugionOptionalConfig;
+import jd.plugins.ExtensionConfigInterface;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
@@ -37,13 +39,15 @@ import org.appwork.utils.Application;
 import org.appwork.utils.IO;
 import org.jdownloader.logging.LogController;
 
+import sun.reflect.generics.reflectiveObjects.ParameterizedTypeImpl;
+
 /**
  * Superclass for all extensions
  * 
  * @author thomas
  * 
  */
-public abstract class AbstractExtension {
+public abstract class AbstractExtension<T extends ExtensionConfigInterface> {
 
     public static final int ADDON_INTERFACE_VERSION = 8;
 
@@ -72,14 +76,47 @@ public abstract class AbstractExtension {
             store.setEnabled(true);
 
         } else {
+
+            stop();
             store.setEnabled(false);
             if (getGUI() != null) {
                 getGUI().setActive(false);
             }
-            stop();
         }
 
         this.enabled = enabled;
+    }
+
+    /**
+     * Converts an ExtensionConfigPanel from the old config containers
+     * 
+     * @param initSettings
+     * @return
+     */
+    @Deprecated
+    protected ExtensionConfigPanel createPanelFromContainer(ConfigContainer initSettings) {
+
+        final AddonConfig cp = AddonConfig.getInstance(initSettings, "", false);
+        ExtensionConfigPanel<AbstractExtension> ret = new ExtensionConfigPanel<AbstractExtension>(this, false) {
+
+            /**
+             * 
+             */
+            private static final long serialVersionUID = 1L;
+
+            @Override
+            protected void onShow() {
+                cp.setShown();
+            }
+
+            @Override
+            protected void onHide() {
+                cp.setHidden();
+            }
+        };
+
+        ret.add(cp, "gapleft 25,spanx,growx,pushx,growy,pushy");
+        return ret;
     }
 
     /**
@@ -89,7 +126,7 @@ public abstract class AbstractExtension {
      * 
      * @return
      */
-    public PlugionOptionalConfig getStore() {
+    public T getStore() {
         return store;
     }
 
@@ -102,21 +139,15 @@ public abstract class AbstractExtension {
 
     protected abstract void start() throws StartException;
 
-    protected Logger              logger;
+    protected Logger    logger;
 
-    private String                name;
+    private String      name;
 
-    private ConfigContainer       settings;
-
-    private int                   version = -1;
+    private int         version = -1;
     @Deprecated
-    private JSonWrapper           classicConfig;
+    private JSonWrapper classicConfig;
 
-    private PlugionOptionalConfig store;
-
-    public ConfigContainer getSettings() {
-        return settings;
-    }
+    private T           store;
 
     public String getName() {
         return name;
@@ -160,7 +191,7 @@ public abstract class AbstractExtension {
         this.name = name == null ? JDL.L(getClass().getName(), getClass().getSimpleName()) : name;
         logger = createLogger(getClass());
         version = readVersion(getClass());
-        store = createStore(getClass());
+        store = buildStore();
         logger.info("Loaded");
 
         if (JDUtilities.getConfiguration().hasProperty("OPTIONAL_PLUGIN2_" + getConfigID())) {
@@ -173,8 +204,25 @@ public abstract class AbstractExtension {
 
     }
 
-    public static PlugionOptionalConfig createStore(Class<? extends AbstractExtension> class1) {
-        return JsonConfig.create(Application.getResource("cfg/" + class1.getName()), PlugionOptionalConfig.class);
+    /**
+     * Creates the correct config based on the Extensions supertype
+     * 
+     * @param class1
+     * @return
+     */
+    @SuppressWarnings("unchecked")
+    private T buildStore() {
+        Type type = getClass().getGenericSuperclass();
+        if (type instanceof ParameterizedTypeImpl) {
+            Class<T> configInterface = (Class<T>) ((ParameterizedTypeImpl) type).getActualTypeArguments()[0];
+            return JsonConfig.create(Application.getResource("cfg/" + getClass().getName()), configInterface);
+        } else {
+            throw new RuntimeException("Bad Extension Definition. Please add Generic ConfigClass: class " + getClass().getSimpleName() + " extends AbstractExtension<" + getClass().getSimpleName() + "Config>{... with 'public interface " + getClass().getSimpleName() + "Config extends ExtensionConfigInterface{...");
+        }
+    }
+
+    public static ExtensionConfigInterface createStore(Class<? extends AbstractExtension<?>> class1) {
+        return JsonConfig.create(Application.getResource("cfg/" + class1.getName()), ExtensionConfigInterface.class);
     }
 
     protected abstract void initExtension() throws StartException;
@@ -195,17 +243,7 @@ public abstract class AbstractExtension {
 
     }
 
-    @Deprecated
-    public boolean hasSettings() {
-        return settings.getEntries().size() > 0;
-    }
-
-    @Deprecated
-    protected void initSettings(ConfigContainer config) {
-
-    }
-
-    public abstract ExtensionConfigPanel getConfigPanel();
+    public abstract ExtensionConfigPanel<?> getConfigPanel();
 
     public abstract boolean hasConfigPanel();
 
@@ -258,9 +296,7 @@ public abstract class AbstractExtension {
     }
 
     public void init() throws StartException {
-        this.settings = new ConfigContainer(name);
         initExtension();
-        initSettings(settings);
 
         if (store.isFreshInstall()) {
             store.setEnabled(this.isDefaultEnabled());

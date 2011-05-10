@@ -8,7 +8,6 @@ import javax.swing.JFrame;
 
 import jd.HostPluginWrapper;
 import jd.Main;
-import jd.config.ConfigContainer;
 import jd.controlling.AccountController;
 import jd.controlling.DistributeData;
 import jd.controlling.DownloadWatchDog;
@@ -49,7 +48,7 @@ import org.jdownloader.extensions.remotecontrol.helppage.Table;
 // enable CODE_FOR_INTERFACE_5-START-END and disable CODE_FOR_INTERFACE_7-START-END
 // don't forget to change interface version from 7 to 5
 
-public class FeedMeExtension extends AbstractExtension implements RemoteSupport, ActionListener, ControlListener {
+public class FeedMeExtension extends AbstractExtension<FeedMeConfig> implements RemoteSupport, ActionListener, ControlListener {
     // / stop using config and use XML instead
     // public static final String PROPERTY_SETTINGS = "FEEDS";
     public static final String     STORAGE_FEEDS  = "cfg/jdfeedme/feeds.xml";
@@ -73,7 +72,7 @@ public class FeedMeExtension extends AbstractExtension implements RemoteSupport,
     private static JDFeedMeThread  thread         = null;
     private boolean                running        = false;
 
-    public ExtensionConfigPanel getConfigPanel() {
+    public ExtensionConfigPanel<FeedMeExtension> getConfigPanel() {
         return null;
     }
 
@@ -653,10 +652,6 @@ public class FeedMeExtension extends AbstractExtension implements RemoteSupport,
         thread = new JDFeedMeThread();
         thread.start();
         JDController.getInstance().addControlListener(this);
-    }
-
-    @Override
-    protected void initSettings(ConfigContainer config) {
     }
 
     @Override

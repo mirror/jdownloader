@@ -25,7 +25,7 @@ import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
 
 @OptionalPlugin(rev = "$Revision$", id = "lecturnity", interfaceversion = 7)
-public class LecturnityDownloaderExtension extends AbstractExtension implements ActionListener {
+public class LecturnityDownloaderExtension extends AbstractExtension<LecturnityDownloaderConfig> implements ActionListener {
 
     public final static String PROPERTY_DOWNLOADDIR = "PROPERTY_DOWNLOADDIR";
 

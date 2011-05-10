@@ -1,10 +1,11 @@
 package org.jdownloader.extensions.captchapush;
 
-import org.appwork.storage.config.ConfigInterface;
+import jd.plugins.ExtensionConfigInterface;
+
 import org.appwork.storage.config.annotations.DefaultIntValue;
 import org.appwork.storage.config.annotations.DefaultStringValue;
 
-public interface CaptchaPushConfig extends ConfigInterface {
+public interface CaptchaPushConfig extends ExtensionConfigInterface {
 
     @DefaultStringValue("update1.jdownloader.org")
     String getBrokerHost();

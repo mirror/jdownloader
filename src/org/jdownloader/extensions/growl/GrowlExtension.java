@@ -23,7 +23,6 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 
-import jd.config.ConfigContainer;
 import jd.controlling.DownloadWatchDog;
 import jd.controlling.JDController;
 import jd.controlling.SingleDownloadController;
@@ -46,7 +45,7 @@ import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
 import org.jdownloader.extensions.growl.translate.T;
 
-public class GrowlExtension extends AbstractExtension implements ControlListener {
+public class GrowlExtension extends AbstractExtension<GrowlConfig> implements ControlListener {
 
     private static final String TMP_GROWL_NOTIFICATION_SCPT = "tmp/growlNotification.scpt";
 
@@ -68,10 +67,6 @@ public class GrowlExtension extends AbstractExtension implements ControlListener
         }
 
         JDController.getInstance().addControlListener(this);
-    }
-
-    @Override
-    protected void initSettings(ConfigContainer config) {
     }
 
     @Override
@@ -109,7 +104,7 @@ public class GrowlExtension extends AbstractExtension implements ControlListener
         return null;
     }
 
-    public ExtensionConfigPanel getConfigPanel() {
+    public ExtensionConfigPanel<GrowlExtension> getConfigPanel() {
         return null;
     }
 

@@ -34,13 +34,14 @@ import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
 import org.jdownloader.extensions.antistandby.translate.T;
 
-public class AntiStandbyExtension extends AbstractExtension {
+public class AntiStandbyExtension extends AbstractExtension<AntiStandbyConfig> {
 
-    private static final String CONFIG_MODE = "CONFIG_MODE2";
-    private String[]            modes;
-    private MenuAction          menuAction;
-    private boolean             status;
-    private JDAntiStandbyThread asthread    = null;
+    private static final String  CONFIG_MODE = "CONFIG_MODE2";
+    private String[]             modes;
+    private MenuAction           menuAction;
+    private boolean              status;
+    private JDAntiStandbyThread  asthread    = null;
+    private ExtensionConfigPanel configPanel;
 
     public boolean isStatus() {
         return status;
@@ -50,12 +51,12 @@ public class AntiStandbyExtension extends AbstractExtension {
         return getPluginConfig().getIntegerProperty(CONFIG_MODE, 0);
     }
 
-    public ExtensionConfigPanel getConfigPanel() {
-        return null;
+    public ExtensionConfigPanel<AntiStandbyExtension> getConfigPanel() {
+        return configPanel;
     }
 
     public boolean hasConfigPanel() {
-        return false;
+        return true;
     }
 
     public AntiStandbyExtension() throws StartException {
@@ -116,7 +117,6 @@ public class AntiStandbyExtension extends AbstractExtension {
 
     }
 
-    @Override
     protected void initSettings(ConfigContainer config) {
         config.setGroup(new ConfigGroup(getName(), "gui.images.preferences"));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(), CONFIG_MODE, modes, T._.gui_config_antistandby_mode()).setDefaultValue(0));
@@ -145,6 +145,9 @@ public class AntiStandbyExtension extends AbstractExtension {
 
     @Override
     protected void initExtension() throws StartException {
+        ConfigContainer cc = new ConfigContainer(getName());
+        initSettings(cc);
+        configPanel = createPanelFromContainer(cc);
     }
 
 }

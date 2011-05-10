@@ -51,20 +51,21 @@ import org.jdownloader.extensions.langfileeditor.translate.T;
  * @author coalado
  */
 
-public class LangFileEditorExtension extends AbstractExtension implements ActionListener, ControlListener {
+public class LangFileEditorExtension extends AbstractExtension<LangFileEditorConfig> implements ActionListener, ControlListener {
 
     private final SingletonPanel lfe;
     private MenuAction           activateAction;
     private LFEView              lfeView;
     private String               user;
     private String               pass;
+    private ExtensionConfigPanel configPanel;
 
-    public ExtensionConfigPanel getConfigPanel() {
-        return null;
+    public ExtensionConfigPanel<LangFileEditorExtension> getConfigPanel() {
+        return configPanel;
     }
 
     public boolean hasConfigPanel() {
-        return false;
+        return true;
     }
 
     public LangFileEditorExtension() throws StartException {
@@ -132,7 +133,6 @@ public class LangFileEditorExtension extends AbstractExtension implements Action
         JDController.getInstance().addControlListener(this);
     }
 
-    @Override
     protected void initSettings(ConfigContainer config) {
 
         config.setGroup(new ConfigGroup(getName(), getIconKey()));
@@ -217,6 +217,10 @@ public class LangFileEditorExtension extends AbstractExtension implements Action
 
     @Override
     protected void initExtension() throws StartException {
+
+        ConfigContainer cc = new ConfigContainer(getName());
+        initSettings(cc);
+        configPanel = createPanelFromContainer(cc);
     }
 
 }

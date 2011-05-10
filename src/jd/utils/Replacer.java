@@ -37,14 +37,14 @@ public final class Replacer {
 
     private static ArrayList<String[]> KEYS = null;
 
-    public static String getKey(final int index) {
+    public synchronized static String getKey(final int index) {
         if (Replacer.KEYS == null) {
             Replacer.initKeys();
         }
         return index >= Replacer.KEYS.size() ? null : Replacer.KEYS.get(index)[0];
     }
 
-    public static String[] getKeyList() {
+    public synchronized static String[] getKeyList() {
         if (Replacer.KEYS == null) {
             Replacer.initKeys();
         }

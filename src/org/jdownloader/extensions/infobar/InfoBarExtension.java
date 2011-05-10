@@ -17,29 +17,31 @@ import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
 import org.jdownloader.extensions.infobar.translate.T;
 
-public class InfoBarExtension extends AbstractExtension {
+public class InfoBarExtension extends AbstractExtension<InfoBarConfig> {
 
     @Override
     public boolean isDefaultEnabled() {
         return true;
     }
 
-    private static final String PROPERTY_OPACITY      = "PROPERTY_OPACITY";
+    private static final String  PROPERTY_OPACITY      = "PROPERTY_OPACITY";
 
-    private static final String PROPERTY_DROPLOCATION = "PROPERTY_DROPLOCATION";
+    private static final String  PROPERTY_DROPLOCATION = "PROPERTY_DROPLOCATION";
 
-    private static final String PROPERTY_DOCKING      = "PROPERTY_DOCKING";
+    private static final String  PROPERTY_DOCKING      = "PROPERTY_DOCKING";
 
-    private MenuAction          activateAction;
+    private MenuAction           activateAction;
 
-    private InfoDialog          infoDialog;
+    private InfoDialog           infoDialog;
 
-    public ExtensionConfigPanel getConfigPanel() {
-        return null;
+    private ExtensionConfigPanel configPanel;
+
+    public ExtensionConfigPanel<InfoBarExtension> getConfigPanel() {
+        return configPanel;
     }
 
     public boolean hasConfigPanel() {
-        return false;
+        return true;
     }
 
     public InfoBarExtension() throws StartException {
@@ -111,7 +113,6 @@ public class InfoBarExtension extends AbstractExtension {
         logger.info("InfoBar: OK");
     }
 
-    @Override
     protected void initSettings(ConfigContainer config) {
         config.setGroup(new ConfigGroup(getName(), getIconKey()));
         if (Application.getJavaVersion() >= 16000000) {
@@ -181,6 +182,10 @@ public class InfoBarExtension extends AbstractExtension {
 
     @Override
     protected void initExtension() throws StartException {
+
+        ConfigContainer cc = new ConfigContainer(getName());
+        initSettings(cc);
+        configPanel = createPanelFromContainer(cc);
     }
 
 }

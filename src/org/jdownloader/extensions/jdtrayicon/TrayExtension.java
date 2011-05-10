@@ -68,7 +68,7 @@ import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
 import org.jdownloader.extensions.jdtrayicon.translate.T;
 
-public class TrayExtension extends AbstractExtension implements MouseListener, MouseMotionListener, WindowListener, LinkGrabberControllerListener, WindowStateListener, ActionListener, ControlListener {
+public class TrayExtension extends AbstractExtension<TrayConfig> implements MouseListener, MouseMotionListener, WindowListener, LinkGrabberControllerListener, WindowStateListener, ActionListener, ControlListener {
 
     @Override
     protected void stop() throws StopException {
@@ -120,7 +120,6 @@ public class TrayExtension extends AbstractExtension implements MouseListener, M
         JDController.getInstance().addControlListener(this);
     }
 
-    @Override
     protected void initSettings(ConfigContainer config) {
         ConfigEntry ce, cond;
         config.setGroup(new ConfigGroup(getName(), getIconKey()));
@@ -169,50 +168,52 @@ public class TrayExtension extends AbstractExtension implements MouseListener, M
         return null;
     }
 
-    private JSonWrapper         subConfig                   = null;
+    private JSonWrapper          subConfig                   = null;
 
-    private static final String PROPERTY_START_MINIMIZED    = "PROPERTY_START_MINIMIZED";
+    private static final String  PROPERTY_START_MINIMIZED    = "PROPERTY_START_MINIMIZED";
 
-    private static final String PROPERTY_CLOSE_TO_TRAY      = "PROPERTY_CLOSE_TO_TRAY";
+    private static final String  PROPERTY_CLOSE_TO_TRAY      = "PROPERTY_CLOSE_TO_TRAY";
 
-    private static final String PROPERTY_SINGLE_CLICK       = "PROPERTY_SINGLE_CLICK";
+    private static final String  PROPERTY_SINGLE_CLICK       = "PROPERTY_SINGLE_CLICK";
 
-    private static final String PROPERTY_TOOLTIP            = "PROPERTY_TOOLTIP";
+    private static final String  PROPERTY_TOOLTIP            = "PROPERTY_TOOLTIP";
 
-    private static final String PROPERTY_SHOW_ON_LINKGRAB   = "PROPERTY_SHOW_ON_LINKGRAB";
+    private static final String  PROPERTY_SHOW_ON_LINKGRAB   = "PROPERTY_SHOW_ON_LINKGRAB";
 
-    private static final String PROPERTY_SHOW_ON_LINKGRAB2  = "PROPERTY_SHOW_ON_LINKGRAB2";
+    private static final String  PROPERTY_SHOW_ON_LINKGRAB2  = "PROPERTY_SHOW_ON_LINKGRAB2";
 
-    private static final String PROPERTY_SHOW_INFO_IN_TITLE = "PROPERTY_SHOW_INFO_IN_TITLE";
+    private static final String  PROPERTY_SHOW_INFO_IN_TITLE = "PROPERTY_SHOW_INFO_IN_TITLE";
 
-    private static final String PROPERTY_PASSWORD_REQUIRED  = "PROPERTY_PASSWORD_REQUIRED";
+    private static final String  PROPERTY_PASSWORD_REQUIRED  = "PROPERTY_PASSWORD_REQUIRED";
 
-    private static final String PROPERTY_PASSWORD           = "PROPERTY_PASSWORD";
+    private static final String  PROPERTY_PASSWORD           = "PROPERTY_PASSWORD";
 
-    private TrayIconPopup       trayIconPopup;
+    private TrayIconPopup        trayIconPopup;
 
-    private TrayIcon            trayIcon;
+    private TrayIcon             trayIcon;
 
-    private JFrame              guiFrame;
+    private JFrame               guiFrame;
 
-    private TrayIconTooltip     trayIconTooltip;
+    private TrayIconTooltip      trayIconTooltip;
 
-    private TrayMouseAdapter    ma;
+    private TrayMouseAdapter     ma;
 
-    private Thread              updateThread;
+    private Thread               updateThread;
 
-    private boolean             shutdown                    = false;
+    private boolean              shutdown                    = false;
 
-    private boolean             iconified                   = false;
+    private boolean              iconified                   = false;
 
-    private Timer               disableAlwaysonTop;
+    private Timer                disableAlwaysonTop;
 
-    public ExtensionConfigPanel getConfigPanel() {
-        return null;
+    private ExtensionConfigPanel configPanel;
+
+    public ExtensionConfigPanel<TrayExtension> getConfigPanel() {
+        return configPanel;
     }
 
     public boolean hasConfigPanel() {
-        return false;
+        return true;
     }
 
     public TrayExtension() throws StartException {
@@ -554,5 +555,8 @@ public class TrayExtension extends AbstractExtension implements MouseListener, M
 
     @Override
     protected void initExtension() throws StartException {
+        ConfigContainer cc = new ConfigContainer(getName());
+        initSettings(cc);
+        configPanel = createPanelFromContainer(cc);
     }
 }

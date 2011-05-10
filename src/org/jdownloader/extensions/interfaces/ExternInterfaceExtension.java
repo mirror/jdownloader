@@ -60,7 +60,7 @@ import org.mozilla.javascript.Context;
 import org.mozilla.javascript.ContextFactory;
 import org.mozilla.javascript.Scriptable;
 
-public class ExternInterfaceExtension extends AbstractExtension {
+public class ExternInterfaceExtension extends AbstractExtension<ExternInterfaceConfig> {
 
     @Override
     protected void stop() throws StopException {
@@ -85,7 +85,6 @@ public class ExternInterfaceExtension extends AbstractExtension {
 
     }
 
-    @Override
     protected void initSettings(ConfigContainer config) {
         config.setGroup(new ConfigGroup(getName(), getIconKey()));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), LOCALONLY, T._.jd_plugins_optional_interfaces_JDExternInterface_localonly()).setDefaultValue(true));
@@ -123,17 +122,18 @@ public class ExternInterfaceExtension extends AbstractExtension {
 
     }
 
-    private RequestHandler      handler;
-    private HttpServer          server    = null;
-    private final static String LOCALONLY = "localonly";
-    private static String       jdpath    = JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath() + File.separator + "JDownloader.jar";
+    private RequestHandler       handler;
+    private HttpServer           server    = null;
+    private ExtensionConfigPanel configPanel;
+    private final static String  LOCALONLY = "localonly";
+    private static String        jdpath    = JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath() + File.separator + "JDownloader.jar";
 
-    public ExtensionConfigPanel getConfigPanel() {
-        return null;
+    public ExtensionConfigPanel<ExternInterfaceExtension> getConfigPanel() {
+        return configPanel;
     }
 
     public boolean hasConfigPanel() {
-        return false;
+        return true;
     }
 
     public ExternInterfaceExtension() throws StartException {
@@ -500,6 +500,9 @@ public class ExternInterfaceExtension extends AbstractExtension {
 
     @Override
     protected void initExtension() throws StartException {
+        ConfigContainer cc = new ConfigContainer(getName());
+        initSettings(cc);
+        configPanel = createPanelFromContainer(cc);
     }
 
 }

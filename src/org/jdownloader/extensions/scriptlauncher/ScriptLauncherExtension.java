@@ -25,7 +25,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import jd.config.ConfigContainer;
 import jd.controlling.JDLogger;
 import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.plugins.AddonPanel;
@@ -43,7 +42,7 @@ import org.jdownloader.extensions.scriptlauncher.translate.T;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
-public class ScriptLauncherExtension extends AbstractExtension implements RemoteSupport, ActionListener {
+public class ScriptLauncherExtension extends AbstractExtension<ScriptLauncherConfig> implements RemoteSupport, ActionListener {
 
     private static final String              scriptdir    = "./scripts/";
 
@@ -228,10 +227,6 @@ public class ScriptLauncherExtension extends AbstractExtension implements Remote
 
         logger.info("ScriptLauncher OK");
 
-    }
-
-    @Override
-    protected void initSettings(ConfigContainer config) {
     }
 
     @Override

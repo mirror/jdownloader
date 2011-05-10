@@ -36,7 +36,7 @@ import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
 import org.jdownloader.extensions.webinterface.translate.T;
 
-public class WebinterfaceClassicExtension extends AbstractExtension {
+public class WebinterfaceClassicExtension extends AbstractExtension<WebinterfaceClassicConfig> {
     static public WebinterfaceClassicExtension instance;
     static final String                        PROPERTY_HTTPS            = "PARAM_HTTPS";
     static final String                        PROPERTY_LOGIN            = "PARAM_LOGIN";
@@ -47,13 +47,14 @@ public class WebinterfaceClassicExtension extends AbstractExtension {
     static final String                        PROPERTY_LOCALHOST_ONLY   = "PROPERTY_LOCALHOST_ONLY";
 
     static final String                        PROPERTY_USER             = "PARAM_USER";
+    private ExtensionConfigPanel               configPanel;
 
-    public ExtensionConfigPanel getConfigPanel() {
-        return null;
+    public ExtensionConfigPanel<WebinterfaceClassicExtension> getConfigPanel() {
+        return configPanel;
     }
 
     public boolean hasConfigPanel() {
-        return false;
+        return true;
     }
 
     public WebinterfaceClassicExtension() throws StartException {
@@ -82,7 +83,6 @@ public class WebinterfaceClassicExtension extends AbstractExtension {
 
     }
 
-    @Override
     protected void initSettings(ConfigContainer config) {
         JSonWrapper subConfig = JSonWrapper.get("WEBINTERFACE");
         config.setGroup(new ConfigGroup(getName(), getIconKey()));
@@ -124,5 +124,8 @@ public class WebinterfaceClassicExtension extends AbstractExtension {
 
     @Override
     protected void initExtension() throws StartException {
+        ConfigContainer cc = new ConfigContainer(getName());
+        initSettings(cc);
+        configPanel = createPanelFromContainer(cc);
     }
 }

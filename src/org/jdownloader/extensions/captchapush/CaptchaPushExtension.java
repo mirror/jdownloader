@@ -15,7 +15,7 @@ import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
 
-public class CaptchaPushExtension extends AbstractExtension {
+public class CaptchaPushExtension extends AbstractExtension<CaptchaPushConfig> {
 
     private CaptchaPushConfig      config;
     private CaptchaPushConfigPanel configPanel;

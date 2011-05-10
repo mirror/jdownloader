@@ -49,7 +49,6 @@ import jd.controlling.JSonWrapper;
 import jd.controlling.ProgressController;
 import jd.event.MessageEvent;
 import jd.event.MessageListener;
-import jd.gui.UserIF;
 import jd.gui.UserIO;
 import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.dialog.TwoTextFieldDialog;
@@ -447,7 +446,9 @@ public class LFEGui extends SwitchPanel implements ActionListener {
                 while (true) {
                     while (LFEGui.this.subConfig.getStringProperty(LFEGui.PROPERTY_SVN_ACCESS_USER) == null || LFEGui.this.subConfig.getStringProperty(LFEGui.PROPERTY_SVN_ACCESS_USER).trim().length() == 0) {
                         if (!cfgRequested) {
-                            UserIF.getInstance().requestPanel(UserIF.Panels.CONFIGPANEL, LFEGui.this.plugin.getSettings());
+                            // UserIF.getInstance().requestPanel(UserIF.Panels.CONFIGPANEL,
+                            // LFEGui.this.plugin.getSettings());
+                            throw new RuntimeException("TODO");
                         }
                         cfgRequested = true;
                         try {

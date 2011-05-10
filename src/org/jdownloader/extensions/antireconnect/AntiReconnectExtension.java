@@ -32,7 +32,7 @@ import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
 import org.jdownloader.extensions.antireconnect.translate.T;
 
-public class AntiReconnectExtension extends AbstractExtension {
+public class AntiReconnectExtension extends AbstractExtension<AntiReconnectConfig> {
     private static final String   CONFIG_MODE         = "CONFIG_MODE";
     private static final String   CONFIG_IPS          = "CONFIG_IPS";
     private static final String   CONFIG_TIMEOUT      = "CONFIG_TIMEOUT";
@@ -47,13 +47,14 @@ public class AntiReconnectExtension extends AbstractExtension {
     private String[]              availableModes;
 
     private JDAntiReconnectThread asthread            = null;
+    private ExtensionConfigPanel  configPanel;
 
     public ExtensionConfigPanel getConfigPanel() {
-        return null;
+        return configPanel;
     }
 
     public boolean hasConfigPanel() {
-        return false;
+        return true;
     }
 
     public AntiReconnectExtension() throws StartException {
@@ -88,7 +89,6 @@ public class AntiReconnectExtension extends AbstractExtension {
         return T._.description();
     }
 
-    @Override
     protected void initSettings(ConfigContainer config) {
         config.setGroup(new ConfigGroup(getName(), "gui.images.preferences"));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(), CONFIG_MODE, availableModes, T._.gui_config_antireconnect_mode()).setDefaultValue(0));
@@ -124,5 +124,9 @@ public class AntiReconnectExtension extends AbstractExtension {
 
     @Override
     protected void initExtension() throws StartException {
+        ConfigContainer cc = new ConfigContainer(getName());
+        initSettings(cc);
+        configPanel = createPanelFromContainer(cc);
     }
+
 }

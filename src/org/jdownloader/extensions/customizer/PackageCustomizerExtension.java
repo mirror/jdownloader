@@ -20,7 +20,6 @@ import java.util.ArrayList;
 
 import javax.swing.ImageIcon;
 
-import jd.config.ConfigContainer;
 import jd.controlling.LinkGrabberController;
 import jd.controlling.LinkGrabberPackagingEvent;
 import jd.gui.swing.jdgui.menu.MenuAction;
@@ -35,7 +34,7 @@ import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
 import org.jdownloader.extensions.customizer.translate.T;
 
-public class PackageCustomizerExtension extends AbstractExtension implements LinkGrabberPackagingEvent {
+public class PackageCustomizerExtension extends AbstractExtension<PackageCustomizerConfig> implements LinkGrabberPackagingEvent {
 
     public static final String    PROPERTY_SETTINGS = "SETTINGS";
 
@@ -45,7 +44,7 @@ public class PackageCustomizerExtension extends AbstractExtension implements Lin
 
     private CustomizerView        view;
 
-    public ExtensionConfigPanel getConfigPanel() {
+    public ExtensionConfigPanel<PackageCustomizerExtension> getConfigPanel() {
         return null;
     }
 
@@ -115,10 +114,6 @@ public class PackageCustomizerExtension extends AbstractExtension implements Lin
         ctrl.setCustomizedPackager(this);
 
         logger.info("Customizer: OK");
-    }
-
-    @Override
-    protected void initSettings(ConfigContainer config) {
     }
 
     @Override

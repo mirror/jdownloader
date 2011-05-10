@@ -49,37 +49,39 @@ import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
 import org.jdownloader.extensions.infofilewriter.translate.T;
 
-public class InfoFileWriterExtension extends AbstractExtension implements ActionListener, ControlListener {
+public class InfoFileWriterExtension extends AbstractExtension<InfoFileWriterConfig> implements ActionListener, ControlListener {
 
-    private static final String FILENAME_DEFAULT    = "%LAST_FINISHED_PACKAGE.DOWNLOAD_DIRECTORY%/%LAST_FINISHED_PACKAGE.PACKAGENAME%.info";
+    private static final String                           FILENAME_DEFAULT    = "%LAST_FINISHED_PACKAGE.DOWNLOAD_DIRECTORY%/%LAST_FINISHED_PACKAGE.PACKAGENAME%.info";
 
     /**
      * Usually overridden by localization
      */
-    private static final String INFO_STRING_DEFAULT = T._.plugins_optional_infofilewriter_contentdefault();
+    private static final String                           INFO_STRING_DEFAULT = T._.plugins_optional_infofilewriter_contentdefault();
 
-    private static final String PARAM_CREATION      = "CREATION";
+    private static final String                           PARAM_CREATION      = "CREATION";
 
-    private static final String PARAM_FILENAME      = "FILENAME";
+    private static final String                           PARAM_FILENAME      = "FILENAME";
 
-    private static final String PARAM_INFO_STRING   = "INFO_STRING";
+    private static final String                           PARAM_INFO_STRING   = "INFO_STRING";
 
-    private static final String PARAM_CREATE_FILE   = "CREATE_FILE";
+    private static final String                           PARAM_CREATE_FILE   = "CREATE_FILE";
 
-    private static final String PARAM_ONLYPASSWORD  = "ONLYPASSWORD";
+    private static final String                           PARAM_ONLYPASSWORD  = "ONLYPASSWORD";
 
-    private ConfigEntry         cmbVars;
+    private ConfigEntry                                   cmbVars;
 
-    private ConfigEntry         txtInfo;
+    private ConfigEntry                                   txtInfo;
 
-    private JSonWrapper         subConfig           = null;
+    private JSonWrapper                                   subConfig           = null;
 
-    public ExtensionConfigPanel getConfigPanel() {
-        return null;
+    private ExtensionConfigPanel<InfoFileWriterExtension> configPanel;
+
+    public ExtensionConfigPanel<InfoFileWriterExtension> getConfigPanel() {
+        return configPanel;
     }
 
     public boolean hasConfigPanel() {
-        return false;
+        return true;
     }
 
     public InfoFileWriterExtension() throws StartException {
@@ -177,7 +179,6 @@ public class InfoFileWriterExtension extends AbstractExtension implements Action
         JDController.getInstance().addControlListener(this);
     }
 
-    @Override
     protected void initSettings(ConfigContainer config) {
         config.setGroup(new ConfigGroup(getName(), getIconKey()));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, subConfig, PARAM_CREATION, new String[] { T._.jd_plugins_optional_JDInfoFileWriter_packages(), T._.jd_plugins_optional_JDInfoFileWriter_downloadlinks() }, "Create info file for complete ...").setDefaultValue(0));
@@ -219,6 +220,9 @@ public class InfoFileWriterExtension extends AbstractExtension implements Action
 
     @Override
     protected void initExtension() throws StartException {
+        ConfigContainer cc = new ConfigContainer(getName());
+        initSettings(cc);
+        configPanel = createPanelFromContainer(cc);
     }
 
 }

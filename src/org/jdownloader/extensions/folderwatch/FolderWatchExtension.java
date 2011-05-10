@@ -65,36 +65,38 @@ import org.jdownloader.extensions.interfaces.RemoteSupport;
 import org.jdownloader.extensions.remotecontrol.helppage.HelpPage;
 import org.jdownloader.extensions.remotecontrol.helppage.Table;
 
-public class FolderWatchExtension extends AbstractExtension implements FileMonitoringListener, RemoteSupport, ActionListener {
+public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig> implements FileMonitoringListener, RemoteSupport, ActionListener {
 
-    private JSonWrapper      subConfig;
+    private JSonWrapper          subConfig;
 
-    private boolean          isEnabled            = false;
+    private boolean              isEnabled            = false;
 
-    private MenuAction       toggleAction;
-    private MenuAction       showGuiAction;
+    private MenuAction           toggleAction;
+    private MenuAction           showGuiAction;
 
-    private FolderWatchPanel historyGui           = null;
-    private FolderWatchView  view                 = null;
+    private FolderWatchPanel     historyGui           = null;
+    private FolderWatchView      view                 = null;
 
-    private Vector<String>   folderlist;
-    private boolean          folderlistHasChanged = false;
+    private Vector<String>       folderlist;
+    private boolean              folderlistHasChanged = false;
 
-    private boolean          isOption_recursive;
-    private boolean          isOption_import;
-    private boolean          isOption_importAndDelete;
-    private boolean          isOption_history;
+    private boolean              isOption_recursive;
+    private boolean              isOption_import;
+    private boolean              isOption_importAndDelete;
+    private boolean              isOption_history;
 
-    private JList            guiFolderList;
+    private JList                guiFolderList;
 
-    private FileMonitoring   monitoringThread;
+    private FileMonitoring       monitoringThread;
 
-    public ExtensionConfigPanel getConfigPanel() {
-        return null;
+    private ExtensionConfigPanel configPanel;
+
+    public ExtensionConfigPanel<FolderWatchExtension> getConfigPanel() {
+        return configPanel;
     }
 
     public boolean hasConfigPanel() {
-        return false;
+        return true;
     }
 
     public FolderWatchExtension() throws StartException {
@@ -461,7 +463,6 @@ public class FolderWatchExtension extends AbstractExtension implements FileMonit
 
     }
 
-    @Override
     protected void initSettings(ConfigContainer config) {
 
         final JDFileChooser filechooser = new JDFileChooser();
@@ -603,7 +604,10 @@ public class FolderWatchExtension extends AbstractExtension implements FileMonit
 
         isEnabled = subConfig.getBooleanProperty(FolderWatchConstants.PROPERTY_ENABLED, false);
 
+        ConfigContainer cc = new ConfigContainer(getName());
         initOptionVars();
+        initSettings(cc);
+        configPanel = createPanelFromContainer(cc);
 
         History.setEntries(getHistoryEntriesFromConfig());
         historyCleanup(null);

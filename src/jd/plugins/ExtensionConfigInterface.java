@@ -3,7 +3,7 @@ package jd.plugins;
 import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
 
-public interface PlugionOptionalConfig extends ConfigInterface {
+public interface ExtensionConfigInterface extends ConfigInterface {
     /**
      * The enabled field is used to store whether the plugin should be
      * autoactivated on startup or not.

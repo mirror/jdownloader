@@ -12,6 +12,7 @@ import jd.gui.swing.jdgui.views.settings.sidebar.ConfigSidebar;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.storage.config.JsonConfig;
+import org.appwork.utils.swing.EDTRunner;
 
 public class ConfigurationPanel extends SwitchPanel implements ListSelectionListener {
 
@@ -60,7 +61,18 @@ public class ConfigurationPanel extends SwitchPanel implements ListSelectionList
     }
 
     public void valueChanged(ListSelectionEvent e) {
-        setContent(sidebar.getSelectedPanel());
+        new Thread() {
+            public void run() {
+                final SwitchPanel p = sidebar.getSelectedPanel();
+                new EDTRunner() {
+
+                    @Override
+                    protected void runInEDT() {
+                        setContent(p);
+                    }
+                };
+            }
+        }.start();
 
         // invalidate();
     }
@@ -70,6 +82,7 @@ public class ConfigurationPanel extends SwitchPanel implements ListSelectionList
         if (panel != null) {
             panel.setHidden();
             panel.setVisible(false);
+
         }
         boolean found = false;
         for (final Component c : getComponents()) {

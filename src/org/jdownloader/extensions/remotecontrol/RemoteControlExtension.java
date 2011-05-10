@@ -43,23 +43,24 @@ import org.jdownloader.extensions.remotecontrol.translate.T;
  * zu erhöhen.
  */
 @OptionalPlugin(rev = "$Revision$", id = "remotecontrol", interfaceversion = 7)
-public class RemoteControlExtension extends AbstractExtension implements ActionListener {
+public class RemoteControlExtension extends AbstractExtension<RemoteControlConfig> implements ActionListener {
 
-    private static final String PARAM_PORT      = "PORT";
-    private static final String PARAM_LOCALHOST = "LOCALHOST";
-    private static final String PARAM_ENABLED   = "ENABLED";
+    private static final String  PARAM_PORT      = "PORT";
+    private static final String  PARAM_LOCALHOST = "LOCALHOST";
+    private static final String  PARAM_ENABLED   = "ENABLED";
 
-    private final JSonWrapper   subConfig;
+    private final JSonWrapper    subConfig;
 
-    private HttpServer          server;
-    private MenuAction          activate;
+    private HttpServer           server;
+    private MenuAction           activate;
+    private ExtensionConfigPanel configPanel;
 
-    public ExtensionConfigPanel getConfigPanel() {
-        return null;
+    public ExtensionConfigPanel<RemoteControlExtension> getConfigPanel() {
+        return configPanel;
     }
 
     public boolean hasConfigPanel() {
-        return false;
+        return true;
     }
 
     public RemoteControlExtension() throws StartException {
@@ -123,7 +124,6 @@ public class RemoteControlExtension extends AbstractExtension implements ActionL
 
     }
 
-    @Override
     protected void initSettings(ConfigContainer config) {
         config.setGroup(new ConfigGroup(getName(), getIconKey()));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, subConfig, PARAM_PORT, T._.plugins_optional_RemoteControl_port(), 1000, 65500, 1).setDefaultValue(10025));
@@ -162,5 +162,9 @@ public class RemoteControlExtension extends AbstractExtension implements ActionL
 
     @Override
     protected void initExtension() throws StartException {
+
+        ConfigContainer cc = new ConfigContainer(getName());
+        initSettings(cc);
+        configPanel = createPanelFromContainer(cc);
     }
 }

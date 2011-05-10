@@ -25,7 +25,6 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 
-import jd.config.ConfigContainer;
 import jd.controlling.JDLogger;
 import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.interfaces.SwitchPanelEvent;
@@ -41,7 +40,7 @@ import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
 import org.jdownloader.extensions.schedule.translate.T;
 
-public class ScheduleExtension extends AbstractExtension implements ActionListener {
+public class ScheduleExtension extends AbstractExtension<ScheduleConfig> implements ActionListener {
 
     private ArrayList<Actions>                  actions;
 
@@ -333,10 +332,6 @@ public class ScheduleExtension extends AbstractExtension implements ActionListen
             sc.start();
         }
 
-    }
-
-    @Override
-    protected void initSettings(ConfigContainer config) {
     }
 
     @Override

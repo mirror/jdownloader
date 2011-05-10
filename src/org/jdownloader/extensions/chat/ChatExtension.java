@@ -62,7 +62,6 @@ import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
-import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
 import org.appwork.utils.Regex;
@@ -77,7 +76,7 @@ import org.jdownloader.extensions.chat.settings.ChatConfigPanel;
 import org.jdownloader.extensions.chat.translate.T;
 import org.schwering.irc.lib.IRCConnection;
 
-public class ChatExtension extends AbstractExtension {
+public class ChatExtension extends AbstractExtension<ChatConfig> {
     private static final long                AWAY_TIMEOUT         = 15 * 60 * 1000;
     private static final Pattern             CMD_ACTION           = Pattern.compile("(me)", Pattern.CASE_INSENSITIVE);
     private static final Pattern             CMD_CONNECT          = Pattern.compile("(connect|verbinden)", Pattern.CASE_INSENSITIVE);
@@ -146,12 +145,12 @@ public class ChatExtension extends AbstractExtension {
 
     private JTabbedPane                      tabbedPane;
     private JButton                          closeTab;
-    private ChatConfig                       config;
+
     private ChatConfigPanel                  configPanel;
     private String                           currentChannel;
     private Thread                           awayChecker;
 
-    public ExtensionConfigPanel getConfigPanel() {
+    public ExtensionConfigPanel<ChatExtension> getConfigPanel() {
         return configPanel;
     }
 
@@ -189,7 +188,7 @@ public class ChatExtension extends AbstractExtension {
     public void addToText(final User user, String style, final String msg, final JTextPane targetpane, final StringBuilder sb) {
 
         final String msg2 = msg;
-        final boolean color = !config.isUserColorEnabled();
+        final boolean color = !getStore().isUserColorEnabled();
         final Date dt = new Date();
 
         final SimpleDateFormat df = new SimpleDateFormat("HH:mm:ss");
@@ -340,7 +339,7 @@ public class ChatExtension extends AbstractExtension {
             loc = loc.toLowerCase();
         }
         final String def = "JD-[" + loc + "]_" + ("" + System.currentTimeMillis()).substring(6);
-        this.nick = config.getNick();
+        this.nick = getStore().getNick();
         if (this.nick == null || this.nick.equalsIgnoreCase("")) {
             this.nick = UserIO.getInstance().requestInputDialog(T._.plugins_optional_jdchat_enternick());
             if (this.nick != null && !this.nick.equalsIgnoreCase("")) {
@@ -349,7 +348,7 @@ public class ChatExtension extends AbstractExtension {
             if (this.nick != null) {
                 this.nick = this.nick.trim();
             }
-            config.setNick(nick);
+            getStore().setNick(nick);
 
         }
         if (this.nick == null) {
@@ -400,7 +399,7 @@ public class ChatExtension extends AbstractExtension {
                     tabbedPane.setTitleAt(0, T._.gui_tab_title(getCurrentChannel()));
                 }
             };
-            config.setChannelLanguage(newChannel);
+            getStore().setChannelLanguage(newChannel);
         }
 
     }
@@ -416,7 +415,7 @@ public class ChatExtension extends AbstractExtension {
 
     @SuppressWarnings("unchecked")
     private void initGUI() {
-        final int userlistposition = config.getUserListPosition();
+        final int userlistposition = getStore().getUserListPosition();
         this.textArea = new JTextPane();
         final HyperlinkListener hyp = new HyperlinkListener() {
 
@@ -627,8 +626,8 @@ public class ChatExtension extends AbstractExtension {
 
         this.NAMES.clear();
         for (int i = 0; i < 20; i++) {
-            final String host = config.getIrcServer();
-            final int port = config.getIrcPort();
+            final String host = getStore().getIrcServer();
+            final int port = getStore().getIrcPort();
             final String pass = null;
             final String nick = this.getNickname();
             final String user = "jdChatuser";
@@ -692,7 +691,7 @@ public class ChatExtension extends AbstractExtension {
     }
 
     public void onConnected() {
-        this.switchChannel(config.getChannel());
+        this.switchChannel(getStore().getChannel());
         this.setLoggedIn(true);
         this.perform();
 
@@ -723,7 +722,7 @@ public class ChatExtension extends AbstractExtension {
     }
 
     public void perform() {
-        final String[] perform = org.appwork.utils.Regex.getLines(config.getPerformOnLoginCommands());
+        final String[] perform = org.appwork.utils.Regex.getLines(getStore().getPerformOnLoginCommands());
         if (perform == null) { return; }
         for (final String cmd : perform) {
             if (cmd.trim().length() > 0) {
@@ -878,7 +877,7 @@ public class ChatExtension extends AbstractExtension {
             } else if (org.appwork.utils.Regex.matches(cmd, ChatExtension.CMD_NICK)) {
                 this.conn.doNick(rest.trim());
                 this.lastCommand = "/nick ";
-                config.setNick(rest.trim());
+                getStore().setNick(rest.trim());
 
             } else if (org.appwork.utils.Regex.matches(cmd, ChatExtension.CMD_CONNECT)) {
                 if (this.conn == null || !this.conn.isConnected()) {
@@ -980,7 +979,7 @@ public class ChatExtension extends AbstractExtension {
     public void updateNamesPanel() {
         final StringBuilder sb = new StringBuilder();
         Collections.sort(this.NAMES);
-        final boolean color = !config.isUserColorEnabled();
+        final boolean color = !getStore().isUserColorEnabled();
         sb.append("<ul>");
         for (final User name : this.NAMES) {
             sb.append("<li>");
@@ -1061,7 +1060,6 @@ public class ChatExtension extends AbstractExtension {
 
         this.NAMES = new ArrayList<User>();
         this.sb = new StringBuilder();
-        config = JsonConfig.create(ChatConfig.class);
 
         ChatExtension.COMMANDS.add("/msg ");
         ChatExtension.COMMANDS.add("/topic ");
@@ -1071,7 +1069,7 @@ public class ChatExtension extends AbstractExtension {
         ChatExtension.COMMANDS.add("/nick ");
         ChatExtension.COMMANDS.add("/mode ");
         ChatExtension.COMMANDS.add("/join ");
-        configPanel = new ChatConfigPanel(this, config);
+        configPanel = new ChatConfigPanel(this, getStore());
         Reconnecter.getInstance().getEventSender().addListener(new DefaultEventListener<ReconnecterEvent>() {
 
             public void onEvent(final ReconnecterEvent event) {

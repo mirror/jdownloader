@@ -18,7 +18,6 @@ package org.jdownloader.extensions.improveddock;
 
 import java.util.ArrayList;
 
-import jd.config.ConfigContainer;
 import jd.controlling.JDController;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
@@ -30,7 +29,7 @@ import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
 
-public class ImprovedMacOSXDockExtension extends AbstractExtension implements ControlListener {
+public class ImprovedMacOSXDockExtension extends AbstractExtension<ImprovedMacOSXDockConfig> implements ControlListener {
 
     @Override
     public boolean isLinuxRunnable() {
@@ -80,6 +79,7 @@ public class ImprovedMacOSXDockExtension extends AbstractExtension implements Co
 
     @Override
     protected void stop() throws StopException {
+        JDController.getInstance().removeControlListener(this);
         if (updateThread != null) {
             updateThread.stopUpdating();
             updateThread = null;
@@ -89,11 +89,6 @@ public class ImprovedMacOSXDockExtension extends AbstractExtension implements Co
     @Override
     protected void start() throws StartException {
         JDController.getInstance().addControlListener(this);
-    }
-
-    @Override
-    protected void initSettings(ConfigContainer config) {
-        JDController.getInstance().removeControlListener(this);
     }
 
     @Override

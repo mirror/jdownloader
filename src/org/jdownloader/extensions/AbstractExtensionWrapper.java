@@ -6,6 +6,8 @@ import java.io.IOException;
 import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
 
+import jd.plugins.ExtensionConfigInterface;
+
 import org.appwork.storage.Storable;
 import org.appwork.utils.Application;
 import org.appwork.utils.ImageProvider.ImageProvider;
@@ -23,6 +25,8 @@ public class AbstractExtensionWrapper implements Storable {
 
     private Class<AbstractExtension> clazz;
 
+    private boolean                  settings;
+
     public static AbstractExtensionWrapper create(String id, Class<AbstractExtension> cls) throws StartException, InstantiationException, IllegalAccessException, IOException {
         AbstractExtensionWrapper ret = new AbstractExtensionWrapper();
         AbstractExtension plg = (AbstractExtension) cls.newInstance();
@@ -37,6 +41,7 @@ public class AbstractExtensionWrapper implements Storable {
         ret.iconPath = path;
         ret.linuxRunnable = plg.isLinuxRunnable();
         ret.macRunnable = plg.isMacRunnable();
+        ret.settings = plg.hasConfigPanel();
         ret.name = plg.getName();
         ret.lng = JDT.getLanguage();
         ret.version = plg.getVersion();
@@ -57,6 +62,14 @@ public class AbstractExtensionWrapper implements Storable {
         // IllegalArgumentException("Module is not for linux");
 
         return ret;
+    }
+
+    public boolean isSettings() {
+        return settings;
+    }
+
+    public void setSettings(boolean settings) {
+        this.settings = settings;
     }
 
     private String            author;
@@ -210,7 +223,7 @@ public class AbstractExtensionWrapper implements Storable {
     public boolean _isEnabled() {
         if (extension == null) {
             // not init yet. check storage to return if we have to init it
-            return AbstractExtension.createStore(_getClazz()).isEnabled();
+            return getStore().isEnabled();
         } else {
             return extension.isEnabled();
         }
@@ -243,7 +256,7 @@ public class AbstractExtensionWrapper implements Storable {
     public void _setEnabled(boolean b) throws StartException, StopException {
 
         if (extension == null) {
-            AbstractExtension.createStore(_getClazz()).setEnabled(b);
+            getStore().setEnabled(b);
             if (b) {
                 try {
                     init();
@@ -255,6 +268,11 @@ public class AbstractExtensionWrapper implements Storable {
             extension.setEnabled(b);
         }
 
+    }
+
+    @SuppressWarnings("unchecked")
+    public ExtensionConfigInterface getStore() {
+        return AbstractExtension.createStore((Class<? extends AbstractExtension<?>>) _getClazz());
     }
 
     /**

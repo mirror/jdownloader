@@ -689,4 +689,7 @@ public interface JdownloaderTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Enabled/Disable this Extension" })
     String settings_sidebar_tooltip_enable_extension();
+
+    @Default(lngs = { "en" }, values = { "Enabled" })
+    String configheader_enabled();
 }

@@ -49,23 +49,24 @@ import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
 import org.jdownloader.extensions.shutdown.translate.T;
 
-public class ShutdownExtension extends AbstractExtension implements ControlListener {
+public class ShutdownExtension extends AbstractExtension<ShutdownConfig> implements ControlListener {
 
-    private static final int    count                 = 60;
-    private static final String CONFIG_ENABLEDONSTART = "ENABLEDONSTART";
-    private static final String CONFIG_MODE           = "CONFIG_MODE";
-    private static final String CONFIG_FORCESHUTDOWN  = "FORCE";
-    private static Thread       shutdown              = null;
-    private static boolean      shutdownEnabled;
-    private static MenuAction   menuAction            = null;
-    private static String[]     MODES_AVAIL           = null;
+    private static final int     count                 = 60;
+    private static final String  CONFIG_ENABLEDONSTART = "ENABLEDONSTART";
+    private static final String  CONFIG_MODE           = "CONFIG_MODE";
+    private static final String  CONFIG_FORCESHUTDOWN  = "FORCE";
+    private static Thread        shutdown              = null;
+    private static boolean       shutdownEnabled;
+    private static MenuAction    menuAction            = null;
+    private static String[]      MODES_AVAIL           = null;
+    private ExtensionConfigPanel configPanel;
 
-    public ExtensionConfigPanel getConfigPanel() {
-        return null;
+    public ExtensionConfigPanel<ShutdownExtension> getConfigPanel() {
+        return configPanel;
     }
 
     public boolean hasConfigPanel() {
-        return false;
+        return true;
     }
 
     public ShutdownExtension() throws StartException {
@@ -456,7 +457,6 @@ public class ShutdownExtension extends AbstractExtension implements ControlListe
         logger.info("Shutdown OK");
     }
 
-    @Override
     protected void initSettings(ConfigContainer config) {
         JSonWrapper subConfig = getPluginConfig();
 
@@ -520,5 +520,8 @@ public class ShutdownExtension extends AbstractExtension implements ControlListe
 
     @Override
     protected void initExtension() throws StartException {
+        ConfigContainer cc = new ConfigContainer(getName());
+        initSettings(cc);
+        configPanel = createPanelFromContainer(cc);
     }
 }

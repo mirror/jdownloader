@@ -40,7 +40,7 @@ import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
 import org.jdownloader.extensions.jdpremclient.translate.T;
 
-public class PremiumCompoundExtension extends AbstractExtension {
+public class PremiumCompoundExtension extends AbstractExtension<PremiumCompoundConfig> {
 
     private static final Object                  LOCK                = new Object();
     private static boolean                       replaced            = false;
@@ -50,6 +50,7 @@ public class PremiumCompoundExtension extends AbstractExtension {
     private static boolean                       preferLocalAccounts = false;
 
     private static final HashMap<String, String> premShareHosts      = new HashMap<String, String>();
+    private ExtensionConfigPanel                 configPanel;
 
     public PremiumCompoundExtension() {
         super(T._.jd_plugins_optional_jdpremium_name());
@@ -182,6 +183,9 @@ public class PremiumCompoundExtension extends AbstractExtension {
                 enabled = true;
             }
         }
+        ConfigContainer cc = new ConfigContainer(getName());
+        initSettings(cc);
+        configPanel = createPanelFromContainer(cc);
 
     }
 
@@ -191,16 +195,15 @@ public class PremiumCompoundExtension extends AbstractExtension {
     }
 
     @Override
-    public ExtensionConfigPanel getConfigPanel() {
-        return null;
+    public ExtensionConfigPanel<PremiumCompoundExtension> getConfigPanel() {
+        return configPanel;
     }
 
     @Override
     public boolean hasConfigPanel() {
-        return false;
+        return true;
     }
 
-    @Override
     protected void initSettings(ConfigContainer config) {
         config.setGroup(new ConfigGroup(getName(), getIconKey()));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, this.getPluginConfig(), "SERVER", "JDPremServer: (Restart required)").setPropertyType(PropertyType.NEEDS_RESTART));

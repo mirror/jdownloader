@@ -61,7 +61,7 @@ import org.jdownloader.extensions.extraction.split.Unix;
 import org.jdownloader.extensions.extraction.split.XtreamSplit;
 import org.jdownloader.extensions.extraction.translate.T;
 
-public class ExtractionExtension extends AbstractExtension implements ControlListener, ActionListener {
+public class ExtractionExtension extends AbstractExtension<ExtractionConfig> implements ControlListener, ActionListener {
     private static final int             EXTRACT_LINK            = 1000;
 
     private static final int             EXTRACT_PACKAGE         = 1001;
@@ -87,6 +87,8 @@ public class ExtractionExtension extends AbstractExtension implements ControlLis
     private final ArrayList<IExtraction> extractors              = new ArrayList<IExtraction>();
 
     private final ArrayList<Archive>     archives                = new ArrayList<Archive>();
+
+    private ExtensionConfigPanel         configPanel;
 
     public ExtractionExtension() throws StartException {
         super(T._.name());
@@ -705,11 +707,15 @@ public class ExtractionExtension extends AbstractExtension implements ControlLis
             }
         };
 
+        ConfigContainer cc = new ConfigContainer(getName());
+        initSettings(cc);
+        configPanel = createPanelFromContainer(cc);
+
     }
 
     @Override
     public boolean hasConfigPanel() {
-        return false;
+        return true;
     }
 
     @Override
@@ -747,7 +753,7 @@ public class ExtractionExtension extends AbstractExtension implements ControlLis
     }
 
     @Override
-    public ExtensionConfigPanel getConfigPanel() {
-        return null;
+    public ExtensionConfigPanel<ExtractionExtension> getConfigPanel() {
+        return configPanel;
     }
 }

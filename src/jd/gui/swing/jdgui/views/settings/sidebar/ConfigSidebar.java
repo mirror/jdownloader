@@ -43,7 +43,9 @@ import jd.gui.swing.jdgui.menu.WindowMenu;
 import jd.gui.swing.laf.LookAndFeelController;
 import net.miginfocom.swing.MigLayout;
 
+import org.appwork.utils.logging.Log;
 import org.appwork.utils.swing.dialog.Dialog;
+import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.AbstractExtensionWrapper;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
@@ -305,9 +307,32 @@ public class ConfigSidebar extends JPanel implements ControlListener, MouseMotio
         list.repaint();
     }
 
-    public SwitchPanel getSelectedPanel() {
-        if (!(list.getSelectedValue() instanceof SwitchPanel)) return null;
-        return (SwitchPanel) list.getSelectedValue();
-    }
+    public synchronized SwitchPanel getSelectedPanel() {
+        if (list.getSelectedValue() instanceof AbstractExtensionWrapper) {
+            AbstractExtension ext = ((AbstractExtensionWrapper) list.getSelectedValue())._getExtension();
+            if (ext == null) {
+                try {
+                    ((AbstractExtensionWrapper) list.getSelectedValue()).init();
+                    ext = ((AbstractExtensionWrapper) list.getSelectedValue())._getExtension();
+                } catch (Exception e) {
+                    Log.exception(e);
+                    Dialog.getInstance().showExceptionDialog("Error", e.getMessage(), e);
+                    return null;
+                }
 
+            }
+            if (ext.hasConfigPanel()) {
+                return ext.getConfigPanel();
+
+            } else {
+                return new EmptyExtensionConfigPanel(ext);
+            }
+
+        } else if (list.getSelectedValue() instanceof SwitchPanel) {
+            return (SwitchPanel) list.getSelectedValue();
+        } else {
+            return null;
+        }
+
+    }
 }

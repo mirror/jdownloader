@@ -38,18 +38,20 @@ import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
 import org.jdownloader.extensions.jdpremserv.gui.JDPremServGui;
 
-public class PremServExtension extends AbstractExtension implements ActionListener, ControlListener {
+public class PremServExtension extends AbstractExtension<PremServConfig> implements ActionListener, ControlListener {
 
-    private MenuAction    activateAction;
+    private MenuAction           activateAction;
 
-    private JDPremServGui tab;
+    private JDPremServGui        tab;
 
-    public ExtensionConfigPanel getConfigPanel() {
-        return null;
+    private ExtensionConfigPanel configPanel;
+
+    public ExtensionConfigPanel<PremServExtension> getConfigPanel() {
+        return configPanel;
     }
 
     public boolean hasConfigPanel() {
-        return false;
+        return true;
     }
 
     public PremServExtension() throws StartException {
@@ -147,7 +149,6 @@ public class PremServExtension extends AbstractExtension implements ActionListen
         JDController.getInstance().addControlListener(this);
     }
 
-    @Override
     protected void initSettings(ConfigContainer config) {
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), "PORT", "Server", 1024, 65535, 1).setDefaultValue(8080));
 
@@ -185,6 +186,9 @@ public class PremServExtension extends AbstractExtension implements ActionListen
 
     @Override
     protected void initExtension() throws StartException {
+        ConfigContainer cc = new ConfigContainer(getName());
+        initSettings(cc);
+        configPanel = createPanelFromContainer(cc);
     }
 
 }

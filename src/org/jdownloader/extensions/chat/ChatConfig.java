@@ -1,11 +1,12 @@
 package org.jdownloader.extensions.chat;
 
-import org.appwork.storage.config.ConfigInterface;
+import jd.plugins.ExtensionConfigInterface;
+
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
 import org.appwork.storage.config.annotations.DefaultIntValue;
 import org.appwork.storage.config.annotations.DefaultStringValue;
 
-public interface ChatConfig extends ConfigInterface {
+public interface ChatConfig extends ExtensionConfigInterface {
     @DefaultStringValue("#jDownloader")
     String getChannel();
 
