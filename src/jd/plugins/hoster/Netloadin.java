@@ -28,12 +28,12 @@ import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -85,6 +85,7 @@ public class Netloadin extends PluginForHost {
         String ID = getID(downloadLink.getDownloadURL());
         br.getPage("http://netload.in/json/datei" + ID + ".htm");
         checkPassword(downloadLink, br);
+        checkErrors(downloadLink, br);
         checkLimit(downloadLink, br);
         String url = br.getRegex("link\":\"(http.*?)\"").getMatch(0);
         if (url != null) {
@@ -137,6 +138,13 @@ public class Netloadin extends PluginForHost {
         } else {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+    }
+
+    private void checkErrors(DownloadLink downloadLink, Browser br) throws Exception {
+        String state = br.getRegex("state\":\"(.*?)\"").getMatch(0);
+        if ("hddcrash".equalsIgnoreCase(state)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "HDDCrash(In Recovery)", 12 * 60 * 60 * 1000l);
+        if ("maintenance".equalsIgnoreCase(state)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Maintenance", 2 * 60 * 60 * 1000l);
+
     }
 
     private void loginAPI(Account account, AccountInfo ai) throws IOException, PluginException {
@@ -223,6 +231,7 @@ public class Netloadin extends PluginForHost {
         String ID = getID(downloadLink.getDownloadURL());
         br.getPage("http://netload.in/json/datei" + ID + ".htm");
         checkPassword(downloadLink, br);
+        checkErrors(downloadLink, br);
         workAroundTimeOut(br);
         String url = br.getRegex("link\":\"(http.*?)\"").getMatch(0);
         if (url != null) {

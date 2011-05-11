@@ -57,7 +57,8 @@ public class Ftp extends PluginForHost {
         SimpleFTP ftp = new SimpleFTP();
         try {
             URL url = new URL(downloadLink.getDownloadURL());
-            String filePath = new Regex(downloadLink.getDownloadURL(), "://.*?/(.+)").getMatch(0);
+            /* cut off all ?xyz at the end */
+            String filePath = new Regex(downloadLink.getDownloadURL(), "://.*?/(.+?)(\\?|$)").getMatch(0);
             ftp.connect(url);
             String name = null;
             if (oldStyle()) {
@@ -65,7 +66,8 @@ public class Ftp extends PluginForHost {
                 String[] list = ftp.getFileInfo(Encoding.urlDecode(filePath, false));
                 if (list != null) {
                     /* list command worked */
-                    name = new Regex(downloadLink.getDownloadURL(), ".*/(.+)").getMatch(0);
+                    /* cut off all ?xyz at the end */
+                    name = new Regex(filePath, ".*/(.+?)(\\?|$)").getMatch(0);
                     if (name == null) {
                         logger.severe("could not get filename from ftpurl");
                         name = downloadLink.getName();
@@ -85,7 +87,8 @@ public class Ftp extends PluginForHost {
                 long size = ftp.getSize(Encoding.urlDecode(filePath, false));
                 if (size != -1) {
                     downloadLink.setDownloadSize(size);
-                    name = new Regex(url, ".*/(.+)").getMatch(0);
+                    /* cut off all ?xyz at the end */
+                    name = new Regex(filePath, ".*/(.+?)(\\?|$)").getMatch(0);
                     if (name == null) {
                         logger.severe("could not get filename from ftpurl");
                         name = downloadLink.getName();
@@ -98,7 +101,8 @@ public class Ftp extends PluginForHost {
                     size = ftp.getSize(Encoding.urlDecode(filePath, false));
                     if (size != -1) {
                         downloadLink.setDownloadSize(size);
-                        name = new Regex(url, ".*/(.+)").getMatch(0);
+                        /* cut off all ?xyz at the end */
+                        name = new Regex(filePath, ".*/(.+?)(\\?|$)").getMatch(0);
                         if (name == null) {
                             logger.severe("could not get filename from ftpurl");
                             name = downloadLink.getName();
@@ -148,7 +152,8 @@ public class Ftp extends PluginForHost {
         try {
             if (new File(downloadLink.getFileOutput()).exists()) throw new PluginException(LinkStatus.ERROR_ALREADYEXISTS);
             URL url = new URL(ftpurl);
-            String filePath = new Regex(ftpurl, "://.*?/(.+)").getMatch(0);
+            /* cut off all ?xyz at the end */
+            String filePath = new Regex(ftpurl, "://.*?/(.+?)(\\?|$)").getMatch(0);
             String name = null;
             ftp.connect(url);
             if (oldStyle()) {
@@ -160,7 +165,8 @@ public class Ftp extends PluginForHost {
                 String[] list = ftp.getFileInfo(Encoding.urlDecode(filePath, false));
                 if (list != null) {
                     /* list command worked */
-                    name = new Regex(ftpurl, ".*/(.+)").getMatch(0);
+                    /* cut off all ?xyz at the end */
+                    name = new Regex(ftpurl, ".*/(.+?)(\\?|$)").getMatch(0);
                     if (name == null) {
                         logger.severe("could not get filename from ftpurl");
                         name = downloadLink.getName();
@@ -188,7 +194,8 @@ public class Ftp extends PluginForHost {
                 long size = ftp.getSize(Encoding.urlDecode(filePath, false));
                 if (size != -1) {
                     downloadLink.setDownloadSize(size);
-                    name = new Regex(ftpurl, ".*/(.+)").getMatch(0);
+                    /* cut off all ?xyz at the end */
+                    name = new Regex(ftpurl, ".*/(.+?)(\\?|$)").getMatch(0);
                     if (name == null) {
                         logger.severe("could not get filename from ftpurl");
                         name = downloadLink.getName();
@@ -201,7 +208,8 @@ public class Ftp extends PluginForHost {
                     size = ftp.getSize(Encoding.urlDecode(filePath, false));
                     if (size != -1) {
                         downloadLink.setDownloadSize(size);
-                        name = new Regex(ftpurl, ".*/(.+)").getMatch(0);
+                        /* cut off all ?xyz at the end */
+                        name = new Regex(ftpurl, ".*/(.+?)(\\?|$)").getMatch(0);
                         if (name == null) {
                             logger.severe("could not get filename from ftpurl");
                             name = downloadLink.getName();
