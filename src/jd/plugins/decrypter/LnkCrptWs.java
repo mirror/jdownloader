@@ -18,16 +18,22 @@ package jd.plugins.decrypter;
 
 import java.awt.Point;
 import java.io.File;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
+
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
 
 import jd.PluginWrapper;
 import jd.captcha.utils.Utilities;
 import jd.controlling.ProgressController;
 import jd.gui.UserIO;
+import jd.gui.swing.components.Balloon;
 import jd.http.Browser;
 import jd.http.RandomUserAgent;
 import jd.nutils.encoding.Encoding;
+import jd.nutils.nativeintegration.LocalBrowser;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
@@ -39,12 +45,10 @@ import jd.plugins.PluginUtils;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-import org.mozilla.javascript.Context;
-import org.mozilla.javascript.ContextFactory;
-import org.mozilla.javascript.Scriptable;
-
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "linkcrypt.ws" }, urls = { "http://[\\w\\.]*?linkcrypt\\.ws/dir/[\\w]+" }, flags = { 0 })
 public class LnkCrptWs extends PluginForDecrypt {
+
+    private final HashMap<String, String> map = new HashMap<String, String>();
 
     public LnkCrptWs(final PluginWrapper wrapper) {
         super(wrapper);
@@ -68,7 +72,7 @@ public class LnkCrptWs extends PluginForDecrypt {
             throw e;
         }
         if (br.containsHTML("Error 404 - Ordner nicht gefunden")) { throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore.")); }
-        // check for a password. STore latest password in DB
+        // check for a password. Store latest password in DB
         Form password = br.getForm(0);
         if (password != null && password.hasInputFieldByName("password")) {
             // Password Protected
@@ -131,28 +135,22 @@ public class LnkCrptWs extends PluginForDecrypt {
         }
         if (!valid) { throw new DecrypterException(DecrypterException.CAPTCHA); }
         // Look for containers
-        final String[] containers = br.getRegex("eval\\((.*?\\,\\{\\}\\))\\)").getColumn(0);
-        final HashMap<String, String> map = new HashMap<String, String>();
-        for (String c : containers) {
-            Context cx = null;
+        final String[] containers = br.getRegex("eval(.*?)\n").getColumn(0);
+        for (final String c : containers) {
+            Object result = new Object();
+            final ScriptEngineManager manager = new ScriptEngineManager();
+            final ScriptEngine engine = manager.getEngineByName("javascript");
             try {
-                cx = ContextFactory.getGlobal().enterContext();
-                final Scriptable scope = cx.initStandardObjects();
-                c = c.replace("return p}(", " return p}  f(").replace("function(p,a,c,k,e,d)", "function f(p,a,c,k,e,d)");
-                final Object result = cx.evaluateString(scope, c, "<cmd>", 1, null);
-                final String code = Context.toString(result);
-                // System.out.println(code);
-                String[] row = new Regex(code, "href=\"([^\"]+)\"[^>]*>.*?<img.*?image/(.*?)\\.").getRow(0);
-                if (row == null && br.containsHTML("dlc.png")) {
-                    row = new Regex(code, "href=\"(http.*?)\".*?(dlc)").getRow(0);
-                }
-                if (row != null) {
-                    map.put(row[1], row[0]);
-                }
-            } finally {
-                if (cx != null) {
-                    Context.exit();
-                }
+                result = engine.eval(c);
+            } catch (final Throwable e) {
+            }
+            final String code = result.toString();
+            String[] row = new Regex(code, "href=\"([^\"]+)\"[^>]*>.*?<img.*?image/(.*?)\\.").getRow(0);
+            if (row == null && br.containsHTML("dlc.png")) {
+                row = new Regex(code, "href=\"(http.*?)\".*?(dlc)").getRow(0);
+            }
+            if (row != null) {
+                map.put(row[1], row[0]);
             }
         }
         File container = null;
@@ -162,12 +160,6 @@ public class LnkCrptWs extends PluginForDecrypt {
                 container.createNewFile();
             }
             br.cloneBrowser().getDownload(container, map.get("dlc"));
-        } else if (map.containsKey("cnl")) {
-            container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".dlc", true);
-            if (!container.exists()) {
-                container.createNewFile();
-            }
-            br.cloneBrowser().getDownload(container, map.get("cnl").replace("dlc://", "http://"));
         } else if (map.containsKey("ccf")) {
             container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".ccf", true);
             if (!container.exists()) {
@@ -191,7 +183,7 @@ public class LnkCrptWs extends PluginForDecrypt {
         /* we have to open the normal page for weblinks */
         if (br.containsHTML("BlueHeadLine.*?>(Weblinks)<")) {
             br.getPage("http://linkcrypt.ws/dir/" + containerId);
-            // IF container decryption failed, try webdecryption
+            logger.info("ContainerID is null, trying webdecryption...");
             final Form[] forms = br.getForms();
             progress.setRange(forms.length - 8);
             for (final Form form : forms) {
@@ -200,43 +192,54 @@ public class LnkCrptWs extends PluginForDecrypt {
                     progress.increase(1);
                     clone = br.cloneBrowser();
                     clone.submitForm(form);
-                    final String[] srcs = clone.getRegex("<iframe.*?src\\s*?=\\s*?\"?([^\"> ]{20,})\"?\\s?").getColumn(0);
-                    found_out_pl: for (String col : srcs) {
+                    final String[] srcs = clone.getRegex("<frame scrolling.*?src\\s*?=\\s*?\"?([^\"> ]{20,})\"?\\s?").getColumn(0);
+                    for (String col : srcs) {
+                        if (col.contains("out.pl=head")) {
+                            continue;
+                        }
                         col = Encoding.htmlDecode(col);
                         if (col.contains("out.pl")) {
                             clone.getPage(col);
-                            Thread.sleep(600);
+                            // Thread.sleep(600);
                             if (clone.containsHTML("eval")) {
-                                final String[] evals = clone.getRegex("eval\\((.*?\\,\\{\\}\\))\\)").getColumn(0);
-                                for (String c : evals) {
-                                    final Context cx = ContextFactory.getGlobal().enterContext();
-                                    final Scriptable scope = cx.initStandardObjects();
-                                    c = c.replace("return p}(", " return p}  f(").replace("function(p,a,c,k,e", "function f(p,a,c,k,e");
-                                    final Object result = cx.evaluateString(scope, c, "<cmd>", 1, null);
-                                    final String code = Context.toString(result);
+                                final String[] evals = clone.getRegex("eval(.*?)\n").getColumn(0);
+                                for (final String c : evals) {
+                                    Object result = new Object();
+                                    final ScriptEngineManager manager = new ScriptEngineManager();
+                                    final ScriptEngine engine = manager.getEngineByName("javascript");
+                                    try {
+                                        result = engine.eval(c);
+                                    } catch (final Throwable e) {
+                                    }
+                                    final String code = result.toString();
                                     if (code.contains("ba2se") || code.contains("premfree")) {
                                         String versch;
-                                        versch = new Regex(code, "Base64.decode\\('(.*?)'\\)").getMatch(0);
+                                        versch = new Regex(code, "ba2se='(.*?)'").getMatch(0);
                                         if (versch == null) {
                                             versch = new Regex(code, ".*?='([^']*)'").getMatch(0);
                                             versch = Encoding.Base64Decode(versch);
                                             versch = new Regex(versch, "<iframe.*?src\\s*?=\\s*?\"?([^\"> ]{20,})\"?\\s?").getMatch(0);
                                         }
                                         versch = Encoding.Base64Decode(versch);
-                                        versch = Encoding.htmlDecode(versch);
+                                        versch = Encoding.htmlDecode(new Regex(versch, "100.*?src=\"(.*?)\"></iframe>").getMatch(0));
                                         if (versch != null) {
                                             decryptedLinks.add(createDownloadlink(versch));
                                         }
                                     }
                                 }
                             }
-                            break found_out_pl;
                         }
                     }
                 }
             }
         }
-        if (decryptedLinks.size() == 0) {
+        if (decryptedLinks == null || decryptedLinks.size() == 0) {
+            logger.info("No links found, let's see if CNL2 is available!");
+            if (map.containsKey("cnl")) {
+                LocalBrowser.openDefaultURL(new URL(parameter));
+                Balloon.show(JDL.L("jd.controlling.CNL2.checkText.title", "Click'n'Load"), null, JDL.L("jd.controlling.CNL2.checkText.message", "Click'n'Load URL opened"));
+                throw new DecrypterException(JDL.L("jd.controlling.CNL2.checkText.message", "Click'n'Load URL opened"));
+            }
             logger.warning("Decrypter out of date for link: " + parameter);
             return null;
         }
