@@ -25,11 +25,11 @@ import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
@@ -93,6 +93,8 @@ public class BitLoadCom extends PluginForHost {
         if (br.containsHTML(">Datei nicht gefunden")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String dllink = getDllink();
         if (dllink == null) {
+            // Video not downloadable?!, link to player invalid
+            if (br.containsHTML("f//")) throw new PluginException(LinkStatus.ERROR_FATAL, "Server error");
             logger.warning("The dllink is null...");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

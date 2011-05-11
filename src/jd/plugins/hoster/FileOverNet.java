@@ -120,6 +120,7 @@ public class FileOverNet extends PluginForHost {
             break;
         }
         if (failed) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        if (br.containsHTML("Not Ready")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 30 * 60 * 1000l);
         String dllink = br.getRegex("</style></head><body><a href=\"(http.*?)\"").getMatch(0);
         if (dllink == null) dllink = br.getRegex("\"(http://\\d+\\.pool\\.fileover\\.net/\\d+/[a-z0-9]+/.*?)\"").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
