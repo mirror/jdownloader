@@ -83,8 +83,10 @@ public class ImageHosterDecrypter extends PluginForDecrypt {
                     return null;
                 }
             }
-            finallink = br.getRegex("\\'(http://[0-9]+\\.imagebam\\.com/dl\\.php\\?ID=.*?)\\'").getMatch(0);
-            if (finallink == null) finallink = br.getRegex("\\'(http://[0-9]+\\.imagebam\\.com/download\\.php\\?ID=.*?)\\'").getMatch(0);
+            finallink = br.getRegex("(\\'|\")(http://\\d+\\.imagebam\\.com/download/.*?)(\\'|\")").getMatch(1);
+            if (finallink == null) {
+                finallink = br.getRegex("onclick=\"scale\\(this\\);\" src=\"(http://.*?)\"").getMatch(0);
+            }
         } else if (parameter.contains("media.photobucket.com")) {
             finallink = br.getRegex("mediaUrl':'(http.*?)'").getMatch(0);
         } else if (parameter.contains("freeimagehosting.net")) {

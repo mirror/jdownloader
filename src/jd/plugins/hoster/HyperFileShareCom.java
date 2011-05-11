@@ -23,11 +23,11 @@ import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
@@ -51,10 +51,8 @@ public class HyperFileShareCom extends PluginForHost {
         br.clearCookies(getHost());
         br.getPage(downloadLink.getDownloadURL());
         br.setFollowRedirects(true);
-        if (br.containsHTML("302 Found")) {
-            String properlink = br.getRegex("The document has moved <a href=\"(.*?)\"").getMatch(0);
-            br.getPage(properlink);
-        }
+        String properlink = br.getRegex("The document has moved <a href=\"(.*?)\"").getMatch(0);
+        if (properlink != null) br.getPage(properlink);
         if (br.containsHTML("Download URL is incorrect") || br.containsHTML("Not Found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<title>Download (.*?)</title>").getMatch(0);
         if (filename == null) filename = br.getRegex("<span>Download(.*?)</span></div>").getMatch(0);
@@ -73,14 +71,13 @@ public class HyperFileShareCom extends PluginForHost {
         if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         url = "http://download.hyperfileshare.com/" + url;
         br.getPage(url);
-        url = null;
-        url = br.getRegex("href=\"(download\\.php\\?code=[a-f0-9]+&sid=[a-f0-9]+&s=\\d)\"").getMatch(0);
+        url = br.getRegex("href=\"(download\\.php\\?code=[a-f0-9]+\\&sid=[a-f0-9]+\\&s=\\d)\"").getMatch(0);
         if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         url = "http://download.hyperfileshare.com/" + url;
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
-            if (br.containsHTML("You exceeded your download size limit")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l);
+            if (br.containsHTML("(You exceeded your download size limit|>You exceeded your download quota)")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
