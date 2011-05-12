@@ -23,11 +23,11 @@ import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vid2c.com" }, urls = { "http://(www\\.)?vid2c\\.com/video/\\d+" }, flags = { 0 })
 public class Vid2CCom extends PluginForHost {
@@ -47,6 +47,8 @@ public class Vid2CCom extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
+        /* hoster has broken gzip */
+        br.getHeaders().put("Accept-Encoding", null);
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("<title> Most Recent Videos \\- Free Sex Adult Videos - Vid2C</title>") || !br.containsHTML("SWFObject") || br.getURL().equals("http://www.vid2c.com/videos/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<div class=\"left span\\-630\">[\t\n\r ]+<h1>(.*?)</h1").getMatch(0);
@@ -57,6 +59,8 @@ public class Vid2CCom extends PluginForHost {
         filename = filename.trim();
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ".flv");
         Browser br2 = br.cloneBrowser();
+        /* hoster has broken gzip */
+        br2.getHeaders().put("Accept-Encoding", null);
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
