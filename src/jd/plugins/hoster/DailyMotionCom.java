@@ -32,7 +32,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dailymotion.com" }, urls = { "http://(www\\.)?dailymotion\\.com/video/[a-z0-9]+_.{1}" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dailymotion.com" }, urls = { "http://(www\\.)?dailymotion\\.com/video/[a-z0-9]+" }, flags = { 2 })
 public class DailyMotionCom extends PluginForHost {
 
     public DailyMotionCom(PluginWrapper wrapper) {
@@ -76,7 +76,7 @@ public class DailyMotionCom extends PluginForHost {
             logger.warning("filename is null...");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dllink = br.getRegex("\\.addVariable\\(\"sequence\",  \"(.*?)\"").getMatch(0);
+        dllink = br.getRegex("addVariable\\(\"sequence\",  \"(.*?)\"").getMatch(0);
         if (dllink != null) {
             String allLinks = Encoding.htmlDecode(dllink);
             logger.info("alllinkstext: " + allLinks);
