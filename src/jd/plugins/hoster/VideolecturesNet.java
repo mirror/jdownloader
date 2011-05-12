@@ -16,43 +16,28 @@
 
 package jd.plugins.hoster;
 
-import java.io.IOException;
-
 import jd.PluginWrapper;
+import jd.network.rtmp.url.RtmpUrlConnection;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "videolectures.net" }, urls = { "http://[\\w\\.]*?videolectures\\.net/.+" }, flags = { 0 })
 public class VideolecturesNet extends PluginForHost {
 
-    public VideolecturesNet(PluginWrapper wrapper) {
+    private String clipUrl              = null;
+    private String clipNetConnectionUrl = null;
+
+    public VideolecturesNet(final PluginWrapper wrapper) {
         super(wrapper);
     }
 
     @Override
     public String getAGBLink() {
-        return "http://videolectures.net/site/about/";
-    }
-
-    @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
-        br.getPage(downloadLink.getDownloadURL());
-
-        // String[] data =
-        // br.getRegex("streamer: \"(.+?)/([^/]+?)\",.*?file: \"(.+?)\"").getRow(0);
-        downloadLink.setFinalFileName(br.getRegex("<title>(.+?)</title>").getMatch(0).trim() + ".flv");
-        // rtmpLink = data[0] + "/" + data[1] + "" + data[2];
-        return AvailableStatus.TRUE;
-    }
-
-    @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
-
-        // Download here
-        /** See {@link #Ftp} for example download */
+        return "http://videolectures.net/site/terms_of_use/";
     }
 
     @Override
@@ -61,14 +46,56 @@ public class VideolecturesNet extends PluginForHost {
     }
 
     @Override
+    public void handleFree(final DownloadLink downloadLink) throws Exception {
+        requestFileInformation(downloadLink);
+        final String swfUrl = br.getRegex("flowplayer_swf:\\s\"(.*?)\",").getMatch(0);
+        final String app = clipNetConnectionUrl.substring(clipNetConnectionUrl.lastIndexOf("/") + 1);
+        if (swfUrl == null || app == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+
+        final String dllink = clipNetConnectionUrl + "/" + clipUrl;
+
+        if (dllink.startsWith("rtmp")) {
+            dl = new RTMPDownload(this, downloadLink, dllink);
+            final RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
+
+            rtmp.setPlayPath(clipUrl);
+            rtmp.setPageUrl(downloadLink.getDownloadURL());
+            rtmp.setSwfVfy(swfUrl);
+            rtmp.setFlashVer("WIN 10,1,102,64");
+            rtmp.setApp(app);
+            rtmp.setUrl(clipNetConnectionUrl);
+            rtmp.setResume(true);
+
+            ((RTMPDownload) dl).startDownload();
+        } else {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+    }
+
+    @Override
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+        setBrowserExclusive();
+        br.getPage(downloadLink.getDownloadURL());
+        String filename = br.getRegex("<title>(.*?)\\s-.*?</title>").getMatch(0).trim();
+        if (filename == null) {
+            filename = br.getRegex("name=\"title\"\\scontent=\"(.*?)\"").getMatch(0);
+        }
+        clipUrl = br.getRegex("\\s+clip.url\\s=\\s\"(.*?)\"").getMatch(0);
+        clipNetConnectionUrl = br.getRegex("clip.netConnectionUrl\\s=\\s\"(.*?)\"").getMatch(0);
+        if (filename == null || clipUrl == null || clipNetConnectionUrl == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        downloadLink.setFinalFileName(filename + ".flv");
+        return AvailableStatus.TRUE;
+    }
+
+    @Override
     public void reset() {
     }
 
     @Override
-    public void resetPluginGlobals() {
+    public void resetDownloadlink(final DownloadLink link) {
     }
 
     @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetPluginGlobals() {
     }
 }
