@@ -286,7 +286,6 @@ public class AbstractExtensionWrapper implements Storable {
         try {
             return AbstractExtension.createStore((Class<? extends AbstractExtension<?>>) _getClazz(), (Class<? extends ExtensionConfigInterface>) Class.forName(this.getConfigInterface()));
         } catch (Throwable e) {
-            e.printStackTrace();
             return null;
         }
     }

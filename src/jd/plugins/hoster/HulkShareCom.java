@@ -34,11 +34,11 @@ import jd.parser.html.HTMLParser;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -316,6 +316,9 @@ public class HulkShareCom extends PluginForHost {
                 dllink = br.getRegex("Download: <a href=\"(.*?)\"").getMatch(0);
                 if (dllink == null) {
                     dllink = br.getRegex("\"(http://[0-9\\.]+/d/[a-z0-9]+/.*?)\"").getMatch(0);
+                    if (dllink == null) {
+                        dllink = br.getRegex("\"(http://[0-9w]+\\.hulkshare\\.com/d/[a-z0-9]+/.*?)\"").getMatch(0);
+                    }
                     if (dllink == null) {
                         String jsCrap = br.getRegex("style=\"width: 360px; height: 100px; margin: 0 10px; overflow: auto; float: left;\">[\t\n\r ]+<script language=\"JavaScript\">[\t\n\r ]+function [A-Za-z0-9]+\\(\\)[\t\n\r ]+\\{(.*?)window\\.").getMatch(0);
                         if (jsCrap != null) dllink = execJS(jsCrap);
