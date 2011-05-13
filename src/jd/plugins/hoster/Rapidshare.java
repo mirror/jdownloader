@@ -30,21 +30,21 @@ import jd.config.SubConfiguration;
 import jd.controlling.DownloadWatchDog;
 import jd.controlling.JDLogger;
 import jd.http.Browser;
+import jd.http.Browser.BrowserException;
 import jd.http.Request;
 import jd.http.URLConnectionAdapter;
-import jd.http.Browser.BrowserException;
 import jd.nutils.Formatter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.download.RAFDownload;
 import jd.utils.locale.JDL;
 
@@ -55,7 +55,7 @@ public class Rapidshare extends PluginForHost {
 
         public static RSLink parse(final DownloadLink link) {
             final RSLink ret = new RSLink(link);
-            ret.id = Integer.parseInt(new Regex(ret.url, "files/(\\d+)/").getMatch(0));
+            ret.id = Long.parseLong(new Regex(ret.url, "files/(\\d+)/").getMatch(0));
             if (ret.link.getProperty("htmlworkaround", null) == null) {
                 /*
                  * remove html ending, because rs now checks the complete
@@ -79,7 +79,7 @@ public class Rapidshare extends PluginForHost {
             return secTim;
         }
 
-        private int    id;
+        private long   id;
 
         private String name;
 
@@ -102,7 +102,7 @@ public class Rapidshare extends PluginForHost {
             this.url = link.getDownloadURL();
         }
 
-        public int getId() {
+        public long getId() {
             return this.id;
         }
 
@@ -662,7 +662,7 @@ public class Rapidshare extends PluginForHost {
                 this.dl = new RAFDownload(this, downloadLink, request);
                 this.dl.setResume(true);
                 // do not use more than 10 chunks
-                this.dl.setChunkNum(Math.max(10, SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2)));
+                this.dl.setChunkNum(Math.min(10, SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2)));
                 urlConnection = this.dl.connect(this.br);
             }
             /*
