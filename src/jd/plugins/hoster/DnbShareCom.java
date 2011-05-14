@@ -20,11 +20,11 @@ import jd.PluginWrapper;
 import jd.parser.html.Form;
 import jd.parser.html.Form.MethodType;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
@@ -46,16 +46,13 @@ public class DnbShareCom extends PluginForHost {
         requestFileInformation(link);
         this.setBrowserExclusive();
         br.getPage(link.getDownloadURL());
-        String file = null;
-        String payload = null;
-        file = br.getRegex("document.write\\('<input type=hidden name=\"file\" value=\"(.*?)\" />'\\);").getMatch(0);
-        payload = br.getRegex("document.write\\('<input type=hidden name=\"payload\" value=\"(.*?)\" />'\\);").getMatch(0);
+        String file = br.getRegex("name=\"file\" value=\"(.*?)\"").getMatch(0);
+        String payload = br.getRegex("name=\"payload\" value=\"(.*?)\"").getMatch(0);
         if (file == null || payload == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         Form dlform = new Form();
         dlform.setMethod(MethodType.POST);
         dlform.put("file", file);
         dlform.put("payload", payload);
-        dlform.put("submit", "Starting download..");
         br.setFollowRedirects(false);
         br.submitForm(dlform);
         if (br.getRedirectLocation() == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
