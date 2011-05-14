@@ -38,7 +38,7 @@ public class ReconnectSettings extends AbstractConfigPanel {
 
     public ReconnectSettings() {
         super();
-        this.addHeader(JDT._.gui_settings_reconnect_title_method(), Theme.getIcon("settings/reconnect", 32));
+        this.addHeader(JDT._.gui_settings_reconnect_title_method(), Theme.getIcon("reconnect", 32));
 
         add(new ReconnectManager());
         this.addHeader(JDT._.gui_settings_reconnect_title_test(), Theme.getIcon("test", 32));
@@ -49,7 +49,7 @@ public class ReconnectSettings extends AbstractConfigPanel {
 
     @Override
     public ImageIcon getIcon() {
-        return Theme.getIcon("settings/reconnect", 32);
+        return Theme.getIcon("reconnect", 32);
     }
 
     @Override

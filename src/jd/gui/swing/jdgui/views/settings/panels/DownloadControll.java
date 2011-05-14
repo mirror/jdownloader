@@ -40,7 +40,7 @@ public class DownloadControll extends AbstractConfigPanel {
     public DownloadControll() {
         super();
 
-        this.addHeader(JDT._.gui_settings_downloadcontroll_title(), Theme.getIcon("settings/downloadmanagment", 32));
+        this.addHeader(JDT._.gui_settings_downloadcontroll_title(), Theme.getIcon("downloadmanagment", 32));
         this.addDescription(JDT._.gui_settings_downloadcontroll_description());
 
         maxSimPerHost = new Spinner(0, 20);
@@ -57,7 +57,7 @@ public class DownloadControll extends AbstractConfigPanel {
 
     @Override
     public ImageIcon getIcon() {
-        return Theme.getIcon("settings/downloadmanagment", 32);
+        return Theme.getIcon("downloadmanagment", 32);
     }
 
     @Override

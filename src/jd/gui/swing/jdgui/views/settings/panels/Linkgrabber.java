@@ -43,7 +43,7 @@ public class Linkgrabber extends AbstractConfigPanel {
     public Linkgrabber() {
         super();
 
-        this.addHeader(getTitle(), Theme.getIcon("settings/linkgrabber", 32));
+        this.addHeader(getTitle(), Theme.getIcon("linkgrabber", 32));
         this.addDescription(JDT._.gui_settings_linkgrabber_description());
 
         checkLinks = new Checkbox();
@@ -54,7 +54,7 @@ public class Linkgrabber extends AbstractConfigPanel {
         addPair(T._.gui_config_linkgrabber_replacechars(), rename);
         addPair(T._.gui_config_linkgrabber_cnl2(), cnl);
 
-        this.addHeader(T._.gui_config_linkgrabber_ignorelist(), Theme.getIcon("settings/filter", 32));
+        this.addHeader(T._.gui_config_linkgrabber_ignorelist(), Theme.getIcon("filter", 32));
         this.addDescription(JDT._.gui_settings_linkgrabber_filter_description());
         filter = new LinkgrabberFilter();
         blackOrWhite = new ComboBox(new String[] { T._.settings_linkgrabber_filter_blackorwhite_black(), T._.settings_linkgrabber_filter_blackorwhite_white() });
@@ -66,7 +66,7 @@ public class Linkgrabber extends AbstractConfigPanel {
 
     @Override
     public ImageIcon getIcon() {
-        return Theme.getIcon("settings/linkgrabber", 32);
+        return Theme.getIcon("linkgrabber", 32);
     }
 
     @Override

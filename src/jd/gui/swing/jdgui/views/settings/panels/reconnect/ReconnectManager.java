@@ -105,7 +105,7 @@ public class ReconnectManager extends MigPanel implements SettingsComponent, Act
                 return ret;
             }
         });
-        this.autoButton = new JButton(JDT._.reconnectmanager_wizard(), Theme.getIcon("settings/wizard", 20));
+        this.autoButton = new JButton(JDT._.reconnectmanager_wizard(), Theme.getIcon("wizard", 20));
         this.autoButton.addActionListener(this);
 
         this.card = new MigPanel("ins 0", "[grow,fill]", "[grow,fill]");

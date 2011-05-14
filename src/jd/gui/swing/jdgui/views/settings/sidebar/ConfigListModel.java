@@ -14,6 +14,7 @@ import jd.gui.swing.jdgui.views.settings.panels.DownloadControll;
 import jd.gui.swing.jdgui.views.settings.panels.ReconnectSettings;
 import jd.gui.swing.jdgui.views.settings.panels.downloadandnetwork.ProxyConfig;
 import jd.gui.swing.jdgui.views.settings.panels.hoster.ConfigPanelPlugin;
+import jd.gui.swing.jdgui.views.settings.panels.pluginsettings.PluginSettings;
 
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.extensions.AbstractExtensionWrapper;
@@ -43,6 +44,7 @@ public class ConfigListModel extends DefaultListModel {
 
         // addElement(new Premium());
         addElement(new ConfigPanelPlugin());
+        addElement(new PluginSettings());
         // addElement(new ExtensionManager());
 
         addElement(new BarrierFree());

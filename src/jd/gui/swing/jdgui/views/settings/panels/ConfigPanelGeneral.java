@@ -53,14 +53,14 @@ public class ConfigPanelGeneral extends AbstractConfigPanel {
         subfolder = new Checkbox();
         simpleContainer = new Checkbox();
 
-        this.addHeader(T._.gui_config_general_downloaddirectory(), Theme.getIcon("settings/downloadpath", 32));
+        this.addHeader(T._.gui_config_general_downloaddirectory(), Theme.getIcon("downloadpath", 32));
         this.addDescription(JDT._.gui_settings_downloadpath_description());
         this.add(downloadFolder);
         this.addPair(T._.gui_config_general_createsubfolders(), subfolder);
 
         /* File Writing */
         autoCRC = new Checkbox();
-        this.addHeader(T._.gui_config_download_write(), Theme.getIcon("settings/hashsum", 32));
+        this.addHeader(T._.gui_config_download_write(), Theme.getIcon("hashsum", 32));
         this.addDescription(JDT._.gui_settings_filewriting_description());
         this.addPair(T._.gui_config_download_crc(), autoCRC);
 
@@ -73,13 +73,13 @@ public class ConfigPanelGeneral extends AbstractConfigPanel {
         // T._.gui_config_reloadcontainer()));
         // ce.setDefaultValue(true);
 
-        this.addHeader(T._.gui_config_various(), Theme.getIcon("settings/settings", 32));
+        this.addHeader(T._.gui_config_various(), Theme.getIcon("settings", 32));
         this.addPair(T._.gui_config_simple_container(), simpleContainer);
     }
 
     @Override
     public ImageIcon getIcon() {
-        return Theme.getIcon("settings/home", 32);
+        return Theme.getIcon("home", 32);
     }
 
     @Override

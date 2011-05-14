@@ -38,7 +38,7 @@ public class BarrierFree extends AbstractConfigPanel {
         super();
         captchaSize = new Spinner(50, 500);
         captchaSize.setFormat("#'%'");
-        this.addHeader(getTitle(), Theme.getIcon("settings/barrierfreesettings", 32));
+        this.addHeader(getTitle(), Theme.getIcon("barrierfreesettings", 32));
         this.addDescription(JDT._.gui_settings_barrierfree_description());
         this.addPair(T._.gui_config_barrierfree_captchasize(), captchaSize);
 
@@ -46,7 +46,7 @@ public class BarrierFree extends AbstractConfigPanel {
 
     @Override
     public ImageIcon getIcon() {
-        return Theme.getIcon("settings/barrierfreesettings", 32);
+        return Theme.getIcon("barrierfreesettings", 32);
     }
 
     @Override

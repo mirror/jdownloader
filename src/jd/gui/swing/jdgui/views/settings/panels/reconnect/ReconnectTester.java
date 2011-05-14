@@ -112,7 +112,7 @@ public class ReconnectTester extends MigPanel implements SettingsComponent, Acti
     private void testReconnect() {
         JDLogger.addHeader("Reconnect Testing");
 
-        final ProgressController progress = new ProgressController(100, JDT._.gui_warning_reconnect_pleaseWait(), Theme.getIcon("settings/reconnect", 20));
+        final ProgressController progress = new ProgressController(100, JDT._.gui_warning_reconnect_pleaseWait(), Theme.getIcon("reconnect", 20));
         btnTest.setEnabled(false);
         Log.L.info("Start Reconnect");
         this.lblStatusMessage.setText(JDT._.gui_warning_reconnect_running());
