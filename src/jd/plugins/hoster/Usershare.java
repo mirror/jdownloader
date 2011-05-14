@@ -101,77 +101,77 @@ public class Usershare extends PluginForHost {
                 password = true;
                 logger.info("The downloadlink seems to be password protected.");
             }
-            if (br.containsHTML("api\\.recaptcha\\.net") || br.containsHTML("google.com/recaptcha/api/")) {
-                // Some hosters also got commentfields with captchas, therefore
-                // is
-                // the !br.contains...check Exampleplugin:
-                // FileGigaCom
-                logger.info("Detected captcha method \"Re Captcha\" for this host");
-                PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
-                rc.parse();
-                rc.load();
-                File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                String c = getCaptchaCode(cf, link);
-                if (password) {
-                    passCode = handlePassword(passCode, rc.getForm(), link);
+            Form dlform = null;
+            Form[] forms = br.getForms();
+            if (forms == null || forms.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            for (Form singleForm : forms)
+                if (singleForm.containsHTML(link.getName())) {
+                    dlform = singleForm;
+                    break;
                 }
-                rc.setCode(c);
-                logger.info("Put captchacode " + c + " obtained by captcha metod \"Re Captcha\" in the form and submitted it.");
-                checkErrors(link, true, passCode, false);
-                linkurl = getDllink();
-            } else {
-                Form dlform = null;
-                Form[] forms = br.getForms();
-                if (forms == null || forms.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                for (Form singleForm : forms)
-                    if (singleForm.containsHTML(link.getName())) {
-                        dlform = singleForm;
-                        break;
-                    }
-                if (dlform == null) {
-                    logger.warning("dlform is null...");
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                dlform.setAction(link.getDownloadURL());
-                dlform.remove("method_premium");
-                String cryptedScript = br.getRegex("p\\}\\((.*?)\\.split\\('\\|'\\)").getMatch(0);
-                if (cryptedScript == null) {
-                    logger.warning("cryptedScript is null");
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                String date = unpackJS(cryptedScript);
-                if (date == null) {
-                    logger.warning("date is null #1");
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                date = execJS(date);
-                if (date == null) {
-                    logger.warning("date is null #2");
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                dlform.put("date", date);
-                if (password) {
-                    logger.info("The downloadlink seems to be password protected.");
-                    passCode = handlePassword(passCode, dlform, link);
-                    dlform.put("password", passCode);
-                    logger.info("Put password \"" + passCode + "\" entered by user in the DLForm and submitted it.");
-                }
-                // Ticket Time
-                wait(link);
-                br.submitForm(dlform);
-                Form finalForm = br.getFormbyProperty("name", "F1");
-                if (finalForm != null) {
-                    logger.info("Sending final form...");
-                    finalForm.setAction(link.getDownloadURL());
-                    finalForm.put("x", Integer.toString(new Random().nextInt(100)));
-                    finalForm.put("y", Integer.toString(new Random().nextInt(100)));
-                    br.submitForm(finalForm);
-                }
-                checkErrors(link, true, passCode, false);
-                linkurl = br.getRedirectLocation();
-                if (linkurl == null) linkurl = getDllink();
+            if (dlform == null) {
+                logger.warning("dlform is null...");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+            dlform.setAction(link.getDownloadURL());
+            dlform.remove("method_premium");
+            String cryptedScript = br.getRegex("p\\}\\((.*?)\\.split\\('\\|'\\)").getMatch(0);
+            if (cryptedScript == null) {
+                logger.warning("cryptedScript is null");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            String date = unpackJS(cryptedScript);
+            if (date == null) {
+                logger.warning("date is null #1");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            date = execJS(date);
+            if (date == null) {
+                logger.warning("date is null #2");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            dlform.put("date", date);
+            if (password) {
+                logger.info("The downloadlink seems to be password protected.");
+                passCode = handlePassword(passCode, dlform, link);
+                dlform.put("password", passCode);
+                logger.info("Put password \"" + passCode + "\" entered by user in the DLForm and submitted it.");
+            }
+            // Ticket Time
+            wait(link);
+            br.submitForm(dlform);
+            Form finalForm = br.getFormbyProperty("name", "F1");
+            if (finalForm != null) {
+                if (br.containsHTML("api\\.recaptcha\\.net") || br.containsHTML("google.com/recaptcha/api/")) {
+                    // Some hosters also got commentfields with captchas,
+                    // therefore
+                    // is
+                    // the !br.contains...check Exampleplugin:
+                    // FileGigaCom
+                    logger.info("Detected captcha method \"Re Captcha\" for this host");
+                    PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+                    jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+                    rc.setForm(finalForm);
+                    rc.findID();
+                    rc.load();
+                    File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+                    String c = getCaptchaCode(cf, link);
+                    if (password) {
+                        passCode = handlePassword(passCode, rc.getForm(), link);
+                    }
+                    rc.prepareForm(c);
+                    finalForm = rc.getForm();
+                    logger.info("Put captchacode " + c + " obtained by captcha metod \"Re Captcha\" in the form and submitted it.");
+                }
+                logger.info("Sending final form...");
+                finalForm.setAction(link.getDownloadURL());
+                finalForm.put("x", Integer.toString(new Random().nextInt(100)));
+                finalForm.put("y", Integer.toString(new Random().nextInt(100)));
+                br.submitForm(finalForm);
+            }
+            checkErrors(link, true, passCode, false);
+            linkurl = br.getRedirectLocation();
+            if (linkurl == null) linkurl = getDllink();
             if (passCode != null) {
                 link.setProperty("pass", passCode);
             }

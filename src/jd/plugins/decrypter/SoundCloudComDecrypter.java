@@ -23,6 +23,7 @@ import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "soundcloud.com" }, urls = { "http://(www\\.)?soundcloud\\.com/(?!groups).+" }, flags = { 0 })
@@ -39,11 +40,20 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
         if (!decryptList) decryptList = !parameter.matches(".*?soundcloud\\.com/[a-z\\-_0-9]+/[a-z\\-_0-9]+");
         if (decryptList) {
             br.getPage(parameter);
+            String fpName = br.getRegex("<title>(.*?) on SoundCloud \\- Create, record and share your sounds for free</title>").getMatch(0);
             String[] links = br.getRegex("<h3><a href=\"(/.*?)\"").getColumn(0);
-            if (links == null || links.length == 0) links = br.getRegex("class=\"action-overlay-inner\"><a href=\"(/.*?)\"").getColumn(0);
+            if (links == null || links.length == 0) {
+                links = br.getRegex("class=\"info\"><span>\\d+\\.</span>[\t\n\r ]+<a href=\"(/.*?)\"").getColumn(0);
+                if (links == null || links.length == 0) links = br.getRegex("class=\"action\\-overlay\\-inner\"><a href=\"(/.*?)\"").getColumn(0);
+            }
             if (links == null || links.length == 0) return null;
             for (String sclink : links)
                 decryptedLinks.add(createDownloadlink("http://soundclouddecrypted.com" + sclink));
+            if (fpName != null) {
+                FilePackage fp = FilePackage.getInstance();
+                fp.setName(fpName.trim());
+                fp.addLinks(decryptedLinks);
+            }
         } else {
             decryptedLinks.add(createDownloadlink(parameter.replace("soundcloud", "soundclouddecrypted")));
         }

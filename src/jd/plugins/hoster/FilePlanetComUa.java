@@ -28,12 +28,13 @@ import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.parser.html.HTMLParser;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
+import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
@@ -51,18 +52,29 @@ public class FilePlanetComUa extends PluginForHost {
         return COOKIE_HOST + "/tos.html";
     }
 
-    public String               brbefore     = "";
-    private static final String passwordText = "(<br><b>Password:</b> <input|<br><b>Passwort:</b> <input)";
-    private static final String COOKIE_HOST  = "http://fileplanet.com.ua";
-    public boolean              nopremium    = false;
+    public String               brbefore            = "";
+    private static final String passwordText        = "(<br><b>Password:</b> <input|<br><b>Passwort:</b> <input)";
+    private static final String COOKIE_HOST         = "http://fileplanet.com.ua";
+    public boolean              nopremium           = false;
+    private static final String ONLY4PREMIUM        = "To download files you need to buy a premium account.<br>";
+    private static final String ONLYPREMIUMUSERTEXT = "Only downloadable for premium users";
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(false);
+        // First check over their linkchecker because we cannot find out the
+        // status directly over the link
+        this.checkLinks(new DownloadLink[] { link });
+        if (!link.isAvailabilityStatusChecked()) return AvailableStatus.UNCHECKED;
+        if (link.isAvailabilityStatusChecked() && !link.isAvailable()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         br.setCookie(COOKIE_HOST, "lang", "english");
         br.getPage(link.getDownloadURL());
         doSomething();
+        if (brbefore.contains(ONLY4PREMIUM)) {
+            link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.fileplanetcomua.only4premium", ONLYPREMIUMUSERTEXT));
+            return AvailableStatus.TRUE;
+        }
         if (brbefore.contains("(No such file|No such user exist|File not found)")) {
             logger.warning("file is 99,99% offline, throwing \"file not found\" now...");
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -123,6 +135,7 @@ public class FilePlanetComUa extends PluginForHost {
                 freeform = br.getFormbyKey("download1");
             }
         }
+        doSomething();
         if (freeform != null) {
             freeform.remove(null);
             freeform.remove("method_premium");
@@ -355,7 +368,7 @@ public class FilePlanetComUa extends PluginForHost {
         if (brbefore.contains("You're using all download slots for IP")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l);
         if (brbefore.contains("Error happened when generating Download Link")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error!", 10 * 60 * 1000l);
         // Errorhandling for only-premium links
-        if (brbefore.contains("(You can download files up to.*?only|Upgrade your account to download bigger files|This file reached max downloads)")) {
+        if (brbefore.contains("(You can download files up to.*?only|Upgrade your account to download bigger files|This file reached max downloads)") || brbefore.contains(ONLY4PREMIUM)) {
             String filesizelimit = new Regex(brbefore, "You can download files up to(.*?)only").getMatch(0);
             if (filesizelimit != null) {
                 filesizelimit = filesizelimit.trim();
@@ -363,7 +376,7 @@ public class FilePlanetComUa extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FATAL, "Free users can only download files up to " + filesizelimit);
             } else {
                 logger.warning("Only downloadable via premium");
-                throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable via premium");
+                throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.fileplanetcomua.only4premium", ONLYPREMIUMUSERTEXT));
             }
         }
     }
@@ -373,7 +386,7 @@ public class FilePlanetComUa extends PluginForHost {
         brbefore = br.toString();
         ArrayList<String> someStuff = new ArrayList<String>();
         ArrayList<String> regexStuff = new ArrayList<String>();
-        regexStuff.add("<!(--.*?--)>");
+        regexStuff.add("<\\!(\\-\\-.*?\\-\\-)>");
         regexStuff.add("(display: none;\">.*?</div>)");
         regexStuff.add("(visibility:hidden>.*?<)");
         for (String aRegex : regexStuff) {
@@ -387,6 +400,54 @@ public class FilePlanetComUa extends PluginForHost {
         for (String fun : someStuff) {
             brbefore = brbefore.replace(fun, "");
         }
+    }
+
+    public boolean checkLinks(DownloadLink[] urls) {
+        if (urls == null || urls.length == 0) { return false; }
+        br.setCookie(COOKIE_HOST, "lang", "english");
+        try {
+            ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
+            int index = 0;
+            StringBuilder sb = new StringBuilder();
+            while (true) {
+                sb.delete(0, sb.capacity());
+                sb.append("links=");
+                links.clear();
+                while (true) {
+                    /* we test 100 links at once */
+                    if (index == urls.length || links.size() > 100) break;
+                    links.add(urls[index]);
+                    index++;
+                }
+                int c = 0;
+                for (DownloadLink dl : links) {
+                    /*
+                     * append fake filename, because api will not report
+                     * anything else
+                     */
+                    if (c > 0) sb.append("%0D%0A");
+                    sb.append(dl.getDownloadURL());
+                    c++;
+                }
+                br.postPage("http://fileplanet.com.ua/checkfiles.html", "op=checkfiles&process=URLs+pr%C3%BCfen&list=" + sb.toString());
+                for (DownloadLink dl : links) {
+                    String linkpart = new Regex(dl.getDownloadURL(), "fileplanet\\.com\\.ua/([a-z0-9]+)").getMatch(0);
+                    if (linkpart == null) {
+                        logger.warning(this.getHost() + " availablecheck is broken!");
+                        return false;
+                    }
+                    if (br.containsHTML(linkpart + " not found") || !br.containsHTML(linkpart + " found")) {
+                        dl.setAvailable(false);
+                    } else {
+                        dl.setAvailable(true);
+                    }
+                }
+                if (index == urls.length) break;
+            }
+        } catch (Exception e) {
+            return false;
+        }
+        return true;
     }
 
     @Override
