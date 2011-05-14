@@ -23,11 +23,11 @@ import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
@@ -91,8 +91,10 @@ public class YouSendItCom extends PluginForHost {
             if (br.containsHTML("Download link is invalid")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             String filename = br.getRegex("style=\"width:390px; display:block; overflow:hidden;\">(.*?)</a>").getMatch(0);
             if (filename == null) filename = br.getRegex("<span style=\\'color:#1F3CD6;\\'>(.*?)</span><").getMatch(0);
+            if (filename == null) filename = br.getRegex("clsDownloadFileName\">(.*?)</").getMatch(0);
             String filesize = br.getRegex("\">Size:\\&nbsp;<strong>(.*?)</strong>").getMatch(0);
             if (filesize == null) filesize = br.getRegex(";\\'>Size: (.*?)\\&nbsp;").getMatch(0);
+            if (filesize == null) filesize = br.getRegex("\">Size: (.*?)</").getMatch(0);
             if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             // Set the final filename here because server sometimes doesn't give
             // us
@@ -117,7 +119,7 @@ public class YouSendItCom extends PluginForHost {
             if (dllink == null) {
                 dllink = br.getRegex("onclick=\\'showDownloadProcessing\\(this\\);\\' style=\\'position:absolute;top:10px;right:10px;\\'>[\t\r\n ]+<a href=\"(.*?)\"").getMatch(0);
                 if (dllink == null) {
-                    dllink = br.getRegex("\"(directDownload\\?phi_action=app/directDownload\\&fl=[A-Za-z0]+(\\&experience=bas)?)\"").getMatch(0);
+                    dllink = br.getRegex("\"(directDownload\\?phi_action=app/directDownload\\&fl=[A-Za-z0-9]+(\\&experience=bas)?)\"").getMatch(0);
                     if (dllink == null) {
                         dllink = br.getRegex("<a id=\"download-button\" href=\"(http.*?)\"").getMatch(0);
                         dllink = null;

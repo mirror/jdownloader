@@ -51,26 +51,26 @@ public class ClipboardHandler extends Thread implements ControlListener {
         return INSTANCE;
     }
 
-    private final Clipboard clipboard;
+    private final Clipboard     clipboard;
 
-    private boolean enabled = false;
+    private boolean             enabled        = false;
 
-    private boolean waitFlag;
-    private boolean tempdisabled = true;
+    private boolean             waitFlag;
+    private boolean             tempdisabled   = true;
 
-    private DataFlavor urlFlavor = null;
+    private DataFlavor          urlFlavor      = null;
 
-    private DataFlavor uriListFlavor = null;
-    private final DataFlavor fileListFlavor = DataFlavor.javaFileListFlavor;
-    private final DataFlavor stringFlavor = DataFlavor.stringFlavor;
-    private DataFlavor htmlFlavor = null;
+    private DataFlavor          uriListFlavor  = null;
+    private final DataFlavor    fileListFlavor = DataFlavor.javaFileListFlavor;
+    private final DataFlavor    stringFlavor   = DataFlavor.stringFlavor;
+    private DataFlavor          htmlFlavor     = null;
 
-    private Transferable cur = null;
-    private DataFlavor lastDataFlavor = null;
-    private String lastString = null;
-    private String currentString = null;
-    private final static byte[] tmpByteArray = new byte[0];
-    private final Object LOCK = new Object();
+    private Transferable        cur            = null;
+    private DataFlavor          lastDataFlavor = null;
+    private String              lastString     = null;
+    private String              currentString  = null;
+    private final static byte[] tmpByteArray   = new byte[0];
+    private final Object        LOCK           = new Object();
 
     /**
      */

@@ -19,6 +19,8 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
+import jd.http.RandomUserAgent;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
@@ -32,6 +34,8 @@ import org.appwork.utils.formatter.SizeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "u.115.com" }, urls = { "http://[\\w\\.]*?u\\.115\\.com/file/[a-z0-9]+" }, flags = { 0 })
 public class U115Com extends PluginForHost {
 
+    private final String ua = RandomUserAgent.generate();
+
     public U115Com(PluginWrapper wrapper) {
         super(wrapper);
         // 10 seconds waittime between the downloadstart of simultan DLs of this
@@ -44,6 +48,21 @@ public class U115Com extends PluginForHost {
         return "http://u.115.com/tos.html";
     }
 
+    private void prepareBrowser(final Browser br) {
+        try {
+            if (br == null) { return; }
+            br.setCookie("http://u.115.com/", "lang", "en");
+            br.getHeaders().put("User-Agent", ua);
+            br.setCustomCharset("utf-8");
+            br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
+            br.getHeaders().put("Accept-Language", "en-us,de;q=0.7,en;q=0.3");
+            br.getHeaders().put("Pragma", null);
+            br.getHeaders().put("Cache-Control", null);
+        } catch (Throwable e) {
+            /* setCookie throws exception in 09580 */
+        }
+    }
+
     private static final String UNDERMAINTENANCEURL  = "http://u.115.com/weihu.html";
     private static final String UNDERMAINTENANCETEXT = "The servers are under maintenance";
     private static final String NOFREESLOTS          = "网络繁忙时段，非登陆用户其它下载地址暂时关闭。推荐您使用优蛋下载";
@@ -51,6 +70,7 @@ public class U115Com extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
+        prepareBrowser(br);
         br.setCustomCharset("utf-8");
         br.getPage(link.getDownloadURL());
         if (br.getRedirectLocation() != null) {
@@ -58,7 +78,7 @@ public class U115Com extends PluginForHost {
                 link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.U115Com.undermaintenance", UNDERMAINTENANCETEXT));
                 return AvailableStatus.UNCHECKABLE;
             }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            br.getPage(br.getRedirectLocation());
         }
         if (br.containsHTML("id=\"pickcode_error\">很抱歉，文件不存在。</div>") || br.containsHTML("很抱歉，文件不存在。")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<title>(.*?)\\|115网盘|网盘|115网络U盘-我的网盘|免费网络硬盘</title>").getMatch(0);
@@ -113,6 +133,7 @@ public class U115Com extends PluginForHost {
     public String findLink() throws Exception {
         String linkToDownload = br.getRegex("\"(http://\\d+\\.(cnc|tel|bak)\\.115cdn\\.com/pickdown/.*?)\"").getMatch(0);
         if (linkToDownload == null) linkToDownload = br.getRegex("</a>\\&nbsp;[\t\r\n ]+<a href=\"(http://.*?)\"").getMatch(0);
+        if (linkToDownload == null) linkToDownload = br.getRegex("download-link\">.*?<a href=\"(http://.*?)\"").getMatch(0);
         return linkToDownload;
     }
 

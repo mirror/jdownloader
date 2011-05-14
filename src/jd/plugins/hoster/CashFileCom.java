@@ -85,7 +85,7 @@ public class CashFileCom extends PluginForHost {
             if (filename == null) {
                 filename = new Regex(BRBEFORE, "<h2>Download File(.*?)</h2>").getMatch(0);
                 if (filename == null) {
-                    filename = new Regex(BRBEFORE, "Filename:</b></td><td[ ]{0,2}>(.*?)</td>").getMatch(0);
+                    filename = new Regex(BRBEFORE, "Filename:</b>(&nbsp;)?(.*?)<").getMatch(1);
                     if (filename == null) {
                         filename = new Regex(BRBEFORE, "Filename.*?nowrap.*?>(.*?)</td").getMatch(0);
                         if (filename == null) {

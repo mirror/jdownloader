@@ -24,11 +24,11 @@ import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.BrowserAdapter;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "duckload.com" }, urls = { "http://[\\w\\.]*?duckload\\.com/(download/[a-z0-9]+(/.+)?|(divx|play|dl)/[a-zA-Z0-9\\.-]+|[a-zA-Z0-9\\.]+\\.html)" }, flags = { 2 })
 public class DuckLoad extends PluginForHost {
@@ -136,7 +136,10 @@ public class DuckLoad extends PluginForHost {
         this.sleep(Long.parseLong(values[1]) * 1000l, downloadLink);
 
         final String finallink = this.br.postPage("http://www.duckload.com/jDownloader/getFreeEncrypt.php", "crypt=" + values[2]);
-        if (!finallink.startsWith("http://") || finallink.startsWith("ERROR; ")) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, finallink); }
+        if (!finallink.startsWith("http://") || finallink.startsWith("ERROR; ")) {
+            if (br.containsHTML("Maintenance")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Maintenance", 60 * 60 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, finallink);
+        }
         this.dl = BrowserAdapter.openDownload(this.br, downloadLink, finallink, true, 1);
         if (!this.dl.getConnection().isContentDisposition()) {
             this.br.followConnection();
@@ -188,7 +191,10 @@ public class DuckLoad extends PluginForHost {
         if (usedCachedLink == false) {
             /* create new link */
             finalLink = this.br.postPage("http://www.duckload.com/jDownloader/getPremium.php", "link=" + Encoding.urlEncode(link) + "&jd_uname=" + Encoding.urlEncode(account.getUser()) + "&jd_pass=" + Encoding.urlEncode(account.getPass()));
-            if (!finalLink.startsWith("http:") || finalLink.startsWith("ERROR; ")) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, finalLink); }
+            if (!finalLink.startsWith("http:") || finalLink.startsWith("ERROR; ")) {
+                if (br.containsHTML("Maintenance")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Maintenance", 60 * 60 * 1000l);
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, finalLink);
+            }
             this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, finalLink, true, 0);
             if (!this.dl.getConnection().isContentDisposition()) {
                 this.br.followConnection();
