@@ -117,7 +117,7 @@ public class HellShareCom extends PluginForHost {
          * reduces traffic very fast ;)
          */
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
-        if (!(dl.getConnection().isContentDisposition())) {
+        if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
             if (br.containsHTML("<h1>File not found</h1>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             if (br.containsHTML("The server is under the maximum load")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server is under maximum load", 10 * 60 * 1000l);
@@ -193,7 +193,7 @@ public class HellShareCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1000l);
         }
         if (br.containsHTML("<h1>File not found</h1>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String fileId = new Regex(downloadLink.getDownloadURL(), "/(\\d+)$(/)?").getMatch(0);
+        String fileId = new Regex(downloadLink.getDownloadURL(), "/(\\d+)(/)?$").getMatch(0);
         Form form = br.getForm(0);
         if (form == null || fileId == null || !br.containsHTML("antispam\\.php\\?sv=FreeDown:")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String captcha = "http://www.en.hellshare.com/antispam.php?sv=FreeDown:" + fileId;
