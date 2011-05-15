@@ -31,7 +31,7 @@ import jd.gui.swing.jdgui.views.downloads.columns.StatusColumn;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
-import org.jdownloader.gui.translate.T;
+import org.jdownloader.gui.translate._GUI;
 
 public class DownloadJTableModel extends JDTableModel {
 
@@ -42,16 +42,16 @@ public class DownloadJTableModel extends JDTableModel {
     }
 
     protected void initColumns() {
-        this.addColumn(new FileColumn(T._.gui_treetable_name(), this));
-        this.addColumn(new SizeColumn(T._.gui_treetable_size(), this));
-        this.addColumn(new LoadedColumn(T._.gui_treetable_loaded(), this));
-        this.addColumn(new RemainingColumn(T._.gui_treetable_remaining(), this));
-        this.addColumn(new HosterColumn(T._.gui_treetable_hoster(), this));
-        this.addColumn(new DateAddedColumn(T._.gui_treetable_added(), this));
-        this.addColumn(new DateFinishedColumn(T._.gui_treetable_finished(), this));
-        this.addColumn(new StatusColumn(T._.gui_treetable_status(), this));
-        this.addColumn(new ProgressColumn(T._.gui_treetable_progress(), this));
-        this.addColumn(new ProxyColumn(T._.gui_treetable_proxy(), this));
+        this.addColumn(new FileColumn(_GUI._.gui_treetable_name(), this));
+        this.addColumn(new SizeColumn(_GUI._.gui_treetable_size(), this));
+        this.addColumn(new LoadedColumn(_GUI._.gui_treetable_loaded(), this));
+        this.addColumn(new RemainingColumn(_GUI._.gui_treetable_remaining(), this));
+        this.addColumn(new HosterColumn(_GUI._.gui_treetable_hoster(), this));
+        this.addColumn(new DateAddedColumn(_GUI._.gui_treetable_added(), this));
+        this.addColumn(new DateFinishedColumn(_GUI._.gui_treetable_finished(), this));
+        this.addColumn(new StatusColumn(_GUI._.gui_treetable_status(), this));
+        this.addColumn(new ProgressColumn(_GUI._.gui_treetable_progress(), this));
+        this.addColumn(new ProxyColumn(_GUI._.gui_treetable_proxy(), this));
     }
 
     public void refreshModel() {

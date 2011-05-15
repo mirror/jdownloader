@@ -23,14 +23,14 @@ import jd.gui.swing.jdgui.menu.actions.RemoveDupesAction;
 import jd.gui.swing.jdgui.menu.actions.RemoveFailedAction;
 import jd.gui.swing.jdgui.menu.actions.RemoveOfflineAction;
 
-import org.jdownloader.gui.translate.T;
+import org.jdownloader.gui.translate._GUI;
 
 public class CleanupMenu extends JStartMenu {
 
     private static final long serialVersionUID = 2238339685705371437L;
 
     public CleanupMenu() {
-        super(T._.gui_menu_remove(), "gui.images.delete");
+        super(_GUI._.gui_menu_remove(), "gui.images.delete");
 
         this.add(new CleanupDownloads());
         this.add(new CleanupPackages());

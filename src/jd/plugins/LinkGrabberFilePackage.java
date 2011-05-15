@@ -30,7 +30,7 @@ import jd.nutils.io.JDIO;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.event.Eventsender;
-import org.jdownloader.translate.JDT;
+import org.jdownloader.translate._JDT;
 
 class LinkGrabberFilePackageBroadcaster extends Eventsender<LinkGrabberFilePackageListener, LinkGrabberFilePackageEvent> {
 
@@ -100,7 +100,7 @@ public class LinkGrabberFilePackage extends Property implements LinkGrabberFileP
     public LinkGrabberFilePackage() {
         created = System.currentTimeMillis();
         downloadDirectory = JDUtilities.getDefaultDownloadDirectory();
-        name = JDUtilities.removeEndingPoints(JDT._.controller_packages_defaultname());
+        name = JDUtilities.removeEndingPoints(_JDT._.controller_packages_defaultname());
         useSubDir = JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_PACKETNAME_AS_SUBFOLDER, false);
         // TODO
         // OptionalPluginWrapper addon = JDUtilities.getOptionalPlugin("unrar");
@@ -408,7 +408,7 @@ public class LinkGrabberFilePackage extends Property implements LinkGrabberFileP
 
     public void setName(String name) {
         if (name == null || name.length() == 0) {
-            this.name = JDUtilities.removeEndingPoints(JDT._.controller_packages_defaultname());
+            this.name = JDUtilities.removeEndingPoints(_JDT._.controller_packages_defaultname());
         } else
             this.name = JDUtilities.removeEndingPoints(JDIO.validateFileandPathName(name));
         this.name = this.name.trim();

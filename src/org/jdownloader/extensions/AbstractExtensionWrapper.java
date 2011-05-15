@@ -12,7 +12,7 @@ import org.appwork.storage.Storable;
 import org.appwork.utils.Application;
 import org.appwork.utils.ImageProvider.ImageProvider;
 import org.appwork.utils.images.IconIO;
-import org.jdownloader.translate.JDT;
+import org.jdownloader.translate._JDT;
 
 /**
  * Wraps around an extension to avoid extension init if the extension is not
@@ -45,7 +45,7 @@ public class AbstractExtensionWrapper implements Storable {
         ret.macRunnable = plg.isMacRunnable();
         ret.settings = plg.hasConfigPanel();
         ret.name = plg.getName();
-        ret.lng = JDT.getLanguage();
+        ret.lng = _JDT.getLanguage();
         ret.version = plg.getVersion();
         ret.windowsRunnable = plg.isWindowsRunnable();
         ret.extension = plg;

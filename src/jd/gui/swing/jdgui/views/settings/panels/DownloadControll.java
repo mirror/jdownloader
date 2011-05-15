@@ -22,9 +22,9 @@ import jd.gui.swing.jdgui.views.settings.components.ComboBox;
 import jd.gui.swing.jdgui.views.settings.components.Spinner;
 
 import org.jdownloader.gui.settings.AbstractConfigPanel;
-import org.jdownloader.gui.translate.T;
+import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.Theme;
-import org.jdownloader.translate.JDT;
+import org.jdownloader.translate._JDT;
 
 public class DownloadControll extends AbstractConfigPanel {
 
@@ -34,25 +34,25 @@ public class DownloadControll extends AbstractConfigPanel {
     private ComboBox          ifFileExists;
 
     public String getTitle() {
-        return JDT._.gui_settings_downloadcontroll_title();
+        return _JDT._.gui_settings_downloadcontroll_title();
     }
 
     public DownloadControll() {
         super();
 
-        this.addHeader(JDT._.gui_settings_downloadcontroll_title(), Theme.getIcon("downloadmanagment", 32));
-        this.addDescription(JDT._.gui_settings_downloadcontroll_description());
+        this.addHeader(_JDT._.gui_settings_downloadcontroll_title(), Theme.getIcon("downloadmanagment", 32));
+        this.addDescription(_JDT._.gui_settings_downloadcontroll_description());
 
         maxSimPerHost = new Spinner(0, 20);
-        String[] removeDownloads = new String[] { T._.gui_config_general_toDoWithDownloads_immediate(), T._.gui_config_general_toDoWithDownloads_atstart(), T._.gui_config_general_toDoWithDownloads_packageready(), T._.gui_config_general_toDoWithDownloads_never() };
+        String[] removeDownloads = new String[] { _GUI._.gui_config_general_toDoWithDownloads_immediate(), _GUI._.gui_config_general_toDoWithDownloads_atstart(), _GUI._.gui_config_general_toDoWithDownloads_packageready(), _GUI._.gui_config_general_toDoWithDownloads_never() };
 
         remove = new ComboBox(removeDownloads);
-        String[] fileExists = new String[] { T._.system_download_triggerfileexists_overwrite(), T._.system_download_triggerfileexists_skip(), T._.system_download_triggerfileexists_rename(), T._.system_download_triggerfileexists_askpackage(), T._.system_download_triggerfileexists_ask() };
+        String[] fileExists = new String[] { _GUI._.system_download_triggerfileexists_overwrite(), _GUI._.system_download_triggerfileexists_skip(), _GUI._.system_download_triggerfileexists_rename(), _GUI._.system_download_triggerfileexists_askpackage(), _GUI._.system_download_triggerfileexists_ask() };
         ifFileExists = new ComboBox(fileExists);
 
-        this.addPair(T._.gui_config_download_simultan_downloads_per_host(), maxSimPerHost);
-        this.addPair(T._.gui_config_general_todowithdownloads(), remove);
-        this.addPair(T._.system_download_triggerfileexists(), ifFileExists);
+        this.addPair(_GUI._.gui_config_download_simultan_downloads_per_host(), maxSimPerHost);
+        this.addPair(_GUI._.gui_config_general_todowithdownloads(), remove);
+        this.addPair(_GUI._.system_download_triggerfileexists(), ifFileExists);
     }
 
     @Override

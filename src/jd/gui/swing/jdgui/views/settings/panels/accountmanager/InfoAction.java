@@ -11,7 +11,7 @@ import jd.plugins.infogenerator.PluginInfoGenerator;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.os.CrossSystem;
-import org.jdownloader.gui.translate.T;
+import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.Theme;
 
 public class InfoAction extends TableBarAction {
@@ -19,7 +19,7 @@ public class InfoAction extends TableBarAction {
 
     public InfoAction() {
 
-        this.putValue(NAME, T._.settings_accountmanager_info());
+        this.putValue(NAME, _GUI._.settings_accountmanager_info());
         this.putValue(AbstractAction.SMALL_ICON, Theme.getIcon("info", ActionColumn.SIZE));
     }
 

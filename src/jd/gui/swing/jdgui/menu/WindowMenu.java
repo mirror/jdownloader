@@ -30,7 +30,7 @@ import jd.gui.swing.jdgui.actions.ToolBarAction;
 import org.appwork.utils.Application;
 import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionController;
-import org.jdownloader.translate.JDT;
+import org.jdownloader.translate._JDT;
 
 public class WindowMenu extends JMenu {
 
@@ -38,7 +38,7 @@ public class WindowMenu extends JMenu {
     private static WindowMenu INSTANCE         = null;
 
     private WindowMenu() {
-        super(JDT._.gui_menu_windows());
+        super(_JDT._.gui_menu_windows());
         updateMenu();
     }
 

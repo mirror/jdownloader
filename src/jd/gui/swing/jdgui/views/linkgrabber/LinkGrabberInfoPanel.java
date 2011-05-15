@@ -29,7 +29,7 @@ import jd.nutils.Formatter;
 import jd.plugins.LinkGrabberFilePackage;
 
 import org.appwork.storage.config.JsonConfig;
-import org.jdownloader.gui.translate.T;
+import org.jdownloader.gui.translate._GUI;
 
 public class LinkGrabberInfoPanel extends InfoPanel {
 
@@ -43,10 +43,10 @@ public class LinkGrabberInfoPanel extends InfoPanel {
     public LinkGrabberInfoPanel() {
         super("gui.images.taskpanes.linkgrabber");
 
-        addInfoEntry(T._.jd_gui_swing_jdgui_views_info_LinkGrabberInfoPanel_packages(), "0", 0, 0);
-        addInfoEntry(T._.jd_gui_swing_jdgui_views_info_LinkGrabberInfoPanel_links(), "0", 0, 1);
-        addInfoEntry(T._.jd_gui_swing_jdgui_views_info_LinkGrabberInfoPanel_filteredlinks(), "0", 1, 1);
-        addInfoEntry(T._.jd_gui_swing_jdgui_views_info_LinkGrabberInfoPanel_size(), "0", 1, 0);
+        addInfoEntry(_GUI._.jd_gui_swing_jdgui_views_info_LinkGrabberInfoPanel_packages(), "0", 0, 0);
+        addInfoEntry(_GUI._.jd_gui_swing_jdgui_views_info_LinkGrabberInfoPanel_links(), "0", 0, 1);
+        addInfoEntry(_GUI._.jd_gui_swing_jdgui_views_info_LinkGrabberInfoPanel_filteredlinks(), "0", 1, 1);
+        addInfoEntry(_GUI._.jd_gui_swing_jdgui_views_info_LinkGrabberInfoPanel_size(), "0", 1, 0);
         addCheckboxes();
         lgi = LinkGrabberController.getInstance();
         Thread updateTimer = new Thread() {
@@ -67,7 +67,7 @@ public class LinkGrabberInfoPanel extends InfoPanel {
     }
 
     private void addCheckboxes() {
-        final JCheckBox topOrBottom = new JCheckBox(T._.gui_taskpanes_download_linkgrabber_config_addattop());
+        final JCheckBox topOrBottom = new JCheckBox(_GUI._.gui_taskpanes_download_linkgrabber_config_addattop());
         topOrBottom.setOpaque(false);
         topOrBottom.addActionListener(new ActionListener() {
 
@@ -79,10 +79,10 @@ public class LinkGrabberInfoPanel extends InfoPanel {
         });
         topOrBottom.setSelected(JsonConfig.create(LinkgrabberSettings.class).isAddNewLinksOnTop());
 
-        topOrBottom.setToolTipText(T._.gui_tooltips_linkgrabber_topOrBottom());
+        topOrBottom.setToolTipText(_GUI._.gui_tooltips_linkgrabber_topOrBottom());
         topOrBottom.setIconTextGap(3);
 
-        final JCheckBox startAfterAdding = new JCheckBox(T._.gui_taskpanes_download_linkgrabber_config_startofter());
+        final JCheckBox startAfterAdding = new JCheckBox(_GUI._.gui_taskpanes_download_linkgrabber_config_startofter());
         startAfterAdding.setOpaque(false);
         startAfterAdding.addActionListener(new ActionListener() {
 
@@ -94,10 +94,10 @@ public class LinkGrabberInfoPanel extends InfoPanel {
         });
         startAfterAdding.setSelected(JsonConfig.create(LinkgrabberSettings.class).isAutoDownloadStartAfterAddingEnabled());
 
-        startAfterAdding.setToolTipText(T._.gui_tooltips_linkgrabber_startlinksafteradd());
+        startAfterAdding.setToolTipText(_GUI._.gui_tooltips_linkgrabber_startlinksafteradd());
         startAfterAdding.setIconTextGap(3);
 
-        final JCheckBox autoStart = new JCheckBox(T._.gui_taskpanes_download_linkgrabber_config_autostart());
+        final JCheckBox autoStart = new JCheckBox(_GUI._.gui_taskpanes_download_linkgrabber_config_autostart());
         autoStart.setOpaque(false);
         autoStart.addActionListener(new ActionListener() {
 
@@ -108,7 +108,7 @@ public class LinkGrabberInfoPanel extends InfoPanel {
         });
         autoStart.setSelected(JsonConfig.create(LinkgrabberSettings.class).isAutoaddLinksAfterLinkcheck());
 
-        autoStart.setToolTipText(T._.gui_tooltips_linkgrabber_autostart());
+        autoStart.setToolTipText(_GUI._.gui_tooltips_linkgrabber_autostart());
         autoStart.setIconTextGap(3);
 
         addComponent(topOrBottom, 2, 0);
@@ -129,10 +129,10 @@ public class LinkGrabberInfoPanel extends InfoPanel {
                     tot += fp.getDownloadSize(false);
                     links += fp.getDownloadLinks().size();
                 }
-                updateInfo(T._.jd_gui_swing_jdgui_views_info_LinkGrabberInfoPanel_packages(), fps.size());
-                updateInfo(T._.jd_gui_swing_jdgui_views_info_LinkGrabberInfoPanel_links(), links);
-                updateInfo(T._.jd_gui_swing_jdgui_views_info_LinkGrabberInfoPanel_filteredlinks(), lgi.getFilterPackage().size());
-                updateInfo(T._.jd_gui_swing_jdgui_views_info_LinkGrabberInfoPanel_size(), Formatter.formatReadable(tot));
+                updateInfo(_GUI._.jd_gui_swing_jdgui_views_info_LinkGrabberInfoPanel_packages(), fps.size());
+                updateInfo(_GUI._.jd_gui_swing_jdgui_views_info_LinkGrabberInfoPanel_links(), links);
+                updateInfo(_GUI._.jd_gui_swing_jdgui_views_info_LinkGrabberInfoPanel_filteredlinks(), lgi.getFilterPackage().size());
+                updateInfo(_GUI._.jd_gui_swing_jdgui_views_info_LinkGrabberInfoPanel_size(), Formatter.formatReadable(tot));
                 fps.clear();
                 return null;
             }

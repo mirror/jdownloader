@@ -22,7 +22,7 @@ import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.jdgui.views.InfoPanel;
 import jd.nutils.Formatter;
 
-import org.jdownloader.gui.translate.T;
+import org.jdownloader.gui.translate._GUI;
 
 public class DownloadInfoPanel extends InfoPanel {
 
@@ -33,12 +33,12 @@ public class DownloadInfoPanel extends InfoPanel {
     public DownloadInfoPanel() {
         super("gui.images.taskpanes.download");
 
-        addInfoEntry(T._.jd_gui_swing_jdgui_views_info_DownloadInfoPanel_packages(), "0", 0, 0);
-        addInfoEntry(T._.jd_gui_swing_jdgui_views_info_DownloadInfoPanel_links(), "0", 0, 1);
-        addInfoEntry(T._.jd_gui_swing_jdgui_views_info_DownloadInfoPanel_size(), "0", 1, 0);
-        addInfoEntry(T._.jd_gui_swing_jdgui_views_info_DownloadInfoPanel_speed(), "0", 2, 0);
-        addInfoEntry(T._.jd_gui_swing_jdgui_views_info_DownloadInfoPanel_eta(), "0", 2, 1);
-        addInfoEntry(T._.jd_gui_swing_jdgui_views_info_DownloadInfoPanel_progress(), "0", 3, 0);
+        addInfoEntry(_GUI._.jd_gui_swing_jdgui_views_info_DownloadInfoPanel_packages(), "0", 0, 0);
+        addInfoEntry(_GUI._.jd_gui_swing_jdgui_views_info_DownloadInfoPanel_links(), "0", 0, 1);
+        addInfoEntry(_GUI._.jd_gui_swing_jdgui_views_info_DownloadInfoPanel_size(), "0", 1, 0);
+        addInfoEntry(_GUI._.jd_gui_swing_jdgui_views_info_DownloadInfoPanel_speed(), "0", 2, 0);
+        addInfoEntry(_GUI._.jd_gui_swing_jdgui_views_info_DownloadInfoPanel_eta(), "0", 2, 1);
+        addInfoEntry(_GUI._.jd_gui_swing_jdgui_views_info_DownloadInfoPanel_progress(), "0", 3, 0);
         ds = DownloadInformations.getInstance();
         Thread updateTimer = new Thread() {
             public void run() {
@@ -68,12 +68,12 @@ public class DownloadInfoPanel extends InfoPanel {
                 } else {
                     speed = 0;
                 }
-                updateInfo(T._.jd_gui_swing_jdgui_views_info_DownloadInfoPanel_speed(), Formatter.formatReadable(speed) + "/s");
-                updateInfo(T._.jd_gui_swing_jdgui_views_info_DownloadInfoPanel_eta(), Formatter.formatSeconds(speed == 0 ? -1 : ds.getETA()));
-                updateInfo(T._.jd_gui_swing_jdgui_views_info_DownloadInfoPanel_packages(), ds.getPackagesCount());
-                updateInfo(T._.jd_gui_swing_jdgui_views_info_DownloadInfoPanel_links(), ds.getDownloadCount());
-                updateInfo(T._.jd_gui_swing_jdgui_views_info_DownloadInfoPanel_size(), Formatter.formatReadable(ds.getTotalDownloadSize()));
-                updateInfo(T._.jd_gui_swing_jdgui_views_info_DownloadInfoPanel_progress(), ds.getPercent() + "%");
+                updateInfo(_GUI._.jd_gui_swing_jdgui_views_info_DownloadInfoPanel_speed(), Formatter.formatReadable(speed) + "/s");
+                updateInfo(_GUI._.jd_gui_swing_jdgui_views_info_DownloadInfoPanel_eta(), Formatter.formatSeconds(speed == 0 ? -1 : ds.getETA()));
+                updateInfo(_GUI._.jd_gui_swing_jdgui_views_info_DownloadInfoPanel_packages(), ds.getPackagesCount());
+                updateInfo(_GUI._.jd_gui_swing_jdgui_views_info_DownloadInfoPanel_links(), ds.getDownloadCount());
+                updateInfo(_GUI._.jd_gui_swing_jdgui_views_info_DownloadInfoPanel_size(), Formatter.formatReadable(ds.getTotalDownloadSize()));
+                updateInfo(_GUI._.jd_gui_swing_jdgui_views_info_DownloadInfoPanel_progress(), ds.getPercent() + "%");
                 return null;
             }
         }.start();

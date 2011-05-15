@@ -26,14 +26,14 @@ import jd.config.SubConfiguration;
 import jd.gui.swing.jdgui.views.settings.ConfigPanel;
 import jd.utils.JDTheme;
 
-import org.jdownloader.gui.translate.T;
+import org.jdownloader.gui.translate._GUI;
 
 public class ConfigPanelCaptcha extends ConfigPanel {
 
     private static final long serialVersionUID = 3383448498625377495L;
 
     public String getTitle() {
-        return T._.jd_gui_swing_jdgui_settings_panels_ConfigPanelCaptcha_captcha_title();
+        return _GUI._.jd_gui_swing_jdgui_settings_panels_ConfigPanelCaptcha_captcha_title();
     }
 
     @Override
@@ -56,11 +56,11 @@ public class ConfigPanelCaptcha extends ConfigPanel {
         ConfigContainer container = new ConfigContainer();
         ConfigEntry ce1;
 
-        container.setGroup(new ConfigGroup(T._.gui_config_captcha_settings(), "gui.images.config.ocr"));
+        container.setGroup(new ConfigGroup(_GUI._.gui_config_captcha_settings(), "gui.images.config.ocr"));
 
-        container.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, SubConfiguration.getConfig("JAC"), Configuration.JAC_SHOW_TIMEOUT, T._.gui_config_captcha_train_show_timeout(), 0, 600, 5).setDefaultValue(20));
-        container.addEntry(ce1 = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, SubConfiguration.getConfig("JAC"), Configuration.PARAM_CAPTCHA_JAC_DISABLE, T._.gui_config_captcha_jac_disable()).setDefaultValue(false));
-        container.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, SubConfiguration.getConfig("JAC"), Configuration.AUTOTRAIN_ERROR_LEVEL, T._.gui_config_captcha_train_level(), 0, 100, 5).setDefaultValue(95).setEnabledCondidtion(ce1, false));
+        container.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, SubConfiguration.getConfig("JAC"), Configuration.JAC_SHOW_TIMEOUT, _GUI._.gui_config_captcha_train_show_timeout(), 0, 600, 5).setDefaultValue(20));
+        container.addEntry(ce1 = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, SubConfiguration.getConfig("JAC"), Configuration.PARAM_CAPTCHA_JAC_DISABLE, _GUI._.gui_config_captcha_jac_disable()).setDefaultValue(false));
+        container.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, SubConfiguration.getConfig("JAC"), Configuration.AUTOTRAIN_ERROR_LEVEL, _GUI._.gui_config_captcha_train_level(), 0, 100, 5).setDefaultValue(95).setEnabledCondidtion(ce1, false));
 
         return container;
     }

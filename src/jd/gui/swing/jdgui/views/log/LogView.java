@@ -26,7 +26,7 @@ import jd.gui.swing.jdgui.views.ClosableView;
 import jd.utils.JDTheme;
 
 import org.appwork.storage.config.JsonConfig;
-import org.jdownloader.gui.translate.T;
+import org.jdownloader.gui.translate._GUI;
 
 /**
  * The tab for the log.
@@ -81,12 +81,12 @@ public class LogView extends ClosableView {
 
     @Override
     public String getTitle() {
-        return T._.jd_gui_swing_jdgui_views_log_tab_title();
+        return _GUI._.jd_gui_swing_jdgui_views_log_tab_title();
     }
 
     @Override
     public String getTooltip() {
-        return T._.jd_gui_swing_jdgui_views_log_tab_tooltip();
+        return _GUI._.jd_gui_swing_jdgui_views_log_tab_tooltip();
     }
 
     @Override

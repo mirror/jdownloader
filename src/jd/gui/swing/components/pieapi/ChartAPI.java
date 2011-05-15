@@ -32,7 +32,7 @@ import javax.swing.JComponent;
 import jd.controlling.JDLogger;
 import jd.nutils.encoding.Encoding;
 
-import org.jdownloader.gui.translate.T;
+import org.jdownloader.gui.translate._GUI;
 
 /**
  * Die ChartAPI greift auf die Google Chart API zurück. Sie funktioniert nur mit
@@ -171,7 +171,7 @@ public abstract class ChartAPI extends JComponent {
         }
 
         g.drawImage(image, 0, 0, null);
-        g.drawString(T._.plugins_config_premium_chartapi_caption_error2(), 0, 10);
+        g.drawString(_GUI._.plugins_config_premium_chartapi_caption_error2(), 0, 10);
     }
 
     public abstract String createDataString();

@@ -26,7 +26,7 @@ import javax.swing.JButton;
 import jd.gui.swing.jdgui.views.InfoPanel;
 import jd.utils.JDTheme;
 
-import org.jdownloader.gui.translate.T;
+import org.jdownloader.gui.translate._GUI;
 
 /**
  * The infopanel where the logcontrol buttons are placed.
@@ -42,7 +42,7 @@ public class LogInfoPanel extends InfoPanel implements ActionListener {
     public LogInfoPanel() {
         super("gui.images.taskpanes.log");
 
-        btnUpload = createButton(T._.jd_gui_swing_jdgui_views_info_LogInfoPanel_upload(), JDTheme.II("gui.images.upload", 16, 16));
+        btnUpload = createButton(_GUI._.jd_gui_swing_jdgui_views_info_LogInfoPanel_upload(), JDTheme.II("gui.images.upload", 16, 16));
 
         addComponent(btnUpload, 1, 1);
     }

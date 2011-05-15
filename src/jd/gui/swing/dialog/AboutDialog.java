@@ -38,7 +38,7 @@ import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
 
-import org.jdownloader.gui.translate.T;
+import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.update.JDUpdater;
 
 public class AboutDialog extends JDialog {
@@ -62,20 +62,20 @@ public class AboutDialog extends JDialog {
 
         JPanel links = new JPanel(new MigLayout("ins 0", "[]push[]push[]push[]"));
         try {
-            JButton btn = Factory.createButton(T._.jd_gui_swing_components_AboutDialog_license(), JDTheme.II("gui.images.premium", 16, 16), new ActionListener() {
+            JButton btn = Factory.createButton(_GUI._.jd_gui_swing_components_AboutDialog_license(), JDTheme.II("gui.images.premium", 16, 16), new ActionListener() {
 
                 public void actionPerformed(ActionEvent e) {
                     String license = JDIO.readFileToString(JDUtilities.getResourceFile("licenses/jdownloader.license"));
-                    UserIO.getInstance().requestMessageDialog(UserIO.STYLE_LARGE | UserIO.NO_ICON | UserIO.NO_COUNTDOWN, T._.jd_gui_swing_components_AboutDialog_license_title(), license);
+                    UserIO.getInstance().requestMessageDialog(UserIO.STYLE_LARGE | UserIO.NO_ICON | UserIO.NO_COUNTDOWN, _GUI._.jd_gui_swing_components_AboutDialog_license_title(), license);
                 }
 
             });
             btn.setBorder(null);
 
             links.add(btn);
-            links.add(new JLink(T._.jd_gui_swing_components_AboutDialog_homepage(), JDTheme.II("gui.images.config.host", 16, 16), new URL("http://www.jdownloader.org/home?lng=en")));
-            links.add(new JLink(T._.jd_gui_swing_components_AboutDialog_forum(), JDTheme.II("gui.images.list", 16, 16), new URL("http://board.jdownloader.org")));
-            links.add(new JLink(T._.jd_gui_swing_components_AboutDialog_contributers(), JDTheme.II("gui.images.accounts", 16, 16), new URL("http://jdownloader.org/knowledge/wiki/contributers")));
+            links.add(new JLink(_GUI._.jd_gui_swing_components_AboutDialog_homepage(), JDTheme.II("gui.images.config.host", 16, 16), new URL("http://www.jdownloader.org/home?lng=en")));
+            links.add(new JLink(_GUI._.jd_gui_swing_components_AboutDialog_forum(), JDTheme.II("gui.images.list", 16, 16), new URL("http://board.jdownloader.org")));
+            links.add(new JLink(_GUI._.jd_gui_swing_components_AboutDialog_contributers(), JDTheme.II("gui.images.accounts", 16, 16), new URL("http://jdownloader.org/knowledge/wiki/contributers")));
         } catch (MalformedURLException e1) {
             e1.printStackTrace();
         }
@@ -85,7 +85,7 @@ public class AboutDialog extends JDialog {
         sb.append("Java Version: ").append(System.getProperty("java.version"));
 
         final String info = sb.toString();
-        JButton btn = Factory.createButton(T._.jd_gui_swing_components_AboutDialog_copy(), JDTheme.II("gui.icons.copy", 16, 16), new ActionListener() {
+        JButton btn = Factory.createButton(_GUI._.jd_gui_swing_components_AboutDialog_copy(), JDTheme.II("gui.icons.copy", 16, 16), new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {
 
@@ -110,7 +110,7 @@ public class AboutDialog extends JDialog {
         this.pack();
 
         this.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
-        this.setTitle(T._.jd_gui_swing_components_AboutDialog_title());
+        this.setTitle(_GUI._.jd_gui_swing_components_AboutDialog_title());
         this.setResizable(false);
         this.setLocation(Screen.getCenterOfComponent(DummyFrame.getDialogParent(), this));
 

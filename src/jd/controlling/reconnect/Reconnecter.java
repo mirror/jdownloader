@@ -39,7 +39,7 @@ import org.appwork.storage.StorageKeyAddedEvent;
 import org.appwork.storage.StorageValueChangeEvent;
 import org.appwork.utils.event.DefaultEventListener;
 import org.appwork.utils.event.DefaultEventSender;
-import org.jdownloader.translate.JDT;
+import org.jdownloader.translate._JDT;
 
 public final class Reconnecter implements StateMachineInterface {
     public static final String         RECONNECT_SUCCESS_COUNTER        = "RECONNECT_SUCCESS_COUNTER";
@@ -212,7 +212,7 @@ public final class Reconnecter implements StateMachineInterface {
             for (retry = 0; retry < maxretries; retry++) {
                 ReconnectPluginController.LOG.info("Starting " + this.toString() + " #" + (retry + 1));
                 progress.increase(1);
-                progress.setStatusText(JDT._.jd_controlling_reconnect_plugins_ReconnectPluginController_doReconnect_1() + (retry + 1));
+                progress.setStatusText(_JDT._.jd_controlling_reconnect_plugins_ReconnectPluginController_doReconnect_1() + (retry + 1));
                 ret = ReconnectPluginController.getInstance().doReconnect();
                 if (ret) {
                     reconnectCounter.incrementAndGet();
@@ -321,7 +321,7 @@ public final class Reconnecter implements StateMachineInterface {
         }
         if (ret == false) {
             /* reconnect failed, increase fail counter */
-            final ProgressController progress = new ProgressController(JDT._.jd_controlling_reconnect_Reconnector_progress_failed(), 100, "gui.images.reconnect_warning");
+            final ProgressController progress = new ProgressController(_JDT._.jd_controlling_reconnect_Reconnector_progress_failed(), 100, "gui.images.reconnect_warning");
             progress.doFinalize(10000l);
 
             final long counter = this.storage.get(Reconnecter.RECONNECT_FAILED_COUNTER, 0);
@@ -334,7 +334,7 @@ public final class Reconnecter implements StateMachineInterface {
 
                 this.setAutoReconnectEnabled(false);
 
-                UserIO.getInstance().requestMessageDialog(UserIO.DONT_SHOW_AGAIN | UserIO.DONT_SHOW_AGAIN_IGNORES_CANCEL, JDT._.jd_controlling_reconnect_Reconnector_progress_failed2());
+                UserIO.getInstance().requestMessageDialog(UserIO.DONT_SHOW_AGAIN | UserIO.DONT_SHOW_AGAIN_IGNORES_CANCEL, _JDT._.jd_controlling_reconnect_Reconnector_progress_failed2());
 
             }
 
@@ -352,7 +352,7 @@ public final class Reconnecter implements StateMachineInterface {
         JDUtilities.getConfiguration().setProperty(Configuration.PARAM_ALLOW_RECONNECT, b);
         if (!b) {
 
-            UserIF.getInstance().displayMiniWarning(JDT._.gui_warning_reconnect_hasbeendisabled(), JDT._.gui_warning_reconnect_hasbeendisabled_tooltip());
+            UserIF.getInstance().displayMiniWarning(_JDT._.gui_warning_reconnect_hasbeendisabled(), _JDT._.gui_warning_reconnect_hasbeendisabled_tooltip());
 
         }
         JDUtilities.getConfiguration().save();

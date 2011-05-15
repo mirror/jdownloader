@@ -6,7 +6,7 @@ import javax.swing.AbstractAction;
 
 import jd.gui.swing.jdgui.actions.ActionController;
 
-import org.jdownloader.gui.translate.T;
+import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.Theme;
 
 public class NewAction extends AbstractAction {
@@ -18,7 +18,7 @@ public class NewAction extends AbstractAction {
 
     public NewAction(PremiumAccountTable table) {
         this.table = table;
-        this.putValue(NAME, T._.settings_accountmanager_add());
+        this.putValue(NAME, _GUI._.settings_accountmanager_add());
         this.putValue(AbstractAction.SMALL_ICON, Theme.getIcon("add", 20));
     }
 

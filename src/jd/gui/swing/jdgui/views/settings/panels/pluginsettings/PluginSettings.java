@@ -7,20 +7,22 @@ import jd.HostPluginWrapper;
 
 import org.jdownloader.gui.settings.AbstractConfigPanel;
 import org.jdownloader.images.Theme;
-import org.jdownloader.translate.JDT;
+import org.jdownloader.translate._JDT;
 
 public class PluginSettings extends AbstractConfigPanel {
 
+    private PluginSettingsPanel psp;
+
     public String getTitle() {
-        return JDT._.gui_settings_plugins_title();
+        return _JDT._.gui_settings_plugins_title();
     }
 
     public PluginSettings() {
         super();
         this.addHeader(getTitle(), Theme.getIcon("plugin", 32));
-        this.addDescription(JDT._.gui_settings_plugins_description(HostPluginWrapper.getHostWrapper().size() + DecryptPluginWrapper.getDecryptWrapper().size()));
+        this.addDescription(_JDT._.gui_settings_plugins_description(HostPluginWrapper.getHostWrapper().size() + DecryptPluginWrapper.getDecryptWrapper().size()));
 
-        add(new PluginSettingsPanel());
+        add(psp = new PluginSettingsPanel());
 
     }
 
@@ -31,9 +33,11 @@ public class PluginSettings extends AbstractConfigPanel {
 
     @Override
     public void save() {
+        psp.setHidden();
     }
 
     @Override
     public void updateContents() {
+        psp.setShown();
     }
 }

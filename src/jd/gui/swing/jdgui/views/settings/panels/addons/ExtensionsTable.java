@@ -28,9 +28,9 @@ import org.jdownloader.extensions.AbstractExtensionWrapper;
 import org.jdownloader.extensions.ExtensionController;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
-import org.jdownloader.gui.translate.T;
+import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.Theme;
-import org.jdownloader.translate.JDT;
+import org.jdownloader.translate._JDT;
 
 public class ExtensionsTable extends SettingsTable<AbstractExtensionWrapper> implements SettingsComponent {
 
@@ -61,7 +61,7 @@ public class ExtensionsTable extends SettingsTable<AbstractExtensionWrapper> imp
         @Override
         protected void initColumns() {
 
-            this.addColumn(new ExtCheckColumn<AbstractExtensionWrapper>(T._.extensiontablemodel_column_enabled()) {
+            this.addColumn(new ExtCheckColumn<AbstractExtensionWrapper>(_GUI._.extensiontablemodel_column_enabled()) {
 
                 public ExtTableHeaderRenderer getHeaderRenderer(final JTableHeader jTableHeader) {
 
@@ -104,7 +104,7 @@ public class ExtensionsTable extends SettingsTable<AbstractExtensionWrapper> imp
                             object._setEnabled(true);
 
                             if (object._getExtension().getGUI() != null) {
-                                int ret = UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN, object.getName(), JDT._.gui_settings_extensions_show_now(object.getName()));
+                                int ret = UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN, object.getName(), _JDT._.gui_settings_extensions_show_now(object.getName()));
 
                                 if (UserIO.isOK(ret)) {
                                     // activate panel
@@ -115,7 +115,7 @@ public class ExtensionsTable extends SettingsTable<AbstractExtensionWrapper> imp
                                 }
                             }
                         } catch (StartException e) {
-                            Dialog.getInstance().showExceptionDialog(JDT._.dialog_title_exception(), e.getMessage(), e);
+                            Dialog.getInstance().showExceptionDialog(_JDT._.dialog_title_exception(), e.getMessage(), e);
                         } catch (StopException e) {
                             e.printStackTrace();
                         }
@@ -126,7 +126,7 @@ public class ExtensionsTable extends SettingsTable<AbstractExtensionWrapper> imp
                         } catch (StartException e) {
                             e.printStackTrace();
                         } catch (StopException e) {
-                            Dialog.getInstance().showExceptionDialog(JDT._.dialog_title_exception(), e.getMessage(), e);
+                            Dialog.getInstance().showExceptionDialog(_JDT._.dialog_title_exception(), e.getMessage(), e);
                         }
                     }
                     /*
@@ -141,7 +141,7 @@ public class ExtensionsTable extends SettingsTable<AbstractExtensionWrapper> imp
                 }
             });
 
-            this.addColumn(new ExtTextColumn<AbstractExtensionWrapper>(T._.gui_column_plugin(), this) {
+            this.addColumn(new ExtTextColumn<AbstractExtensionWrapper>(_GUI._.gui_column_plugin(), this) {
 
                 private static final long serialVersionUID = -3960914415647488335L;
 
@@ -156,7 +156,7 @@ public class ExtensionsTable extends SettingsTable<AbstractExtensionWrapper> imp
                 }
 
             });
-            this.addColumn(new ExtLongColumn<AbstractExtensionWrapper>(T._.gui_column_version(), this) {
+            this.addColumn(new ExtLongColumn<AbstractExtensionWrapper>(_GUI._.gui_column_version(), this) {
 
                 private static final long serialVersionUID = -7390851512040553114L;
 

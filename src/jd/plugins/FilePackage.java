@@ -32,7 +32,7 @@ import jd.nutils.io.JDIO;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.event.Eventsender;
-import org.jdownloader.translate.JDT;
+import org.jdownloader.translate._JDT;
 
 class FilePackageBroadcaster extends Eventsender<FilePackageListener, FilePackageEvent> {
 
@@ -64,7 +64,7 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
     public synchronized static FilePackage getDefaultFilePackage() {
         if (FP == null) {
             FP = new FilePackage();
-            FP.setName(JDT._.controller_packages_defaultname());
+            FP.setName(_JDT._.controller_packages_defaultname());
         }
         return FP;
     }

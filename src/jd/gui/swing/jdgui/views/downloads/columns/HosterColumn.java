@@ -33,7 +33,7 @@ import jd.plugins.PluginForHost;
 import jd.utils.JDTheme;
 
 import org.jdesktop.swingx.renderer.JRendererLabel;
-import org.jdownloader.gui.translate.T;
+import org.jdownloader.gui.translate._GUI;
 
 public class HosterColumn extends JDTableColumn {
 
@@ -57,8 +57,8 @@ public class HosterColumn extends JDTableColumn {
         jlr.setBorder(null);
         imgResume = JDTheme.II("gui.images.resume", 16, 16);
         imgPremium = JDTheme.II("gui.images.premium", 16, 16);
-        strResume = T._.jd_gui_swing_jdgui_views_downloadview_TableRenderer_resume();
-        strPremium = T._.jd_gui_swing_jdgui_views_downloadview_TableRenderer_premium();
+        strResume = _GUI._.jd_gui_swing_jdgui_views_downloadview_TableRenderer_resume();
+        strPremium = _GUI._.jd_gui_swing_jdgui_views_downloadview_TableRenderer_premium();
     }
 
     @Override

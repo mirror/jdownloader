@@ -7,7 +7,7 @@ import jd.gui.swing.jdgui.interfaces.ContextMenuAction;
 import jd.gui.swing.jdgui.views.linkgrabber.LinkGrabberPanel;
 import jd.plugins.LinkGrabberFilePackage;
 
-import org.jdownloader.gui.translate.T;
+import org.jdownloader.gui.translate._GUI;
 
 public class ContinuePackagesAction extends ContextMenuAction {
 
@@ -28,7 +28,7 @@ public class ContinuePackagesAction extends ContextMenuAction {
 
     @Override
     protected String getName() {
-        return T._.gui_linkgrabberv2_lg_continueselected() + " (" + packages.size() + ")";
+        return _GUI._.gui_linkgrabberv2_lg_continueselected() + " (" + packages.size() + ")";
     }
 
     public void actionPerformed(ActionEvent e) {

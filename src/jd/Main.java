@@ -147,7 +147,7 @@ public class Main {
         }
 
         if (Application.isOutdatedJavaVersion(true)) {
-            final int returnValue = UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.NO_CANCEL_OPTION, JDT._.gui_javacheck_newerjavaavailable_title( Application.getJavaVersion()), JDT._.gui_javacheck_newerjavaavailable_msg(), JDTheme.II("gui.images.warning", 32, 32), null, null);
+            final int returnValue = UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.NO_CANCEL_OPTION, _JDT._.gui_javacheck_newerjavaavailable_title( Application.getJavaVersion()), _JDT._.gui_javacheck_newerjavaavailable_msg(), JDTheme.II("gui.images.warning", 32, 32), null, null);
             if ((returnValue & UserIO.RETURN_DONT_SHOW_AGAIN) == 0) {
                 CrossSystem.openURLOrShowMessage("http://jdownloader.org/download/index?updatejava=1");
             }

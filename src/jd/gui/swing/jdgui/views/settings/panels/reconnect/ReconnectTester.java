@@ -23,7 +23,7 @@ import org.appwork.app.gui.MigPanel;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.images.Theme;
-import org.jdownloader.translate.JDT;
+import org.jdownloader.translate._JDT;
 
 public class ReconnectTester extends MigPanel implements SettingsComponent, ActionListener {
     /**
@@ -56,7 +56,7 @@ public class ReconnectTester extends MigPanel implements SettingsComponent, Acti
         add(this.lblDuration);
 
         add(this.lblTime);
-        JLabel lbl = new JLabel(JDT._.gui_config_reconnect_showcase_currentip());
+        JLabel lbl = new JLabel(_JDT._.gui_config_reconnect_showcase_currentip());
         lbl.setEnabled(false);
         add(lbl);
         add(this.lblCurrentIP, "growx,pushx");
@@ -72,11 +72,11 @@ public class ReconnectTester extends MigPanel implements SettingsComponent, Acti
     }
 
     private void initComponents() {
-        this.btnTest = new JButton(JDT._.gui_config_reconnect_showcase_reconnect2());
+        this.btnTest = new JButton(_JDT._.gui_config_reconnect_showcase_reconnect2());
         this.btnTest.setIcon(Theme.getIcon("play", 20));
         this.btnTest.addActionListener(this);
 
-        this.lblDuration = new JLabel(JDT._.gui_config_reconnect_showcase_time());
+        this.lblDuration = new JLabel(_JDT._.gui_config_reconnect_showcase_time());
         this.lblDuration.setEnabled(false);
         this.lblTime = new JLabel("---");
         this.lblCurrentIP = new JLabel("---");
@@ -85,10 +85,10 @@ public class ReconnectTester extends MigPanel implements SettingsComponent, Acti
         this.lblSuccessIcon.setEnabled(false);
         this.lblSuccessIcon.setHorizontalTextPosition(SwingConstants.LEFT);
 
-        this.lblStatusMessage = new JLabel(JDT._.gui_config_reconnect_showcase_message_none());
+        this.lblStatusMessage = new JLabel(_JDT._.gui_config_reconnect_showcase_message_none());
         this.lblStatusMessage.setEnabled(false);
 
-        this.lblBeforeIpLabel = new JLabel(JDT._.gui_config_reconnect_showcase_lastip());
+        this.lblBeforeIpLabel = new JLabel(_JDT._.gui_config_reconnect_showcase_lastip());
         this.lblBeforeIpLabel.setEnabled(false);
 
         this.lblBeforeIP = new JLabel("---");
@@ -112,10 +112,10 @@ public class ReconnectTester extends MigPanel implements SettingsComponent, Acti
     private void testReconnect() {
         JDLogger.addHeader("Reconnect Testing");
 
-        final ProgressController progress = new ProgressController(100, JDT._.gui_warning_reconnect_pleaseWait(), Theme.getIcon("reconnect", 20));
+        final ProgressController progress = new ProgressController(100, _JDT._.gui_warning_reconnect_pleaseWait(), Theme.getIcon("reconnect", 20));
         btnTest.setEnabled(false);
         Log.L.info("Start Reconnect");
-        this.lblStatusMessage.setText(JDT._.gui_warning_reconnect_running());
+        this.lblStatusMessage.setText(_JDT._.gui_warning_reconnect_running());
         this.lblStatusMessage.setEnabled(true);
         this.lblBeforeIP.setText(IPController.getInstance().fetchIP().toString());
 
@@ -159,18 +159,18 @@ public class ReconnectTester extends MigPanel implements SettingsComponent, Acti
                     JDUtilities.getConfiguration().setProperty(Configuration.PARAM_RETRIES, 0);
                     if (Reconnecter.getInstance().forceReconnect()) {
                         if (JSonWrapper.get("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) {
-                            progress.setStatusText(JDT._.gui_warning_reconnectunknown());
+                            progress.setStatusText(_JDT._.gui_warning_reconnectunknown());
                         } else {
-                            progress.setStatusText(JDT._.gui_warning_reconnectSuccess());
+                            progress.setStatusText(_JDT._.gui_warning_reconnectSuccess());
                         }
                         new EDTRunner() {
 
                             @Override
                             protected void runInEDT() {
                                 if (JSonWrapper.get("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) {
-                                    lblStatusMessage.setText(JDT._.gui_warning_reconnectunknown());
+                                    lblStatusMessage.setText(_JDT._.gui_warning_reconnectunknown());
                                 } else {
-                                    lblStatusMessage.setText(JDT._.gui_warning_reconnectSuccess());
+                                    lblStatusMessage.setText(_JDT._.gui_warning_reconnectSuccess());
                                 }
                                 lblSuccessIcon.setIcon(Theme.getIcon("true", 32));
                                 lblSuccessIcon.setEnabled(true);
@@ -184,13 +184,13 @@ public class ReconnectTester extends MigPanel implements SettingsComponent, Acti
 
                         };
                     } else {
-                        progress.setStatusText(JDT._.gui_warning_reconnectFailed());
+                        progress.setStatusText(_JDT._.gui_warning_reconnectFailed());
                         progress.setColor(Color.RED);
                         new EDTRunner() {
 
                             @Override
                             protected void runInEDT() {
-                                lblStatusMessage.setText(JDT._.gui_warning_reconnectFailed());
+                                lblStatusMessage.setText(_JDT._.gui_warning_reconnectFailed());
                                 lblSuccessIcon.setIcon(Theme.getIcon("false", 32));
                                 lblSuccessIcon.setEnabled(true);
                                 if (JSonWrapper.get("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) {

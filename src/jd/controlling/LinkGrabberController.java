@@ -35,7 +35,7 @@ import jd.plugins.LinkGrabberFilePackageListener;
 
 import org.appwork.utils.Regex;
 import org.appwork.utils.event.Eventsender;
-import org.jdownloader.translate.JDT;
+import org.jdownloader.translate._JDT;
 
 class LinkGrabberControllerBroadcaster extends Eventsender<LinkGrabberControllerListener, LinkGrabberControllerEvent> {
 
@@ -162,11 +162,11 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
 
         });
 
-        FP_UNSORTED = new LinkGrabberFilePackage(JDT._.gui_linkgrabber_package_unsorted(), this);
-        FP_UNCHECKED = new LinkGrabberFilePackage(JDT._.gui_linkgrabber_package_unchecked(), this);
-        FP_OFFLINE = new LinkGrabberFilePackage(JDT._.gui_linkgrabber_package_offline(), this);
+        FP_UNSORTED = new LinkGrabberFilePackage(_JDT._.gui_linkgrabber_package_unsorted(), this);
+        FP_UNCHECKED = new LinkGrabberFilePackage(_JDT._.gui_linkgrabber_package_unchecked(), this);
+        FP_OFFLINE = new LinkGrabberFilePackage(_JDT._.gui_linkgrabber_package_offline(), this);
         FP_OFFLINE.setIgnore(true);
-        FP_FILTERED = new LinkGrabberFilePackage(JDT._.gui_linkgrabber_package_filtered());
+        FP_FILTERED = new LinkGrabberFilePackage(_JDT._.gui_linkgrabber_package_filtered());
         FP_FILTERED.setIgnore(true);
     }
 

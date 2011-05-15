@@ -59,7 +59,7 @@ import jd.plugins.PluginsC;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Application;
 import org.appwork.utils.Regex;
-import org.jdownloader.translate.JDT;
+import org.jdownloader.translate._JDT;
 import org.jdownloader.update.JDUpdater;
 import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
@@ -257,7 +257,7 @@ public class JDUtilities {
 
         if (JDUpdater.getInstance().getWaitingUpdates() > 0) {
             ret.append(new char[] { ' ', '(' });
-            ret.append(JDT._.gui_mainframe_title_updatemessage2(JDUpdater.getInstance().getWaitingUpdates()));
+            ret.append(_JDT._.gui_mainframe_title_updatemessage2(JDUpdater.getInstance().getWaitingUpdates()));
             ret.append(')');
         }
 

@@ -7,7 +7,7 @@ import jd.gui.swing.jdgui.interfaces.ContextMenuAction;
 import jd.plugins.DownloadLink;
 import jd.utils.JDUtilities;
 
-import org.jdownloader.gui.translate.T;
+import org.jdownloader.gui.translate._GUI;
 
 public class EnableAction extends ContextMenuAction {
 
@@ -31,7 +31,7 @@ public class EnableAction extends ContextMenuAction {
 
     @Override
     protected String getName() {
-        return T._.gui_table_contextmenu_enable() + " (" + links.size() + ")";
+        return _GUI._.gui_table_contextmenu_enable() + " (" + links.size() + ")";
     }
 
     @Override

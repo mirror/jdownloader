@@ -9,7 +9,7 @@ import javax.swing.UIManager;
 
 import jd.utils.JDTheme;
 
-import org.jdownloader.gui.translate.T;
+import org.jdownloader.gui.translate._GUI;
 
 public class JDCloseAction extends AbstractAction {
 
@@ -38,7 +38,7 @@ public class JDCloseAction extends AbstractAction {
         this.height = ic.getIconHeight();
         this.width = ic.getIconWidth();
         this.putValue(AbstractAction.SMALL_ICON, ic);
-        this.putValue(AbstractAction.SHORT_DESCRIPTION, T._.jd_gui_swing_components_JDCloseAction_closeTab());
+        this.putValue(AbstractAction.SHORT_DESCRIPTION, _GUI._.jd_gui_swing_components_JDCloseAction_closeTab());
     }
 
     public int getHeight() {

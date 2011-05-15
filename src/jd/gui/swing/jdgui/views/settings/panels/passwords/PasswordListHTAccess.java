@@ -25,13 +25,13 @@ import jd.controlling.HTACCESSController;
 import jd.gui.swing.jdgui.views.settings.ConfigPanel;
 import jd.utils.JDTheme;
 
-import org.jdownloader.gui.translate.T;
+import org.jdownloader.gui.translate._GUI;
 
 public class PasswordListHTAccess extends ConfigPanel {
 
     @Override
     public String getTitle() {
-        return T._.jd_gui_swing_jdgui_settings_panels_passwords_PasswordListHTAccess_general_title();
+        return _GUI._.jd_gui_swing_jdgui_settings_panels_passwords_PasswordListHTAccess_general_title();
     }
 
     @Override
@@ -56,7 +56,7 @@ public class PasswordListHTAccess extends ConfigPanel {
         ConfigContainer container = new ConfigContainer();
 
         container.setGroup(new ConfigGroup(getTitle(), getIconKey()));
-        container.addEntry(new ConfigEntry(ConfigContainer.TYPE_LISTCONTROLLED, HTACCESSController.getInstance(), T._.plugins_http_htaccess()));
+        container.addEntry(new ConfigEntry(ConfigContainer.TYPE_LISTCONTROLLED, HTACCESSController.getInstance(), _GUI._.plugins_http_htaccess()));
 
         return container;
     }

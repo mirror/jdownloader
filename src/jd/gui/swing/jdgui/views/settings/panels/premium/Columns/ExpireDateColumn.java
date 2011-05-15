@@ -23,7 +23,7 @@ import jd.nutils.Formatter;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 
-import org.jdownloader.gui.translate.T;
+import org.jdownloader.gui.translate._GUI;
 
 public class ExpireDateColumn extends JDTextTableColumn {
 
@@ -56,14 +56,14 @@ public class ExpireDateColumn extends JDTextTableColumn {
             Account ac = (Account) value;
             AccountInfo ai = ac.getAccountInfo();
             if (!ac.isValid()) {
-                return T._.jd_gui_swing_jdgui_settings_panels_premium_PremiumTableRenderer_invalidAccount();
+                return _GUI._.jd_gui_swing_jdgui_settings_panels_premium_PremiumTableRenderer_invalidAccount();
             } else if (ai == null) {
-                return T._.jd_gui_swing_jdgui_settings_panels_premium_PremiumTableRenderer_unknown();
+                return _GUI._.jd_gui_swing_jdgui_settings_panels_premium_PremiumTableRenderer_unknown();
             } else {
                 if (ai.getValidUntil() == -1) {
-                    return T._.jd_gui_swing_jdgui_settings_panels_premium_PremiumTableRenderer_unlimited();
+                    return _GUI._.jd_gui_swing_jdgui_settings_panels_premium_PremiumTableRenderer_unlimited();
                 } else if (ai.isExpired()) {
-                    return T._.jd_gui_swing_jdgui_settings_panels_premium_PremiumTableRenderer_expired();
+                    return _GUI._.jd_gui_swing_jdgui_settings_panels_premium_PremiumTableRenderer_expired();
                 } else {
                     return Formatter.formatTime(ai.getValidUntil());
                 }

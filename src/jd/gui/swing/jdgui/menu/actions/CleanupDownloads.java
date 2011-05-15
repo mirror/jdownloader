@@ -26,7 +26,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 
-import org.jdownloader.gui.translate.T;
+import org.jdownloader.gui.translate._GUI;
 
 public class CleanupDownloads extends ToolBarAction {
 
@@ -38,7 +38,7 @@ public class CleanupDownloads extends ToolBarAction {
 
     @Override
     public void onAction(ActionEvent e) {
-        if (!UserIO.isOK(UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.DONT_SHOW_AGAIN_IGNORES_CANCEL, T._.jd_gui_swing_jdgui_menu_actions_CleanupDownload_message()))) return;
+        if (!UserIO.isOK(UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.DONT_SHOW_AGAIN_IGNORES_CANCEL, _GUI._.jd_gui_swing_jdgui_menu_actions_CleanupDownload_message()))) return;
 
         DownloadController dlc = DownloadController.getInstance();
         ArrayList<DownloadLink> downloadstodelete = new ArrayList<DownloadLink>();

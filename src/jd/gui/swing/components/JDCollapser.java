@@ -30,7 +30,7 @@ import jd.gui.swing.jdgui.interfaces.DroppedPanel;
 import jd.nutils.JDImage;
 import net.miginfocom.swing.MigLayout;
 
-import org.jdownloader.gui.translate.T;
+import org.jdownloader.gui.translate._GUI;
 
 /**
  * class for an infopanel with close button.
@@ -85,7 +85,7 @@ public abstract class JDCollapser extends DroppedPanel {
             menutitle.setIcon(icon);
         }
 
-        closeButton.setToolTipText(T._.jd_gui_swing_components_JDCollapser_closetooltip(name));
+        closeButton.setToolTipText(_GUI._.jd_gui_swing_components_JDCollapser_closetooltip(name));
     }
 
     abstract public void onClosed();

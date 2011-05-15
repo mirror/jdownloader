@@ -41,7 +41,7 @@ import jd.plugins.FilePackage;
 import jd.utils.JDTheme;
 
 import org.appwork.utils.Regex;
-import org.jdownloader.gui.translate.T;
+import org.jdownloader.gui.translate._GUI;
 
 public class TableTransferHandler extends TransferHandler {
     private static final long serialVersionUID = 2560352681437669412L;
@@ -140,7 +140,7 @@ public class TableTransferHandler extends TransferHandler {
                 if (current instanceof FilePackage) {
                     /* Links in Package */
                     String name = ((FilePackage) current).getName();
-                    popup.add(m = new JMenuItem(T._.gui_table_draganddrop_insertinpackagestart(name)));
+                    popup.add(m = new JMenuItem(_GUI._.gui_table_draganddrop_insertinpackagestart(name)));
                     m.setIcon(JDTheme.II("gui.images.go_top", 16, 16));
                     m.addActionListener(new ActionListener() {
                         public void actionPerformed(ActionEvent e) {
@@ -148,7 +148,7 @@ public class TableTransferHandler extends TransferHandler {
                         }
                     });
 
-                    popup.add(m = new JMenuItem(T._.gui_table_draganddrop_insertinpackageend(name)));
+                    popup.add(m = new JMenuItem(_GUI._.gui_table_draganddrop_insertinpackageend(name)));
                     m.setIcon(JDTheme.II("gui.images.go_bottom", 16, 16));
                     m.addActionListener(new ActionListener() {
                         public void actionPerformed(ActionEvent e) {
@@ -159,7 +159,7 @@ public class TableTransferHandler extends TransferHandler {
                 } else if (current instanceof DownloadLink) {
                     /* Links in Links */
                     String name = ((DownloadLink) current).getName();
-                    popup.add(m = new JMenuItem(T._.gui_table_draganddrop_before(name)));
+                    popup.add(m = new JMenuItem(_GUI._.gui_table_draganddrop_before(name)));
                     m.setIcon(JDTheme.II("gui.images.go_top", 16, 16));
                     m.addActionListener(new ActionListener() {
                         public void actionPerformed(ActionEvent e) {
@@ -167,7 +167,7 @@ public class TableTransferHandler extends TransferHandler {
                         }
                     });
 
-                    popup.add(m = new JMenuItem(T._.gui_table_draganddrop_after(name)));
+                    popup.add(m = new JMenuItem(_GUI._.gui_table_draganddrop_after(name)));
                     m.setIcon(JDTheme.II("gui.images.go_bottom", 16, 16));
                     m.addActionListener(new ActionListener() {
                         public void actionPerformed(ActionEvent e) {
@@ -185,7 +185,7 @@ public class TableTransferHandler extends TransferHandler {
                 } else
                     return false;
 
-                popup.add(m = new JMenuItem(T._.gui_table_draganddrop_movepackagebefore(name)));
+                popup.add(m = new JMenuItem(_GUI._.gui_table_draganddrop_movepackagebefore(name)));
                 m.setIcon(JDTheme.II("gui.images.go_top", 16, 16));
                 m.addActionListener(new ActionListener() {
                     public void actionPerformed(ActionEvent e) {
@@ -194,7 +194,7 @@ public class TableTransferHandler extends TransferHandler {
 
                 });
 
-                popup.add(m = new JMenuItem(T._.gui_table_draganddrop_movepackageend(name)));
+                popup.add(m = new JMenuItem(_GUI._.gui_table_draganddrop_movepackageend(name)));
                 m.setIcon(JDTheme.II("gui.images.go_bottom", 16, 16));
                 m.addActionListener(new ActionListener() {
                     public void actionPerformed(ActionEvent e) {
@@ -207,7 +207,7 @@ public class TableTransferHandler extends TransferHandler {
                 return false;
             }
         }
-        popup.add(m = new JMenuItem(T._.gui_btn_cancel()));
+        popup.add(m = new JMenuItem(_GUI._.gui_btn_cancel()));
         m.setIcon(JDTheme.II("gui.images.unselected", 16, 16));
         popup.show(table, point.x, point.y);
         return true;

@@ -40,7 +40,7 @@ import net.miginfocom.swing.MigLayout;
 
 import org.appwork.storage.config.JsonConfig;
 import org.jdesktop.swingworker.SwingWorker;
-import org.jdownloader.gui.translate.T;
+import org.jdownloader.gui.translate._GUI;
 
 public class Balloon {
     private static final int          MAX       = 5;
@@ -125,7 +125,7 @@ public class Balloon {
 
                 final JLabel lblTitle = new JLabel(title);
                 lblTitle.setIcon(new ImageIcon(JDImage.getImage("logo/logo_16_16")));
-                lblTitle.setToolTipText(T._.jd_gui_swing_components_Balloon_toolTip());
+                lblTitle.setToolTipText(_GUI._.jd_gui_swing_components_Balloon_toolTip());
                 lblTitle.addMouseListener(new JDMouseAdapter() {
                     @Override
                     public void mouseClicked(final MouseEvent e) {

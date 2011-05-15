@@ -27,7 +27,7 @@ import jd.nutils.Executer;
 import jd.nutils.JDFlags;
 import jd.utils.JDUtilities;
 
-import org.jdownloader.gui.translate.T;
+import org.jdownloader.gui.translate._GUI;
 
 public class RestoreAction extends ToolBarAction {
 
@@ -39,7 +39,7 @@ public class RestoreAction extends ToolBarAction {
 
     @Override
     public void onAction(ActionEvent e) {
-        if (JDFlags.hasSomeFlags(UserIO.getInstance().requestConfirmDialog(0, T._.sys_ask_rlyrestore()), UserIO.RETURN_OK, UserIO.RETURN_DONT_SHOW_AGAIN)) {
+        if (JDFlags.hasSomeFlags(UserIO.getInstance().requestConfirmDialog(0, _GUI._.sys_ask_rlyrestore()), UserIO.RETURN_OK, UserIO.RETURN_DONT_SHOW_AGAIN)) {
             final Executer exec = new Executer("java");
             exec.addParameters(new String[] { "-jar", "jdupdate.jar", "-restore" });
             exec.setRunin(JDUtilities.getResourceFile(".").getAbsolutePath());

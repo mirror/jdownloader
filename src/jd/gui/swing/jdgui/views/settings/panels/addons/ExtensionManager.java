@@ -25,9 +25,9 @@ import javax.swing.event.ListSelectionListener;
 import org.appwork.utils.swing.table.ExtTable;
 import org.jdownloader.extensions.AbstractExtensionWrapper;
 import org.jdownloader.gui.settings.AbstractConfigPanel;
-import org.jdownloader.gui.translate.T;
+import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.Theme;
-import org.jdownloader.translate.JDT;
+import org.jdownloader.translate._JDT;
 
 /**
  * @author JD-Team
@@ -53,7 +53,7 @@ public class ExtensionManager extends AbstractConfigPanel {
     protected void init() {
 
         this.addHeader(getTitle(), getIcon());
-        txtDescription = this.addDescription(JDT._.gui_settings_extensions_description());
+        txtDescription = this.addDescription(_JDT._.gui_settings_extensions_description());
         table = new ExtensionsTable();
         this.add(new JScrollPane(table));
 
@@ -88,7 +88,7 @@ public class ExtensionManager extends AbstractConfigPanel {
 
     @Override
     public String getTitle() {
-        return T._.extensionManager_title();
+        return _GUI._.extensionManager_title();
     }
 
     @Override

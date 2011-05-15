@@ -9,7 +9,7 @@ import jd.gui.swing.jdgui.interfaces.ContextMenuAction;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkGrabberFilePackage;
 
-import org.jdownloader.gui.translate.T;
+import org.jdownloader.gui.translate._GUI;
 
 public class SplitHosterAction extends ContextMenuAction {
 
@@ -30,7 +30,7 @@ public class SplitHosterAction extends ContextMenuAction {
 
     @Override
     protected String getName() {
-        return T._.gui_linkgrabberv2_splithoster() + " (" + packages.size() + ")";
+        return _GUI._.gui_linkgrabberv2_splithoster() + " (" + packages.size() + ")";
     }
 
     public void actionPerformed(ActionEvent e) {

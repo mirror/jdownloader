@@ -15,7 +15,7 @@ import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
-import org.jdownloader.translate.JDT;
+import org.jdownloader.translate._JDT;
 
 public class CaptchaDialogQueueEntry extends QueueAction<String, RuntimeException> {
     private final static AtomicLong IDCounter = new AtomicLong(0);
@@ -76,11 +76,11 @@ public class CaptchaDialogQueueEntry extends QueueAction<String, RuntimeExceptio
             if (resp == null) {
                 /* no external response available */
                 if (!e.isCausedByTimeout()) {
-                    String[] options = new String[] { JDT._.captchacontroller_cancel_dialog_allorhost_next(), JDT._.captchacontroller_cancel_dialog_allorhost_cancelhost(captchaController.getHost()), JDT._.captchacontroller_cancel_dialog_allorhost_all() };
+                    String[] options = new String[] { _JDT._.captchacontroller_cancel_dialog_allorhost_next(), _JDT._.captchacontroller_cancel_dialog_allorhost_cancelhost(captchaController.getHost()), _JDT._.captchacontroller_cancel_dialog_allorhost_all() };
                     try {
                         int defSelection = JSonStorage.getPlainStorage("CaptchaController").get("lastCancelOption", 0);
 
-                        switch (Dialog.getInstance().showComboDialog(Dialog.LOGIC_COUNTDOWN | Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, JDT._.captchacontroller_cancel_dialog_allorhost(), JDT._.captchacontroller_cancel_dialog_allorhost_msg(), options, defSelection, null, null, null, null)) {
+                        switch (Dialog.getInstance().showComboDialog(Dialog.LOGIC_COUNTDOWN | Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _JDT._.captchacontroller_cancel_dialog_allorhost(), _JDT._.captchacontroller_cancel_dialog_allorhost_msg(), options, defSelection, null, null, null, null)) {
                         case 0:
                             // nothing
                             JSonStorage.getPlainStorage("CaptchaController").put("lastCancelOption", 0);

@@ -35,7 +35,7 @@ import jd.utils.locale.JDL;
 import jd.utils.locale.JDLocale;
 
 import org.appwork.utils.swing.dialog.AbstractDialog;
-import org.jdownloader.gui.translate.T;
+import org.jdownloader.gui.translate._GUI;
 
 public class General extends ConfigPanel {
 
@@ -47,7 +47,7 @@ public class General extends ConfigPanel {
 
     @Override
     public String getTitle() {
-        return T._.jd_gui_swing_jdgui_settings_panels_gui_General_gui_title();
+        return _GUI._.jd_gui_swing_jdgui_settings_panels_gui_General_gui_title();
     }
 
     @Override
@@ -71,8 +71,8 @@ public class General extends ConfigPanel {
 
         final ConfigContainer look = new ConfigContainer();
 
-        look.setGroup(new ConfigGroup(T._.gui_config_gui_view(), "gui.images.config.gui"));
-        look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, SubConfiguration.getConfig(JDL.CONFIG), JDL.LOCALE_PARAM_ID, JDL.getLocaleIDs().toArray(new JDLocale[] {}), T._.gui_config_gui_language()));
+        look.setGroup(new ConfigGroup(_GUI._.gui_config_gui_view(), "gui.images.config.gui"));
+        look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, SubConfiguration.getConfig(JDL.CONFIG), JDL.LOCALE_PARAM_ID, JDL.getLocaleIDs().toArray(new JDLocale[] {}), _GUI._.gui_config_gui_language()));
         ce.setDefaultValue(JDL.DEFAULT_LOCALE);
         ce.setPropertyType(PropertyType.NEEDS_RESTART);
 
@@ -87,7 +87,7 @@ public class General extends ConfigPanel {
         // ce.setPropertyType(PropertyType.NEEDS_RESTART);
         // }
 
-        look.setGroup(new ConfigGroup(T._.gui_config_gui_feel(), "gui.images.configuration"));
+        look.setGroup(new ConfigGroup(_GUI._.gui_config_gui_feel(), "gui.images.configuration"));
         // look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER,
         // this.subConfig, JDGuiConstants.PARAM_INPUTTIMEOUT,
         // JDL.L("gui.config.gui.inputtimeout", "Timeout for InputWindows"), 0,
@@ -102,18 +102,18 @@ public class General extends ConfigPanel {
 
             public void actionPerformed(final ActionEvent e) {
                 AbstractDialog.resetDialogInformations();
-                UserIO.getInstance().requestMessageDialog(T._.gui_config_gui_resetdialogs_message());
+                UserIO.getInstance().requestMessageDialog(_GUI._.gui_config_gui_resetdialogs_message());
             }
 
-        }, T._.gui_config_gui_resetdialogs_short(), T._.gui_config_gui_resetdialogs2(), JDTheme.II("gui.images.restart", 16, 16)));
+        }, _GUI._.gui_config_gui_resetdialogs_short(), _GUI._.gui_config_gui_resetdialogs2(), JDTheme.II("gui.images.restart", 16, 16)));
 
-        look.setGroup(new ConfigGroup(T._.gui_config_gui_performance(), "gui.images.performance"));
-        look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.subConfig, JDGuiConstants.DECORATION_ENABLED, T._.gui_config_gui_decoration()));
+        look.setGroup(new ConfigGroup(_GUI._.gui_config_gui_performance(), "gui.images.performance"));
+        look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.subConfig, JDGuiConstants.DECORATION_ENABLED, _GUI._.gui_config_gui_decoration()));
         ce.setDefaultValue(true);
         ce.setPropertyType(PropertyType.NEEDS_RESTART);
 
-        look.setGroup(new ConfigGroup(T._.gui_config_gui_barrierfree(), "gui.images.barrierfree"));
-        look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, this.subConfig, JDGuiConstants.PARAM_GENERAL_FONT_SIZE, T._.gui_config_gui_font_size(), 50, 200, 10).setDefaultValue(100));
+        look.setGroup(new ConfigGroup(_GUI._.gui_config_gui_barrierfree(), "gui.images.barrierfree"));
+        look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, this.subConfig, JDGuiConstants.PARAM_GENERAL_FONT_SIZE, _GUI._.gui_config_gui_font_size(), 50, 200, 10).setDefaultValue(100));
         ce.setPropertyType(PropertyType.NEEDS_RESTART);
 
         return look;

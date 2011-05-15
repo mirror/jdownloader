@@ -42,7 +42,7 @@ import jd.nutils.encoding.Encoding;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.net.httpconnection.HTTPConnectionUtils;
-import org.jdownloader.translate.JDT;
+import org.jdownloader.translate._JDT;
 
 /**
  * Diese abstrakte Klasse steuert den Zugriff auf weitere Plugins. Alle Plugins
@@ -133,7 +133,7 @@ public abstract class Plugin implements ActionListener {
      */
     public static String getUserInput(final String message, final DownloadLink link) throws PluginException {
         final String password = PluginUtils.askPassword(message, link);
-        if (password == null) { throw new PluginException(LinkStatus.ERROR_FATAL, JDT._.plugins_errors_wrongpassword()); }
+        if (password == null) { throw new PluginException(LinkStatus.ERROR_FATAL, _JDT._.plugins_errors_wrongpassword()); }
         return password;
     }
 
@@ -335,6 +335,16 @@ public abstract class Plugin implements ActionListener {
      * Initialisiert das Plugin vor dem ersten Gebrauch
      */
     public void init() {
+    }
+
+    /**
+     * Can be overridden, to return a descriptio of the hoster, or a short help
+     * forit's settings
+     * 
+     * @return
+     */
+    public String getDescription() {
+        return null;
     }
 
 }

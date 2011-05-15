@@ -7,7 +7,7 @@ import jd.gui.swing.jdgui.interfaces.ContextMenuAction;
 import jd.plugins.DownloadLink;
 
 import org.appwork.utils.os.CrossSystem;
-import org.jdownloader.gui.translate.T;
+import org.jdownloader.gui.translate._GUI;
 
 public class OpenInBrowserAction extends ContextMenuAction {
 
@@ -28,7 +28,7 @@ public class OpenInBrowserAction extends ContextMenuAction {
 
     @Override
     protected String getName() {
-        return T._.gui_table_contextmenu_browselink();
+        return _GUI._.gui_table_contextmenu_browselink();
     }
 
     @Override

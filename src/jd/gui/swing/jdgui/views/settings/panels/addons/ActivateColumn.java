@@ -26,7 +26,7 @@ import org.appwork.utils.swing.table.columns.ExtCheckColumn;
 import org.jdownloader.extensions.AbstractExtensionWrapper;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
-import org.jdownloader.translate.JDT;
+import org.jdownloader.translate._JDT;
 
 public class ActivateColumn extends ExtCheckColumn<AbstractExtensionWrapper> {
 
@@ -57,7 +57,7 @@ public class ActivateColumn extends ExtCheckColumn<AbstractExtensionWrapper> {
                 object._setEnabled(true);
 
                 if (object._getExtension().getGUI() != null) {
-                    int ret = UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN, object.getName(), JDT._.gui_settings_extensions_show_now(object.getName()));
+                    int ret = UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN, object.getName(), _JDT._.gui_settings_extensions_show_now(object.getName()));
 
                     if (UserIO.isOK(ret)) {
                         // activate panel
@@ -68,7 +68,7 @@ public class ActivateColumn extends ExtCheckColumn<AbstractExtensionWrapper> {
                     }
                 }
             } catch (StartException e) {
-                Dialog.getInstance().showExceptionDialog(JDT._.dialog_title_exception(), e.getMessage(), e);
+                Dialog.getInstance().showExceptionDialog(_JDT._.dialog_title_exception(), e.getMessage(), e);
             } catch (StopException e) {
                 e.printStackTrace();
             }
@@ -79,7 +79,7 @@ public class ActivateColumn extends ExtCheckColumn<AbstractExtensionWrapper> {
             } catch (StartException e) {
                 e.printStackTrace();
             } catch (StopException e) {
-                Dialog.getInstance().showExceptionDialog(JDT._.dialog_title_exception(), e.getMessage(), e);
+                Dialog.getInstance().showExceptionDialog(_JDT._.dialog_title_exception(), e.getMessage(), e);
             }
         }
         /*

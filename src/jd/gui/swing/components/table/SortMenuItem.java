@@ -7,14 +7,14 @@ import javax.swing.JMenuItem;
 
 import jd.utils.JDTheme;
 
-import org.jdownloader.gui.translate.T;
+import org.jdownloader.gui.translate._GUI;
 
 public class SortMenuItem extends JMenuItem implements ActionListener {
 
     private static final long serialVersionUID = 6328630034846759725L;
     private Object            obj              = null;
     private JDTableColumn     column           = null;
-    private static String     defaultString    = T._.gui_table_contextmenu_sort();
+    private static String     defaultString    = _GUI._.gui_table_contextmenu_sort();
 
     public SortMenuItem() {
         super(SortMenuItem.defaultString);

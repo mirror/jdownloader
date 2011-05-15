@@ -22,7 +22,7 @@ import jd.gui.swing.jdgui.actions.ActionController;
 import jd.gui.swing.jdgui.interfaces.View;
 import jd.utils.JDTheme;
 
-import org.jdownloader.gui.translate.T;
+import org.jdownloader.gui.translate._GUI;
 
 public class DownloadView extends View {
 
@@ -48,12 +48,12 @@ public class DownloadView extends View {
 
     @Override
     public String getTitle() {
-        return T._.jd_gui_swing_jdgui_views_downloadview_tab_title();
+        return _GUI._.jd_gui_swing_jdgui_views_downloadview_tab_title();
     }
 
     @Override
     public String getTooltip() {
-        return T._.jd_gui_swing_jdgui_views_downloadview_tab_tooltip();
+        return _GUI._.jd_gui_swing_jdgui_views_downloadview_tab_tooltip();
     }
 
     @Override

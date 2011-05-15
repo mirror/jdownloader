@@ -40,7 +40,7 @@ import jd.nutils.Formatter;
 import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
 
-import org.jdownloader.gui.translate.T;
+import org.jdownloader.gui.translate._GUI;
 
 public class StatusBar extends JPanel implements ChangeListener, ControlListener {
 
@@ -71,7 +71,7 @@ public class StatusBar extends JPanel implements ChangeListener, ControlListener
         }
 
         JDUtilities.getController().addControlListener(this);
-        spMaxSpeed = new JDSpinner(T._.gui_statusbar_speed());
+        spMaxSpeed = new JDSpinner(_GUI._.gui_statusbar_speed());
         spMaxSpeed.getSpinner().addChangeListener(this);
         spMaxSpeed.getSpinner().setModel(new SpinnerNumberModel(0, 0, Integer.MAX_VALUE, 50));
         try {
@@ -81,10 +81,10 @@ public class StatusBar extends JPanel implements ChangeListener, ControlListener
             dlConfig.setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0);
             dlConfig.save();
         }
-        spMaxSpeed.setToolTipText(T._.gui_tooltip_statusbar_speedlimiter());
+        spMaxSpeed.setToolTipText(_GUI._.gui_tooltip_statusbar_speedlimiter());
         colorizeSpinnerSpeed();
 
-        spMaxDls = new JDSpinner(T._.gui_statusbar_sim_ownloads(), "h 20!");
+        spMaxDls = new JDSpinner(_GUI._.gui_statusbar_sim_ownloads(), "h 20!");
         spMaxDls.getSpinner().setModel(new SpinnerNumberModel(2, 1, 20, 1));
         try {
             spMaxDls.setValue(dlConfig.getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, 2));
@@ -93,10 +93,10 @@ public class StatusBar extends JPanel implements ChangeListener, ControlListener
             dlConfig.setProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, 2);
             dlConfig.save();
         }
-        spMaxDls.setToolTipText(T._.gui_tooltip_statusbar_simultan_downloads());
+        spMaxDls.setToolTipText(_GUI._.gui_tooltip_statusbar_simultan_downloads());
         spMaxDls.getSpinner().addChangeListener(this);
 
-        spMaxChunks = new JDSpinner(T._.gui_statusbar_maxChunks(), "h 20!");
+        spMaxChunks = new JDSpinner(_GUI._.gui_statusbar_maxChunks(), "h 20!");
         spMaxChunks.getSpinner().setModel(new SpinnerNumberModel(2, 1, 20, 1));
         try {
             spMaxChunks.setValue(dlConfig.getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2));
@@ -104,7 +104,7 @@ public class StatusBar extends JPanel implements ChangeListener, ControlListener
             dlConfig.setProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2);
             dlConfig.save();
         }
-        spMaxChunks.setToolTipText(T._.gui_tooltip_statusbar_max_chunks());
+        spMaxChunks.setToolTipText(_GUI._.gui_tooltip_statusbar_max_chunks());
         spMaxChunks.getSpinner().addChangeListener(this);
 
         add(PremiumStatus.getInstance());
@@ -167,7 +167,7 @@ public class StatusBar extends JPanel implements ChangeListener, ControlListener
      */
     public void setSpeed(int speed) {
         if (speed <= 0) {
-            spMaxSpeed.setText(T._.gui_statusbar_speed());
+            spMaxSpeed.setText(_GUI._.gui_statusbar_speed());
         } else {
             spMaxSpeed.setText("(" + Formatter.formatReadable(speed) + "/s)");
         }

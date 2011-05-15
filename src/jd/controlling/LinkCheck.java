@@ -32,7 +32,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForHost;
 
 import org.appwork.utils.event.Eventsender;
-import org.jdownloader.translate.JDT;
+import org.jdownloader.translate._JDT;
 
 class LinkCheckBroadcaster extends Eventsender<LinkCheckListener, LinkCheckEvent> {
 
@@ -174,7 +174,7 @@ public class LinkCheck implements ActionListener, ProgressControllerListener {
             public void run() {
                 setName("OnlineCheck");
                 getBroadcaster().fireEvent(new LinkCheckEvent(this, LinkCheckEvent.START));
-                pc = new ProgressController(JDT._.gui_linkgrabber_pc_onlinecheck(), null);
+                pc = new ProgressController(_JDT._.gui_linkgrabber_pc_onlinecheck(), null);
                 pc.getBroadcaster().addListener(LinkCheck.getLinkChecker());
                 pc.setRange(0);
                 while (linksToCheck.size() != 0) {
@@ -267,7 +267,7 @@ public class LinkCheck implements ActionListener, ProgressControllerListener {
         if (checkThread != null && checkThread.isAlive()) {
             EventQueue.invokeLater(new Runnable() {
                 public void run() {
-                    pc.setStatusText(pc.getStatusText() + ": " + JDT._.gui_linkgrabber_aborted());
+                    pc.setStatusText(pc.getStatusText() + ": " + _JDT._.gui_linkgrabber_aborted());
                     pc.doFinalize(5000l);
                 }
             });

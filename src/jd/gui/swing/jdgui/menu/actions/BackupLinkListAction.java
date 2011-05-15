@@ -33,7 +33,7 @@ import jd.nutils.io.JDIO;
 import jd.plugins.FilePackage;
 import jd.utils.JDHexUtils;
 
-import org.jdownloader.gui.translate.T;
+import org.jdownloader.gui.translate._GUI;
 
 public class BackupLinkListAction extends ThreadedAction {
 
@@ -67,7 +67,7 @@ public class BackupLinkListAction extends ThreadedAction {
             if (files == null) return;
 
             String defaultpw = SubConfiguration.getConfig("JDC_CONFIG").getStringProperty("password", "jddefault");
-            String pw = UserIO.getInstance().requestInputDialog(UserIO.NO_COUNTDOWN, T._.jd_gui_swing_jdgui_menu_actions_BackupLinkListAction_password(), defaultpw);
+            String pw = UserIO.getInstance().requestInputDialog(UserIO.NO_COUNTDOWN, _GUI._.jd_gui_swing_jdgui_menu_actions_BackupLinkListAction_password(), defaultpw);
             if (pw == null || pw.length() == 0) return;
             byte[] crypted = JDCrypt.encrypt(JDHexUtils.getHexString(bos.toByteArray()), getPWByte(pw));
             JDIO.saveToFile(files[0], crypted);

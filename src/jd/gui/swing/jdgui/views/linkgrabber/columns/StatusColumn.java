@@ -32,7 +32,7 @@ import jd.plugins.LinkGrabberFilePackage;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 
-import org.jdownloader.gui.translate.T;
+import org.jdownloader.gui.translate._GUI;
 
 public class StatusColumn extends JDTableColumn {
 
@@ -61,10 +61,10 @@ public class StatusColumn extends JDTableColumn {
 
     public StatusColumn(String name, JDTableModel table) {
         super(name, table);
-        strOnline = T._.linkgrabber_onlinestatus_online();
-        strOffline = T._.linkgrabber_onlinestatus_offline();
-        strUnchecked = T._.linkgrabber_onlinestatus_unchecked();
-        strUncheckable = T._.linkgrabber_onlinestatus_uncheckable();
+        strOnline = _GUI._.linkgrabber_onlinestatus_online();
+        strOffline = _GUI._.linkgrabber_onlinestatus_offline();
+        strUnchecked = _GUI._.linkgrabber_onlinestatus_unchecked();
+        strUncheckable = _GUI._.linkgrabber_onlinestatus_uncheckable();
         imgOnline = JDTheme.II("gui.images.ok", 16, 16);
         imgFailed = JDTheme.II("gui.images.bad", 16, 16);
         imgPriorityS = JDTheme.II("gui.images.priority-1", 16, 16);
@@ -72,10 +72,10 @@ public class StatusColumn extends JDTableColumn {
         imgPriority2 = JDTheme.II("gui.images.priority2", 16, 16);
         imgPriority3 = JDTheme.II("gui.images.priority3", 16, 16);
         imgUncheckable = JDTheme.II("gui.images.help", 16, 16);
-        strPriorityS = T._.gui_treetable_tooltip_priority_1();
-        strPriority1 = T._.gui_treetable_tooltip_priority1();
-        strPriority2 = T._.gui_treetable_tooltip_priority2();
-        strPriority3 = T._.gui_treetable_tooltip_priority3();
+        strPriorityS = _GUI._.gui_treetable_tooltip_priority_1();
+        strPriority1 = _GUI._.gui_treetable_tooltip_priority1();
+        strPriority2 = _GUI._.gui_treetable_tooltip_priority2();
+        strPriority3 = _GUI._.gui_treetable_tooltip_priority3();
         statuspanel = new StatusLabel();
         statuspanel.setBorder(null);
     }
@@ -102,12 +102,12 @@ public class StatusColumn extends JDTableColumn {
                 int size = fp.getDownloadLinks().size();
                 if (failedCount > 0) {
                     if (failedCount == size) {
-                        statuspanel.setText(T._.gui_linkgrabber_packageofflinepercent(JDUtilities.getPercent(failedCount, size)), null);
+                        statuspanel.setText(_GUI._.gui_linkgrabber_packageofflinepercent(JDUtilities.getPercent(failedCount, size)), null);
                     } else {
-                        statuspanel.setText(T._.gui_linkgrabber_packageofflinepercent(JDUtilities.getPercent(failedCount, size)) + "/" + T._.gui_linkgrabber_packageonlinepercent(JDUtilities.getPercent(size - failedCount, size)), null);
+                        statuspanel.setText(_GUI._.gui_linkgrabber_packageofflinepercent(JDUtilities.getPercent(failedCount, size)) + "/" + _GUI._.gui_linkgrabber_packageonlinepercent(JDUtilities.getPercent(size - failedCount, size)), null);
                     }
                 } else {
-                    statuspanel.setText(T._.gui_linkgrabber_packageonlineall(), null);
+                    statuspanel.setText(_GUI._.gui_linkgrabber_packageonlineall(), null);
                 }
             }
             if (fp.hasCustomIcon()) {

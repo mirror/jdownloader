@@ -33,7 +33,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 
 import org.jdesktop.swingx.renderer.JRendererLabel;
-import org.jdownloader.gui.translate.T;
+import org.jdownloader.gui.translate._GUI;
 
 public class ProgressColumn extends JDTableColumn {
 
@@ -57,9 +57,9 @@ public class ProgressColumn extends JDTableColumn {
         /* FIXME: wait for synthethica simple2d bugfix */
         // progress.setBorder(null);
         COL_PROGRESS_NORMAL = progress.getForeground();
-        strPluginDisabled = T._.gui_downloadlink_plugindisabled();
-        strPluginError = T._.gui_treetable_error_plugin();
-        strUnknownFilesize = T._.jd_gui_swing_jdgui_views_downloadview_Columns_ProgressColumn_unknownFilesize();
+        strPluginDisabled = _GUI._.gui_downloadlink_plugindisabled();
+        strPluginError = _GUI._.gui_treetable_error_plugin();
+        strUnknownFilesize = _GUI._.jd_gui_swing_jdgui_views_downloadview_Columns_ProgressColumn_unknownFilesize();
         jlr = new JRendererLabel();
         jlr.setBorder(null);
     }

@@ -7,7 +7,7 @@ import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.appwork.utils.swing.dialog.ProgressDialog;
 import org.appwork.utils.swing.dialog.ProgressDialog.ProgressGetter;
-import org.jdownloader.gui.translate.T;
+import org.jdownloader.gui.translate._GUI;
 
 public class ProgressControllerDialog {
 
@@ -33,7 +33,7 @@ public class ProgressControllerDialog {
         };
         final ProgressDialog dialog = new ProgressDialog(progressAdapter, 0, "Please Wait",
 
-        source.getName(), null, null, T._.ProgressControllerDialog_minimize());
+        source.getName(), null, null, _GUI._.ProgressControllerDialog_minimize());
         new Thread() {
             public void run() {
                 try {

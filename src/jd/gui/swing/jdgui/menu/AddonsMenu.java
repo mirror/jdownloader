@@ -29,7 +29,7 @@ import jd.utils.JDTheme;
 
 import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionController;
-import org.jdownloader.translate.JDT;
+import org.jdownloader.translate._JDT;
 
 public class AddonsMenu extends JMenu {
 
@@ -37,7 +37,7 @@ public class AddonsMenu extends JMenu {
     private static AddonsMenu INSTANCE         = null;
 
     private AddonsMenu() {
-        super(JDT._.gui_menu_extensions());
+        super(_JDT._.gui_menu_extensions());
         updateMenu();
     }
 

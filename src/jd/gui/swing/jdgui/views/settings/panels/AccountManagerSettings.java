@@ -22,20 +22,20 @@ import jd.gui.swing.jdgui.views.settings.panels.accountmanager.AccountManager;
 
 import org.jdownloader.gui.settings.AbstractConfigPanel;
 import org.jdownloader.images.Theme;
-import org.jdownloader.translate.JDT;
+import org.jdownloader.translate._JDT;
 
 public class AccountManagerSettings extends AbstractConfigPanel {
 
     private static final long serialVersionUID = -7963763730328793139L;
 
     public String getTitle() {
-        return JDT._.gui_settings_premium_title();
+        return _JDT._.gui_settings_premium_title();
     }
 
     public AccountManagerSettings() {
         super();
         this.addHeader(getTitle(), Theme.getIcon("premium", 32));
-        this.addDescription(JDT._.gui_settings_premium_description());
+        this.addDescription(_JDT._.gui_settings_premium_description());
 
         add(AccountManager.getInstance());
     }

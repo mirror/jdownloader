@@ -9,14 +9,14 @@ import jd.gui.swing.jdgui.menu.actions.RestoreAction;
 import jd.gui.swing.jdgui.menu.actions.SettingsAction;
 import jd.nutils.OSDetector;
 
-import org.jdownloader.gui.translate.T;
+import org.jdownloader.gui.translate._GUI;
 
 public class FileMenu extends JMenu {
 
     private static final long serialVersionUID = -6088167424746457972L;
 
     public FileMenu() {
-        super(T._.jd_gui_skins_simple_simplegui_menubar_filemenu());
+        super(_GUI._.jd_gui_skins_simple_simplegui_menubar_filemenu());
 
         add(new SaveMenu());
         addSeparator();

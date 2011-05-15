@@ -12,7 +12,7 @@ import jd.utils.JDTheme;
 
 import org.appwork.utils.swing.table.ExtColumn;
 import org.appwork.utils.swing.table.ExtTable;
-import org.jdownloader.gui.translate.T;
+import org.jdownloader.gui.translate._GUI;
 
 public class HosterIconColumn extends ExtColumn<PackageLinkNode> {
 
@@ -34,9 +34,9 @@ public class HosterIconColumn extends ExtColumn<PackageLinkNode> {
         imgResume = JDTheme.II("gui.images.resume", 16, 16);
         imgMissing = JDTheme.II("gui.images.bad", 16, 16);
         imgPremium = JDTheme.II("gui.images.premium", 16, 16);
-        strResume = T._.jd_gui_swing_jdgui_views_downloadview_TableRenderer_resume();
-        strPremium = T._.jd_gui_swing_jdgui_views_downloadview_TableRenderer_premium();
-        strMissing = T._.jd_gui_swing_jdgui_views_downloadview_TableRenderer_missing();
+        strResume = _GUI._.jd_gui_swing_jdgui_views_downloadview_TableRenderer_resume();
+        strPremium = _GUI._.jd_gui_swing_jdgui_views_downloadview_TableRenderer_premium();
+        strMissing = _GUI._.jd_gui_swing_jdgui_views_downloadview_TableRenderer_missing();
     }
 
     @Override

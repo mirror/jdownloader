@@ -11,7 +11,7 @@ import jd.plugins.FilePackage;
 import jd.utils.JDUtilities;
 
 import org.appwork.storage.config.JsonConfig;
-import org.jdownloader.gui.translate.T;
+import org.jdownloader.gui.translate._GUI;
 
 public class NewPackageAction extends ContextMenuAction {
 
@@ -32,12 +32,12 @@ public class NewPackageAction extends ContextMenuAction {
 
     @Override
     protected String getName() {
-        return T._.gui_table_contextmenu_newpackage() + " (" + links.size() + ")";
+        return _GUI._.gui_table_contextmenu_newpackage() + " (" + links.size() + ")";
     }
 
     public void actionPerformed(ActionEvent e) {
         FilePackage fp = links.get(0).getFilePackage();
-        String string = UserIO.getInstance().requestInputDialog(0, T._.gui_linklist_newpackage_message(), fp.getName());
+        String string = UserIO.getInstance().requestInputDialog(0, _GUI._.gui_linklist_newpackage_message(), fp.getName());
         if (string == null) return;
 
         FilePackage nfp = FilePackage.getInstance();

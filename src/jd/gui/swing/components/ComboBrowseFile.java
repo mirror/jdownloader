@@ -34,7 +34,7 @@ import jd.gui.UserIO;
 import jd.gui.swing.GuiRunnable;
 import net.miginfocom.swing.MigLayout;
 
-import org.jdownloader.gui.translate.T;
+import org.jdownloader.gui.translate._GUI;
 
 public class ComboBrowseFile extends JPanel implements ActionListener {
 
@@ -203,7 +203,7 @@ public class ComboBrowseFile extends JPanel implements ActionListener {
 
         }
 
-        btnBrowse = new JButton(T._.gui_btn_select());
+        btnBrowse = new JButton(_GUI._.gui_btn_select());
         btnBrowse.addActionListener(this);
 
         this.add(cmboInput, "grow");

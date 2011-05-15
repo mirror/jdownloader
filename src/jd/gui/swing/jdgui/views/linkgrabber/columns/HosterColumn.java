@@ -28,7 +28,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkGrabberFilePackage;
 
 import org.jdesktop.swingx.renderer.JRendererLabel;
-import org.jdownloader.gui.translate.T;
+import org.jdownloader.gui.translate._GUI;
 
 public class HosterColumn extends JDTableColumn {
 
@@ -42,7 +42,7 @@ public class HosterColumn extends JDTableColumn {
         super(name, table);
         jlr = new JRendererLabel();
         jlr.setBorder(null);
-        strLoadingFrom = T._.jd_gui_swing_jdgui_views_downloadview_TableRenderer_loadingFrom() + " ";
+        strLoadingFrom = _GUI._.jd_gui_swing_jdgui_views_downloadview_TableRenderer_loadingFrom() + " ";
     }
 
     @Override

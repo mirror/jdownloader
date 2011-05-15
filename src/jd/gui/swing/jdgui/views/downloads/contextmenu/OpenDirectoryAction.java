@@ -6,7 +6,7 @@ import java.io.File;
 import jd.gui.swing.jdgui.interfaces.ContextMenuAction;
 import jd.utils.JDUtilities;
 
-import org.jdownloader.gui.translate.T;
+import org.jdownloader.gui.translate._GUI;
 
 public class OpenDirectoryAction extends ContextMenuAction {
 
@@ -27,7 +27,7 @@ public class OpenDirectoryAction extends ContextMenuAction {
 
     @Override
     protected String getName() {
-        return T._.gui_table_contextmenu_downloaddir();
+        return _GUI._.gui_table_contextmenu_downloaddir();
     }
 
     public void actionPerformed(ActionEvent e) {

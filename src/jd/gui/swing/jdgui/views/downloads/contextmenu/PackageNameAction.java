@@ -7,7 +7,7 @@ import jd.gui.UserIO;
 import jd.gui.swing.jdgui.interfaces.ContextMenuAction;
 import jd.plugins.FilePackage;
 
-import org.jdownloader.gui.translate.T;
+import org.jdownloader.gui.translate._GUI;
 
 public class PackageNameAction extends ContextMenuAction {
 
@@ -28,11 +28,11 @@ public class PackageNameAction extends ContextMenuAction {
 
     @Override
     protected String getName() {
-        return T._.gui_table_contextmenu_editpackagename() + " (" + packages.size() + ")";
+        return _GUI._.gui_table_contextmenu_editpackagename() + " (" + packages.size() + ")";
     }
 
     public void actionPerformed(ActionEvent e) {
-        String name = UserIO.getInstance().requestInputDialog(0, T._.gui_linklist_editpackagename_message(), packages.get(0).getName());
+        String name = UserIO.getInstance().requestInputDialog(0, _GUI._.gui_linklist_editpackagename_message(), packages.get(0).getName());
         if (name == null) return;
 
         for (FilePackage packagee : packages) {

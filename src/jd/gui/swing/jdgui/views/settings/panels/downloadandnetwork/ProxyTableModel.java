@@ -17,7 +17,7 @@ import org.appwork.utils.swing.table.columns.ExtCheckColumn;
 import org.appwork.utils.swing.table.columns.ExtPasswordEditorColumn;
 import org.appwork.utils.swing.table.columns.ExtRadioColumn;
 import org.appwork.utils.swing.table.columns.ExtTextColumn;
-import org.jdownloader.gui.translate.T;
+import org.jdownloader.gui.translate._GUI;
 
 public class ProxyTableModel extends ExtTableModel<ProxyInfo> implements DefaultEventListener<ProxyEvent<ProxyInfo>> {
 
@@ -33,7 +33,7 @@ public class ProxyTableModel extends ExtTableModel<ProxyInfo> implements Default
 
     @Override
     protected void initColumns() {
-        this.addColumn(new ExtCheckColumn<ProxyInfo>(T._.gui_column_use(), this) {
+        this.addColumn(new ExtCheckColumn<ProxyInfo>(_GUI._.gui_column_use(), this) {
 
             private static final long serialVersionUID = 6843580898685333774L;
 
@@ -56,7 +56,7 @@ public class ProxyTableModel extends ExtTableModel<ProxyInfo> implements Default
                 });
             }
         });
-        this.addColumn(new ExtTextColumn<ProxyInfo>(T._.gui_column_host(), this) {
+        this.addColumn(new ExtTextColumn<ProxyInfo>(_GUI._.gui_column_host(), this) {
 
             private static final long serialVersionUID = -7209180150340921804L;
 
@@ -73,7 +73,7 @@ public class ProxyTableModel extends ExtTableModel<ProxyInfo> implements Default
             }
 
         });
-        this.addColumn(new ExtTextColumn<ProxyInfo>(T._.gui_column_user(), this) {
+        this.addColumn(new ExtTextColumn<ProxyInfo>(_GUI._.gui_column_user(), this) {
 
             private static final long serialVersionUID = -7209180150340921804L;
 
@@ -96,7 +96,7 @@ public class ProxyTableModel extends ExtTableModel<ProxyInfo> implements Default
             }
 
         });
-        this.addColumn(new ExtPasswordEditorColumn<ProxyInfo>(T._.gui_column_pass(), this) {
+        this.addColumn(new ExtPasswordEditorColumn<ProxyInfo>(_GUI._.gui_column_pass(), this) {
 
             private static final long serialVersionUID = -7209180150340921804L;
 
@@ -125,7 +125,7 @@ public class ProxyTableModel extends ExtTableModel<ProxyInfo> implements Default
             }
 
         });
-        this.addColumn(new ExtTextColumn<ProxyInfo>(T._.gui_column_port(), this) {
+        this.addColumn(new ExtTextColumn<ProxyInfo>(_GUI._.gui_column_port(), this) {
 
             private static final long serialVersionUID = -7209180150340921804L;
 
@@ -137,7 +137,7 @@ public class ProxyTableModel extends ExtTableModel<ProxyInfo> implements Default
 
         });
 
-        this.addColumn(new ExtTextColumn<ProxyInfo>(T._.gui_column_proxystatus(), this) {
+        this.addColumn(new ExtTextColumn<ProxyInfo>(_GUI._.gui_column_proxystatus(), this) {
 
             private static final long serialVersionUID = -7209180150340921804L;
 
@@ -146,7 +146,7 @@ public class ProxyTableModel extends ExtTableModel<ProxyInfo> implements Default
                 return value.getProxy().getStatus().name();
             }
         });
-        this.addColumn(new ExtTextColumn<ProxyInfo>(T._.gui_column_proxytype(), this) {
+        this.addColumn(new ExtTextColumn<ProxyInfo>(_GUI._.gui_column_proxytype(), this) {
 
             private static final long serialVersionUID = -7209180150340921804L;
 
@@ -161,7 +161,7 @@ public class ProxyTableModel extends ExtTableModel<ProxyInfo> implements Default
             }
         });
 
-        this.addColumn(new ExtRadioColumn<ProxyInfo>(T._.gui_column_defaultproxy(), this) {
+        this.addColumn(new ExtRadioColumn<ProxyInfo>(_GUI._.gui_column_defaultproxy(), this) {
 
             private static final long serialVersionUID = 6843580898685333774L;
 

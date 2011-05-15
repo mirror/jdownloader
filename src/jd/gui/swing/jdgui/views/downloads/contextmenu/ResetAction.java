@@ -9,7 +9,7 @@ import jd.gui.UserIO;
 import jd.gui.swing.jdgui.interfaces.ContextMenuAction;
 import jd.plugins.DownloadLink;
 
-import org.jdownloader.gui.translate.T;
+import org.jdownloader.gui.translate._GUI;
 
 public class ResetAction extends ContextMenuAction {
 
@@ -30,13 +30,13 @@ public class ResetAction extends ContextMenuAction {
 
     @Override
     protected String getName() {
-        return T._.gui_table_contextmenu_reset() + " (" + links.size() + ")";
+        return _GUI._.gui_table_contextmenu_reset() + " (" + links.size() + ")";
     }
 
     public void actionPerformed(ActionEvent e) {
         IOEQ.add(new Runnable() {
             public void run() {
-                if (UserIO.isOK(UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.DONT_SHOW_AGAIN_IGNORES_CANCEL, T._.gui_downloadlist_reset() + " (" + T._.gui_downloadlist_delete_size_packagev2(links.size()) + ")"))) {
+                if (UserIO.isOK(UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.DONT_SHOW_AGAIN_IGNORES_CANCEL, _GUI._.gui_downloadlist_reset() + " (" + _GUI._.gui_downloadlist_delete_size_packagev2(links.size()) + ")"))) {
                     for (DownloadLink link : links) {
                         if (link.getLinkStatus().isPluginActive()) {
                             /*

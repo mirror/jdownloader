@@ -4,7 +4,7 @@ import java.awt.event.ActionEvent;
 
 import javax.swing.AbstractAction;
 
-import org.jdownloader.gui.translate.T;
+import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.Theme;
 
 public class TestAction extends AbstractAction {
@@ -12,7 +12,7 @@ public class TestAction extends AbstractAction {
 
     public TestAction(FilterTable table) {
         this.table = table;
-        this.putValue(NAME, T._.settings_linkgrabber_filter_action_test());
+        this.putValue(NAME, _GUI._.settings_linkgrabber_filter_action_test());
         this.putValue(AbstractAction.SMALL_ICON, Theme.getIcon("run", 20));
     }
 

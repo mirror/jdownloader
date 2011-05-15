@@ -8,7 +8,7 @@ import jd.controlling.IOEQ;
 import jd.gui.swing.jdgui.interfaces.ContextMenuAction;
 import jd.plugins.DownloadLink;
 
-import org.jdownloader.gui.translate.T;
+import org.jdownloader.gui.translate._GUI;
 
 public class ResumeAction extends ContextMenuAction {
 
@@ -29,7 +29,7 @@ public class ResumeAction extends ContextMenuAction {
 
     @Override
     protected String getName() {
-        return T._.gui_table_contextmenu_resume() + " (" + links.size() + ")";
+        return _GUI._.gui_table_contextmenu_resume() + " (" + links.size() + ")";
     }
 
     @Override

@@ -29,7 +29,7 @@ import jd.plugins.Account;
 import jd.utils.JDUtilities;
 
 import org.jdesktop.swingx.renderer.JRendererLabel;
-import org.jdownloader.gui.translate.T;
+import org.jdownloader.gui.translate._GUI;
 
 public class HosterColumn extends JDTableColumn {
 
@@ -74,7 +74,7 @@ public class HosterColumn extends JDTableColumn {
     @Override
     public Component myTableCellRendererComponent(JDTableModel table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
         if (value instanceof Account) {
-            jlr.setText(T._.jd_gui_swing_jdgui_settings_panels_premium_PremiumTableRenderer_account());
+            jlr.setText(_GUI._.jd_gui_swing_jdgui_settings_panels_premium_PremiumTableRenderer_account());
             jlr.setBorder(leftGap);
             jlr.setIcon(null);
             jlr.setHorizontalAlignment(SwingConstants.RIGHT);

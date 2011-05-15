@@ -12,7 +12,7 @@ import javax.swing.SwingConstants;
 
 import net.miginfocom.swing.MigLayout;
 
-import org.jdownloader.translate.JDT;
+import org.jdownloader.translate._JDT;
 
 public class Header extends JPanel {
 
@@ -47,7 +47,7 @@ public class Header extends JPanel {
 
         add(label);
         add(new JSeparator());
-        enabled = new JCheckBox(JDT._.configheader_enabled());
+        enabled = new JCheckBox(_JDT._.configheader_enabled());
         enabled.addActionListener(listener);
         enabled.setHorizontalTextPosition(SwingConstants.LEFT);
         enabled.addActionListener(new ActionListener() {

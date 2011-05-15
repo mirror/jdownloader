@@ -33,7 +33,7 @@ import jd.utils.Upload;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.utils.os.CrossSystem;
-import org.jdownloader.gui.translate.T;
+import org.jdownloader.gui.translate._GUI;
 
 /**
  * The panel for the log file.
@@ -75,16 +75,16 @@ public class LogPane extends SwitchPanel implements ActionListener {
             }
             if (content == null || content.length() == 0) return;
 
-            String question = UserIO.getInstance().requestInputDialog(UserIO.NO_COUNTDOWN, T._.userio_input_title(), T._.gui_logger_askQuestion(), null, null, null, null);
+            String question = UserIO.getInstance().requestInputDialog(UserIO.NO_COUNTDOWN, _GUI._.userio_input_title(), _GUI._.gui_logger_askQuestion(), null, null, null, null);
             if (question == null) question = "";
             append("\r\n\r\n-------------------------------------------------------------\r\n\r\n");
             String url = Upload.toJDownloader(content, question);
             if (url != null) {
                 CrossSystem.openURLOrShowMessage(url);
-                append(T._.gui_logupload_message() + "\r\n" + url);
+                append(_GUI._.gui_logupload_message() + "\r\n" + url);
             } else {
-                UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.NO_CANCEL_OPTION, T._.sys_warning_loguploadfailed());
-                append(T._.gui_logDialog_warning_uploadFailed());
+                UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.NO_CANCEL_OPTION, _GUI._.sys_warning_loguploadfailed());
+                append(_GUI._.gui_logDialog_warning_uploadFailed());
             }
             append("\r\n\r\n-------------------------------------------------------------\r\n\r\n");
             break;

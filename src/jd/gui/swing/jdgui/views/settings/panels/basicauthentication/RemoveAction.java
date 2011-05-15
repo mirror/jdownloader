@@ -9,7 +9,7 @@ import jd.controlling.authentication.AuthenticationController;
 import jd.controlling.authentication.AuthenticationInfo;
 
 import org.appwork.utils.swing.table.utils.MinimumSelectionObserver;
-import org.jdownloader.gui.translate.T;
+import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.Theme;
 
 public class RemoveAction extends AbstractAction {
@@ -21,7 +21,7 @@ public class RemoveAction extends AbstractAction {
 
     public RemoveAction(AuthTable table) {
         this.table = table;
-        this.putValue(NAME, T._.settings_auth_delete());
+        this.putValue(NAME, _GUI._.settings_auth_delete());
         this.putValue(AbstractAction.SMALL_ICON, Theme.getIcon("remove", 20));
         table.getSelectionModel().addListSelectionListener(new MinimumSelectionObserver(table, this, 1));
 
@@ -29,7 +29,7 @@ public class RemoveAction extends AbstractAction {
 
     public RemoveAction(AuthTable authTable, ArrayList<AuthenticationInfo> selection) {
         this.table = authTable;
-        this.putValue(NAME, T._.settings_auth_delete());
+        this.putValue(NAME, _GUI._.settings_auth_delete());
         this.putValue(AbstractAction.SMALL_ICON, Theme.getIcon("remove", 20));
         this.setEnabled(selection.size() > 0);
 

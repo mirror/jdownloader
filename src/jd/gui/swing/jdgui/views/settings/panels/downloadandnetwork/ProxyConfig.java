@@ -20,12 +20,12 @@ import org.appwork.utils.swing.table.ExtTable;
 import org.appwork.utils.swing.table.SelectionHighlighter;
 import org.jdownloader.gui.settings.AbstractConfigPanel;
 import org.jdownloader.images.Theme;
-import org.jdownloader.translate.JDT;
+import org.jdownloader.translate._JDT;
 
 public class ProxyConfig extends AbstractConfigPanel {
 
     public String getTitle() {
-        return JDT._.gui_settings_proxy_title();
+        return _JDT._.gui_settings_proxy_title();
     }
 
     private static final long   serialVersionUID = -521958649780869375L;
@@ -40,7 +40,7 @@ public class ProxyConfig extends AbstractConfigPanel {
         super();
 
         this.addHeader(getTitle(), Theme.getIcon("proxy", 32));
-        this.addDescription(JDT._.gui_settings_proxy_description());
+        this.addDescription(_JDT._.gui_settings_proxy_description());
 
         table = new ExtTable<ProxyInfo>(new ProxyTableModel(), "proxyTable") {
             /**
@@ -62,8 +62,8 @@ public class ProxyConfig extends AbstractConfigPanel {
         this.add(sp, "gapleft 37,growx, pushx,spanx,pushy,growy");
         JToolBar toolbar = new JToolBar();
         toolbar.setFloatable(false);
-        btnAdd = new JButton(JDT._.basics_add(), Theme.getIcon("add", 20));
-        btnRemove = new JButton(JDT._.basics_remove(), Theme.getIcon("delete", 20));
+        btnAdd = new JButton(_JDT._.basics_add(), Theme.getIcon("add", 20));
+        btnRemove = new JButton(_JDT._.basics_remove(), Theme.getIcon("delete", 20));
         btnAdd.addActionListener(new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {

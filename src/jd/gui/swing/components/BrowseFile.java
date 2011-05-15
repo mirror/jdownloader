@@ -28,7 +28,7 @@ import javax.swing.JTextField;
 import jd.gui.UserIO;
 import net.miginfocom.swing.MigLayout;
 
-import org.jdownloader.gui.translate.T;
+import org.jdownloader.gui.translate._GUI;
 
 public class BrowseFile extends JPanel implements ActionListener {
 
@@ -130,7 +130,7 @@ public class BrowseFile extends JPanel implements ActionListener {
         txtInput.setEditable(editable);
         txtInput.addActionListener(this);
 
-        btnBrowse = new JButton(T._.gui_btn_select());
+        btnBrowse = new JButton(_GUI._.gui_btn_select());
         btnBrowse.addActionListener(this);
 
         add(txtInput, "grow");

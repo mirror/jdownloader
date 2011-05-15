@@ -29,7 +29,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginProgress;
 import jd.utils.JDTheme;
 
-import org.jdownloader.gui.translate.T;
+import org.jdownloader.gui.translate._GUI;
 
 public class StatusColumn extends JDTableColumn {
 
@@ -67,14 +67,14 @@ public class StatusColumn extends JDTableColumn {
         imgPriority1 = JDTheme.II("gui.images.priority1", 16, 16);
         imgPriority2 = JDTheme.II("gui.images.priority2", 16, 16);
         imgPriority3 = JDTheme.II("gui.images.priority3", 16, 16);
-        strStopMark = T._.jd_gui_swing_jdgui_views_downloadview_TableRenderer_stopmark();
-        strFinished = T._.jd_gui_swing_jdgui_views_downloadview_TableRenderer_finished();
-        strFailed = T._.jd_gui_swing_jdgui_views_downloadview_TableRenderer_failed();
-        strExtract = T._.jd_gui_swing_jdgui_views_downloadview_TableRenderer_extract();
-        strPriorityS = T._.gui_treetable_tooltip_priority_1();
-        strPriority1 = T._.gui_treetable_tooltip_priority1();
-        strPriority2 = T._.gui_treetable_tooltip_priority2();
-        strPriority3 = T._.gui_treetable_tooltip_priority3();
+        strStopMark = _GUI._.jd_gui_swing_jdgui_views_downloadview_TableRenderer_stopmark();
+        strFinished = _GUI._.jd_gui_swing_jdgui_views_downloadview_TableRenderer_finished();
+        strFailed = _GUI._.jd_gui_swing_jdgui_views_downloadview_TableRenderer_failed();
+        strExtract = _GUI._.jd_gui_swing_jdgui_views_downloadview_TableRenderer_extract();
+        strPriorityS = _GUI._.gui_treetable_tooltip_priority_1();
+        strPriority1 = _GUI._.gui_treetable_tooltip_priority1();
+        strPriority2 = _GUI._.gui_treetable_tooltip_priority2();
+        strPriority3 = _GUI._.gui_treetable_tooltip_priority3();
 
     }
 

@@ -1224,4 +1224,10 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Extension Modules" })
     String extensionManager_title();
+
+    @Default(lngs = { "en" }, values = { "Choose Plugin" })
+    String pluginsettings_combo_label();
+
+    @Default(lngs = { "en" }, values = { "Advanced!" })
+    String gui_settings_advanced_title();
 }

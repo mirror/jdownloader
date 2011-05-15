@@ -27,7 +27,7 @@ import jd.gui.swing.jdgui.actions.ToolBarAction;
 import jd.parser.html.HTMLParser;
 import jd.utils.JDTheme;
 
-import org.jdownloader.gui.translate.T;
+import org.jdownloader.gui.translate._GUI;
 
 public class AddUrlAction extends ToolBarAction {
 
@@ -51,7 +51,7 @@ public class AddUrlAction extends ToolBarAction {
             }
         } catch (Exception e2) {
         }
-        String link = UserIO.getInstance().requestInputDialog(UserIO.NO_COUNTDOWN | UserIO.STYLE_LARGE, T._.gui_dialog_addurl_title(), T._.gui_dialog_addurl_message(), def.toString(), JDTheme.II("gui.images.taskpanes.linkgrabber", 32, 32), T._.gui_dialog_addurl_okoption_parse(), null);
+        String link = UserIO.getInstance().requestInputDialog(UserIO.NO_COUNTDOWN | UserIO.STYLE_LARGE, _GUI._.gui_dialog_addurl_title(), _GUI._.gui_dialog_addurl_message(), def.toString(), JDTheme.II("gui.images.taskpanes.linkgrabber", 32, 32), _GUI._.gui_dialog_addurl_okoption_parse(), null);
         if (link == null || link.length() == 0) return;
         if (CNL2.checkText(link)) return;
         DistributeData tmp = new DistributeData(link, false);

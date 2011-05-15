@@ -22,7 +22,7 @@ import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.extensions.Header;
-import org.jdownloader.translate.JDT;
+import org.jdownloader.translate._JDT;
 
 public abstract class AbstractConfigPanel extends SwitchPanel {
 
@@ -34,7 +34,7 @@ public abstract class AbstractConfigPanel extends SwitchPanel {
         pairs = new ArrayList<Pair<?>>();
     }
 
-    protected JTextArea addDescription(String description) {
+    public JTextArea addDescription(String description) {
         JTextArea txt = new JTextArea();
         txt.setEditable(false);
         txt.setLineWrap(true);
@@ -48,14 +48,14 @@ public abstract class AbstractConfigPanel extends SwitchPanel {
         return txt;
     }
 
-    protected void addTopHeader(String name, ImageIcon icon) {
+    public void addTopHeader(String name, ImageIcon icon) {
         add(new Header(name, icon), "spanx,growx,pushx");
 
     }
 
     protected void showRestartRequiredMessage() {
         try {
-            Dialog.getInstance().showConfirmDialog(0, JDT._.dialog_optional_showRestartRequiredMessage_title(), JDT._.dialog_optional_showRestartRequiredMessage_msg(), null, JDT._.basics_yes(), JDT._.basics_no());
+            Dialog.getInstance().showConfirmDialog(0, _JDT._.dialog_optional_showRestartRequiredMessage_title(), _JDT._.dialog_optional_showRestartRequiredMessage_msg(), null, _JDT._.basics_yes(), _JDT._.basics_no());
             JDController.getInstance().exit();
         } catch (DialogClosedException e) {
         } catch (DialogCanceledException e) {

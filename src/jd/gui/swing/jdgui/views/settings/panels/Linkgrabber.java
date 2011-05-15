@@ -23,9 +23,9 @@ import jd.gui.swing.jdgui.views.settings.components.ComboBox;
 import jd.gui.swing.jdgui.views.settings.components.LinkgrabberFilter.LinkgrabberFilter;
 
 import org.jdownloader.gui.settings.AbstractConfigPanel;
-import org.jdownloader.gui.translate.T;
+import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.Theme;
-import org.jdownloader.translate.JDT;
+import org.jdownloader.translate._JDT;
 
 public class Linkgrabber extends AbstractConfigPanel {
 
@@ -37,28 +37,28 @@ public class Linkgrabber extends AbstractConfigPanel {
     private ComboBox          blackOrWhite;
 
     public String getTitle() {
-        return JDT._.gui_settings_linkgrabber_title();
+        return _JDT._.gui_settings_linkgrabber_title();
     }
 
     public Linkgrabber() {
         super();
 
         this.addHeader(getTitle(), Theme.getIcon("linkgrabber", 32));
-        this.addDescription(JDT._.gui_settings_linkgrabber_description());
+        this.addDescription(_JDT._.gui_settings_linkgrabber_description());
 
         checkLinks = new Checkbox();
         rename = new Checkbox();
         cnl = new Checkbox();
 
-        addPair(T._.gui_config_linkgrabber_onlincheck(), checkLinks);
-        addPair(T._.gui_config_linkgrabber_replacechars(), rename);
-        addPair(T._.gui_config_linkgrabber_cnl2(), cnl);
+        addPair(_GUI._.gui_config_linkgrabber_onlincheck(), checkLinks);
+        addPair(_GUI._.gui_config_linkgrabber_replacechars(), rename);
+        addPair(_GUI._.gui_config_linkgrabber_cnl2(), cnl);
 
-        this.addHeader(T._.gui_config_linkgrabber_ignorelist(), Theme.getIcon("filter", 32));
-        this.addDescription(JDT._.gui_settings_linkgrabber_filter_description());
+        this.addHeader(_GUI._.gui_config_linkgrabber_ignorelist(), Theme.getIcon("filter", 32));
+        this.addDescription(_JDT._.gui_settings_linkgrabber_filter_description());
         filter = new LinkgrabberFilter();
-        blackOrWhite = new ComboBox(new String[] { T._.settings_linkgrabber_filter_blackorwhite_black(), T._.settings_linkgrabber_filter_blackorwhite_white() });
-        addPair(T._.gui_config_linkgrabber_filter_type(), blackOrWhite);
+        blackOrWhite = new ComboBox(new String[] { _GUI._.settings_linkgrabber_filter_blackorwhite_black(), _GUI._.settings_linkgrabber_filter_blackorwhite_white() });
+        addPair(_GUI._.gui_config_linkgrabber_filter_type(), blackOrWhite);
 
         add(filter);
 

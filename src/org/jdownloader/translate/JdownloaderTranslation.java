@@ -698,4 +698,7 @@ public interface JdownloaderTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "JDownloader uses 'Plugins' for %s1 websites to automate downloads which would take a lot of time without JDownloader. Some of these Plugins have settings to customize their behaviour." })
     String gui_settings_plugins_description(int num);
+
+    @Default(lngs = { "en" }, values = { "All Settings found here are for Advanced Users only! Do not change anything here if you do not know 100% what you are doing." })
+    String gui_settings_advanced_description();
 }

@@ -36,7 +36,7 @@ import jd.utils.JDHexUtils;
 
 import org.appwork.utils.Regex;
 import org.jdownloader.extensions.ExtensionController;
-import org.jdownloader.translate.JDT;
+import org.jdownloader.translate._JDT;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.ContextFactory;
 import org.mozilla.javascript.Scriptable;
@@ -73,7 +73,7 @@ public final class CNL2 {
                             } else {
                                 LocalBrowser.openDefaultURL(new URL(text + "?jd=1"));
                             }
-                            Balloon.show(JDT._.jd_controlling_CNL2_checkText_title(), null, JDT._.jd_controlling_CNL2_checkText_message());
+                            Balloon.show(_JDT._.jd_controlling_CNL2_checkText_title(), null, _JDT._.jd_controlling_CNL2_checkText_message());
                             return true;
                         }
                     }

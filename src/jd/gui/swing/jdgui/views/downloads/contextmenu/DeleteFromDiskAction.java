@@ -7,7 +7,7 @@ import jd.gui.UserIO;
 import jd.gui.swing.jdgui.interfaces.ContextMenuAction;
 import jd.plugins.DownloadLink;
 
-import org.jdownloader.gui.translate.T;
+import org.jdownloader.gui.translate._GUI;
 
 public class DeleteFromDiskAction extends ContextMenuAction {
 
@@ -36,7 +36,7 @@ public class DeleteFromDiskAction extends ContextMenuAction {
 
     @Override
     protected String getName() {
-        return T._.gui_table_contextmenu_deletelistdisk2() + " (" + links.size() + "/" + counter + ")";
+        return _GUI._.gui_table_contextmenu_deletelistdisk2() + " (" + links.size() + "/" + counter + ")";
     }
 
     @Override
@@ -45,7 +45,7 @@ public class DeleteFromDiskAction extends ContextMenuAction {
     }
 
     public void actionPerformed(ActionEvent e) {
-        if (links.size() > 0 && UserIO.isOK(UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.DONT_SHOW_AGAIN_IGNORES_CANCEL, T._.gui_downloadlist_delete2() + " (" + T._.gui_downloadlist_delete_links(links.size()) + " /  " + T._.gui_downloadlist_delete_files(counter) + ")"))) {
+        if (links.size() > 0 && UserIO.isOK(UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.DONT_SHOW_AGAIN_IGNORES_CANCEL, _GUI._.gui_downloadlist_delete2() + " (" + _GUI._.gui_downloadlist_delete_links(links.size()) + " /  " + _GUI._.gui_downloadlist_delete_files(counter) + ")"))) {
             for (DownloadLink link : links) {
                 link.setEnabled(false);
                 link.deleteFile(true, true);

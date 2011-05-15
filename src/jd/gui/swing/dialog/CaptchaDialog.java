@@ -38,7 +38,7 @@ import net.miginfocom.swing.MigLayout;
 
 import org.appwork.utils.swing.dialog.AbstractDialog;
 import org.appwork.utils.swing.dialog.Dialog;
-import org.jdownloader.gui.translate.T;
+import org.jdownloader.gui.translate._GUI;
 
 /**
  * This Dialog is used to display a Inputdialog for the captchas
@@ -56,7 +56,7 @@ public class CaptchaDialog extends AbstractDialog<String> implements ActionListe
     private final String      explain;
 
     public CaptchaDialog(final int flag, final String host, final File imagefile, final String defaultValue, final String explain) {
-        super(flag | Dialog.STYLE_HIDE_ICON, (host != null ? host + ": " : "") + T._.gui_captchaWindow_askForInput(), null, null, null);
+        super(flag | Dialog.STYLE_HIDE_ICON, (host != null ? host + ": " : "") + _GUI._.gui_captchaWindow_askForInput(), null, null, null);
 
         this.imagefile = imagefile;
         this.defaultValue = defaultValue;

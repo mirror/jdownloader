@@ -22,7 +22,7 @@ import javax.swing.text.JTextComponent;
 import jd.gui.swing.jdgui.JDGui;
 import jd.utils.JDTheme;
 
-import org.jdownloader.gui.translate.T;
+import org.jdownloader.gui.translate._GUI;
 
 public class ContextMenu {
 
@@ -48,7 +48,7 @@ public class ContextMenu {
 
         JPopupMenu menu = new JPopupMenu();
 
-        menu.add(new MenuAbstractAction(t, T._.gui_textcomponent_context_cut(), JDTheme.II("gui.icons.cut", 16, 16), T._.gui_textcomponent_context_cut_acc()) {
+        menu.add(new MenuAbstractAction(t, _GUI._.gui_textcomponent_context_cut(), JDTheme.II("gui.icons.cut", 16, 16), _GUI._.gui_textcomponent_context_cut_acc()) {
 
             private static final long serialVersionUID = 1L;
 
@@ -61,7 +61,7 @@ public class ContextMenu {
                 return !(c instanceof JPasswordField);
             }
         });
-        menu.add(new MenuAbstractAction(t, T._.gui_textcomponent_context_copy(), JDTheme.II("gui.icons.copy", 16, 16), T._.gui_textcomponent_context_copy_acc()) {
+        menu.add(new MenuAbstractAction(t, _GUI._.gui_textcomponent_context_copy(), JDTheme.II("gui.icons.copy", 16, 16), _GUI._.gui_textcomponent_context_copy_acc()) {
 
             private static final long serialVersionUID = 1L;
 
@@ -74,7 +74,7 @@ public class ContextMenu {
                 return !(c instanceof JPasswordField) && c.isEnabled() && c.getSelectedText() != null;
             }
         });
-        menu.add(new MenuAbstractAction(t, T._.gui_textcomponent_context_paste(), JDTheme.II("gui.icons.paste", 16, 16), T._.gui_textcomponent_context_paste_acc()) {
+        menu.add(new MenuAbstractAction(t, _GUI._.gui_textcomponent_context_paste(), JDTheme.II("gui.icons.paste", 16, 16), _GUI._.gui_textcomponent_context_paste_acc()) {
 
             private static final long serialVersionUID = 1L;
 
@@ -92,7 +92,7 @@ public class ContextMenu {
                 }
             }
         });
-        menu.add(new MenuAbstractAction(t, T._.gui_textcomponent_context_delete(), JDTheme.II("gui.icons.delete", 16, 16), T._.gui_textcomponent_context_delete_acc()) {
+        menu.add(new MenuAbstractAction(t, _GUI._.gui_textcomponent_context_delete(), JDTheme.II("gui.icons.delete", 16, 16), _GUI._.gui_textcomponent_context_delete_acc()) {
 
             private static final long serialVersionUID = 1L;
 
@@ -101,7 +101,7 @@ public class ContextMenu {
             }
         });
 
-        menu.add(new MenuAbstractAction(t, T._.gui_textcomponent_context_selectall(), JDTheme.II("gui.icons.select_all", 16, 16), T._.gui_textcomponent_context_selectall_acc()) {
+        menu.add(new MenuAbstractAction(t, _GUI._.gui_textcomponent_context_selectall(), JDTheme.II("gui.icons.select_all", 16, 16), _GUI._.gui_textcomponent_context_selectall_acc()) {
 
             private static final long serialVersionUID = 1L;
 

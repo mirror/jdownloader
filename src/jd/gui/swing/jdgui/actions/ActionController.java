@@ -58,7 +58,7 @@ import org.appwork.storage.StorageValueChangeEvent;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.event.DefaultEventListener;
 import org.appwork.utils.os.CrossSystem;
-import org.jdownloader.gui.translate.T;
+import org.jdownloader.gui.translate._GUI;
 
 /**
  * Class to control toolbar actions
@@ -182,7 +182,7 @@ public class ActionController {
                 JDController.getInstance().addControlListener(new ConfigPropertyListener(Configuration.PARAM_DOWNLOAD_PAUSE_SPEED) {
                     @Override
                     public void onPropertyChanged(final Property source, final String key) {
-                        setToolTipText(T._.gui_menu_action_break2_desc(JSonWrapper.get("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_PAUSE_SPEED, 10) + ""));
+                        setToolTipText(_GUI._.gui_menu_action_break2_desc(JSonWrapper.get("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_PAUSE_SPEED, 10) + ""));
                     }
                 });
             }
@@ -191,7 +191,7 @@ public class ActionController {
             public void initDefaults() {
                 this.setEnabled(false);
                 this.setType(ToolBarAction.Types.TOGGLE);
-                this.setToolTipText(T._.gui_menu_action_break2_desc(JSonWrapper.get("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_PAUSE_SPEED, 10) + ""));
+                this.setToolTipText(_GUI._.gui_menu_action_break2_desc(JSonWrapper.get("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_PAUSE_SPEED, 10) + ""));
             }
 
             @Override
@@ -230,7 +230,7 @@ public class ActionController {
             @Override
             public void threadedActionPerformed(final ActionEvent e) {
                 if (DownloadWatchDog.getInstance().getStateMonitor().hasPassed(DownloadWatchDog.STOPPING_STATE)) return;
-                final ProgressController pc = new ProgressController(T._.gui_downloadstop(), null);
+                final ProgressController pc = new ProgressController(_GUI._.gui_downloadstop(), null);
                 final Thread test = new Thread() {
                     @Override
                     public void run() {
@@ -278,12 +278,12 @@ public class ActionController {
 
                                 if (((Number) storageEvent.getNewValue()).longValue() > 5) {
                                     setIcon("gui.images.reconnect_warning");
-                                    setToolTipText(T._.gui_menu_action_reconnect_notconfigured_tooltip());
-                                    ActionController.getToolBarAction("toolbar.quickconfig.reconnecttoggle").setToolTipText(T._.gui_menu_action_reconnect_notconfigured_tooltip());
+                                    setToolTipText(_GUI._.gui_menu_action_reconnect_notconfigured_tooltip());
+                                    ActionController.getToolBarAction("toolbar.quickconfig.reconnecttoggle").setToolTipText(_GUI._.gui_menu_action_reconnect_notconfigured_tooltip());
                                 } else {
-                                    setToolTipText(T._.gui_menu_action_reconnectman_desc());
+                                    setToolTipText(_GUI._.gui_menu_action_reconnectman_desc());
                                     setIcon("gui.images.reconnect");
-                                    ActionController.getToolBarAction("toolbar.quickconfig.reconnecttoggle").setToolTipText(T._.gui_menu_action_reconnectauto_desc());
+                                    ActionController.getToolBarAction("toolbar.quickconfig.reconnecttoggle").setToolTipText(_GUI._.gui_menu_action_reconnectauto_desc());
                                 }
                             }
 
@@ -300,7 +300,7 @@ public class ActionController {
 
             @Override
             public void threadedActionPerformed(final ActionEvent e) {
-                if (JDFlags.hasSomeFlags(UserIO.getInstance().requestConfirmDialog(0, T._.gui_reconnect_confirm()), UserIO.RETURN_OK, UserIO.RETURN_DONT_SHOW_AGAIN)) {
+                if (JDFlags.hasSomeFlags(UserIO.getInstance().requestConfirmDialog(0, _GUI._.gui_reconnect_confirm()), UserIO.RETURN_OK, UserIO.RETURN_DONT_SHOW_AGAIN)) {
                     new Thread(new Runnable() {
                         public void run() {
                             Reconnecter.getInstance().forceReconnect();
@@ -414,7 +414,7 @@ public class ActionController {
 
             @Override
             public void initDefaults() {
-                this.setToolTipText(T._.jd_gui_swing_jdgui_actions_ActionController_toolbar_control_stopmark_tooltip());
+                this.setToolTipText(_GUI._.jd_gui_swing_jdgui_actions_ActionController_toolbar_control_stopmark_tooltip());
                 this.setEnabled(false);
                 this.setType(ToolBarAction.Types.TOGGLE);
                 this.setSelected(false);
@@ -554,7 +554,7 @@ public class ActionController {
 
                     @Override
                     public Integer runSave() {
-                        return UserIO.getInstance().requestComboDialog(UserIO.NO_COUNTDOWN, T._.jd_gui_swing_jdgui_actions_ActionController_buy_title(), T._.jd_gui_swing_jdgui_actions_ActionController_buy_message(), data, i, null, T._.jd_gui_swing_jdgui_actions_ActionController_continue(), null, new JDLabelListRenderer());
+                        return UserIO.getInstance().requestComboDialog(UserIO.NO_COUNTDOWN, _GUI._.jd_gui_swing_jdgui_actions_ActionController_buy_title(), _GUI._.jd_gui_swing_jdgui_actions_ActionController_buy_message(), data, i, null, _GUI._.jd_gui_swing_jdgui_actions_ActionController_continue(), null, new JDLabelListRenderer());
                     }
                 }.getReturnValue();
                 if (selection < 0) { return; }
@@ -596,7 +596,7 @@ public class ActionController {
             @Override
             public void onAction(final ActionEvent e) {
                 if (!this.isSelected()) {
-                    final int answer = UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.DONT_SHOW_AGAIN_IGNORES_CANCEL, T._.dialogs_premiumstatus_global_title(), T._.dialogs_premiumstatus_global_message(), UserIO.getInstance().getIcon(UserIO.ICON_WARNING), T._.gui_btn_yes(), T._.gui_btn_no());
+                    final int answer = UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.DONT_SHOW_AGAIN_IGNORES_CANCEL, _GUI._.dialogs_premiumstatus_global_title(), _GUI._.dialogs_premiumstatus_global_message(), UserIO.getInstance().getIcon(UserIO.ICON_WARNING), _GUI._.gui_btn_yes(), _GUI._.gui_btn_no());
                     if (JDFlags.hasAllFlags(answer, UserIO.RETURN_CANCEL)) {
                         this.setSelected(true);
                         return;

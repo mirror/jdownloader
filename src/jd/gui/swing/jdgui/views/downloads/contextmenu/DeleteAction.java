@@ -7,7 +7,7 @@ import jd.gui.UserIO;
 import jd.gui.swing.jdgui.interfaces.ContextMenuAction;
 import jd.plugins.DownloadLink;
 
-import org.jdownloader.gui.translate.T;
+import org.jdownloader.gui.translate._GUI;
 
 public class DeleteAction extends ContextMenuAction {
 
@@ -28,11 +28,11 @@ public class DeleteAction extends ContextMenuAction {
 
     @Override
     protected String getName() {
-        return T._.gui_table_contextmenu_deletelist2() + " (" + links.size() + ")";
+        return _GUI._.gui_table_contextmenu_deletelist2() + " (" + links.size() + ")";
     }
 
     public void actionPerformed(ActionEvent e) {
-        if (links.size() > 0 && UserIO.isOK(UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.DONT_SHOW_AGAIN_IGNORES_CANCEL, T._.gui_downloadlist_delete() + " (" + T._.gui_downloadlist_delete_size_packagev2(links.size()) + ")"))) {
+        if (links.size() > 0 && UserIO.isOK(UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.DONT_SHOW_AGAIN_IGNORES_CANCEL, _GUI._.gui_downloadlist_delete() + " (" + _GUI._.gui_downloadlist_delete_size_packagev2(links.size()) + ")"))) {
             for (DownloadLink link : links) {
                 link.setEnabled(false);
                 link.deleteFile(true, false);

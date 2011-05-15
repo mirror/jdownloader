@@ -4,7 +4,7 @@ import java.awt.event.ActionEvent;
 
 import javax.swing.AbstractAction;
 
-import org.jdownloader.gui.translate.T;
+import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.Theme;
 
 public class DisableAction extends AbstractAction {
@@ -12,7 +12,7 @@ public class DisableAction extends AbstractAction {
 
     public DisableAction(FilterTable table) {
         this.table = table;
-        this.putValue(NAME, table.getExtTableModel().getSelectedObjects().size() == 0 ? T._.settings_linkgrabber_filter_action_all() : T._.settings_linkgrabber_filter_action_disable());
+        this.putValue(NAME, table.getExtTableModel().getSelectedObjects().size() == 0 ? _GUI._.settings_linkgrabber_filter_action_all() : _GUI._.settings_linkgrabber_filter_action_disable());
         this.putValue(AbstractAction.SMALL_ICON, Theme.getIcon("disable", 20));
     }
 

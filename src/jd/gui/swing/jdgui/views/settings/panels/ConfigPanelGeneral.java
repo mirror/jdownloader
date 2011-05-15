@@ -22,14 +22,14 @@ import jd.gui.swing.jdgui.views.settings.components.Checkbox;
 import jd.gui.swing.jdgui.views.settings.components.FolderChooser;
 
 import org.jdownloader.gui.settings.AbstractConfigPanel;
-import org.jdownloader.gui.translate.T;
+import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.Theme;
-import org.jdownloader.translate.JDT;
+import org.jdownloader.translate._JDT;
 
 public class ConfigPanelGeneral extends AbstractConfigPanel {
 
     public String getTitle() {
-        return JDT._.gui_settings_general_title();
+        return _JDT._.gui_settings_general_title();
     }
 
     public String getIconKey() {
@@ -53,16 +53,16 @@ public class ConfigPanelGeneral extends AbstractConfigPanel {
         subfolder = new Checkbox();
         simpleContainer = new Checkbox();
 
-        this.addHeader(T._.gui_config_general_downloaddirectory(), Theme.getIcon("downloadpath", 32));
-        this.addDescription(JDT._.gui_settings_downloadpath_description());
+        this.addHeader(_GUI._.gui_config_general_downloaddirectory(), Theme.getIcon("downloadpath", 32));
+        this.addDescription(_JDT._.gui_settings_downloadpath_description());
         this.add(downloadFolder);
-        this.addPair(T._.gui_config_general_createsubfolders(), subfolder);
+        this.addPair(_GUI._.gui_config_general_createsubfolders(), subfolder);
 
         /* File Writing */
         autoCRC = new Checkbox();
-        this.addHeader(T._.gui_config_download_write(), Theme.getIcon("hashsum", 32));
-        this.addDescription(JDT._.gui_settings_filewriting_description());
-        this.addPair(T._.gui_config_download_crc(), autoCRC);
+        this.addHeader(_GUI._.gui_config_download_write(), Theme.getIcon("hashsum", 32));
+        this.addDescription(_JDT._.gui_settings_filewriting_description());
+        this.addPair(_GUI._.gui_config_download_crc(), autoCRC);
 
         // container.setGroup(new ConfigGroup(T._.gui_config_gui_container(),
         // "gui.images.container"));
@@ -73,8 +73,8 @@ public class ConfigPanelGeneral extends AbstractConfigPanel {
         // T._.gui_config_reloadcontainer()));
         // ce.setDefaultValue(true);
 
-        this.addHeader(T._.gui_config_various(), Theme.getIcon("settings", 32));
-        this.addPair(T._.gui_config_simple_container(), simpleContainer);
+        this.addHeader(_GUI._.gui_config_various(), Theme.getIcon("settings", 32));
+        this.addPair(_GUI._.gui_config_simple_container(), simpleContainer);
     }
 
     @Override

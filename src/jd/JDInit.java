@@ -66,7 +66,7 @@ import org.appwork.utils.swing.dialog.ProgressDialog;
 import org.appwork.utils.swing.dialog.ProgressDialog.ProgressGetter;
 import org.jdownloader.extensions.ExtensionController;
 import org.jdownloader.plugins.scanner.PluginScanner;
-import org.jdownloader.translate.JDT;
+import org.jdownloader.translate._JDT;
 import org.lobobrowser.util.OS;
 
 /**
@@ -184,8 +184,8 @@ public class JDInit {
             if (!old.equals(JDUtilities.getRevision())) {
                 JDInit.LOG.info("Detected that JD just got updated");
 
-                final ConfirmDialog dialog = new ConfirmDialog(Dialog.BUTTONS_HIDE_CANCEL, JDT._.system_update_message_title(JDUtilities.getRevision()), JDT._.system_update_message(), null, null, null);
-                dialog.setLeftActions(new AbstractAction(JDT._.system_update_showchangelogv2()) {
+                final ConfirmDialog dialog = new ConfirmDialog(Dialog.BUTTONS_HIDE_CANCEL, _JDT._.system_update_message_title(JDUtilities.getRevision()), _JDT._.system_update_message(), null, null, null);
+                dialog.setLeftActions(new AbstractAction(_JDT._.system_update_showchangelogv2()) {
 
                     private static final long serialVersionUID = 1L;
 
@@ -351,13 +351,13 @@ public class JDInit {
                     final File home = JDUtilities.getResourceFile(".");
                     if (!home.canWrite()) {
                         JDInit.LOG.severe("INSTALL abgebrochen");
-                        UserIO.getInstance().requestMessageDialog(JDT._.installer_error_noWriteRights());
+                        UserIO.getInstance().requestMessageDialog(_JDT._.installer_error_noWriteRights());
                         JDIO.removeDirectoryOrFile(JDUtilities.getResourceFile("config"));
                         System.exit(1);
                     }
                 } else {
                     JDInit.LOG.severe("INSTALL abgebrochen2");
-                    UserIO.getInstance().requestMessageDialog(JDT._.installer_abortInstallation());
+                    UserIO.getInstance().requestMessageDialog(_JDT._.installer_abortInstallation());
                     JDIO.removeDirectoryOrFile(JDUtilities.getResourceFile("config"));
                     System.exit(0);
                 }

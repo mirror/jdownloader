@@ -37,7 +37,7 @@ import jd.gui.swing.jdgui.views.settings.panels.premium.Columns.UserColumn;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 
-import org.jdownloader.gui.translate.T;
+import org.jdownloader.gui.translate._GUI;
 
 public class PremiumJTableModel extends JDTableModel {
 
@@ -55,18 +55,18 @@ public class PremiumJTableModel extends JDTableModel {
     }
 
     protected void initColumns() {
-        this.addColumn(new HosterColumn(T._.jd_gui_swing_jdgui_settings_panels_premium_PremiumJTableModel_hoster(), this));
-        this.addColumn(new EnabledColumn(T._.jd_gui_swing_jdgui_settings_panels_premium_PremiumJTableModel_enabled(), this));
-        this.addColumn(new UserColumn(T._.jd_gui_swing_jdgui_settings_panels_premium_PremiumJTableModel_user(), this));
-        this.addColumn(new PassColumn(T._.jd_gui_swing_jdgui_settings_panels_premium_PremiumJTableModel_pass(), this));
-        this.addColumn(new StatusColumn(T._.jd_gui_swing_jdgui_settings_panels_premium_PremiumJTableModel_status(), this));
-        this.addColumn(new ExpireDateColumn(T._.jd_gui_swing_jdgui_settings_panels_premium_PremiumJTableModel_expiredate(), this));
-        this.addColumn(new TrafficLeftColumn(T._.jd_gui_swing_jdgui_settings_panels_premium_PremiumJTableModel_trafficleft(), this));
-        this.addColumn(new TrafficShareColumn(T._.jd_gui_swing_jdgui_settings_panels_premium_PremiumJTableModel_trafficshare(), this));
-        this.addColumn(new PremiumPointsColumn(T._.jd_gui_swing_jdgui_settings_panels_premium_PremiumJTableModel_premiumpoints(), this));
-        this.addColumn(new FilesNumColumn(T._.jd_gui_swing_jdgui_settings_panels_premium_PremiumJTableModel_filesnum(), this));
-        this.addColumn(new CashColumn(T._.jd_gui_swing_jdgui_settings_panels_premium_PremiumJTableModel_cash(), this));
-        this.addColumn(new UsedSpaceColumn(T._.jd_gui_swing_jdgui_settings_panels_premium_PremiumJTableModel_usedspace(), this));
+        this.addColumn(new HosterColumn(_GUI._.jd_gui_swing_jdgui_settings_panels_premium_PremiumJTableModel_hoster(), this));
+        this.addColumn(new EnabledColumn(_GUI._.jd_gui_swing_jdgui_settings_panels_premium_PremiumJTableModel_enabled(), this));
+        this.addColumn(new UserColumn(_GUI._.jd_gui_swing_jdgui_settings_panels_premium_PremiumJTableModel_user(), this));
+        this.addColumn(new PassColumn(_GUI._.jd_gui_swing_jdgui_settings_panels_premium_PremiumJTableModel_pass(), this));
+        this.addColumn(new StatusColumn(_GUI._.jd_gui_swing_jdgui_settings_panels_premium_PremiumJTableModel_status(), this));
+        this.addColumn(new ExpireDateColumn(_GUI._.jd_gui_swing_jdgui_settings_panels_premium_PremiumJTableModel_expiredate(), this));
+        this.addColumn(new TrafficLeftColumn(_GUI._.jd_gui_swing_jdgui_settings_panels_premium_PremiumJTableModel_trafficleft(), this));
+        this.addColumn(new TrafficShareColumn(_GUI._.jd_gui_swing_jdgui_settings_panels_premium_PremiumJTableModel_trafficshare(), this));
+        this.addColumn(new PremiumPointsColumn(_GUI._.jd_gui_swing_jdgui_settings_panels_premium_PremiumJTableModel_premiumpoints(), this));
+        this.addColumn(new FilesNumColumn(_GUI._.jd_gui_swing_jdgui_settings_panels_premium_PremiumJTableModel_filesnum(), this));
+        this.addColumn(new CashColumn(_GUI._.jd_gui_swing_jdgui_settings_panels_premium_PremiumJTableModel_cash(), this));
+        this.addColumn(new UsedSpaceColumn(_GUI._.jd_gui_swing_jdgui_settings_panels_premium_PremiumJTableModel_usedspace(), this));
     }
 
     @Override

@@ -9,7 +9,7 @@ import jd.gui.swing.jdgui.interfaces.ContextMenuAction;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkGrabberFilePackage;
 
-import org.jdownloader.gui.translate.T;
+import org.jdownloader.gui.translate._GUI;
 
 public class DeleteAction extends ContextMenuAction {
 
@@ -30,13 +30,13 @@ public class DeleteAction extends ContextMenuAction {
 
     @Override
     protected String getName() {
-        return T._.gui_table_contextmenu_remove() + " (" + links.size() + ")";
+        return _GUI._.gui_table_contextmenu_remove() + " (" + links.size() + ")";
     }
 
     public void actionPerformed(ActionEvent e) {
         LinkGrabberController controller = LinkGrabberController.getInstance();
 
-        if (UserIO.isOK(UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.DONT_SHOW_AGAIN_IGNORES_CANCEL, T._.gui_downloadlist_delete() + " (" + T._.gui_downloadlist_delete_size_packagev2(links.size()) + ")"))) {
+        if (UserIO.isOK(UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.DONT_SHOW_AGAIN_IGNORES_CANCEL, _GUI._.gui_downloadlist_delete() + " (" + _GUI._.gui_downloadlist_delete_size_packagev2(links.size()) + ")"))) {
             LinkGrabberFilePackage fp;
             for (DownloadLink link : links) {
                 link.setProperty("removed", true);

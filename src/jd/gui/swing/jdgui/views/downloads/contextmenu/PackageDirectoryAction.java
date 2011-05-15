@@ -9,7 +9,7 @@ import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.jdgui.interfaces.ContextMenuAction;
 import jd.plugins.FilePackage;
 
-import org.jdownloader.gui.translate.T;
+import org.jdownloader.gui.translate._GUI;
 
 public class PackageDirectoryAction extends ContextMenuAction {
 
@@ -30,7 +30,7 @@ public class PackageDirectoryAction extends ContextMenuAction {
 
     @Override
     protected String getName() {
-        return T._.gui_table_contextmenu_editdownloaddir() + " (" + packages.size() + ")";
+        return _GUI._.gui_table_contextmenu_editdownloaddir() + " (" + packages.size() + ")";
     }
 
     public void actionPerformed(ActionEvent e) {

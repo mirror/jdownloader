@@ -22,7 +22,7 @@ import jd.gui.UserIO;
 import jd.gui.swing.jdgui.actions.ToolBarAction;
 import jd.nutils.JDFlags;
 
-import org.jdownloader.gui.translate.T;
+import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.update.RestartController;
 
 public class RestartAction extends ToolBarAction {
@@ -35,7 +35,7 @@ public class RestartAction extends ToolBarAction {
 
     @Override
     public void onAction(ActionEvent e) {
-        if (JDFlags.hasSomeFlags(UserIO.getInstance().requestConfirmDialog(0, T._.sys_ask_rlyrestart()), UserIO.RETURN_OK, UserIO.RETURN_DONT_SHOW_AGAIN)) {
+        if (JDFlags.hasSomeFlags(UserIO.getInstance().requestConfirmDialog(0, _GUI._.sys_ask_rlyrestart()), UserIO.RETURN_OK, UserIO.RETURN_DONT_SHOW_AGAIN)) {
             RestartController.getInstance().directRestart();
         }
     }

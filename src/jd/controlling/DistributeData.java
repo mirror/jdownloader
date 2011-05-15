@@ -41,7 +41,7 @@ import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.Regex;
-import org.jdownloader.translate.JDT;
+import org.jdownloader.translate._JDT;
 
 /**
  * Diese Klasse läuft in einem Thread und verteilt den Inhalt der Zwischenablage
@@ -509,9 +509,9 @@ public class DistributeData extends Thread {
                 }
                 LOG.warning("No supported links found -> search for links in source code of all urls");
 
-                final String title = JDT._.gui_dialog_deepdecrypt_title();
-                final String message = JDT._.gui_dialog_deepdecrypt_message(txt);
-                final int res = UserIO.getInstance().requestConfirmDialog(0, title, message, JDTheme.II("gui.images.search", 32, 32), JDT._.gui_btn_continue(), null);
+                final String title = _JDT._.gui_dialog_deepdecrypt_title();
+                final String message = _JDT._.gui_dialog_deepdecrypt_message(txt);
+                final int res = UserIO.getInstance().requestConfirmDialog(0, title, message, JDTheme.II("gui.images.search", 32, 32), _JDT._.gui_btn_continue(), null);
 
                 if (JDFlags.hasAllFlags(res, UserIO.RETURN_OK)) {
                     links = getLoadLinkString(ls);
@@ -533,7 +533,7 @@ public class DistributeData extends Thread {
         final StringBuffer sb = new StringBuffer();
         ProgressController pc = null;
         try {
-            pc = new ProgressController(JDT._.gui_addurls_progress(links.length), links.length, null);
+            pc = new ProgressController(_JDT._.gui_addurls_progress(links.length), links.length, null);
             int count = 0;
 
             for (final String l : links) {
@@ -541,7 +541,7 @@ public class DistributeData extends Thread {
 
                 try {
                     new URL(l);
-                    pc.setStatusText(JDT._.gui_addurls_progress_get(links.length, l));
+                    pc.setStatusText(_JDT._.gui_addurls_progress_get(links.length, l));
 
                     br.openGetConnection(l);
                     if (br.getHttpConnection().isContentDisposition() || (br.getHttpConnection().getContentType() != null && !br.getHttpConnection().getContentType().contains("text"))) {
@@ -568,7 +568,7 @@ public class DistributeData extends Thread {
                     } catch (Throwable e) {
                     }
                 }
-                pc.setStatusText(JDT._.gui_addurls_progress_found(links.length, count));
+                pc.setStatusText(_JDT._.gui_addurls_progress_found(links.length, count));
                 pc.increase(1);
             }
             JDLogger.getLogger().info("Found Links " + sb);

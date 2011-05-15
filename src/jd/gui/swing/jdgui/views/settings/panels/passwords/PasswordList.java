@@ -25,13 +25,13 @@ import jd.controlling.PasswordListController;
 import jd.gui.swing.jdgui.views.settings.ConfigPanel;
 import jd.utils.JDTheme;
 
-import org.jdownloader.gui.translate.T;
+import org.jdownloader.gui.translate._GUI;
 
 public class PasswordList extends ConfigPanel {
 
     @Override
     public String getTitle() {
-        return T._.jd_gui_swing_jdgui_settings_panels_PasswordList_general_title();
+        return _GUI._.jd_gui_swing_jdgui_settings_panels_PasswordList_general_title();
     }
 
     public static String getIconKey() {
@@ -56,7 +56,7 @@ public class PasswordList extends ConfigPanel {
         ConfigContainer container = new ConfigContainer();
 
         container.setGroup(new ConfigGroup(getTitle(), getIconKey()));
-        container.addEntry(new ConfigEntry(ConfigContainer.TYPE_LISTCONTROLLED, PasswordListController.getInstance(), T._.plugins_optional_jdunrar_config_passwordlist()));
+        container.addEntry(new ConfigEntry(ConfigContainer.TYPE_LISTCONTROLLED, PasswordListController.getInstance(), _GUI._.plugins_optional_jdunrar_config_passwordlist()));
 
         return container;
     }

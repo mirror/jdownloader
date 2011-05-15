@@ -25,7 +25,7 @@ import jd.gui.swing.jdgui.actions.ToolBarAction;
 import jd.nutils.io.JDFileFilter;
 import jd.utils.JDUtilities;
 
-import org.jdownloader.gui.translate.T;
+import org.jdownloader.gui.translate._GUI;
 
 public class AddContainerAction extends ToolBarAction {
 
@@ -37,7 +37,7 @@ public class AddContainerAction extends ToolBarAction {
 
     @Override
     public void onAction(ActionEvent e) {
-        File[] ret = UserIO.getInstance().requestFileChooser("_LOADSAVEDLC", T._.gui_filechooser_loaddlc(), UserIO.FILES_ONLY, new JDFileFilter(null, JDUtilities.getContainerExtensions(null), true), true);
+        File[] ret = UserIO.getInstance().requestFileChooser("_LOADSAVEDLC", _GUI._.gui_filechooser_loaddlc(), UserIO.FILES_ONLY, new JDFileFilter(null, JDUtilities.getContainerExtensions(null), true), true);
         if (ret == null) return;
         for (File r : ret) {
             JDController.loadContainerFile(r);

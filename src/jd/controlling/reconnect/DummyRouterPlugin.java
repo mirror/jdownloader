@@ -11,7 +11,7 @@ import net.miginfocom.swing.MigLayout;
 
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.images.Theme;
-import org.jdownloader.translate.JDT;
+import org.jdownloader.translate._JDT;
 
 public class DummyRouterPlugin extends RouterPlugin {
 
@@ -45,7 +45,7 @@ public class DummyRouterPlugin extends RouterPlugin {
         text.setBackground(null);
         text.setOpaque(false);
         text.putClientProperty("Synthetica.opaque", Boolean.FALSE);
-        text.setText(JDT._.jd_controlling_reconnect_plugins_DummyRouterPlugin_getGUI2());
+        text.setText(_JDT._.jd_controlling_reconnect_plugins_DummyRouterPlugin_getGUI2());
         p.add(text);
         return p;
     }
@@ -57,7 +57,7 @@ public class DummyRouterPlugin extends RouterPlugin {
 
     @Override
     public String getName() {
-        return JDT._.jd_controlling_reconnect_plugins_DummyRouterPlugin_getName();
+        return _JDT._.jd_controlling_reconnect_plugins_DummyRouterPlugin_getName();
     }
 
     @Override

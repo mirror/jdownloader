@@ -29,7 +29,7 @@ import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 
 import org.jdesktop.swingx.renderer.JRendererLabel;
-import org.jdownloader.gui.translate.T;
+import org.jdownloader.gui.translate._GUI;
 
 public class TrafficLeftColumn extends JDTableColumn {
 
@@ -134,12 +134,12 @@ public class TrafficLeftColumn extends JDTableColumn {
         } else {
             HostAccounts ha = (HostAccounts) value;
             if (!ha.gotAccountInfos()) {
-                jlr.setText(T._.jd_gui_swing_jdgui_settings_panels_premium_PremiumTableRenderer_unknown());
+                jlr.setText(_GUI._.jd_gui_swing_jdgui_settings_panels_premium_PremiumTableRenderer_unknown());
             } else {
                 if (ha.getTraffic() < 0) {
-                    jlr.setText(T._.jd_gui_swing_jdgui_settings_panels_premium_PremiumTableRenderer_unlimited());
+                    jlr.setText(_GUI._.jd_gui_swing_jdgui_settings_panels_premium_PremiumTableRenderer_unlimited());
                 } else if (ha.getTraffic() == 0) {
-                    jlr.setText(T._.jd_gui_swing_jdgui_settings_panels_premium_PremiumTableRenderer_noTrafficLeft());
+                    jlr.setText(_GUI._.jd_gui_swing_jdgui_settings_panels_premium_PremiumTableRenderer_noTrafficLeft());
                 } else {
                     jlr.setText(Formatter.formatReadable(ha.getTraffic()));
                 }

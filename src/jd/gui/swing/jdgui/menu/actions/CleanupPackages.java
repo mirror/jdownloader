@@ -25,7 +25,7 @@ import jd.gui.swing.jdgui.actions.ToolBarAction;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 
-import org.jdownloader.gui.translate.T;
+import org.jdownloader.gui.translate._GUI;
 
 public class CleanupPackages extends ToolBarAction {
 
@@ -37,7 +37,7 @@ public class CleanupPackages extends ToolBarAction {
 
     @Override
     public void onAction(ActionEvent e) {
-        if (!UserIO.isOK(UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.DONT_SHOW_AGAIN_IGNORES_CANCEL, T._.jd_gui_swing_jdgui_menu_actions_CleanupPackages_message()))) return;
+        if (!UserIO.isOK(UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.DONT_SHOW_AGAIN_IGNORES_CANCEL, _GUI._.jd_gui_swing_jdgui_menu_actions_CleanupPackages_message()))) return;
 
         DownloadController dlc = DownloadController.getInstance();
         ArrayList<FilePackage> packagestodelete = new ArrayList<FilePackage>();

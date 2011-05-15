@@ -8,7 +8,7 @@ import jd.plugins.PackageLinkNode;
 
 import org.appwork.utils.swing.table.ExtDefaultRowSorter;
 import org.appwork.utils.swing.table.columns.ExtTextColumn;
-import org.jdownloader.gui.translate.T;
+import org.jdownloader.gui.translate._GUI;
 
 public abstract class DateColumn extends ExtTextColumn<PackageLinkNode> {
 
@@ -25,7 +25,7 @@ public abstract class DateColumn extends ExtTextColumn<PackageLinkNode> {
         date = new Date();
         sb = new StringBuffer();
         try {
-            dateFormat = new SimpleDateFormat(T._.org_jdownloader_gui_views_downloads_columns_DateColumn_dateFormat()) {
+            dateFormat = new SimpleDateFormat(_GUI._.org_jdownloader_gui_views_downloads_columns_DateColumn_dateFormat()) {
 
                 /**
                  * 

@@ -29,7 +29,7 @@ import java.awt.event.KeyEvent;
 
 import javax.swing.KeyStroke;
 
-import org.jdownloader.gui.translate.T;
+import org.jdownloader.gui.translate._GUI;
 
 public class ShortCuts {
     /**
@@ -65,35 +65,35 @@ public class ShortCuts {
 
         if ((modifiers & KeyEvent.CTRL_DOWN_MASK) != 0) {
             if (buf.length() > 0) buf.append('+');
-            buf.append(T._.jd_gui_swing_ShortCuts_key_ctrl());
+            buf.append(_GUI._.jd_gui_swing_ShortCuts_key_ctrl());
         }
         if ((modifiers & KeyEvent.META_DOWN_MASK) != 0) {
             if (buf.length() > 0) buf.append('+');
-            buf.append(T._.jd_gui_swing_ShortCuts_key_meta());
+            buf.append(_GUI._.jd_gui_swing_ShortCuts_key_meta());
         }
         if ((modifiers & KeyEvent.ALT_DOWN_MASK) != 0) {
             if (buf.length() > 0) buf.append('+');
-            buf.append(T._.jd_gui_swing_ShortCuts_key_alt());
+            buf.append(_GUI._.jd_gui_swing_ShortCuts_key_alt());
         }
         if ((modifiers & KeyEvent.ALT_GRAPH_DOWN_MASK) != 0) {
             if (buf.length() > 0) buf.append('+');
-            buf.append(T._.jd_gui_swing_ShortCuts_key_altGr());
+            buf.append(_GUI._.jd_gui_swing_ShortCuts_key_altGr());
         }
         if ((modifiers & KeyEvent.SHIFT_DOWN_MASK) != 0) {
             if (buf.length() > 0) buf.append('+');
-            buf.append(T._.jd_gui_swing_ShortCuts_key_shift());
+            buf.append(_GUI._.jd_gui_swing_ShortCuts_key_shift());
         }
         if ((modifiers & KeyEvent.BUTTON1_DOWN_MASK) != 0) {
             if (buf.length() > 0) buf.append('+');
-            buf.append(T._.jd_gui_swing_ShortCuts_key_button1());
+            buf.append(_GUI._.jd_gui_swing_ShortCuts_key_button1());
         }
         if ((modifiers & KeyEvent.BUTTON2_DOWN_MASK) != 0) {
             if (buf.length() > 0) buf.append('+');
-            buf.append(T._.jd_gui_swing_ShortCuts_key_button2());
+            buf.append(_GUI._.jd_gui_swing_ShortCuts_key_button2());
         }
         if ((modifiers & KeyEvent.BUTTON3_DOWN_MASK) != 0) {
             if (buf.length() > 0) buf.append('+');
-            buf.append(T._.jd_gui_swing_ShortCuts_key_button3());
+            buf.append(_GUI._.jd_gui_swing_ShortCuts_key_button3());
         }
 
         return buf.toString();

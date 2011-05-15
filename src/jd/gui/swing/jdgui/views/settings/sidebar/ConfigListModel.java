@@ -13,7 +13,6 @@ import jd.gui.swing.jdgui.views.settings.panels.ConfigPanelGeneral;
 import jd.gui.swing.jdgui.views.settings.panels.DownloadControll;
 import jd.gui.swing.jdgui.views.settings.panels.ReconnectSettings;
 import jd.gui.swing.jdgui.views.settings.panels.downloadandnetwork.ProxyConfig;
-import jd.gui.swing.jdgui.views.settings.panels.hoster.ConfigPanelPlugin;
 import jd.gui.swing.jdgui.views.settings.panels.pluginsettings.PluginSettings;
 
 import org.appwork.utils.os.CrossSystem;
@@ -43,11 +42,13 @@ public class ConfigListModel extends DefaultListModel {
         addElement(new BasicAuthentication());
 
         // addElement(new Premium());
-        addElement(new ConfigPanelPlugin());
+
         addElement(new PluginSettings());
         // addElement(new ExtensionManager());
 
         addElement(new BarrierFree());
+
+        // addElement(new AdvancedSettings());
         boolean first = true;
         ArrayList<AbstractExtensionWrapper> pluginsOptional = ExtensionController.getInstance().getExtensions();
         Collections.sort(pluginsOptional, new Comparator<AbstractExtensionWrapper>() {

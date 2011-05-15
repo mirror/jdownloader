@@ -8,7 +8,7 @@ import jd.controlling.LinkGrabberController;
 import jd.gui.swing.jdgui.interfaces.ContextMenuAction;
 import jd.plugins.LinkGrabberFilePackage;
 
-import org.jdownloader.gui.translate.T;
+import org.jdownloader.gui.translate._GUI;
 
 public class SelectHostAction extends ContextMenuAction {
 
@@ -29,7 +29,7 @@ public class SelectHostAction extends ContextMenuAction {
 
     @Override
     protected String getName() {
-        return T._.gui_linkgrabberv2_onlyselectedhoster() + " (" + hosts.size() + ")";
+        return _GUI._.gui_linkgrabberv2_onlyselectedhoster() + " (" + hosts.size() + ")";
     }
 
     public void actionPerformed(ActionEvent e) {

@@ -39,7 +39,7 @@ import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
 
-import org.jdownloader.gui.translate.T;
+import org.jdownloader.gui.translate._GUI;
 
 public class FilePackageInfo extends JDCollapser implements ActionListener, FocusListener {
 
@@ -82,7 +82,7 @@ public class FilePackageInfo extends JDCollapser implements ActionListener, Focu
     public FilePackageInfo() {
         buildGui();
         fp = null;
-        menutitle.setText(T._.gui_table_contextmenu_prop());
+        menutitle.setText(_GUI._.gui_table_contextmenu_prop());
         menutitle.setIcon(JDTheme.II("gui.images.config.tip", 16, 16));
     }
 
@@ -122,8 +122,8 @@ public class FilePackageInfo extends JDCollapser implements ActionListener, Focu
 
     private void buildGui() {
         tabbedPane = new JTabbedPane();
-        tabbedPane.addTab(T._.gui_fileinfopanel_packagetab(), JDTheme.II("gui.images.package_opened", 16, 16), createFilePackageInfo());
-        tabbedPane.addTab(T._.gui_fileinfopanel_link(), JDTheme.II("gui.images.link", 16, 16), createLinkInfo());
+        tabbedPane.addTab(_GUI._.gui_fileinfopanel_packagetab(), JDTheme.II("gui.images.package_opened", 16, 16), createFilePackageInfo());
+        tabbedPane.addTab(_GUI._.gui_fileinfopanel_link(), JDTheme.II("gui.images.link", 16, 16), createLinkInfo());
         content.setLayout(new MigLayout("ins 0", "[grow]", "[]"));
         content.add(tabbedPane, "grow");
     }
@@ -146,28 +146,28 @@ public class FilePackageInfo extends JDCollapser implements ActionListener, Focu
         txtComment = new JDTextField(true);
         txtComment.addActionListener(this);
         txtComment.addFocusListener(this);
-        chbPostProcessing = new JCheckBox(T._.gui_fileinfopanel_packagetab_chb_postProcessing());
-        chbPostProcessing.setToolTipText(T._.gui_fileinfopanel_packagetab_chb_postProcessing_toolTip());
+        chbPostProcessing = new JCheckBox(_GUI._.gui_fileinfopanel_packagetab_chb_postProcessing());
+        chbPostProcessing.setToolTipText(_GUI._.gui_fileinfopanel_packagetab_chb_postProcessing_toolTip());
         chbPostProcessing.setSelected(true);
         chbPostProcessing.setHorizontalTextPosition(JCheckBox.LEFT);
         chbPostProcessing.addActionListener(this);
         chbPostProcessing.addFocusListener(this);
 
         panel = new JPanel(new MigLayout("ins 5, wrap 3", "[]10[grow,fill]10[]", "[]5[]5[]5[]"));
-        panel.add(lblFiles = new JLabel(T._.gui_fileinfopanel_packagetab_lbl_files(0)), "spanx, split 3");
+        panel.add(lblFiles = new JLabel(_GUI._.gui_fileinfopanel_packagetab_lbl_files(0)), "spanx, split 3");
         panel.add(progressBarFilePackage = new MultiProgressBar(), "growx, pushx, h 18!");
         panel.add(lblSize = new JLabel("0B/0B"), "alignx right");
-        panel.add(new JLabel(T._.gui_fileinfopanel_packagetab_lbl_name()));
+        panel.add(new JLabel(_GUI._.gui_fileinfopanel_packagetab_lbl_name()));
         panel.add(txtName, "growx, span 2");
-        panel.add(new JLabel(T._.gui_fileinfopanel_packagetab_lbl_saveto()));
+        panel.add(new JLabel(_GUI._.gui_fileinfopanel_packagetab_lbl_saveto()));
         panel.add(brwSaveTo.getInput(), "shrinkx");
         panel.add(brwSaveTo.getButton(), "pushx, growx");
-        panel.add(new JLabel(T._.gui_fileinfopanel_packagetab_lbl_password()));
+        panel.add(new JLabel(_GUI._.gui_fileinfopanel_packagetab_lbl_password()));
         panel.add(txtPassword, "growx");
         panel.add(chbPostProcessing, "alignx right");
-        panel.add(new JLabel(T._.gui_fileinfopanel_packagetab_lbl_password2()));
+        panel.add(new JLabel(_GUI._.gui_fileinfopanel_packagetab_lbl_password2()));
         panel.add(txtPassword2, "growx, span 2");
-        panel.add(new JLabel(T._.gui_fileinfopanel_packagetab_lbl_comment()));
+        panel.add(new JLabel(_GUI._.gui_fileinfopanel_packagetab_lbl_comment()));
         panel.add(txtComment, "growx, span 2");
         return panel;
     }
@@ -177,27 +177,27 @@ public class FilePackageInfo extends JDCollapser implements ActionListener, Focu
         panel = new JPanel(new MigLayout("ins 5, wrap 3", "[]10[grow,fill]10[]", "[]5[]5[]5[]"));
         panel.add(lblHoster = new JLabel(JDTheme.II("gui.images.sort", 16, 16)), "split 3");
         panel.add(lblType = new JLabel(JDTheme.II("gui.images.sort", 16, 16)));
-        panel.add(lblChunks = new JLabel(T._.gui_fileinfopanel_linktab_chunks()));
+        panel.add(lblChunks = new JLabel(_GUI._.gui_fileinfopanel_linktab_chunks()));
         panel.add(progressBarDownloadLink, "spanx, growx, pushx, split 2, h 18!");
         panel.add(lblSizeDl = new JLabel("0B/0B"), "alignx right");
-        panel.add(lblETA = new JLabel(T._.gui_fileinfopanel_linktab_eta2("0")));
-        panel.add(lblSpeed = new JLabel(T._.gui_fileinfopanel_linktab_speed("0 kb")), "skip");
-        panel.add(new JLabel(T._.gui_fileinfopanel_linktab_name()));
+        panel.add(lblETA = new JLabel(_GUI._.gui_fileinfopanel_linktab_eta2("0")));
+        panel.add(lblSpeed = new JLabel(_GUI._.gui_fileinfopanel_linktab_speed("0 kb")), "skip");
+        panel.add(new JLabel(_GUI._.gui_fileinfopanel_linktab_name()));
         panel.add(txtNameDl = new JDTextField(true), "growx, spanx");
         txtNameDl.setEditable(false);
-        panel.add(new JLabel(T._.gui_fileinfopanel_linktab_saveto()));
+        panel.add(new JLabel(_GUI._.gui_fileinfopanel_linktab_saveto()));
         panel.add(txtPathLabel = new JDTextField(true), "growx, spanx");
         txtPathLabel.setEditable(false);
-        panel.add(new JLabel(T._.gui_fileinfopanel_linktab_url()));
+        panel.add(new JLabel(_GUI._.gui_fileinfopanel_linktab_url()));
         panel.add(txtURL = new JDTextField(true), "growx, spanx");
         txtURL.setEditable(false);
-        panel.add(new JLabel(T._.gui_fileinfopanel_linktab_comment()));
+        panel.add(new JLabel(_GUI._.gui_fileinfopanel_linktab_comment()));
         panel.add(txtCommentDl = new JDTextField(true), "growx, spanx");
         txtCommentDl.setEditable(false);
-        panel.add(new JLabel(T._.gui_fileinfopanel_linktab_password()));
+        panel.add(new JLabel(_GUI._.gui_fileinfopanel_linktab_password()));
         panel.add(txtPasswordDl = new JDTextField(true), "growx, spanx");
         txtPasswordDl.setEditable(false);
-        panel.add(new JLabel(T._.gui_fileinfopanel_linktab_status()));
+        panel.add(new JLabel(_GUI._.gui_fileinfopanel_linktab_status()));
         panel.add(txtStatusDl = new JDTextField(true), "growx, spanx");
         txtStatusDl.setEditable(false);
 
@@ -259,14 +259,14 @@ public class FilePackageInfo extends JDCollapser implements ActionListener, Focu
                             progressBarFilePackage.setMaximums(max);
                             progressBarFilePackage.setValues(values);
                             lblSize.setText(Formatter.formatReadable(fp.getTotalKBLoaded()) + "/" + Formatter.formatReadable(fp.getTotalEstimatedPackageSize()));
-                            lblFiles.setText(T._.gui_fileinfopanel_packagetab_lbl_files(fp.getDownloadLinkList().size()));
+                            lblFiles.setText(_GUI._.gui_fileinfopanel_packagetab_lbl_files(fp.getDownloadLinkList().size()));
                             lblSize.setToolTipText(fp.getTotalKBLoaded() + " / " + fp.getTotalEstimatedPackageSize());
                         }
                         if (downloadLink != null) {
                             if (downloadLink.getChunksProgress() != null && !downloadLink.getLinkStatus().hasStatus(LinkStatus.ERROR_FILE_NOT_FOUND)) {
                                 long fileSize = downloadLink.getDownloadSize();
                                 int chunks = downloadLink.getChunksProgress().length;
-                                lblChunks.setText(chunks + " " + T._.gui_fileinfopanel_linktab_chunks());
+                                lblChunks.setText(chunks + " " + _GUI._.gui_fileinfopanel_linktab_chunks());
                                 long part = fileSize / chunks;
 
                                 long[] max = new long[chunks];
@@ -305,8 +305,8 @@ public class FilePackageInfo extends JDCollapser implements ActionListener, Focu
                                 lblETA.setVisible(false);
                                 lblSpeed.setVisible(false);
                             } else {
-                                lblETA.setText(T._.gui_fileinfopanel_linktab_eta2(Formatter.formatSeconds((downloadLink.getDownloadSize() - downloadLink.getDownloadCurrent()) / downloadLink.getDownloadSpeed())));
-                                lblSpeed.setText(T._.gui_fileinfopanel_linktab_speed(Formatter.formatReadable(Math.max(0, downloadLink.getDownloadSpeed()))));
+                                lblETA.setText(_GUI._.gui_fileinfopanel_linktab_eta2(Formatter.formatSeconds((downloadLink.getDownloadSize() - downloadLink.getDownloadCurrent()) / downloadLink.getDownloadSpeed())));
+                                lblSpeed.setText(_GUI._.gui_fileinfopanel_linktab_speed(Formatter.formatReadable(Math.max(0, downloadLink.getDownloadSpeed()))));
                                 lblSpeed.setVisible(true);
                                 lblETA.setVisible(true);
                             }

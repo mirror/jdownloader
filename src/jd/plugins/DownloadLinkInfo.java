@@ -5,7 +5,7 @@ import java.util.Date;
 
 import jd.nutils.Formatter;
 
-import org.jdownloader.translate.JDT;
+import org.jdownloader.translate._JDT;
 
 public class DownloadLinkInfo {
 
@@ -28,7 +28,7 @@ public class DownloadLinkInfo {
 
     static {
         try {
-            dateFormat = new SimpleDateFormat(JDT._.jd_gui_swing_jdgui_views_downloadview_TableRenderer_TableRenderer_dateformat());
+            dateFormat = new SimpleDateFormat(_JDT._.jd_gui_swing_jdgui_views_downloadview_TableRenderer_TableRenderer_dateformat());
         } catch (Exception e) {
             dateFormat = new SimpleDateFormat("dd.MM.yy HH:mm");
         }
@@ -119,7 +119,7 @@ public class DownloadLinkInfo {
 
     public String getLoadingFrom() {
         if (loadingFrom != null) return loadingFrom;
-        return loadingFrom = JDT._.jd_gui_swing_jdgui_views_downloadview_TableRenderer_loadingFrom() + " " + link.getHost();
+        return loadingFrom = _JDT._.jd_gui_swing_jdgui_views_downloadview_TableRenderer_loadingFrom() + " " + link.getHost();
     }
 
     public String getStatusString() {

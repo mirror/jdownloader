@@ -27,13 +27,13 @@ import jd.controlling.LinkGrabberController;
 import jd.gui.swing.jdgui.views.settings.ConfigPanel;
 import jd.utils.JDTheme;
 
-import org.jdownloader.gui.translate.T;
+import org.jdownloader.gui.translate._GUI;
 
 public class Linkgrabber extends ConfigPanel {
 
     @Override
     public String getTitle() {
-        return T._.jd_gui_swing_jdgui_settings_panels_gui_Linkgrabber_gui_linkgrabber_title();
+        return _GUI._.jd_gui_swing_jdgui_settings_panels_gui_Linkgrabber_gui_linkgrabber_title();
     }
 
     public static String getIconKey() {
@@ -60,26 +60,26 @@ public class Linkgrabber extends ConfigPanel {
 
         ConfigEntry ce;
 
-        container.setGroup(new ConfigGroup(T._.gui_config_gui_linggrabber(), "gui.images.taskpanes.linkgrabber"));
+        container.setGroup(new ConfigGroup(_GUI._.gui_config_gui_linggrabber(), "gui.images.taskpanes.linkgrabber"));
 
-        container.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, config, LinkGrabberController.PARAM_ONLINECHECK, T._.gui_config_linkgrabber_onlincheck()));
+        container.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, config, LinkGrabberController.PARAM_ONLINECHECK, _GUI._.gui_config_linkgrabber_onlincheck()));
         ce.setDefaultValue(true);
-        container.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, config, LinkGrabberController.PARAM_REPLACECHARS, T._.gui_config_linkgrabber_replacechars()));
+        container.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, config, LinkGrabberController.PARAM_REPLACECHARS, _GUI._.gui_config_linkgrabber_replacechars()));
         ce.setDefaultValue(false);
-        String[] options = new String[] { T._.jd_gui_swing_jdgui_settings_panels_gui_Linkgrabber_newpackages_expanded(), T._.jd_gui_swing_jdgui_settings_panels_gui_Linkgrabber_newpackages_automatic(), T._.jd_gui_swing_jdgui_settings_panels_gui_Linkgrabber_newpackages_collapsed() };
-        container.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, config, LinkGrabberController.PARAM_NEWPACKAGES, options, T._.jd_gui_swing_jdgui_settings_panels_gui_Linkgrabber_newpackages()));
+        String[] options = new String[] { _GUI._.jd_gui_swing_jdgui_settings_panels_gui_Linkgrabber_newpackages_expanded(), _GUI._.jd_gui_swing_jdgui_settings_panels_gui_Linkgrabber_newpackages_automatic(), _GUI._.jd_gui_swing_jdgui_settings_panels_gui_Linkgrabber_newpackages_collapsed() };
+        container.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, config, LinkGrabberController.PARAM_NEWPACKAGES, options, _GUI._.jd_gui_swing_jdgui_settings_panels_gui_Linkgrabber_newpackages()));
         ce.setDefaultValue(2);
-        container.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, config, LinkGrabberController.PARAM_CONTROLPOSITION, T._.gui_config_linkgrabber_controlposition()));
+        container.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, config, LinkGrabberController.PARAM_CONTROLPOSITION, _GUI._.gui_config_linkgrabber_controlposition()));
         ce.setDefaultValue(true);
         ce.setPropertyType(PropertyType.NEEDS_RESTART);
-        container.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, config, LinkGrabberController.PARAM_INFOPANEL_ONLINKGRAB, T._.gui_config_linkgrabber_infopanel_onlinkgrab()));
+        container.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, config, LinkGrabberController.PARAM_INFOPANEL_ONLINKGRAB, _GUI._.gui_config_linkgrabber_infopanel_onlinkgrab()));
         ce.setDefaultValue(false);
-        container.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, config, LinkGrabberController.PARAM_USE_CNL2, T._.gui_config_linkgrabber_cnl2()));
+        container.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, config, LinkGrabberController.PARAM_USE_CNL2, _GUI._.gui_config_linkgrabber_cnl2()));
         ce.setDefaultValue(true);
 
-        container.setGroup(new ConfigGroup(T._.gui_config_gui_linggrabber_ignorelist(), "gui.images.filter"));
+        container.setGroup(new ConfigGroup(_GUI._.gui_config_gui_linggrabber_ignorelist(), "gui.images.filter"));
 
-        container.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, config, LinkGrabberController.IGNORE_LIST, T._.gui_config_linkgrabber_ignorelist()));
+        container.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, config, LinkGrabberController.IGNORE_LIST, _GUI._.gui_config_linkgrabber_ignorelist()));
         ce.setDefaultValue("#Ignorefiletype 'olo':\r\n\r\n.+?\\.olo\r\n\r\n#Ignore hoster 'examplehost.com':\r\n\r\n.*?examplehost\\.com.*?");
 
         return container;

@@ -42,7 +42,7 @@ import jd.nutils.jobber.JDRunnable;
 import jd.nutils.jobber.Jobber;
 
 import org.appwork.utils.Regex;
-import org.jdownloader.translate.JDT;
+import org.jdownloader.translate._JDT;
 
 /**
  * Dies ist die Oberklasse für alle Plugins, die Links entschlüsseln können
@@ -121,7 +121,7 @@ public abstract class PluginForDecrypt extends Plugin {
         String before = link.getProgressController().getStatusText();
         while (i > 0) {
             i -= 1000;
-            link.getProgressController().setStatusText(before + " " + JDT._.gui_download_waittime_status2(Formatter.formatSeconds(i / 1000)));
+            link.getProgressController().setStatusText(before + " " + _JDT._.gui_download_waittime_status2(Formatter.formatSeconds(i / 1000)));
             Thread.sleep(1000);
         }
         link.getProgressController().setStatusText(before);
@@ -164,7 +164,7 @@ public abstract class PluginForDecrypt extends Plugin {
      */
     public ArrayList<DownloadLink> decryptLink(CryptedLink cryptedLink) {
         curcryptedLink = cryptedLink;
-        ProgressController progress = new ProgressController(JDT._.jd_plugins_PluginForDecrypt_decrypting(getHost(), getLinkName()), null);
+        ProgressController progress = new ProgressController(_JDT._.jd_plugins_PluginForDecrypt_decrypting(getHost(), getLinkName()), null);
         progress.setInitials(getInitials());
         curcryptedLink.setProgressController(progress);
         try {
@@ -178,12 +178,12 @@ public abstract class PluginForDecrypt extends Plugin {
         try {
             tmpLinks = decryptIt(curcryptedLink, progress);
         } catch (SocketTimeoutException e2) {
-            progress.setStatusText(JDT._.jd_plugins_PluginForDecrypt_error_server());
+            progress.setStatusText(_JDT._.jd_plugins_PluginForDecrypt_error_server());
             progress.setColor(Color.RED);
             progress.doFinalize(15000l);
             return new ArrayList<DownloadLink>();
         } catch (UnknownHostException e) {
-            progress.setStatusText(JDT._.jd_plugins_PluginForDecrypt_error_connection());
+            progress.setStatusText(_JDT._.jd_plugins_PluginForDecrypt_error_connection());
             progress.setColor(Color.RED);
             progress.doFinalize(15000l);
             return new ArrayList<DownloadLink>();
@@ -203,7 +203,7 @@ public abstract class PluginForDecrypt extends Plugin {
         if (tmpLinks == null) {
             logger.severe("Decrypter out of date: " + this);
             logger.severe("Decrypter out of date: " + getVersion());
-            progress.setStatusText(JDT._.jd_plugins_PluginForDecrypt_error_outOfDate(this.getHost()));
+            progress.setStatusText(_JDT._.jd_plugins_PluginForDecrypt_error_outOfDate(this.getHost()));
 
             progress.setColor(Color.RED);
             progress.doFinalize(15000l);
@@ -273,7 +273,7 @@ public abstract class PluginForDecrypt extends Plugin {
      * @throws DecrypterException
      */
     protected String getCaptchaCode(String method, File file, int flag, CryptedLink link, String defaultValue, String explain) throws DecrypterException {
-        if (link.getProgressController() != null) link.getProgressController().setStatusText(JDT._.gui_linkgrabber_waitinguserio2(method));
+        if (link.getProgressController() != null) link.getProgressController().setStatusText(_JDT._.gui_linkgrabber_waitinguserio2(method));
         String cc = new CaptchaController(this.getInitTime(), getHost(), method, file, defaultValue, explain).getCode(flag);
         if (link.getProgressController() != null) link.getProgressController().setStatusText(null);
         if (cc == null) throw new DecrypterException(DecrypterException.CAPTCHA);

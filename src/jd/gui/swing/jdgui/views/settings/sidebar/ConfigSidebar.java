@@ -54,7 +54,7 @@ import org.jdownloader.extensions.AbstractExtensionWrapper;
 import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
-import org.jdownloader.translate.JDT;
+import org.jdownloader.translate._JDT;
 
 public class ConfigSidebar extends JPanel implements ControlListener, MouseMotionListener, MouseListener, ConfigEventListener {
 
@@ -135,7 +135,7 @@ public class ConfigSidebar extends JPanel implements ControlListener, MouseMotio
                     if (x > 3 && x < 18 && y > 3 && y < 18) {
 
                         list.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-                        list.setToolTipText(JDT._.settings_sidebar_tooltip_enable_extension());
+                        list.setToolTipText(_JDT._.settings_sidebar_tooltip_enable_extension());
                     } else {
                         list.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
                         if (list.getModel().getElementAt(index) instanceof AbstractExtensionWrapper) {
@@ -255,7 +255,7 @@ public class ConfigSidebar extends JPanel implements ControlListener, MouseMotio
                             object._setEnabled(true);
 
                             if (object._getExtension().getGUI() != null) {
-                                int ret = UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN, object.getName(), JDT._.gui_settings_extensions_show_now(object.getName()));
+                                int ret = UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN, object.getName(), _JDT._.gui_settings_extensions_show_now(object.getName()));
 
                                 if (UserIO.isOK(ret)) {
                                     // activate panel
@@ -266,7 +266,7 @@ public class ConfigSidebar extends JPanel implements ControlListener, MouseMotio
                                 }
                             }
                         } catch (StartException e1) {
-                            Dialog.getInstance().showExceptionDialog(JDT._.dialog_title_exception(), e1.getMessage(), e1);
+                            Dialog.getInstance().showExceptionDialog(_JDT._.dialog_title_exception(), e1.getMessage(), e1);
                         } catch (StopException e1) {
                             e1.printStackTrace();
                         }
@@ -277,7 +277,7 @@ public class ConfigSidebar extends JPanel implements ControlListener, MouseMotio
                         } catch (StartException e1) {
                             e1.printStackTrace();
                         } catch (StopException e1) {
-                            Dialog.getInstance().showExceptionDialog(JDT._.dialog_title_exception(), e1.getMessage(), e1);
+                            Dialog.getInstance().showExceptionDialog(_JDT._.dialog_title_exception(), e1.getMessage(), e1);
                         }
                     }
                     /*

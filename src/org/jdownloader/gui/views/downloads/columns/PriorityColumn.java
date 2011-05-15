@@ -9,7 +9,7 @@ import jd.utils.JDTheme;
 
 import org.appwork.utils.swing.table.ExtDefaultRowSorter;
 import org.appwork.utils.swing.table.columns.ExtIconColumn;
-import org.jdownloader.gui.translate.T;
+import org.jdownloader.gui.translate._GUI;
 
 public class PriorityColumn extends ExtIconColumn<PackageLinkNode> {
 
@@ -32,10 +32,10 @@ public class PriorityColumn extends ExtIconColumn<PackageLinkNode> {
         imgPriority1 = JDTheme.II("gui.images.priority1", 16, 16);
         imgPriority2 = JDTheme.II("gui.images.priority2", 16, 16);
         imgPriority3 = JDTheme.II("gui.images.priority3", 16, 16);
-        strPriorityS = T._.gui_treetable_tooltip_priority_1();
-        strPriority1 = T._.gui_treetable_tooltip_priority1();
-        strPriority2 = T._.gui_treetable_tooltip_priority2();
-        strPriority3 = T._.gui_treetable_tooltip_priority3();
+        strPriorityS = _GUI._.gui_treetable_tooltip_priority_1();
+        strPriority1 = _GUI._.gui_treetable_tooltip_priority1();
+        strPriority2 = _GUI._.gui_treetable_tooltip_priority2();
+        strPriority3 = _GUI._.gui_treetable_tooltip_priority3();
 
         this.setRowSorter(new ExtDefaultRowSorter<PackageLinkNode>() {
             /**

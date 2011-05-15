@@ -36,8 +36,8 @@ import jd.plugins.LinkGrabberFilePackage;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
-import org.jdownloader.gui.translate.T;
-import org.jdownloader.translate.JDT;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.translate._JDT;
 
 public class DownloadAutostart implements LinkGrabberControllerListener {
 
@@ -57,7 +57,7 @@ public class DownloadAutostart implements LinkGrabberControllerListener {
         if (pc != null) abortAutostart();
         if (!JsonConfig.create(LinkgrabberSettings.class).isAutoaddLinksAfterLinkcheck()) return;
         if (LinkGrabberController.getInstance().size() == 0) return;
-        pc = new ProgressController(T._.controller_downloadautostart(), null);
+        pc = new ProgressController(_GUI._.controller_downloadautostart(), null);
         pc.getBroadcaster().addListener(new ProgressControllerListener() {
             public void onProgressControllerEvent(ProgressControllerEvent event) {
                 if (event.getEventID() == ProgressControllerEvent.CANCEL) {
@@ -72,7 +72,7 @@ public class DownloadAutostart implements LinkGrabberControllerListener {
                                 if (!asked) {
                                     try {
                                         asked = true;
-                                        Dialog.getInstance().showConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, JDT._.dialog_rly_forAutoaddAfterLinkcheck_title(), JDT._.dialog_rly_forAutoaddAfterLinkcheck_msg(JsonConfig.create(DownloadSettings.class).getDefaultDownloadFolder()), null, JDT._.dialog_rly_forAutoaddAfterLinkcheck_ok(), JDT._.dialog_rly_forAutoaddAfterLinkcheck_cancel());
+                                        Dialog.getInstance().showConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _JDT._.dialog_rly_forAutoaddAfterLinkcheck_title(), _JDT._.dialog_rly_forAutoaddAfterLinkcheck_msg(JsonConfig.create(DownloadSettings.class).getDefaultDownloadFolder()), null, _JDT._.dialog_rly_forAutoaddAfterLinkcheck_ok(), _JDT._.dialog_rly_forAutoaddAfterLinkcheck_cancel());
 
                                     } catch (DialogNoAnswerException e) {
                                         JsonConfig.create(LinkgrabberSettings.class).setAutoaddLinksAfterLinkcheck(false);

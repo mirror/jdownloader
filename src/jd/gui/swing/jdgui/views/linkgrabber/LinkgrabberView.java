@@ -27,7 +27,7 @@ import jd.gui.swing.jdgui.actions.ActionController;
 import jd.gui.swing.jdgui.interfaces.View;
 import jd.utils.JDTheme;
 
-import org.jdownloader.gui.translate.T;
+import org.jdownloader.gui.translate._GUI;
 
 public class LinkgrabberView extends View {
 
@@ -64,12 +64,12 @@ public class LinkgrabberView extends View {
 
     @Override
     public String getTitle() {
-        return T._.jd_gui_swing_jdgui_views_linkgrabberview_tab_title();
+        return _GUI._.jd_gui_swing_jdgui_views_linkgrabberview_tab_title();
     }
 
     @Override
     public String getTooltip() {
-        return T._.jd_gui_swing_jdgui_views_linkgrabberview_tab_tooltip();
+        return _GUI._.jd_gui_swing_jdgui_views_linkgrabberview_tab_tooltip();
     }
 
     @Override

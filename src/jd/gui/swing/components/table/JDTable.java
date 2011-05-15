@@ -48,7 +48,7 @@ import jd.gui.swing.jdgui.interfaces.JDMouseAdapter;
 
 import org.appwork.utils.Application;
 import org.jdesktop.swingx.JXTable;
-import org.jdownloader.gui.translate.T;
+import org.jdownloader.gui.translate._GUI;
 
 public class JDTable extends JXTable {
 
@@ -250,7 +250,7 @@ public class JDTable extends JXTable {
 
     private void installColumnControlButton() {
         final JButton button = new JButton(((JButton) this.getColumnControl()).getIcon());
-        button.setToolTipText(T._.jd_gui_swing_components_table_JDTable_columnControl());
+        button.setToolTipText(_GUI._.jd_gui_swing_components_table_JDTable_columnControl());
         button.addActionListener(new ActionListener() {
 
             public void actionPerformed(final ActionEvent event) {

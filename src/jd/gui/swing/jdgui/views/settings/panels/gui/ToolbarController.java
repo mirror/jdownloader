@@ -47,7 +47,7 @@ import jd.utils.JDTheme;
 import org.jdesktop.swingx.JXTable;
 import org.jdesktop.swingx.renderer.DefaultTableRenderer;
 import org.jdesktop.swingx.renderer.JRendererLabel;
-import org.jdownloader.gui.translate.T;
+import org.jdownloader.gui.translate._GUI;
 
 public class ToolbarController extends ConfigPanel {
     private static final ArrayList<String> WHITELIST        = new ArrayList<String>();
@@ -127,7 +127,7 @@ public class ToolbarController extends ConfigPanel {
     private static final long              serialVersionUID = -7024581410075950497L;
 
     public String getTitle() {
-        return T._.jd_gui_swing_jdgui_settings_panels_gui_ToolbarController_toolbarController_title();
+        return _GUI._.jd_gui_swing_jdgui_settings_panels_gui_ToolbarController_toolbarController_title();
     }
 
     @Override
@@ -296,13 +296,13 @@ public class ToolbarController extends ConfigPanel {
         public String getColumnName(int column) {
             switch (column) {
             case 0:
-                return T._.jd_gui_swing_jdgui_settings_panels_gui_ToolbarController_column_use();
+                return _GUI._.jd_gui_swing_jdgui_settings_panels_gui_ToolbarController_column_use();
             case 1:
-                return T._.jd_gui_swing_jdgui_settings_panels_gui_ToolbarController_column_name();
+                return _GUI._.jd_gui_swing_jdgui_settings_panels_gui_ToolbarController_column_name();
             case 2:
-                return T._.jd_gui_swing_jdgui_settings_panels_gui_ToolbarController_column_desc();
+                return _GUI._.jd_gui_swing_jdgui_settings_panels_gui_ToolbarController_column_desc();
             case 3:
-                return T._.jd_gui_swing_jdgui_settings_panels_gui_ToolbarController_column_hotkey();
+                return _GUI._.jd_gui_swing_jdgui_settings_panels_gui_ToolbarController_column_hotkey();
             }
             return super.getColumnName(column);
         }

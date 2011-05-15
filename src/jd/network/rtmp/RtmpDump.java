@@ -19,7 +19,7 @@ import org.appwork.utils.Regex;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.nativ.NativeProcess;
-import org.jdownloader.translate.JDT;
+import org.jdownloader.translate._JDT;
 
 public class RtmpDump extends RTMPDownload {
 
@@ -178,7 +178,7 @@ public class RtmpDump extends RTMPDownload {
                 logger.finest("no errors : rename");
                 if (!tmpFile.renameTo(new File(downloadLink.getFileOutput()))) {
                     logger.severe("Could not rename file " + tmpFile + " to " + downloadLink.getFileOutput());
-                    error(LinkStatus.ERROR_LOCAL_IO, JDT._.system_download_errors_couldnotrename());
+                    error(LinkStatus.ERROR_LOCAL_IO, _JDT._.system_download_errors_couldnotrename());
                 }
                 downloadLink.getLinkStatus().addStatus(LinkStatus.FINISHED);
             } else {

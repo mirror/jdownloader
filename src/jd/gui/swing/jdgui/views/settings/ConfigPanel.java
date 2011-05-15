@@ -19,7 +19,6 @@ package jd.gui.swing.jdgui.views.settings;
 import java.util.ArrayList;
 import java.util.logging.Logger;
 
-import javax.swing.BorderFactory;
 import javax.swing.Icon;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
@@ -38,7 +37,7 @@ import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.utils.JDTheme;
 import net.miginfocom.swing.MigLayout;
 
-import org.jdownloader.gui.translate.T;
+import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.update.RestartController;
 
 public abstract class ConfigPanel extends SwitchPanel {
@@ -57,9 +56,9 @@ public abstract class ConfigPanel extends SwitchPanel {
 
     public ConfigPanel() {
         this.setLayout(new MigLayout("ins 0", "[fill,grow]", "[fill,grow]"));
-        this.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        // this.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
-        panel = new JPanel(new MigLayout("ins 5, wrap 2", "[fill,grow 10]10[fill,grow]"));
+        panel = new JPanel(new MigLayout("ins 0, wrap 2", "[fill,grow 10]10[fill,grow]"));
     }
 
     public void init(boolean useScrollPane) {
@@ -173,7 +172,7 @@ public abstract class ConfigPanel extends SwitchPanel {
         this.save();
         if (changes == PropertyType.NEEDS_RESTART) {
             if (!JDGui.getInstance().isExitRequested()) {
-                int answer = UserIO.getInstance().requestConfirmDialog(0, T._.jd_gui_swing_jdgui_settings_ConfigPanel_restartquestion_title(), T._.jd_gui_swing_jdgui_settings_ConfigPanel_restartquestion(), null, T._.jd_gui_swing_jdgui_settings_ConfigPanel_restartquestion_ok(), null);
+                int answer = UserIO.getInstance().requestConfirmDialog(0, _GUI._.jd_gui_swing_jdgui_settings_ConfigPanel_restartquestion_title(), _GUI._.jd_gui_swing_jdgui_settings_ConfigPanel_restartquestion(), null, _GUI._.jd_gui_swing_jdgui_settings_ConfigPanel_restartquestion_ok(), null);
 
                 if (UserIO.isOK(answer)) {
                     RestartController.getInstance().directRestart();

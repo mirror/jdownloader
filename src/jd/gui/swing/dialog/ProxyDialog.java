@@ -18,7 +18,7 @@ import org.appwork.utils.BinaryLogic;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.appwork.utils.swing.dialog.AbstractDialog;
 import org.appwork.utils.swing.dialog.Dialog;
-import org.jdownloader.gui.translate.T;
+import org.jdownloader.gui.translate._GUI;
 
 public class ProxyDialog extends AbstractDialog<HTTPProxy> implements CaretListener {
 
@@ -30,34 +30,34 @@ public class ProxyDialog extends AbstractDialog<HTTPProxy> implements CaretListe
     private JTextField        txtUser;
     private JTextField        txtPass;
 
-    private final String[]    types            = new String[] { T._.jd_gui_swing_dialog_ProxyDialog_http(), T._.jd_gui_swing_dialog_ProxyDialog_socks5(), T._.jd_gui_swing_dialog_ProxyDialog_localip() };
+    private final String[]    types            = new String[] { _GUI._.jd_gui_swing_dialog_ProxyDialog_http(), _GUI._.jd_gui_swing_dialog_ProxyDialog_socks5(), _GUI._.jd_gui_swing_dialog_ProxyDialog_localip() };
     private JLabel            lblUser;
     private JLabel            lblPass;
     private JLabel            lblPort;
     private JLabel            lblHost;
 
     public ProxyDialog() {
-        super(0, T._.jd_gui_swing_dialog_ProxyDialog_title(), JDTheme.II("gui.images.proxy", 32, 32), null, null);
+        super(0, _GUI._.jd_gui_swing_dialog_ProxyDialog_title(), JDTheme.II("gui.images.proxy", 32, 32), null, null);
     }
 
     @Override
     public JComponent layoutDialogContent() {
         JPanel panel = new JPanel(new MigLayout("ins 0, wrap 4", "[][grow 10,fill][][grow 3,fill]"));
 
-        panel.add(new JLabel(T._.jd_gui_swing_dialog_ProxyDialog_type()));
+        panel.add(new JLabel(_GUI._.jd_gui_swing_dialog_ProxyDialog_type()));
         panel.add(cmbType = new JComboBox(types), "spanx");
         cmbType.addActionListener(this);
-        panel.add(lblHost = new JLabel(T._.jd_gui_swing_dialog_ProxyDialog_hostport()));
+        panel.add(lblHost = new JLabel(_GUI._.jd_gui_swing_dialog_ProxyDialog_hostport()));
         panel.add(txtHost = new JTextField());
         txtHost.addCaretListener(this);
         panel.add(lblPort = new JLabel(":"));
         panel.add(txtPort = new JTextField(), "shrinkx");
         txtPort.addCaretListener(this);
 
-        panel.add(lblUser = new JLabel(T._.jd_gui_swing_dialog_ProxyDialog_username()));
+        panel.add(lblUser = new JLabel(_GUI._.jd_gui_swing_dialog_ProxyDialog_username()));
         panel.add(txtUser = new JTextField(), "spanx");
 
-        panel.add(lblPass = new JLabel(T._.jd_gui_swing_dialog_ProxyDialog_password()));
+        panel.add(lblPass = new JLabel(_GUI._.jd_gui_swing_dialog_ProxyDialog_password()));
         panel.add(txtPass = new JTextField(), "spanx");
         this.okButton.setEnabled(false);
         return panel;
@@ -69,10 +69,10 @@ public class ProxyDialog extends AbstractDialog<HTTPProxy> implements CaretListe
             boolean setVisible = false;
             if (cmbType.getSelectedIndex() == 2) {
                 setVisible = false;
-                lblHost.setText(T._.jd_gui_swing_dialog_ProxyDialog_hostip());
+                lblHost.setText(_GUI._.jd_gui_swing_dialog_ProxyDialog_hostip());
             } else {
                 setVisible = true;
-                lblHost.setText(T._.jd_gui_swing_dialog_ProxyDialog_hostport());
+                lblHost.setText(_GUI._.jd_gui_swing_dialog_ProxyDialog_hostport());
             }
             txtPort.setVisible(setVisible);
             lblPort.setVisible(setVisible);

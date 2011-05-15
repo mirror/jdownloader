@@ -83,7 +83,7 @@ import net.miginfocom.swing.MigLayout;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Application;
 import org.appwork.utils.swing.dialog.Dialog;
-import org.jdownloader.gui.translate.T;
+import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.DownloadsView;
 
 public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
@@ -213,7 +213,7 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
 
     @Override
     public void closeWindow() {
-        if (JDFlags.hasSomeFlags(UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.NO_COUNTDOWN | UserIO.DONT_SHOW_AGAIN_IGNORES_CANCEL, T._.sys_ask_rlyclose()), UserIO.RETURN_OK)) {
+        if (JDFlags.hasSomeFlags(UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.NO_COUNTDOWN | UserIO.DONT_SHOW_AGAIN_IGNORES_CANCEL, _GUI._.sys_ask_rlyclose()), UserIO.RETURN_OK)) {
             JDUtilities.getController().exit();
         }
     }
@@ -252,11 +252,11 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
             }.start();
             break;
         case ControlEvent.CONTROL_DOWNLOAD_START:
-            Balloon.showIfHidden(T._.ballon_download_title(), JDTheme.II("gui.images.next", 32, 32), T._.ballon_download_finished_started());
+            Balloon.showIfHidden(_GUI._.ballon_download_title(), JDTheme.II("gui.images.next", 32, 32), _GUI._.ballon_download_finished_started());
             break;
         case ControlEvent.CONTROL_DOWNLOAD_STOP:
             JDLogger.getLogger().info("All downloads finished");
-            Balloon.showIfHidden(T._.ballon_download_title(), JDTheme.II("gui.images.stop", 32, 32), T._.ballon_download_finished_stopped());
+            Balloon.showIfHidden(_GUI._.ballon_download_title(), JDTheme.II("gui.images.stop", 32, 32), _GUI._.ballon_download_finished_stopped());
             break;
         }
     }

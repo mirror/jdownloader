@@ -25,7 +25,7 @@ import org.appwork.storage.TypeRef;
 import org.appwork.utils.Application;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.swing.dialog.Dialog;
-import org.jdownloader.translate.JDT;
+import org.jdownloader.translate._JDT;
 
 public class ExtensionController {
     private static final ExtensionController INSTANCE = new ExtensionController();
@@ -220,7 +220,7 @@ public class ExtensionController {
         int v = AbstractExtension.readVersion(cls);
         if (cached != null) {
             cached._setClazz(cls);
-            if (cached.getVersion() != v || !cached.getLng().equals(JDT.getLanguage()) || cached._getSettings() == null) {
+            if (cached.getVersion() != v || !cached.getLng().equals(_JDT.getLanguage()) || cached._getSettings() == null) {
                 // update cache
                 cached = null;
             }

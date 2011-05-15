@@ -10,7 +10,7 @@ import jd.gui.swing.jdgui.views.linkgrabber.LinkGrabberPanel;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkGrabberFilePackage;
 
-import org.jdownloader.gui.translate.T;
+import org.jdownloader.gui.translate._GUI;
 
 public class ContinueLinksAction extends ContextMenuAction {
 
@@ -31,7 +31,7 @@ public class ContinueLinksAction extends ContextMenuAction {
 
     @Override
     protected String getName() {
-        return T._.gui_linkgrabberv2_lg_continueselectedlinks() + " (" + links.size() + ")";
+        return _GUI._.gui_linkgrabberv2_lg_continueselectedlinks() + " (" + links.size() + ")";
     }
 
     public void actionPerformed(ActionEvent e) {

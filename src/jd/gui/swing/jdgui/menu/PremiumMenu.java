@@ -35,7 +35,7 @@ import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.jdgui.actions.ActionController;
 import jd.plugins.PluginForHost;
 
-import org.jdownloader.gui.translate.T;
+import org.jdownloader.gui.translate._GUI;
 
 public class PremiumMenu extends JMenu implements ActionListener, AccountControllerListener {
 
@@ -46,7 +46,7 @@ public class PremiumMenu extends JMenu implements ActionListener, AccountControl
     private Timer              updateAsync;
 
     private PremiumMenu() {
-        super(T._.gui_menu_premium());
+        super(_GUI._.gui_menu_premium());
 
         updateAsync = new Timer(250, this);
         updateAsync.setInitialDelay(250);
@@ -105,7 +105,7 @@ public class PremiumMenu extends JMenu implements ActionListener, AccountControl
         int entries = 6;
         int menus = ('z' - 'a') / entries + 1;
         JMenu[] jmenus = new JMenu[menus];
-        JMenu num = new JMenu(T._.jd_gui_swing_menu_HosterMenu("0 - 9"));
+        JMenu num = new JMenu(_GUI._.jd_gui_swing_menu_HosterMenu("0 - 9"));
         this.add(num);
         for (HostPluginWrapper wrapper : hosts) {
             if (!wrapper.isLoaded() || !wrapper.isPremiumEnabled()) continue;
@@ -118,7 +118,7 @@ public class PremiumMenu extends JMenu implements ActionListener, AccountControl
                 if (jmenus[index] == null) {
                     int start = 'a' + index * entries;
                     int end = Math.min('a' + ((1 + index) * entries) - 1, 'z');
-                    jmenus[index] = new JMenu(T._.jd_gui_swing_menu_HosterMenu(new String(new byte[] { (byte) (start) }).toUpperCase() + " - " + new String(new byte[] { (byte) (end) }).toUpperCase()));
+                    jmenus[index] = new JMenu(_GUI._.jd_gui_swing_menu_HosterMenu(new String(new byte[] { (byte) (start) }).toUpperCase() + " - " + new String(new byte[] { (byte) (end) }).toUpperCase()));
                     this.add(jmenus[index]);
                 }
                 menu = jmenus[index];

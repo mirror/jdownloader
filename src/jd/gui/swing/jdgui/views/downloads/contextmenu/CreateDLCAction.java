@@ -10,7 +10,7 @@ import jd.nutils.io.JDFileFilter;
 import jd.plugins.DownloadLink;
 import jd.utils.JDUtilities;
 
-import org.jdownloader.gui.translate.T;
+import org.jdownloader.gui.translate._GUI;
 
 public class CreateDLCAction extends ContextMenuAction {
 
@@ -31,7 +31,7 @@ public class CreateDLCAction extends ContextMenuAction {
 
     @Override
     protected String getName() {
-        return T._.gui_table_contextmenu_dlc() + " (" + links.size() + ")";
+        return _GUI._.gui_table_contextmenu_dlc() + " (" + links.size() + ")";
     }
 
     public void actionPerformed(ActionEvent e) {

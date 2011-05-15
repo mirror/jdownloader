@@ -7,7 +7,7 @@ import jd.gui.swing.jdgui.interfaces.ContextMenuAction;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 
-import org.jdownloader.gui.translate.T;
+import org.jdownloader.gui.translate._GUI;
 
 public class StopAction extends ContextMenuAction {
 
@@ -31,7 +31,7 @@ public class StopAction extends ContextMenuAction {
 
     @Override
     protected String getName() {
-        return T._.jd_gui_swing_jdgui_views_downloads_contextmenu_StopAction_name() + " (" + links.size() + ")";
+        return _GUI._.jd_gui_swing_jdgui_views_downloads_contextmenu_StopAction_name() + " (" + links.size() + ")";
     }
 
     @Override

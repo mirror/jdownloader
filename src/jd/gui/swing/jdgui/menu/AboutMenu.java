@@ -23,14 +23,14 @@ import jd.gui.swing.jdgui.menu.actions.KnowledgeAction;
 import jd.gui.swing.jdgui.menu.actions.LatestChangesAction;
 import jd.gui.swing.jdgui.menu.actions.LogAction;
 
-import org.jdownloader.gui.translate.T;
+import org.jdownloader.gui.translate._GUI;
 
 public class AboutMenu extends JMenu {
 
     private static final long serialVersionUID = 1899581616146592295L;
 
     public AboutMenu() {
-        super(T._.gui_menu_about());
+        super(_GUI._.gui_menu_about());
 
         this.add(new LogAction());
         this.addSeparator();

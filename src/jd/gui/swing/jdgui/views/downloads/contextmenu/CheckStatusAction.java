@@ -7,7 +7,7 @@ import jd.controlling.LinkCheck;
 import jd.gui.swing.jdgui.interfaces.ContextMenuAction;
 import jd.plugins.DownloadLink;
 
-import org.jdownloader.gui.translate.T;
+import org.jdownloader.gui.translate._GUI;
 
 public class CheckStatusAction extends ContextMenuAction {
 
@@ -28,7 +28,7 @@ public class CheckStatusAction extends ContextMenuAction {
 
     @Override
     protected String getName() {
-        return T._.gui_table_contextmenu_check() + " (" + links.size() + ")";
+        return _GUI._.gui_table_contextmenu_check() + " (" + links.size() + ")";
     }
 
     public void actionPerformed(ActionEvent e) {

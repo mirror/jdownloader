@@ -61,7 +61,7 @@ import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.storage.config.JsonConfig;
-import org.jdownloader.gui.translate.T;
+import org.jdownloader.gui.translate._GUI;
 
 public class LinkGrabberPanel extends SwitchPanel implements ActionListener, LinkCheckListener, ProgressControllerListener, LinkGrabberControllerListener {
 
@@ -158,7 +158,7 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
             @Override
             public void threadedActionPerformed(ActionEvent e) {
                 if (LGINSTANCE.getPackages().isEmpty() && LGINSTANCE.getFilterPackage().isEmpty()) return;
-                if (JDFlags.hasSomeFlags(UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.NO_COUNTDOWN | UserIO.DONT_SHOW_AGAIN_IGNORES_CANCEL, T._.gui_linkgrabberv2_lg_clear_ask()), UserIO.RETURN_OK)) {
+                if (JDFlags.hasSomeFlags(UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.NO_COUNTDOWN | UserIO.DONT_SHOW_AGAIN_IGNORES_CANCEL, _GUI._.gui_linkgrabberv2_lg_clear_ask()), UserIO.RETURN_OK)) {
                     synchronized (LinkGrabberController.ControllerLock) {
                         synchronized (LGINSTANCE.getPackages()) {
                             stopLinkGatherer();
@@ -279,7 +279,7 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
         new Thread() {
             @Override
             public void run() {
-                Balloon.showIfHidden(T._.gui_config_gui_linkgrabber(), JDTheme.II("gui.images.add", 32, 32), T._.gui_linkgrabber_adding("" + linkList.size()));
+                Balloon.showIfHidden(_GUI._.gui_config_gui_linkgrabber(), JDTheme.II("gui.images.add", 32, 32), _GUI._.gui_linkgrabber_adding("" + linkList.size()));
                 for (DownloadLink element : linkList) {
                     if (LGINSTANCE.isDupe(element)) continue;
                     addToWaitingList(element);
@@ -340,7 +340,7 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
             gatherer_running = false;
             EventQueue.invokeLater(new Runnable() {
                 public void run() {
-                    pc.setStatusText(pc.getStatusText() + ": " + T._.gui_linkgrabber_aborted());
+                    pc.setStatusText(pc.getStatusText() + ": " + _GUI._.gui_linkgrabber_aborted());
                     pc.doFinalize(5000l);
                 }
             });
@@ -373,7 +373,7 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
             public void run() {
                 setName("LinkGrabber");
                 gatherer_running = true;
-                pc = new ProgressController(T._.gui_linkgrabber_pc_linkgrabber(), null);
+                pc = new ProgressController(_GUI._.gui_linkgrabber_pc_linkgrabber(), null);
                 pc.getBroadcaster().addListener(INSTANCE);
                 lc.getBroadcaster().addListener(INSTANCE);
                 pc.setRange(0);
@@ -419,7 +419,7 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
                 for (LinkGrabberFilePackage fp : fps) {
                     links += fp.getDownloadLinks().size();
                 }
-                Balloon.showIfHidden(T._.gui_config_gui_linkgrabber(), JDTheme.II("gui.images.add", 32, 32), T._.gui_linkgrabber_finished("" + links, "" + fps.size()));
+                Balloon.showIfHidden(_GUI._.gui_config_gui_linkgrabber(), JDTheme.II("gui.images.add", 32, 32), _GUI._.gui_linkgrabber_finished("" + links, "" + fps.size()));
                 fps = null;
             }
         };
@@ -555,7 +555,7 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
 
     public void checkAlreadyinList(DownloadLink link) {
         if (JDUtilities.getDownloadController().hasDownloadLinkwithURL(link.getDownloadURL())) {
-            link.getLinkStatus().setErrorMessage(T._.gui_linkgrabber_alreadyindl());
+            link.getLinkStatus().setErrorMessage(_GUI._.gui_linkgrabber_alreadyindl());
             link.getLinkStatus().addStatus(LinkStatus.ERROR_ALREADYEXISTS);
         }
     }

@@ -22,20 +22,20 @@ import jd.gui.swing.jdgui.views.settings.panels.basicauthentication.BasicAuthent
 
 import org.jdownloader.gui.settings.AbstractConfigPanel;
 import org.jdownloader.images.Theme;
-import org.jdownloader.translate.JDT;
+import org.jdownloader.translate._JDT;
 
 public class BasicAuthentication extends AbstractConfigPanel {
 
     private static final long serialVersionUID = -7963763730328793139L;
 
     public String getTitle() {
-        return JDT._.gui_settings_basicauth_title();
+        return _JDT._.gui_settings_basicauth_title();
     }
 
     public BasicAuthentication() {
         super();
         this.addHeader(getTitle(), Theme.getIcon("basicauth", 32));
-        this.addDescription(JDT._.gui_settings_basicauth_description());
+        this.addDescription(_JDT._.gui_settings_basicauth_description());
 
         add(BasicAuthenticationPanel.getInstance());
     }

@@ -15,7 +15,7 @@ import org.appwork.utils.swing.dialog.Dialog.FileChooserSelectionMode;
 import org.appwork.utils.swing.dialog.Dialog.FileChooserType;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
-import org.jdownloader.translate.JDT;
+import org.jdownloader.translate._JDT;
 
 public class FolderChooser extends JPanel implements SettingsComponent, ActionListener {
     /**
@@ -30,7 +30,7 @@ public class FolderChooser extends JPanel implements SettingsComponent, ActionLi
         super(new MigLayout("ins 0", "[grow,fill][]"));
         this.id = id;
         txt = new JTextField();
-        btn = new JButton(JDT._.basics_browser_folder());
+        btn = new JButton(_JDT._.basics_browser_folder());
         btn.addActionListener(this);
 
         add(txt);
@@ -53,7 +53,7 @@ public class FolderChooser extends JPanel implements SettingsComponent, ActionLi
 
     public void actionPerformed(ActionEvent e) {
         try {
-            File[] ret = Dialog.getInstance().showFileChooser(id, JDT._.gui_setting_folderchooser_title(), FileChooserSelectionMode.DIRECTORIES_ONLY, null, false, FileChooserType.SAVE_DIALOG, null);
+            File[] ret = Dialog.getInstance().showFileChooser(id, _JDT._.gui_setting_folderchooser_title(), FileChooserSelectionMode.DIRECTORIES_ONLY, null, false, FileChooserType.SAVE_DIALOG, null);
 
             txt.setText(ret[0].getAbsolutePath());
 

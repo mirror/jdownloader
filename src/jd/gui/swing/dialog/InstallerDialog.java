@@ -62,7 +62,7 @@ public class InstallerDialog extends AbstractDialog<Object> {
     private BrowseFile browseFile;
 
     private InstallerDialog(final File dlFolder) {
-        super(UserIO.NO_ICON, T._.installer_gui_title(), null, null, null);
+        super(UserIO.NO_ICON, _GUI._.installer_gui_title(), null, null, null);
 
         final String countryCode = JDL.getCountryCodeByIP();
         final String languageCode = countryCode != null ? countryCode.toLowerCase(Locale.getDefault()) : null;
@@ -132,12 +132,12 @@ public class InstallerDialog extends AbstractDialog<Object> {
         });
 
         final ConfigContainer container = new ConfigContainer();
-        container.setGroup(new ConfigGroup(T._.gui_config_gui_language(), "gui.splash.languages"));
+        container.setGroup(new ConfigGroup(_GUI._.gui_config_gui_language(), "gui.splash.languages"));
         container.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMPONENT, new JScrollPane(list), "growx,pushx"));
-        container.setGroup(new ConfigGroup(T._.gui_config_general_downloaddirectory(), "gui.images.userhome"));
+        container.setGroup(new ConfigGroup(_GUI._.gui_config_general_downloaddirectory(), "gui.images.userhome"));
         container.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMPONENT, this.browseFile, "growx,pushx"));
 
-        final JLabel lbl = new JLabel(T._.installer_gui_message());
+        final JLabel lbl = new JLabel(_GUI._.installer_gui_message());
         lbl.setFont(lbl.getFont().deriveFont(Font.BOLD));
         lbl.setHorizontalAlignment(SwingConstants.CENTER);
 
@@ -145,11 +145,11 @@ public class InstallerDialog extends AbstractDialog<Object> {
             final String dir = JDUtilities.getResourceFile("downloads").getParent().substring(3).toLowerCase();
 
             if (!JDUtilities.getResourceFile("uninstall.exe").exists() && (dir.startsWith("programme\\") || dir.startsWith("program files\\"))) {
-                lbl.setText(T._.installer_vistaDir_warning( JDUtilities.getResourceFile("downloads").getParent()));
+                lbl.setText(_GUI._.installer_vistaDir_warning( JDUtilities.getResourceFile("downloads").getParent()));
                 lbl.setForeground(Color.RED);
             }
             if (!JDUtilities.getResourceFile("Updater.jar").canWrite()) {
-                lbl.setText(T._.installer_nowriteDir_warning( JDUtilities.getResourceFile("downloads").getParent()));
+                lbl.setText(_GUI._.installer_nowriteDir_warning( JDUtilities.getResourceFile("downloads").getParent()));
                 lbl.setForeground(Color.RED);
             }
         }

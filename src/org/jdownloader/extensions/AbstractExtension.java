@@ -38,6 +38,7 @@ import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
 import org.jdownloader.logging.LogController;
+import org.jdownloader.settings.advanced.AdvancedConfigManager;
 
 import sun.reflect.generics.reflectiveObjects.ParameterizedTypeImpl;
 
@@ -202,6 +203,7 @@ public abstract class AbstractExtension<T extends ExtensionConfigInterface> {
         logger = createLogger(getClass());
         version = readVersion(getClass());
         store = buildStore();
+        AdvancedConfigManager.getInstance().register(store);
         logger.info("Loaded");
 
         if (JDUtilities.getConfiguration().hasProperty("OPTIONAL_PLUGIN2_" + getConfigID())) {

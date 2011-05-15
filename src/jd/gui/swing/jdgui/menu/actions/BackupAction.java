@@ -26,7 +26,7 @@ import jd.update.JDUpdateUtils;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 
-import org.jdownloader.gui.translate.T;
+import org.jdownloader.gui.translate._GUI;
 
 public class BackupAction extends ThreadedAction {
 
@@ -45,9 +45,9 @@ public class BackupAction extends ThreadedAction {
         JDController.getInstance().syncDatabase();
         File backupFile = JDUpdateUtils.backupDataBase();
         if (backupFile == null) {
-            Balloon.show(T._.gui_balloon_backup_title(), JDTheme.II("gui.images.save", 32, 32), T._.gui_backup_finished_failed(JDUtilities.getResourceFile("backup/")));
+            Balloon.show(_GUI._.gui_balloon_backup_title(), JDTheme.II("gui.images.save", 32, 32), _GUI._.gui_backup_finished_failed(JDUtilities.getResourceFile("backup/")));
         } else {
-            Balloon.show(T._.gui_balloon_backup_title(), JDTheme.II("gui.images.save", 32, 32), T._.gui_backup_finished_success(backupFile.getAbsolutePath()));
+            Balloon.show(_GUI._.gui_balloon_backup_title(), JDTheme.II("gui.images.save", 32, 32), _GUI._.gui_backup_finished_success(backupFile.getAbsolutePath()));
         }
     }
 
