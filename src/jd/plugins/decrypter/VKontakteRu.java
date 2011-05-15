@@ -136,7 +136,7 @@ public class VKontakteRu extends PluginForDecrypt implements ProgressControllerL
         }
         String vtag = br.getRegex("\"vtag\":\"(.*?)\"").getMatch(0);
         String videoID = br.getRegex("\"vkid\":\"(.*?)\"").getMatch(0);
-        if (videoID == null) videoID = new Regex(parameter, ".*?vkontakte\\.ru/video(-)?\\d+_(\\d+)").getMatch(1);
+        if (videoID == null) videoID = new Regex(parameter, ".*?vkontakte\\.ru/video(\\-)?\\d+_(\\d+)").getMatch(1);
         if (videoID == null || urlPart == null || vtag == null) return null;
         // Find the highest possible quality, also every video is only available
         // in 1-2 formats so we HAVE to use the highest one, if we don't do that
