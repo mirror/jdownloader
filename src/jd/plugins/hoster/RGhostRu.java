@@ -21,17 +21,17 @@ import java.io.IOException;
 import jd.PluginWrapper;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
 //rghost.ru by pspzockerscene
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rghost.ru" }, urls = { "http://[\\w\\.]*?(rghost\\.net|rghost\\.ru|phonon\\.rghost\\.ru)/(download/[0-9]+|[0-9]+/private/[a-z0-9]+|[0-9]+)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rghost.ru" }, urls = { "http://(www\\.)?(rghost\\.net|rghost\\.ru|phonon\\.rghost\\.ru)/([0-9]+/private/[a-z0-9]+|download/[0-9]+|[0-9]+(\\?key=[a-z0-9]+)?)" }, flags = { 0 })
 public class RGhostRu extends PluginForHost {
 
     public RGhostRu(PluginWrapper wrapper) {
@@ -48,7 +48,7 @@ public class RGhostRu extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("Access to the file was restricted") || br.containsHTML("<title>404") || br.containsHTML("File was deleted")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("(Access to the file was restricted|the action is prohibited, this is a private file and your key is incorrect|<title>404|File was deleted)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<meta name=\"description\" content=\"(.*?). Download").getMatch(0);
         if (filename == null) filename = br.getRegex("title=\"Comments for the file (.*?)\"").getMatch(0);
         String filesize = br.getRegex("<small>\\((.*?)\\)</small>").getMatch(0);
@@ -68,8 +68,8 @@ public class RGhostRu extends PluginForHost {
     public void handleFree(DownloadLink link) throws Exception {
         requestFileInformation(link);
         br.setFollowRedirects(false);
-        String dllink = br.getRegex("class=\"header_link\">.*?<a href=\"([^\"]*?/download/\\d+.*?)\"").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("<a href=\"([^\"]*?/download/\\d+.*?)\"").getMatch(0);
+        String dllink = br.getRegex("class=\"header_link\">.*?<a href=\"([^\"]*?/download/(private/)?\\d+.*?)\"").getMatch(0);
+        if (dllink == null) dllink = br.getRegex("<a href=\"([^\"]*?/download/(private/)?\\d+.*?)\"").getMatch(0);
         String passCode = null;
         if (dllink == null && br.containsHTML(PWTEXT)) {
             Form pwform = br.getForm(2);
@@ -93,7 +93,7 @@ public class RGhostRu extends PluginForHost {
         }
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
-        if (!(dl.getConnection().isContentDisposition())) {
+        if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
             if (br.containsHTML(">409</div>")) {
                 sleep(20000l, link);
