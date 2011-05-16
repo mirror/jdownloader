@@ -27,12 +27,12 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -371,6 +371,10 @@ public class FileSonicCom extends PluginForHost {
             this.errorHandling(downloadLink, this.br);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        if (this.dl.getConnection().getResponseCode() == 404) {
+            this.dl.getConnection().disconnect();
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         if (passCode != null) {
             downloadLink.setProperty("pass", passCode);
         }
@@ -409,6 +413,10 @@ public class FileSonicCom extends PluginForHost {
         if (this.dl.getConnection() != null && this.dl.getConnection().getContentType() != null && (this.dl.getConnection().getContentType().contains("html") || this.dl.getConnection().getContentType().contains("unknown"))) {
             this.br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        if (this.dl.getConnection().getResponseCode() == 404) {
+            this.dl.getConnection().disconnect();
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         this.dl.startDownload();
     }

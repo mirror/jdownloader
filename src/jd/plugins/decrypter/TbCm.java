@@ -52,11 +52,16 @@ import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 import de.savemytube.flv.FLV;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "youtube.com" }, urls = { "http://[\\w\\.]*?youtube\\.com/(watch.*?v=|view_play_list\\?p=|playlist\\?p=|.*?g/c/|.*?grid/user/|v/)[a-z-_A-Z0-9]+(.*?page=\\d+)?" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "youtube.com" }, urls = { "https?://[\\w\\.]*?youtube\\.com/(watch.*?v=|view_play_list\\?p=|playlist\\?p=|.*?g/c/|.*?grid/user/|v/)[a-z-_A-Z0-9]+(.*?page=\\d+)?" }, flags = { 0 })
 public class TbCm extends PluginForDecrypt {
 
     public static enum DestinationFormat {
-        AUDIOMP3("Audio (MP3)", new String[] { ".mp3" }), VIDEOFLV("Video (FLV)", new String[] { ".flv" }), VIDEOMP4("Video (MP4)", new String[] { ".mp4" }), VIDEOWEBM("Video (Webm)", new String[] { ".webm" }), VIDEO3GP("Video (3GP)", new String[] { ".3gp" }), UNKNOWN("Unknown (unk)", new String[] { ".unk" }),
+        AUDIOMP3("Audio (MP3)", new String[] { ".mp3" }),
+        VIDEOFLV("Video (FLV)", new String[] { ".flv" }),
+        VIDEOMP4("Video (MP4)", new String[] { ".mp4" }),
+        VIDEOWEBM("Video (Webm)", new String[] { ".webm" }),
+        VIDEO3GP("Video (3GP)", new String[] { ".3gp" }),
+        UNKNOWN("Unknown (unk)", new String[] { ".unk" }),
 
         VIDEOIPHONE("Video (IPhone)", new String[] { ".mp4" });
 
@@ -176,6 +181,7 @@ public class TbCm extends PluginForDecrypt {
         this.possibleconverts = new HashMap<DestinationFormat, ArrayList<Info>>();
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString().replace("watch#!v", "watch?v");
+        parameter = parameter.replaceFirst("https", "http");
         this.br.setFollowRedirects(true);
         this.br.setCookiesExclusive(true);
         this.br.clearCookies("youtube.com");

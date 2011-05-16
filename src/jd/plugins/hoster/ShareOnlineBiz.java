@@ -47,6 +47,7 @@ public class ShareOnlineBiz extends PluginForHost {
     private long                                                   server         = -1;
     private final static long                                      waitNoFreeSlot = 10 * 60 * 1000l;
     private final static String                                    UA             = RandomUserAgent.generate();
+    private boolean                                                hideID         = true;
 
     public ShareOnlineBiz(PluginWrapper wrapper) {
         super(wrapper);
@@ -64,6 +65,7 @@ public class ShareOnlineBiz extends PluginForHost {
         // egoshare links!
         String id = new Regex(link.getDownloadURL(), "(id\\=|/dl/)([a-zA-Z0-9]+)").getMatch(1);
         link.setUrlDownload("http://www.share-online.biz/dl/" + id);
+        if (hideID) link.setName("download.php");
     }
 
     public HashMap<String, String> loginAPI(Account account, boolean forceLogin) throws IOException, PluginException {
@@ -132,6 +134,7 @@ public class ShareOnlineBiz extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+        hideID = false;
         correctDownloadLink(downloadLink);
         this.setBrowserExclusive();
         server = -1;

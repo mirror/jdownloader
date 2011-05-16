@@ -181,7 +181,7 @@ public class ShrLnksBz extends PluginForDecrypt {
                 } else {
                     final String jk = new StringBuffer(Encoding.Base64Decode(encVars[1])).reverse().toString();
                     final String crypted = new StringBuffer(Encoding.Base64Decode(encVars[2])).reverse().toString();
-                    flashVars = "passwords=autopostpw&crypted=" + Encoding.formEncoding(crypted) + "&jk=" + Encoding.formEncoding(jk);
+                    flashVars = "passwords=autopostpw&crypted=" + Encoding.formEncoding(crypted) + "&jk=" + Encoding.formEncoding(jk) + "&source=" + Encoding.formEncoding(parameter);
                     cnlbr.setConnectTimeout(5000);
                     cnlbr.getHeaders().put("jd.randomNumber", System.getProperty("jd.randomNumber"));
                     try {
