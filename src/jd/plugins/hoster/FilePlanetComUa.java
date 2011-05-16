@@ -56,7 +56,7 @@ public class FilePlanetComUa extends PluginForHost {
     private static final String passwordText        = "(<br><b>Password:</b> <input|<br><b>Passwort:</b> <input)";
     private static final String COOKIE_HOST         = "http://fileplanet.com.ua";
     public boolean              nopremium           = false;
-    private static final String ONLY4PREMIUM        = "To download files you need to buy a premium account.<br>";
+    private static final String ONLY4PREMIUM        = "(To download files you need to buy a premium account.<br>|Скачивание из Вашей страны доступно только при наличии премиум аккаунта\\! Сейчас вы будете перенаправлены на страницу покупки\\!<)";
     private static final String ONLYPREMIUMUSERTEXT = "Only downloadable for premium users";
 
     @Override
@@ -71,7 +71,7 @@ public class FilePlanetComUa extends PluginForHost {
         br.setCookie(COOKIE_HOST, "lang", "english");
         br.getPage(link.getDownloadURL());
         doSomething();
-        if (brbefore.contains(ONLY4PREMIUM)) {
+        if (new Regex(brbefore, ONLY4PREMIUM).matches()) {
             link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.fileplanetcomua.only4premium", ONLYPREMIUMUSERTEXT));
             return AvailableStatus.TRUE;
         }
@@ -368,7 +368,7 @@ public class FilePlanetComUa extends PluginForHost {
         if (brbefore.contains("You're using all download slots for IP")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l);
         if (brbefore.contains("Error happened when generating Download Link")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error!", 10 * 60 * 1000l);
         // Errorhandling for only-premium links
-        if (brbefore.contains("(You can download files up to.*?only|Upgrade your account to download bigger files|This file reached max downloads)") || brbefore.contains(ONLY4PREMIUM)) {
+        if (brbefore.contains("(You can download files up to.*?only|Upgrade your account to download bigger files|This file reached max downloads)") || new Regex(brbefore, ONLY4PREMIUM).matches()) {
             String filesizelimit = new Regex(brbefore, "You can download files up to(.*?)only").getMatch(0);
             if (filesizelimit != null) {
                 filesizelimit = filesizelimit.trim();

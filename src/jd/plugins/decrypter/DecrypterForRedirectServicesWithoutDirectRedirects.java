@@ -90,6 +90,7 @@ public class DecrypterForRedirectServicesWithoutDirectRedirects extends PluginFo
                 logger.warning("adf.ly single regex broken");
                 finallink = "dummytext";
             }
+            if (finallink.contains("mooleech.co.cc")) dh = true;
         } else if (parameter.contains("link.songs.pk/") || parameter.contains("songspk.info/ghazals/download/ghazals.php?id=")) {
             finallink = br.getRedirectLocation();
             dh = true;
