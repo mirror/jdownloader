@@ -354,7 +354,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
     void assignRealDownloadDir(ExtractionController controller) {
         Boolean usesub = getSettings().isSubpathEnabled();
         if (usesub) {
-            if (getSettings().getSubPathFilesTreshold() > controller.getArchiv().getNumberOfFiles()) { return; }
+            if (getSettings().getSubPathFilesTreshhold() > controller.getArchiv().getNumberOfFiles()) { return; }
             if (getSettings().isSubpathEnabledIfAllFilesAreInAFolder()) {
                 if (controller.getArchiv().isNoFolder()) { return; }
             }

@@ -1,6 +1,7 @@
 package jd.gui.swing.jdgui.views.settings.panels.advanced;
 
 import javax.swing.ImageIcon;
+import javax.swing.JScrollPane;
 
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.gui.settings.AbstractConfigPanel;
@@ -18,7 +19,7 @@ public class AdvancedSettings extends AbstractConfigPanel {
         super();
         this.addHeader(getTitle(), Theme.getIcon("advancedConfig", 32));
         this.addDescription(_JDT._.gui_settings_advanced_description());
-        add(new AdvancedTable());
+        add(new JScrollPane(new AdvancedTable()));
     }
 
     @Override

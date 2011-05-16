@@ -32,7 +32,7 @@ public class PluginSettingsPanel extends JPanel implements SettingsComponent, Ac
     protected PluginConfigPanel           configPanel;
 
     public PluginSettingsPanel() {
-        super(new MigLayout("ins 0,wrap 1", "[][]", "[]15[grow,fill][]"));
+        super(new MigLayout("ins 0,wrap 1", "[grow,fill]", "[]15[grow,fill][]"));
         decryterIcon = Theme.getIcon("spider", 20);
         selector = new SearchComboBox<PluginWrapper>() {
 
@@ -61,7 +61,7 @@ public class PluginSettingsPanel extends JPanel implements SettingsComponent, Ac
 
         add(selector);
         this.card = new MigPanel("ins 0", "[grow,fill]", "[grow,fill]");
-        add(card, "spanx,growx,pushx");
+        add(card, "growx,pushx");
         selector.addActionListener(this);
         fill();
     }

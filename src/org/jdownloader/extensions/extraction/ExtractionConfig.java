@@ -7,7 +7,9 @@ import org.appwork.storage.config.annotations.DefaultEnumValue;
 import org.appwork.storage.config.annotations.DefaultIntValue;
 import org.appwork.storage.config.annotations.DefaultStringArrayValue;
 import org.appwork.storage.config.annotations.DefaultStringValue;
+import org.appwork.storage.config.annotations.Description;
 import org.jdownloader.settings.AboutConfig;
+import org.jdownloader.settings.RangeValidatorMarker;
 
 public interface ExtractionConfig extends ExtensionConfigInterface {
     @DefaultBooleanValue(false)
@@ -26,6 +28,7 @@ public interface ExtractionConfig extends ExtensionConfigInterface {
 
     @DefaultBooleanValue(true)
     @AboutConfig
+    @Description("Shall Extraction Extension ask you for passwords if the correct password has not been found in passwordcache?")
     boolean isAskForUnknownPasswordsEnabled();
 
     @AboutConfig
@@ -33,6 +36,7 @@ public interface ExtractionConfig extends ExtensionConfigInterface {
 
     @DefaultBooleanValue(true)
     @AboutConfig
+    @Description("Extraction Extension autoextracts sub-archives. If you do not want this, disable this option.")
     boolean isDeepExtractionEnabled();
 
     @AboutConfig
@@ -43,6 +47,7 @@ public interface ExtractionConfig extends ExtensionConfigInterface {
 
     void setDeleteArchiveFilesAfterExtraction(boolean enabled);
 
+    @Description("Info File Extension is able to create Info files for all downloaded files. Extraction Extension can remove these files")
     @DefaultBooleanValue(false)
     @AboutConfig
     boolean isDeleteInfoFilesAfterExtraction();
@@ -55,7 +60,9 @@ public interface ExtractionConfig extends ExtensionConfigInterface {
 
     void setSubpathEnabled(boolean enabled);
 
+    @AboutConfig
     @DefaultStringValue("%PACKAGENAME%")
+    @Description("A Blacklist is a list of regular expressions. Use a blacklist to avoid extracting certain filetypes.")
     String getSubPath();
 
     void setSubPath(String path);
@@ -65,8 +72,12 @@ public interface ExtractionConfig extends ExtensionConfigInterface {
      * 
      * @return
      */
+
+    @org.appwork.storage.config.annotations.Description("Only use subfolders if the archive contains more than *** files")
+    @AboutConfig
     @DefaultIntValue(1)
-    int getSubPathFilesTreshold();
+    @RangeValidatorMarker(range = { 0, 30 })
+    int getSubPathFilesTreshhold();
 
     void setSubPathFilesTreshhold(int treshold);
 
@@ -86,6 +97,7 @@ public interface ExtractionConfig extends ExtensionConfigInterface {
     @AboutConfig
     String[] getBlacklistPatterns();
 
+    @Description("A Blacklist is a list of regular expressions. Use a blacklist to avoid extracting certain filetypes.")
     @AboutConfig
     void setBlacklistPatterns(String[] patterns);
 }

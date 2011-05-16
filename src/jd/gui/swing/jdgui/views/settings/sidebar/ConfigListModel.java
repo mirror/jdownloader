@@ -12,6 +12,7 @@ import jd.gui.swing.jdgui.views.settings.panels.BasicAuthentication;
 import jd.gui.swing.jdgui.views.settings.panels.ConfigPanelGeneral;
 import jd.gui.swing.jdgui.views.settings.panels.DownloadControll;
 import jd.gui.swing.jdgui.views.settings.panels.ReconnectSettings;
+import jd.gui.swing.jdgui.views.settings.panels.advanced.AdvancedSettings;
 import jd.gui.swing.jdgui.views.settings.panels.downloadandnetwork.ProxyConfig;
 import jd.gui.swing.jdgui.views.settings.panels.pluginsettings.PluginSettings;
 
@@ -48,7 +49,7 @@ public class ConfigListModel extends DefaultListModel {
 
         addElement(new BarrierFree());
 
-        // addElement(new AdvancedSettings());
+        addElement(new AdvancedSettings());
         boolean first = true;
         ArrayList<AbstractExtensionWrapper> pluginsOptional = ExtensionController.getInstance().getExtensions();
         Collections.sort(pluginsOptional, new Comparator<AbstractExtensionWrapper>() {

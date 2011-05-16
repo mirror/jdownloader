@@ -97,7 +97,7 @@ public class AuthTableModel extends ExtTableModel<AuthenticationInfo> {
             private ComboBoxModel typeModel = new DefaultComboBoxModel(new String[] { T._.authtablemodel_column_type_http(), T._.authtablemodel_column_type_ftp() });
 
             @Override
-            public ComboBoxModel updateModel(ComboBoxModel dataModel, Object value) {
+            public ComboBoxModel updateModel(ComboBoxModel dataModel, AuthenticationInfo value) {
                 return typeModel;
             }
 

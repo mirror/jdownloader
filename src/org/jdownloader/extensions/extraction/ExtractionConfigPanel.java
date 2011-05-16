@@ -73,7 +73,7 @@ public class ExtractionConfigPanel extends ExtensionConfigPanel<ExtractionExtens
                 toggleOverwriteExisting.getComponent().setSelected(s.isOverwriteExistingFilesEnabled());
                 toggleUseSubpath.getComponent().setSelected(s.isSubpathEnabled());
                 subPath.getComponent().setText(s.getSubPath());
-                subPathMinFiles.getComponent().setValue(s.getSubPathFilesTreshold());
+                subPathMinFiles.getComponent().setValue(s.getSubPathFilesTreshhold());
                 toggleUseSubpathOnlyIfNotFoldered.getComponent().setSelected(s.isSubpathEnabledIfAllFilesAreInAFolder());
 
             }

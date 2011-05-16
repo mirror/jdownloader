@@ -1,5 +1,5 @@
 package org.jdownloader.settings.advanced;
 
-public class AdvancedEntry {
+public class Validator {
 
 }
