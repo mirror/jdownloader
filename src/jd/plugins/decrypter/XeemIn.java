@@ -35,7 +35,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xeem.in" }, urls = { "http://[\\w\\.]*?xeem\\.in/open-.*?\\.htm" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xeem.in" }, urls = { "http://(www\\.)?xeem\\.in/open-.*?\\.htm" }, flags = { 0 })
 public class XeemIn extends PluginForDecrypt {
 
     public XeemIn(PluginWrapper wrapper) {
@@ -100,21 +100,18 @@ public class XeemIn extends PluginForDecrypt {
         String pass = br.getRegex("Passwort: <b>(.*?)</b").getMatch(0);
         if (pass != null && pass.equals("kein Passwort")) pass = null;
         // container handling (if no containers found, use webprotection
-        if (br.containsHTML("DLC-Container")) {
+        if (br.containsHTML("\\-dlc\\-")) {
             decryptedLinks = loadcontainer(br, "dlc", param);
             if (decryptedLinks != null && decryptedLinks.size() > 0) return decryptedLinks;
         }
-
-        if (br.containsHTML("RSDF-Container")) {
+        if (br.containsHTML("\\rsdf\\-")) {
             decryptedLinks = loadcontainer(br, "rsdf", param);
             if (decryptedLinks != null && decryptedLinks.size() > 0) return decryptedLinks;
         }
-
-        if (br.containsHTML("CCF-Container")) {
+        if (br.containsHTML("\\-ccf\\-")) {
             decryptedLinks = loadcontainer(br, "ccf", param);
             if (decryptedLinks != null && decryptedLinks.size() > 0) return decryptedLinks;
         }
-
         // Webprotection decryption
         decryptedLinks = new ArrayList<DownloadLink>();
         String[] links = br.getRegex("middle;\"><a href=\"(.*?)\"").getColumn(0);
@@ -144,7 +141,7 @@ public class XeemIn extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = null;
         Browser brc = br.cloneBrowser();
         String[] dlclinks = null;
-        dlclinks = br.getRegex("(http://www\\.xeem\\.in/download-" + format + "-.*?)\"").getColumn(0);
+        dlclinks = br.getRegex("(http://www\\.xeem\\.in/download\\-" + format + "\\-.*?)\"").getColumn(0);
         if (dlclinks == null || dlclinks.length == 0) return null;
         for (int index = dlclinks.length - 1; index >= 0; index--) {
             /*

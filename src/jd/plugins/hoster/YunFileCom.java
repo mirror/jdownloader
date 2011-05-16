@@ -84,10 +84,10 @@ public class YunFileCom extends PluginForHost {
         String vid2 = br.getRegex("setCookie\\(\"vid2\", \"(.*?)\"").getMatch(0);
         String action = br.getRegex("id=\"down_from\"([\t\n\r ]+)?action=\"(http://.*?)\" method=\"post\"").getMatch(1);
         if (action == null) action = br.getRegex("\"(http://dl\\d+\\.yunfile\\.com/file/downfile/[a-z0-9]+/[a-z0-9]+/[a-z0-9]+)\"").getMatch(0);
-        if (vid == null || vid1 == null || vid2 == null || action == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        // Those cookies are important, no downloadstart without them!
-        br.setCookie(MAINPAGE, "vid1", vid1);
-        br.setCookie(MAINPAGE, "vid2", vid2);
+        if (vid == null || action == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        // Those cookies are important, no downloadstart without one of them!
+        if (vid1 != null) br.setCookie(MAINPAGE, "vid1", vid1);
+        if (vid2 != null) br.setCookie(MAINPAGE, "vid2", vid2);
         br.setFollowRedirects(true);
         String postData = "module=fileService&action=downfile&userId=" + userid + "&fileId=" + fileid + "&vid=" + vid;
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, action, postData, false, 1);
