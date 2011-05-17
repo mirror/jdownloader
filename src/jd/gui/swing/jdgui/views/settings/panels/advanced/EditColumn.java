@@ -13,6 +13,8 @@ import net.miginfocom.swing.MigLayout;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.utils.swing.dialog.Dialog;
+import org.appwork.utils.swing.dialog.DialogCanceledException;
+import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.appwork.utils.swing.table.columns.ExtComponentColumn;
 import org.jdownloader.images.Theme;
 import org.jdownloader.settings.advanced.AdvancedConfigEntry;
@@ -49,26 +51,55 @@ public class EditColumn extends ExtComponentColumn<AdvancedConfigEntry> {
 
     }
 
+    class ResetAction extends AbstractAction {
+        private AdvancedConfigEntry value;
+
+        public ResetAction() {
+            super("Reset to Default", Theme.getIcon("reset", 16));
+        }
+
+        public void actionPerformed(ActionEvent e) {
+            try {
+                Dialog.getInstance().showConfirmDialog(0, "Reset to default?", "Really reset " + value.getKey() + " to " + value.getDefault());
+                value.setValue(value.getDefault());
+                EditColumn.this.getModel().fireTableDataChanged();
+            } catch (DialogClosedException e1) {
+                e1.printStackTrace();
+            } catch (DialogCanceledException e1) {
+                e1.printStackTrace();
+            }
+        }
+
+        public void setEntry(AdvancedConfigEntry value) {
+
+            this.value = value;
+        }
+
+    }
+
     public static final int SIZE = 16;
     private JPanel          renderer;
     private JPanel          editor;
-    private InfoAction      info;
+    private InfoAction      editorInfo;
     private InfoAction      rendererInfo;
+    private ResetAction     editorReset;
+    private ResetAction     rendererReset;
 
     public EditColumn() {
         super("Actions");
         renderer = new JPanel(new MigLayout("ins 2", "[]", "[]"));
         editor = new JPanel(new MigLayout("ins 2", "[]", "[]"));
-        info = new InfoAction();
-        rendererInfo = new InfoAction();
-        renderer.add(getButton(rendererInfo), "width 18!,height 18!");
-        editor.add(getButton(info), "width 18!,height 18!");
-        // add(info);
-    }
+        editorInfo = new InfoAction();
 
-    private void add(AbstractAction action) {
-        renderer.add(getButton(action), "width 18!,height 18!");
-        editor.add(getButton(action), "width 18!,height 18!");
+        rendererInfo = new InfoAction();
+
+        editorReset = new ResetAction();
+        rendererReset = new ResetAction();
+        renderer.add(getButton(rendererInfo), "width 18!,height 18!");
+        editor.add(getButton(editorInfo), "width 18!,height 18!");
+        renderer.add(getButton(rendererReset), "width 18!,height 18!");
+        editor.add(getButton(editorReset), "width 18!,height 18!");
+        // add(info);
     }
 
     private Component getButton(AbstractAction action) {
@@ -90,12 +121,12 @@ public class EditColumn extends ExtComponentColumn<AdvancedConfigEntry> {
 
     @Override
     public int getMinWidth() {
-        return 30;
+        return 50;
     }
 
     @Override
     protected JComponent getEditorComponent(AdvancedConfigEntry value, boolean isSelected, int row, int column) {
-        info.setEntry(value);
+        editorInfo.setEntry(value);
 
         return editor;
     }
@@ -104,10 +135,6 @@ public class EditColumn extends ExtComponentColumn<AdvancedConfigEntry> {
     protected JComponent getRendererComponent(AdvancedConfigEntry value, boolean isSelected, int row, int column) {
         rendererInfo.setEntry(value);
         return renderer;
-    }
-
-    private void setAdvancedConfigEntry(AdvancedConfigEntry value) {
-        info.setEntry(value);
     }
 
 }

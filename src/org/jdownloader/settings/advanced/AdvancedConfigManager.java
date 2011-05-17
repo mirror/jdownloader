@@ -4,7 +4,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 import org.appwork.storage.config.ConfigInterface;
-import org.appwork.storage.config.MethodHandler;
+import org.appwork.storage.config.KeyHandler;
+import org.jdownloader.settings.AboutConfig;
 
 public class AdvancedConfigManager {
     private static final AdvancedConfigManager INSTANCE = new AdvancedConfigManager();
@@ -27,28 +28,17 @@ public class AdvancedConfigManager {
 
     public void register(ConfigInterface cf) {
 
-        HashMap<String, AdvancedConfigInterfaceEntry> map = new HashMap<String, AdvancedConfigInterfaceEntry>();
-        for (MethodHandler m : cf.getStorageHandler().getMap().values()) {
+        HashMap<KeyHandler, Boolean> map = new HashMap<KeyHandler, Boolean>();
 
-            AdvancedConfigInterfaceEntry f = map.get(m.getKey());
-            if (f == null) {
-                f = new AdvancedConfigInterfaceEntry(cf);
-                map.put(m.getKey(), f);
+        for (KeyHandler m : cf.getStorageHandler().getMap().values()) {
+
+            if (map.containsKey(m)) continue;
+
+            if (m.getAnnotation(AboutConfig.class) != null) {
+                configInterfaces.add(new AdvancedConfigInterfaceEntry(cf, m));
+                map.put(m, true);
             }
-            if (m.isGetter()) {
-                f.setGetter(m);
-            } else {
-                f.setSetter(m);
-            }
-            if (f.getGetter() != null & f.getSetter() != null) {
-                // if
-                // (f.getGetter().getMethod().getAnnotation(AboutConfig.class)
-                // != null ||
-                // f.getSetter().getMethod().getAnnotation(AboutConfig.class) !=
-                // null) {
-                configInterfaces.add(f);
-                // }
-            }
+
         }
 
         eventSender.fireEvent(new AdvancedConfigEvent(this, AdvancedConfigEvent.Types.UPDATED, cf));

@@ -35,6 +35,11 @@ public class AdvancedTableModel extends ExtTableModel<AdvancedConfigEntry> imple
         addColumn(new ExtTextColumn<AdvancedConfigEntry>("Key") {
 
             @Override
+            protected String getToolTip(AdvancedConfigEntry obj) {
+                return obj.getDescription();
+            }
+
+            @Override
             protected String getStringValue(AdvancedConfigEntry value) {
                 return value.getKey();
             }

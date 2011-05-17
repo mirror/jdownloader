@@ -6,7 +6,6 @@ import java.util.ArrayList;
 import javax.swing.ComboBoxModel;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.JLabel;
-import javax.swing.SpinnerModel;
 import javax.swing.SpinnerNumberModel;
 import javax.swing.SwingConstants;
 
@@ -60,6 +59,11 @@ public class AdvancedValueColumn extends ExtCompoundColumn<AdvancedConfigEntry> 
             }
 
             @Override
+            protected String getToolTip(AdvancedConfigEntry obj) {
+                return obj.getDescription();
+            }
+
+            @Override
             protected void setStringValue(String value, AdvancedConfigEntry object) {
                 object.setValue(value);
             }
@@ -68,6 +72,11 @@ public class AdvancedValueColumn extends ExtCompoundColumn<AdvancedConfigEntry> 
         defaultColumn = new ExtTextColumn<AdvancedConfigEntry>(getName()) {
             protected void prepareTableCellRendererComponent(final JLabel jlr) {
                 jlr.setHorizontalAlignment(SwingConstants.RIGHT);
+            }
+
+            @Override
+            protected String getToolTip(AdvancedConfigEntry obj) {
+                return obj.getDescription();
             }
 
             @Override
@@ -115,33 +124,47 @@ public class AdvancedValueColumn extends ExtCompoundColumn<AdvancedConfigEntry> 
             }
 
             @Override
-            protected SpinnerModel getModel(AdvancedConfigEntry value) {
-                if (Clazz.isFloat((value.getType()))) {
-                    return dm;
-                } else if (Clazz.isDouble((value.getType()))) {
-                    return dm;
-                } else {
-                    if (value.getValidator() != null) {
-                        if (value.getValidator() instanceof RangeValidator) { return new SpinnerNumberModel(getNumber(value).longValue(), ((RangeValidator) value.getValidator()).getMin(), ((RangeValidator) value.getValidator()).getMax(), ((RangeValidator) value.getValidator()).getSteps()); }
+            protected SpinnerNumberModel getModel(AdvancedConfigEntry value, Number n) {
+                SpinnerNumberModel ret = super.getModel(value, n);
+
+                if (value.getValidator() != null) {
+                    if (value.getValidator() instanceof RangeValidator) {
+
+                        if (Clazz.isDouble(n.getClass())) {
+                            ret.setMaximum((double) ((RangeValidator) value.getValidator()).getMax());
+                            ret.setMinimum((double) ((RangeValidator) value.getValidator()).getMin());
+                            ret.setStepSize((double) ((RangeValidator) value.getValidator()).getSteps());
+                        } else if (Clazz.isFloat(n.getClass())) {
+                            ret.setMaximum((float) ((RangeValidator) value.getValidator()).getMax());
+                            ret.setMinimum((float) ((RangeValidator) value.getValidator()).getMin());
+                            ret.setStepSize((float) ((RangeValidator) value.getValidator()).getSteps());
+                        } else if (Clazz.isLong(n.getClass())) {
+                            ret.setMaximum((long) ((RangeValidator) value.getValidator()).getMax());
+                            ret.setMinimum((long) ((RangeValidator) value.getValidator()).getMin());
+                            ret.setStepSize((long) ((RangeValidator) value.getValidator()).getSteps());
+                        } else if (Clazz.isInteger(n.getClass())) {
+                            ret.setMaximum((int) ((RangeValidator) value.getValidator()).getMax());
+                            ret.setMinimum((int) ((RangeValidator) value.getValidator()).getMin());
+                            ret.setStepSize((int) ((RangeValidator) value.getValidator()).getSteps());
+                        } else if (Clazz.isShort(n.getClass())) {
+                            ret.setMaximum((short) ((RangeValidator) value.getValidator()).getMax());
+                            ret.setMinimum((short) ((RangeValidator) value.getValidator()).getMin());
+                            ret.setStepSize((short) ((RangeValidator) value.getValidator()).getSteps());
+                        } else if (Clazz.isByte(n.getClass())) {
+                            ret.setMaximum((byte) ((RangeValidator) value.getValidator()).getMax());
+                            ret.setMinimum((byte) ((RangeValidator) value.getValidator()).getMin());
+                            ret.setStepSize((byte) ((RangeValidator) value.getValidator()).getSteps());
+                        }
+
                     }
-                    return lm;
                 }
+                return ret;
+
             }
 
             @Override
             protected Number getNumber(AdvancedConfigEntry value) {
                 return (Number) value.getValue();
-            }
-
-            @Override
-            protected String getFormat(AdvancedConfigEntry value) {
-                if (Clazz.isFloat((value.getType()))) {
-                    return "#.#";
-                } else if (Clazz.isDouble((value.getType()))) {
-                    return "#.#";
-                } else {
-                    return "#";
-                }
             }
 
             @Override
