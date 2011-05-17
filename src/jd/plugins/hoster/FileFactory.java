@@ -31,12 +31,12 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -49,16 +49,17 @@ import org.mozilla.javascript.Scriptable;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filefactory.com" }, urls = { "http://[\\w\\.]*?filefactory\\.com(/|//)file/[\\w]+/?" }, flags = { 2 })
 public class FileFactory extends PluginForHost {
 
-    private static final String FILESIZE      = "<span>(.*? (B|KB|MB|GB)) file";
+    private static final String FILESIZE         = "id=\"info\" class=\"metadata\">[\t\n\r ]+<span>(.*?) file uploaded";
 
-    private static final String NO_SLOT       = "no free download slots";
-    private static final String NOT_AVAILABLE = "class=\"box error\"";
-    private static final String SLOTEXPIRED   = "<p>Your download slot has expired\\.";
-    private static final String LOGIN_ERROR   = "The email or password you have entered is incorrect";
-    private static final String SERVER_DOWN   = "server hosting the file you are requesting is currently down";
-    private static final String CAPTCHALIMIT  = "<p>We have detected several recent attempts to bypass our free download restrictions originating from your IP Address";
+    private static final String NO_SLOT          = ">All free download slots are in use";
+    private static final String NO_SLOT_USERTEXT = "No free slots available";
+    private static final String NOT_AVAILABLE    = "class=\"box error\"";
+    private static final String SLOTEXPIRED      = "<p>Your download slot has expired\\.";
+    private static final String LOGIN_ERROR      = "The email or password you have entered is incorrect";
+    private static final String SERVER_DOWN      = "server hosting the file you are requesting is currently down";
+    private static final String CAPTCHALIMIT     = "<p>We have detected several recent attempts to bypass our free download restrictions originating from your IP Address";
 
-    private String              dlUrl         = null;
+    private String              dlUrl            = null;
 
     public FileFactory(final PluginWrapper wrapper) {
         super(wrapper);
@@ -73,7 +74,7 @@ public class FileFactory extends PluginForHost {
     public void checkErrors() throws PluginException {
         if (br.containsHTML(CAPTCHALIMIT)) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1000l);
         if (this.br.containsHTML(FileFactory.SLOTEXPIRED)) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error"); }
-        if (this.br.containsHTML("there are currently no free download slots") || this.br.containsHTML("download slots on this server are")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "No free slots", 10 * 60 * 1000l); }
+        if (this.br.containsHTML(NO_SLOT)) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, NO_SLOT_USERTEXT, 10 * 60 * 1000l); }
         if (this.br.containsHTML(FileFactory.NOT_AVAILABLE)) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         if (this.br.containsHTML(FileFactory.SERVER_DOWN) || this.br.containsHTML(FileFactory.NO_SLOT)) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 20 * 60 * 1000l); }
         if (this.br.getRegex("Please wait (\\d+) minutes to download more files, or").getMatch(0) != null) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(this.br.getRegex("Please wait (\\d+) minutes to download more files, or").getMatch(0)) * 60 * 1001l); }
@@ -296,7 +297,6 @@ public class FileFactory extends PluginForHost {
                 }
                 if (waittime > 0) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waittime); }
             }
-            if (this.br.containsHTML("All free download slots are in use.")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "All free download slots are in use.", 10 * 60 * 1000l);
             if (this.br.containsHTML("You are currently downloading too many files at once")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1000l); }
             this.checkErrors();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -393,15 +393,15 @@ public class FileFactory extends PluginForHost {
                 if (i == 3) { throw e; }
             }
         }
-        if (this.br.containsHTML("This file has been deleted.")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        if (this.br.containsHTML(FileFactory.NOT_AVAILABLE) && !this.br.containsHTML("there are currently no free download slots")) {
+        if (this.br.containsHTML("This file has been deleted\\.")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (this.br.containsHTML(FileFactory.NOT_AVAILABLE) && !this.br.containsHTML(NO_SLOT)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (this.br.containsHTML(FileFactory.SERVER_DOWN)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else {
-            if (this.br.containsHTML("there are currently no free download slots") || this.br.containsHTML("download slots on this server are")) {
-                downloadLink.getLinkStatus().setErrorMessage(JDL.L("plugins.hoster.filefactorycom.errors.nofreeslots", "No slots free available"));
-                downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.filefactorycom.errors.nofreeslots", "No slots free available"));
+            if (this.br.containsHTML(NO_SLOT)) {
+                downloadLink.getLinkStatus().setErrorMessage(JDL.L("plugins.hoster.filefactorycom.errors.nofreeslots", NO_SLOT_USERTEXT));
+                downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.filefactorycom.errors.nofreeslots", NO_SLOT_USERTEXT));
             } else {
                 if (this.br.containsHTML("File Not Found")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
                 final String fileName = this.br.getRegex("<title>(.*?) - download now for free").getMatch(0);

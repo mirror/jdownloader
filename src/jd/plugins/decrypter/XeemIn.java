@@ -35,7 +35,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xeem.in" }, urls = { "http://(www\\.)?xeem\\.in/open-.*?\\.htm" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xeem.in" }, urls = { "http://(www\\.)?xeem\\.in/open\\-.*?\\.htm" }, flags = { 0 })
 public class XeemIn extends PluginForDecrypt {
 
     public XeemIn(PluginWrapper wrapper) {
