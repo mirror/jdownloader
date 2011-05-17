@@ -127,13 +127,14 @@ public class EditColumn extends ExtComponentColumn<AdvancedConfigEntry> {
     @Override
     protected JComponent getEditorComponent(AdvancedConfigEntry value, boolean isSelected, int row, int column) {
         editorInfo.setEntry(value);
-
+        editorReset.setEntry(value);
         return editor;
     }
 
     @Override
     protected JComponent getRendererComponent(AdvancedConfigEntry value, boolean isSelected, int row, int column) {
         rendererInfo.setEntry(value);
+        rendererReset.setEntry(value);
         return renderer;
     }
 
