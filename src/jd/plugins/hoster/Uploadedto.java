@@ -345,7 +345,21 @@ public class Uploadedto extends PluginForHost {
                     sb.append("&id_" + c + "=" + getID(dl));
                     c++;
                 }
-                br.postPage("http://uploaded.to/api/filemultiple", sb.toString());
+                int retry = 0;
+                while (true) {
+                    /*
+                     * workaround for api issues, retry 5 times when content
+                     * length is only 20 bytes
+                     */
+                    if (retry == 5) return false;
+                    br.postPage("http://uploaded.to/api/filemultiple", sb.toString());
+                    if (br.getHttpConnection().getLongContentLength() != 20) {
+                        break;
+                    }
+                    Thread.sleep(500);
+                    retry++;
+                }
+                sb = null;
                 String infos[][] = br.getRegex(Pattern.compile("(.*?),(.*?),(.*?),(.*?),(.*?)(\r|\n|$)")).getMatches();
                 for (DownloadLink dl : links) {
                     String id = getID(dl);
