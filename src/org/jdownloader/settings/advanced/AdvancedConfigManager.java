@@ -35,8 +35,14 @@ public class AdvancedConfigManager {
             if (map.containsKey(m)) continue;
 
             if (m.getAnnotation(AboutConfig.class) != null) {
-                configInterfaces.add(new AdvancedConfigInterfaceEntry(cf, m));
-                map.put(m, true);
+                if (m.getSetter() == null) {
+                    throw new RuntimeException("Setter for " + m.getGetter().getMethod() + " missing");
+                } else if (m.getGetter() == null) {
+                    throw new RuntimeException("Getter for " + m.getSetter().getMethod() + " missing");
+                } else {
+                    configInterfaces.add(new AdvancedConfigInterfaceEntry(cf, m));
+                    map.put(m, true);
+                }
             }
 
         }

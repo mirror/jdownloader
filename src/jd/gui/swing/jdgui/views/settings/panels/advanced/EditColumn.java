@@ -1,6 +1,5 @@
 package jd.gui.swing.jdgui.views.settings.panels.advanced;
 
-import java.awt.Component;
 import java.awt.Cursor;
 import java.awt.event.ActionEvent;
 
@@ -71,6 +70,11 @@ public class EditColumn extends ExtComponentColumn<AdvancedConfigEntry> {
         }
 
         public void setEntry(AdvancedConfigEntry value) {
+            if (value.getValue() == null) {
+                setEnabled(value.getDefault() != null);
+            } else {
+                setEnabled(!value.getValue().equals(value.getDefault()));
+            }
 
             this.value = value;
         }
@@ -84,6 +88,7 @@ public class EditColumn extends ExtComponentColumn<AdvancedConfigEntry> {
     private InfoAction      rendererInfo;
     private ResetAction     editorReset;
     private ResetAction     rendererReset;
+    private JButton         reset;
 
     public EditColumn() {
         super("Actions");
@@ -95,14 +100,14 @@ public class EditColumn extends ExtComponentColumn<AdvancedConfigEntry> {
 
         editorReset = new ResetAction();
         rendererReset = new ResetAction();
-        renderer.add(getButton(rendererInfo), "width 18!,height 18!");
-        editor.add(getButton(editorInfo), "width 18!,height 18!");
+        // renderer.add(getButton(rendererInfo), "width 18!,height 18!");
+        // editor.add(getButton(editorInfo), "width 18!,height 18!");
         renderer.add(getButton(rendererReset), "width 18!,height 18!");
-        editor.add(getButton(editorReset), "width 18!,height 18!");
+        editor.add(reset = getButton(editorReset), "width 18!,height 18!");
         // add(info);
     }
 
-    private Component getButton(AbstractAction action) {
+    private JButton getButton(AbstractAction action) {
         final JButton bt = new JButton(action);
 
         bt.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
@@ -121,13 +126,15 @@ public class EditColumn extends ExtComponentColumn<AdvancedConfigEntry> {
 
     @Override
     public int getMinWidth() {
-        return 50;
+        return 30;
     }
 
     @Override
     protected JComponent getEditorComponent(AdvancedConfigEntry value, boolean isSelected, int row, int column) {
         editorInfo.setEntry(value);
         editorReset.setEntry(value);
+        reset.setToolTipText("Reset to " + value.getDefault());
+        // rendererReset = new ResetAction();
         return editor;
     }
 

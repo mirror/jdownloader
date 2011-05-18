@@ -16,4 +16,6 @@ public interface AdvancedConfigEntry {
 
     public void setValue(Object value);
 
+    public String getTypeString();
+
 }

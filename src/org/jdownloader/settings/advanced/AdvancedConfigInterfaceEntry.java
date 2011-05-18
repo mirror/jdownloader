@@ -1,6 +1,7 @@
 package org.jdownloader.settings.advanced;
 
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Type;
 
 import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.KeyHandler;
@@ -70,4 +71,19 @@ public class AdvancedConfigInterfaceEntry implements AdvancedConfigEntry {
         return keyHandler.getDefaultValue();
     }
 
+    public String getTypeString() {
+        Validator v = getValidator();
+        Type gen = keyHandler.getGetter().getMethod().getGenericReturnType();
+        String ret;
+        if (gen instanceof Class) {
+            ret = ((Class) gen).getSimpleName();
+        } else {
+            ret = gen.toString();
+        }
+        if (v != null) {
+
+            ret += " [" + v + "]";
+        }
+        return ret;
+    }
 }

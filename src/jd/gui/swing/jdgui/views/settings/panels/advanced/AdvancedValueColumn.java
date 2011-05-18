@@ -12,6 +12,7 @@ import javax.swing.SwingConstants;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.reflection.Clazz;
+import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.table.ExtColumn;
 import org.appwork.utils.swing.table.ExtTableModel;
 import org.appwork.utils.swing.table.columns.ExtCheckColumn;
@@ -86,8 +87,17 @@ public class AdvancedValueColumn extends ExtCompoundColumn<AdvancedConfigEntry> 
 
             @Override
             protected void setStringValue(String value, AdvancedConfigEntry object) {
-                object.setValue(JSonStorage.restoreFromString(value, new TypeRef(object.getType()) {
-                }, object.getValue()));
+
+                Object newV = JSonStorage.restoreFromString(value, new TypeRef(object.getType()) {
+                }, null);
+                if (newV != null) {
+                    object.setValue(newV);
+                } else {
+                    if (!"null".equalsIgnoreCase(value.trim())) {
+                        Dialog.getInstance().showErrorDialog("'" + value + "' is not a valid '" + object.getTypeString() + "'");
+                    }
+                }
+
             }
         };
         register(defaultColumn);

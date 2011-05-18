@@ -45,13 +45,18 @@ public class AdvancedTableModel extends ExtTableModel<AdvancedConfigEntry> imple
             }
         });
         addColumn(new AdvancedValueColumn());
-        // addColumn(new ExtTextColumn<AdvancedConfigEntry>("Type") {
-        //
-        // @Override
-        // protected String getStringValue(AdvancedConfigEntry value) {
-        // return "[" + value.getType().getSimpleName() + "]";
-        // }
-        // });
+        addColumn(new ExtTextColumn<AdvancedConfigEntry>("Type") {
+
+            @Override
+            public int getDefaultWidth() {
+                return 100;
+            }
+
+            @Override
+            protected String getStringValue(AdvancedConfigEntry value) {
+                return value.getTypeString();
+            }
+        });
         addColumn(new EditColumn());
     }
 
