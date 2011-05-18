@@ -26,7 +26,6 @@ import jd.http.Cookies;
 import jd.http.RandomUserAgent;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
-import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -49,7 +48,7 @@ public class UploadingCom extends PluginForHost {
     private String              userAgent       = RandomUserAgent.generate();
     private boolean             free            = false;
     private static final String FILEIDREGEX     = "name=\"file_id\" value=\"(.*?)\"";
-    private static final String CODEREGEX       = "uploading\\.com/files/get/(.+)";
+    private static final String CODEREGEX       = "uploading\\.com/files/get/(\\w+)";
     private static final Object LOCK            = new Object();
 
     public UploadingCom(PluginWrapper wrapper) {
@@ -404,13 +403,10 @@ public class UploadingCom extends PluginForHost {
     }
 
     public String getDownloadUrl(DownloadLink downloadLink, String fileID, String code) throws Exception {
-        String timead = br.getRegex("timead_counter\">(\\d+)<").getMatch(0);
-        if (timead == null) timead = br.getRegex("start_timer\\((\\d+)\\)").getMatch(0);
-        if (timead != null) {
-            Form form = br.getForm(0);
-            sleep(Integer.parseInt(timead) * 1000l, downloadLink);
-            br.submitForm(form);
-        }
+        // String timead = br.getRegex("timead_counter\">(\\d+)<").getMatch(0);
+        // if (timead == null) timead =
+        // br.getRegex("start_timer\\((\\d+)\\)").getMatch(0);
+        // sleep(Integer.parseInt(timead) * 1000l, downloadLink);
         String varLink = br.getRegex("var file_link = '(http://.*?)'").getMatch(0);
         /* captcha may occur here */
         String captcha = "";
