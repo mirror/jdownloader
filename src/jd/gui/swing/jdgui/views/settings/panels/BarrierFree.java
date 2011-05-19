@@ -22,7 +22,7 @@ import jd.gui.swing.jdgui.views.settings.components.Spinner;
 
 import org.jdownloader.gui.settings.AbstractConfigPanel;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.images.Theme;
+import org.jdownloader.images.NewTheme;
 import org.jdownloader.translate._JDT;
 
 public class BarrierFree extends AbstractConfigPanel {
@@ -38,7 +38,7 @@ public class BarrierFree extends AbstractConfigPanel {
         super();
         captchaSize = new Spinner(50, 500);
         captchaSize.setFormat("#'%'");
-        this.addHeader(getTitle(), Theme.getIcon("barrierfreesettings", 32));
+        this.addHeader(getTitle(), NewTheme.I().getIcon("barrierfreesettings", 32));
         this.addDescription(_JDT._.gui_settings_barrierfree_description());
         this.addPair(_GUI._.gui_config_barrierfree_captchasize(), captchaSize);
 
@@ -46,7 +46,7 @@ public class BarrierFree extends AbstractConfigPanel {
 
     @Override
     public ImageIcon getIcon() {
-        return Theme.getIcon("barrierfreesettings", 32);
+        return NewTheme.I().getIcon("barrierfreesettings", 32);
     }
 
     @Override

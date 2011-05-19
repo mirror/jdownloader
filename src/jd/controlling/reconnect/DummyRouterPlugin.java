@@ -10,7 +10,7 @@ import javax.swing.event.HyperlinkListener;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.utils.os.CrossSystem;
-import org.jdownloader.images.Theme;
+import org.jdownloader.images.NewTheme;
 import org.jdownloader.translate._JDT;
 
 public class DummyRouterPlugin extends RouterPlugin {
@@ -24,7 +24,7 @@ public class DummyRouterPlugin extends RouterPlugin {
     private ImageIcon icon;
 
     private DummyRouterPlugin() {
-        icon = Theme.getIcon("delete", 16);
+        icon = NewTheme.I().getIcon("delete", 16);
     }
 
     @Override

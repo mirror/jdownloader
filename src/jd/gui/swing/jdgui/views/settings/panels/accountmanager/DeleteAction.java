@@ -5,13 +5,13 @@ import java.awt.event.ActionEvent;
 import javax.swing.AbstractAction;
 
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.images.Theme;
+import org.jdownloader.images.NewTheme;
 
 public class DeleteAction extends TableBarAction {
     public DeleteAction() {
 
         this.putValue(NAME, _GUI._.settings_accountmanager_delete());
-        this.putValue(AbstractAction.SMALL_ICON, Theme.getIcon("delete", ActionColumn.SIZE));
+        this.putValue(AbstractAction.SMALL_ICON, NewTheme.I().getIcon("delete", ActionColumn.SIZE));
     }
 
     public void actionPerformed(ActionEvent e) {

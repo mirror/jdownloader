@@ -12,7 +12,7 @@ import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.extraction.translate.T;
 import org.jdownloader.gui.settings.Pair;
-import org.jdownloader.images.Theme;
+import org.jdownloader.images.NewTheme;
 
 public class ExtractionConfigPanel extends ExtensionConfigPanel<ExtractionExtension> {
 
@@ -38,7 +38,7 @@ public class ExtractionConfigPanel extends ExtensionConfigPanel<ExtractionExtens
         //
         // plg.getSettings().isAskForUnknownPasswordsEnabled()
 
-        this.addHeader(T._.settings_extractto(), Theme.getIcon("folder", 32));
+        this.addHeader(T._.settings_extractto(), NewTheme.I().getIcon("folder", 32));
         toggleCustomizedPath = this.addPair(T._.settings_extract_to_archive_folder(), new Checkbox());
         customPath = this.addPair(T._.settings_extract_to_path(), new FolderChooser("custom_extraction_path"));
         customPath.setConditionPair(toggleCustomizedPath);
@@ -52,7 +52,7 @@ public class ExtractionConfigPanel extends ExtensionConfigPanel<ExtractionExtens
         toggleUseSubpathOnlyIfNotFoldered.setConditionPair(toggleUseSubpath);
         subPath = this.addPair(T._.settings_subpath(), new TextInput());
         subPath.setConditionPair(toggleUseSubpath);
-        this.addHeader(T._.settings_various(), Theme.getIcon("settings", 32));
+        this.addHeader(T._.settings_various(), NewTheme.I().getIcon("settings", 32));
         toggleDeleteArchives = this.addPair(T._.settings_remove_after_extract(), new Checkbox());
         toggleOverwriteExisting = this.addPair(T._.settings_overwrite(), new Checkbox());
 

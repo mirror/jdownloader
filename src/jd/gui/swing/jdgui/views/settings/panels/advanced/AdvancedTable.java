@@ -15,4 +15,8 @@ public class AdvancedTable extends SettingsTable<AdvancedConfigEntry> {
         return true;
     }
 
+    public void filter(String text) {
+        ((AdvancedTableModel) this.getExtTableModel()).filter(text);
+    }
+
 }

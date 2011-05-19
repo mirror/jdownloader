@@ -6,7 +6,7 @@ import jd.DecryptPluginWrapper;
 import jd.HostPluginWrapper;
 
 import org.jdownloader.gui.settings.AbstractConfigPanel;
-import org.jdownloader.images.Theme;
+import org.jdownloader.images.NewTheme;
 import org.jdownloader.translate._JDT;
 
 public class PluginSettings extends AbstractConfigPanel {
@@ -19,7 +19,7 @@ public class PluginSettings extends AbstractConfigPanel {
 
     public PluginSettings() {
         super();
-        this.addHeader(getTitle(), Theme.getIcon("plugin", 32));
+        this.addHeader(getTitle(), NewTheme.I().getIcon("plugin", 32));
         this.addDescription(_JDT._.gui_settings_plugins_description(HostPluginWrapper.getHostWrapper().size() + DecryptPluginWrapper.getDecryptWrapper().size()));
 
         add(psp = new PluginSettingsPanel());
@@ -28,7 +28,7 @@ public class PluginSettings extends AbstractConfigPanel {
 
     @Override
     public ImageIcon getIcon() {
-        return Theme.getIcon("plugin", 32);
+        return NewTheme.I().getIcon("plugin", 32);
     }
 
     @Override

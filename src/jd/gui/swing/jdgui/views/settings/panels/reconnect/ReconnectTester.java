@@ -22,7 +22,7 @@ import jd.utils.JDUtilities;
 import org.appwork.app.gui.MigPanel;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.swing.EDTRunner;
-import org.jdownloader.images.Theme;
+import org.jdownloader.images.NewTheme;
 import org.jdownloader.translate._JDT;
 
 public class ReconnectTester extends MigPanel implements SettingsComponent, ActionListener {
@@ -73,7 +73,7 @@ public class ReconnectTester extends MigPanel implements SettingsComponent, Acti
 
     private void initComponents() {
         this.btnTest = new JButton(_JDT._.gui_config_reconnect_showcase_reconnect2());
-        this.btnTest.setIcon(Theme.getIcon("play", 20));
+        this.btnTest.setIcon(NewTheme.I().getIcon("play", 20));
         this.btnTest.addActionListener(this);
 
         this.lblDuration = new JLabel(_JDT._.gui_config_reconnect_showcase_time());
@@ -81,7 +81,7 @@ public class ReconnectTester extends MigPanel implements SettingsComponent, Acti
         this.lblTime = new JLabel("---");
         this.lblCurrentIP = new JLabel("---");
 
-        this.lblSuccessIcon = new JLabel(Theme.getIcon("ok", 32));
+        this.lblSuccessIcon = new JLabel(NewTheme.I().getIcon("ok", 32));
         this.lblSuccessIcon.setEnabled(false);
         this.lblSuccessIcon.setHorizontalTextPosition(SwingConstants.LEFT);
 
@@ -112,7 +112,7 @@ public class ReconnectTester extends MigPanel implements SettingsComponent, Acti
     private void testReconnect() {
         JDLogger.addHeader("Reconnect Testing");
 
-        final ProgressController progress = new ProgressController(100, _JDT._.gui_warning_reconnect_pleaseWait(), Theme.getIcon("reconnect", 20));
+        final ProgressController progress = new ProgressController(100, _JDT._.gui_warning_reconnect_pleaseWait(), NewTheme.I().getIcon("reconnect", 20));
         btnTest.setEnabled(false);
         Log.L.info("Start Reconnect");
         this.lblStatusMessage.setText(_JDT._.gui_warning_reconnect_running());
@@ -172,7 +172,7 @@ public class ReconnectTester extends MigPanel implements SettingsComponent, Acti
                                 } else {
                                     lblStatusMessage.setText(_JDT._.gui_warning_reconnectSuccess());
                                 }
-                                lblSuccessIcon.setIcon(Theme.getIcon("true", 32));
+                                lblSuccessIcon.setIcon(NewTheme.I().getIcon("true", 32));
                                 lblSuccessIcon.setEnabled(true);
                                 lblStatusMessage.setEnabled(true);
                                 if (JSonWrapper.get("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) {
@@ -191,7 +191,7 @@ public class ReconnectTester extends MigPanel implements SettingsComponent, Acti
                             @Override
                             protected void runInEDT() {
                                 lblStatusMessage.setText(_JDT._.gui_warning_reconnectFailed());
-                                lblSuccessIcon.setIcon(Theme.getIcon("false", 32));
+                                lblSuccessIcon.setIcon(NewTheme.I().getIcon("false", 32));
                                 lblSuccessIcon.setEnabled(true);
                                 if (JSonWrapper.get("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) {
                                     lblCurrentIP.setText("?");

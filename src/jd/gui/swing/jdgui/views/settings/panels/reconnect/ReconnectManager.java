@@ -22,7 +22,7 @@ import org.appwork.storage.StorageKeyAddedEvent;
 import org.appwork.storage.StorageValueChangeEvent;
 import org.appwork.utils.event.DefaultEventListener;
 import org.appwork.utils.swing.EDTRunner;
-import org.jdownloader.images.Theme;
+import org.jdownloader.images.NewTheme;
 import org.jdownloader.translate._JDT;
 
 public class ReconnectManager extends MigPanel implements SettingsComponent, ActionListener, DefaultEventListener<StorageEvent<?>> {
@@ -105,7 +105,7 @@ public class ReconnectManager extends MigPanel implements SettingsComponent, Act
                 return ret;
             }
         });
-        this.autoButton = new JButton(_JDT._.reconnectmanager_wizard(), Theme.getIcon("wizard", 20));
+        this.autoButton = new JButton(_JDT._.reconnectmanager_wizard(), NewTheme.I().getIcon("wizard", 20));
         this.autoButton.addActionListener(this);
 
         this.card = new MigPanel("ins 0", "[grow,fill]", "[grow,fill]");

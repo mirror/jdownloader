@@ -15,7 +15,7 @@ import org.appwork.utils.swing.table.ExtTableModel;
 import org.appwork.utils.swing.table.columns.ExtCheckColumn;
 import org.appwork.utils.swing.table.columns.ExtComboColumn;
 import org.jdownloader.extensions.antireconnect.translate.T;
-import org.jdownloader.images.Theme;
+import org.jdownloader.images.NewTheme;
 
 public class FilterTableModel extends ExtTableModel<LinkFilter> {
 
@@ -41,7 +41,7 @@ public class FilterTableModel extends ExtTableModel<LinkFilter> {
                     @Override
                     public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
                         super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-                        setIcon(Theme.getIcon("ok", 14));
+                        setIcon(NewTheme.I().getIcon("ok", 14));
                         setHorizontalAlignment(CENTER);
                         setText(null);
                         return this;
@@ -168,7 +168,7 @@ public class FilterTableModel extends ExtTableModel<LinkFilter> {
                     @Override
                     public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
                         super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-                        setIcon(Theme.getIcon("regex", 14));
+                        setIcon(NewTheme.I().getIcon("regex", 14));
                         setHorizontalAlignment(CENTER);
                         setText(null);
                         return this;

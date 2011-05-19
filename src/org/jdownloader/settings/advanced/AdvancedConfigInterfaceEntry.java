@@ -28,7 +28,7 @@ public class AdvancedConfigInterfaceEntry implements AdvancedConfigEntry {
     }
 
     public String getKey() {
-        return configInterface.getStorageHandler().getConfigInterface().getSimpleName() + "." + keyHandler.getKey();
+        return configInterface.getStorageHandler().getConfigInterface().getSimpleName().replace("Config", "") + "." + keyHandler.getKey();
     }
 
     public Object getValue() {

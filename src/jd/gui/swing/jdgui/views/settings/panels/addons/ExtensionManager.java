@@ -26,7 +26,7 @@ import org.appwork.utils.swing.table.ExtTable;
 import org.jdownloader.extensions.AbstractExtensionWrapper;
 import org.jdownloader.gui.settings.AbstractConfigPanel;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.images.Theme;
+import org.jdownloader.images.NewTheme;
 import org.jdownloader.translate._JDT;
 
 /**
@@ -35,7 +35,7 @@ import org.jdownloader.translate._JDT;
 public class ExtensionManager extends AbstractConfigPanel {
 
     public ImageIcon getIcon() {
-        return Theme.getIcon("extension", 32);
+        return NewTheme.I().getIcon("extension", 32);
     }
 
     private static final long                  serialVersionUID = 4145243293360008779L;

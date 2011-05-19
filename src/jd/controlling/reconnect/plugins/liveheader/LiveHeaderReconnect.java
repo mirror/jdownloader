@@ -64,7 +64,7 @@ import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.appwork.utils.swing.dialog.InputDialog;
-import org.jdownloader.images.Theme;
+import org.jdownloader.images.NewTheme;
 import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
@@ -125,7 +125,7 @@ public class LiveHeaderReconnect extends RouterPlugin implements ActionListener,
 
     public LiveHeaderReconnect() {
         super();
-        this.icon = Theme.getIcon("modem", 16);
+        this.icon = NewTheme.I().getIcon("modem", 16);
 
         // only listen to system to autosend script
         JDController.getInstance().addControlListener(this);

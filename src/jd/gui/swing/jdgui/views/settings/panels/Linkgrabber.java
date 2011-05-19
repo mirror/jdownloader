@@ -24,7 +24,7 @@ import jd.gui.swing.jdgui.views.settings.components.LinkgrabberFilter.Linkgrabbe
 
 import org.jdownloader.gui.settings.AbstractConfigPanel;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.images.Theme;
+import org.jdownloader.images.NewTheme;
 import org.jdownloader.translate._JDT;
 
 public class Linkgrabber extends AbstractConfigPanel {
@@ -43,7 +43,7 @@ public class Linkgrabber extends AbstractConfigPanel {
     public Linkgrabber() {
         super();
 
-        this.addHeader(getTitle(), Theme.getIcon("linkgrabber", 32));
+        this.addHeader(getTitle(), NewTheme.I().getIcon("linkgrabber", 32));
         this.addDescription(_JDT._.gui_settings_linkgrabber_description());
 
         checkLinks = new Checkbox();
@@ -54,7 +54,7 @@ public class Linkgrabber extends AbstractConfigPanel {
         addPair(_GUI._.gui_config_linkgrabber_replacechars(), rename);
         addPair(_GUI._.gui_config_linkgrabber_cnl2(), cnl);
 
-        this.addHeader(_GUI._.gui_config_linkgrabber_ignorelist(), Theme.getIcon("filter", 32));
+        this.addHeader(_GUI._.gui_config_linkgrabber_ignorelist(), NewTheme.I().getIcon("filter", 32));
         this.addDescription(_JDT._.gui_settings_linkgrabber_filter_description());
         filter = new LinkgrabberFilter();
         blackOrWhite = new ComboBox(new String[] { _GUI._.settings_linkgrabber_filter_blackorwhite_black(), _GUI._.settings_linkgrabber_filter_blackorwhite_white() });
@@ -66,7 +66,7 @@ public class Linkgrabber extends AbstractConfigPanel {
 
     @Override
     public ImageIcon getIcon() {
-        return Theme.getIcon("linkgrabber", 32);
+        return NewTheme.I().getIcon("linkgrabber", 32);
     }
 
     @Override

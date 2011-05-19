@@ -21,7 +21,7 @@ import javax.swing.ImageIcon;
 import jd.gui.swing.jdgui.views.settings.panels.basicauthentication.BasicAuthenticationPanel;
 
 import org.jdownloader.gui.settings.AbstractConfigPanel;
-import org.jdownloader.images.Theme;
+import org.jdownloader.images.NewTheme;
 import org.jdownloader.translate._JDT;
 
 public class BasicAuthentication extends AbstractConfigPanel {
@@ -34,7 +34,7 @@ public class BasicAuthentication extends AbstractConfigPanel {
 
     public BasicAuthentication() {
         super();
-        this.addHeader(getTitle(), Theme.getIcon("basicauth", 32));
+        this.addHeader(getTitle(), NewTheme.I().getIcon("basicauth", 32));
         this.addDescription(_JDT._.gui_settings_basicauth_description());
 
         add(BasicAuthenticationPanel.getInstance());
@@ -42,7 +42,7 @@ public class BasicAuthentication extends AbstractConfigPanel {
 
     @Override
     public ImageIcon getIcon() {
-        return Theme.getIcon("basicauth", 32);
+        return NewTheme.I().getIcon("basicauth", 32);
     }
 
     @Override

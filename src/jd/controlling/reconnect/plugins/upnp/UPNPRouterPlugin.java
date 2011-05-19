@@ -62,7 +62,7 @@ import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.appwork.utils.swing.dialog.ProgressDialog;
 import org.appwork.utils.swing.dialog.ProgressDialog.ProgressGetter;
-import org.jdownloader.images.Theme;
+import org.jdownloader.images.NewTheme;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -87,7 +87,7 @@ public class UPNPRouterPlugin extends RouterPlugin implements ActionListener, IP
 
     public UPNPRouterPlugin() {
         super();
-        icon = Theme.getIcon("upnp", 16);
+        icon = NewTheme.I().getIcon("upnp", 16);
     }
 
     public void actionPerformed(final ActionEvent e) {

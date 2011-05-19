@@ -21,7 +21,7 @@ import javax.swing.ImageIcon;
 import jd.gui.swing.jdgui.views.settings.panels.accountmanager.AccountManager;
 
 import org.jdownloader.gui.settings.AbstractConfigPanel;
-import org.jdownloader.images.Theme;
+import org.jdownloader.images.NewTheme;
 import org.jdownloader.translate._JDT;
 
 public class AccountManagerSettings extends AbstractConfigPanel {
@@ -34,7 +34,7 @@ public class AccountManagerSettings extends AbstractConfigPanel {
 
     public AccountManagerSettings() {
         super();
-        this.addHeader(getTitle(), Theme.getIcon("premium", 32));
+        this.addHeader(getTitle(), NewTheme.I().getIcon("premium", 32));
         this.addDescription(_JDT._.gui_settings_premium_description());
 
         add(AccountManager.getInstance());
@@ -42,7 +42,7 @@ public class AccountManagerSettings extends AbstractConfigPanel {
 
     @Override
     public ImageIcon getIcon() {
-        return Theme.getIcon("premium", 32);
+        return NewTheme.I().getIcon("premium", 32);
     }
 
     @Override

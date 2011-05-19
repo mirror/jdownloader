@@ -29,7 +29,7 @@ import org.jdownloader.extensions.ExtensionController;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.images.Theme;
+import org.jdownloader.images.NewTheme;
 import org.jdownloader.translate._JDT;
 
 public class ExtensionsTable extends SettingsTable<AbstractExtensionWrapper> implements SettingsComponent {
@@ -70,7 +70,7 @@ public class ExtensionsTable extends SettingsTable<AbstractExtensionWrapper> imp
                         @Override
                         public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
                             super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-                            setIcon(Theme.getIcon("ok", 14));
+                            setIcon(NewTheme.I().getIcon("ok", 14));
                             setHorizontalAlignment(CENTER);
                             setText(null);
                             return this;

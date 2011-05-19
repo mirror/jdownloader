@@ -23,7 +23,7 @@ import org.appwork.utils.swing.table.columns.ExtPasswordEditorColumn;
 import org.appwork.utils.swing.table.columns.ExtProgressColumn;
 import org.appwork.utils.swing.table.columns.ExtTextColumn;
 import org.jdownloader.extensions.antireconnect.translate.T;
-import org.jdownloader.images.Theme;
+import org.jdownloader.images.NewTheme;
 
 public class PremiumAccountTableModel extends ExtTableModel<Account> {
 
@@ -61,7 +61,7 @@ public class PremiumAccountTableModel extends ExtTableModel<Account> {
                     @Override
                     public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
                         super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-                        setIcon(Theme.getIcon("ok", 14));
+                        setIcon(NewTheme.I().getIcon("ok", 14));
                         setHorizontalAlignment(CENTER);
                         setText(null);
                         return this;

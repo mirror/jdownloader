@@ -5,7 +5,7 @@ import java.awt.event.ActionEvent;
 import javax.swing.AbstractAction;
 
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.images.Theme;
+import org.jdownloader.images.NewTheme;
 
 public class BuyAction extends AbstractAction {
     /**
@@ -17,7 +17,7 @@ public class BuyAction extends AbstractAction {
     public BuyAction(PremiumAccountTable table) {
         this.table = table;
         this.putValue(NAME, _GUI._.settings_accountmanager_buy());
-        this.putValue(AbstractAction.SMALL_ICON, Theme.getIcon("buy", 20));
+        this.putValue(AbstractAction.SMALL_ICON, NewTheme.I().getIcon("buy", 20));
     }
 
     public void actionPerformed(ActionEvent e) {

@@ -15,7 +15,7 @@ import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.appwork.utils.swing.table.columns.ExtComponentColumn;
-import org.jdownloader.images.Theme;
+import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.advanced.AdvancedConfigEntry;
 
 public class EditColumn extends ExtComponentColumn<AdvancedConfigEntry> {
@@ -23,7 +23,7 @@ public class EditColumn extends ExtComponentColumn<AdvancedConfigEntry> {
         private AdvancedConfigEntry value;
 
         public InfoAction() {
-            super("Info", Theme.getIcon("info", 16));
+            super("Info", NewTheme.I().getIcon("info", 16));
         }
 
         public void actionPerformed(ActionEvent e) {
@@ -54,7 +54,7 @@ public class EditColumn extends ExtComponentColumn<AdvancedConfigEntry> {
         private AdvancedConfigEntry value;
 
         public ResetAction() {
-            super("Reset to Default", Theme.getIcon("reset", 16));
+            super("Reset to Default", NewTheme.I().getIcon("reset", 16));
         }
 
         public void actionPerformed(ActionEvent e) {

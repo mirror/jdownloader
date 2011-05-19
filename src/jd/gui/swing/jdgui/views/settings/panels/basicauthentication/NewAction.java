@@ -8,7 +8,7 @@ import jd.controlling.authentication.AuthenticationController;
 import jd.controlling.authentication.AuthenticationInfo;
 
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.images.Theme;
+import org.jdownloader.images.NewTheme;
 
 public class NewAction extends AbstractAction {
     /**
@@ -20,7 +20,7 @@ public class NewAction extends AbstractAction {
     public NewAction(AuthTable table) {
         this.table = table;
         this.putValue(NAME, _GUI._.settings_auth_add());
-        this.putValue(AbstractAction.SMALL_ICON, Theme.getIcon("add", 20));
+        this.putValue(AbstractAction.SMALL_ICON, NewTheme.I().getIcon("add", 20));
     }
 
     public void actionPerformed(ActionEvent e) {

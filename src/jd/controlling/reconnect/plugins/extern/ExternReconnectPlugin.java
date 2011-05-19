@@ -28,7 +28,7 @@ import net.miginfocom.swing.MigLayout;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.TextComponentChangeListener;
-import org.jdownloader.images.Theme;
+import org.jdownloader.images.NewTheme;
 
 /**
  * Plugin to use an extern tool for reconnection
@@ -55,7 +55,7 @@ public class ExternReconnectPlugin extends RouterPlugin implements ActionListene
 
     public ExternReconnectPlugin() {
         super();
-        icon = Theme.getIcon("console", 16);
+        icon = NewTheme.I().getIcon("console", 16);
     }
 
     @Override

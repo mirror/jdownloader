@@ -23,7 +23,7 @@ import jd.gui.swing.jdgui.views.settings.components.Spinner;
 
 import org.jdownloader.gui.settings.AbstractConfigPanel;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.images.Theme;
+import org.jdownloader.images.NewTheme;
 import org.jdownloader.translate._JDT;
 
 public class DownloadControll extends AbstractConfigPanel {
@@ -40,7 +40,7 @@ public class DownloadControll extends AbstractConfigPanel {
     public DownloadControll() {
         super();
 
-        this.addHeader(_JDT._.gui_settings_downloadcontroll_title(), Theme.getIcon("downloadmanagment", 32));
+        this.addHeader(_JDT._.gui_settings_downloadcontroll_title(), NewTheme.I().getIcon("downloadmanagment", 32));
         this.addDescription(_JDT._.gui_settings_downloadcontroll_description());
 
         maxSimPerHost = new Spinner(0, 20);
@@ -57,7 +57,7 @@ public class DownloadControll extends AbstractConfigPanel {
 
     @Override
     public ImageIcon getIcon() {
-        return Theme.getIcon("downloadmanagment", 32);
+        return NewTheme.I().getIcon("downloadmanagment", 32);
     }
 
     @Override

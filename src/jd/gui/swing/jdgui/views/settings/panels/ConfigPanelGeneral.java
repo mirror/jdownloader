@@ -23,7 +23,7 @@ import jd.gui.swing.jdgui.views.settings.components.FolderChooser;
 
 import org.jdownloader.gui.settings.AbstractConfigPanel;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.images.Theme;
+import org.jdownloader.images.NewTheme;
 import org.jdownloader.translate._JDT;
 
 public class ConfigPanelGeneral extends AbstractConfigPanel {
@@ -53,14 +53,14 @@ public class ConfigPanelGeneral extends AbstractConfigPanel {
         subfolder = new Checkbox();
         simpleContainer = new Checkbox();
 
-        this.addHeader(_GUI._.gui_config_general_downloaddirectory(), Theme.getIcon("downloadpath", 32));
+        this.addHeader(_GUI._.gui_config_general_downloaddirectory(), NewTheme.I().getIcon("downloadpath", 32));
         this.addDescription(_JDT._.gui_settings_downloadpath_description());
         this.add(downloadFolder);
         this.addPair(_GUI._.gui_config_general_createsubfolders(), subfolder);
 
         /* File Writing */
         autoCRC = new Checkbox();
-        this.addHeader(_GUI._.gui_config_download_write(), Theme.getIcon("hashsum", 32));
+        this.addHeader(_GUI._.gui_config_download_write(), NewTheme.I().getIcon("hashsum", 32));
         this.addDescription(_JDT._.gui_settings_filewriting_description());
         this.addPair(_GUI._.gui_config_download_crc(), autoCRC);
 
@@ -73,13 +73,13 @@ public class ConfigPanelGeneral extends AbstractConfigPanel {
         // T._.gui_config_reloadcontainer()));
         // ce.setDefaultValue(true);
 
-        this.addHeader(_GUI._.gui_config_various(), Theme.getIcon("settings", 32));
+        this.addHeader(_GUI._.gui_config_various(), NewTheme.I().getIcon("settings", 32));
         this.addPair(_GUI._.gui_config_simple_container(), simpleContainer);
     }
 
     @Override
     public ImageIcon getIcon() {
-        return Theme.getIcon("home", 32);
+        return NewTheme.I().getIcon("home", 32);
     }
 
     @Override

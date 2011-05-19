@@ -8,7 +8,7 @@ import javax.swing.JPanel;
 import net.miginfocom.swing.MigLayout;
 
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.images.Theme;
+import org.jdownloader.images.NewTheme;
 
 public class ExtensionHeader extends JPanel {
     /**
@@ -19,7 +19,7 @@ public class ExtensionHeader extends JPanel {
     public ExtensionHeader() {
         super(new MigLayout("ins 0,wrap 2", "[][grow,fill]", "[][]"));
         add(Box.createGlue(), "spanx,height 15!");
-        add(new JLabel(Theme.getIcon("extension", 32)));
+        add(new JLabel(NewTheme.I().getIcon("extension", 32)));
         add(new JLabel(_GUI._.extensionManager_title()));
         setOpaque(false);
 

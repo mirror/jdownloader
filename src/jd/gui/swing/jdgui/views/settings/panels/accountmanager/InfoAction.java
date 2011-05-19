@@ -12,7 +12,7 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.images.Theme;
+import org.jdownloader.images.NewTheme;
 
 public class InfoAction extends TableBarAction {
     private PluginForHost plugin;
@@ -20,7 +20,7 @@ public class InfoAction extends TableBarAction {
     public InfoAction() {
 
         this.putValue(NAME, _GUI._.settings_accountmanager_info());
-        this.putValue(AbstractAction.SMALL_ICON, Theme.getIcon("info", ActionColumn.SIZE));
+        this.putValue(AbstractAction.SMALL_ICON, NewTheme.I().getIcon("info", ActionColumn.SIZE));
     }
 
     public void actionPerformed(ActionEvent e) {

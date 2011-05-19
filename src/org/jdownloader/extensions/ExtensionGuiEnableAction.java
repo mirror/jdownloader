@@ -12,7 +12,7 @@ import jd.controlling.JDLogger;
 import jd.nutils.JDImage;
 
 import org.appwork.utils.Application;
-import org.appwork.utils.images.IconIO;
+import org.jdownloader.images.NewTheme;
 
 public class ExtensionGuiEnableAction extends AbstractAction {
 
@@ -66,9 +66,9 @@ public class ExtensionGuiEnableAction extends AbstractAction {
             Image checkBox;
 
             if (selected) {
-                checkBox = IconIO.getImage(ExtensionGuiEnableAction.class.getResource("/org/jdownloader/img/enabled.png"));
+                checkBox = NewTheme.I().getImage("enabled", 12);
             } else {
-                checkBox = IconIO.getImage(ExtensionGuiEnableAction.class.getResource("/org/jdownloader/img/disabled.png"));
+                checkBox = NewTheme.I().getImage("disabled", 12);
             }
 
             BufferedImage ret = new BufferedImage(img.getWidth(null), img.getHeight(null), BufferedImage.TYPE_INT_ARGB);

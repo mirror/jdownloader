@@ -24,7 +24,7 @@ import jd.gui.swing.jdgui.views.settings.panels.reconnect.ReconnectManager;
 import jd.gui.swing.jdgui.views.settings.panels.reconnect.ReconnectTester;
 
 import org.jdownloader.gui.settings.AbstractConfigPanel;
-import org.jdownloader.images.Theme;
+import org.jdownloader.images.NewTheme;
 import org.jdownloader.translate._JDT;
 
 public class ReconnectSettings extends AbstractConfigPanel {
@@ -38,10 +38,10 @@ public class ReconnectSettings extends AbstractConfigPanel {
 
     public ReconnectSettings() {
         super();
-        this.addHeader(_JDT._.gui_settings_reconnect_title_method(), Theme.getIcon("reconnect", 32));
+        this.addHeader(_JDT._.gui_settings_reconnect_title_method(), NewTheme.I().getIcon("reconnect", 32));
 
         add(new ReconnectManager());
-        this.addHeader(_JDT._.gui_settings_reconnect_title_test(), Theme.getIcon("test", 32));
+        this.addHeader(_JDT._.gui_settings_reconnect_title_test(), NewTheme.I().getIcon("test", 32));
 
         add(tester = new ReconnectTester());
 
@@ -49,7 +49,7 @@ public class ReconnectSettings extends AbstractConfigPanel {
 
     @Override
     public ImageIcon getIcon() {
-        return Theme.getIcon("reconnect", 32);
+        return NewTheme.I().getIcon("reconnect", 32);
     }
 
     @Override

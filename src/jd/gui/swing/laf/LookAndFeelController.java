@@ -34,7 +34,7 @@ import org.appwork.storage.TypeRef;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Application;
 import org.appwork.utils.logging.Log;
-import org.jdownloader.images.Theme;
+import org.jdownloader.images.NewTheme;
 
 public class LookAndFeelController {
     private static final String                DE_JAVASOFT_PLAF_SYNTHETICA_SYNTHETICA_SIMPLE2D_LOOK_AND_FEEL = "de.javasoft.plaf.synthetica.SyntheticaSimple2DLookAndFeel";
@@ -187,7 +187,7 @@ public class LookAndFeelController {
                 try {
                     defaultLAF = laf.equals(DE_JAVASOFT_PLAF_SYNTHETICA_SYNTHETICA_SIMPLE2D_LOOK_AND_FEEL);
 
-                    String str = Theme.getText("/lafoptions/" + laf + ".json");
+                    String str = NewTheme.I().getText("lafoptions/" + laf + ".json");
                     if (str != null) {
 
                         lafOptions = JSonStorage.restoreFromString(str, new TypeRef<LAFOptions>() {

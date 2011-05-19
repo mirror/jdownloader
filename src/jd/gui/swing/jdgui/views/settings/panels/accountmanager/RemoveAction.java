@@ -6,7 +6,7 @@ import javax.swing.AbstractAction;
 
 import org.appwork.utils.swing.table.utils.MinimumSelectionObserver;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.images.Theme;
+import org.jdownloader.images.NewTheme;
 
 public class RemoveAction extends AbstractAction {
     /**
@@ -18,7 +18,7 @@ public class RemoveAction extends AbstractAction {
     public RemoveAction(PremiumAccountTable table) {
         this.table = table;
         this.putValue(NAME, _GUI._.settings_accountmanager_delete());
-        this.putValue(AbstractAction.SMALL_ICON, Theme.getIcon("remove", 20));
+        this.putValue(AbstractAction.SMALL_ICON, NewTheme.I().getIcon("remove", 20));
         table.getSelectionModel().addListSelectionListener(new MinimumSelectionObserver(table, this, 1));
 
     }
