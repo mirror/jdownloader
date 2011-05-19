@@ -22,17 +22,18 @@ import java.io.IOException;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.http.Browser;
 import jd.http.RandomUserAgent;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -70,8 +71,10 @@ public class Freaksharenet extends PluginForHost {
         final String ajax = br.getRegex("\\$\\.get\\(\"\\.\\./\\.\\.(.*?)\",").getMatch(0);
         if (form == null || ajax == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         // waittime
-        br.cloneBrowser().openGetConnection("http://freakshare.com" + ajax);
-        final String ttt = br.getRegex("var time = (\\d+)\\.[0-9];").getMatch(0);
+        final Browser br2 = br.cloneBrowser();
+        br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        br2.getPage("http://freakshare.com" + ajax);
+        final String ttt = br2.getRegex("SUCCESS:(\\d+)").getMatch(0);
         int tt = 0;
         if (ttt != null) {
             tt = Integer.parseInt(ttt);
