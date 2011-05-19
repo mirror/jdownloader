@@ -61,7 +61,7 @@ public class ZidduCom extends PluginForHost {
          */
         if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
-            if (br.containsHTML("Oops The requested URL  was not found on this server")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error!");
+            if (br.containsHTML("(The requested URL  was not found on this server|> Oops \\!\\!)")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error!");
             throw new PluginException(LinkStatus.ERROR_CAPTCHA, JDL.L("downloadlink.status.error.captcha_wrong", "Captcha wrong"));
         }
         dl.startDownload();

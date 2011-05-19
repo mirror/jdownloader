@@ -16,23 +16,25 @@
 
 package jd.plugins.hoster;
 
-import java.io.IOException;
+import java.util.HashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
+import jd.http.Cookie;
+import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "facebook.com" }, urls = { "http://[\\w\\.]*?facebook\\.com/video/video\\.php\\?v=\\d+" }, flags = { 2 })
 public class FaceBookComVideos extends PluginForHost {
@@ -40,65 +42,56 @@ public class FaceBookComVideos extends PluginForHost {
     private String              dllink           = null;
     private static String       FACEBOOKMAINPAGE = "http://www.facebook.com";
     private static final String DLLINKREGEXP     = "\\(\"(highqual|video)_src\", \"(http.*?)\"\\)";
+    private static final Object LOCK             = new Object();
 
     public FaceBookComVideos(final PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.facebook.com/r.php");
     }
 
-    public boolean checkLinks(final DownloadLink[] urls) {
-        if (urls == null || urls.length == 0) { return false; }
-        try {
-            br.setCookie("http://www.facebook.com", "locale", "en_GB");
-            final Account aa = AccountController.getInstance().getValidAccount(this);
-            if (aa == null || !aa.isValid()) { throw new PluginException(LinkStatus.ERROR_FATAL, "Kann Links ohne gültigen Account nicht überprüfen"); }
-            br.setFollowRedirects(true);
-            login(aa);
-            for (final DownloadLink dl : urls) {
-                final String addedlink = dl.getDownloadURL();
-                br.getPage(addedlink);
-                if (br.containsHTML("No htmlCode read")) {
-                    dl.setAvailable(false);
-                    continue;
-                }
-                dllink = Encoding.urlDecode(decodeUnicode(br.getRegex(DLLINKREGEXP).getMatch(1)), true);
-                // extrahiere Videoname aus HTML-Quellcode
-                String filename = br.getRegex("class=\"video_title datawrap\">(.*)</h3>").getMatch(0);
+    public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
+        br.setCookie("http://www.facebook.com", "locale", "en_GB");
+        final Account aa = AccountController.getInstance().getValidAccount(this);
+        if (aa == null || !aa.isValid()) throw new PluginException(LinkStatus.ERROR_FATAL, "Kann Links ohne gültigen Account nicht überprüfen");
+        br.setFollowRedirects(true);
+        login(aa, false);
+        br.getPage(link.getDownloadURL());
+        String getThisPage = br.getRegex("window\\.location\\.replace\\(\"(http:.*?)\"").getMatch(0);
+        if (getThisPage != null) br.getPage(getThisPage.replace("\\", ""));
+        if (br.containsHTML("(No htmlCode read|>Dieses Video wurde entweder von Facebook entfernt oder)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        dllink = Encoding.urlDecode(decodeUnicode(br.getRegex(DLLINKREGEXP).getMatch(1)), true);
+        // extrahiere Videoname aus HTML-Quellcode
+        String filename = br.getRegex("class=\"video_title datawrap\">(.*)</h3>").getMatch(0);
 
-                // wird nichts gefunden, versuche Videoname aus einem anderen
-                // Teil des Quellcodes rauszusuchen
-                if (filename == null) {
-                    filename = br.getRegex("<title>Facebook \\| Videos posted by .*: (.*)</title>").getMatch(0);
-                }
-
-                // falls Videoname immer noch nicht gefunden wurde, dann
-                // versuche Username & Video-ID als Filename zu nehmen
-                if (filename == null) {
-                    filename = br.getRegex("<title>Facebook \\| Videos posted by (.*): .*</title>").getMatch(0).trim();
-
-                    // falls Username gefunden wurde, so setze dies und Video-ID
-                    // zusammen
-                    if (filename != null) {
-                        final String videoid = new Regex(dl.getDownloadURL(), "facebook\\.com/video/video\\.php\\?v=(\\d+)").getMatch(0);
-                        filename = filename + " - Video_" + videoid;
-                    }
-                }
-
-                // wurde Filename extrahiert, setze entgültiger Dateiname &
-                // Dateiendung
-                if (filename != null) {
-                    filename = filename.trim();
-                    dl.setFinalFileName(filename + ".mp4");
-                    dl.setAvailable(true);
-                } else {
-                    // falls nicht, so setze den Download als nicht verfügbar
-                    dl.setAvailable(false);
-                }
-            }
-        } catch (final Exception e) {
-            return false;
+        // wird nichts gefunden, versuche Videoname aus einem anderen
+        // Teil des Quellcodes rauszusuchen
+        if (filename == null) {
+            filename = br.getRegex("<title>Facebook \\| Videos posted by .*: (.*)</title>").getMatch(0);
         }
-        return true;
+
+        // falls Videoname immer noch nicht gefunden wurde, dann
+        // versuche Username & Video-ID als Filename zu nehmen
+        if (filename == null) {
+            filename = br.getRegex("<title>Facebook \\| Videos posted by (.*): .*</title>").getMatch(0).trim();
+
+            // falls Username gefunden wurde, so setze dies und Video-ID
+            // zusammen
+            if (filename != null) {
+                final String videoid = new Regex(link.getDownloadURL(), "facebook\\.com/video/video\\.php\\?v=(\\d+)").getMatch(0);
+                filename = filename + " - Video_" + videoid;
+            }
+        }
+
+        // wurde Filename extrahiert, setze entgültiger Dateiname &
+        // Dateiendung
+        if (filename != null) {
+            filename = filename.trim();
+            link.setFinalFileName(filename + ".mp4");
+            return AvailableStatus.TRUE;
+        } else {
+            // falls nicht, so setze den Download als nicht verfügbar
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
     }
 
     private String decodeUnicode(final String s) {
@@ -115,7 +108,7 @@ public class FaceBookComVideos extends PluginForHost {
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
         try {
-            login(account);
+            login(account, true);
         } catch (final PluginException e) {
             account.setValid(false);
             return ai;
@@ -169,28 +162,43 @@ public class FaceBookComVideos extends PluginForHost {
         dl.startDownload();
     }
 
-    public void login(final Account account) throws Exception {
-        setBrowserExclusive();
-        br.setDebug(true);
-        br.setFollowRedirects(true);
-        br.getPage(FACEBOOKMAINPAGE);
-        final Form loginForm = br.getForm(0);
-        if (loginForm == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-        loginForm.remove("persistent");
-        loginForm.remove(null);
-        loginForm.put("email", account.getUser());
-        loginForm.put("pass", Encoding.urlEncode(account.getPass()));
-        br.submitForm(loginForm);
-        if (br.getCookie(FACEBOOKMAINPAGE, "c_user") == null || br.getCookie(FACEBOOKMAINPAGE, "xs") == null) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE); }
-    }
-
-    @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException {
-        checkLinks(new DownloadLink[] { downloadLink });
-        if (!downloadLink.isAvailabilityStatusChecked()) {
-            downloadLink.setAvailableStatus(AvailableStatus.UNCHECKABLE);
+    @SuppressWarnings("unchecked")
+    public void login(final Account account, final boolean force) throws Exception {
+        synchronized (LOCK) {
+            // Load cookies
+            br.setCookiesExclusive(false);
+            final Object ret = account.getProperty("cookies", null);
+            boolean acmatch = account.getUser().matches(account.getStringProperty("name", account.getUser()));
+            if (acmatch) acmatch = account.getPass().matches(account.getStringProperty("pass", account.getPass()));
+            if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
+                final HashMap<String, String> cookies = (HashMap<String, String>) ret;
+                if (cookies.containsKey("c_user") && cookies.containsKey("xs") && account.isValid()) {
+                    for (final String key : cookies.keySet()) {
+                        this.br.setCookie(FACEBOOKMAINPAGE, key, cookies.get(key));
+                    }
+                    return;
+                }
+            }
+            br.setFollowRedirects(true);
+            br.getPage(FACEBOOKMAINPAGE);
+            final Form loginForm = br.getForm(0);
+            if (loginForm == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+            loginForm.remove("persistent");
+            loginForm.remove(null);
+            loginForm.put("email", account.getUser());
+            loginForm.put("pass", Encoding.urlEncode(account.getPass()));
+            br.submitForm(loginForm);
+            if (br.getCookie(FACEBOOKMAINPAGE, "c_user") == null || br.getCookie(FACEBOOKMAINPAGE, "xs") == null) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE); }
+            // Save cookies
+            final HashMap<String, String> cookies = new HashMap<String, String>();
+            final Cookies add = this.br.getCookies(FACEBOOKMAINPAGE);
+            for (final Cookie c : add.getCookies()) {
+                cookies.put(c.getKey(), c.getValue());
+            }
+            account.setProperty("name", account.getUser());
+            account.setProperty("pass", account.getPass());
+            account.setProperty("cookies", cookies);
         }
-        return downloadLink.getAvailableStatus();
     }
 
     @Override
