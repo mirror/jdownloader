@@ -29,7 +29,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "musicore.net" }, urls = { "http://(www\\.)?(r\\.)?musicore\\.net/(forums/index\\.php\\?/topic/\\d+-|forums/index\\.php\\?showtopic=\\d+|url\\.php\\?id=[A-Za-z0-9]+\\&url=[a-zA-Z0-9=\\+/\\-]+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "musicore.net" }, urls = { "http(s)?://(www\\.)?(r\\.)?musicore\\.net/(forums/index\\.php\\?/topic/\\d+-|forums/index\\.php\\?showtopic=\\d+|\\?id=[A-Za-z0-9]+\\&url=[a-zA-Z0-9=\\+/\\-]+)" }, flags = { 0 })
 public class MsCreNt extends PluginForDecrypt {
 
     public MsCreNt(PluginWrapper wrapper) {
@@ -56,7 +56,9 @@ public class MsCreNt extends PluginForDecrypt {
             String topicID = new Regex(parameter, "(topic/|showtopic=)(\\d+)").getMatch(1);
             if (topicID == null) return null;
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+            br.setFollowRedirects(true);
             br.getPage("http://musicore.net/ajax/release.php?id=" + topicID);
+            br.setFollowRedirects(false);
             String redirectlinks[] = br.getRegex("(\\'|\")(http://r\\.musicore\\.net/\\?id=.*?url=.*?)(\\'|\")").getColumn(1);
             if (redirectlinks == null || redirectlinks.length == 0) return null;
             br.getPage("http://musicore.net/ajax/ftp.php?id=" + topicID);
