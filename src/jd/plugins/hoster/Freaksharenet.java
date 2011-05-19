@@ -55,6 +55,7 @@ public class Freaksharenet extends PluginForHost {
         setConfigElements();
     }
 
+    @Override
     public void correctDownloadLink(final DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replace("freakshare.net", "freakshare.com"));
     }
@@ -66,8 +67,10 @@ public class Freaksharenet extends PluginForHost {
         handleFreeErrors();
         br.setFollowRedirects(false);
         Form form = br.getForm(1);
-        if (form == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        final String ajax = br.getRegex("\\$\\.get\\(\"\\.\\./\\.\\.(.*?)\",").getMatch(0);
+        if (form == null || ajax == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         // waittime
+        br.cloneBrowser().openGetConnection("http://freakshare.com" + ajax);
         final String ttt = br.getRegex("var time = (\\d+)\\.[0-9];").getMatch(0);
         int tt = 0;
         if (ttt != null) {
