@@ -80,6 +80,9 @@ public class TurboBitNet extends PluginForHost {
             fileName = br.getRegex("<span class='file-icon.*?'>(.*?)</span>").getMatch(0);
         }
         String fileSize = br.getRegex("(File size|Dateiumfang):</b>(.*?)</div>").getMatch(1);
+        if (fileSize == null) {
+            fileSize = br.getRegex("<span class='file-icon.*?'>.*?</span>.*?\\((.*?)\\)").getMatch(0);
+        }
         if (fileName == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         downloadLink.setName(fileName.trim());
         if (fileSize != null) {
