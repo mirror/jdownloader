@@ -19,6 +19,7 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
@@ -46,11 +47,15 @@ public class MinUs extends PluginForHost {
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("(<h2>Not found\\.</h2>|<p>Our records indicate that the gallery/image you are referencing has been deleted or does not exist)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("\\[\\{\"name\": \"(.*?)\"").getMatch(0);
+        if (filename == null) filename = br.getRegex("rel=\"image_src\" href=\"http://i\\.min\\.us/(.*?)\"").getMatch(0);
         String filesize = br.getRegex("\"filesize\": \"(.*?)\"").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         // Set the final filename here because servers send other/internal or
         // wrong names
-        link.setFinalFileName(filename.trim());
+        if (filename != null)
+            link.setFinalFileName(filename.trim());
+        else
+            link.setName(new Regex(link.getDownloadURL(), "min\\.us/(.+)").getMatch(0));
         link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
     }
@@ -67,6 +72,7 @@ public class MinUs extends PluginForHost {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        if (downloadLink.getFinalFileName() == null) downloadLink.setFinalFileName(getFileNameFromHeader(dl.getConnection()));
         dl.startDownload();
     }
 

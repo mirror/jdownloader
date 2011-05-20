@@ -48,6 +48,8 @@ public class FourSharedCom extends PluginForHost {
         enablePremium("http://www.4shared.com/ref/14368016/1");
     }
 
+    private static final String PASSWORDTEXT = "enter a password to access";
+
     @Override
     public void correctDownloadLink(final DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replaceAll("\\.viajd", ".com"));
@@ -95,7 +97,7 @@ public class FourSharedCom extends PluginForHost {
             ai.setTrafficMax(SizeFormatter.getSize(dat[1]));
             ai.setTrafficLeft((long) (ai.getTrafficMax() * (100.0 - Float.parseFloat(dat[0])) / 100.0));
         }
-        final String accountDetails = br.getRegex("(/account/myAccount.jsp\\?sId=[^\"]+)").getMatch(0);
+        final String accountDetails = br.getRegex("(/account/myAccount\\.jsp\\?sId=[^\"]+)").getMatch(0);
         br.getPage(accountDetails);
         final String expire = br.getRegex("<td>Expiration Date:</td>.*?<td>(.*?)<span").getMatch(0);
         ai.setValidUntil(TimeFormatter.getMilliSeconds(expire.trim(), "yyyy-MM-dd", Locale.UK));
@@ -116,6 +118,7 @@ public class FourSharedCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
+        String pass = handlePassword(downloadLink);
         String url = null;
         // If file isn't available for freeusers we can still try to get the
         // streamlink
@@ -133,12 +136,7 @@ public class FourSharedCom extends PluginForHost {
             url = br.getRegex("<a href=\"(http://(www\\.)?4shared(\\-china)?\\.com/get[^\\;\"]*).*?\" class=\".*?dbtn.*?\" tabindex=\"1\"").getMatch(0);
             if (url == null) url = br.getRegex("\"(http://(www\\.)?4shared(\\-china)?\\.com/get/[A-Za-z0-9\\-_]+/.*?)\"").getMatch(0);
             if (url == null) {
-                /* maybe directdownload */
-                url = br.getRegex("startDownload.*?window\\.location.*?(http://.*?)\"").getMatch(0);
-                if (url == null) {
-                    /* maybe picture download */
-                    url = br.getRegex("\"(http://dc\\d+\\.4shared(\\-china)?\\.com/download/[A-Za-z0-9]+/.*?)\"").getMatch(0);
-                }
+                url = getDllink();
                 if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             } else {
                 br.getPage(url);
@@ -166,34 +164,46 @@ public class FourSharedCom extends PluginForHost {
             dl.getConnection().disconnect();
             throw new PluginException(LinkStatus.ERROR_RETRY, error);
         }
-        String pass = downloadLink.getStringProperty("pass");
         if (!dl.getConnection().isContentDisposition() && dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
-            if (br.containsHTML("enter a password to access")) {
-                final Form form = br.getFormbyProperty("name", "theForm");
-                if (form == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-
-                if (pass == null) {
-                    pass = getUserInput(null, downloadLink);
-                }
-                form.put("userPass2", pass);
-                dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, form, false, 1);
-                if (br.containsHTML("enter a password to access")) {
-                    downloadLink.setProperty("pass", null);
-                    throw new PluginException(LinkStatus.ERROR_FATAL, "Password wrong");
-                }
-            } else {
-                handleFreeErrors();
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
+            handleFreeErrors();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (!dl.getConnection().isContentDisposition() && dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             handleFreeErrors();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        downloadLink.setProperty("pass", pass);
+        if (pass != null) downloadLink.setProperty("pass", pass);
         dl.startDownload();
+    }
+
+    private String getDllink() {
+        /* maybe directdownload */
+        String url = br.getRegex("startDownload.*?window\\.location.*?(http://.*?)\"").getMatch(0);
+        if (url == null) {
+            /* maybe picture download */
+            url = br.getRegex("\"(http://dc\\d+\\.4shared(\\-china)?\\.com/download/[A-Za-z0-9]+/(?!desktop4shared).*?)\"").getMatch(0);
+        }
+        return url;
+    }
+
+    private String handlePassword(DownloadLink link) throws Exception {
+        String pass = link.getStringProperty("pass");
+        if (br.containsHTML(PASSWORDTEXT)) {
+            Form pwform = br.getFormbyProperty("name", "theForm");
+            if (pwform == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+            if (pass == null) {
+                pass = getUserInput(null, link);
+            }
+            pwform.put("userPass2", pass);
+            br.submitForm(pwform);
+            if (br.containsHTML(PASSWORDTEXT)) {
+                link.setProperty("pass", null);
+                throw new PluginException(LinkStatus.ERROR_FATAL, "Password wrong");
+            }
+        }
+        return pass;
     }
 
     private void handleFreeErrors() throws PluginException {
@@ -206,8 +216,10 @@ public class FourSharedCom extends PluginForHost {
     public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
         login(account);
         br.getPage(downloadLink.getDownloadURL());
+        String pass = handlePassword(downloadLink);
         // direct download or not?
-        final String link = br.getRedirectLocation() != null ? br.getRedirectLocation() : br.getRegex("function startDownload\\(\\)\\{.*?window.location = \"(.*?)\";").getMatch(0);
+        String link = br.getRedirectLocation();
+        if (link == null) link = getDllink();
         if (link == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, link, true, 0);
         final String error = new Regex(dl.getConnection().getURL(), "\\?error(.*)").getMatch(0);
@@ -220,6 +232,7 @@ public class FourSharedCom extends PluginForHost {
             if (br.containsHTML("(Servers Upgrade|4shared servers are currently undergoing a short-time maintenance)")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000l); }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        if (pass != null) downloadLink.setProperty("pass", pass);
         dl.startDownload();
     }
 
@@ -243,43 +256,14 @@ public class FourSharedCom extends PluginForHost {
             br.setFollowRedirects(true);
             br.getPage(downloadLink.getDownloadURL());
             // need password?
-            if (br.containsHTML("enter a password to access")) {
-                final Form form = br.getFormbyProperty("name", "theForm");
-                if (form == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-                // set password before in decrypter?
-                if (downloadLink.getProperty("pass") != null) {
-                    downloadLink.setDecrypterPassword(downloadLink.getProperty("pass").toString());
-                    form.put("userPass2", downloadLink.getDecrypterPassword());
-                    br.submitForm(form);
-                    // password not correct?
-                    // some subfolder can have different password
-                    if (br.containsHTML("enter a password to access")) {
-                        downloadLink.setDecrypterPassword(null);
-                    }
-                }
-                if (downloadLink.getDecrypterPassword() == null) {
-                    for (int retry = 5; retry > 0; retry--) {
-                        final String pass = getUserInput(null, downloadLink);
-                        form.put("userPass2", pass);
-                        br.submitForm(form);
-                        if (!br.containsHTML("enter a password to access")) {
-                            downloadLink.setProperty("pass", pass);
-                            downloadLink.setDecrypterPassword(pass);
-                            break;
-                        } else {
-                            if (retry == 1) {
-                                logger.severe("Wrong Password!");
-                            }
-                        }
-                    }
-                }
-            }
+            if (br.containsHTML(PASSWORDTEXT)) downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.foursharedcom.passwordprotected", "This link is password protected"));
             if (br.containsHTML("The file link that you requested is not valid")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
             String filename = br.getRegex(Pattern.compile("id=\"fileNameTextSpan\">(.*?)</span>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
             if (filename == null) {
                 filename = br.getRegex("title\" content=\"(.*?)\"").getMatch(0);
                 if (filename == null) {
-                    filename = br.getRegex("<title>(.*?) - 4shared\\.com - online file sharing and storage - download</title>").getMatch(0);
+                    filename = br.getRegex("<title>(.*?) \\- 4shared\\.com \\- online file sharing and storage \\- download</title>").getMatch(0);
+                    if (filename == null) filename = br.getRegex("<h1 id=\"fileNameText\">(.*?)</h1>").getMatch(0);
                 }
             }
             String size = br.getRegex("<td class=\"finforight lgraybox\" style=\"border-top:1px #dddddd solid\">([0-9,]+ [a-zA-Z]+)</td>").getMatch(0);

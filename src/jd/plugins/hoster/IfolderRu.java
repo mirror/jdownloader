@@ -24,11 +24,11 @@ import jd.http.RandomUserAgent;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -105,7 +105,7 @@ public class IfolderRu extends PluginForHost {
         String watchAd = br.getRegex("http://ints\\.ifolder\\.ru/ints/\\?(.*?)\"").getMatch(0);
         if (watchAd != null) {
             downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.ifolderru.errors.ticketwait", "Waiting for ticket"));
-            watchAd = "http://ints.ifolder.ru/ints/?".concat(watchAd);
+            watchAd = "http://ints.ifolder.ru/ints/?".concat(watchAd).replace("';", "");
             br.getPage(watchAd);
             watchAd = br.getRegex("<font size=\"\\+1\"><a href=(.*?)>").getMatch(0);
             // If they take the waittime out this part is optional
@@ -160,6 +160,12 @@ public class IfolderRu extends PluginForHost {
             captchaForm.put("confirmed_number", captchaCode);
             /* this hoster checks content encoding */
             captchaForm.setEncoding("application/x-www-form-urlencoded");
+            Regex specialStuff = br.getRegex("\"name=\\'(.*?)\\' value=\\'(.*?)\\'");
+            if (specialStuff.getMatch(0) != null && specialStuff.getMatch(1) != null) {
+                captchaForm.put(specialStuff.getMatch(0), specialStuff.getMatch(1));
+            } else {
+                logger.info("Specialstuff is null, this could cause trouble...");
+            }
             try {
                 br.submitForm(captchaForm);
             } catch (Exception e) {

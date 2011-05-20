@@ -39,10 +39,13 @@ public class ChoMikujPl extends PluginForDecrypt {
         super(wrapper);
     }
 
+    private static final String PASSWORDWRONG = ">Nieprawidłowe hasło<";
+    private static final String PASSWORDTEXT  = "Ten folder jest <b>zabezpieczony oddzielnym hasłem";
+
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows; U; Windows NT 6.1; de; rv:1.9.2.12) Gecko/20101026 Firefox/3.6.12");
+        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows; U; Windows NT 6.1; de; rv:1.9.2.17) Gecko/20110420 Firefox/3.6.17");
         // The message used on errors in this plugin
         String error = "Error while decrypting link: " + parameter;
         br.getPage(parameter);
@@ -51,9 +54,6 @@ public class ChoMikujPl extends PluginForDecrypt {
             fpName = br.getRegex("class=\"T_selected\">(.*?)</span>").getMatch(0);
             if (fpName == null) {
                 fpName = br.getRegex("<span id=\"ctl00_CT_FW_SelectedFolderLabel\" style=\"font-weight:bold;\">(.*?)</span>").getMatch(0);
-                if (fpName == null) {
-                    fpName = br.getRegex("").getMatch(0);
-                }
             }
         }
         String viewState = br.getRegex("id=\"__VIEWSTATE\" value=\"(.*?)\"").getMatch(0);
@@ -65,8 +65,26 @@ public class ChoMikujPl extends PluginForDecrypt {
             return null;
         }
         subFolderID = subFolderID.trim();
-        // Das sind die wichtigen Postdaten
+        // Important post data
         String postdata = "ctl00%24SM=ctl00%24CT%24FW%24FoldersUp%7Cctl00%24CT%24FW%24RefreshButton&__EVENTTARGET=ctl00%24CT%24FW%24RefreshButton&__EVENTARGUMENT=&__VIEWSTATE=" + Encoding.urlEncode(viewState) + "&PageCmd=&PageArg=undefined&ctl00%24LoginTop%24LoginChomikName=&ctl00%24LoginTop%24LoginChomikPassword=&ctl00%24SearchInputBox=&ctl00%24SearchFileBox=&ctl00%24SearchType=all&SType=0&ctl00%24CT%24ChomikID=" + chomikId + "&ctl00%24CT%24PermW%24LoginCtrl%24PF=&ctl00%24CT%24TW%24TreeExpandLog=&ChomikSubfolderId=" + subFolderID + "&ctl00%24CT%24FW%24SubfolderID=" + subFolderID + "&FVSortType=1&FVSortDir=1&FVSortChange=&ctl00%24CT%24FW%24inpFolderAddress=" + Encoding.urlEncode(parameter) + "&FrGroupId=0&__ASYNCPOST=true&ctl00%24CT%24FrW%24FrPage=";
+        // not working yet
+        // if (br.containsHTML(PASSWORDTEXT)) {
+        // prepareBrowser(parameter, br);
+        // for (int i = 0; i <= 3; i++) {
+        // String passCode = getUserInput(null, param);
+        // br.postPage(parameter, postdata + "&ctl00%24CT%24FW%24FolderPass=" +
+        // passCode);
+        // if (br.containsHTML(PASSWORDWRONG) || br.containsHTML(PASSWORDTEXT))
+        // continue;
+        //
+        // break;
+        // }
+        // if (br.containsHTML(PASSWORDWRONG) || br.containsHTML(PASSWORDTEXT))
+        // {
+        // logger.warning("Wrong password!");
+        // throw new DecrypterException(DecrypterException.PASSWORD);
+        // }
+        // }
         logger.info("Looking how many pages we got here for folder " + subFolderID + " ...");
         // Herausfinden wie viele Seiten der Link hat
         int pageCount = getPageCount(postdata, parameter);
