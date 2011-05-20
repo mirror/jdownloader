@@ -22,7 +22,7 @@ public abstract class ExtensionConfigPanel<T extends AbstractExtension> extends 
     public ExtensionConfigPanel(T plg, boolean clean) {
         super();
         this.extension = plg;
-        plg.getSettings().addListener(this);
+        plg.getSettings().getStorageHandler().getEventSender().addListener(this);
         if (!clean) {
             header = new Header(plg.getName(), plg.getIcon(32), new ActionListener() {
 

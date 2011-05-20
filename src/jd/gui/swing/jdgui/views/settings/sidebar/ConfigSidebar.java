@@ -165,8 +165,8 @@ public class ConfigSidebar extends JPanel implements ControlListener, MouseMotio
             public void valueChanged(ListSelectionEvent e) {
                 SwitchPanel op = getSelectedPanel();
                 if (op instanceof ExtensionConfigPanel) {
-                    ((ExtensionConfigPanel<?>) op).getExtension().getSettings().removeListener(ConfigSidebar.this);
-                    ((ExtensionConfigPanel<?>) op).getExtension().getSettings().addListener(ConfigSidebar.this);
+                    ((ExtensionConfigPanel<?>) op).getExtension().getSettings().getStorageHandler().getEventSender().removeListener(ConfigSidebar.this);
+                    ((ExtensionConfigPanel<?>) op).getExtension().getSettings().getStorageHandler().getEventSender().addListener(ConfigSidebar.this);
                 }
             }
         });
