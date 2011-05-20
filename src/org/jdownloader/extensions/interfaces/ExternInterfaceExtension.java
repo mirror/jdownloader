@@ -241,7 +241,7 @@ public class ExternInterfaceExtension extends AbstractExtension<ExternInterfaceC
 
     @Override
     public String getIconKey() {
-        return "gui.images.flashgot";
+        return "interface";
     }
 
     class RequestHandler implements Handler {

@@ -54,7 +54,7 @@ public class FolderWatchPanel extends SwitchPanel {
     }
 
     private void initActions() {
-        new ThreadedAction("action.folderwatch.history.clear", "gui.images.clear") {
+        new ThreadedAction("action.folderwatch.history.clear", "clear") {
             private static final long serialVersionUID = 3349495273700955040L;
 
             @Override
@@ -79,7 +79,7 @@ public class FolderWatchPanel extends SwitchPanel {
             }
         };
 
-        new ThreadedAction("action.folderwatch.history.reimport", "gui.images.add") {
+        new ThreadedAction("action.folderwatch.history.reimport", "add") {
             private static final long serialVersionUID = 9034432457172125570L;
 
             @Override
@@ -118,7 +118,7 @@ public class FolderWatchPanel extends SwitchPanel {
 
     public FolderWatchInfoPanel getInfoPanel() {
         if (infoPanel == null) {
-            infoPanel = new FolderWatchInfoPanel("gui.images.addons.unrar");
+            infoPanel = new FolderWatchInfoPanel("addons.unrar");
         }
 
         return infoPanel;

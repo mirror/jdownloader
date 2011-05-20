@@ -32,7 +32,7 @@ public class AddContainerAction extends ToolBarAction {
     private static final long serialVersionUID = 4713690050852393405L;
 
     public AddContainerAction() {
-        super("action.load", "gui.images.load");
+        super("action.load", "load");
     }
 
     @Override

@@ -24,7 +24,7 @@ public class ResumeAction extends ContextMenuAction {
 
     @Override
     protected String getIcon() {
-        return "gui.images.resume";
+        return "resume";
     }
 
     @Override

@@ -36,7 +36,7 @@ public class RemoveOfflineAction extends ThreadedAction {
     private static final long serialVersionUID = 4181319974731148936L;
 
     public RemoveOfflineAction() {
-        super("action.remove_offline", "gui.images.remove_offline");
+        super("action.remove_offline", "remove_offline");
     }
 
     @Override

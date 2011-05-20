@@ -90,17 +90,17 @@ public class AntiReconnectExtension extends AbstractExtension<AntiReconnectConfi
     }
 
     protected void initSettings(ConfigContainer config) {
-        config.setGroup(new ConfigGroup(getName(), "gui.images.preferences"));
+        config.setGroup(new ConfigGroup(getName(), "settings"));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(), CONFIG_MODE, availableModes, T._.gui_config_antireconnect_mode()).setDefaultValue(0));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, getPluginConfig(), CONFIG_IPS, T._.gui_config_antireconnect_ips()).setDefaultValue("192.168.178.20-80"));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), CONFIG_TIMEOUT, T._.gui_config_antireconnect_timeout(), 1, 60000, 100).setDefaultValue(500));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), CONFIG_EACH, T._.gui_config_antireconnect_each(), 1, 300000, 1000).setDefaultValue(10000));
 
-        config.setGroup(new ConfigGroup(T._.gui_config_antireconnect_oldgroup(), "gui.images.preferences"));
+        config.setGroup(new ConfigGroup(T._.gui_config_antireconnect_oldgroup(), "settings"));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), CONFIG_OLDDOWNLOADS, T._.gui_config_antireconnect_olddownloads(), 1, 20, 1).setDefaultValue(JDUtilities.getConfiguration().getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN)));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), CONFIG_OLDRECONNECT, T._.gui_config_antireconnect_oldreconnect()).setDefaultValue(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_ALLOW_RECONNECT)));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), CONFIG_OLDSPEED, T._.gui_config_antireconnect_oldspeed(), 0, 500000, 10).setDefaultValue(JDUtilities.getConfiguration().getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED)));
-        config.setGroup(new ConfigGroup(T._.gui_config_antireconnect_newgroup(), "gui.images.preferences"));
+        config.setGroup(new ConfigGroup(T._.gui_config_antireconnect_newgroup(), "settings"));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), CONFIG_NEWDOWNLOADS, T._.gui_config_antireconnect_newdownloads(), 1, 20, 1).setDefaultValue(3));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), CONFIG_NEWRECONNECT, T._.gui_config_antireconnect_newreconnect()).setDefaultValue(false));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), CONFIG_NEWSPEED, T._.gui_config_antireconnect_newspeed(), 0, 500000, 10).setDefaultValue(JDUtilities.getConfiguration().getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED)));

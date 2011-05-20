@@ -76,7 +76,6 @@ import jd.nutils.JDImage;
 import jd.nutils.OSDetector;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
 
@@ -85,6 +84,7 @@ import org.appwork.utils.Application;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.DownloadsView;
+import org.jdownloader.images.NewTheme;
 
 public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
 
@@ -252,11 +252,11 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
             }.start();
             break;
         case ControlEvent.CONTROL_DOWNLOAD_START:
-            Balloon.showIfHidden(_GUI._.ballon_download_title(), JDTheme.II("gui.images.next", 32, 32), _GUI._.ballon_download_finished_started());
+            Balloon.showIfHidden(_GUI._.ballon_download_title(), NewTheme.I().getIcon("go-next", 32), _GUI._.ballon_download_finished_started());
             break;
         case ControlEvent.CONTROL_DOWNLOAD_STOP:
             JDLogger.getLogger().info("All downloads finished");
-            Balloon.showIfHidden(_GUI._.ballon_download_title(), JDTheme.II("gui.images.stop", 32, 32), _GUI._.ballon_download_finished_stopped());
+            Balloon.showIfHidden(_GUI._.ballon_download_title(), NewTheme.I().getIcon("media-playback-stop", 32), _GUI._.ballon_download_finished_stopped());
             break;
         }
     }
@@ -267,7 +267,7 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
      */
     @Override
     public void displayMiniWarning(final String shortWarn, final String longWarn) {
-        Balloon.show(shortWarn, JDTheme.II("gui.images.warning", 32, 32), longWarn);
+        Balloon.show(shortWarn, NewTheme.I().getIcon("warning", 32), longWarn);
     }
 
     @Override

@@ -60,7 +60,7 @@ public class PackageCustomizerExtension extends AbstractExtension<PackageCustomi
 
     @Override
     public String getIconKey() {
-        return "gui.images.newpackage";
+        return "package_new";
     }
 
     public void attachToPackagesFirstStage(DownloadLink link) {

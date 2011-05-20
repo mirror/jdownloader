@@ -37,7 +37,7 @@ public class Linkgrabber extends ConfigPanel {
     }
 
     public static String getIconKey() {
-        return "gui.images.taskpanes.linkgrabber";
+        return "linkgrabber";
     }
 
     @Override
@@ -60,7 +60,7 @@ public class Linkgrabber extends ConfigPanel {
 
         ConfigEntry ce;
 
-        container.setGroup(new ConfigGroup(_GUI._.gui_config_gui_linggrabber(), "gui.images.taskpanes.linkgrabber"));
+        container.setGroup(new ConfigGroup(_GUI._.gui_config_gui_linggrabber(), "linkgrabber"));
 
         container.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, config, LinkGrabberController.PARAM_ONLINECHECK, _GUI._.gui_config_linkgrabber_onlincheck()));
         ce.setDefaultValue(true);
@@ -77,7 +77,7 @@ public class Linkgrabber extends ConfigPanel {
         container.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, config, LinkGrabberController.PARAM_USE_CNL2, _GUI._.gui_config_linkgrabber_cnl2()));
         ce.setDefaultValue(true);
 
-        container.setGroup(new ConfigGroup(_GUI._.gui_config_gui_linggrabber_ignorelist(), "gui.images.filter"));
+        container.setGroup(new ConfigGroup(_GUI._.gui_config_gui_linggrabber_ignorelist(), "filter"));
 
         container.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, config, LinkGrabberController.IGNORE_LIST, _GUI._.gui_config_linkgrabber_ignorelist()));
         ce.setDefaultValue("#Ignorefiletype 'olo':\r\n\r\n.+?\\.olo\r\n\r\n#Ignore hoster 'examplehost.com':\r\n\r\n.*?examplehost\\.com.*?");

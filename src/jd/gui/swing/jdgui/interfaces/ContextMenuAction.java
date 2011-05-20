@@ -2,7 +2,7 @@ package jd.gui.swing.jdgui.interfaces;
 
 import javax.swing.AbstractAction;
 
-import jd.utils.JDTheme;
+import org.jdownloader.images.NewTheme;
 
 public abstract class ContextMenuAction extends AbstractAction {
 
@@ -18,7 +18,7 @@ public abstract class ContextMenuAction extends AbstractAction {
         putValue(NAME, getName());
 
         String icon = getIcon();
-        if (icon != null) putValue(SMALL_ICON, JDTheme.II(getIcon(), 16, 16));
+        if (icon != null) putValue(SMALL_ICON, NewTheme.I().getIcon(getIcon(), 16));
     }
 
     protected abstract String getName();

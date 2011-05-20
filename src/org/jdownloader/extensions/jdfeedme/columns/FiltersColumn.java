@@ -25,34 +25,34 @@ import javax.swing.SwingConstants;
 import jd.gui.swing.components.table.JDTableColumn;
 import jd.gui.swing.components.table.JDTableModel;
 import jd.gui.swing.jdgui.interfaces.JDMouseAdapter;
-import jd.utils.JDTheme;
 
 import org.jdesktop.swingx.renderer.JRendererLabel;
 import org.jdownloader.extensions.jdfeedme.JDFeedMeFeed;
 import org.jdownloader.extensions.jdfeedme.dialogs.FiltersDialog;
+import org.jdownloader.images.NewTheme;
 
 public class FiltersColumn extends JDTableColumn {
 
     private static final long serialVersionUID = 8660856288827573254L;
-    
-    private JRendererLabel labelRend;
-    private JRendererLabel labelLink;
-    private Object obj;
+
+    private JRendererLabel    labelRend;
+    private JRendererLabel    labelLink;
+    private Object            obj;
 
     public FiltersColumn(String name, JDTableModel table) {
         super(name, table);
-        
+
         labelRend = new JRendererLabel();
         labelRend.setBorder(null);
         labelRend.setHorizontalAlignment(SwingConstants.CENTER);
-        labelRend.setIcon(JDTheme.II("gui.images.config.home", 16, 16));
+        labelRend.setIcon(NewTheme.I().getIcon("home", 16));
         labelRend.setToolTipText("Define download filters");
         labelRend.setOpaque(false);
-        
+
         labelLink = new JRendererLabel();
         labelLink.setBorder(null);
         labelLink.setHorizontalAlignment(SwingConstants.CENTER);
-        labelLink.setIcon(JDTheme.II("gui.images.config.home", 16, 16));
+        labelLink.setIcon(NewTheme.I().getIcon("home", 16));
         labelLink.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         labelLink.setOpaque(false);
 
@@ -60,7 +60,7 @@ public class FiltersColumn extends JDTableColumn {
 
             @Override
             public void mouseEntered(MouseEvent evt) {
-            	
+
             }
 
             @Override
@@ -96,7 +96,7 @@ public class FiltersColumn extends JDTableColumn {
 
     @Override
     public Component myTableCellEditorComponent(JDTableModel table, Object value, boolean isSelected, int row, int column) {
-    	this.obj = value;
+        this.obj = value;
         return labelLink;
     }
 
@@ -112,32 +112,32 @@ public class FiltersColumn extends JDTableColumn {
     @Override
     public void sort(Object obj, boolean sortingToggle) {
     }
-    
+
     public void actionPerformed() {
-    	JDFeedMeFeed feed = ((JDFeedMeFeed)this.obj);
-    	
-    	/* CODE_FOR_INTERFACE_5_START
-        int flags = UserIO.NO_COUNTDOWN;
-        CODE_FOR_INTERFACE_5_END */
+        JDFeedMeFeed feed = ((JDFeedMeFeed) this.obj);
+
+        /*
+         * CODE_FOR_INTERFACE_5_START int flags = UserIO.NO_COUNTDOWN;
+         * CODE_FOR_INTERFACE_5_END
+         */
         /* CODE_FOR_INTERFACE_7_START */
         int flags = 0;
         /* CODE_FOR_INTERFACE_7_END */
-    	
-    	FiltersDialog dialog = new FiltersDialog(flags, feed);
-    	
-    	/* CODE_FOR_INTERFACE_7_START */
+
+        FiltersDialog dialog = new FiltersDialog(flags, feed);
+
+        /* CODE_FOR_INTERFACE_7_START */
         dialog.displayDialog();
         /* CODE_FOR_INTERFACE_7_END */
-    	
-    	if (dialog.isResultOK())
-    	{
-    		feed.setFilters(dialog.getResultFilters());
-    		feed.setDoFilters(dialog.getResultCheckboxDofilters());
-    		feed.setFiltersearchtitle(dialog.getResultCheckboxTitle());
-    		feed.setFiltersearchdesc(dialog.getResultCheckboxDescription());
-    	}
+
+        if (dialog.isResultOK()) {
+            feed.setFilters(dialog.getResultFilters());
+            feed.setDoFilters(dialog.getResultCheckboxDofilters());
+            feed.setFiltersearchtitle(dialog.getResultCheckboxTitle());
+            feed.setFiltersearchdesc(dialog.getResultCheckboxDescription());
+        }
     }
-    
+
     @Override
     protected int getMaxWidth() {
         return 60;

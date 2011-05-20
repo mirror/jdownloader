@@ -19,9 +19,9 @@ package org.jdownloader.extensions.customizer;
 import javax.swing.Icon;
 
 import jd.plugins.AddonPanel;
-import jd.utils.JDTheme;
 
 import org.jdownloader.extensions.customizer.translate.T;
+import org.jdownloader.images.NewTheme;
 
 public class CustomizerView extends AddonPanel {
 
@@ -35,7 +35,7 @@ public class CustomizerView extends AddonPanel {
 
     @Override
     public Icon getIcon() {
-        return JDTheme.II("gui.images.newpackage", 16, 16);
+        return NewTheme.I().getIcon("package_new", 16);
     }
 
     @Override

@@ -15,13 +15,13 @@ import javax.swing.JTextArea;
 import jd.controlling.JDController;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.gui.swing.jdgui.views.settings.components.SettingsComponent;
-import jd.utils.JDTheme;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.extensions.Header;
+import org.jdownloader.images.NewTheme;
 import org.jdownloader.translate._JDT;
 
 public abstract class AbstractConfigPanel extends SwitchPanel {
@@ -64,7 +64,7 @@ public abstract class AbstractConfigPanel extends SwitchPanel {
 
     @Deprecated
     protected void addHeader(String name, String iconKey) {
-        this.addHeader(name, JDTheme.II(iconKey, 32, 32));
+        this.addHeader(name, NewTheme.I().getIcon(iconKey, 32));
     }
 
     public abstract ImageIcon getIcon();

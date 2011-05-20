@@ -127,7 +127,7 @@ public class PremServExtension extends AbstractExtension<PremServConfig> impleme
 
     @Override
     public String getIconKey() {
-        return "gui.images.chat";
+        return "chat";
     }
 
     @Override

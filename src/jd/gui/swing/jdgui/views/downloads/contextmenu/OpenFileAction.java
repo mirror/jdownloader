@@ -26,7 +26,7 @@ public class OpenFileAction extends ContextMenuAction {
 
     @Override
     protected String getIcon() {
-        return "gui.images.load";
+        return "load";
     }
 
     @Override

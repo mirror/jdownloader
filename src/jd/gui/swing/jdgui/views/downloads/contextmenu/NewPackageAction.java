@@ -27,7 +27,7 @@ public class NewPackageAction extends ContextMenuAction {
 
     @Override
     protected String getIcon() {
-        return "gui.images.newpackage";
+        return "package_new";
     }
 
     @Override

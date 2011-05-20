@@ -37,10 +37,10 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
-import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.Regex;
+import org.jdownloader.images.NewTheme;
 import org.jdownloader.translate._JDT;
 
 /**
@@ -511,7 +511,7 @@ public class DistributeData extends Thread {
 
                 final String title = _JDT._.gui_dialog_deepdecrypt_title();
                 final String message = _JDT._.gui_dialog_deepdecrypt_message(txt);
-                final int res = UserIO.getInstance().requestConfirmDialog(0, title, message, JDTheme.II("gui.images.search", 32, 32), _JDT._.gui_btn_continue(), null);
+                final int res = UserIO.getInstance().requestConfirmDialog(0, title, message, NewTheme.I().getIcon("search", 32), _JDT._.gui_btn_continue(), null);
 
                 if (JDFlags.hasAllFlags(res, UserIO.RETURN_OK)) {
                     links = getLoadLinkString(ls);

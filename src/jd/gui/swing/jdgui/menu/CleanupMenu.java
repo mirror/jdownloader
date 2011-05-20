@@ -30,7 +30,7 @@ public class CleanupMenu extends JStartMenu {
     private static final long serialVersionUID = 2238339685705371437L;
 
     public CleanupMenu() {
-        super(_GUI._.gui_menu_remove(), "gui.images.delete");
+        super(_GUI._.gui_menu_remove(), "delete");
 
         this.add(new CleanupDownloads());
         this.add(new CleanupPackages());

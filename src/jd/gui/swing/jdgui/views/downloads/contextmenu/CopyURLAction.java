@@ -27,7 +27,7 @@ public class CopyURLAction extends ContextMenuAction {
 
     @Override
     protected String getIcon() {
-        return "gui.icons.cut";
+        return "cut";
     }
 
     @Override

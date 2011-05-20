@@ -34,7 +34,6 @@ import jd.controlling.reconnect.plugins.upnp.UPNPRouterPlugin;
 import jd.controlling.reconnect.plugins.upnp.UpnpRouterDevice;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
-import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
@@ -48,6 +47,7 @@ import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.appwork.utils.swing.dialog.ProgressDialog;
 import org.appwork.utils.swing.dialog.ProgressDialog.ProgressGetter;
+import org.jdownloader.images.NewTheme;
 
 public class RouterSender {
     private static final RouterSender INSTANCE           = new RouterSender();
@@ -149,7 +149,7 @@ public class RouterSender {
     }
 
     private Component addHelpButton(final String name, final String tooltip, final String dialog) {
-        final JButton but = new JButton(JDTheme.II("gui.images.help", 20, 20));
+        final JButton but = new JButton(NewTheme.I().getIcon("help", 20));
         but.setContentAreaFilled(false);
         but.setToolTipText(tooltip);
         but.addActionListener(new ActionListener() {

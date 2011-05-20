@@ -19,9 +19,9 @@ package org.jdownloader.extensions.folderwatch;
 import javax.swing.Icon;
 
 import jd.gui.swing.jdgui.views.ClosableView;
-import jd.utils.JDTheme;
 
 import org.jdownloader.extensions.folderwatch.translate.T;
+import org.jdownloader.images.NewTheme;
 
 public class FolderWatchView extends ClosableView {
 
@@ -35,7 +35,7 @@ public class FolderWatchView extends ClosableView {
 
     @Override
     public Icon getIcon() {
-        return JDTheme.II("gui.images.folderwatch", 16, 16);
+        return NewTheme.I().getIcon("folder_add", 16);
     }
 
     @Override

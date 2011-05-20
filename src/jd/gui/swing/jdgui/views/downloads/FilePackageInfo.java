@@ -35,11 +35,11 @@ import jd.nutils.Formatter;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
-import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
 
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.images.NewTheme;
 
 public class FilePackageInfo extends JDCollapser implements ActionListener, FocusListener {
 
@@ -83,7 +83,7 @@ public class FilePackageInfo extends JDCollapser implements ActionListener, Focu
         buildGui();
         fp = null;
         menutitle.setText(_GUI._.gui_table_contextmenu_prop());
-        menutitle.setIcon(JDTheme.II("gui.images.config.tip", 16, 16));
+        menutitle.setIcon(NewTheme.I().getIcon("info", 16));
     }
 
     public void setPackage(FilePackage fp) {
@@ -122,8 +122,8 @@ public class FilePackageInfo extends JDCollapser implements ActionListener, Focu
 
     private void buildGui() {
         tabbedPane = new JTabbedPane();
-        tabbedPane.addTab(_GUI._.gui_fileinfopanel_packagetab(), JDTheme.II("gui.images.package_opened", 16, 16), createFilePackageInfo());
-        tabbedPane.addTab(_GUI._.gui_fileinfopanel_link(), JDTheme.II("gui.images.link", 16, 16), createLinkInfo());
+        tabbedPane.addTab(_GUI._.gui_fileinfopanel_packagetab(), NewTheme.I().getIcon("package_open", 16), createFilePackageInfo());
+        tabbedPane.addTab(_GUI._.gui_fileinfopanel_link(), NewTheme.I().getIcon("link", 16), createLinkInfo());
         content.setLayout(new MigLayout("ins 0", "[grow]", "[]"));
         content.add(tabbedPane, "grow");
     }
@@ -175,8 +175,8 @@ public class FilePackageInfo extends JDCollapser implements ActionListener, Focu
     private JPanel createLinkInfo() {
         progressBarDownloadLink = new MultiProgressBar();
         panel = new JPanel(new MigLayout("ins 5, wrap 3", "[]10[grow,fill]10[]", "[]5[]5[]5[]"));
-        panel.add(lblHoster = new JLabel(JDTheme.II("gui.images.sort", 16, 16)), "split 3");
-        panel.add(lblType = new JLabel(JDTheme.II("gui.images.sort", 16, 16)));
+        panel.add(lblHoster = new JLabel(NewTheme.I().getIcon("sort", 16)), "split 3");
+        panel.add(lblType = new JLabel(NewTheme.I().getIcon("sort", 16)));
         panel.add(lblChunks = new JLabel(_GUI._.gui_fileinfopanel_linktab_chunks()));
         panel.add(progressBarDownloadLink, "spanx, growx, pushx, split 2, h 18!");
         panel.add(lblSizeDl = new JLabel("0B/0B"), "alignx right");

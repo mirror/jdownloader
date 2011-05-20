@@ -21,10 +21,10 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 
 import jd.gui.swing.components.JDTextField;
-import jd.utils.JDTheme;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.utils.swing.dialog.AbstractDialog;
+import org.jdownloader.images.NewTheme;
 
 public class TwoTextFieldDialog extends AbstractDialog<String[]> {
 
@@ -43,7 +43,7 @@ public class TwoTextFieldDialog extends AbstractDialog<String[]> {
     private JDTextField       txtFieldTwo;
 
     public TwoTextFieldDialog(final String title, final String messageOne, final String defOne, final String messageTwo, final String defTwo) {
-        super(0, title, JDTheme.II("gui.images.config.tip", 32, 32), null, null);
+        super(0, title, NewTheme.I().getIcon("info", 32), null, null);
         this.messageOne = messageOne;
         this.defOne = defOne;
         this.messageTwo = messageTwo;

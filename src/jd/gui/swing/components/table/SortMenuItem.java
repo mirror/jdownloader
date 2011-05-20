@@ -5,9 +5,8 @@ import java.awt.event.ActionListener;
 
 import javax.swing.JMenuItem;
 
-import jd.utils.JDTheme;
-
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.images.NewTheme;
 
 public class SortMenuItem extends JMenuItem implements ActionListener {
 
@@ -18,7 +17,7 @@ public class SortMenuItem extends JMenuItem implements ActionListener {
 
     public SortMenuItem() {
         super(SortMenuItem.defaultString);
-        this.setIcon(JDTheme.II("gui.images.sort", 16, 16));
+        this.setIcon(NewTheme.I().getIcon("sort", 16));
         this.addActionListener(this);
     }
 

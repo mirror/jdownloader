@@ -39,7 +39,7 @@ public class General extends ConfigPanel {
 
     @Override
     public Icon getIcon() {
-        return JDTheme.II("gui.images.config.network_local", ConfigPanel.ICON_SIZE, ConfigPanel.ICON_SIZE);
+        return JDTheme.II("network-idle", ConfigPanel.ICON_SIZE, ConfigPanel.ICON_SIZE);
     }
 
     private static final long serialVersionUID = 3383448498625377495L;
@@ -58,7 +58,7 @@ public class General extends ConfigPanel {
         ConfigEntry ce, cond;
 
         /* Download Directory */
-        container.setGroup(new ConfigGroup(_GUI._.gui_config_general_downloaddirectory(), "gui.images.userhome"));
+        container.setGroup(new ConfigGroup(_GUI._.gui_config_general_downloaddirectory(), "home"));
 
         container.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_BROWSEFOLDER, JDUtilities.getConfiguration(), Configuration.PARAM_DOWNLOAD_DIRECTORY, ""));
         ce.setDefaultValue(JDUtilities.getResourceFile("downloads").getAbsolutePath());
@@ -71,7 +71,7 @@ public class General extends ConfigPanel {
         ce.setEnabledCondidtion(cond, true);
 
         /* Download Control */
-        container.setGroup(new ConfigGroup(_GUI._.gui_config_download_download_tab(), "gui.images.downloadorder"));
+        container.setGroup(new ConfigGroup(_GUI._.gui_config_download_download_tab(), "downloadpath"));
 
         container.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, config, Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN_PER_HOST, _GUI._.gui_config_download_simultan_downloads_per_host(), 0, 20, 1).setDefaultValue(0));
 
@@ -90,7 +90,7 @@ public class General extends ConfigPanel {
         container.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, JSonWrapper.get("DOWNLOAD"), Configuration.PARAM_DOWNLOAD_PAUSE_SPEED, _GUI._.gui_config_download_pausespeed(), 10, 500, 10).setDefaultValue(10));
 
         /* File Writing */
-        container.setGroup(new ConfigGroup(_GUI._.gui_config_download_write(), "gui.images.save"));
+        container.setGroup(new ConfigGroup(_GUI._.gui_config_download_write(), "save"));
         container.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, config, Configuration.PARAM_DO_CRC, _GUI._.gui_config_download_crc()).setDefaultValue(true));
         container.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, config, "MAXBUFFERSIZE", _GUI._.gui_config_download_buffersize2(), 500, 2000, 100).setDefaultValue(500));
 

@@ -37,10 +37,10 @@ import jd.plugins.AccountInfo;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.event.Eventsender;
+import org.jdownloader.images.NewTheme;
 import org.jdownloader.translate._JDT;
 
 public class AccountController extends SubConfiguration implements ActionListener, AccountControllerListener {
@@ -516,7 +516,7 @@ public class AccountController extends SubConfiguration implements ActionListene
         if (ret != null && !JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true)) {
             if (System.currentTimeMillis() - lastballoon > BALLOON_INTERVAL) {
                 lastballoon = System.currentTimeMillis();
-                Balloon.show(_JDT._.gui_ballon_accountmanager_title(), JDTheme.II("gui.images.accounts", 32, 32), _JDT._.gui_accountcontroller_globpremdisabled());
+                Balloon.show(_JDT._.gui_ballon_accountmanager_title(), NewTheme.I().getIcon("logout", 32), _JDT._.gui_accountcontroller_globpremdisabled());
             }
             ret = null;
         }

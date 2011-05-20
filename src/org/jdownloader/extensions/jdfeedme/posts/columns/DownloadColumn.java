@@ -25,41 +25,39 @@ import javax.swing.SwingConstants;
 import jd.gui.swing.components.table.JDTableColumn;
 import jd.gui.swing.components.table.JDTableModel;
 import jd.gui.swing.jdgui.interfaces.JDMouseAdapter;
-import jd.utils.JDTheme;
 
 import org.jdesktop.swingx.renderer.JRendererLabel;
 import org.jdownloader.extensions.jdfeedme.FeedMeExtension;
 import org.jdownloader.extensions.jdfeedme.JDFeedMeFeed;
 import org.jdownloader.extensions.jdfeedme.posts.JDFeedMePost;
 import org.jdownloader.extensions.jdfeedme.posts.PostsTableModel;
+import org.jdownloader.images.NewTheme;
 
-public class DownloadColumn extends JDTableColumn 
-{
+public class DownloadColumn extends JDTableColumn {
 
     private static final long serialVersionUID = 8660656283327573254L;
-    
-    private JRendererLabel labelRend;
-    private JRendererLabel labelLink;
-    private Object obj;
-    private PostsTableModel table;
 
-    public DownloadColumn(String name, PostsTableModel table) 
-    {
+    private JRendererLabel    labelRend;
+    private JRendererLabel    labelLink;
+    private Object            obj;
+    private PostsTableModel   table;
+
+    public DownloadColumn(String name, PostsTableModel table) {
         super(name, table);
-        
+
         this.table = table;
-        
+
         labelRend = new JRendererLabel();
         labelRend.setBorder(null);
         labelRend.setHorizontalAlignment(SwingConstants.CENTER);
-        labelRend.setIcon(JDTheme.II("gui.images.taskpanes.download", 16, 16));
+        labelRend.setIcon(NewTheme.I().getIcon("download", 16));
         labelRend.setToolTipText("Download the files from this post");
         labelRend.setOpaque(false);
-        
+
         labelLink = new JRendererLabel();
         labelLink.setBorder(null);
         labelLink.setHorizontalAlignment(SwingConstants.CENTER);
-        labelLink.setIcon(JDTheme.II("gui.images.taskpanes.download", 16, 16));
+        labelLink.setIcon(NewTheme.I().getIcon("download", 16));
         labelLink.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         labelLink.setOpaque(false);
 
@@ -67,7 +65,7 @@ public class DownloadColumn extends JDTableColumn
 
             @Override
             public void mouseEntered(MouseEvent evt) {
-            	
+
             }
 
             @Override
@@ -103,7 +101,7 @@ public class DownloadColumn extends JDTableColumn
 
     @Override
     public Component myTableCellEditorComponent(JDTableModel table, Object value, boolean isSelected, int row, int column) {
-    	this.obj = value;
+        this.obj = value;
         return labelLink;
     }
 
@@ -119,23 +117,21 @@ public class DownloadColumn extends JDTableColumn
     @Override
     public void sort(Object obj, boolean sortingToggle) {
     }
-    
+
     public void actionPerformed() {
-        
+
         this.fireEditingStopped();
-        
-    	JDFeedMePost post = ((JDFeedMePost)DownloadColumn.this.obj);
-    	// temporarily mark as added (until we know for sure)
-    	post.setAdded(JDFeedMePost.ADDED_YES);
-    	JDFeedMeFeed feed = table.getFeed();
-    	FeedMeExtension.downloadPostThreaded(feed, post, "", table);
+
+        JDFeedMePost post = ((JDFeedMePost) DownloadColumn.this.obj);
+        // temporarily mark as added (until we know for sure)
+        post.setAdded(JDFeedMePost.ADDED_YES);
+        JDFeedMeFeed feed = table.getFeed();
+        FeedMeExtension.downloadPostThreaded(feed, post, "", table);
     }
-    
-    
+
     @Override
     protected int getMaxWidth() {
         return 50;
     }
-    
 
 }

@@ -20,16 +20,16 @@ import java.io.Serializable;
 
 import javax.swing.ImageIcon;
 
-import jd.utils.JDTheme;
+import org.jdownloader.images.NewTheme;
 
 public class ConfigGroup implements Serializable {
     private static final long serialVersionUID = 1075652697591884926L;
 
-    private final String name;
-    private final ImageIcon icon;
+    private final String      name;
+    private final ImageIcon   icon;
 
     public ConfigGroup(final String name, final String iconKey) {
-        this(name, JDTheme.II(iconKey, 32, 32));
+        this(name, NewTheme.I().getIcon(iconKey, 32));
     }
 
     public ConfigGroup(final String name, final ImageIcon icon) {

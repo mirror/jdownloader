@@ -27,9 +27,9 @@ import jd.gui.swing.jdgui.components.StatusLabel;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginProgress;
-import jd.utils.JDTheme;
 
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.images.NewTheme;
 
 public class StatusColumn extends JDTableColumn {
 
@@ -59,14 +59,14 @@ public class StatusColumn extends JDTableColumn {
         super(name, table);
         statuspanel = new StatusLabel();
         statuspanel.setBorder(null);
-        imgFinished = JDTheme.II("gui.images.ok", 16, 16);
-        imgFailed = JDTheme.II("gui.images.bad", 16, 16);
-        imgExtract = JDTheme.II("gui.images.update_manager", 16, 16);
-        imgStopMark = JDTheme.II("gui.images.stopmark", 16, 16);
-        imgPriorityS = JDTheme.II("gui.images.priority-1", 16, 16);
-        imgPriority1 = JDTheme.II("gui.images.priority1", 16, 16);
-        imgPriority2 = JDTheme.II("gui.images.priority2", 16, 16);
-        imgPriority3 = JDTheme.II("gui.images.priority3", 16, 16);
+        imgFinished = NewTheme.I().getIcon("true", 16);
+        imgFailed = NewTheme.I().getIcon("false", 16);
+        imgExtract = NewTheme.I().getIcon("update", 16);
+        imgStopMark = NewTheme.I().getIcon("stopmark", 16);
+        imgPriorityS = NewTheme.I().getIcon("prio_-1", 16);
+        imgPriority1 = NewTheme.I().getIcon("prio_1", 16);
+        imgPriority2 = NewTheme.I().getIcon("prio_2", 16);
+        imgPriority3 = NewTheme.I().getIcon("prio_3", 16);
         strStopMark = _GUI._.jd_gui_swing_jdgui_views_downloadview_TableRenderer_stopmark();
         strFinished = _GUI._.jd_gui_swing_jdgui_views_downloadview_TableRenderer_finished();
         strFailed = _GUI._.jd_gui_swing_jdgui_views_downloadview_TableRenderer_failed();

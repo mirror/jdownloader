@@ -23,7 +23,7 @@ public class PackageNameAction extends ContextMenuAction {
 
     @Override
     protected String getIcon() {
-        return "gui.images.edit";
+        return "edit";
     }
 
     @Override

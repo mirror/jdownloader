@@ -30,7 +30,7 @@ public class LogAction extends ToolBarAction {
     private static final long serialVersionUID = -353145605693194634L;
 
     public LogAction() {
-        super("action.log", "gui.images.taskpanes.log");
+        super("action.log", "log");
     }
 
     @Override

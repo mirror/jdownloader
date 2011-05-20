@@ -79,7 +79,7 @@ public class ClickPositionDialog extends AbstractDialog<Point> implements Action
         if (this.imagefile != null && this.imagefile.exists()) {
             imageIcon = new ImageIcon(this.imagefile.getAbsolutePath());
         } else {
-            imageIcon = JDTheme.II("gui.images.config.ocr");
+            imageIcon = JDTheme.II("ocr");
         }
 
         final int size = SubConfiguration.getConfig("JAC").getIntegerProperty(Configuration.PARAM_CAPTCHA_SIZE, 100);

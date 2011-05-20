@@ -25,10 +25,10 @@ import javax.swing.JMenuItem;
 
 import jd.gui.swing.jdgui.actions.ActionController;
 import jd.gui.swing.jdgui.actions.ToolBarAction.Types;
-import jd.utils.JDTheme;
 
 import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionController;
+import org.jdownloader.images.NewTheme;
 import org.jdownloader.translate._JDT;
 
 public class AddonsMenu extends JMenu {
@@ -72,7 +72,7 @@ public class AddonsMenu extends JMenu {
             if (mis != null && !mis.isEmpty()) {
                 if (mis.size() == 1) {
                     JMenuItem c = mis.get(0).toJMenuItem();
-                    c.setIcon(JDTheme.II(plg.getIconKey(), 16, 16));
+                    c.setIcon(NewTheme.I().getIcon(plg.getIconKey(), 16));
                     if (mis.get(0).getType() == Types.TOGGLE) {
                         itemsToggle.add(c);
                     } else {

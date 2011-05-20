@@ -70,7 +70,7 @@ public class PremiumCompoundExtension extends AbstractExtension<PremiumCompoundC
 
     @Override
     public String getIconKey() {
-        return "gui.images.premium";
+        return "premium";
     }
 
     public static String getJDPremServer() {

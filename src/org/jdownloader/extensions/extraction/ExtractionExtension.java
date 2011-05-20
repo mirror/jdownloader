@@ -195,7 +195,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
 
     @Override
     public String getIconKey() {
-        return "gui.images.addons.unrar";
+        return "unpack";
     }
 
     public void actionPerformed(ActionEvent e) {

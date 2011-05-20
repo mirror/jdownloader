@@ -151,7 +151,7 @@ public class ScheduleExtension extends AbstractExtension<ScheduleConfig> impleme
 
     @Override
     public String getIconKey() {
-        return "gui.images.config.eventmanager";
+        return "event";
     }
 
     public void actionPerformed(ActionEvent e) {

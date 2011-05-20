@@ -22,7 +22,7 @@ public class OpenDirectoryAction extends ContextMenuAction {
 
     @Override
     protected String getIcon() {
-        return "gui.images.package_opened";
+        return "package_open";
     }
 
     @Override

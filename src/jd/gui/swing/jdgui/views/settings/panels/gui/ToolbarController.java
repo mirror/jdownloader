@@ -136,7 +136,7 @@ public class ToolbarController extends ConfigPanel {
     }
 
     public static String getIconKey() {
-        return "gui.images.toolbar";
+        return "toolbar";
     }
 
     private JXTable                  table;

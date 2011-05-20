@@ -32,37 +32,38 @@ import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.SwingGui;
 import jd.gui.swing.jdgui.actions.ActionController;
 import jd.gui.swing.jdgui.actions.ToolBarAction;
-import jd.utils.JDTheme;
 import net.miginfocom.swing.MigLayout;
+
+import org.jdownloader.images.NewTheme;
 
 public class ViewToolbar extends JPanel {
 
-    private static String[] defaultlist = new String[] {};
+    private static String[]     defaultlist              = new String[] {};
 
-    private static final long serialVersionUID = 7533137014274040205L;
+    private static final long   serialVersionUID         = 7533137014274040205L;
 
-    public static String BUTTON_CONSTRAINTS = "gaptop 2, gapleft 2, sizegroup toolbar";
+    public static String        BUTTON_CONSTRAINTS       = "gaptop 2, gapleft 2, sizegroup toolbar";
 
-    private static final String GUIINSTANCE = "GUI";
+    private static final String GUIINSTANCE              = "GUI";
 
     private static final String PROPERTY_CHANGE_LISTENER = "PROPERTY_CHANGE_LISTENER";
 
-    public static final int EAST = 1;
-    public static final int WEST = 2;
-    public static final int NORTH = 3;
-    public static final int SOUTH = 4;
+    public static final int     EAST                     = 1;
+    public static final int     WEST                     = 2;
+    public static final int     NORTH                    = 3;
+    public static final int     SOUTH                    = 4;
 
-    public static final int FIRST_COL = -1;
+    public static final int     FIRST_COL                = -1;
 
-    public static final int LAST_COL = -2;
+    public static final int     LAST_COL                 = -2;
 
-    private String[] current = null;
+    private String[]            current                  = null;
 
-    protected int halign = ViewToolbar.WEST;
+    protected int               halign                   = ViewToolbar.WEST;
 
-    private boolean contentPainted = true;
+    private boolean             contentPainted           = true;
 
-    private boolean textPainted = true;
+    private boolean             textPainted              = true;
 
     public ViewToolbar(String... actions) {
         current = actions;
@@ -149,7 +150,7 @@ public class ViewToolbar extends JPanel {
                 if (ab != null) {
                     ab.setContentAreaFilled(contentPainted);
                     ab.setFocusPainted(false);
-                    ab.setIcon(JDTheme.II(action.getValue(ToolBarAction.IMAGE_KEY) + "", 16, 16));
+                    ab.setIcon(NewTheme.I().getIcon(action.getValue(ToolBarAction.IMAGE_KEY) + "", 16));
                     if (!textPainted) {
                         ab.setText("");
                     }

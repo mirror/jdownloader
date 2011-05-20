@@ -8,7 +8,6 @@ import jd.controlling.IOEQ;
 import jd.controlling.proxy.ProxyController;
 import jd.controlling.proxy.ProxyEvent;
 import jd.controlling.proxy.ProxyInfo;
-import jd.utils.JDTheme;
 
 import org.appwork.utils.event.DefaultEventListener;
 import org.appwork.utils.swing.EDTRunner;
@@ -18,6 +17,7 @@ import org.appwork.utils.swing.table.columns.ExtPasswordEditorColumn;
 import org.appwork.utils.swing.table.columns.ExtRadioColumn;
 import org.appwork.utils.swing.table.columns.ExtTextColumn;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.images.NewTheme;
 
 public class ProxyTableModel extends ExtTableModel<ProxyInfo> implements DefaultEventListener<ProxyEvent<ProxyInfo>> {
 
@@ -27,7 +27,7 @@ public class ProxyTableModel extends ExtTableModel<ProxyInfo> implements Default
     public ProxyTableModel() {
         super("proxyTable");
         tableData = new ArrayList<ProxyInfo>(ProxyController.getInstance().getList());
-        icon = JDTheme.II("gui.images.proxy", 20, 20);
+        icon = NewTheme.I().getIcon("proxy", 20);
         ProxyController.getInstance().getEventSender().addListener(this);
     }
 

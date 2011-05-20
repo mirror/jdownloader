@@ -25,10 +25,10 @@ import jd.gui.swing.jdgui.components.JDProgressBar;
 import jd.gui.swing.jdgui.components.speedmeter.SpeedMeterPanel;
 import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.nutils.Formatter;
-import jd.utils.JDTheme;
 import net.miginfocom.swing.MigLayout;
 
 import org.jdownloader.extensions.infobar.translate.T;
+import org.jdownloader.images.NewTheme;
 
 public class InfoDialog extends JWindow implements ActionListener, MouseListener, MouseMotionListener {
 
@@ -84,7 +84,7 @@ public class InfoDialog extends JWindow implements ActionListener, MouseListener
         prgTotal.setStringPainted(true);
 
         lblHelp = new JLabel(T._.jd_plugins_optional_infobar_InfoDialog_help());
-        lblHelp.setIcon(JDTheme.II("gui.images.clipboard", 16, 16));
+        lblHelp.setIcon(NewTheme.I().getIcon("clipboard", 16));
         lblHelp.setHorizontalTextPosition(JLabel.LEADING);
         lblHelp.setHorizontalAlignment(JLabel.CENTER);
         lblHelp.setToolTipText(T._.jd_plugins_optional_infobar_InfoDialog_help_tooltip2());

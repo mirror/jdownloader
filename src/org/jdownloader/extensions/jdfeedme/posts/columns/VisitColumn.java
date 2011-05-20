@@ -25,11 +25,11 @@ import javax.swing.SwingConstants;
 import jd.gui.swing.components.table.JDTableColumn;
 import jd.gui.swing.components.table.JDTableModel;
 import jd.gui.swing.jdgui.interfaces.JDMouseAdapter;
-import jd.utils.JDTheme;
 
 import org.appwork.utils.os.CrossSystem;
 import org.jdesktop.swingx.renderer.JRendererLabel;
 import org.jdownloader.extensions.jdfeedme.posts.JDFeedMePost;
+import org.jdownloader.images.NewTheme;
 
 public class VisitColumn extends JDTableColumn {
 
@@ -45,14 +45,14 @@ public class VisitColumn extends JDTableColumn {
         labelRend = new JRendererLabel();
         labelRend.setBorder(null);
         labelRend.setHorizontalAlignment(SwingConstants.CENTER);
-        labelRend.setIcon(JDTheme.II("gui.images.browse", 16, 16));
+        labelRend.setIcon(NewTheme.I().getIcon("browse", 16));
         labelRend.setToolTipText("Open post in browser");
         labelRend.setOpaque(false);
 
         labelLink = new JRendererLabel();
         labelLink.setBorder(null);
         labelLink.setHorizontalAlignment(SwingConstants.CENTER);
-        labelLink.setIcon(JDTheme.II("gui.images.browse", 16, 16));
+        labelLink.setIcon(NewTheme.I().getIcon("browse", 16));
         labelLink.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         labelLink.setOpaque(false);
 

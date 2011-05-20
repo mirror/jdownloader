@@ -28,7 +28,6 @@ import jd.gui.swing.dialog.CaptchaDialog;
 import jd.gui.swing.dialog.ClickPositionDialog;
 import jd.gui.swing.jdgui.GraphicalUserInterfaceSettings;
 import jd.nutils.JDFlags;
-import jd.utils.JDTheme;
 
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.BinaryLogic;
@@ -36,6 +35,7 @@ import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.images.NewTheme;
 
 public class UserIO {
 
@@ -248,13 +248,13 @@ public class UserIO {
     public ImageIcon getIcon(final int iconInfo) {
         switch (iconInfo) {
         case UserIO.ICON_ERROR:
-            return JDTheme.II("gui.images.stop", 32, 32);
+            return NewTheme.I().getIcon("stop", 32);
         case UserIO.ICON_WARNING:
-            return JDTheme.II("gui.images.warning", 32, 32);
+            return NewTheme.I().getIcon("warning", 32);
         case UserIO.ICON_QUESTION:
-            return JDTheme.II("gui.images.help", 32, 32);
+            return NewTheme.I().getIcon("help", 32);
         default:
-            return JDTheme.II("gui.images.config.tip", 32, 32);
+            return NewTheme.I().getIcon("info", 32);
         }
     }
 

@@ -30,10 +30,10 @@ import jd.gui.swing.jdgui.components.StatusLabel;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForHost;
-import jd.utils.JDTheme;
 
 import org.jdesktop.swingx.renderer.JRendererLabel;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.images.NewTheme;
 
 public class HosterColumn extends JDTableColumn {
 
@@ -55,8 +55,8 @@ public class HosterColumn extends JDTableColumn {
         statuspanel.setBorder(null);
         jlr = new JRendererLabel();
         jlr.setBorder(null);
-        imgResume = JDTheme.II("gui.images.resume", 16, 16);
-        imgPremium = JDTheme.II("gui.images.premium", 16, 16);
+        imgResume = NewTheme.I().getIcon("resume", 16);
+        imgPremium = NewTheme.I().getIcon("premium", 16);
         strResume = _GUI._.jd_gui_swing_jdgui_views_downloadview_TableRenderer_resume();
         strPremium = _GUI._.jd_gui_swing_jdgui_views_downloadview_TableRenderer_premium();
     }

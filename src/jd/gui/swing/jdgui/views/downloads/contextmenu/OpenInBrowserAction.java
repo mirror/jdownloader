@@ -23,7 +23,7 @@ public class OpenInBrowserAction extends ContextMenuAction {
 
     @Override
     protected String getIcon() {
-        return "gui.images.browse";
+        return "browse";
     }
 
     @Override

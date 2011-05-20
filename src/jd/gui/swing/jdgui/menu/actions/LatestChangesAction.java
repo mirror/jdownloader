@@ -27,7 +27,7 @@ public class LatestChangesAction extends ToolBarAction {
     private static final long serialVersionUID = 2705114922279833817L;
 
     public LatestChangesAction() {
-        super("action.changes", "gui.images.help");
+        super("action.changes", "help");
     }
 
     @Override

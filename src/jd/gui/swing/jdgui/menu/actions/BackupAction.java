@@ -23,17 +23,17 @@ import jd.controlling.JDController;
 import jd.gui.swing.components.Balloon;
 import jd.gui.swing.jdgui.actions.ThreadedAction;
 import jd.update.JDUpdateUtils;
-import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.images.NewTheme;
 
 public class BackupAction extends ThreadedAction {
 
     private static final long serialVersionUID = 823930266263085474L;
 
     public BackupAction() {
-        super("action.backup", "gui.images.save");
+        super("action.backup", "save");
     }
 
     @Override
@@ -45,9 +45,9 @@ public class BackupAction extends ThreadedAction {
         JDController.getInstance().syncDatabase();
         File backupFile = JDUpdateUtils.backupDataBase();
         if (backupFile == null) {
-            Balloon.show(_GUI._.gui_balloon_backup_title(), JDTheme.II("gui.images.save", 32, 32), _GUI._.gui_backup_finished_failed(JDUtilities.getResourceFile("backup/")));
+            Balloon.show(_GUI._.gui_balloon_backup_title(), NewTheme.I().getIcon("save", 32), _GUI._.gui_backup_finished_failed(JDUtilities.getResourceFile("backup/")));
         } else {
-            Balloon.show(_GUI._.gui_balloon_backup_title(), JDTheme.II("gui.images.save", 32, 32), _GUI._.gui_backup_finished_success(backupFile.getAbsolutePath()));
+            Balloon.show(_GUI._.gui_balloon_backup_title(), NewTheme.I().getIcon("save", 32), _GUI._.gui_backup_finished_success(backupFile.getAbsolutePath()));
         }
     }
 

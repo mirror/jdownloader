@@ -26,7 +26,7 @@ public class ExitAction extends ToolBarAction {
     private static final long serialVersionUID = -1428029294638573437L;
 
     public ExitAction() {
-        super("action.exit", "gui.images.exit");
+        super("action.exit", "exit");
     }
 
     @Override

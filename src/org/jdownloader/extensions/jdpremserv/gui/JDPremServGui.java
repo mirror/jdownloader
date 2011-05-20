@@ -5,8 +5,9 @@ import javax.swing.JScrollPane;
 
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.gui.swing.jdgui.views.ClosableView;
-import jd.utils.JDTheme;
 import net.miginfocom.swing.MigLayout;
+
+import org.jdownloader.images.NewTheme;
 
 public class JDPremServGui extends ClosableView {
 
@@ -46,7 +47,7 @@ public class JDPremServGui extends ClosableView {
     @Override
     public Icon getIcon() {
         // we should use an own icon later
-        return JDTheme.II("gui.images.chat", 16, 16);
+        return NewTheme.I().getIcon("chat", 16);
     }
 
     @Override

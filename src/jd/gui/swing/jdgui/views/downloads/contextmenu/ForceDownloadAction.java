@@ -22,7 +22,7 @@ public class ForceDownloadAction extends ContextMenuAction {
 
     @Override
     protected String getIcon() {
-        return "gui.images.next";
+        return "go-next";
     }
 
     @Override

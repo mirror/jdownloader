@@ -24,7 +24,7 @@ public class PriorityAction extends ContextMenuAction {
 
     @Override
     protected String getIcon() {
-        return "gui.images.priority" + priority;
+        return "prio_" + priority;
     }
 
     @Override

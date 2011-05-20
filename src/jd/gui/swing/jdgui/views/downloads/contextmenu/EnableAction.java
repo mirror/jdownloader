@@ -26,7 +26,7 @@ public class EnableAction extends ContextMenuAction {
 
     @Override
     protected String getIcon() {
-        return "gui.images.ok";
+        return "true";
     }
 
     @Override

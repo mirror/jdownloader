@@ -26,7 +26,7 @@ public class AddLinksMenu extends JStartMenu {
     private static final long serialVersionUID = -3531629185758097151L;
 
     public AddLinksMenu() {
-        super(_GUI._.gui_menu_addlinks(), "gui.images.add");
+        super(_GUI._.gui_menu_addlinks(), "add");
         this.add(new AddUrlAction());
         this.add(new AddContainerAction());
 

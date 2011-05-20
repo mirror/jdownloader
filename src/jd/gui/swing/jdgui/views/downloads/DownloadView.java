@@ -43,7 +43,7 @@ public class DownloadView extends View {
 
     @Override
     public Icon getIcon() {
-        return JDTheme.II("gui.images.taskpanes.download", ICON_SIZE, ICON_SIZE);
+        return JDTheme.II("download", ICON_SIZE, ICON_SIZE);
     }
 
     @Override

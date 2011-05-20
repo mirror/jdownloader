@@ -40,7 +40,7 @@ public class BackupLinkListAction extends ThreadedAction {
     private static final long serialVersionUID = 823930266263085474L;
 
     public BackupLinkListAction() {
-        super("action.backuplinklist", "gui.images.save");
+        super("action.backuplinklist", "save");
     }
 
     public static byte[] getPWByte(String requestInputDialog) {

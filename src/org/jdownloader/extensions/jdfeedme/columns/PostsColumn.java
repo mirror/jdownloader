@@ -27,7 +27,6 @@ import jd.gui.UserIO;
 import jd.gui.swing.components.table.JDTableColumn;
 import jd.gui.swing.components.table.JDTableModel;
 import jd.gui.swing.jdgui.interfaces.JDMouseAdapter;
-import jd.utils.JDTheme;
 
 import org.jdesktop.swingx.renderer.JRendererLabel;
 import org.jdownloader.extensions.jdfeedme.FeedMeExtension;
@@ -35,40 +34,41 @@ import org.jdownloader.extensions.jdfeedme.JDFeedMeFeed;
 import org.jdownloader.extensions.jdfeedme.JDFeedMeTableModel;
 import org.jdownloader.extensions.jdfeedme.dialogs.PostsDialog;
 import org.jdownloader.extensions.jdfeedme.posts.JDFeedMePost;
+import org.jdownloader.images.NewTheme;
 
 public class PostsColumn extends JDTableColumn {
 
-    private static final long serialVersionUID = 7660856282857573284L;
-    
+    private static final long  serialVersionUID = 7660856282857573284L;
+
     private JDFeedMeTableModel table;
-    private JRendererLabel labelRend;
-    private JRendererLabel labelLink;
-    private Object obj;
+    private JRendererLabel     labelRend;
+    private JRendererLabel     labelLink;
+    private Object             obj;
 
     public PostsColumn(String name, JDFeedMeTableModel table) {
         super(name, table);
-        
+
         this.table = table;
-        
+
         labelRend = new JRendererLabel();
         labelRend.setBorder(null);
         labelRend.setHorizontalAlignment(SwingConstants.CENTER);
-        labelRend.setIcon(JDTheme.II("gui.images.search", 16, 16));
+        labelRend.setIcon(NewTheme.I().getIcon("search", 16));
         labelRend.setToolTipText("View recent posts");
         labelRend.setOpaque(false);
-        
+
         labelLink = new JRendererLabel();
         labelLink.setBorder(null);
         labelLink.setHorizontalAlignment(SwingConstants.CENTER);
-        labelLink.setIcon(JDTheme.II("gui.images.search", 16, 16));
+        labelLink.setIcon(NewTheme.I().getIcon("search", 16));
         labelLink.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         labelLink.setOpaque(false);
-        
+
         labelLink.addMouseListener(new JDMouseAdapter() {
 
             @Override
             public void mouseEntered(MouseEvent evt) {
-            	
+
             }
 
             @Override
@@ -104,21 +104,25 @@ public class PostsColumn extends JDTableColumn {
 
     @Override
     public Component myTableCellEditorComponent(JDTableModel table, Object value, boolean isSelected, int row, int column) {
-    	this.obj = value;
-    	
-    	if (((JDFeedMeFeed)value).getNewposts()) labelLink.setIcon(JDTheme.II("gui.images.taskpanes.linkgrabber", 16, 16));
-    	else labelLink.setIcon(JDTheme.II("gui.images.search", 16, 16));
-    	
+        this.obj = value;
+
+        if (((JDFeedMeFeed) value).getNewposts())
+            labelLink.setIcon(NewTheme.I().getIcon("linkgrabber", 16));
+        else
+            labelLink.setIcon(NewTheme.I().getIcon("search", 16));
+
         return labelLink;
     }
 
     @Override
     public Component myTableCellRendererComponent(JDTableModel table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
-        
-    	if (((JDFeedMeFeed)value).getNewposts()) labelRend.setIcon(JDTheme.II("gui.images.taskpanes.linkgrabber", 16, 16));
-    	else labelRend.setIcon(JDTheme.II("gui.images.search", 16, 16));
-    	
-    	return labelRend;
+
+        if (((JDFeedMeFeed) value).getNewposts())
+            labelRend.setIcon(NewTheme.I().getIcon("linkgrabber", 16));
+        else
+            labelRend.setIcon(NewTheme.I().getIcon("search", 16));
+
+        return labelRend;
     }
 
     @Override
@@ -128,29 +132,30 @@ public class PostsColumn extends JDTableColumn {
     @Override
     public void sort(Object obj, boolean sortingToggle) {
     }
-    
+
     public void actionPerformed() {
-    	JDFeedMeFeed feed = ((JDFeedMeFeed)this.obj);
-    	ArrayList<JDFeedMePost> posts = table.getPosts().get(feed.getUniqueid());
-    	if (posts == null) posts = new ArrayList<JDFeedMePost>();
-    	
-    	/* CODE_FOR_INTERFACE_5_START
-    	int flags = UserIO.NO_COUNTDOWN | UserIO.NO_CANCEL_OPTION;
-    	CODE_FOR_INTERFACE_5_END */
-    	/* CODE_FOR_INTERFACE_7_START */
-    	int flags = UserIO.NO_CANCEL_OPTION;
-    	/* CODE_FOR_INTERFACE_7_END */
-    	
-    	PostsDialog dialog = new PostsDialog(flags, feed, posts);
-    	
-    	/* CODE_FOR_INTERFACE_7_START */
+        JDFeedMeFeed feed = ((JDFeedMeFeed) this.obj);
+        ArrayList<JDFeedMePost> posts = table.getPosts().get(feed.getUniqueid());
+        if (posts == null) posts = new ArrayList<JDFeedMePost>();
+
+        /*
+         * CODE_FOR_INTERFACE_5_START int flags = UserIO.NO_COUNTDOWN |
+         * UserIO.NO_CANCEL_OPTION; CODE_FOR_INTERFACE_5_END
+         */
+        /* CODE_FOR_INTERFACE_7_START */
+        int flags = UserIO.NO_CANCEL_OPTION;
+        /* CODE_FOR_INTERFACE_7_END */
+
+        PostsDialog dialog = new PostsDialog(flags, feed, posts);
+
+        /* CODE_FOR_INTERFACE_7_START */
         dialog.displayDialog();
         /* CODE_FOR_INTERFACE_7_END */
-    	
-    	FeedMeExtension.getGui().setFeedNewposts(feed, false);
-    	this.fireEditingStopped();
+
+        FeedMeExtension.getGui().setFeedNewposts(feed, false);
+        this.fireEditingStopped();
     }
-    
+
     @Override
     protected int getMaxWidth() {
         return 60;

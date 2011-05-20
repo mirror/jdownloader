@@ -26,7 +26,7 @@ public class DisableAction extends ContextMenuAction {
 
     @Override
     protected String getIcon() {
-        return "gui.images.bad";
+        return "false";
     }
 
     @Override

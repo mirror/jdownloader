@@ -25,7 +25,7 @@ public class PackageDirectoryAction extends ContextMenuAction {
 
     @Override
     protected String getIcon() {
-        return "gui.images.save";
+        return "save";
     }
 
     @Override

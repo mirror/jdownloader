@@ -26,7 +26,7 @@ public class StopAction extends ContextMenuAction {
 
     @Override
     protected String getIcon() {
-        return "gui.images.stopsign";
+        return "stopsign";
     }
 
     @Override

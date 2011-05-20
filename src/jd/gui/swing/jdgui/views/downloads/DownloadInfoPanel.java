@@ -31,7 +31,7 @@ public class DownloadInfoPanel extends InfoPanel {
     private long                 speed;
 
     public DownloadInfoPanel() {
-        super("gui.images.taskpanes.download");
+        super("download");
 
         addInfoEntry(_GUI._.jd_gui_swing_jdgui_views_info_DownloadInfoPanel_packages(), "0", 0, 0);
         addInfoEntry(_GUI._.jd_gui_swing_jdgui_views_info_DownloadInfoPanel_links(), "0", 0, 1);

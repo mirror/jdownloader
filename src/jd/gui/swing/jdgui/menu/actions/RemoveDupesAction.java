@@ -36,7 +36,7 @@ public class RemoveDupesAction extends ThreadedAction {
     private static final long serialVersionUID = 3088399063634025074L;
 
     public RemoveDupesAction() {
-        super("action.remove_dupes", "gui.images.remove_dupes");
+        super("action.remove_dupes", "remove_dupes");
     }
 
     @Override

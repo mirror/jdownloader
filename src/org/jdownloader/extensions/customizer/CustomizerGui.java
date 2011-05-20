@@ -37,13 +37,13 @@ import jd.gui.swing.jdgui.interfaces.DroppedPanel;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.gui.swing.jdgui.views.ViewToolbar;
 import jd.nutils.JDFlags;
-import jd.utils.JDTheme;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.utils.swing.table.ExtRowHighlighter;
 import org.appwork.utils.swing.table.ExtTable;
 import org.appwork.utils.swing.table.SelectionHighlighter;
 import org.jdownloader.extensions.customizer.translate.T;
+import org.jdownloader.images.NewTheme;
 
 public class CustomizerGui extends SwitchPanel {
 
@@ -70,7 +70,7 @@ public class CustomizerGui extends SwitchPanel {
     }
 
     private void initActions() {
-        new ThreadedAction("action.customize.addsetting", "gui.images.add") {
+        new ThreadedAction("action.customize.addsetting", "add") {
             private static final long serialVersionUID = 2902582906883565245L;
 
             @Override
@@ -96,7 +96,7 @@ public class CustomizerGui extends SwitchPanel {
             }
         };
 
-        new ThreadedAction("action.customize.removesetting", "gui.images.delete") {
+        new ThreadedAction("action.customize.removesetting", "delete") {
             private static final long serialVersionUID = -961227177718839351L;
 
             @Override
@@ -145,13 +145,13 @@ public class CustomizerGui extends SwitchPanel {
             this.setLayout(new MigLayout("ins 5, wrap 2", "[]20[grow,fill]", "[][]"));
             valueColor = getBackground().darker().darker().darker().darker().darker();
             titleColor = getBackground().darker().darker();
-            this.iconContainer = new JLabel(JDTheme.II("gui.images.newpackage", 32, 32));
+            this.iconContainer = new JLabel(NewTheme.I().getIcon("package_new", 32));
             add(iconContainer, "spany, gapleft 1");
 
             JLabel title;
             add(title = new JLabel(T._.jd_plugins_optional_customizer_CustomizerGui_tester()));
             add(tester = new JTextField(), "growx, split 2");
-            add(reset = new JButton(JDTheme.II("gui.images.undo", 16, 16)));
+            add(reset = new JButton(NewTheme.I().getIcon("undo", 16)));
 
             title.setForeground(titleColor);
             tester.setForeground(valueColor);

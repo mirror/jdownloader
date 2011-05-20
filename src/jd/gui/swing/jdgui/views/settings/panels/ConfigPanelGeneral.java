@@ -33,7 +33,7 @@ public class ConfigPanelGeneral extends AbstractConfigPanel {
     }
 
     public String getIconKey() {
-        return "gui.images.configuration";
+        return "settings";
     }
 
     private static final long serialVersionUID = 3383448498625377495L;
@@ -63,15 +63,6 @@ public class ConfigPanelGeneral extends AbstractConfigPanel {
         this.addHeader(_GUI._.gui_config_download_write(), NewTheme.I().getIcon("hashsum", 32));
         this.addDescription(_JDT._.gui_settings_filewriting_description());
         this.addPair(_GUI._.gui_config_download_crc(), autoCRC);
-
-        // container.setGroup(new ConfigGroup(T._.gui_config_gui_container(),
-        // "gui.images.container"));
-        //
-        // container.addEntry(ce = new
-        // ConfigEntry(ConfigContainer.TYPE_CHECKBOX,
-        // JDUtilities.getConfiguration(), Configuration.PARAM_RELOADCONTAINER,
-        // T._.gui_config_reloadcontainer()));
-        // ce.setDefaultValue(true);
 
         this.addHeader(_GUI._.gui_config_various(), NewTheme.I().getIcon("settings", 32));
         this.addPair(_GUI._.gui_config_simple_container(), simpleContainer);

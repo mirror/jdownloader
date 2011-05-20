@@ -23,7 +23,7 @@ public class ContinuePackagesAction extends ContextMenuAction {
 
     @Override
     protected String getIcon() {
-        return "gui.images.taskpanes.linkgrabber";
+        return "linkgrabber";
     }
 
     @Override

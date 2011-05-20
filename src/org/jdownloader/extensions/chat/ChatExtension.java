@@ -160,7 +160,7 @@ public class ChatExtension extends AbstractExtension<ChatConfig> {
 
     @Override
     public String getIconKey() {
-        return "gui.images.chat";
+        return "chat";
     }
 
     public ChatExtension() throws StartException {

@@ -34,10 +34,10 @@ import jd.gui.UserIO;
 import jd.gui.swing.Factory;
 import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
-import jd.utils.JDTheme;
 import net.miginfocom.swing.MigLayout;
 
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.images.NewTheme;
 import org.jdownloader.update.RestartController;
 
 public abstract class ConfigPanel extends SwitchPanel {
@@ -221,7 +221,7 @@ public abstract class ConfigPanel extends SwitchPanel {
     }
 
     public Icon getIcon() {
-        return JDTheme.II("gui.images.taskpanes.configuration", 32, 32);
+        return NewTheme.I().getIcon("settings", 32);
     }
 
 }

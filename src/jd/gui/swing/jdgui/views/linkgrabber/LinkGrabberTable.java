@@ -64,11 +64,11 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLinkInfoCache;
 import jd.plugins.LinkGrabberFilePackage;
 import jd.plugins.LinkStatus;
-import jd.utils.JDTheme;
 import jd.utils.MenuScroller;
 
 import org.appwork.utils.Application;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.images.NewTheme;
 
 class PropMenuItem extends JMenuItem implements ActionListener {
 
@@ -78,7 +78,7 @@ class PropMenuItem extends JMenuItem implements ActionListener {
 
     public PropMenuItem(LinkGrabberPanel linkgrabber) {
         super(_GUI._.gui_table_contextmenu_prop());
-        this.setIcon(JDTheme.II("gui.images.config.tip", 16, 16));
+        this.setIcon(NewTheme.I().getIcon("info", 16));
         this.linkgrabber = linkgrabber;
         this.addActionListener(this);
     }
@@ -371,7 +371,7 @@ public class LinkGrabberTable extends JDTable implements MouseListener, KeyListe
 
     private JMenu createDeleteMenu(ArrayList<DownloadLink> alllinks) {
         JMenu popup = new JMenu(_GUI._.gui_table_contextmenu_remove());
-        popup.setIcon(JDTheme.II("gui.images.delete", 16, 16));
+        popup.setIcon(NewTheme.I().getIcon("delete", 16));
         if (alllinks != null && alllinks.size() > 0) {
             popup.add(new DeleteAction(alllinks));
             popup.addSeparator();
@@ -387,7 +387,7 @@ public class LinkGrabberTable extends JDTable implements MouseListener, KeyListe
         JExtCheckBoxMenuItem tmp;
 
         JMenu men = new JMenu(_GUI._.gui_table_contextmenu_filetype());
-        men.setIcon(JDTheme.II("gui.images.filter", 16, 16));
+        men.setIcon(NewTheme.I().getIcon("filter", 16));
 
         ArrayList<String> extensions = linkgrabber.getExtensions();
         if (extensions.isEmpty()) {
@@ -408,7 +408,7 @@ public class LinkGrabberTable extends JDTable implements MouseListener, KeyListe
 
     private JMenu createPrioMenu(ArrayList<DownloadLink> links) {
         JMenu prioPopup = new JMenu(_GUI._.gui_table_contextmenu_priority() + " (" + links.size() + ")");
-        prioPopup.setIcon(JDTheme.II("gui.images.priority0", 16, 16));
+        prioPopup.setIcon(NewTheme.I().getIcon("prio_0", 16));
 
         prioPopup.add(new PriorityAction(links, 3));
         prioPopup.add(new PriorityAction(links, 2));

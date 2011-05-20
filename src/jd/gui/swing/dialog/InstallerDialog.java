@@ -132,9 +132,9 @@ public class InstallerDialog extends AbstractDialog<Object> {
         });
 
         final ConfigContainer container = new ConfigContainer();
-        container.setGroup(new ConfigGroup(_GUI._.gui_config_gui_language(), "gui.splash.languages"));
+        container.setGroup(new ConfigGroup(_GUI._.gui_config_gui_language(), "language"));
         container.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMPONENT, new JScrollPane(list), "growx,pushx"));
-        container.setGroup(new ConfigGroup(_GUI._.gui_config_general_downloaddirectory(), "gui.images.userhome"));
+        container.setGroup(new ConfigGroup(_GUI._.gui_config_general_downloaddirectory(), "home"));
         container.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMPONENT, this.browseFile, "growx,pushx"));
 
         final JLabel lbl = new JLabel(_GUI._.installer_gui_message());

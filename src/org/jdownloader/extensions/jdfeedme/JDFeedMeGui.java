@@ -95,7 +95,7 @@ public class JDFeedMeGui extends SwitchPanel implements KeyListener, ActionListe
     }
 
     private void initActions() {
-        new ThreadedAction("Add Feed", "gui.images.add") {
+        new ThreadedAction("Add Feed", "add") {
             private static final long serialVersionUID = 2902582806883565245L;
 
             @Override
@@ -147,7 +147,7 @@ public class JDFeedMeGui extends SwitchPanel implements KeyListener, ActionListe
             }
         };
 
-        new ThreadedAction("Remove Feed", "gui.images.delete") {
+        new ThreadedAction("Remove Feed", "delete") {
             private static final long serialVersionUID = -961227173418839351L;
 
             @Override
@@ -179,7 +179,7 @@ public class JDFeedMeGui extends SwitchPanel implements KeyListener, ActionListe
             }
         };
 
-        new ThreadedAction("Reset Feed", "gui.images.restart") {
+        new ThreadedAction("Reset Feed", "restart") {
             private static final long serialVersionUID = -961227173618834351L;
 
             @Override
@@ -235,7 +235,7 @@ public class JDFeedMeGui extends SwitchPanel implements KeyListener, ActionListe
             }
         };
 
-        new ThreadedAction("Sync All Now", "gui.images.taskpanes.download") {
+        new ThreadedAction("Sync All Now", "download") {
             private static final long serialVersionUID = -911247173617834351L;
 
             @Override

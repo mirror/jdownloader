@@ -103,7 +103,7 @@ public final class Reconnecter implements StateMachineInterface {
     // final ProgressController progress = new
     // ProgressController(JDL.L("jd.controlling.reconnect.Reconnector.progress.failed",
     // "Reconnect failed! Please check your reconnect Settings and try a Manual Reconnect!"),
-    // 100, "gui.images.reconnect_warning");
+    // 100, "reconnect_warning");
     // progress.doFinalize(10000l);
     // final int counter =
     // configuration.getIntegerProperty(Configuration.PARAM_RECONNECT_FAILED_COUNTER,
@@ -205,7 +205,7 @@ public final class Reconnecter implements StateMachineInterface {
         } else if (maxretries == 0) {
             maxretries = 1;
         }
-        final ProgressController progress = new ProgressController(this.toString(), maxretries + 10, "gui.images.reconnect");
+        final ProgressController progress = new ProgressController(this.toString(), maxretries + 10, "reconnect");
         progress.increase(5);
         IPController.getInstance().invalidate();
         try {
@@ -321,7 +321,7 @@ public final class Reconnecter implements StateMachineInterface {
         }
         if (ret == false) {
             /* reconnect failed, increase fail counter */
-            final ProgressController progress = new ProgressController(_JDT._.jd_controlling_reconnect_Reconnector_progress_failed(), 100, "gui.images.reconnect_warning");
+            final ProgressController progress = new ProgressController(_JDT._.jd_controlling_reconnect_Reconnector_progress_failed(), 100, "reconnect_warning");
             progress.doFinalize(10000l);
 
             final long counter = this.storage.get(Reconnecter.RECONNECT_FAILED_COUNTER, 0);

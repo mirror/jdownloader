@@ -27,17 +27,18 @@ import javax.swing.event.EventListenerList;
 
 import jd.gui.swing.SwingGui;
 import jd.gui.swing.jdgui.interfaces.DroppedPanel;
-import jd.utils.JDTheme;
 import net.miginfocom.swing.MigLayout;
+
+import org.jdownloader.images.NewTheme;
 
 public abstract class InfoPanel extends DroppedPanel {
 
-    private static final long serialVersionUID = 5465564955866972884L;
+    private static final long                 serialVersionUID = 5465564955866972884L;
 
-    protected EventListenerList listenerList;
+    protected EventListenerList               listenerList;
 
-    protected final Color valueColor;
-    protected final Color titleColor;
+    protected final Color                     valueColor;
+    protected final Color                     titleColor;
     private final HashMap<String, JComponent> map;
 
     public InfoPanel(String iconKey) {
@@ -50,7 +51,7 @@ public abstract class InfoPanel extends DroppedPanel {
         titleColor = getBackground().darker().darker();
 
         setLayout(new MigLayout("ins 5", "[]5[]", "[][]"));
-        add(new JLabel(JDTheme.II(iconKey, 32, 32)), "spany 2,cell 0 0,gapleft 1");
+        add(new JLabel(NewTheme.I().getIcon(iconKey, 32)), "spany 2,cell 0 0,gapleft 1");
     }
 
     /**

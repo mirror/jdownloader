@@ -56,12 +56,12 @@ import jd.plugins.FilePackage;
 import jd.plugins.FilePackageInfoCache;
 import jd.plugins.LinkGrabberFilePackage;
 import jd.plugins.LinkStatus;
-import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.storage.config.JsonConfig;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.images.NewTheme;
 
 public class LinkGrabberPanel extends SwitchPanel implements ActionListener, LinkCheckListener, ProgressControllerListener, LinkGrabberControllerListener {
 
@@ -147,7 +147,7 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
     }
 
     public void initActions() {
-        new ThreadedAction("action.linkgrabber.clearlist", "gui.images.clear") {
+        new ThreadedAction("action.linkgrabber.clearlist", "clear") {
 
             private static final long serialVersionUID = -4407938288408350792L;
 
@@ -182,7 +182,7 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
                 }
             }
         };
-        new ThreadedAction("action.linkgrabber.addall", "gui.images.taskpanes.download") {
+        new ThreadedAction("action.linkgrabber.addall", "download") {
 
             private static final long serialVersionUID = 6181260839200699153L;
 
@@ -279,7 +279,7 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
         new Thread() {
             @Override
             public void run() {
-                Balloon.showIfHidden(_GUI._.gui_config_gui_linkgrabber(), JDTheme.II("gui.images.add", 32, 32), _GUI._.gui_linkgrabber_adding("" + linkList.size()));
+                Balloon.showIfHidden(_GUI._.gui_config_gui_linkgrabber(), NewTheme.I().getIcon("add", 32), _GUI._.gui_linkgrabber_adding("" + linkList.size()));
                 for (DownloadLink element : linkList) {
                     if (LGINSTANCE.isDupe(element)) continue;
                     addToWaitingList(element);
@@ -419,7 +419,7 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
                 for (LinkGrabberFilePackage fp : fps) {
                     links += fp.getDownloadLinks().size();
                 }
-                Balloon.showIfHidden(_GUI._.gui_config_gui_linkgrabber(), JDTheme.II("gui.images.add", 32, 32), _GUI._.gui_linkgrabber_finished("" + links, "" + fps.size()));
+                Balloon.showIfHidden(_GUI._.gui_config_gui_linkgrabber(), NewTheme.I().getIcon("add", 32), _GUI._.gui_linkgrabber_finished("" + links, "" + fps.size()));
                 fps = null;
             }
         };

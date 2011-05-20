@@ -407,7 +407,7 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig> impleme
 
     @Override
     public String getIconKey() {
-        return "gui.images.logout";
+        return "logout";
     }
 
     // @Override
@@ -426,14 +426,14 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig> impleme
 
     @Override
     protected void start() throws StartException {
-        if (menuAction == null) menuAction = new MenuAction("gui.jdshutdown.toggle", "gui.images.logout") {
+        if (menuAction == null) menuAction = new MenuAction("gui.jdshutdown.toggle", "logout") {
             private static final long serialVersionUID = 4359802245569811800L;
 
             @Override
             public void initDefaults() {
                 this.setEnabled(true);
                 setType(ToolBarAction.Types.TOGGLE);
-                this.setIcon("gui.images.logout");
+                this.setIcon("logout");
                 this.setActionListener(new ActionListener() {
                     public void actionPerformed(ActionEvent e) {
                         if (shutdownEnabled) {

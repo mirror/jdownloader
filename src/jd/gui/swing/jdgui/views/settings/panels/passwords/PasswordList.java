@@ -35,7 +35,7 @@ public class PasswordList extends ConfigPanel {
     }
 
     public static String getIconKey() {
-        return "gui.images.config.passwordlist";
+        return "password";
     }
 
     @Override

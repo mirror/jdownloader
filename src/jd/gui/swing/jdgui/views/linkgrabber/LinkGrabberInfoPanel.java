@@ -41,7 +41,7 @@ public class LinkGrabberInfoPanel extends InfoPanel {
     protected ArrayList<LinkGrabberFilePackage> fps              = new ArrayList<LinkGrabberFilePackage>();
 
     public LinkGrabberInfoPanel() {
-        super("gui.images.taskpanes.linkgrabber");
+        super("linkgrabber");
 
         addInfoEntry(_GUI._.jd_gui_swing_jdgui_views_info_LinkGrabberInfoPanel_packages(), "0", 0, 0);
         addInfoEntry(_GUI._.jd_gui_swing_jdgui_views_info_LinkGrabberInfoPanel_links(), "0", 0, 1);

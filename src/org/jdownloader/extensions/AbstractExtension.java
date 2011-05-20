@@ -30,13 +30,13 @@ import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.gui.swing.jdgui.views.settings.sidebar.AddonConfig;
 import jd.plugins.AddonPanel;
 import jd.plugins.ExtensionConfigInterface;
-import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
+import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.advanced.AdvancedConfigManager;
 
@@ -286,11 +286,11 @@ public abstract class AbstractExtension<T extends ExtensionConfigInterface> {
 
     @Deprecated
     public String getIconKey() {
-        return "gui.images.preferences";
+        return "settings";
     }
 
     public ImageIcon getIcon(int size) {
-        return JDTheme.II(getIconKey(), size, size);
+        return NewTheme.I().getIcon(getIconKey(), size);
     }
 
     public boolean isWindowsRunnable() {

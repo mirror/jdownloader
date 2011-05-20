@@ -5,11 +5,11 @@ import javax.swing.ImageIcon;
 
 import jd.plugins.DownloadLink;
 import jd.plugins.PackageLinkNode;
-import jd.utils.JDTheme;
 
 import org.appwork.utils.swing.table.ExtDefaultRowSorter;
 import org.appwork.utils.swing.table.columns.ExtIconColumn;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.images.NewTheme;
 
 public class PriorityColumn extends ExtIconColumn<PackageLinkNode> {
 
@@ -28,10 +28,10 @@ public class PriorityColumn extends ExtIconColumn<PackageLinkNode> {
 
     public PriorityColumn() {
         super("PriorityColumn");
-        imgPriorityS = JDTheme.II("gui.images.priority-1", 16, 16);
-        imgPriority1 = JDTheme.II("gui.images.priority1", 16, 16);
-        imgPriority2 = JDTheme.II("gui.images.priority2", 16, 16);
-        imgPriority3 = JDTheme.II("gui.images.priority3", 16, 16);
+        imgPriorityS = NewTheme.I().getIcon("prio_-1", 16);
+        imgPriority1 = NewTheme.I().getIcon("prio_1", 16);
+        imgPriority2 = NewTheme.I().getIcon("prio_2", 16);
+        imgPriority3 = NewTheme.I().getIcon("prio_3", 16);
         strPriorityS = _GUI._.gui_treetable_tooltip_priority_1();
         strPriority1 = _GUI._.gui_treetable_tooltip_priority1();
         strPriority2 = _GUI._.gui_treetable_tooltip_priority2();

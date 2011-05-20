@@ -26,7 +26,7 @@ public class AboutAction extends ToolBarAction {
     private static final long serialVersionUID = -353145605693194634L;
 
     public AboutAction() {
-        super("action.about", "gui.images.about");
+        super("action.about", "about");
     }
 
     @Override

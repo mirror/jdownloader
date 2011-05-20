@@ -28,7 +28,6 @@ import jd.controlling.reconnect.plugins.extern.ExternReconnectPlugin;
 import jd.controlling.reconnect.plugins.liveheader.CLRConverter;
 import jd.controlling.reconnect.plugins.liveheader.LiveHeaderReconnect;
 import jd.nutils.io.JDFileFilter;
-import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -44,6 +43,7 @@ import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.appwork.utils.swing.dialog.ProgressDialog;
+import org.jdownloader.images.NewTheme;
 
 public class ReconnectPluginController {
     private static final String                    JD_CONTROLLING_RECONNECT_PLUGINS = "jd/controlling/reconnect/plugins/";
@@ -172,7 +172,7 @@ public class ReconnectPluginController {
         if (this.getActivePlugin() != DummyRouterPlugin.getInstance()) {
 
             try {
-                Dialog.getInstance().showConfirmDialog(Dialog.BUTTONS_HIDE_CANCEL, JDL.L("jd.controlling.reconnect.ReconnectPluginController.autoFind.title", "Reconnect Wizard"), JDL.LF("jd.controlling.reconnect.ReconnectPluginController.autoFind.success", "Successful!\r\nJDownloader performs the reconnect by using '%s'.", this.getActivePlugin().getName()), JDTheme.II("gui.images.ok", 32, 32), null, null);
+                Dialog.getInstance().showConfirmDialog(Dialog.BUTTONS_HIDE_CANCEL, JDL.L("jd.controlling.reconnect.ReconnectPluginController.autoFind.title", "Reconnect Wizard"), JDL.LF("jd.controlling.reconnect.ReconnectPluginController.autoFind.success", "Successful!\r\nJDownloader performs the reconnect by using '%s'.", this.getActivePlugin().getName()), NewTheme.I().getIcon("true", 32), null, null);
             } catch (DialogClosedException e1) {
                 e1.printStackTrace();
             } catch (DialogCanceledException e1) {
@@ -181,7 +181,7 @@ public class ReconnectPluginController {
         } else {
 
             this.setActivePlugin(restore);
-            final ConfirmDialog conDialog = new ConfirmDialog(Dialog.BUTTONS_HIDE_CANCEL, JDL.L("jd.controlling.reconnect.ReconnectPluginController.autoFind.title", "Reconnect Wizard"), JDL.L("jd.controlling.reconnect.ReconnectPluginController.autoFind.failed", "Failed!\r\nJDownloader could not find working reconnect settings for your connection.\r\nPlease contact Support for further help."), JDTheme.II("gui.images.bad", 32, 32), null, null);
+            final ConfirmDialog conDialog = new ConfirmDialog(Dialog.BUTTONS_HIDE_CANCEL, JDL.L("jd.controlling.reconnect.ReconnectPluginController.autoFind.title", "Reconnect Wizard"), JDL.L("jd.controlling.reconnect.ReconnectPluginController.autoFind.failed", "Failed!\r\nJDownloader could not find working reconnect settings for your connection.\r\nPlease contact Support for further help."), NewTheme.I().getIcon("false", 32), null, null);
 
             conDialog.setLeftActions(new AbstractAction(JDL.L("jd.controlling.reconnect.ReconnectPluginController.autoFind.support", "Support")) {
 

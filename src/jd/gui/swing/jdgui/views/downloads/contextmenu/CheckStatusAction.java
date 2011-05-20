@@ -23,7 +23,7 @@ public class CheckStatusAction extends ContextMenuAction {
 
     @Override
     protected String getIcon() {
-        return "gui.images.config.network_local";
+        return "network-idle";
     }
 
     @Override

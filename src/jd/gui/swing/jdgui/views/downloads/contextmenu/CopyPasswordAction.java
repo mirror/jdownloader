@@ -25,7 +25,7 @@ public class CopyPasswordAction extends ContextMenuAction {
 
     @Override
     protected String getIcon() {
-        return "gui.icons.copy";
+        return "copy";
     }
 
     @Override

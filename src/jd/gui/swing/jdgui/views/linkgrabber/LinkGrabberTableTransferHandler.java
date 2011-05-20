@@ -39,10 +39,10 @@ import jd.controlling.LinkGrabberController;
 import jd.gui.swing.SwingGui;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkGrabberFilePackage;
-import jd.utils.JDTheme;
 
 import org.appwork.utils.Regex;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.images.NewTheme;
 
 public class LinkGrabberTableTransferHandler extends TransferHandler {
     private static final long     serialVersionUID = 2560352681437669412L;
@@ -139,7 +139,7 @@ public class LinkGrabberTableTransferHandler extends TransferHandler {
                     /* Links in Package */
                     String Name = ((LinkGrabberFilePackage) current).getName();
                     popup.add(m = new JMenuItem(_GUI._.gui_table_draganddrop_insertinpackagestart(Name)));
-                    m.setIcon(JDTheme.II("gui.images.go_top", 16, 16));
+                    m.setIcon(NewTheme.I().getIcon("go-top", 16));
                     m.addActionListener(new ActionListener() {
                         public void actionPerformed(ActionEvent e) {
                             LinkGrabberController.getInstance().move(draggingObjects, current, LinkGrabberController.MOVE_BEGIN);
@@ -147,7 +147,7 @@ public class LinkGrabberTableTransferHandler extends TransferHandler {
                     });
 
                     popup.add(m = new JMenuItem(_GUI._.gui_table_draganddrop_insertinpackageend(Name)));
-                    m.setIcon(JDTheme.II("gui.images.go_bottom", 16, 16));
+                    m.setIcon(NewTheme.I().getIcon("go-bottom", 16));
                     m.addActionListener(new ActionListener() {
                         public void actionPerformed(ActionEvent e) {
                             LinkGrabberController.getInstance().move(draggingObjects, current, LinkGrabberController.MOVE_END);
@@ -158,7 +158,7 @@ public class LinkGrabberTableTransferHandler extends TransferHandler {
                     /* Links in Links */
                     String name = ((DownloadLink) current).getName();
                     popup.add(m = new JMenuItem(_GUI._.gui_table_draganddrop_before(name)));
-                    m.setIcon(JDTheme.II("gui.images.go_top", 16, 16));
+                    m.setIcon(NewTheme.I().getIcon("go-top", 16));
                     m.addActionListener(new ActionListener() {
                         public void actionPerformed(ActionEvent e) {
                             LinkGrabberController.getInstance().move(draggingObjects, current, LinkGrabberController.MOVE_BEFORE);
@@ -166,7 +166,7 @@ public class LinkGrabberTableTransferHandler extends TransferHandler {
                     });
 
                     popup.add(m = new JMenuItem(_GUI._.gui_table_draganddrop_after(name)));
-                    m.setIcon(JDTheme.II("gui.images.go_bottom", 16, 16));
+                    m.setIcon(NewTheme.I().getIcon("go-bottom", 16));
                     m.addActionListener(new ActionListener() {
                         public void actionPerformed(ActionEvent e) {
                             LinkGrabberController.getInstance().move(draggingObjects, current, LinkGrabberController.MOVE_AFTER);
@@ -184,7 +184,7 @@ public class LinkGrabberTableTransferHandler extends TransferHandler {
                     return false;
 
                 popup.add(m = new JMenuItem(_GUI._.gui_table_draganddrop_movepackagebefore(name)));
-                m.setIcon(JDTheme.II("gui.images.go_top", 16, 16));
+                m.setIcon(NewTheme.I().getIcon("go-top", 16));
                 m.addActionListener(new ActionListener() {
                     public void actionPerformed(ActionEvent e) {
                         LinkGrabberController.getInstance().move(draggingObjects, current, LinkGrabberController.MOVE_BEFORE);
@@ -193,7 +193,7 @@ public class LinkGrabberTableTransferHandler extends TransferHandler {
                 });
 
                 popup.add(m = new JMenuItem(_GUI._.gui_table_draganddrop_movepackageend(name)));
-                m.setIcon(JDTheme.II("gui.images.go_bottom", 16, 16));
+                m.setIcon(NewTheme.I().getIcon("go-bottom", 16));
                 m.addActionListener(new ActionListener() {
                     public void actionPerformed(ActionEvent e) {
                         LinkGrabberController.getInstance().move(draggingObjects, current, LinkGrabberController.MOVE_AFTER);
@@ -206,7 +206,7 @@ public class LinkGrabberTableTransferHandler extends TransferHandler {
             }
         }
         popup.add(m = new JMenuItem(_GUI._.gui_btn_cancel()));
-        m.setIcon(JDTheme.II("gui.images.unselected", 16, 16));
+        m.setIcon(NewTheme.I().getIcon("disabled", 16));
         popup.show(table, point.x, point.y);
         return true;
     }

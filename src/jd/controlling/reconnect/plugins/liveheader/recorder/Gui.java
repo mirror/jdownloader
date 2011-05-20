@@ -39,7 +39,6 @@ import jd.controlling.reconnect.plugins.liveheader.LiveHeaderReconnect;
 import jd.controlling.reconnect.plugins.liveheader.translate.T;
 import jd.gui.UserIO;
 import jd.nutils.JDFlags;
-import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
 
@@ -49,6 +48,7 @@ import org.appwork.utils.swing.dialog.AbstractDialog;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
+import org.jdownloader.images.NewTheme;
 
 public class Gui extends AbstractDialog<Object> {
 
@@ -71,9 +71,9 @@ public class Gui extends AbstractDialog<Object> {
             private final String      strGood;
 
             public RRStatus() {
-                this.imageProgress = JDTheme.II("gui.images.reconnect", 32, 32);
-                this.imageBad = JDTheme.II("gui.images.unselected", 32, 32);
-                this.imageGood = JDTheme.II("gui.images.selected", 32, 32);
+                this.imageProgress = NewTheme.I().getIcon("record", 32);
+                this.imageBad = NewTheme.I().getIcon("false", 32);
+                this.imageGood = NewTheme.I().getIcon("true", 32);
                 this.strProgress = T._.jd_router_reconnectrecorder_Gui_icon_progress();
                 this.strBad = T._.jd_router_reconnectrecorder_Gui_icon_bad();
                 this.strGood = T._.jd_router_reconnectrecorder_Gui_icon_good();

@@ -30,12 +30,12 @@ import jd.gui.swing.components.ComboBrowseFile;
 import jd.gui.swing.components.JDCollapser;
 import jd.gui.swing.components.JDTextField;
 import jd.plugins.LinkGrabberFilePackage;
-import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.images.NewTheme;
 
 public class LinkGrabberFilePackageInfo extends JDCollapser implements ActionListener, FocusListener {
 
@@ -61,7 +61,7 @@ public class LinkGrabberFilePackageInfo extends JDCollapser implements ActionLis
         buildGui();
         fp = null;
         menutitle.setText(_GUI._.gui_table_contextmenu_prop());
-        menutitle.setIcon(JDTheme.II("gui.images.config.tip", 16, 16));
+        menutitle.setIcon(NewTheme.I().getIcon("info", 16));
     }
 
     public void setPackage(LinkGrabberFilePackage fp) {

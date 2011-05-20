@@ -30,7 +30,7 @@ public class SettingsAction extends ToolBarAction {
     private static final long serialVersionUID = 2547991585530678706L;
 
     public SettingsAction() {
-        super("action.settings", "gui.images.taskpanes.configuration");
+        super("action.settings", "settings");
     }
 
     @Override

@@ -23,7 +23,7 @@ public class SetPasswordAction extends ContextMenuAction {
 
     @Override
     protected String getIcon() {
-        return "gui.images.password";
+        return "password";
     }
 
     @Override

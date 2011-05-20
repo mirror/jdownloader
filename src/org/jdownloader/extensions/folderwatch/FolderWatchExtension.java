@@ -48,7 +48,6 @@ import jd.nutils.JDFlags;
 import jd.nutils.JDHash;
 import jd.nutils.OSDetector;
 import jd.plugins.AddonPanel;
-import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
 
@@ -64,6 +63,7 @@ import org.jdownloader.extensions.folderwatch.translate.T;
 import org.jdownloader.extensions.interfaces.RemoteSupport;
 import org.jdownloader.extensions.remotecontrol.helppage.HelpPage;
 import org.jdownloader.extensions.remotecontrol.helppage.Table;
+import org.jdownloader.images.NewTheme;
 
 public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig> implements FileMonitoringListener, RemoteSupport, ActionListener {
 
@@ -126,7 +126,7 @@ public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig> i
 
     @Override
     public String getIconKey() {
-        return "gui.images.folderwatch";
+        return "folder_add";
     }
 
     public void actionPerformed(ActionEvent e) {
@@ -479,7 +479,7 @@ public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig> i
         config.setGroup(new ConfigGroup(T._.plugins_optional_folderwatch_JDFolderWatch_gui_label_folderlist(), getIconKey()));
 
         JButton addButton = new JButton(T._.plugins_optional_folderwatch_JDFolderWatch_gui_folderlist_add());
-        addButton.setIcon(JDTheme.II("gui.images.add", 16, 16));
+        addButton.setIcon(NewTheme.I().getIcon("add", 16));
         addButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 filechooser.showOpenDialog(null);
@@ -496,7 +496,7 @@ public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig> i
         });
 
         JButton removeButton = new JButton(T._.plugins_optional_folderwatch_JDFolderWatch_gui_folderlist_remove());
-        removeButton.setIcon(JDTheme.II("gui.images.delete", 16, 16));
+        removeButton.setIcon(NewTheme.I().getIcon("delete", 16));
         removeButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 while (!guiFolderList.isSelectionEmpty()) {
@@ -526,7 +526,7 @@ public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig> i
                     openInFilebrowser(folder);
                 }
             }
-        }, T._.plugins_optional_folderwatch_JDFolderWatch_gui_action_openfolder(), T._.plugins_optional_folderwatch_JDFolderWatch_gui_action_openfolder_long(), JDTheme.II("gui.images.package", 16, 16)));
+        }, T._.plugins_optional_folderwatch_JDFolderWatch_gui_action_openfolder(), T._.plugins_optional_folderwatch_JDFolderWatch_gui_action_openfolder_long(), NewTheme.I().getIcon("package_closed", 16)));
 
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_BUTTON, new ActionListener() {
             public void actionPerformed(ActionEvent e) {
@@ -537,13 +537,13 @@ public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig> i
                     updateListModelSelection();
                 }
             }
-        }, T._.plugins_optional_folderwatch_JDFolderWatch_gui_action_emptyfolder(), T._.plugins_optional_folderwatch_JDFolderWatch_gui_action_emptyfolder_long(), JDTheme.II("gui.images.clear", 16, 16)));
+        }, T._.plugins_optional_folderwatch_JDFolderWatch_gui_action_emptyfolder(), T._.plugins_optional_folderwatch_JDFolderWatch_gui_action_emptyfolder_long(), NewTheme.I().getIcon("clear", 16)));
 
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_BUTTON, new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 showGui();
             }
-        }, T._.plugins_optional_folderwatch_JDFolderWatch_gui_action_showhistory(), T._.plugins_optional_folderwatch_JDFolderWatch_gui_action_showhistory_long(), JDTheme.II("gui.images.config.eventmanager", 16, 16)));
+        }, T._.plugins_optional_folderwatch_JDFolderWatch_gui_action_showhistory(), T._.plugins_optional_folderwatch_JDFolderWatch_gui_action_showhistory_long(), NewTheme.I().getIcon("event", 16)));
 
         config.setGroup(new ConfigGroup(T._.plugins_optional_folderwatch_JDFolderWatch_gui_label_options(), getIconKey()));
 

@@ -25,16 +25,16 @@ import jd.controlling.DistributeData;
 import jd.gui.UserIO;
 import jd.gui.swing.jdgui.actions.ToolBarAction;
 import jd.parser.html.HTMLParser;
-import jd.utils.JDTheme;
 
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.images.NewTheme;
 
 public class AddUrlAction extends ToolBarAction {
 
     private static final long serialVersionUID = -7185006215784212976L;
 
     public AddUrlAction() {
-        super("action.addurl", "gui.images.url");
+        super("action.addurl", "url");
     }
 
     @Override
@@ -51,7 +51,7 @@ public class AddUrlAction extends ToolBarAction {
             }
         } catch (Exception e2) {
         }
-        String link = UserIO.getInstance().requestInputDialog(UserIO.NO_COUNTDOWN | UserIO.STYLE_LARGE, _GUI._.gui_dialog_addurl_title(), _GUI._.gui_dialog_addurl_message(), def.toString(), JDTheme.II("gui.images.taskpanes.linkgrabber", 32, 32), _GUI._.gui_dialog_addurl_okoption_parse(), null);
+        String link = UserIO.getInstance().requestInputDialog(UserIO.NO_COUNTDOWN | UserIO.STYLE_LARGE, _GUI._.gui_dialog_addurl_title(), _GUI._.gui_dialog_addurl_message(), def.toString(), NewTheme.I().getIcon("linkgrabber", 32), _GUI._.gui_dialog_addurl_okoption_parse(), null);
         if (link == null || link.length() == 0) return;
         if (CNL2.checkText(link)) return;
         DistributeData tmp = new DistributeData(link, false);

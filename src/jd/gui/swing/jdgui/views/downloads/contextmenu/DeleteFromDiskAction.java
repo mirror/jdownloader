@@ -31,7 +31,7 @@ public class DeleteFromDiskAction extends ContextMenuAction {
 
     @Override
     protected String getIcon() {
-        return "gui.images.delete";
+        return "delete";
     }
 
     @Override

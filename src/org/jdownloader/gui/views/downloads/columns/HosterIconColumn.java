@@ -8,11 +8,11 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PackageLinkNode;
 import jd.plugins.PluginForHost;
-import jd.utils.JDTheme;
 
 import org.appwork.utils.swing.table.ExtColumn;
 import org.appwork.utils.swing.table.ExtTable;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.images.NewTheme;
 
 public class HosterIconColumn extends ExtColumn<PackageLinkNode> {
 
@@ -31,9 +31,9 @@ public class HosterIconColumn extends ExtColumn<PackageLinkNode> {
         super("HosterIcon", null);
         statuspanel = new StatusLabel();
         statuspanel.setBorder(null);
-        imgResume = JDTheme.II("gui.images.resume", 16, 16);
-        imgMissing = JDTheme.II("gui.images.bad", 16, 16);
-        imgPremium = JDTheme.II("gui.images.premium", 16, 16);
+        imgResume = NewTheme.I().getIcon("resume", 16);
+        imgMissing = NewTheme.I().getIcon("false", 16);
+        imgPremium = NewTheme.I().getIcon("premium", 16);
         strResume = _GUI._.jd_gui_swing_jdgui_views_downloadview_TableRenderer_resume();
         strPremium = _GUI._.jd_gui_swing_jdgui_views_downloadview_TableRenderer_premium();
         strMissing = _GUI._.jd_gui_swing_jdgui_views_downloadview_TableRenderer_missing();

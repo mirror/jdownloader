@@ -11,7 +11,6 @@ import javax.swing.event.CaretEvent;
 import javax.swing.event.CaretListener;
 
 import jd.controlling.JDLogger;
-import jd.utils.JDTheme;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.utils.BinaryLogic;
@@ -19,6 +18,7 @@ import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.appwork.utils.swing.dialog.AbstractDialog;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.images.NewTheme;
 
 public class ProxyDialog extends AbstractDialog<HTTPProxy> implements CaretListener {
 
@@ -37,7 +37,7 @@ public class ProxyDialog extends AbstractDialog<HTTPProxy> implements CaretListe
     private JLabel            lblHost;
 
     public ProxyDialog() {
-        super(0, _GUI._.jd_gui_swing_dialog_ProxyDialog_title(), JDTheme.II("gui.images.proxy", 32, 32), null, null);
+        super(0, _GUI._.jd_gui_swing_dialog_ProxyDialog_title(), NewTheme.I().getIcon("proxy", 32), null, null);
     }
 
     @Override

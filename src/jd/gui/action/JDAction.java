@@ -29,9 +29,9 @@ import javax.swing.KeyStroke;
 import jd.config.Property;
 import jd.controlling.JDLogger;
 import jd.gui.swing.ShortCuts;
-import jd.utils.JDTheme;
 
 import org.appwork.utils.Regex;
+import org.jdownloader.images.NewTheme;
 
 /**
  * This abstract class is the parent class for all actions in JDownloader
@@ -87,8 +87,8 @@ public abstract class JDAction extends AbstractAction {
      */
     public void setIcon(final String key) {
         if (key.length() >= 3) {
-            putValue(AbstractAction.SMALL_ICON, JDTheme.II(key, 16, 16));
-            putValue(AbstractAction.LARGE_ICON_KEY, JDTheme.II(key, 24, 24));
+            putValue(AbstractAction.SMALL_ICON, NewTheme.I().getIcon(key, 16));
+            putValue(AbstractAction.LARGE_ICON_KEY, NewTheme.I().getIcon(key, 24));
             putValue(IMAGE_KEY, key);
         }
     }

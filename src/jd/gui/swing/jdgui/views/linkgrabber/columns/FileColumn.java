@@ -32,29 +32,30 @@ import jd.gui.swing.jdgui.components.StatusLabel;
 import jd.nutils.NaturalOrderComparator;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkGrabberFilePackage;
-import jd.utils.JDTheme;
+
+import org.jdownloader.images.NewTheme;
 
 public class FileColumn extends JDTableColumn {
 
-    private static final long serialVersionUID = 2228210790952050305L;
-    private DownloadLink dLink;
-    private Border leftGap;
-    private ImageIcon icon_fp_open;
-    private ImageIcon icon_fp_open_error;
-    private ImageIcon icon_fp_closed;
-    private ImageIcon icon_fp_closed_error;
-    private ImageIcon imgFileFailed;
+    private static final long      serialVersionUID = 2228210790952050305L;
+    private DownloadLink           dLink;
+    private Border                 leftGap;
+    private ImageIcon              icon_fp_open;
+    private ImageIcon              icon_fp_open_error;
+    private ImageIcon              icon_fp_closed;
+    private ImageIcon              icon_fp_closed_error;
+    private ImageIcon              imgFileFailed;
     private LinkGrabberFilePackage fp;
-    private StatusLabel jlr;
+    private StatusLabel            jlr;
 
     public FileColumn(String name, JDTableModel table) {
         super(name, table);
         leftGap = BorderFactory.createEmptyBorder(0, 32, 0, 0);
-        icon_fp_open = JDTheme.II("gui.images.package_opened_tree", 32, 16);
-        icon_fp_open_error = JDTheme.II("gui.images.package_open_error_tree", 32, 16);
-        icon_fp_closed = JDTheme.II("gui.images.package_closed_tree", 32, 16);
-        icon_fp_closed_error = JDTheme.II("gui.images.package_closed_error_tree", 32, 16);
-        imgFileFailed = JDTheme.II("gui.images.offlinefile", 16, 16);
+        icon_fp_open = NewTheme.I().getIcon("tree_package_open", 32);
+        icon_fp_open_error = NewTheme.I().getIcon("tree_package_open_error", 32);
+        icon_fp_closed = NewTheme.I().getIcon("tree_package_closed", 32);
+        icon_fp_closed_error = NewTheme.I().getIcon("tree_package_closed_error", 32);
+        imgFileFailed = NewTheme.I().getIcon("file_error", 16);
         jlr = new StatusLabel();
         jlr.setBorder(null);
     }

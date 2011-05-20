@@ -40,7 +40,7 @@ public class PasswordListHTAccess extends ConfigPanel {
     }
 
     public static String getIconKey() {
-        return "gui.images.htaccess";
+        return "htaccess";
     }
 
     private static final long serialVersionUID = 3383448498625377495L;

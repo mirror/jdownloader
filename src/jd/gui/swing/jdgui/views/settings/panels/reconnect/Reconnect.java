@@ -37,7 +37,7 @@ public class Reconnect extends ConfigPanel {
     private static final long serialVersionUID = 3383448498625377495L;
 
     public static String getIconKey() {
-        return "gui.images.reconnect_settings";
+        return "reconnect";
     }
 
     @Override
@@ -63,7 +63,7 @@ public class Reconnect extends ConfigPanel {
         ConfigEntry ce, cond;
         final ConfigContainer container = new ConfigContainer();
 
-        container.setGroup(new ConfigGroup(_GUI._.gui_config_reconnect_shared(), "gui.images.reconnect_settings"));
+        container.setGroup(new ConfigGroup(_GUI._.gui_config_reconnect_shared(), "reconnect"));
 
         container.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getConfiguration(), Configuration.PARAM_IPCHECKWAITTIME, _GUI._.reconnect_waittimetofirstipcheck(), 5, 600, 5).setDefaultValue(5));
         container.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getConfiguration(), Configuration.PARAM_RETRIES, _GUI._.reconnect_retries(), -1, 20, 1).setDefaultValue(5));
@@ -71,7 +71,7 @@ public class Reconnect extends ConfigPanel {
         container.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, config, "PARAM_DOWNLOAD_AUTORESUME_ON_RECONNECT", _GUI._.gui_config_download_autoresume()).setDefaultValue(true));
         container.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, config, "PARAM_DOWNLOAD_PREFER_RECONNECT", _GUI._.gui_config_download_preferreconnect()).setDefaultValue(true));
 
-        container.setGroup(new ConfigGroup(_GUI._.gui_config_download_ipcheck(), "gui.images.network"));
+        container.setGroup(new ConfigGroup(_GUI._.gui_config_download_ipcheck(), "network-idle"));
 
         container.addEntry(cond = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, config, Configuration.PARAM_GLOBAL_IP_DISABLE, _GUI._.gui_config_download_ipcheck_disable()) {
             private static final long serialVersionUID = 1L;

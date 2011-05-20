@@ -35,7 +35,7 @@ public class RemoveDisabledAction extends ToolBarAction {
     private static final long serialVersionUID = -5335194420202699757L;
 
     public RemoveDisabledAction() {
-        super("action.remove_disabled", "gui.images.remove_disabled");
+        super("action.remove_disabled", "remove_disabled");
     }
 
     @Override

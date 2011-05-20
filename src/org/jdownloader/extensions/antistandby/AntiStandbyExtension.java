@@ -82,7 +82,7 @@ public class AntiStandbyExtension extends AbstractExtension<AntiStandbyConfig> {
 
     @Override
     protected void start() throws StartException {
-        if (menuAction == null) menuAction = new MenuAction("jdantistandby", "gui.images.config.eventmanager") {
+        if (menuAction == null) menuAction = new MenuAction("jdantistandby", "event") {
 
             private static final long serialVersionUID = -5269457972563036769L;
 
@@ -118,7 +118,7 @@ public class AntiStandbyExtension extends AbstractExtension<AntiStandbyConfig> {
     }
 
     protected void initSettings(ConfigContainer config) {
-        config.setGroup(new ConfigGroup(getName(), "gui.images.preferences"));
+        config.setGroup(new ConfigGroup(getName(), "settings"));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(), CONFIG_MODE, modes, T._.gui_config_antistandby_mode()).setDefaultValue(0));
 
     }

@@ -282,7 +282,7 @@ public class UPNPRouterPlugin extends RouterPlugin implements ActionListener, IP
                     // true);
                     if (UPNPRouterPlugin.this.getStorage().get(UpnpRouterDevice.CONTROLURL, null) != null) {
 
-                        final ImageIcon icon = JDTheme.II("gui.images.ok", 32, 32);
+                        final ImageIcon icon = NewTheme.I().getIcon("true",32);
 
                         final ConfirmDialog d = new ConfirmDialog(Dialog.BUTTONS_HIDE_CANCEL, T._.jd_controlling_reconnect_plugins_upnp_UPNPRouterPlugin_autoFind_successdialog_title(), T._.jd_controlling_reconnect_plugins_upnp_UPNPRouterPlugin_autoFind_successdialog_message(UPNPRouterPlugin.this.getStorage().get(UpnpRouterDevice.FRIENDLYNAME, null)), icon, null, null);
 
@@ -290,7 +290,7 @@ public class UPNPRouterPlugin extends RouterPlugin implements ActionListener, IP
                         Dialog.getInstance().showDialog(d);
                         ReconnectPluginController.getInstance().setActivePlugin(UPNPRouterPlugin.this);
                     } else {
-                        final ImageIcon icon = JDTheme.II("gui.images.bad", 32, 32);
+                        final ImageIcon icon = NewTheme.I().getIcon("false",32);
 
                         final ConfirmDialog d = new ConfirmDialog(Dialog.BUTTONS_HIDE_CANCEL, T._.jd_controlling_reconnect_plugins_upnp_UPNPRouterPlugin_autoFind_faileddialog_title(), T._.jd_controlling_reconnect_plugins_upnp_UPNPRouterPlugin_autoFind_faileddialog_message(), icon, null, null);
                         d.setPreferredSize(new Dimension(500, 150));

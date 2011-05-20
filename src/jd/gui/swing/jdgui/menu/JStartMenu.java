@@ -18,7 +18,7 @@ package jd.gui.swing.jdgui.menu;
 
 import javax.swing.JMenu;
 
-import jd.utils.JDTheme;
+import org.jdownloader.images.NewTheme;
 
 public class JStartMenu extends JMenu {
 
@@ -27,7 +27,7 @@ public class JStartMenu extends JMenu {
     public JStartMenu(String name, String icon) {
         super(name);
 
-        this.setIcon(JDTheme.II(icon, 16, 16));
+        this.setIcon(NewTheme.I().getIcon(icon, 16));
     }
 
 }

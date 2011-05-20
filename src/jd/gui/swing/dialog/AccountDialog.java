@@ -37,7 +37,6 @@ import jd.gui.swing.jdgui.actions.ActionController;
 import jd.gui.swing.jdgui.views.settings.JDLabelListRenderer;
 import jd.plugins.Account;
 import jd.plugins.PluginForHost;
-import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
 
@@ -46,6 +45,7 @@ import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.images.NewTheme;
 
 public class AccountDialog extends AbstractDialog<Integer> {
 
@@ -116,7 +116,7 @@ public class AccountDialog extends AbstractDialog<Integer> {
         }
         this.hoster.setRenderer(new JDLabelListRenderer());
 
-        final JButton link = new JButton(JDTheme.II("gui.images.buy", 16, 16));
+        final JButton link = new JButton(NewTheme.I().getIcon("money", 16));
         link.setToolTipText(_GUI._.gui_menu_action_premium_buy_name());
         link.addActionListener(new ActionListener() {
             public void actionPerformed(final ActionEvent e) {

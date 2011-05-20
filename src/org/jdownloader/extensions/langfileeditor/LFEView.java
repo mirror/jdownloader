@@ -21,9 +21,9 @@ import javax.swing.JMenuBar;
 
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.gui.swing.jdgui.views.ClosableView;
-import jd.utils.JDTheme;
 
 import org.jdownloader.extensions.langfileeditor.translate.T;
+import org.jdownloader.images.NewTheme;
 
 public class LFEView extends ClosableView {
 
@@ -49,7 +49,7 @@ public class LFEView extends ClosableView {
 
     @Override
     public Icon getIcon() {
-        return JDTheme.II("gui.splash.languages", 16, 16);
+        return NewTheme.I().getIcon("language", 16);
     }
 
     @Override

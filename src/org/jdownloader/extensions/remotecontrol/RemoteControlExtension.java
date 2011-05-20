@@ -71,7 +71,7 @@ public class RemoteControlExtension extends AbstractExtension<RemoteControlConfi
 
     @Override
     public String getIconKey() {
-        return "gui.images.server";
+        return "server";
     }
 
     public void actionPerformed(final ActionEvent e) {

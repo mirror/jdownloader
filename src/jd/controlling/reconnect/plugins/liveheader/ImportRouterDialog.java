@@ -45,10 +45,10 @@ import jd.controlling.reconnect.plugins.liveheader.translate.T;
 import jd.gui.UserIO;
 import jd.gui.swing.Factory;
 import jd.nutils.encoding.Encoding;
-import jd.utils.JDTheme;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.utils.swing.dialog.AbstractDialog;
+import org.jdownloader.images.NewTheme;
 
 public class ImportRouterDialog extends AbstractDialog<Integer> {
 
@@ -58,7 +58,7 @@ public class ImportRouterDialog extends AbstractDialog<Integer> {
     private JList                     list;
 
     public ImportRouterDialog(final ArrayList<String[]> scripts) {
-        super(UserIO.NO_COUNTDOWN, T._.gui_config_liveheader_dialog_importrouter(), JDTheme.II("gui.images.search", 32, 32), null, null);
+        super(UserIO.NO_COUNTDOWN, T._.gui_config_liveheader_dialog_importrouter(), NewTheme.I().getIcon("search", 32), null, null);
 
         this.scripts = scripts;
         Collections.sort(this.scripts, new Comparator<String[]>() {
@@ -153,7 +153,7 @@ public class ImportRouterDialog extends AbstractDialog<Integer> {
         final JTextArea preview = new JTextArea();
         preview.setFocusable(true);
 
-        final JButton reset = Factory.createButton(null, JDTheme.II("gui.images.undo", 16, 16), new ActionListener() {
+        final JButton reset = Factory.createButton(null, NewTheme.I().getIcon("undo", 16), new ActionListener() {
             public void actionPerformed(final ActionEvent e) {
                 searchField.setForeground(Color.lightGray);
                 searchField.setText(text);

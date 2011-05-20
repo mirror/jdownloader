@@ -25,7 +25,7 @@ public class ResetAction extends ContextMenuAction {
 
     @Override
     protected String getIcon() {
-        return "gui.images.undo";
+        return "undo";
     }
 
     @Override

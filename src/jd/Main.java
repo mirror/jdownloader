@@ -17,9 +17,6 @@
 
 package jd;
 
-
- import org.jdownloader.translate.*;
-
 import java.awt.EventQueue;
 import java.io.File;
 import java.io.IOException;
@@ -61,6 +58,8 @@ import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.singleapp.AnotherInstanceRunningException;
 import org.appwork.utils.singleapp.InstanceMessageListener;
 import org.appwork.utils.singleapp.SingleAppInstance;
+import org.jdownloader.images.NewTheme;
+import org.jdownloader.translate._JDT;
 import org.jdownloader.update.JDUpdater;
 
 /**
@@ -147,7 +146,7 @@ public class Main {
         }
 
         if (Application.isOutdatedJavaVersion(true)) {
-            final int returnValue = UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.NO_CANCEL_OPTION, _JDT._.gui_javacheck_newerjavaavailable_title( Application.getJavaVersion()), _JDT._.gui_javacheck_newerjavaavailable_msg(), JDTheme.II("gui.images.warning", 32, 32), null, null);
+            final int returnValue = UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.NO_CANCEL_OPTION, _JDT._.gui_javacheck_newerjavaavailable_title(Application.getJavaVersion()), _JDT._.gui_javacheck_newerjavaavailable_msg(), NewTheme.I().getIcon("warning", 32), null, null);
             if ((returnValue & UserIO.RETURN_DONT_SHOW_AGAIN) == 0) {
                 CrossSystem.openURLOrShowMessage("http://jdownloader.org/download/index?updatejava=1");
             }

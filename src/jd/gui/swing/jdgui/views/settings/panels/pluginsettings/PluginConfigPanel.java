@@ -36,7 +36,7 @@ public class PluginConfigPanel extends SwitchPanel {
         // icon = JDImage.getScaledImageIcon(icon, 32, 32);
         // }
         // } else {
-        // icon = Theme.getIcon("spider", 32);
+        // icon = Theme.getIcon("linkgrabber", 32);
         // }
         // gui.addTopHeader(selectedItem.getHost(), icon);
 

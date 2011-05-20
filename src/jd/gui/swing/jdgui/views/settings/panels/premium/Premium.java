@@ -59,7 +59,7 @@ public class Premium extends ConfigPanel implements ActionListener, AccountContr
     }
 
     public static String getIconKey() {
-        return "gui.images.config.premium";
+        return "premium";
     }
 
     public Premium() {
@@ -98,7 +98,7 @@ public class Premium extends ConfigPanel implements ActionListener, AccountContr
     }
 
     private void initActions() {
-        new ThreadedAction("action.premiumview.refreshacc", "gui.images.reconnect") {
+        new ThreadedAction("action.premiumview.refreshacc", "reconnect") {
 
             private static final long serialVersionUID = -8727499044544169514L;
 
@@ -117,7 +117,7 @@ public class Premium extends ConfigPanel implements ActionListener, AccountContr
             }
 
         };
-        new ThreadedAction("action.premiumview.removeacc", "gui.images.delete") {
+        new ThreadedAction("action.premiumview.removeacc", "delete") {
 
             private static final long serialVersionUID = -4407938288408350792L;
 

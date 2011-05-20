@@ -32,7 +32,7 @@ public class RemoveFailedAction extends ToolBarAction {
     private static final long serialVersionUID = -5425871515927494136L;
 
     public RemoveFailedAction() {
-        super("action.remove_failed", "gui.images.remove_failed");
+        super("action.remove_failed", "remove_failed");
     }
 
     @Override

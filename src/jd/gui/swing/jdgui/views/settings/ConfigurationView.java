@@ -49,7 +49,7 @@ public class ConfigurationView extends ClosableView {
 
     @Override
     public Icon getIcon() {
-        return JDTheme.II("gui.images.taskpanes.configuration", ICON_SIZE, ICON_SIZE);
+        return JDTheme.II("settings", ICON_SIZE, ICON_SIZE);
     }
 
     @Override

@@ -30,7 +30,7 @@ public class RestartAction extends ToolBarAction {
     private static final long serialVersionUID = 1333126351380171619L;
 
     public RestartAction() {
-        super("action.restart", "gui.images.restart");
+        super("action.restart", "restart");
     }
 
     @Override

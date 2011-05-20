@@ -7,9 +7,8 @@ import javax.swing.AbstractAction;
 import javax.swing.Icon;
 import javax.swing.UIManager;
 
-import jd.utils.JDTheme;
-
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.images.NewTheme;
 
 public class JDCloseAction extends AbstractAction {
 
@@ -28,7 +27,7 @@ public class JDCloseAction extends AbstractAction {
         /*
          * If UIManager returns null, use fallback icon.
          */
-        return JDTheme.II("gui.images.cancel", 16, 16);
+        return NewTheme.I().getIcon("cancel", 16);
     }
 
     public JDCloseAction(ActionListener listener) {

@@ -150,7 +150,7 @@ public class FeedMeExtension extends AbstractExtension<FeedMeConfig> implements 
 
     @Override
     public String getIconKey() {
-        return "gui.images.rss";
+        return "rss";
     }
 
     private void syncRss() {

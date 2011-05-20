@@ -26,7 +26,7 @@ public class SaveMenu extends JStartMenu {
     private static final long serialVersionUID = -153884445300435027L;
 
     public SaveMenu() {
-        super(_GUI._.gui_menu_save(), "gui.images.save");
+        super(_GUI._.gui_menu_save(), "save");
         this.add(new BackupAction());
         this.add(new BackupLinkListAction());
     }

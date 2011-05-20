@@ -26,7 +26,7 @@ public class CreateDLCAction extends ContextMenuAction {
 
     @Override
     protected String getIcon() {
-        return "gui.images.dlc";
+        return "dlc";
     }
 
     @Override

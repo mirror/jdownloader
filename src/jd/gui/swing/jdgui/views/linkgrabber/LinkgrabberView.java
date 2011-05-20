@@ -59,7 +59,7 @@ public class LinkgrabberView extends View {
 
     @Override
     public Icon getIcon() {
-        return JDTheme.II("gui.images.taskpanes.linkgrabber", ICON_SIZE, ICON_SIZE);
+        return JDTheme.II("linkgrabber", ICON_SIZE, ICON_SIZE);
     }
 
     @Override

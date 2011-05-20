@@ -76,7 +76,7 @@ public class LogView extends ClosableView {
 
     @Override
     public Icon getIcon() {
-        return JDTheme.II("gui.images.taskpanes.log", ICON_SIZE, ICON_SIZE);
+        return JDTheme.II("log", ICON_SIZE, ICON_SIZE);
     }
 
     @Override

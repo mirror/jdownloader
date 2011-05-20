@@ -1,5 +1,6 @@
 package org.jdownloader.images;
 
+import org.appwork.resources.AWUTheme;
 import org.appwork.resources.Theme;
 
 /**
@@ -29,12 +30,8 @@ public class NewTheme extends Theme {
      * the only existing instance by using {@link #getInstance()}.
      */
     private NewTheme() {
-        super();
-    }
-
-    @Override
-    protected String getNameSpace() {
-        return "org/jdownloader/";
+        super("org/jdownloader/");
+        AWUTheme.getInstance().setNameSpace(getNameSpace());
     }
 
 }

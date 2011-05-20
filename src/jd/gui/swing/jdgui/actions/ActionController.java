@@ -117,7 +117,7 @@ public class ActionController {
 
         };
 
-        new ThreadedAction("toolbar.control.start", "gui.images.next") {
+        new ThreadedAction("toolbar.control.start", "go-next") {
             private static final long serialVersionUID = 1683169623090750199L;
 
             @Override
@@ -159,7 +159,7 @@ public class ActionController {
             }
 
         };
-        new ToolBarAction("toolbar.control.pause", "gui.images.break") {
+        new ToolBarAction("toolbar.control.pause", "media-playback-pause") {
             private static final long serialVersionUID = 7153300370492212502L;
 
             @Override
@@ -202,7 +202,7 @@ public class ActionController {
 
         };
 
-        new ThreadedAction("toolbar.control.stop", "gui.images.stop") {
+        new ThreadedAction("toolbar.control.stop", "stop") {
             private static final long serialVersionUID = 1409143759105090751L;
 
             @Override
@@ -264,7 +264,7 @@ public class ActionController {
 
         };
 
-        new ThreadedAction("toolbar.interaction.reconnect", "gui.images.reconnect") {
+        new ThreadedAction("toolbar.interaction.reconnect", "reconnect") {
             private static final long serialVersionUID = -1295253607970814759L;
 
             @Override
@@ -277,12 +277,12 @@ public class ActionController {
                             if (storageEvent.getKey() == Reconnecter.RECONNECT_FAILED_COUNTER) {
 
                                 if (((Number) storageEvent.getNewValue()).longValue() > 5) {
-                                    setIcon("gui.images.reconnect_warning");
+                                    setIcon("reconnect_warning");
                                     setToolTipText(_GUI._.gui_menu_action_reconnect_notconfigured_tooltip());
                                     ActionController.getToolBarAction("toolbar.quickconfig.reconnecttoggle").setToolTipText(_GUI._.gui_menu_action_reconnect_notconfigured_tooltip());
                                 } else {
                                     setToolTipText(_GUI._.gui_menu_action_reconnectman_desc());
-                                    setIcon("gui.images.reconnect");
+                                    setIcon("reconnect");
                                     ActionController.getToolBarAction("toolbar.quickconfig.reconnecttoggle").setToolTipText(_GUI._.gui_menu_action_reconnectauto_desc());
                                 }
                             }
@@ -311,7 +311,7 @@ public class ActionController {
 
         };
 
-        new ThreadedAction("toolbar.interaction.update", "gui.images.update") {
+        new ThreadedAction("toolbar.interaction.update", "update") {
             private static final long serialVersionUID = 4359802245569811800L;
 
             @Override
@@ -325,7 +325,7 @@ public class ActionController {
 
         };
 
-        new ToolBarAction("toolbar.quickconfig.clipboardoberserver", "gui.images.clipboard") {
+        new ToolBarAction("toolbar.quickconfig.clipboardoberserver", "clipboard") {
             private static final long serialVersionUID = -6442494647304101403L;
 
             @Override
@@ -350,7 +350,7 @@ public class ActionController {
             }
         };
 
-        new ToolBarAction("toolbar.quickconfig.reconnecttoggle", "gui.images.reconnect") {
+        new ToolBarAction("toolbar.quickconfig.reconnecttoggle", "reconnect") {
             private static final long serialVersionUID = -2942320816429047941L;
 
             @Override
@@ -376,7 +376,7 @@ public class ActionController {
 
         };
 
-        new ToolBarAction("action.opendlfolder", "gui.images.package_opened") {
+        new ToolBarAction("action.opendlfolder", "package_open") {
             private static final long serialVersionUID = -60944746807335951L;
 
             @Override
@@ -392,7 +392,7 @@ public class ActionController {
 
         };
 
-        new ThreadedAction("toolbar.control.stopmark", "gui.images.config.eventmanager") {
+        new ThreadedAction("toolbar.control.stopmark", "event") {
             private static final long serialVersionUID = 4359802245569811800L;
 
             @Override
@@ -439,7 +439,7 @@ public class ActionController {
 
         };
 
-        new ThreadedAction("action.downloadview.movetobottom", "gui.images.go_bottom") {
+        new ThreadedAction("action.downloadview.movetobottom", "go-bottom") {
             private static final long serialVersionUID = 6181260839200699153L;
 
             @Override
@@ -456,7 +456,7 @@ public class ActionController {
                 }
             }
         };
-        new ThreadedAction("action.downloadview.movetotop", "gui.images.go_top") {
+        new ThreadedAction("action.downloadview.movetotop", "go-top") {
             private static final long serialVersionUID = 6181260839200699153L;
 
             @Override
@@ -474,7 +474,7 @@ public class ActionController {
             }
         };
 
-        new ThreadedAction("action.downloadview.moveup", "gui.images.up") {
+        new ThreadedAction("action.downloadview.moveup", "up") {
             private static final long serialVersionUID = 6181260839200699153L;
 
             @Override
@@ -491,7 +491,7 @@ public class ActionController {
                 }
             }
         };
-        new ThreadedAction("action.downloadview.movedown", "gui.images.down") {
+        new ThreadedAction("action.downloadview.movedown", "go-down") {
             private static final long serialVersionUID = 6181260839200699153L;
 
             @Override
@@ -509,7 +509,7 @@ public class ActionController {
             }
         };
 
-        new ThreadedAction("action.premiumview.addacc", "gui.images.newlogins") {
+        new ThreadedAction("action.premiumview.addacc", "add") {
 
             private static final long serialVersionUID = -4407938288408350792L;
 
@@ -526,7 +526,7 @@ public class ActionController {
                 }
             }
         };
-        new ThreadedAction("action.premium.buy", "gui.images.buy") {
+        new ThreadedAction("action.premium.buy", "buy") {
 
             private static final long serialVersionUID = -4407938288408350792L;
 
@@ -562,7 +562,7 @@ public class ActionController {
             }
         };
 
-        new ToolBarAction("addonsMenu.configuration", "gui.images.config.packagemanager") {
+        new ToolBarAction("addonsMenu.configuration", "extension") {
             private static final long serialVersionUID = -3613887193435347389L;
 
             @Override
@@ -574,7 +574,7 @@ public class ActionController {
                 SwingGui.getInstance().requestPanel(UserIF.Panels.CONFIGPANEL, ExtensionManager.class);
             }
         };
-        new ToolBarAction("premiumMenu.toggle", "gui.images.config.tip") {
+        new ToolBarAction("premiumMenu.toggle", "info") {
 
             private static final long serialVersionUID = 4276436625882302179L;
 
@@ -607,7 +607,7 @@ public class ActionController {
             }
 
         };
-        new ToolBarAction("premiumMenu.configuration", "gui.images.config.premium") {
+        new ToolBarAction("premiumMenu.configuration", "premium") {
             private static final long serialVersionUID = -3613887193435347389L;
 
             @Override

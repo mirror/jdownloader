@@ -44,6 +44,7 @@ import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.Regex;
+import org.jdownloader.images.NewTheme;
 
 /**
  * Hier werden alle notwendigen Informationen zu einem einzelnen Download
@@ -1055,7 +1056,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
                     Image image = JDTheme.getImage(JDTheme.getTheme() + "/mime/" + JDIO.getFileExtension(this.getName()), 16, 16);
                     icon = new ImageIcon(image);
                 } catch (Exception e) {
-                    icon = JDTheme.II("gui.images.link", 16, 16);
+                    icon = NewTheme.I().getIcon("url", 16);
                 }
             } else {
                 try {
@@ -1065,7 +1066,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
                         Image image = JDTheme.getImage(JDTheme.getTheme() + "/mime/" + JDIO.getFileExtension(this.getName()), 16, 16);
                         icon = new ImageIcon(image);
                     } catch (Exception e2) {
-                        icon = JDTheme.II("gui.images.link", 16, 16);
+                        icon = NewTheme.I().getIcon("url", 16);
                     }
                 }
 

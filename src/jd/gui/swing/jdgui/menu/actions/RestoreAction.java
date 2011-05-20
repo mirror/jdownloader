@@ -34,7 +34,7 @@ public class RestoreAction extends ToolBarAction {
     private static final long serialVersionUID = -1428029294638573437L;
 
     public RestoreAction() {
-        super("action.restore", "gui.images.edit");
+        super("action.restore", "edit");
     }
 
     @Override

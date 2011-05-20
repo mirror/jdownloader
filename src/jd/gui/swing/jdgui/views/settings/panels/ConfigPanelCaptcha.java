@@ -42,7 +42,7 @@ public class ConfigPanelCaptcha extends ConfigPanel {
     }
 
     public static String getIconKey() {
-        return "gui.images.config.ocr";
+        return "ocr";
     }
 
     public ConfigPanelCaptcha() {
@@ -56,7 +56,7 @@ public class ConfigPanelCaptcha extends ConfigPanel {
         ConfigContainer container = new ConfigContainer();
         ConfigEntry ce1;
 
-        container.setGroup(new ConfigGroup(_GUI._.gui_config_captcha_settings(), "gui.images.config.ocr"));
+        container.setGroup(new ConfigGroup(_GUI._.gui_config_captcha_settings(), "ocr"));
 
         container.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, SubConfiguration.getConfig("JAC"), Configuration.JAC_SHOW_TIMEOUT, _GUI._.gui_config_captcha_train_show_timeout(), 0, 600, 5).setDefaultValue(20));
         container.addEntry(ce1 = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, SubConfiguration.getConfig("JAC"), Configuration.PARAM_CAPTCHA_JAC_DISABLE, _GUI._.gui_config_captcha_jac_disable()).setDefaultValue(false));

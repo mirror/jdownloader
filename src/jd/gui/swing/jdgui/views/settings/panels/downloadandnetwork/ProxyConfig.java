@@ -85,7 +85,7 @@ public class ProxyConfig extends AbstractConfigPanel {
 
     @Override
     public ImageIcon getIcon() {
-        return JDTheme.II("gui.images.proxy", ConfigPanel.ICON_SIZE, ConfigPanel.ICON_SIZE);
+        return JDTheme.II("proxy", ConfigPanel.ICON_SIZE, ConfigPanel.ICON_SIZE);
     }
 
     @Override

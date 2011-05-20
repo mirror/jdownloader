@@ -24,7 +24,7 @@ public class SelectHostAction extends ContextMenuAction {
 
     @Override
     protected String getIcon() {
-        return "gui.images.addselected";
+        return "addselected";
     }
 
     @Override

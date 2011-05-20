@@ -29,10 +29,10 @@ import jd.gui.swing.components.table.JDTableModel;
 import jd.gui.swing.jdgui.components.StatusLabel;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkGrabberFilePackage;
-import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.images.NewTheme;
 
 public class StatusColumn extends JDTableColumn {
 
@@ -65,13 +65,13 @@ public class StatusColumn extends JDTableColumn {
         strOffline = _GUI._.linkgrabber_onlinestatus_offline();
         strUnchecked = _GUI._.linkgrabber_onlinestatus_unchecked();
         strUncheckable = _GUI._.linkgrabber_onlinestatus_uncheckable();
-        imgOnline = JDTheme.II("gui.images.ok", 16, 16);
-        imgFailed = JDTheme.II("gui.images.bad", 16, 16);
-        imgPriorityS = JDTheme.II("gui.images.priority-1", 16, 16);
-        imgPriority1 = JDTheme.II("gui.images.priority1", 16, 16);
-        imgPriority2 = JDTheme.II("gui.images.priority2", 16, 16);
-        imgPriority3 = JDTheme.II("gui.images.priority3", 16, 16);
-        imgUncheckable = JDTheme.II("gui.images.help", 16, 16);
+        imgOnline = NewTheme.I().getIcon("true", 16);
+        imgFailed = NewTheme.I().getIcon("false", 16);
+        imgPriorityS = NewTheme.I().getIcon("prio_-1", 16);
+        imgPriority1 = NewTheme.I().getIcon("prio_1", 16);
+        imgPriority2 = NewTheme.I().getIcon("prio_2", 16);
+        imgPriority3 = NewTheme.I().getIcon("prio_3", 16);
+        imgUncheckable = NewTheme.I().getIcon("help", 16);
         strPriorityS = _GUI._.gui_treetable_tooltip_priority_1();
         strPriority1 = _GUI._.gui_treetable_tooltip_priority1();
         strPriority2 = _GUI._.gui_treetable_tooltip_priority2();

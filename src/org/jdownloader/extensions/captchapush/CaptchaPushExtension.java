@@ -31,7 +31,7 @@ public class CaptchaPushExtension extends AbstractExtension<CaptchaPushConfig> {
 
     @Override
     public String getIconKey() {
-        return "gui.images.config.ocr";
+        return "ocr";
     }
 
     @Override

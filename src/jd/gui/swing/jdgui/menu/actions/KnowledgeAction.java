@@ -27,7 +27,7 @@ public class KnowledgeAction extends ToolBarAction {
     private static final long serialVersionUID = 2227665710503234763L;
 
     public KnowledgeAction() {
-        super("action.help", "gui.images.help");
+        super("action.help", "help");
     }
 
     @Override

@@ -73,11 +73,11 @@ import jd.plugins.DownloadLinkInfoCache;
 import jd.plugins.FilePackage;
 import jd.plugins.FilePackageInfoCache;
 import jd.plugins.LinkStatus;
-import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.Application;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.images.NewTheme;
 
 public class DownloadTable extends JDTable implements MouseListener, KeyListener {
 
@@ -246,7 +246,7 @@ public class DownloadTable extends JDTable implements MouseListener, KeyListener
 
     private JMenu createPrioMenu(final ArrayList<DownloadLink> links) {
         final JMenu prioPopup = new JMenu(_GUI._.gui_table_contextmenu_priority() + " (" + links.size() + ")");
-        prioPopup.setIcon(JDTheme.II("gui.images.priority0", 16, 16));
+        prioPopup.setIcon(NewTheme.I().getIcon("prio_0", 16));
 
         prioPopup.add(new PriorityAction(links, 3));
         prioPopup.add(new PriorityAction(links, 2));
@@ -425,7 +425,7 @@ public class DownloadTable extends JDTable implements MouseListener, KeyListener
 
             final JMenu pop = new JMenu(_GUI._.gui_table_contextmenu_more());
             popup.add(pop);
-            pop.setIcon(JDTheme.II("gui.images.configuration", 16, 16));
+            pop.setIcon(NewTheme.I().getIcon("settings", 16));
             while (items.getSub().size() > 0) {
 
                 items.getSub().remove(0).addToPopup(pop);
@@ -545,7 +545,7 @@ class PropMenuItem extends JMenuItem implements ActionListener {
 
     public PropMenuItem(final DownloadLinksPanel panel) {
         super(_GUI._.gui_table_contextmenu_prop());
-        this.setIcon(JDTheme.II("gui.images.config.tip", 16, 16));
+        this.setIcon(NewTheme.I().getIcon("info", 16));
         this.panel = panel;
         this.addActionListener(this);
     }

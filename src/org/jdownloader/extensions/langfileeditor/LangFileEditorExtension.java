@@ -34,7 +34,6 @@ import jd.gui.swing.jdgui.interfaces.SwitchPanelListener;
 import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.nutils.svn.Subversion;
 import jd.plugins.AddonPanel;
-import jd.utils.JDTheme;
 
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.extensions.AbstractExtension;
@@ -42,6 +41,7 @@ import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
 import org.jdownloader.extensions.langfileeditor.translate.T;
+import org.jdownloader.images.NewTheme;
 
 /**
  * Editor for jDownloader language files. Gets JDL.L() and JDL.LF() entries from
@@ -115,7 +115,7 @@ public class LangFileEditorExtension extends AbstractExtension<LangFileEditorCon
 
     @Override
     public String getIconKey() {
-        return "gui.splash.languages";
+        return "language";
     }
 
     @Override
@@ -182,7 +182,7 @@ public class LangFileEditorExtension extends AbstractExtension<LangFileEditorCon
                 }
 
             }
-        }, T._.jd_plugins_optional_langfileeditor_LangFileEditor_testlogins(), T._.jd_plugins_optional_langfileeditor_LangFileEditor_testloginsmessage(), JDTheme.II("gui.images.premium", 16, 16)));
+        }, T._.jd_plugins_optional_langfileeditor_LangFileEditor_testlogins(), T._.jd_plugins_optional_langfileeditor_LangFileEditor_testloginsmessage(), NewTheme.I().getIcon("premium", 16)));
 
     }
 

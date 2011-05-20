@@ -19,9 +19,9 @@ package org.jdownloader.extensions.schedule;
 import javax.swing.Icon;
 
 import jd.gui.swing.jdgui.views.ClosableView;
-import jd.utils.JDTheme;
 
 import org.jdownloader.extensions.schedule.translate.T;
+import org.jdownloader.images.NewTheme;
 
 public class SchedulerView extends ClosableView {
     private static final long serialVersionUID = -7876057076125402969L;
@@ -34,7 +34,7 @@ public class SchedulerView extends ClosableView {
 
     @Override
     public Icon getIcon() {
-        return JDTheme.II("gui.images.config.eventmanager", 16, 16);
+        return NewTheme.I().getIcon("event", 16);
     }
 
     @Override

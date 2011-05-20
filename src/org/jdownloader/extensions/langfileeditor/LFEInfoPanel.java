@@ -20,7 +20,7 @@ public class LFEInfoPanel extends InfoPanel {
     }
 
     private LFEInfoPanel() {
-        super("gui.splash.languages");
+        super("language");
 
         keyChart = new PieChartAPI(350, 50);
         keyChart.addEntity(entDone = new ChartAPIEntity(T._.plugins_optional_langfileeditor_keychart_done(), 0, LFEGui.COLOR_DONE));

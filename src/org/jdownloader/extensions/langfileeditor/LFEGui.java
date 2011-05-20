@@ -371,7 +371,7 @@ public class LFEGui extends SwitchPanel implements ActionListener {
     }
 
     private void getSourceEntries() {
-        final ProgressController progress = new ProgressController(T._.plugins_optional_langfileeditor_analyzingSource1(), "gui.splash.languages");
+        final ProgressController progress = new ProgressController(T._.plugins_optional_langfileeditor_analyzingSource1(), "language");
         progress.setIndeterminate(true);
 
         this.sourceParser = new SrcParser(this.dirWorkingCopy);
@@ -818,7 +818,7 @@ public class LFEGui extends SwitchPanel implements ActionListener {
             this.dirWorkingCopy.mkdirs();
         }
 
-        final ProgressController progress = new ProgressController(T._.plugins_optional_langfileeditor_svn_updating(), "gui.splash.languages");
+        final ProgressController progress = new ProgressController(T._.plugins_optional_langfileeditor_svn_updating(), "language");
         progress.setIndeterminate(true);
         try {
             Subversion svn = new Subversion(LFEGui.SOURCE_SVN, this.subConfig.getStringProperty(LFEGui.PROPERTY_SVN_ACCESS_USER), this.subConfig.getStringProperty(LFEGui.PROPERTY_SVN_ACCESS_PASS));

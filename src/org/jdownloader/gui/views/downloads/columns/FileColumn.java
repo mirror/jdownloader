@@ -8,11 +8,11 @@ import javax.swing.border.Border;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PackageLinkNode;
-import jd.utils.JDTheme;
 
 import org.appwork.utils.swing.renderer.RenderLabel;
 import org.appwork.utils.swing.table.ExtColumn;
 import org.appwork.utils.swing.table.ExtTable;
+import org.jdownloader.images.NewTheme;
 
 public class FileColumn extends ExtColumn<PackageLinkNode> {
 
@@ -32,8 +32,8 @@ public class FileColumn extends ExtColumn<PackageLinkNode> {
     public FileColumn() {
         super("FilePackage", null);
         leftGap = BorderFactory.createEmptyBorder(0, 32, 0, 0);
-        icon_fp_open = JDTheme.II("gui.images.package_opened_tree", 32, 16);
-        icon_fp_closed = JDTheme.II("gui.images.package_closed_tree", 32, 16);
+        icon_fp_open = NewTheme.I().getIcon("tree_package_open", 32);
+        icon_fp_closed = NewTheme.I().getIcon("tree_package_closed", 32);
         jlr = new RenderLabel();
     }
 

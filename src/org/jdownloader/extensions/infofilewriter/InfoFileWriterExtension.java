@@ -39,7 +39,6 @@ import jd.plugins.AddonPanel;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForHost;
-import jd.utils.JDTheme;
 import jd.utils.Replacer;
 import jd.utils.StringUtil;
 
@@ -48,6 +47,7 @@ import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
 import org.jdownloader.extensions.infofilewriter.translate.T;
+import org.jdownloader.images.NewTheme;
 
 public class InfoFileWriterExtension extends AbstractExtension<InfoFileWriterConfig> implements ActionListener, ControlListener {
 
@@ -166,7 +166,7 @@ public class InfoFileWriterExtension extends AbstractExtension<InfoFileWriterCon
 
     @Override
     public String getIconKey() {
-        return "gui.images.list";
+        return "list";
     }
 
     @Override
@@ -187,7 +187,7 @@ public class InfoFileWriterExtension extends AbstractExtension<InfoFileWriterCon
 
         config.addEntry(cmbVars = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, subConfig, "VARS", Replacer.getKeyList(), T._.plugins_optional_infofilewriter_variables()));
 
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_BUTTON, this, T._.plugins_optional_infofilewriter_insertKey_short(), T._.plugins_optional_infofilewriter_insertKey(), JDTheme.II("gui.icons.paste", 16, 16)));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_BUTTON, this, T._.plugins_optional_infofilewriter_insertKey_short(), T._.plugins_optional_infofilewriter_insertKey(), NewTheme.I().getIcon("paste", 16)));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, subConfig, PARAM_FILENAME, T._.plugins_optional_infofilewriter_filename()).setDefaultValue(FILENAME_DEFAULT));
         config.addEntry(txtInfo = new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, subConfig, PARAM_INFO_STRING, T._.plugins_optional_infofilewriter_content()).setDefaultValue(INFO_STRING_DEFAULT));
 
