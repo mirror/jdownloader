@@ -69,12 +69,16 @@ public class Freaksharenet extends PluginForHost {
         br.setFollowRedirects(false);
         Form form = br.getForm(1);
         final String ajax = br.getRegex("\\$\\.get\\(\"\\.\\./\\.\\.(.*?)\",").getMatch(0);
-        if (form == null || ajax == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-        // waittime
-        final Browser br2 = br.cloneBrowser();
-        br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        br2.getPage("http://freakshare.com" + ajax);
-        final String ttt = br2.getRegex("SUCCESS:(\\d+)").getMatch(0);
+        if (form == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        String ttt = null;
+        if (ajax != null) {
+            final Browser br2 = br.cloneBrowser();
+            br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+            br2.getPage("http://freakshare.com" + ajax);
+            ttt = br2.getRegex("SUCCESS:(\\d+)").getMatch(0);
+        } else {
+            ttt = br.getRegex("var time = (\\d+)\\.0").getMatch(0);
+        }
         int tt = 0;
         if (ttt != null) {
             tt = Integer.parseInt(ttt);
