@@ -49,6 +49,7 @@ public class ChoMikujPl extends PluginForDecrypt {
         // The message used on errors in this plugin
         String error = "Error while decrypting link: " + parameter;
         br.getPage(parameter);
+        String additionalPath = param.getStringProperty("path");
         String fpName = br.getRegex("<title>(.*?) - .*? - Chomikuj\\.pl.*?</title>").getMatch(0);
         if (fpName == null) {
             fpName = br.getRegex("class=\"T_selected\">(.*?)</span>").getMatch(0);
@@ -59,14 +60,16 @@ public class ChoMikujPl extends PluginForDecrypt {
         String viewState = br.getRegex("id=\"__VIEWSTATE\" value=\"(.*?)\"").getMatch(0);
         String chomikId = br.getRegex("id=\"ctl00_CT_ChomikID\" value=\"(.*?)\"").getMatch(0);
         String subFolderID = br.getRegex("id=\"ctl00_CT_FW_SubfolderID\" value=\"(.*?)\"").getMatch(0);
+        String treeExpandLog = br.getRegex("RefreshTreeAfterOptionsChange\\',\\'\\'\\)\" style=\"display: none\"></a>[\t\n\r ]+<input type=\"hidden\" value=\"(.*?)\" id=\"treeExpandLog\"").getMatch(0);
         if (subFolderID == null) subFolderID = br.getRegex("name=\"ChomikSubfolderId\" type=\"hidden\" value=\"(.*?)\"").getMatch(0);
-        if (subFolderID == null || fpName == null || chomikId == null || viewState == null) {
+        if (subFolderID == null || fpName == null || chomikId == null || viewState == null || treeExpandLog == null) {
             logger.warning(error);
             return null;
         }
+        fpName = fpName.trim();
         subFolderID = subFolderID.trim();
         // Important post data
-        String postdata = "ctl00%24SM=ctl00%24CT%24FW%24FoldersUp%7Cctl00%24CT%24FW%24RefreshButton&__EVENTTARGET=ctl00%24CT%24FW%24RefreshButton&__EVENTARGUMENT=&__VIEWSTATE=" + Encoding.urlEncode(viewState) + "&PageCmd=&PageArg=undefined&ctl00%24LoginTop%24LoginChomikName=&ctl00%24LoginTop%24LoginChomikPassword=&ctl00%24SearchInputBox=&ctl00%24SearchFileBox=&ctl00%24SearchType=all&SType=0&ctl00%24CT%24ChomikID=" + chomikId + "&ctl00%24CT%24PermW%24LoginCtrl%24PF=&ctl00%24CT%24TW%24TreeExpandLog=&ChomikSubfolderId=" + subFolderID + "&ctl00%24CT%24FW%24SubfolderID=" + subFolderID + "&FVSortType=1&FVSortDir=1&FVSortChange=&ctl00%24CT%24FW%24inpFolderAddress=" + Encoding.urlEncode(parameter) + "&FrGroupId=0&__ASYNCPOST=true&ctl00%24CT%24FrW%24FrPage=";
+        String postdata = "ctl00%24SM=ctl00%24CT%24FW%24FoldersUp%7Cctl00%24CT%24FW%24RefreshButton&__EVENTTARGET=ctl00%24CT%24FW%24RefreshButton&__EVENTARGUMENT=&__VIEWSTATE=" + Encoding.urlEncode(viewState) + "&PageCmd=&PageArg=undefined&ctl00%24LoginTop%24LoginChomikName=&ctl00%24LoginTop%24LoginChomikPassword=&ctl00%24SearchInputBox=nazwa%20lub%20e-mail&ctl00%24SearchFileBox=nazwa%20pliku&ctl00%24SearchType=all&SType=0&ctl00%24CT%24ChomikID=" + chomikId + "&ctl00%24CT%24PermW%24LoginCtrl%24PF=&ctl00%24CT%24TW%24TreeExpandLog=&ChomikSubfolderId=" + subFolderID + "&ctl00%24CT%24FW%24SubfolderID=" + subFolderID + "&FVSortType=1&FVSortDir=1&FVSortChange=&ctl00%24CT%24FW%24inpFolderAddress=" + Encoding.urlEncode(parameter) + "&treeExpandLog=" + Encoding.urlEncode(treeExpandLog) + "&FrGroupId=0&__ASYNCPOST=true&FVPage=0&ctl00%24CT%24FrW%24FrPage=";
         // not working yet
         // if (br.containsHTML(PASSWORDTEXT)) {
         // prepareBrowser(parameter, br);
@@ -122,12 +125,32 @@ public class ChoMikujPl extends PluginForDecrypt {
                 String finalLink = String.format("&id=%s&gallerylink=%s&", id, param.toString().replace("chomikuj.pl", "60423fhrzisweguikipo9re"));
                 DownloadLink dl = createDownloadlink(finalLink);
                 dl.setName(String.valueOf(new Random().nextInt(1000000)));
+                if (additionalPath != null) {
+                    dl.setProperty("path", additionalPath);
+                } else {
+                    dl.setProperty("path", fpName);
+                }
                 decryptedLinks.add(dl);
+            }
+            String[][] allFolders = br.getRegex("class=\"folders\" cellspacing=\"6\" cellpadding=\"0\" border=\"0\">[\t\n\r ]+<tr>[\t\n\r ]+<td><a href=\"(.*?)\" onclick=\"return Ts\\(\\'\\d+\\'\\)\">(.*?)</span>").getMatches();
+            if (allFolders != null && allFolders.length != 0) {
+                for (String[] folder : allFolders) {
+                    String folderLink = folder[0];
+                    String folderName = folder[1];
+                    folderLink = "http://chomikuj.pl" + folderLink;
+                    DownloadLink folderDl = createDownloadlink(folderLink);
+                    if (additionalPath != null) {
+                        folderDl.setProperty("path", additionalPath + "\\" + folderName);
+                    } else {
+                        folderDl.setProperty("path", fpName + "\\" + folderName);
+                    }
+                    decryptedLinks.add(folderDl);
+                }
             }
             progress.increase(1);
         }
         FilePackage fp = FilePackage.getInstance();
-        fp.setName(fpName.trim());
+        fp.setName(fpName);
         fp.addLinks(decryptedLinks);
         return decryptedLinks;
     }

@@ -94,6 +94,8 @@ public class ChoMikujPl extends PluginForHost {
         if (br.containsHTML(PREMIUMONLY)) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.chomikujpl.only4registered", PREMIUMONLYUSERTEXT));
         getDllink(downloadLink);
         if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        String additionalPath = downloadLink.getStringProperty("path");
+        if (additionalPath != null) downloadLink.addSubdirectory(additionalPath);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
@@ -163,6 +165,8 @@ public class ChoMikujPl extends PluginForHost {
             logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        String additionalPath = link.getStringProperty("path");
+        if (additionalPath != null) link.addSubdirectory(additionalPath);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, DLLINK, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The final dllink seems not to be a file!");
