@@ -52,15 +52,21 @@ public class FilerNet extends PluginForHost {
         return "http://www.filer.net/agb.htm";
     }
 
+    private static long LAST_FREE_DOWNLOAD = 0l;
+
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         br.setFollowRedirects(false);
         int maxCaptchaTries = 5;
-
         br.setCookiesExclusive(true);
         br.clearCookies("filer.net");
         br.getPage(downloadLink.getDownloadURL());
+        final long waited = System.currentTimeMillis() - FilerNet.LAST_FREE_DOWNLOAD;
+        if (FilerNet.LAST_FREE_DOWNLOAD > 0 && waited < 3601000) {
+            FilerNet.LAST_FREE_DOWNLOAD = 0;
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 3601000 - waited);
+        }
         int tries = 0;
         while (tries < maxCaptchaTries) {
             PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
@@ -107,6 +113,7 @@ public class FilerNet extends PluginForHost {
         }
         dl.setAllowFilenameFromURL(true);
         dl.startDownload();
+        FilerNet.LAST_FREE_DOWNLOAD = System.currentTimeMillis();
     }
 
     public void login(Account account) throws IOException, PluginException, InterruptedException {

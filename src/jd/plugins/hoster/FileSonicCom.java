@@ -27,12 +27,12 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -281,7 +281,7 @@ public class FileSonicCom extends PluginForHost {
         final long waited = System.currentTimeMillis() - FileSonicCom.LAST_FREE_DOWNLOAD;
         if (FileSonicCom.LAST_FREE_DOWNLOAD > 0 && waited < 300000) {
             FileSonicCom.LAST_FREE_DOWNLOAD = 0;
-            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 600000 - waited);
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 600000 - waited);
         }
         this.requestFileInformation(downloadLink);
         br.setCookie(getDomain(), "lang", "en");
