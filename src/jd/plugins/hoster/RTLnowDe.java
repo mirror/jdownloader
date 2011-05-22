@@ -45,7 +45,6 @@ public class RTLnowDe extends PluginForHost {
 
     public RTLnowDe(final PluginWrapper wrapper) {
         super(wrapper);
-        setStartIntervall(5000l);
     }
 
     private long crc32Hash(final String wahl) throws UnsupportedEncodingException {

@@ -49,7 +49,6 @@ public class NCryptIn extends PluginForDecrypt {
 
     private final String                   RECAPTCHA      = "recaptcha/api/challenge";
     private final String                   OTHERCAPTCHA   = "/temp/anicaptcha/\\d+\\.gif";
-    private final String                   TRICK          = "(<form action=\"http://127\\.0\\.0\\.1:9666/flash/addcrypted2\" target|<img src=\"/images/status/online\\.gif\" alt=\"\"|\" onmouseover=\"if\\(style\\.backgroundColor\\!=\\')";
     private final String                   PASSWORDTEXT   = "password";
     private final String                   PASSWORDFAILED = "<td class=\"error\">&bull; Das Passwort ist ung\\&uuml;ltig";
     private final HashMap<String, Boolean> CNL_URL_MAP    = new HashMap<String, Boolean>();
@@ -83,8 +82,9 @@ public class NCryptIn extends PluginForDecrypt {
                     break;
                 }
             }
+            br.getRequest().setHtmlCode(aBrowser);
             if (allForm != null) {
-                if (allForm.containsHTML(RECAPTCHA) && !new Regex(aBrowser, TRICK).matches()) {
+                if (allForm.containsHTML(RECAPTCHA)) {
                     for (int i = 0; i <= 5; i++) {
                         final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
                         final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
@@ -98,14 +98,14 @@ public class NCryptIn extends PluginForDecrypt {
                         }
                         rc.setCode(c);
                         haveFun();
-                        if (new Regex(aBrowser, RECAPTCHA).matches() && !new Regex(aBrowser, TRICK).matches()) {
+                        if (new Regex(aBrowser, RECAPTCHA).matches()) {
                             continue;
                         }
                         break;
                     }
                     if (new Regex(aBrowser, PASSWORDFAILED).matches()) { throw new DecrypterException(DecrypterException.PASSWORD); }
                     if (new Regex(aBrowser, RECAPTCHA).matches()) { throw new DecrypterException(DecrypterException.CAPTCHA); }
-                } else if (allForm.containsHTML(OTHERCAPTCHA) && !allForm.containsHTML("recaptcha_challenge") && !new Regex(aBrowser, TRICK).matches()) {
+                } else if (allForm.containsHTML(OTHERCAPTCHA) && !allForm.containsHTML("recaptcha_challenge")) {
                     for (int i = 0; i <= 3; i++) {
                         final String captchaLink = new Regex(aBrowser, OTHERCAPTCHA).getMatch(-1);
                         if (captchaLink == null) { return null; }
@@ -127,19 +127,19 @@ public class NCryptIn extends PluginForDecrypt {
                         }
                         br.submitForm(allForm);
                         haveFun();
-                        if (new Regex(aBrowser, OTHERCAPTCHA).matches() && !new Regex(aBrowser, TRICK).matches()) {
+                        if (new Regex(aBrowser, OTHERCAPTCHA).matches()) {
                             continue;
                         }
                         break;
                     }
                     if (new Regex(aBrowser, PASSWORDFAILED).matches()) { throw new DecrypterException(DecrypterException.PASSWORD); }
                     if (new Regex(aBrowser, OTHERCAPTCHA).matches()) { throw new DecrypterException(DecrypterException.CAPTCHA); }
-                } else if (allForm.containsHTML(PASSWORDTEXT) && !new Regex(aBrowser, TRICK).matches()) {
+                } else if (allForm.containsHTML(PASSWORDTEXT)) {
                     for (int i = 0; i <= 3; i++) {
                         allForm.put(PASSWORDTEXT, getPassword(param));
                         br.submitForm(allForm);
                         haveFun();
-                        if (new Regex(aBrowser, PASSWORDFAILED).matches() && !new Regex(aBrowser, TRICK).matches()) {
+                        if (new Regex(aBrowser, PASSWORDFAILED).matches()) {
                             continue;
                         }
                         break;
@@ -223,8 +223,8 @@ public class NCryptIn extends PluginForDecrypt {
         // regexStuff.add("display:none;\">(.*?)</(div|span)>");
         // regexStuff.add("(<div class=\"hidden\" id=\"error_box\">.*?</div>)");
         // regexStuff.add("(<div class=\"\\w+\">.*?</div>)");
-        regexStuff.add("(<form name=\"protected\".*?style=\"display:none;\">.*?</form>)");
-        regexStuff.add("<div class=\"clear\"></div>[\t\n\r ]+(<form name=.*?)<\\!\\-\\- DIV CONTAINS ALL MIRRORS \\-\\->");
+        // regexStuff.add("(<form name=\"protected\".*?style=\"display:none;\">.*?</form>)");
+        regexStuff.add("(<table>.*?<!--.*?-->)");
         for (final String aRegex : regexStuff) {
             aBrowser = br.toString();
             final String replaces[] = br.getRegex(aRegex).getColumn(0);

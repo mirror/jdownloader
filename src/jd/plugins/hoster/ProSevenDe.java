@@ -71,21 +71,24 @@ public class ProSevenDe extends PluginForHost {
     private void jsonParser(final String json, final String path) throws Exception {
         final ObjectMapper mapper = new ObjectMapper();
         final JsonNode rootNode = mapper.readTree(json);
-        final Iterator<JsonNode> iter = rootNode.get("categoryList").iterator();
-        while (iter.hasNext()) {
-            final Iterator<JsonNode> iter1 = iter.next().path("clipList").iterator();
-            while (iter1.hasNext()) {
-                final JsonNode t8 = iter1.next();
-                final JsonNode t9 = t8.path("metadata");
+        final Iterator<JsonNode> catIter = rootNode.get("categoryList").iterator();
+        while (catIter.hasNext()) {
+            final Iterator<JsonNode> clipIter = catIter.next().path("clipList").iterator();
+            while (clipIter.hasNext()) {
+                final JsonNode ta = clipIter.next();
+                final JsonNode tb = ta.path("metadata");
                 fileDesc = new HashMap<String, String>();
-                if (t8.path("title") != null) {
-                    fileDesc.put("title", t8.path("title").getTextValue());
+                if (ta.path("title") != null) {
+                    fileDesc.put("title", ta.path("title").getTextValue());
                 }
-                if (t9.path(path) != null) {
-                    fileDesc.put(path, t9.path(path).getTextValue());
+                if (tb.path(path) != null) {
+                    fileDesc.put(path, tb.path(path).getTextValue());
                 }
-                if (t9.path("show_artist") != null) {
-                    fileDesc.put("show_artist", t9.path("show_artist").getTextValue());
+                if (tb.path("show_artist") != null) {
+                    fileDesc.put("show_artist", tb.path("show_artist").getTextValue());
+                }
+                if (tb.path("geoblocking") != null) {
+                    fileDesc.put("geoblocking", tb.path("geoblocking").getTextValue());
                 }
             }
         }
@@ -98,11 +101,20 @@ public class ProSevenDe extends PluginForHost {
         br.getPage(downloadLink.getDownloadURL());
         final String jsonString = br.getRegex("json:\\s+\"(.*?)\"\n").getMatch(0).replaceAll("\\\\", "");
         jsonParser(jsonString, "downloadFilename");
-        if (fileDesc == null || fileDesc.size() < 3) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        if (fileDesc == null || fileDesc.size() < 4) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         clipUrl = fileDesc.get("downloadFilename");
         if (fileDesc.get("show_artist") == null && fileDesc.get("title") == null || clipUrl == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         final String filename = fileDesc.get("show_artist") + "_" + fileDesc.get("title");
         downloadLink.setName(filename.trim() + ".flv");
+        if (!clipUrl.startsWith("rtmp")) {
+            br.getPage("http://www.prosieben.de/static/videoplayer/config/playerConfig.json");
+            final String host = br.getRegex(fileDesc.get("geoblocking") + "\" : \"(.*?)\"").getMatch(0);
+            if (host != null) {
+                clipUrl = String.format(host, fileDesc.get("downloadFilename"));
+            } else {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+        }
         return AvailableStatus.TRUE;
     }
 
