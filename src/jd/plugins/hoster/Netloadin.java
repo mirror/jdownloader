@@ -85,7 +85,7 @@ public class Netloadin extends PluginForHost {
         String ID = getID(downloadLink.getDownloadURL());
         br.getPage("http://netload.in/json/datei" + ID + ".htm");
         checkPassword(downloadLink, br);
-        checkErrors(downloadLink, br);
+        checkErrors(downloadLink, br, false);
         checkLimit(downloadLink, br);
         String url = br.getRegex("link\":\"(http.*?)\"").getMatch(0);
         if (url != null) {
@@ -136,15 +136,16 @@ public class Netloadin extends PluginForHost {
         } else if ("ok".equalsIgnoreCase(state)) {
             this.sleep(Integer.parseInt(countdown) * 1000l, downloadLink);
         } else {
+            if ("fail".equalsIgnoreCase(state)) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 4 * 60 * 60 * 1000l); }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
     }
 
-    private void checkErrors(DownloadLink downloadLink, Browser br) throws Exception {
+    private void checkErrors(DownloadLink downloadLink, Browser br, boolean checkFail) throws Exception {
         String state = br.getRegex("state\":\"(.*?)\"").getMatch(0);
         if ("hddcrash".equalsIgnoreCase(state)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "HDDCrash(In Recovery)", 12 * 60 * 60 * 1000l);
         if ("maintenance".equalsIgnoreCase(state)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Maintenance", 2 * 60 * 60 * 1000l);
-
+        if (checkFail && "fail".equalsIgnoreCase(state)) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 4 * 60 * 60 * 1000l); }
     }
 
     private void loginAPI(Account account, AccountInfo ai) throws IOException, PluginException {
@@ -231,7 +232,7 @@ public class Netloadin extends PluginForHost {
         String ID = getID(downloadLink.getDownloadURL());
         br.getPage("http://netload.in/json/datei" + ID + ".htm");
         checkPassword(downloadLink, br);
-        checkErrors(downloadLink, br);
+        checkErrors(downloadLink, br, true);
         workAroundTimeOut(br);
         String url = br.getRegex("link\":\"(http.*?)\"").getMatch(0);
         if (url != null) {

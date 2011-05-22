@@ -149,12 +149,18 @@ public class FilesMailRu extends PluginForHost {
         if (premium) chunks = 0;
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL(), resume, chunks);
         if (dl.getConnection().getResponseCode() == 503) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Too many simultan downloads!"); }
-        if (!this.dl.startDownload()) {
-            // Chunk-Error or server-error
-            downloadLink.setProperty("disablechunks", "disable");
-            downloadLink.reset();
-            logger.warning(downloadLink.getLinkStatus().getErrorMessage());
-            throw new PluginException(LinkStatus.ERROR_RETRY, "Chunkerror");
+        dl.startDownload();
+        /* DO NOT use download.reset() within plugin */
+        /*
+         * DO NOT check startDownload, because download abort will return with
+         * false, so your previous handling caused an endless loop
+         */
+        if (downloadLink.getLinkStatus().getErrorMessage() != null) {
+            if (downloadLink.getLinkStatus().getErrorMessage().contains("Service Temporarily Unavailable")) {
+                downloadLink.setProperty("disablechunks", "disable");
+                downloadLink.setChunksProgress(null);
+                throw new PluginException(LinkStatus.ERROR_RETRY, "Chunkerror");
+            }
         }
     }
 

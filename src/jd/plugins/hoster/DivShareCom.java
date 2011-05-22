@@ -19,7 +19,6 @@ package jd.plugins.hoster;
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
-import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
@@ -86,6 +85,11 @@ public class DivShareCom extends PluginForHost {
             br.getPage(infolink2);
             String dllink = br.getRegex("class=\"download_message\">Your download will start momentarily\\. If it doesn\\'t, <a href=\"(http://.*?)\"").getMatch(0);
             if (dllink == null) dllink = br.getRegex("\"(http://storagestart\\.divshare\\.com/launch\\.php\\?f=.*?)\"").getMatch(0);
+            if (dllink == null && br.containsHTML("application/mp3")) {
+                String id = br.getRegex("divshare.com/download/([0-9a-f]+)").getMatch(0);
+                String id2 = br.getRegex("divshare.com/download/.*?-([0-9a-f]+)").getMatch(0);
+                dllink = "http://storagestart2.divshare.com/launch.php?f=" + id + "&s=" + id2;
+            }
             if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, 1);
             if (dl.getConnection().getContentType().contains("html")) {
@@ -136,18 +140,25 @@ public class DivShareCom extends PluginForHost {
         if (downloadLink.getDownloadURL().contains("direct")) {
             String redirect = br.getRegex("If it doesn\\'t\\, <a href=\"(.*?)\">click here<").getMatch(0);
             br.setFollowRedirects(true);
-            URLConnectionAdapter con = br.openGetConnection(redirect);
-            con.disconnect();
-            br.setFollowRedirects(false);
-            if (con.isContentDisposition()) {
-                downloadLink.setFinalFileName(Plugin.getFileNameFromDispositionHeader(con.getHeaderField("Content-Disposition")).replace("_", "."));
-                downloadLink.setDownloadSize(con.getLongContentLength());
-                return AvailableStatus.TRUE;
+            URLConnectionAdapter con = null;
+            try {
+                con = br.openGetConnection(redirect);
+                if (con.isContentDisposition()) {
+                    downloadLink.setFinalFileName(Plugin.getFileNameFromDispositionHeader(con.getHeaderField("Content-Disposition")).replace("_", "."));
+                    downloadLink.setDownloadSize(con.getLongContentLength());
+                    return AvailableStatus.TRUE;
+                }
+                if (br.containsHTML("This file is unavailable until")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+                if (br.containsHTML("Sorry, we couldn't find this file.")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                if (br.containsHTML("This file is secured by Divshare.")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (final Throwable e) {
+                }
+                br.setFollowRedirects(false);
             }
-            if (br.containsHTML("This file is unavailable until")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-            if (br.containsHTML("Sorry, we couldn't find this file.")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            if (br.containsHTML("This file is secured by Divshare.")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         } else {
             // handling für die anderen Links (mit "download" bzw. "image" im
             // Link
@@ -159,11 +170,14 @@ public class DivShareCom extends PluginForHost {
             Browser br2 = br.cloneBrowser();
             br2.getPage(filename0);
             String filename = br2.getRegex("no-repeat left center;\">(.*?)</span>").getMatch(0);
-            Regex reg = br.getRegex("<b>File Size:</b> (.*?) <span class=\"tiny\">(.*?)</span><br />");
-            String filesize = reg.getMatch(0) + " " + reg.getMatch(1);
             if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             downloadLink.setName(filename.replaceAll("(\\)|\\()", "").replace("_", "."));
-            downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.replaceAll(",", "\\.")));
+            String id = br2.getRegex("divshare.com/download/([0-9a-f\\-]+)").getMatch(0);
+            if (id != null) br2.postPage("http://www.divshare.com/scripts/ajax/v5/fileStats.php", "code=" + id);
+            String size = br2.getRegex("File Size:.*?>.*?([0-9\\.]+)").getMatch(0);
+            String sizef = br2.getRegex("tiny.*?>([KGTBM]+)").getMatch(0);
+            if (sizef != null) size = size + " " + sizef;
+            downloadLink.setDownloadSize(SizeFormatter.getSize(size.replaceAll(",", "\\.")));
         }
         return AvailableStatus.TRUE;
     }
