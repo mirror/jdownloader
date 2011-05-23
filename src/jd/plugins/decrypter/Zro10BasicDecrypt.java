@@ -51,7 +51,7 @@ public class Zro10BasicDecrypt extends PluginForDecrypt {
         String finallink = null;
         if (parameter.contains("url-2.com/")) {
             br.getPage(parameter);
-            finallink2 = br.getRegex("language='javascript'>.*?\\('(.*?)'\\)").getMatch(0);
+            finallink2 = br.getRegex("language=\\'javascript\\'>.*?\\('(.*?)\\'\\)").getMatch(0);
             // Errorhandling
             if (finallink2 == null && br.containsHTML("Turn this long URL") && !br.containsHTML("Click here to go")) {
                 logger.warning("The requested document was not found on this server.");
