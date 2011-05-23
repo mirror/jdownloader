@@ -37,12 +37,12 @@ import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -105,6 +105,12 @@ public class DirectHTTP extends PluginForHost {
             return this.tries;
         }
 
+        /**
+         * 
+         * DO NOT use in Plugins at the moment, cause the current nightly is not
+         * able to use this function, directHTTP is included in jar and not
+         * updatable at the moment
+         */
         public void findID() throws PluginException {
             this.id = this.br.getRegex(IDREGEX).getMatch(0);
             if (this.id == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

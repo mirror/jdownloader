@@ -27,11 +27,11 @@ import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.parser.html.Form.MethodType;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -60,7 +60,8 @@ public class PiggyShareCom extends PluginForHost {
         br.getPage(addedLink);
         PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
         jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
-        rc.findID();
+        String id = this.br.getRegex("\\?k=([A-Za-z0-9%_\\+\\- ]+)\"").getMatch(0);
+        rc.setId(id);
         br.getPage("http://piggyshare.com/download/~starttimer/" + new Regex(addedLink, FILEIDREGEX).getMatch(0) + "/" + new Random().nextInt(1000000000));
         handleErrors();
         long timeBefore = System.currentTimeMillis();
