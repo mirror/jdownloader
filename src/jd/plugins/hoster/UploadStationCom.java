@@ -74,6 +74,7 @@ public class UploadStationCom extends PluginForHost {
         // Works like fileserve.com, they use the same scripts
         requestFileInformation(downloadLink);
         br.setCustomCharset("utf-8");
+        br.getHeaders().put("Accept-Encoding", "");
         br.getHeaders().put("User-Agent", agent);
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML(FILEOFFLINE)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -188,6 +189,7 @@ public class UploadStationCom extends PluginForHost {
         /* reset maxPrem workaround on every fetchaccount info */
         maxDls.set(1);
         this.setBrowserExclusive();
+        br.getHeaders().put("Accept-Encoding", "");
         br.setCustomCharset("utf-8");
         br.getHeaders().put("User-Agent", agent);
         br.postPage("http://uploadstation.com/login.php", "loginUserName=" + Encoding.urlEncode(account.getUser()) + "&loginUserPassword=" + Encoding.urlEncode(account.getPass()) + "&autoLogin=on&recaptcha_response_field=&recaptcha_challenge_field=&recaptcha_shortencode_field=&loginFormSubmit=Login");
@@ -281,6 +283,7 @@ public class UploadStationCom extends PluginForHost {
         if (urls == null || urls.length == 0) { return false; }
         try {
             Browser checkbr = new Browser();
+            checkbr.getHeaders().put("Accept-Encoding", "");
             checkbr.getHeaders().put("User-Agent", agent);
             checkbr.setCustomCharset("utf-8");
             final ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
