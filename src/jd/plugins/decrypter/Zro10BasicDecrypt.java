@@ -77,7 +77,7 @@ public class Zro10BasicDecrypt extends PluginForDecrypt {
             // little errorhandling
             if (br.getRedirectLocation() != null && !br.getRedirectLocation().contains(ID)) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
             if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
-            finallink = br.getRegex("onclick=\"NewWindow\\('(.*?)','name'").getMatch(0);
+            finallink = br.getRegex("onclick=\"NewWindow\\(\\'(.*?)\\',\\'name\\'").getMatch(0);
         }
         if (finallink == null) {
             finallink = finallink2;

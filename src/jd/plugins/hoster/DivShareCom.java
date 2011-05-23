@@ -106,7 +106,7 @@ public class DivShareCom extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("<title>DivShare - Password-Protected File</title>")) {
+        if (br.containsHTML("<title>DivShare \\- Password-Protected File</title>")) {
             Form pw = br.getForm(0);
             String password = null;
             // first look plugin

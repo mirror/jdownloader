@@ -224,11 +224,6 @@ public class MhfScriptBasic extends PluginForHost {
         }
 
         br.getPage(COOKIE_HOST + "/members.php");
-        String premium = br.getRegex("<b>Your Package</b></td>[\r\t\n ]+<b>(.*?)</b></A>").getMatch(0);
-        if (!premium.equals("Premium")) {
-            account.setValid(true);
-            return ai;
-        }
         String expired = br.getRegex("Expired\\?</b></td>[\r\t\n ]+<td align=[\r\t\n ]+>(.*?)<").getMatch(0);
         if (expired != null) {
             if (expired.trim().equalsIgnoreCase("No"))
