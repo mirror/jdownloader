@@ -86,7 +86,6 @@ public class StatusLabel extends JPanel {
     @Override
     public void setEnabled(boolean b) {
         if (left == null) return;
-
         if (b == false) left.setDisabledIcon(JDImage.getDisabledIcon(left.getIcon()));
         left.setEnabled(b);
         for (int i = 0; i < ICONCOUNT; i++) {

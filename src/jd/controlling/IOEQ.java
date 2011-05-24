@@ -1,5 +1,8 @@
 package jd.controlling;
 
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+
 import org.appwork.utils.event.queue.Queue;
 import org.appwork.utils.event.queue.QueueAction;
 
@@ -12,8 +15,9 @@ import org.appwork.utils.event.queue.QueueAction;
  */
 public class IOEQ {
 
-    private static final Queue INSTANCE = new Queue("InOrderExcecutionQueue") {
-    };
+    public static final ScheduledExecutorService TIMINGQUEUE = Executors.newSingleThreadScheduledExecutor();
+    private static final Queue                   INSTANCE    = new Queue("InOrderExcecutionQueue") {
+                                                             };
 
     private IOEQ() {
     }

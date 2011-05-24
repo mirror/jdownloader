@@ -23,11 +23,11 @@ import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mystere-tv.com" }, urls = { "http://(www\\.)?decryptedmystere\\-tv\\.com/.*?\\-v\\d+\\.html" }, flags = { 0 })
 public class MystereTvCom extends PluginForHost {
@@ -73,12 +73,12 @@ public class MystereTvCom extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             con = br2.openGetConnection(DLLINK);
-            if (con.getContentType().contains("html") && con.getContentLength() < 100)
+            if (con.getContentType().contains("html") && con.getLongContentLength() < 100) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-
-            else
+            } else {
                 downloadLink.setDownloadSize(con.getLongContentLength());
-            return AvailableStatus.TRUE;
+                return AvailableStatus.TRUE;
+            }
         } finally {
             try {
                 con.disconnect();
@@ -91,7 +91,7 @@ public class MystereTvCom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 1);
-        if (dl.getConnection().getContentType().contains("html") && dl.getConnection().getContentLength() < 100) {
+        if (dl.getConnection().getContentType().contains("html") && dl.getConnection().getLongContentLength() < 100) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

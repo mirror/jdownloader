@@ -220,7 +220,12 @@ public class MegaVideo extends PluginForHost {
         } else {
             String name = downloadLink.getName();
             String cpName = url.substring(url.lastIndexOf("/") + 1);
-            downloadLink.setFinalFileName(name.endsWith("." + JDIO.getFileExtension(cpName)) ? name : name + "." + JDIO.getFileExtension(cpName));
+            String useName = name;
+            if (name.startsWith("http_download")) {
+                /* replace fake filename with the one from url */
+                useName = Encoding.urlDecode(cpName, false);
+            }
+            downloadLink.setFinalFileName(useName);
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, true, 0);
             dl.startDownload();
         }

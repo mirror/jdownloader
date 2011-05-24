@@ -9,4 +9,6 @@ public interface PackageLinkNode {
      * @return
      */
     public int getListOrderID();
+
+    public boolean isEnabled();
 }
