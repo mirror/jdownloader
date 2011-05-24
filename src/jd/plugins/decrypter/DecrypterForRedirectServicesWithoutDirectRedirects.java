@@ -409,8 +409,6 @@ public class DecrypterForRedirectServicesWithoutDirectRedirects extends PluginFo
             parameter = parameter.replace("filep.info//", "filep.info/?url=");
             br.postPage(parameter, "abod=1");
             finallink = br.getRegex("onclick=\"NewWindow\\(\\'(.*?)\\'").getMatch(0);
-        } else if (parameter.contains("zpag.es/")) {
-            finallink = br.getRegex("window\\.location = \"(http://.*?)\"").getMatch(0);
         } else if (parameter.contains("stardima.com/") || parameter.contains("1lien.com/")) {
             String id = new Regex(parameter, "(\\d+)$").getMatch(0);
             if (parameter.contains("stardima.com/download/"))

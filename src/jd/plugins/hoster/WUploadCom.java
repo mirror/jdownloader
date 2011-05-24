@@ -312,7 +312,7 @@ public class WUploadCom extends PluginForHost {
         if (br.containsHTML("This file is available for premium users only\\.")) { throw new PluginException(LinkStatus.ERROR_FATAL, "Premium only file. Buy Premium Account"); }
         if (br.containsHTML("(You can not access this page directly\\. Please use the|>website to start your download</a>|<p>If the problem persists, clear your cookies and try again\\.</p>)")) {
             logger.warning(br.toString());
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 60 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
         }
     }
 
