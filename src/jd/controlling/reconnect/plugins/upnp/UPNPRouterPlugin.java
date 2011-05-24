@@ -49,7 +49,6 @@ import jd.controlling.reconnect.ipcheck.InvalidIPRangeException;
 import jd.controlling.reconnect.ipcheck.InvalidProviderException;
 import jd.controlling.reconnect.plugins.upnp.translate.T;
 import jd.gui.UserIO;
-import jd.utils.JDTheme;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
@@ -282,7 +281,7 @@ public class UPNPRouterPlugin extends RouterPlugin implements ActionListener, IP
                     // true);
                     if (UPNPRouterPlugin.this.getStorage().get(UpnpRouterDevice.CONTROLURL, null) != null) {
 
-                        final ImageIcon icon = NewTheme.I().getIcon("true",32);
+                        final ImageIcon icon = NewTheme.I().getIcon("true", 32);
 
                         final ConfirmDialog d = new ConfirmDialog(Dialog.BUTTONS_HIDE_CANCEL, T._.jd_controlling_reconnect_plugins_upnp_UPNPRouterPlugin_autoFind_successdialog_title(), T._.jd_controlling_reconnect_plugins_upnp_UPNPRouterPlugin_autoFind_successdialog_message(UPNPRouterPlugin.this.getStorage().get(UpnpRouterDevice.FRIENDLYNAME, null)), icon, null, null);
 
@@ -290,7 +289,7 @@ public class UPNPRouterPlugin extends RouterPlugin implements ActionListener, IP
                         Dialog.getInstance().showDialog(d);
                         ReconnectPluginController.getInstance().setActivePlugin(UPNPRouterPlugin.this);
                     } else {
-                        final ImageIcon icon = NewTheme.I().getIcon("false",32);
+                        final ImageIcon icon = NewTheme.I().getIcon("false", 32);
 
                         final ConfirmDialog d = new ConfirmDialog(Dialog.BUTTONS_HIDE_CANCEL, T._.jd_controlling_reconnect_plugins_upnp_UPNPRouterPlugin_autoFind_faileddialog_title(), T._.jd_controlling_reconnect_plugins_upnp_UPNPRouterPlugin_autoFind_faileddialog_message(), icon, null, null);
                         d.setPreferredSize(new Dimension(500, 150));

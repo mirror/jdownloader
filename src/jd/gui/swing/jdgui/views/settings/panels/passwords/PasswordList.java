@@ -23,9 +23,9 @@ import jd.config.ConfigEntry;
 import jd.config.ConfigGroup;
 import jd.controlling.PasswordListController;
 import jd.gui.swing.jdgui.views.settings.ConfigPanel;
-import jd.utils.JDTheme;
 
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.images.NewTheme;
 
 public class PasswordList extends ConfigPanel {
 
@@ -40,7 +40,7 @@ public class PasswordList extends ConfigPanel {
 
     @Override
     public Icon getIcon() {
-        return JDTheme.II(getIconKey(), ConfigPanel.ICON_SIZE, ConfigPanel.ICON_SIZE);
+        return NewTheme.I().getIcon(getIconKey(), ConfigPanel.ICON_SIZE);
     }
 
     private static final long serialVersionUID = 3383448498625377495L;

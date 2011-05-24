@@ -24,10 +24,10 @@ import javax.swing.ImageIcon;
 import jd.event.ControlEvent;
 import jd.event.MessageEvent;
 import jd.event.MessageListener;
-import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.event.Eventsender;
+import org.jdownloader.images.NewTheme;
 
 class ProgressControllerBroadcaster extends Eventsender<ProgressControllerListener, ProgressControllerEvent> {
 
@@ -90,7 +90,7 @@ public class ProgressController implements MessageListener, Comparable<ProgressC
     }
 
     public ProgressController(Type type, String name, String statusText, long max, String iconKey) {
-        this(type, name, statusText, max, JDTheme.II(iconKey, ICONSIZE, ICONSIZE));
+        this(type, name, statusText, max, NewTheme.I().getIcon(iconKey, ICONSIZE));
 
     }
 
@@ -134,7 +134,7 @@ public class ProgressController implements MessageListener, Comparable<ProgressC
     }
 
     public void setIcon(String iconKey) {
-        this.icon = JDTheme.II(iconKey, ICONSIZE, ICONSIZE);
+        this.icon = NewTheme.I().getIcon(iconKey, ICONSIZE);
         fireChanges();
     }
 

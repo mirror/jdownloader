@@ -33,12 +33,12 @@ import javax.swing.JTextField;
 
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
-import jd.utils.JDTheme;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.utils.swing.dialog.AbstractDialog;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.images.NewTheme;
 
 /**
  * This Dialog is used to display a Inputdialog for the captchas
@@ -94,7 +94,7 @@ public class CaptchaDialog extends AbstractDialog<String> implements ActionListe
         if (this.imagefile != null && this.imagefile.exists()) {
             imageIcon = new ImageIcon(this.imagefile.getAbsolutePath());
         } else {
-            imageIcon = JDTheme.II("ocr");
+            imageIcon = NewTheme.I().getIcon("ocr", 0);
         }
 
         final int size = SubConfiguration.getConfig("JAC").getIntegerProperty(Configuration.PARAM_CAPTCHA_SIZE, 100);

@@ -47,7 +47,6 @@ import jd.gui.swing.laf.LookAndFeelController;
 import jd.http.Browser;
 import jd.nutils.JDImage;
 import jd.nutils.OSDetector;
-import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -367,7 +366,6 @@ public class Main {
         JDController.getInstance();
 
         if (Main.instanceStarted || JDInitFlags.SWITCH_NEW_INSTANCE) {
-            JDTheme.setTheme();
 
             Main.start(args);
         } else {

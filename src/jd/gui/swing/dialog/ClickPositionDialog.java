@@ -33,11 +33,11 @@ import javax.swing.JTextPane;
 
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
-import jd.utils.JDTheme;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.utils.swing.dialog.AbstractDialog;
 import org.appwork.utils.swing.dialog.Dialog;
+import org.jdownloader.images.NewTheme;
 
 public class ClickPositionDialog extends AbstractDialog<Point> implements ActionListener, MouseListener {
 
@@ -79,7 +79,7 @@ public class ClickPositionDialog extends AbstractDialog<Point> implements Action
         if (this.imagefile != null && this.imagefile.exists()) {
             imageIcon = new ImageIcon(this.imagefile.getAbsolutePath());
         } else {
-            imageIcon = JDTheme.II("ocr");
+            imageIcon = NewTheme.I().getIcon("ocr", 0);
         }
 
         final int size = SubConfiguration.getConfig("JAC").getIntegerProperty(Configuration.PARAM_CAPTCHA_SIZE, 100);

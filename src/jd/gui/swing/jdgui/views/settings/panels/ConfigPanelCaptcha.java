@@ -24,9 +24,9 @@ import jd.config.ConfigGroup;
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.gui.swing.jdgui.views.settings.ConfigPanel;
-import jd.utils.JDTheme;
 
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.images.NewTheme;
 
 public class ConfigPanelCaptcha extends ConfigPanel {
 
@@ -38,7 +38,7 @@ public class ConfigPanelCaptcha extends ConfigPanel {
 
     @Override
     public Icon getIcon() {
-        return JDTheme.II(getIconKey(), ConfigPanel.ICON_SIZE, ConfigPanel.ICON_SIZE);
+        return NewTheme.I().getIcon(getIconKey(), ConfigPanel.ICON_SIZE);
     }
 
     public static String getIconKey() {

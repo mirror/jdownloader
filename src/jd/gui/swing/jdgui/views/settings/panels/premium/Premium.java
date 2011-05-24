@@ -37,9 +37,9 @@ import jd.gui.swing.jdgui.views.ViewToolbar;
 import jd.gui.swing.jdgui.views.settings.ConfigPanel;
 import jd.nutils.JDFlags;
 import jd.plugins.Account;
-import jd.utils.JDTheme;
 
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.images.NewTheme;
 
 public class Premium extends ConfigPanel implements ActionListener, AccountControllerListener {
 
@@ -55,7 +55,7 @@ public class Premium extends ConfigPanel implements ActionListener, AccountContr
 
     @Override
     public Icon getIcon() {
-        return JDTheme.II(getIconKey(), ConfigPanel.ICON_SIZE, ConfigPanel.ICON_SIZE);
+        return NewTheme.I().getIcon(getIconKey(), ConfigPanel.ICON_SIZE);
     }
 
     public static String getIconKey() {

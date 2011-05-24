@@ -23,10 +23,10 @@ import jd.gui.swing.jdgui.GraphicalUserInterfaceSettings;
 import jd.gui.swing.jdgui.interfaces.SwitchPanelEvent;
 import jd.gui.swing.jdgui.interfaces.SwitchPanelListener;
 import jd.gui.swing.jdgui.views.ClosableView;
-import jd.utils.JDTheme;
 
 import org.appwork.storage.config.JsonConfig;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.images.NewTheme;
 
 /**
  * The tab for the log.
@@ -76,7 +76,7 @@ public class LogView extends ClosableView {
 
     @Override
     public Icon getIcon() {
-        return JDTheme.II("log", ICON_SIZE, ICON_SIZE);
+        return NewTheme.I().getIcon("log", ICON_SIZE);
     }
 
     @Override

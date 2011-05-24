@@ -16,7 +16,6 @@
 
 package jd.plugins;
 
-import java.awt.Image;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
@@ -40,7 +39,6 @@ import jd.nutils.OSDetector;
 import jd.nutils.io.JDIO;
 import jd.plugins.download.DownloadInterface;
 import jd.plugins.download.DownloadInterface.Chunk;
-import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.Regex;
@@ -1052,22 +1050,16 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     public ImageIcon getIcon() {
         if (icon == null) {
             if (OSDetector.isLinux() || OSDetector.isMac()) {
-                try {
-                    Image image = JDTheme.getImage(JDTheme.getTheme() + "/mime/" + JDIO.getFileExtension(this.getName()), 16, 16);
-                    icon = new ImageIcon(image);
-                } catch (Exception e) {
-                    icon = NewTheme.I().getIcon("url", 16);
-                }
+
+                icon = NewTheme.I().getIcon("url", 16);
+
             } else {
                 try {
                     icon = JDImage.getScaledImageIcon(JDImage.getFileIcon(JDIO.getFileExtension(getFileOutput())), 16, 16);
                 } catch (Exception e) {
-                    try {
-                        Image image = JDTheme.getImage(JDTheme.getTheme() + "/mime/" + JDIO.getFileExtension(this.getName()), 16, 16);
-                        icon = new ImageIcon(image);
-                    } catch (Exception e2) {
-                        icon = NewTheme.I().getIcon("url", 16);
-                    }
+
+                    icon = NewTheme.I().getIcon("url", 16);
+
                 }
 
             }

@@ -52,7 +52,6 @@ import jd.pluginloader.HosterPluginCache;
 import jd.pluginloader.VirtualClass;
 import jd.pluginloader.VirtualDecrypterClass;
 import jd.pluginloader.VirtualHosterClass;
-import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 
 import org.appwork.storage.config.JsonConfig;
@@ -325,7 +324,7 @@ public class JDInit {
                 final Configuration configuration = (Configuration) obj;
                 JDUtilities.setConfiguration(configuration);
                 JDInit.LOG.setLevel(configuration.getGenericProperty(Configuration.PARAM_LOGGER_LEVEL, Level.WARNING));
-                JDTheme.setTheme();
+
             } else {
                 final File cfg = JDUtilities.getResourceFile("config");
                 if (!cfg.exists()) {
@@ -341,7 +340,7 @@ public class JDInit {
                 final Configuration configuration = new Configuration();
                 JDUtilities.setConfiguration(configuration);
                 JDInit.LOG.setLevel(configuration.getGenericProperty(Configuration.PARAM_LOGGER_LEVEL, Level.WARNING));
-                JDTheme.setTheme();
+
                 JDUtilities.getDatabaseConnector().saveConfiguration(Configuration.NAME, JDUtilities.getConfiguration());
 
                 LookAndFeelController.getInstance().setUIManager();

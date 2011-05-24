@@ -30,7 +30,6 @@ import jd.controlling.JSonWrapper;
 import jd.gui.UserIO;
 import jd.gui.swing.jdgui.JDGuiConstants;
 import jd.gui.swing.jdgui.views.settings.ConfigPanel;
-import jd.utils.JDTheme;
 import jd.utils.locale.JDL;
 import jd.utils.locale.JDLocale;
 
@@ -53,7 +52,7 @@ public class General extends ConfigPanel {
 
     @Override
     public Icon getIcon() {
-        return JDTheme.II(getIconKey(), ConfigPanel.ICON_SIZE, ConfigPanel.ICON_SIZE);
+        return NewTheme.I().getIcon(getIconKey(), ConfigPanel.ICON_SIZE);
     }
 
     private JSonWrapper subConfig;

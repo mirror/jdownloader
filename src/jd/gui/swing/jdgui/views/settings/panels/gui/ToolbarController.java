@@ -42,12 +42,12 @@ import jd.gui.swing.jdgui.actions.ToolBarAction.Types;
 import jd.gui.swing.jdgui.components.toolbar.MainToolBar;
 import jd.gui.swing.jdgui.components.toolbar.ToolBar;
 import jd.gui.swing.jdgui.views.settings.ConfigPanel;
-import jd.utils.JDTheme;
 
 import org.jdesktop.swingx.JXTable;
 import org.jdesktop.swingx.renderer.DefaultTableRenderer;
 import org.jdesktop.swingx.renderer.JRendererLabel;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.images.NewTheme;
 
 public class ToolbarController extends ConfigPanel {
     private static final ArrayList<String> WHITELIST        = new ArrayList<String>();
@@ -132,7 +132,7 @@ public class ToolbarController extends ConfigPanel {
 
     @Override
     public Icon getIcon() {
-        return JDTheme.II(getIconKey(), ConfigPanel.ICON_SIZE, ConfigPanel.ICON_SIZE);
+        return NewTheme.I().getIcon(getIconKey(), ConfigPanel.ICON_SIZE);
     }
 
     public static String getIconKey() {

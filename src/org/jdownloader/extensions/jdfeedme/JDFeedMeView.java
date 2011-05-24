@@ -3,7 +3,8 @@ package org.jdownloader.extensions.jdfeedme;
 import javax.swing.Icon;
 
 import jd.plugins.AddonPanel;
-import jd.utils.JDTheme;
+
+import org.jdownloader.images.NewTheme;
 
 public class JDFeedMeView extends AddonPanel<FeedMeExtension> {
 
@@ -20,11 +21,11 @@ public class JDFeedMeView extends AddonPanel<FeedMeExtension> {
         // TODO Auto-generated method stub
 
         /*
-         * CODE_FOR_INTERFACE_5_START return JDTheme.II("reconnect", ICON_SIZE,
-         * ICON_SIZE); CODE_FOR_INTERFACE_5_END
+         * CODE_FOR_INTERFACE_5_START return NewTheme.I().getIcon("reconnect",
+         * ICON_SIZE, ICON_SIZE); CODE_FOR_INTERFACE_5_END
          */
         /* CODE_FOR_INTERFACE_7_START */
-        return JDTheme.II("rss", ICON_SIZE, ICON_SIZE);
+        return NewTheme.I().getIcon("rss", ICON_SIZE);
         /* CODE_FOR_INTERFACE_7_END */
 
     }

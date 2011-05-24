@@ -25,10 +25,10 @@ import jd.config.Configuration;
 import jd.config.Property;
 import jd.controlling.JSonWrapper;
 import jd.gui.swing.jdgui.views.settings.ConfigPanel;
-import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.images.NewTheme;
 
 public class General extends ConfigPanel {
 
@@ -39,7 +39,7 @@ public class General extends ConfigPanel {
 
     @Override
     public Icon getIcon() {
-        return JDTheme.II("network-idle", ConfigPanel.ICON_SIZE, ConfigPanel.ICON_SIZE);
+        return NewTheme.I().getIcon("network-idle", ConfigPanel.ICON_SIZE);
     }
 
     private static final long serialVersionUID = 3383448498625377495L;
