@@ -36,7 +36,7 @@ public class RemoveDupesAction extends ThreadedAction {
     private static final long serialVersionUID = 3088399063634025074L;
 
     public RemoveDupesAction() {
-        super("action.remove_dupes", "remove_dupes");
+        super(_GUI._.action_remove_dupe_links(), "action.remove_dupes", "remove_dupes");
     }
 
     @Override
@@ -70,5 +70,20 @@ public class RemoveDupesAction extends ThreadedAction {
                 dl.getFilePackage().remove(dl);
             }
         }
+    }
+
+    @Override
+    protected String createMnemonic() {
+        return _GUI._.action_remove_dupe_links_mnemonic();
+    }
+
+    @Override
+    protected String createAccelerator() {
+        return _GUI._.action_remove_dupe_links_accelerator();
+    }
+
+    @Override
+    protected String createTooltip() {
+        return _GUI._.action_remove_dupe_links_tooltip();
     }
 }

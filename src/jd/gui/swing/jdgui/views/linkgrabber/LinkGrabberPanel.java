@@ -147,7 +147,7 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
     }
 
     public void initActions() {
-        new ThreadedAction("action.linkgrabber.clearlist", "clear") {
+        new ThreadedAction(_GUI._.action_clearlinkgrabber(), "action.linkgrabber.clearlist", "clear") {
 
             private static final long serialVersionUID = -4407938288408350792L;
 
@@ -181,8 +181,23 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
                     }
                 }
             }
+
+            @Override
+            protected String createMnemonic() {
+                return _GUI._.action_clearlinkgrabber_mnemonic();
+            }
+
+            @Override
+            protected String createAccelerator() {
+                return _GUI._.action_clearlinkgrabber_accelerator();
+            }
+
+            @Override
+            protected String createTooltip() {
+                return _GUI._.action_clearlinkgrabber_tooltip();
+            }
         };
-        new ThreadedAction("action.linkgrabber.addall", "download") {
+        new ThreadedAction(_GUI._.action_linkgrabber_addall(), "action.linkgrabber.addall", "download") {
 
             private static final long serialVersionUID = 6181260839200699153L;
 
@@ -199,6 +214,21 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
                         confirmPackages(fps);
                     }
                 }
+            }
+
+            @Override
+            protected String createMnemonic() {
+                return _GUI._.action_linkgrabber_addall_mnemonic();
+            }
+
+            @Override
+            protected String createAccelerator() {
+                return _GUI._.action_linkgrabber_addall_accelerator();
+            }
+
+            @Override
+            protected String createTooltip() {
+                return _GUI._.action_linkgrabber_addall_tooltip();
             }
         };
 

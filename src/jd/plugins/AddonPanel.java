@@ -15,17 +15,17 @@ import org.jdownloader.extensions.ExtensionGuiEnableAction;
  * @author thomas
  * 
  */
-public abstract class AddonPanel extends ClosableView {
+public abstract class AddonPanel<T extends AbstractExtension<? extends ExtensionConfigInterface>> extends ClosableView {
 
     /**
      * 
      */
     private static final long        serialVersionUID = 1L;
     private boolean                  active           = false;
-    private AbstractExtension        extension;
+    private T                        extension;
     private ExtensionGuiEnableAction action;
 
-    public AddonPanel(AbstractExtension plg) {
+    public AddonPanel(T plg) {
         extension = plg;
 
         getBroadcaster().addListener(new SwitchPanelListener() {
@@ -39,6 +39,10 @@ public abstract class AddonPanel extends ClosableView {
 
         });
 
+    }
+
+    public T getExtension() {
+        return extension;
     }
 
     /**

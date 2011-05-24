@@ -14,7 +14,6 @@ import javax.swing.ListSelectionModel;
 
 import jd.controlling.proxy.ProxyInfo;
 import jd.gui.swing.jdgui.views.settings.ConfigPanel;
-import jd.utils.JDTheme;
 
 import org.appwork.utils.swing.table.ExtTable;
 import org.appwork.utils.swing.table.SelectionHighlighter;
@@ -85,7 +84,7 @@ public class ProxyConfig extends AbstractConfigPanel {
 
     @Override
     public ImageIcon getIcon() {
-        return JDTheme.II("proxy", ConfigPanel.ICON_SIZE, ConfigPanel.ICON_SIZE);
+        return NewTheme.I().getIcon("proxy", ConfigPanel.ICON_SIZE);
     }
 
     @Override

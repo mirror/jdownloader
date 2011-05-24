@@ -33,7 +33,7 @@ public class BackupAction extends ThreadedAction {
     private static final long serialVersionUID = 823930266263085474L;
 
     public BackupAction() {
-        super("action.backup", "save");
+        super(_GUI._.action_backup(), "action.backup", "save");
     }
 
     @Override
@@ -49,6 +49,21 @@ public class BackupAction extends ThreadedAction {
         } else {
             Balloon.show(_GUI._.gui_balloon_backup_title(), NewTheme.I().getIcon("save", 32), _GUI._.gui_backup_finished_success(backupFile.getAbsolutePath()));
         }
+    }
+
+    @Override
+    protected String createMnemonic() {
+        return _GUI._.action_backup_mnemonic();
+    }
+
+    @Override
+    protected String createAccelerator() {
+        return _GUI._.action_backup_accelerator();
+    }
+
+    @Override
+    protected String createTooltip() {
+        return _GUI._.action_backup_tooltip();
     }
 
 }

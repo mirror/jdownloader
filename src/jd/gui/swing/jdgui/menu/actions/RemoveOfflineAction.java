@@ -36,7 +36,7 @@ public class RemoveOfflineAction extends ThreadedAction {
     private static final long serialVersionUID = 4181319974731148936L;
 
     public RemoveOfflineAction() {
-        super("action.remove_offline", "remove_offline");
+        super(_GUI._.action_remove_offline_links(), "action.remove_offline", "remove_offline");
     }
 
     @Override
@@ -73,5 +73,20 @@ public class RemoveOfflineAction extends ThreadedAction {
                 dl.getFilePackage().remove(dl);
             }
         }
+    }
+
+    @Override
+    protected String createMnemonic() {
+        return _GUI._.action_remove_offline_links_mnemonic();
+    }
+
+    @Override
+    protected String createAccelerator() {
+        return _GUI._.action_remove_offline_links_accelerator();
+    }
+
+    @Override
+    protected String createTooltip() {
+        return _GUI._.action_remove_offline_links_tooltip();
     }
 }

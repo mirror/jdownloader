@@ -21,12 +21,14 @@ import java.awt.event.ActionEvent;
 import jd.gui.swing.dialog.AboutDialog;
 import jd.gui.swing.jdgui.actions.ToolBarAction;
 
+import org.jdownloader.gui.translate._GUI;
+
 public class AboutAction extends ToolBarAction {
 
     private static final long serialVersionUID = -353145605693194634L;
 
     public AboutAction() {
-        super("action.about", "about");
+        super(_GUI._.action_aboutaction(), "action.about", "about");
     }
 
     @Override
@@ -36,6 +38,21 @@ public class AboutAction extends ToolBarAction {
 
     @Override
     public void initDefaults() {
+    }
+
+    @Override
+    protected String createMnemonic() {
+        return _GUI._.action_aboutaction_mnemonics();
+    }
+
+    @Override
+    protected String createAccelerator() {
+        return _GUI._.action_aboutaction_accelerator();
+    }
+
+    @Override
+    protected String createTooltip() {
+        return _GUI._.action_aboutaction_tooltip();
     }
 
 }

@@ -25,9 +25,9 @@ import jd.gui.UserIF;
 import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.actions.ActionController;
 import jd.gui.swing.jdgui.interfaces.View;
-import jd.utils.JDTheme;
 
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.images.NewTheme;
 
 public class LinkgrabberView extends View {
 
@@ -59,7 +59,7 @@ public class LinkgrabberView extends View {
 
     @Override
     public Icon getIcon() {
-        return JDTheme.II("linkgrabber", ICON_SIZE, ICON_SIZE);
+        return NewTheme.I().getIcon("linkgrabber", ICON_SIZE);
     }
 
     @Override

@@ -22,15 +22,15 @@ import jd.controlling.JDLogger;
 
 public abstract class ThreadedAction extends ToolBarAction {
 
-    private boolean actionrunning = false;
+    private boolean actionrunning          = false;
     private boolean multiplethreadsallowed = false;
 
-    public ThreadedAction(String menukey, String iconkey) {
-        super(menukey, iconkey);
+    public ThreadedAction(String name, String menukey, String iconkey) {
+        super(name, menukey, iconkey);
     }
 
-    public ThreadedAction(String menukey, String iconkey, boolean allowmultiplethreads) {
-        super(menukey, iconkey);
+    public ThreadedAction(String name, String menukey, String iconkey, boolean allowmultiplethreads) {
+        super(name, menukey, iconkey);
         multiplethreadsallowed = allowmultiplethreads;
     }
 

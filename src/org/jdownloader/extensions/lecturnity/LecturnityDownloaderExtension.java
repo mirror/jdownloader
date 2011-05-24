@@ -170,7 +170,23 @@ public class LecturnityDownloaderExtension extends AbstractExtension<LecturnityD
         hpw = new HostPluginWrapper("lecturnity-loader", "jd.plugins.optional.lecturnity.", "LecturnityLoader", "HIDE_ME", 0, "$Revision$");
         logger.finest("Lecturnity: Loaded Host-Plugin!");
 
-        inputAction = new MenuAction("lecturnity", 0);
+        inputAction = new MenuAction("Lecturnity", "lecturnity", 0) {
+
+            @Override
+            protected String createMnemonic() {
+                return null;
+            }
+
+            @Override
+            protected String createAccelerator() {
+                return null;
+            }
+
+            @Override
+            protected String createTooltip() {
+                return null;
+            }
+        };
         inputAction.setActionListener(this);
         inputAction.setIcon(this.getIconKey());
 

@@ -16,20 +16,12 @@
 
 package org.jdownloader.extensions.jdpremserv;
 
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.util.ArrayList;
-
 import jd.Main;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.controlling.JDController;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
-import jd.gui.swing.SwingGui;
-import jd.gui.swing.jdgui.interfaces.SwitchPanelEvent;
-import jd.gui.swing.jdgui.interfaces.SwitchPanelListener;
-import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.plugins.AddonPanel;
 
 import org.jdownloader.extensions.AbstractExtension;
@@ -38,9 +30,7 @@ import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
 import org.jdownloader.extensions.jdpremserv.gui.JDPremServGui;
 
-public class PremServExtension extends AbstractExtension<PremServConfig> implements ActionListener, ControlListener {
-
-    private MenuAction           activateAction;
+public class PremServExtension extends AbstractExtension<PremServConfig> implements ControlListener {
 
     private JDPremServGui        tab;
 
@@ -57,13 +47,6 @@ public class PremServExtension extends AbstractExtension<PremServConfig> impleme
     public PremServExtension() throws StartException {
         super(null);
 
-    }
-
-    public void actionPerformed(ActionEvent e) {
-        // Enable/disable GUI Tab
-        if (e.getSource() == activateAction) {
-            setGuiEnable(activateAction.isSelected());
-        }
     }
 
     public void controlEvent(ControlEvent event) {
@@ -91,38 +74,8 @@ public class PremServExtension extends AbstractExtension<PremServConfig> impleme
 
     private void initGUI() {
 
-        tab = new JDPremServGui();
-        tab.getBroadcaster().addListener(new SwitchPanelListener() {
+        tab = new JDPremServGui(this);
 
-            @Override
-            public void onPanelEvent(SwitchPanelEvent event) {
-                if (event.getEventID() == SwitchPanelEvent.ON_REMOVE) {
-                    setGuiEnable(false);
-                }
-            }
-
-        });
-
-    }
-
-    public void setGuiEnable(boolean b) {
-        if (b) {
-            if (tab == null) {
-                initGUI();
-            }
-            SwingGui.getInstance().setContent(tab, true);
-        } else {
-            if (tab != null) {
-                SwingGui.getInstance().disposeView(tab);
-                try {
-                    stop();
-                } catch (StopException e) {
-                    e.printStackTrace();
-                }
-                tab = null;
-            }
-        }
-        if (activateAction != null && activateAction.isSelected() != b) activateAction.setSelected(b);
     }
 
     @Override
@@ -139,10 +92,6 @@ public class PremServExtension extends AbstractExtension<PremServConfig> impleme
     @Override
     protected void start() throws StartException {
         // this method is called ones after the addon has been loaded
-
-        activateAction = new MenuAction("PremServ", getIconKey());
-        activateAction.setActionListener(this);
-        activateAction.setSelected(false);
 
         if (Main.isInitComplete()) startServer();
 
@@ -172,16 +121,6 @@ public class PremServExtension extends AbstractExtension<PremServConfig> impleme
     @Override
     public AddonPanel getGUI() {
         return null;
-    }
-
-    @Override
-    public ArrayList<MenuAction> getMenuAction() {
-        // add main menu items.. this item is used to show/hide GUi
-        ArrayList<MenuAction> menu = new ArrayList<MenuAction>();
-
-        menu.add(activateAction);
-
-        return menu;
     }
 
     @Override

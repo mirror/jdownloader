@@ -25,9 +25,11 @@ import jd.gui.swing.components.table.JDTable;
 public class FolderWatchTable extends JDTable implements MouseListener {
 
     private static final long serialVersionUID = 675244442903646117L;
+    private FolderWatchPanel  folderWatchPanel;
 
-    public FolderWatchTable() {
+    public FolderWatchTable(FolderWatchPanel folderWatchPanel) {
         super(new FolderWatchTableModel("folderwatch.historyview"));
+        this.folderWatchPanel = folderWatchPanel;
         addMouseListener(this);
         setRowHeight(22);
         // setBackground(new Color(255, 255, 255));
@@ -52,7 +54,7 @@ public class FolderWatchTable extends JDTable implements MouseListener {
     }
 
     public void mouseReleased(MouseEvent e) {
-        FolderWatchPanel.getInstance().getInfoPanel().update();
+        folderWatchPanel.getInfoPanel().update();
     }
 
 }

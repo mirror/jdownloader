@@ -1,32 +1,20 @@
 package org.jdownloader.extensions.jdfeedme;
 
 import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.util.ArrayList;
 
-import javax.swing.JFrame;
-
 import jd.HostPluginWrapper;
-import jd.Main;
 import jd.controlling.AccountController;
 import jd.controlling.DistributeData;
 import jd.controlling.DownloadWatchDog;
-import jd.controlling.JDController;
 import jd.controlling.JDLogger;
 import jd.controlling.LinkGrabberController;
-import jd.event.ControlEvent;
-import jd.event.ControlListener;
 import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.components.table.JDTableModel;
-import jd.gui.swing.jdgui.JDGui;
-import jd.gui.swing.jdgui.interfaces.SwitchPanelEvent;
-import jd.gui.swing.jdgui.interfaces.SwitchPanelListener;
-import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.HTMLParser;
 import jd.plugins.Account;
-import jd.plugins.AddonPanel;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
@@ -48,7 +36,7 @@ import org.jdownloader.extensions.remotecontrol.helppage.Table;
 // enable CODE_FOR_INTERFACE_5-START-END and disable CODE_FOR_INTERFACE_7-START-END
 // don't forget to change interface version from 7 to 5
 
-public class FeedMeExtension extends AbstractExtension<FeedMeConfig> implements RemoteSupport, ActionListener, ControlListener {
+public class FeedMeExtension extends AbstractExtension<FeedMeConfig> implements RemoteSupport {
     // / stop using config and use XML instead
     // public static final String PROPERTY_SETTINGS = "FEEDS";
     public static final String     STORAGE_FEEDS  = "cfg/jdfeedme/feeds.xml";
@@ -66,7 +54,6 @@ public class FeedMeExtension extends AbstractExtension<FeedMeConfig> implements 
 
     private JDFeedMeView           view;
     private JDFeedMeGui            gui            = null;
-    private MenuAction             showAction;
 
     private static FeedMeExtension INSTANCE       = null;
     private static JDFeedMeThread  thread         = null;
@@ -108,44 +95,7 @@ public class FeedMeExtension extends AbstractExtension<FeedMeConfig> implements 
     }
 
     public void actionPerformed(ActionEvent e) {
-        if (e.getSource() == showAction) {
-            /* save current selection state */
-            getPluginConfig().setProperty("selected", showAction.isSelected());
-            getPluginConfig().save();
-            if (showAction.isSelected()) {
-                showGui();
-            } else {
-                if (view != null) view.close();
-            }
-        }
-    }
 
-    private void showGui() {
-        if (view == null) {
-            view = new JDFeedMeView();
-            view.getBroadcaster().addListener(new SwitchPanelListener() {
-
-                @Override
-                public void onPanelEvent(SwitchPanelEvent event) {
-                    if (event.getEventID() == SwitchPanelEvent.ON_REMOVE) showAction.setSelected(false);
-                }
-
-            });
-
-            gui = new JDFeedMeGui();
-
-            view.setContent(gui);
-        }
-        showAction.setSelected(true);
-        JDGui.getInstance().setContent(view, true);
-    }
-
-    public void setGuiEnable(boolean b) {
-        if (b) {
-            showGui();
-        } else {
-            if (view != null) view.close();
-        }
     }
 
     @Override
@@ -628,30 +578,17 @@ public class FeedMeExtension extends AbstractExtension<FeedMeConfig> implements 
         if (thread != null && thread.isSleeping()) thread.interrupt();
         thread = null;
         logger.info("JDFeedMe has exited");
-        JDController.getInstance().removeControlListener(this);
+
     }
 
     @Override
     protected void start() throws StartException {
-        showAction = new MenuAction("feedme", 0);
 
-        /*
-         * CODE_FOR_INTERFACE_5_START showAction.setTitle("JD FeedMe");
-         * CODE_FOR_INTERFACE_5_END
-         */
-        /* CODE_FOR_INTERFACE_7_START */
-        showAction.putValue(javax.swing.Action.NAME, "JD FeedMe");
-        /* CODE_FOR_INTERFACE_7_END */
-
-        showAction.setIcon(this.getIconKey());
-        /* restore selection state */
-        showAction.setSelected(this.getPluginConfig().getBooleanProperty("selected", false));
-        showAction.setActionListener(this);
         logger.info("JDFeedMe is running");
         running = true;
         thread = new JDFeedMeThread();
         thread.start();
-        JDController.getInstance().addControlListener(this);
+
     }
 
     @Override
@@ -670,40 +607,15 @@ public class FeedMeExtension extends AbstractExtension<FeedMeConfig> implements 
     }
 
     @Override
-    public AddonPanel getGUI() {
-        return null;
-    }
-
-    @Override
-    public ArrayList<MenuAction> getMenuAction() {
-        // add main menu items.. this item is used to show/hide GUi
-        ArrayList<MenuAction> menu = new ArrayList<MenuAction>();
-
-        menu.add(showAction);
-
-        return menu;
-    }
-
-    public void controlEvent(ControlEvent event) {
-        /* we must wait till the gui is initiated before we can show the tab */
-        if (event.getEventID() == ControlEvent.CONTROL_INIT_COMPLETE && event.getCaller() instanceof Main) {
-            if (showAction.isSelected()) {
-                JFrame guiFrame = JDGui.getInstance().getMainFrame();
-                if (guiFrame == null) return;
-                new GuiRunnable<Object>() {
-
-                    @Override
-                    public Object runSave() {
-                        showGui();
-                        return null;
-                    }
-                }.start();
-            }
-        }
+    public JDFeedMeView getGUI() {
+        return view;
     }
 
     @Override
     protected void initExtension() throws StartException {
+        view = new JDFeedMeView(this);
+        gui = new JDFeedMeGui();
+        view.setContent(gui);
     }
 
 }

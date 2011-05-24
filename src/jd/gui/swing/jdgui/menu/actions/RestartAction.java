@@ -30,7 +30,7 @@ public class RestartAction extends ToolBarAction {
     private static final long serialVersionUID = 1333126351380171619L;
 
     public RestartAction() {
-        super("action.restart", "restart");
+        super(_GUI._.action_restart(), "action.restart", "restart");
     }
 
     @Override
@@ -42,6 +42,21 @@ public class RestartAction extends ToolBarAction {
 
     @Override
     public void initDefaults() {
+    }
+
+    @Override
+    protected String createMnemonic() {
+        return _GUI._.action_restart_mnemonic();
+    }
+
+    @Override
+    protected String createAccelerator() {
+        return _GUI._.action_restart_accelerator();
+    }
+
+    @Override
+    protected String createTooltip() {
+        return _GUI._.action_restart_tooltip();
     }
 
 }

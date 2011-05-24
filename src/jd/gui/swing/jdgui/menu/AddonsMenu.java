@@ -16,18 +16,25 @@
 
 package jd.gui.swing.jdgui.menu;
 
+import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 
+import javax.swing.AbstractAction;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 
+import jd.gui.UserIO;
 import jd.gui.swing.jdgui.actions.ActionController;
 import jd.gui.swing.jdgui.actions.ToolBarAction.Types;
 
+import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.extensions.AbstractExtension;
+import org.jdownloader.extensions.AbstractExtensionWrapper;
 import org.jdownloader.extensions.ExtensionController;
+import org.jdownloader.extensions.StartException;
+import org.jdownloader.extensions.StopException;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.translate._JDT;
 
@@ -58,33 +65,93 @@ public class AddonsMenu extends JMenu {
         ArrayList<JMenuItem> itemsWithSubmenu = new ArrayList<JMenuItem>();
         ArrayList<JMenuItem> itemsToggle = new ArrayList<JMenuItem>();
         ArrayList<JMenuItem> itemsPress = new ArrayList<JMenuItem>();
-        ArrayList<AbstractExtension> pluginsOptional = ExtensionController.getInstance().getEnabledExtensions();
-        Collections.sort(pluginsOptional, new Comparator<AbstractExtension>() {
+        ArrayList<AbstractExtensionWrapper> pluginsOptional = ExtensionController.getInstance().getExtensions();
+        Collections.sort(pluginsOptional, new Comparator<AbstractExtensionWrapper>() {
 
-            public int compare(AbstractExtension o1, AbstractExtension o2) {
+            public int compare(AbstractExtensionWrapper o1, AbstractExtensionWrapper o2) {
                 return o1.getName().compareTo(o2.getName());
             }
         });
 
-        for (final AbstractExtension plg : pluginsOptional) {
+        for (final AbstractExtensionWrapper wrapper : pluginsOptional) {
 
-            ArrayList<MenuAction> mis = plg.getMenuAction();
-            if (mis != null && !mis.isEmpty()) {
-                if (mis.size() == 1) {
-                    JMenuItem c = mis.get(0).toJMenuItem();
-                    c.setIcon(NewTheme.I().getIcon(plg.getIconKey(), 16));
-                    if (mis.get(0).getType() == Types.TOGGLE) {
-                        itemsToggle.add(c);
+            if (wrapper._isEnabled()) {
+                final AbstractExtension<?> plg = wrapper._getExtension();
+                ArrayList<MenuAction> mis = plg.getMenuAction();
+                if (mis != null && !mis.isEmpty()) {
+                    if (mis.size() == 1) {
+                        JMenuItem c = mis.get(0).toJMenuItem();
+                        c.setIcon(NewTheme.I().getIcon(plg.getIconKey(), 16));
+                        if (mis.get(0).getType() == Types.TOGGLE) {
+                            itemsToggle.add(c);
+                        } else {
+                            itemsPress.add(c);
+                        }
                     } else {
-                        itemsPress.add(c);
-                    }
-                } else {
-                    MenuAction m = new MenuAction(plg.getConfigID(), plg.getName(), plg.getIconKey());
-                    m.setItems(mis);
+                        MenuAction m = new MenuAction(plg.getConfigID(), plg.getName(), plg.getIconKey()) {
 
-                    JMenuItem mi = m.toJMenuItem();
-                    itemsWithSubmenu.add(mi);
+                            @Override
+                            protected String createMnemonic() {
+                                return plg.getName();
+                            }
+
+                            @Override
+                            protected String createAccelerator() {
+                                return "ctrl+shift" + plg.getName().charAt(0);
+                            }
+
+                            @Override
+                            protected String createTooltip() {
+                                return plg.getName();
+                            }
+
+                        };
+                        m.setItems(mis);
+
+                        JMenuItem mi = m.toJMenuItem();
+                        itemsWithSubmenu.add(mi);
+                    }
                 }
+            } else if (wrapper.isQuickToggleEnabled()) {
+
+                JMenuItem jmi = new JMenuItem(new AbstractAction(wrapper.getName(), wrapper._getIcon(16)) {
+
+                    public void actionPerformed(ActionEvent e) {
+                        if (!wrapper._isEnabled()) {
+                            try {
+                                wrapper._setEnabled(true);
+
+                                if (wrapper._getExtension().getGUI() != null) {
+                                    int ret = UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN, wrapper.getName(), _JDT._.gui_settings_extensions_show_now(wrapper.getName()));
+
+                                    if (UserIO.isOK(ret)) {
+                                        // activate panel
+                                        wrapper._getExtension().getGUI().setActive(true);
+                                        // bring panel to front
+                                        wrapper._getExtension().getGUI().toFront();
+
+                                    }
+                                }
+                            } catch (StartException e1) {
+                                Dialog.getInstance().showExceptionDialog(_JDT._.dialog_title_exception(), e1.getMessage(), e1);
+                            } catch (StopException e1) {
+                                e1.printStackTrace();
+                            }
+                        } else {
+                            try {
+
+                                wrapper._setEnabled(false);
+                            } catch (StartException e1) {
+                                e1.printStackTrace();
+                            } catch (StopException e1) {
+                                Dialog.getInstance().showExceptionDialog(_JDT._.dialog_title_exception(), e1.getMessage(), e1);
+                            }
+                        }
+
+                    }
+                });
+                itemsToggle.add(jmi);
+
             }
         }
 

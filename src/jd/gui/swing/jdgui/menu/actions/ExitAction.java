@@ -21,12 +21,14 @@ import java.awt.event.ActionEvent;
 import jd.gui.swing.SwingGui;
 import jd.gui.swing.jdgui.actions.ToolBarAction;
 
+import org.jdownloader.gui.translate._GUI;
+
 public class ExitAction extends ToolBarAction {
 
     private static final long serialVersionUID = -1428029294638573437L;
 
     public ExitAction() {
-        super("action.exit", "exit");
+        super(_GUI._.action_exit(), "action.exit", "exit");
     }
 
     @Override
@@ -36,6 +38,21 @@ public class ExitAction extends ToolBarAction {
 
     @Override
     public void initDefaults() {
+    }
+
+    @Override
+    protected String createMnemonic() {
+        return _GUI._.action_exit_mnemonic();
+    }
+
+    @Override
+    protected String createAccelerator() {
+        return _GUI._.action_exit_accelerator();
+    }
+
+    @Override
+    protected String createTooltip() {
+        return _GUI._.action_exit_tooltip();
     }
 
 }

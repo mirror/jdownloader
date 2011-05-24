@@ -28,7 +28,7 @@ import jd.gui.swing.jdgui.actions.ToolBarAction;
 
 import org.appwork.utils.Application;
 
-public class MenuAction extends ToolBarAction {
+public abstract class MenuAction extends ToolBarAction {
 
     private static final long     serialVersionUID = 2731508542740902624L;
     private ArrayList<MenuAction> items;
@@ -42,16 +42,12 @@ public class MenuAction extends ToolBarAction {
         this.putValue(NAME, name);
     }
 
-    public MenuAction(final String menukey, final int id) {
-        super(menukey, id);
-    }
-
-    public MenuAction(final String menukey, final String icon) {
-        super(menukey, icon);
+    public MenuAction(String name, final String menukey, final int id) {
+        super(name, menukey, id);
     }
 
     public MenuAction(final String menukey, final String name, final String icon) {
-        super(menukey, icon);
+        super(name, menukey, icon);
         this.putValue(NAME, name);
     }
 

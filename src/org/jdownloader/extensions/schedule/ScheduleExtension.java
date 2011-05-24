@@ -16,8 +16,6 @@
 
 package org.jdownloader.extensions.schedule;
 
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -26,13 +24,8 @@ import java.util.Comparator;
 import java.util.Date;
 
 import jd.controlling.JDLogger;
-import jd.gui.swing.jdgui.JDGui;
-import jd.gui.swing.jdgui.interfaces.SwitchPanelEvent;
-import jd.gui.swing.jdgui.interfaces.SwitchPanelListener;
-import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.nutils.ClassFinder;
 import jd.pluginloader.VirtualClass;
-import jd.plugins.AddonPanel;
 
 import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionConfigPanel;
@@ -40,7 +33,7 @@ import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
 import org.jdownloader.extensions.schedule.translate.T;
 
-public class ScheduleExtension extends AbstractExtension<ScheduleConfig> implements ActionListener {
+public class ScheduleExtension extends AbstractExtension<ScheduleConfig> {
 
     private ArrayList<Actions>                  actions;
 
@@ -53,8 +46,6 @@ public class ScheduleExtension extends AbstractExtension<ScheduleConfig> impleme
     private Schedulercheck                      sc      = null;
 
     private boolean                             running = false;
-
-    private MenuAction                          activateAction;
 
     public static final Object                  LOCK    = new Object();
 
@@ -152,43 +143,6 @@ public class ScheduleExtension extends AbstractExtension<ScheduleConfig> impleme
     @Override
     public String getIconKey() {
         return "event";
-    }
-
-    public void actionPerformed(ActionEvent e) {
-        if (e.getSource() == activateAction) {
-            if (((MenuAction) e.getSource()).isSelected()) {
-                showGui();
-            } else {
-                view.close();
-            }
-        }
-    }
-
-    private void showGui() {
-        if (view == null) {
-            view = new SchedulerView();
-
-            view.getBroadcaster().addListener(new SwitchPanelListener() {
-
-                @Override
-                public void onPanelEvent(SwitchPanelEvent event) {
-                    if (event.getEventID() == SwitchPanelEvent.ON_REMOVE) activateAction.setSelected(false);
-                }
-
-            });
-            view.setContent(gui = new MainGui(this));
-
-        }
-        activateAction.setSelected(true);
-        JDGui.getInstance().setContent(view, true);
-    }
-
-    public void setGuiEnable(boolean b) {
-        if (b) {
-            showGui();
-        } else {
-            if (view != null) view.close();
-        }
     }
 
     public class Schedulercheck extends Thread {
@@ -319,11 +273,6 @@ public class ScheduleExtension extends AbstractExtension<ScheduleConfig> impleme
 
         initModules();
 
-        activateAction = new MenuAction("scheduler", 0);
-        activateAction.setActionListener(this);
-        activateAction.setIcon(this.getIconKey());
-        activateAction.setSelected(false);
-
         logger.info("Schedule Init: OK");
         running = true;
         sc = new Schedulercheck();
@@ -350,18 +299,15 @@ public class ScheduleExtension extends AbstractExtension<ScheduleConfig> impleme
     }
 
     @Override
-    public AddonPanel getGUI() {
-        return null;
-    }
-
-    @Override
-    public ArrayList<MenuAction> getMenuAction() {
-        ArrayList<MenuAction> menu = new ArrayList<MenuAction>();
-        menu.add(activateAction);
-        return menu;
+    public SchedulerView getGUI() {
+        return view;
     }
 
     @Override
     protected void initExtension() throws StartException {
+        view = new SchedulerView(this);
+        gui = new MainGui(this);
+        view.setContent(gui);
+
     }
 }

@@ -120,7 +120,23 @@ public class InfoFileWriterExtension extends AbstractExtension<InfoFileWriterCon
             if (event.getCaller() instanceof FilePackage && subConfig.getIntegerProperty(PARAM_CREATION, 0) == 1) return;
 
             final Property obj = (Property) event.getCaller();
-            final MenuAction m = new MenuAction(T._.jd_plugins_optional_JDInfoFileWriter_createInfoFile(), 1337);
+            final MenuAction m = new MenuAction("Create InfoFile", T._.jd_plugins_optional_JDInfoFileWriter_createInfoFile(), 1337) {
+
+                @Override
+                protected String createMnemonic() {
+                    return null;
+                }
+
+                @Override
+                protected String createAccelerator() {
+                    return null;
+                }
+
+                @Override
+                protected String createTooltip() {
+                    return null;
+                }
+            };
             m.setIcon(this.getIconKey());
             m.setSelected(obj.getBooleanProperty(PARAM_CREATE_FILE, true));
             m.setActionListener(new ActionListener() {

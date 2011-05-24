@@ -99,12 +99,27 @@ public class InfoBarExtension extends AbstractExtension<InfoBarConfig> {
 
     @Override
     protected void start() throws StartException {
-        activateAction = new MenuAction("infobar", 0) {
+        activateAction = new MenuAction("Show Infobar", "infobar", 0) {
             private static final long serialVersionUID = 3252473048646596851L;
 
             @Override
             public void onAction(ActionEvent e) {
                 setGuiEnable(activateAction.isSelected());
+            }
+
+            @Override
+            protected String createMnemonic() {
+                return null;
+            }
+
+            @Override
+            protected String createAccelerator() {
+                return null;
+            }
+
+            @Override
+            protected String createTooltip() {
+                return null;
             }
         };
         activateAction.setIcon(this.getIconKey());

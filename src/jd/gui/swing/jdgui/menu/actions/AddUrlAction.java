@@ -34,7 +34,7 @@ public class AddUrlAction extends ToolBarAction {
     private static final long serialVersionUID = -7185006215784212976L;
 
     public AddUrlAction() {
-        super("action.addurl", "url");
+        super(_GUI._.action_addurl(), "action.addurl", "url");
     }
 
     @Override
@@ -61,6 +61,21 @@ public class AddUrlAction extends ToolBarAction {
 
     @Override
     public void initDefaults() {
+    }
+
+    @Override
+    protected String createMnemonic() {
+        return _GUI._.action_addurl_mnemonic();
+    }
+
+    @Override
+    protected String createAccelerator() {
+        return _GUI._.action_addurl_accelerator();
+    }
+
+    @Override
+    protected String createTooltip() {
+        return _GUI._.action_addurl_tooltip();
     }
 
 }

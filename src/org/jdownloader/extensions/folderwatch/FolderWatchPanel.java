@@ -20,29 +20,18 @@ import org.jdownloader.extensions.folderwatch.translate.T;
 
 public class FolderWatchPanel extends SwitchPanel {
 
-    private static final long           serialVersionUID = -4451556977039313203L;
+    private static final long    serialVersionUID = -4451556977039313203L;
 
-    private static FolderWatchTable     table;
-    private static FolderWatchInfoPanel infoPanel;
-    private static JSonWrapper          config;
+    private FolderWatchTable     table;
+    private FolderWatchInfoPanel infoPanel;
+    private JSonWrapper          config;
 
-    private static FolderWatchPanel     INSTANCE;
-
-    private FolderWatchExtension        owner;
-
-    private FolderWatchPanel() {
-    }
-
-    public static synchronized FolderWatchPanel getInstance() {
-        if (INSTANCE == null) INSTANCE = new FolderWatchPanel();
-        return INSTANCE;
-    }
+    private FolderWatchExtension owner;
 
     public FolderWatchPanel(JSonWrapper jSonWrapper, FolderWatchExtension owner) {
         this.owner = owner;
-        FolderWatchPanel.table = new FolderWatchTable();
-        FolderWatchPanel.config = jSonWrapper;
-
+        table = new FolderWatchTable(this);
+        config = jSonWrapper;
         initActions();
         initGUI();
     }
@@ -54,7 +43,7 @@ public class FolderWatchPanel extends SwitchPanel {
     }
 
     private void initActions() {
-        new ThreadedAction("action.folderwatch.history.clear", "clear") {
+        new ThreadedAction("Clear", "action.folderwatch.history.clear", "clear") {
             private static final long serialVersionUID = 3349495273700955040L;
 
             @Override
@@ -77,9 +66,24 @@ public class FolderWatchPanel extends SwitchPanel {
                     }
                 }.start();
             }
+
+            @Override
+            protected String createMnemonic() {
+                return null;
+            }
+
+            @Override
+            protected String createAccelerator() {
+                return null;
+            }
+
+            @Override
+            protected String createTooltip() {
+                return null;
+            }
         };
 
-        new ThreadedAction("action.folderwatch.history.reimport", "add") {
+        new ThreadedAction("Add", "action.folderwatch.history.reimport", "add") {
             private static final long serialVersionUID = 9034432457172125570L;
 
             @Override
@@ -104,6 +108,21 @@ public class FolderWatchPanel extends SwitchPanel {
                     }
                 }.start();
             }
+
+            @Override
+            protected String createMnemonic() {
+                return null;
+            }
+
+            @Override
+            protected String createAccelerator() {
+                return null;
+            }
+
+            @Override
+            protected String createTooltip() {
+                return null;
+            }
         };
     }
 
@@ -118,7 +137,7 @@ public class FolderWatchPanel extends SwitchPanel {
 
     public FolderWatchInfoPanel getInfoPanel() {
         if (infoPanel == null) {
-            infoPanel = new FolderWatchInfoPanel("addons.unrar");
+            infoPanel = new FolderWatchInfoPanel("unpack");
         }
 
         return infoPanel;

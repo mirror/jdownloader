@@ -18,16 +18,16 @@ package org.jdownloader.extensions.schedule;
 
 import javax.swing.Icon;
 
-import jd.gui.swing.jdgui.views.ClosableView;
+import jd.plugins.AddonPanel;
 
 import org.jdownloader.extensions.schedule.translate.T;
 import org.jdownloader.images.NewTheme;
 
-public class SchedulerView extends ClosableView {
+public class SchedulerView extends AddonPanel<ScheduleExtension> {
     private static final long serialVersionUID = -7876057076125402969L;
 
-    public SchedulerView() {
-        super();
+    public SchedulerView(ScheduleExtension owner) {
+        super(owner);
 
         init();
     }
@@ -58,5 +58,13 @@ public class SchedulerView extends ClosableView {
     @Override
     public String getID() {
         return "schedulerview";
+    }
+
+    @Override
+    protected void onDeactivated() {
+    }
+
+    @Override
+    protected void onActivated() {
     }
 }

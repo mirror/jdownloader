@@ -102,7 +102,8 @@ public abstract class JDAction extends AbstractAction {
      * 
      * @param key
      */
-    public void setMnemonic(final String key) {
+    public void setMnemonic(String key) {
+        if (key == null) key = "-";
         final char mnemonic = key.charAt(0);
 
         if (mnemonic != 0 && !key.contentEquals("-")) {
@@ -175,7 +176,7 @@ public abstract class JDAction extends AbstractAction {
                 putValue(AbstractAction.ACCELERATOR_KEY, ks = KeyStroke.getKeyStroke(m, mod));
                 JDLogger.getLogger().finest(this.getTitle() + " Shortcuts: mapped " + accelerator + " to " + ks);
             } catch (Exception e) {
-                JDLogger.exception(e);
+                // JDLogger.exception(e);
                 putValue(AbstractAction.ACCELERATOR_KEY, ks = KeyStroke.getKeyStroke(accelerator.charAt(accelerator.length() - 1), Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()));
                 JDLogger.getLogger().finest(this.getTitle() + " Shortcuts: mapped " + accelerator + " to " + ks + " (Exception)");
             }

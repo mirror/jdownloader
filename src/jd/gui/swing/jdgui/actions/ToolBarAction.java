@@ -22,10 +22,10 @@ import javax.swing.AbstractAction;
 
 import jd.gui.action.JDAction;
 import jd.gui.swing.GuiRunnable;
-import jd.utils.JDTheme;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.Application;
+import org.jdownloader.images.NewTheme;
 
 public abstract class ToolBarAction extends JDAction {
     /**
@@ -55,28 +55,35 @@ public abstract class ToolBarAction extends JDAction {
         this.putValue(ID, id);
     }
 
-    public ToolBarAction(String menukey, int id) {
-        this(menukey, null, id);
+    public ToolBarAction(String name, String menukey, int id) {
+        this(name, menukey, null, id);
     }
 
-    public ToolBarAction(String menukey, String iconkey) {
-        this(menukey, iconkey, -1);
+    public ToolBarAction(String name, String menukey, String iconkey) {
+        this(name, menukey, iconkey, -1);
     }
 
-    public ToolBarAction(String menukey, String iconkey, int id) {
-        super(JDL.L("gui.menu." + menukey + ".name", menukey));
+    public ToolBarAction(String name, String menukey, String iconkey, int id) {
+        super(menukey);
+
         setId(menukey);
         this.setActionID(id);
         if (iconkey != null) setIcon(iconkey);
         if (!JDL.DEBUG) {
-            setMnemonic(JDL.L("gui.menu." + menukey + ".mnem", "-"));
-            setAccelerator(JDL.L("gui.menu." + menukey + ".accel", "-"));
+            setMnemonic(createMnemonic());
+            setAccelerator(createAccelerator());
         }
-        setToolTipText(JDL.L("gui.menu." + menukey + ".tooltip", menukey));
+        setToolTipText(createTooltip());
 
         initDefaults();
         ActionController.register(this);
     }
+
+    abstract protected String createMnemonic();
+
+    abstract protected String createAccelerator();
+
+    abstract protected String createTooltip();
 
     protected ToolBarAction() {
         super("");
@@ -112,8 +119,19 @@ public abstract class ToolBarAction extends JDAction {
     }
 
     private void updateIcon() {
-        putValue(AbstractAction.SMALL_ICON, JDTheme.getCheckBoxImage((String) getValue(IMAGE_KEY), isSelected(), 16, 16));
-        putValue(AbstractAction.LARGE_ICON_KEY, JDTheme.getCheckBoxImage((String) getValue(IMAGE_KEY), isSelected(), 24, 24));
+        // putValue(AbstractAction.SMALL_ICON, JDTheme.getCheckBoxImage((String)
+        // getValue(IMAGE_KEY), isSelected(), 16, 16));
+        // putValue(AbstractAction.LARGE_ICON_KEY,
+        // JDTheme.getCheckBoxImage((String) getValue(IMAGE_KEY), isSelected(),
+        // 24, 24));
+        if (getValue(IMAGE_KEY) == null) {
+
+            putValue(AbstractAction.SMALL_ICON, NewTheme.I().getIcon("checkbox_" + isSelected(), 16));
+            putValue(AbstractAction.LARGE_ICON_KEY, NewTheme.I().getIcon("checkbox_" + isSelected(), 24));
+        } else {
+            putValue(AbstractAction.SMALL_ICON, NewTheme.I().getCheckBoxImage((String) getValue(IMAGE_KEY), isSelected(), 16));
+            putValue(AbstractAction.LARGE_ICON_KEY, NewTheme.I().getCheckBoxImage((String) getValue(IMAGE_KEY), isSelected(), 24));
+        }
     }
 
     @Override

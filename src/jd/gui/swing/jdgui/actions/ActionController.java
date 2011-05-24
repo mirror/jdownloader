@@ -103,7 +103,7 @@ public class ActionController {
      */
     public static void initActions() {
 
-        new ToolBarAction("toolbar.separator", "-") {
+        new ToolBarAction(_GUI._.action_seperator(), "toolbar.separator", null) {
             private static final long serialVersionUID = -4628452328096482738L;
 
             @Override
@@ -115,9 +115,24 @@ public class ActionController {
             public void onAction(final ActionEvent e) {
             }
 
+            @Override
+            protected String createMnemonic() {
+                return null;
+            }
+
+            @Override
+            protected String createAccelerator() {
+                return null;
+            }
+
+            @Override
+            protected String createTooltip() {
+                return null;
+            }
+
         };
 
-        new ThreadedAction("toolbar.control.start", "go-next") {
+        new ThreadedAction(_GUI._.action_start_downloads(), "toolbar.control.start", "media-playback-start") {
             private static final long serialVersionUID = 1683169623090750199L;
 
             @Override
@@ -158,8 +173,23 @@ public class ActionController {
                 DownloadWatchDog.getInstance().startDownloads();
             }
 
+            @Override
+            protected String createMnemonic() {
+                return _GUI._.action_start_downloads_mnemonic();
+            }
+
+            @Override
+            protected String createAccelerator() {
+                return _GUI._.action_start_downloads_accelerator();
+            }
+
+            @Override
+            protected String createTooltip() {
+                return null;
+            }
+
         };
-        new ToolBarAction("toolbar.control.pause", "media-playback-pause") {
+        new ToolBarAction(_GUI._.action_pause(), "toolbar.control.pause", "media-playback-pause") {
             private static final long serialVersionUID = 7153300370492212502L;
 
             @Override
@@ -200,9 +230,24 @@ public class ActionController {
                 DownloadWatchDog.getInstance().pauseDownloadWatchDog(b);
             }
 
+            @Override
+            protected String createMnemonic() {
+                return _GUI._.action_pause_mnemonic();
+            }
+
+            @Override
+            protected String createAccelerator() {
+                return _GUI._.action_pause_accelerator();
+            }
+
+            @Override
+            protected String createTooltip() {
+                return _GUI._.action_pause_tooltip();
+            }
+
         };
 
-        new ThreadedAction("toolbar.control.stop", "stop") {
+        new ThreadedAction(_GUI._.action_stop_downloads(), "toolbar.control.stop", "media-playback-stop") {
             private static final long serialVersionUID = 1409143759105090751L;
 
             @Override
@@ -262,9 +307,24 @@ public class ActionController {
                 DownloadWatchDog.getInstance().stopDownloads();
             }
 
+            @Override
+            protected String createMnemonic() {
+                return _GUI._.action_stop_downloads_mnemonic();
+            }
+
+            @Override
+            protected String createAccelerator() {
+                return _GUI._.action_stop_downloads_accelerator();
+            }
+
+            @Override
+            protected String createTooltip() {
+                return _GUI._.action_stop_downloads_tooltip();
+            }
+
         };
 
-        new ThreadedAction("toolbar.interaction.reconnect", "reconnect") {
+        new ThreadedAction(_GUI._.action_reconnect_invoke(), "toolbar.interaction.reconnect", "reconnect") {
             private static final long serialVersionUID = -1295253607970814759L;
 
             @Override
@@ -309,9 +369,24 @@ public class ActionController {
                 }
             }
 
+            @Override
+            protected String createMnemonic() {
+                return _GUI._.action_reconnect_invoke_mnemonic();
+            }
+
+            @Override
+            protected String createAccelerator() {
+                return _GUI._.action_reconnect_invoke_accelerator();
+            }
+
+            @Override
+            protected String createTooltip() {
+                return _GUI._.action_reconnect_invoke_tooltip();
+            }
+
         };
 
-        new ThreadedAction("toolbar.interaction.update", "update") {
+        new ThreadedAction(_GUI._.action_start_update(), "toolbar.interaction.update", "update") {
             private static final long serialVersionUID = 4359802245569811800L;
 
             @Override
@@ -323,9 +398,24 @@ public class ActionController {
                 WebUpdate.doUpdateCheck(true);
             }
 
+            @Override
+            protected String createMnemonic() {
+                return _GUI._.action_start_update_mnemonic();
+            }
+
+            @Override
+            protected String createAccelerator() {
+                return _GUI._.action_start_update_accelerator();
+            }
+
+            @Override
+            protected String createTooltip() {
+                return _GUI._.action_start_update_tooltip();
+            }
+
         };
 
-        new ToolBarAction("toolbar.quickconfig.clipboardoberserver", "clipboard") {
+        new ToolBarAction(_GUI._.action_clipboard_observer(), "toolbar.quickconfig.clipboardoberserver", "clipboard") {
             private static final long serialVersionUID = -6442494647304101403L;
 
             @Override
@@ -348,9 +438,24 @@ public class ActionController {
             public void onAction(final ActionEvent e) {
                 ClipboardHandler.getClipboard().setEnabled(this.isSelected());
             }
+
+            @Override
+            protected String createMnemonic() {
+                return _GUI._.action_clipboard_observer_mnemonics();
+            }
+
+            @Override
+            protected String createAccelerator() {
+                return _GUI._.action_clipboard_observer_accelerator();
+            }
+
+            @Override
+            protected String createTooltip() {
+                return _GUI._.action_clipboard_observer_tooltip();
+            }
         };
 
-        new ToolBarAction("toolbar.quickconfig.reconnecttoggle", "reconnect") {
+        new ToolBarAction(_GUI._.action_reconnect_toggle(), "toolbar.quickconfig.reconnecttoggle", "reconnect") {
             private static final long serialVersionUID = -2942320816429047941L;
 
             @Override
@@ -374,9 +479,24 @@ public class ActionController {
                 Reconnecter.getInstance().setAutoReconnectEnabled(!Reconnecter.getInstance().isAutoReconnectEnabled());
             }
 
+            @Override
+            protected String createMnemonic() {
+                return _GUI._.action_reconnect_toggle_mnemonic();
+            }
+
+            @Override
+            protected String createAccelerator() {
+                return _GUI._.action_reconnect_toggle_accelerator();
+            }
+
+            @Override
+            protected String createTooltip() {
+                return _GUI._.action_reconnect_toggle_tooltip();
+            }
+
         };
 
-        new ToolBarAction("action.opendlfolder", "package_open") {
+        new ToolBarAction(_GUI._.action_open_dlfolder(), "action.opendlfolder", "package_open") {
             private static final long serialVersionUID = -60944746807335951L;
 
             @Override
@@ -390,9 +510,24 @@ public class ActionController {
                 JDUtilities.openExplorer(new File(dlDir));
             }
 
+            @Override
+            protected String createMnemonic() {
+                return _GUI._.action_open_dlfolder_mnemonic();
+            }
+
+            @Override
+            protected String createAccelerator() {
+                return _GUI._.action_open_dlfolder_accelerator();
+            }
+
+            @Override
+            protected String createTooltip() {
+                return _GUI._.action_open_dlfolder_tooltip();
+            }
+
         };
 
-        new ThreadedAction("toolbar.control.stopmark", "event") {
+        new ThreadedAction(_GUI._.action_stopsign(), "toolbar.control.stopmark", "event") {
             private static final long serialVersionUID = 4359802245569811800L;
 
             @Override
@@ -437,9 +572,24 @@ public class ActionController {
                 // }
             }
 
+            @Override
+            protected String createMnemonic() {
+                return _GUI._.action_stopsign_mnemonic();
+            }
+
+            @Override
+            protected String createAccelerator() {
+                return _GUI._.action_stopsign_accelerator();
+            }
+
+            @Override
+            protected String createTooltip() {
+                return _GUI._.action_stopsign_tooltip();
+            }
+
         };
 
-        new ThreadedAction("action.downloadview.movetobottom", "go-bottom") {
+        new ThreadedAction(_GUI._.action_move_to_bottom(), "action.downloadview.movetobottom", "go-bottom") {
             private static final long serialVersionUID = 6181260839200699153L;
 
             @Override
@@ -455,8 +605,23 @@ public class ActionController {
                     DownloadLinksPanel.getDownloadLinksPanel().move(DownloadController.MOVE_BOTTOM);
                 }
             }
+
+            @Override
+            protected String createMnemonic() {
+                return _GUI._.action_move_to_bottom_mnemonics();
+            }
+
+            @Override
+            protected String createAccelerator() {
+                return _GUI._.action_move_to_bottom_accelerator();
+            }
+
+            @Override
+            protected String createTooltip() {
+                return _GUI._.action_move_to_bottom_tooltip();
+            }
         };
-        new ThreadedAction("action.downloadview.movetotop", "go-top") {
+        new ThreadedAction(_GUI._.action_move_to_top(), "action.downloadview.movetotop", "go-top") {
             private static final long serialVersionUID = 6181260839200699153L;
 
             @Override
@@ -472,9 +637,24 @@ public class ActionController {
                     DownloadLinksPanel.getDownloadLinksPanel().move(DownloadController.MOVE_TOP);
                 }
             }
+
+            @Override
+            protected String createMnemonic() {
+                return _GUI._.action_move_to_top_mnemonic();
+            }
+
+            @Override
+            protected String createAccelerator() {
+                return _GUI._.action_move_to_top_accelerator();
+            }
+
+            @Override
+            protected String createTooltip() {
+                return _GUI._.action_move_to_top_tooltip();
+            }
         };
 
-        new ThreadedAction("action.downloadview.moveup", "up") {
+        new ThreadedAction(_GUI._.action_move_up(), "action.downloadview.moveup", "go-up") {
             private static final long serialVersionUID = 6181260839200699153L;
 
             @Override
@@ -490,8 +670,23 @@ public class ActionController {
                     DownloadLinksPanel.getDownloadLinksPanel().move(DownloadController.MOVE_UP);
                 }
             }
+
+            @Override
+            protected String createMnemonic() {
+                return _GUI._.action_move_up_mnemonic();
+            }
+
+            @Override
+            protected String createAccelerator() {
+                return _GUI._.action_move_up_accelerator();
+            }
+
+            @Override
+            protected String createTooltip() {
+                return _GUI._.action_move_up_tooltip();
+            }
         };
-        new ThreadedAction("action.downloadview.movedown", "go-down") {
+        new ThreadedAction(_GUI._.action_move_down(), "action.downloadview.movedown", "go-down") {
             private static final long serialVersionUID = 6181260839200699153L;
 
             @Override
@@ -507,9 +702,24 @@ public class ActionController {
                     DownloadLinksPanel.getDownloadLinksPanel().move(DownloadController.MOVE_DOWN);
                 }
             }
+
+            @Override
+            protected String createMnemonic() {
+                return _GUI._.action_move_down_mnemonic();
+            }
+
+            @Override
+            protected String createAccelerator() {
+                return _GUI._.action_move_down_accelerator();
+            }
+
+            @Override
+            protected String createTooltip() {
+                return _GUI._.action_move_down_tooltip();
+            }
         };
 
-        new ThreadedAction("action.premiumview.addacc", "add") {
+        new ThreadedAction(_GUI._.action_add_premium_account(), "action.premiumview.addacc", "add") {
 
             private static final long serialVersionUID = -4407938288408350792L;
 
@@ -525,8 +735,23 @@ public class ActionController {
                     AccountDialog.showDialog(null);
                 }
             }
+
+            @Override
+            protected String createMnemonic() {
+                return _GUI._.action_add_premium_account_mnemonic();
+            }
+
+            @Override
+            protected String createAccelerator() {
+                return _GUI._.action_add_premium_account_accelerator();
+            }
+
+            @Override
+            protected String createTooltip() {
+                return _GUI._.action_add_premium_account_tooltip();
+            }
         };
-        new ThreadedAction("action.premium.buy", "buy") {
+        new ThreadedAction(_GUI._.action_buy_premium_account(), "action.premium.buy", "buy") {
 
             private static final long serialVersionUID = -4407938288408350792L;
 
@@ -560,9 +785,24 @@ public class ActionController {
                 if (selection < 0) { return; }
                 CrossSystem.openURLOrShowMessage(data[selection].getPlugin().getBuyPremiumUrl());
             }
+
+            @Override
+            protected String createMnemonic() {
+                return _GUI._.action_buy_premium_account_mnemonic();
+            }
+
+            @Override
+            protected String createAccelerator() {
+                return _GUI._.action_buy_premium_account_accelerator();
+            }
+
+            @Override
+            protected String createTooltip() {
+                return _GUI._.action_buy_premium_account_tooltip();
+            }
         };
 
-        new ToolBarAction("addonsMenu.configuration", "extension") {
+        new ToolBarAction(_GUI._.action_settings(), "addonsMenu.configuration", "extension") {
             private static final long serialVersionUID = -3613887193435347389L;
 
             @Override
@@ -573,8 +813,23 @@ public class ActionController {
             public void onAction(final ActionEvent e) {
                 SwingGui.getInstance().requestPanel(UserIF.Panels.CONFIGPANEL, ExtensionManager.class);
             }
+
+            @Override
+            protected String createMnemonic() {
+                return _GUI._.action_settings_mnemonic();
+            }
+
+            @Override
+            protected String createAccelerator() {
+                return _GUI._.action_settings_accelerator();
+            }
+
+            @Override
+            protected String createTooltip() {
+                return _GUI._.action_settings_tooltip();
+            }
         };
-        new ToolBarAction("premiumMenu.toggle", "info") {
+        new ToolBarAction(_GUI._.action_premium_toggle(), "premiumMenu.toggle", "premium") {
 
             private static final long serialVersionUID = 4276436625882302179L;
 
@@ -606,8 +861,23 @@ public class ActionController {
                 JDUtilities.getConfiguration().save();
             }
 
+            @Override
+            protected String createMnemonic() {
+                return _GUI._.action_premium_toggle_mnemonic();
+            }
+
+            @Override
+            protected String createAccelerator() {
+                return _GUI._.action_premium_toggle_accelerator();
+            }
+
+            @Override
+            protected String createTooltip() {
+                return _GUI._.action_premium_toggle_tooltip();
+            }
+
         };
-        new ToolBarAction("premiumMenu.configuration", "premium") {
+        new ToolBarAction(_GUI._.action_premium_manager(), "premiumMenu.configuration", "premium") {
             private static final long serialVersionUID = -3613887193435347389L;
 
             @Override
@@ -618,9 +888,24 @@ public class ActionController {
             public void onAction(final ActionEvent e) {
                 SwingGui.getInstance().requestPanel(UserIF.Panels.PREMIUMCONFIG, null);
             }
+
+            @Override
+            protected String createMnemonic() {
+                return _GUI._.action_premium_manager_mnemonic();
+            }
+
+            @Override
+            protected String createAccelerator() {
+                return _GUI._.action_premium_manager_accelerator();
+            }
+
+            @Override
+            protected String createTooltip() {
+                return _GUI._.action_premium_manager_tooltip();
+            }
         };
 
-        new ToolBarAction("action.passwordlist", PasswordList.getIconKey()) {
+        new ToolBarAction(_GUI._.action_passwordlist(), "action.passwordlist", PasswordList.getIconKey()) {
             private static final long serialVersionUID = -4111402172655120550L;
 
             @Override
@@ -630,6 +915,21 @@ public class ActionController {
             @Override
             public void onAction(final ActionEvent e) {
                 SwingGui.getInstance().requestPanel(UserIF.Panels.CONFIGPANEL, PasswordList.class);
+            }
+
+            @Override
+            protected String createMnemonic() {
+                return _GUI._.action_passwordlist_mnemonics();
+            }
+
+            @Override
+            protected String createAccelerator() {
+                return _GUI._.action_passwordlist_accelerator();
+            }
+
+            @Override
+            protected String createTooltip() {
+                return _GUI._.action_passwordlist_tooltip();
             }
         };
     }

@@ -34,20 +34,13 @@ import jd.config.ConfigEntry;
 import jd.config.ConfigGroup;
 import jd.config.SubConfiguration;
 import jd.controlling.JDController;
-import jd.controlling.JDLogger;
 import jd.controlling.JSonWrapper;
 import jd.gui.UserIO;
 import jd.gui.swing.components.JDFileChooser;
-import jd.gui.swing.jdgui.JDGui;
-import jd.gui.swing.jdgui.actions.ToolBarAction.Types;
-import jd.gui.swing.jdgui.interfaces.SwitchPanelEvent;
-import jd.gui.swing.jdgui.interfaces.SwitchPanelListener;
-import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.gui.swing.jdgui.views.linkgrabber.LinkGrabberPanel;
 import jd.nutils.JDFlags;
 import jd.nutils.JDHash;
 import jd.nutils.OSDetector;
-import jd.plugins.AddonPanel;
 import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
 
@@ -60,19 +53,15 @@ import org.jdownloader.extensions.folderwatch.core.FileMonitoringListener;
 import org.jdownloader.extensions.folderwatch.data.History;
 import org.jdownloader.extensions.folderwatch.data.HistoryEntry;
 import org.jdownloader.extensions.folderwatch.translate.T;
-import org.jdownloader.extensions.interfaces.RemoteSupport;
 import org.jdownloader.extensions.remotecontrol.helppage.HelpPage;
 import org.jdownloader.extensions.remotecontrol.helppage.Table;
 import org.jdownloader.images.NewTheme;
 
-public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig> implements FileMonitoringListener, RemoteSupport, ActionListener {
+public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig> implements FileMonitoringListener, ActionListener {
 
     private JSonWrapper          subConfig;
 
     private boolean              isEnabled            = false;
-
-    private MenuAction           toggleAction;
-    private MenuAction           showGuiAction;
 
     private FolderWatchPanel     historyGui           = null;
     private FolderWatchView      view                 = null;
@@ -130,20 +119,7 @@ public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig> i
     }
 
     public void actionPerformed(ActionEvent e) {
-        if (e.getID() == 0) {
-            try {
-                subConfig.setProperty(FolderWatchConstants.PROPERTY_ENABLED, toggleAction.isSelected());
-                subConfig.save();
-            } catch (Exception ex) {
-                JDLogger.exception(ex);
-            }
-            startWatching(toggleAction.isSelected());
-        } else if (e.getID() == 1) {
-            if (showGuiAction.isSelected())
-                showGui();
-            else
-                view.close();
-        }
+
     }
 
     private void addListModelEntry(String folder) {
@@ -165,29 +141,6 @@ public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig> i
 
         String folder = folderlist.get(index);
         listModel.set(index, folder + " (" + getNumberOfContainerFiles(folder) + ")");
-    }
-
-    private void showGui() {
-        if (view == null) {
-            view = new FolderWatchView();
-            view.getBroadcaster().addListener(new SwitchPanelListener() {
-                @SuppressWarnings("deprecation")
-                @Override
-                public void onPanelEvent(SwitchPanelEvent event) {
-                    if (event.getEventID() == SwitchPanelEvent.ON_REMOVE) {
-                        showGuiAction.setSelected(false);
-                    }
-                }
-            });
-
-            historyCleanup(null);
-
-            historyGui = new FolderWatchPanel(getPluginConfig(), this);
-            view.setContent(historyGui);
-            view.setInfoPanel(historyGui.getInfoPanel());
-        }
-        showGuiAction.setSelected(true);
-        JDGui.getInstance().setContent(view, true);
     }
 
     private boolean startWatching(boolean param) {
@@ -382,28 +335,6 @@ public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig> i
         initOptionVars();
     }
 
-    public Object handleRemoteCmd(String cmd) {
-        if (cmd.matches("(?is).*/addon/folderwatch/action/start")) {
-            toggleAction.setSelected(true);
-            subConfig.setProperty(FolderWatchConstants.PROPERTY_ENABLED, true);
-            subConfig.save();
-
-            startWatching(true);
-
-            return "FolderWatch has been started.";
-        } else if (cmd.matches("(?is).*/addon/folderwatch/action/stop")) {
-            toggleAction.setSelected(false);
-            subConfig.setProperty(FolderWatchConstants.PROPERTY_ENABLED, false);
-            subConfig.save();
-
-            startWatching(false);
-
-            return "FolderWatch has been stopped.";
-        }
-
-        return null;
-    }
-
     // More commands to come ;)
     public void initCmdTable() {
         Table t = HelpPage.createTable(new Table(getName()));
@@ -541,7 +472,8 @@ public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig> i
 
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_BUTTON, new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                showGui();
+                getGUI().setActive(true);
+                getGUI().toFront();
             }
         }, T._.plugins_optional_folderwatch_JDFolderWatch_gui_action_showhistory(), T._.plugins_optional_folderwatch_JDFolderWatch_gui_action_showhistory_long(), NewTheme.I().getIcon("event", 16)));
 
@@ -575,27 +507,8 @@ public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig> i
     }
 
     @Override
-    public AddonPanel getGUI() {
-        return null;
-    }
-
-    @Override
-    public ArrayList<MenuAction> getMenuAction() {
-        ArrayList<MenuAction> menu = new ArrayList<MenuAction>();
-
-        toggleAction = new MenuAction("folderwatch.toggle", 0);
-        toggleAction.setActionListener(this);
-        toggleAction.setSelected(isEnabled);
-
-        showGuiAction = new MenuAction("folderwatch.history", 1);
-        showGuiAction.setActionListener(this);
-        showGuiAction.setType(Types.TOGGLE);
-
-        menu.add(toggleAction);
-        menu.add(new MenuAction(Types.SEPARATOR));
-        menu.add(showGuiAction);
-
-        return menu;
+    public FolderWatchView getGUI() {
+        return view;
     }
 
     @Override
@@ -611,5 +524,14 @@ public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig> i
 
         History.setEntries(getHistoryEntriesFromConfig());
         historyCleanup(null);
+        initGUI();
+    }
+
+    private void initGUI() {
+
+        view = new FolderWatchView(this);
+        FolderWatchPanel panel = new FolderWatchPanel(subConfig, this);
+        view.setContent(panel);
+        view.setInfoPanel(panel.getInfoPanel());
     }
 }

@@ -31,10 +31,6 @@ import javax.swing.JScrollPane;
 import javax.swing.JSpinner;
 import javax.swing.SpinnerNumberModel;
 
-import org.jdownloader.extensions.jdfeedme.dialogs.AddFeedDialog;
-import org.jdownloader.extensions.jdfeedme.dialogs.ComboDialog;
-import org.jdownloader.extensions.jdfeedme.posts.JDFeedMePost;
-
 import jd.gui.UserIO;
 import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.jdgui.actions.ThreadedAction;
@@ -42,6 +38,10 @@ import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.gui.swing.jdgui.views.ViewToolbar;
 import jd.nutils.JDFlags;
 import net.miginfocom.swing.MigLayout;
+
+import org.jdownloader.extensions.jdfeedme.dialogs.AddFeedDialog;
+import org.jdownloader.extensions.jdfeedme.dialogs.ComboDialog;
+import org.jdownloader.extensions.jdfeedme.posts.JDFeedMePost;
 
 public class JDFeedMeGui extends SwitchPanel implements KeyListener, ActionListener {
 
@@ -95,7 +95,7 @@ public class JDFeedMeGui extends SwitchPanel implements KeyListener, ActionListe
     }
 
     private void initActions() {
-        new ThreadedAction("Add Feed", "add") {
+        new ThreadedAction("Add Feed", "Add Feed", "add") {
             private static final long serialVersionUID = 2902582806883565245L;
 
             @Override
@@ -145,9 +145,24 @@ public class JDFeedMeGui extends SwitchPanel implements KeyListener, ActionListe
                 }.start();
 
             }
+
+            @Override
+            protected String createMnemonic() {
+                return null;
+            }
+
+            @Override
+            protected String createAccelerator() {
+                return null;
+            }
+
+            @Override
+            protected String createTooltip() {
+                return null;
+            }
         };
 
-        new ThreadedAction("Remove Feed", "delete") {
+        new ThreadedAction("Remove Feed", "Remove Feed", "delete") {
             private static final long serialVersionUID = -961227173418839351L;
 
             @Override
@@ -177,9 +192,24 @@ public class JDFeedMeGui extends SwitchPanel implements KeyListener, ActionListe
                 table.getModel().refreshModel();
                 table.getModel().fireTableDataChanged();
             }
+
+            @Override
+            protected String createMnemonic() {
+                return null;
+            }
+
+            @Override
+            protected String createAccelerator() {
+                return null;
+            }
+
+            @Override
+            protected String createTooltip() {
+                return null;
+            }
         };
 
-        new ThreadedAction("Reset Feed", "restart") {
+        new ThreadedAction("Reset Feed", "Reset Feed", "restart") {
             private static final long serialVersionUID = -961227173618834351L;
 
             @Override
@@ -233,9 +263,24 @@ public class JDFeedMeGui extends SwitchPanel implements KeyListener, ActionListe
                     }
                 }.start();
             }
+
+            @Override
+            protected String createMnemonic() {
+                return null;
+            }
+
+            @Override
+            protected String createAccelerator() {
+                return null;
+            }
+
+            @Override
+            protected String createTooltip() {
+                return null;
+            }
         };
 
-        new ThreadedAction("Sync All Now", "download") {
+        new ThreadedAction("Sync All Now", "Sync All Now", "download") {
             private static final long serialVersionUID = -911247173617834351L;
 
             @Override
@@ -260,6 +305,21 @@ public class JDFeedMeGui extends SwitchPanel implements KeyListener, ActionListe
                         return null;
                     }
                 }.start();
+            }
+
+            @Override
+            protected String createMnemonic() {
+                return null;
+            }
+
+            @Override
+            protected String createAccelerator() {
+                return null;
+            }
+
+            @Override
+            protected String createTooltip() {
+                return null;
             }
         };
     }

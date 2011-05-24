@@ -24,10 +24,10 @@ import javax.swing.JComponent;
 import jd.gui.swing.jdgui.GraphicalUserInterfaceSettings;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.gui.swing.jdgui.views.ClosableView;
-import jd.utils.JDTheme;
 
 import org.appwork.storage.config.JsonConfig;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.images.NewTheme;
 
 public class ConfigurationView extends ClosableView {
 
@@ -49,7 +49,7 @@ public class ConfigurationView extends ClosableView {
 
     @Override
     public Icon getIcon() {
-        return JDTheme.II("settings", ICON_SIZE, ICON_SIZE);
+        return NewTheme.I().getIcon("settings", ICON_SIZE);
     }
 
     @Override

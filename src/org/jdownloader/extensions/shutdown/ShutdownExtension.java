@@ -426,7 +426,7 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig> impleme
 
     @Override
     protected void start() throws StartException {
-        if (menuAction == null) menuAction = new MenuAction("gui.jdshutdown.toggle", "logout") {
+        if (menuAction == null) menuAction = new MenuAction("Shutdown", "gui.jdshutdown.toggle", "logout") {
             private static final long serialVersionUID = 4359802245569811800L;
 
             @Override
@@ -450,6 +450,21 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig> impleme
                         }
                     }
                 });
+            }
+
+            @Override
+            protected String createMnemonic() {
+                return null;
+            }
+
+            @Override
+            protected String createAccelerator() {
+                return null;
+            }
+
+            @Override
+            protected String createTooltip() {
+                return null;
             }
         };
         menuAction.setSelected(shutdownEnabled);

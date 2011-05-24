@@ -32,7 +32,7 @@ public class AddContainerAction extends ToolBarAction {
     private static final long serialVersionUID = 4713690050852393405L;
 
     public AddContainerAction() {
-        super("action.load", "load");
+        super(_GUI._.action_addcontainer(), "action.load", "load");
     }
 
     @Override
@@ -46,6 +46,21 @@ public class AddContainerAction extends ToolBarAction {
 
     @Override
     public void initDefaults() {
+    }
+
+    @Override
+    protected String createMnemonic() {
+        return _GUI._.action_addcontainer_mnemonic();
+    }
+
+    @Override
+    protected String createAccelerator() {
+        return _GUI._.action_addcontainer_accelerator();
+    }
+
+    @Override
+    protected String createTooltip() {
+        return _GUI._.action_addcontainer_tooltip();
     }
 
 }

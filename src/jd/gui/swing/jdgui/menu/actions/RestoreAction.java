@@ -34,7 +34,7 @@ public class RestoreAction extends ToolBarAction {
     private static final long serialVersionUID = -1428029294638573437L;
 
     public RestoreAction() {
-        super("action.restore", "edit");
+        super(_GUI._.action_restore(), "action.restore", "edit");
     }
 
     @Override
@@ -61,6 +61,21 @@ public class RestoreAction extends ToolBarAction {
 
     @Override
     public void initDefaults() {
+    }
+
+    @Override
+    protected String createMnemonic() {
+        return _GUI._.action_restore_mnemonic();
+    }
+
+    @Override
+    protected String createAccelerator() {
+        return _GUI._.action_restore_accelerator();
+    }
+
+    @Override
+    protected String createTooltip() {
+        return _GUI._.action_restore_tooltip();
     }
 
 }

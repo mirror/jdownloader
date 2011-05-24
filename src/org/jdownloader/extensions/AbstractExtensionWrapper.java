@@ -109,6 +109,12 @@ public class AbstractExtensionWrapper implements Storable {
 
     private boolean windowsRunnable;
 
+    private boolean quickToggleEnabled;
+
+    public void setQuickToggleEnabled(boolean quickToggleEnabled) {
+        this.quickToggleEnabled = quickToggleEnabled;
+    }
+
     public AbstractExtensionWrapper() {
         // required for Storable
     }
@@ -298,6 +304,10 @@ public class AbstractExtensionWrapper implements Storable {
      */
     public void _setClazz(Class<AbstractExtension<?>> cls) {
         clazz = cls;
+    }
+
+    public boolean isQuickToggleEnabled() {
+        return extension == null ? quickToggleEnabled : extension.isQuickToggleEnabled();
     }
 
 }

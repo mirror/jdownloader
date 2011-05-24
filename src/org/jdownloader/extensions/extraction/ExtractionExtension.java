@@ -506,13 +506,45 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
         case ControlEvent.CONTROL_LINKLIST_CONTEXT_MENU:
             ArrayList<MenuAction> items = (ArrayList<MenuAction>) event.getParameter();
             MenuAction m;
-            MenuAction container = new MenuAction("optional.extraction.linkmenu.container", 0);
+            MenuAction container = new MenuAction("Extract", "optional.extraction.linkmenu.container", 0) {
+
+                @Override
+                protected String createMnemonic() {
+                    return null;
+                }
+
+                @Override
+                protected String createAccelerator() {
+                    return null;
+                }
+
+                @Override
+                protected String createTooltip() {
+                    return null;
+                }
+            };
             container.setIcon(getIconKey());
             items.add(container);
             if (event.getCaller() instanceof DownloadLink) {
                 link = (DownloadLink) event.getCaller();
 
-                container.addMenuItem(m = new MenuAction("optional.extraction.linkmenu.extract", EXTRACT_LINK));
+                container.addMenuItem(m = new MenuAction("Extract Link", "optional.extraction.linkmenu.extract", EXTRACT_LINK) {
+
+                    @Override
+                    protected String createMnemonic() {
+                        return null;
+                    }
+
+                    @Override
+                    protected String createAccelerator() {
+                        return null;
+                    }
+
+                    @Override
+                    protected String createTooltip() {
+                        return null;
+                    }
+                });
                 m.setIcon(getIconKey());
                 m.setActionListener(this);
 
@@ -525,15 +557,63 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
                 }
 
                 m.setProperty(MENU_LINKS, ((DownloadTable) ((JViewport) DownloadLinksPanel.getDownloadLinksPanel().getScrollPane().getComponent(0)).getComponent(0)).getSelectedDownloadLinks());
-                container.addMenuItem(m = new MenuAction("optional.extraction.linkmenu.autoextract", SET_LINK_AUTOEXTRACT));
+                container.addMenuItem(m = new MenuAction("Autoextract", "optional.extraction.linkmenu.autoextract", SET_LINK_AUTOEXTRACT) {
+
+                    @Override
+                    protected String createMnemonic() {
+                        return null;
+                    }
+
+                    @Override
+                    protected String createAccelerator() {
+                        return null;
+                    }
+
+                    @Override
+                    protected String createTooltip() {
+                        return null;
+                    }
+                });
                 m.setActionListener(this);
                 m.setSelected(link.getFilePackage().isPostProcessing());
                 if (!this.getPluginConfig().getBooleanProperty("ACTIVATED", true)) {
                     m.setEnabled(false);
                 }
                 m.setProperty(MENU_LINKS, ((DownloadTable) ((JViewport) DownloadLinksPanel.getDownloadLinksPanel().getScrollPane().getComponent(0)).getComponent(0)).getSelectedDownloadLinks());
-                container.addMenuItem(new MenuAction(Types.SEPARATOR));
-                container.addMenuItem(m = new MenuAction("optional.extraction.linkmenu.setextract", SET_EXTRACT_TO));
+                container.addMenuItem(new MenuAction(Types.SEPARATOR) {
+
+                    @Override
+                    protected String createMnemonic() {
+                        return null;
+                    }
+
+                    @Override
+                    protected String createAccelerator() {
+                        return null;
+                    }
+
+                    @Override
+                    protected String createTooltip() {
+                        return null;
+                    }
+                });
+                container.addMenuItem(m = new MenuAction("Extract To", "optional.extraction.linkmenu.setextract", SET_EXTRACT_TO) {
+
+                    @Override
+                    protected String createMnemonic() {
+                        return null;
+                    }
+
+                    @Override
+                    protected String createAccelerator() {
+                        return null;
+                    }
+
+                    @Override
+                    protected String createTooltip() {
+                        return null;
+                    }
+                });
                 m.setActionListener(this);
 
                 if (isLinkSupported(link.getFileOutput())) {
@@ -550,7 +630,23 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
                     dir = dir.getParentFile();
                 }
                 if (dir == null) break;
-                container.addMenuItem(m = new MenuAction("optional.extraction.linkmenu.openextract3", OPEN_EXTRACT));
+                container.addMenuItem(m = new MenuAction("Open Extract folder", "optional.extraction.linkmenu.openextract3", OPEN_EXTRACT) {
+
+                    @Override
+                    protected String createMnemonic() {
+                        return null;
+                    }
+
+                    @Override
+                    protected String createAccelerator() {
+                        return null;
+                    }
+
+                    @Override
+                    protected String createTooltip() {
+                        return null;
+                    }
+                });
                 m.setActionListener(this);
 
                 if (isLinkSupported(link.getFileOutput())) {
@@ -564,11 +660,43 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
             } else {
                 FilePackage fp = (FilePackage) event.getCaller();
 
-                container.addMenuItem(m = new MenuAction("optional.extraction.linkmenu.package.extract", EXTRACT_PACKAGE));
+                container.addMenuItem(m = new MenuAction("Extract Package", "optional.extraction.linkmenu.package.extract", EXTRACT_PACKAGE) {
+
+                    @Override
+                    protected String createMnemonic() {
+                        return null;
+                    }
+
+                    @Override
+                    protected String createAccelerator() {
+                        return null;
+                    }
+
+                    @Override
+                    protected String createTooltip() {
+                        return null;
+                    }
+                });
                 m.setProperty(MENU_PACKAGES, ((DownloadTable) ((JViewport) DownloadLinksPanel.getDownloadLinksPanel().getScrollPane().getComponent(0)).getComponent(0)).getSelectedFilePackages());
                 m.setIcon(getIconKey());
                 m.setActionListener(this);
-                container.addMenuItem(m = new MenuAction("optional.extraction.linkmenu.package.autoextract", SET_PACKAGE_AUTOEXTRACT));
+                container.addMenuItem(m = new MenuAction("Auto Extract Package", "optional.extraction.linkmenu.package.autoextract", SET_PACKAGE_AUTOEXTRACT) {
+
+                    @Override
+                    protected String createMnemonic() {
+                        return null;
+                    }
+
+                    @Override
+                    protected String createAccelerator() {
+                        return null;
+                    }
+
+                    @Override
+                    protected String createTooltip() {
+                        return null;
+                    }
+                });
                 m.setProperty(MENU_PACKAGES, ((DownloadTable) ((JViewport) DownloadLinksPanel.getDownloadLinksPanel().getScrollPane().getComponent(0)).getComponent(0)).getSelectedFilePackages());
                 m.setSelected(fp.isPostProcessing());
                 m.setActionListener(this);
@@ -622,7 +750,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
 
         this.queue = new Jobber(1);
 
-        if (menuAction == null) menuAction = new MenuAction("optional.extraction.menu.extract.singlefiles", getIconKey()) {
+        if (menuAction == null) menuAction = new MenuAction("Extract Files", "optional.extraction.menu.extract.singlefiles", getIconKey()) {
             private static final long serialVersionUID = -7569522709162921624L;
 
             @Override
@@ -662,6 +790,21 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
                         }
                     }.start();
                 }
+            }
+
+            @Override
+            protected String createMnemonic() {
+                return null;
+            }
+
+            @Override
+            protected String createAccelerator() {
+                return null;
+            }
+
+            @Override
+            protected String createTooltip() {
+                return null;
             }
         };
 

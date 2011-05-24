@@ -21,13 +21,14 @@ import java.awt.event.ActionEvent;
 import jd.gui.swing.jdgui.actions.ToolBarAction;
 
 import org.appwork.utils.os.CrossSystem;
+import org.jdownloader.gui.translate._GUI;
 
 public class LatestChangesAction extends ToolBarAction {
 
     private static final long serialVersionUID = 2705114922279833817L;
 
     public LatestChangesAction() {
-        super("action.changes", "help");
+        super(_GUI._.action_changelog(), "action.changes", "help");
     }
 
     @Override
@@ -37,6 +38,21 @@ public class LatestChangesAction extends ToolBarAction {
 
     @Override
     public void initDefaults() {
+    }
+
+    @Override
+    protected String createMnemonic() {
+        return _GUI._.action_changelog_mnemonic();
+    }
+
+    @Override
+    protected String createAccelerator() {
+        return _GUI._.action_changelog_accelerator();
+    }
+
+    @Override
+    protected String createTooltip() {
+        return _GUI._.action_changelog_tooltip();
     }
 
 }

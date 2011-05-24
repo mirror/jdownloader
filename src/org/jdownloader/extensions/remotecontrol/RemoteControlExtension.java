@@ -16,10 +16,7 @@
 
 package org.jdownloader.extensions.remotecontrol;
 
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.io.IOException;
-import java.util.ArrayList;
 
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -27,7 +24,6 @@ import jd.config.ConfigGroup;
 import jd.controlling.JDLogger;
 import jd.controlling.JSonWrapper;
 import jd.gui.UserIO;
-import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.plugins.AddonPanel;
 import jd.plugins.OptionalPlugin;
 
@@ -43,7 +39,7 @@ import org.jdownloader.extensions.remotecontrol.translate.T;
  * zu erhöhen.
  */
 @OptionalPlugin(rev = "$Revision$", id = "remotecontrol", interfaceversion = 7)
-public class RemoteControlExtension extends AbstractExtension<RemoteControlConfig> implements ActionListener {
+public class RemoteControlExtension extends AbstractExtension<RemoteControlConfig> {
 
     private static final String  PARAM_PORT      = "PORT";
     private static final String  PARAM_LOCALHOST = "LOCALHOST";
@@ -52,7 +48,7 @@ public class RemoteControlExtension extends AbstractExtension<RemoteControlConfi
     private final JSonWrapper    subConfig;
 
     private HttpServer           server;
-    private MenuAction           activate;
+
     private ExtensionConfigPanel configPanel;
 
     public ExtensionConfigPanel<RemoteControlExtension> getConfigPanel() {
@@ -74,24 +70,6 @@ public class RemoteControlExtension extends AbstractExtension<RemoteControlConfi
         return "server";
     }
 
-    public void actionPerformed(final ActionEvent e) {
-        try {
-            subConfig.setProperty(PARAM_ENABLED, activate.isSelected());
-            subConfig.save();
-
-            if (activate.isSelected()) {
-                server = initServer();
-                if (server != null) server.start();
-                UserIO.getInstance().requestMessageDialog(T._.plugins_optional_remotecontrol_startedonport2(getName(), subConfig.getIntegerProperty(PARAM_PORT, 10025), subConfig.getIntegerProperty(PARAM_PORT, 10025)));
-            } else {
-                if (server != null) server.sstop();
-                UserIO.getInstance().requestMessageDialog(T._.plugins_optional_remotecontrol_stopped2(getName()));
-            }
-        } catch (Exception ex) {
-            JDLogger.exception(ex);
-        }
-    }
-
     private HttpServer initServer() {
         try {
             return new HttpServer(subConfig.getIntegerProperty(PARAM_PORT, 10025), new Serverhandler(this), subConfig.getBooleanProperty(PARAM_LOCALHOST, false));
@@ -104,21 +82,22 @@ public class RemoteControlExtension extends AbstractExtension<RemoteControlConfi
 
     @Override
     protected void stop() throws StopException {
+        if (server != null) try {
+            server.sstop();
+
+            UserIO.getInstance().requestMessageDialog(T._.plugins_optional_remotecontrol_stopped2(getName()));
+        } catch (IOException e) {
+
+            throw new StopException(e);
+        }
     }
 
     @Override
     protected void start() throws StartException {
         boolean enabled = subConfig.getBooleanProperty(PARAM_ENABLED, true);
-
-        activate = new MenuAction("remotecontrol", 0);
-        activate.setActionListener(this);
-        activate.setIcon(this.getIconKey());
-        activate.setSelected(enabled);
-
-        if (enabled) {
-            server = initServer();
-            if (server != null) server.start();
-        }
+        server = initServer();
+        if (server != null) server.start();
+        UserIO.getInstance().requestMessageDialog(T._.plugins_optional_remotecontrol_startedonport2(getName(), subConfig.getIntegerProperty(PARAM_PORT, 10025), subConfig.getIntegerProperty(PARAM_PORT, 10025)));
 
         logger.info("RemoteControl OK");
 
@@ -149,15 +128,6 @@ public class RemoteControlExtension extends AbstractExtension<RemoteControlConfi
     @Override
     public AddonPanel getGUI() {
         return null;
-    }
-
-    @Override
-    public ArrayList<MenuAction> getMenuAction() {
-        final ArrayList<MenuAction> menu = new ArrayList<MenuAction>();
-
-        menu.add(activate);
-
-        return menu;
     }
 
     @Override

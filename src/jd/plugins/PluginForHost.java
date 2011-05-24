@@ -51,6 +51,7 @@ import jd.plugins.download.DownloadInterface;
 
 import org.appwork.utils.Regex;
 import org.appwork.utils.os.CrossSystem;
+import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.translate._JDT;
 
 /**
@@ -240,13 +241,63 @@ public abstract class PluginForHost extends Plugin implements FavIconRequestor {
         MenuAction m;
 
         if (config != null && config.getEntries().size() > 0) {
-            m = new MenuAction("plugins.configs", 1);
+            m = new MenuAction(_GUI._.action_plugin_config(), "plugins.configs", 1) {
+
+                @Override
+                protected String createMnemonic() {
+                    return _GUI._.action_plugin_config_mnemonic();
+                }
+
+                @Override
+                protected String createAccelerator() {
+                    return _GUI._.action_plugin_config_accelerator();
+                }
+
+                @Override
+                protected String createTooltip() {
+                    return _GUI._.action_plugin_config_tooltip();
+                }
+
+            };
             m.setActionListener(this);
             menuList.add(m);
-            menuList.add(new MenuAction(Types.SEPARATOR));
+            menuList.add(new MenuAction(Types.SEPARATOR) {
+
+                @Override
+                protected String createMnemonic() {
+                    return null;
+                }
+
+                @Override
+                protected String createAccelerator() {
+                    return null;
+                }
+
+                @Override
+                protected String createTooltip() {
+                    return null;
+                }
+            });
         }
 
-        MenuAction premiumAction = new MenuAction("accounts", 0);
+        MenuAction premiumAction = new MenuAction(_GUI._.action_plugin_accounts(), "accounts", 0) {
+
+            @Override
+            protected String createMnemonic() {
+                return _GUI._.action_plugin_accounts_mnemonic();
+            }
+
+            @Override
+            protected String createAccelerator() {
+                return _GUI._.action_plugin_accounts_accelerator();
+            }
+
+            @Override
+            protected String createTooltip() {
+                return _GUI._.action_plugin_accounts_tooltip();
+            }
+
+        };
         premiumAction.setType(Types.CONTAINER);
         ArrayList<Account> accounts = getPremiumAccounts();
 
@@ -258,17 +309,65 @@ public abstract class PluginForHost extends Plugin implements FavIconRequestor {
                     c++;
                     if (getAccountwithoutUsername()) {
                         if (a.getPass() == null || a.getPass().trim().length() == 0) continue;
-                        account = new MenuAction(i++ + ". " + _JDT._.jd_plugins_PluginsForHost_account());
+                        account = new MenuAction(i++ + ". " + _JDT._.jd_plugins_PluginsForHost_account()) {
+
+                            @Override
+                            protected String createMnemonic() {
+                                return null;
+                            }
+
+                            @Override
+                            protected String createAccelerator() {
+                                return null;
+                            }
+
+                            @Override
+                            protected String createTooltip() {
+                                return null;
+                            }
+                        };
                         account.setType(Types.CONTAINER);
                     } else {
                         if (a.getUser() == null || a.getUser().trim().length() == 0) continue;
-                        account = new MenuAction(i++ + ". " + a.getUser());
+                        account = new MenuAction(i++ + ". " + a.getUser()) {
+
+                            @Override
+                            protected String createMnemonic() {
+                                return null;
+                            }
+
+                            @Override
+                            protected String createAccelerator() {
+                                return null;
+                            }
+
+                            @Override
+                            protected String createTooltip() {
+                                return null;
+                            }
+                        };
                         account.setType(Types.CONTAINER);
                     }
                     m = AccountMenuItemSyncer.getInstance().get(a);
 
                     if (m == null) {
-                        m = new MenuAction("plugins.PluginForHost.enable_premium", 100 + c - 1);
+                        m = new MenuAction(_GUI._.action_plugin_enable_premium(), "plugins.PluginForHost.enable_premium", 100 + c - 1) {
+
+                            @Override
+                            protected String createMnemonic() {
+                                return _GUI._.action_plugin_enable_premium_mnemonic();
+                            }
+
+                            @Override
+                            protected String createAccelerator() {
+                                return _GUI._.action_plugin_enable_premium_accelerator();
+                            }
+
+                            @Override
+                            protected String createTooltip() {
+                                return _GUI._.action_plugin_enable_premium_tooltip();
+                            }
+                        };
                     }
                     m.setActionID(100 + c - 1);
                     m.setSelected(a.isEnabled());
@@ -277,7 +376,23 @@ public abstract class PluginForHost extends Plugin implements FavIconRequestor {
 
                     AccountMenuItemSyncer.getInstance().map(a, m);
 
-                    m = new MenuAction("plugins.PluginForHost.premiumInfo", 200 + c - 1);
+                    m = new MenuAction(_GUI._.action_plugin_premium_info(), "plugins.PluginForHost.premiumInfo", 200 + c - 1) {
+
+                        @Override
+                        protected String createMnemonic() {
+                            return _GUI._.action_plugin_premium_info_mnemonic();
+                        }
+
+                        @Override
+                        protected String createAccelerator() {
+                            return _GUI._.action_plugin_premium_info_accelerator();
+                        }
+
+                        @Override
+                        protected String createTooltip() {
+                            return _GUI._.action_plugin_premium_info_tooltip();
+                        }
+                    };
                     m.setActionListener(this);
                     account.addMenuItem(m);
                     premiumAction.addMenuItem(account);
@@ -291,10 +406,42 @@ public abstract class PluginForHost extends Plugin implements FavIconRequestor {
         if (premiumAction.getSize() != 0) {
             menuList.add(premiumAction);
         } else {
-            menuList.add(m = new MenuAction("plugins.menu.noaccounts", 2));
+            menuList.add(m = new MenuAction(_GUI._.action_plugin_premium_noAccounts(), "plugins.menu.noaccounts", 2) {
+
+                @Override
+                protected String createMnemonic() {
+                    return _GUI._.action_plugin_premium_noAccounts_mnemonic();
+                }
+
+                @Override
+                protected String createAccelerator() {
+                    return _GUI._.action_plugin_premium_noAccounts_accelerator();
+                }
+
+                @Override
+                protected String createTooltip() {
+                    return _GUI._.action_plugin_premium_noAccounts_tooltip();
+                }
+            });
             m.setActionListener(this);
         }
-        menuList.add(m = new MenuAction("plugins.menu.buyaccount", 3));
+        menuList.add(m = new MenuAction(_GUI._.action_plugin_premium_buyAccount(), "plugins.menu.buyaccount", 3) {
+
+            @Override
+            protected String createMnemonic() {
+                return _GUI._.action_plugin_premium_buyAccount_mnemonic();
+            }
+
+            @Override
+            protected String createAccelerator() {
+                return _GUI._.action_plugin_premium_buyAccount_accelerator();
+            }
+
+            @Override
+            protected String createTooltip() {
+                return _GUI._.action_plugin_premium_buyAccount_tooltip();
+            }
+        });
         m.setActionListener(this);
 
         return menuList;

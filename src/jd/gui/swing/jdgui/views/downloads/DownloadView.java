@@ -20,9 +20,9 @@ import javax.swing.Icon;
 
 import jd.gui.swing.jdgui.actions.ActionController;
 import jd.gui.swing.jdgui.interfaces.View;
-import jd.utils.JDTheme;
 
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.images.NewTheme;
 
 public class DownloadView extends View {
 
@@ -43,7 +43,7 @@ public class DownloadView extends View {
 
     @Override
     public Icon getIcon() {
-        return JDTheme.II("download", ICON_SIZE, ICON_SIZE);
+        return NewTheme.I().getIcon("download", ICON_SIZE);
     }
 
     @Override

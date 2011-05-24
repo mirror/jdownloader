@@ -70,7 +70,7 @@ public class CustomizerGui extends SwitchPanel {
     }
 
     private void initActions() {
-        new ThreadedAction("action.customize.addsetting", "add") {
+        new ThreadedAction("Add", "action.customize.addsetting", "add") {
             private static final long serialVersionUID = 2902582906883565245L;
 
             @Override
@@ -94,9 +94,24 @@ public class CustomizerGui extends SwitchPanel {
                 }.start();
 
             }
+
+            @Override
+            protected String createMnemonic() {
+                return null;
+            }
+
+            @Override
+            protected String createAccelerator() {
+                return null;
+            }
+
+            @Override
+            protected String createTooltip() {
+                return null;
+            }
         };
 
-        new ThreadedAction("action.customize.removesetting", "delete") {
+        new ThreadedAction("Delete", "action.customize.removesetting", "delete") {
             private static final long serialVersionUID = -961227177718839351L;
 
             @Override
@@ -115,6 +130,21 @@ public class CustomizerGui extends SwitchPanel {
                     }
                 }
                 table.getModel().refreshData();
+            }
+
+            @Override
+            protected String createMnemonic() {
+                return null;
+            }
+
+            @Override
+            protected String createAccelerator() {
+                return null;
+            }
+
+            @Override
+            protected String createTooltip() {
+                return null;
             }
         };
     }

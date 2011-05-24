@@ -142,7 +142,23 @@ public class ScriptLauncherExtension extends AbstractExtension<ScriptLauncherCon
         for (int i = 0; i < scripts.size(); i++) {
             ArrayList<String> launcherprops = readScriptConfiguration(i);
             String scriptname = scripts.get(i).getName().split("\\.")[0];
-            ma = new MenuAction(scriptname, i + 1000);
+            ma = new MenuAction(scriptname, scriptname, i + 1000) {
+
+                @Override
+                protected String createMnemonic() {
+                    return null;
+                }
+
+                @Override
+                protected String createAccelerator() {
+                    return null;
+                }
+
+                @Override
+                protected String createTooltip() {
+                    return null;
+                }
+            };
 
             if (launcherprops.contains(ADD_CHECKBOX)) {
                 ma.setSelected(false);
@@ -254,14 +270,46 @@ public class ScriptLauncherExtension extends AbstractExtension<ScriptLauncherCon
         ArrayList<MenuAction> menu = new ArrayList<MenuAction>();
 
         MenuAction ma;
-        menu.add(ma = new MenuAction(getName(), 0));
+        menu.add(ma = new MenuAction(getName(), getName(), 0) {
+
+            @Override
+            protected String createMnemonic() {
+                return null;
+            }
+
+            @Override
+            protected String createAccelerator() {
+                return null;
+            }
+
+            @Override
+            protected String createTooltip() {
+                return null;
+            }
+        });
 
         for (int i = 0; i < menuitems.size(); i++) {
             ma.addMenuItem(menuitems.get(i));
         }
 
         if (menuitems.size() == 0) {
-            ma.addMenuItem(ma = new MenuAction(T._.plugins_optional_JDScriptLauncher_noscripts(), 0));
+            ma.addMenuItem(ma = new MenuAction(T._.plugins_optional_JDScriptLauncher_noscripts(), T._.plugins_optional_JDScriptLauncher_noscripts(), 0) {
+
+                @Override
+                protected String createMnemonic() {
+                    return null;
+                }
+
+                @Override
+                protected String createAccelerator() {
+                    return null;
+                }
+
+                @Override
+                protected String createTooltip() {
+                    return null;
+                }
+            });
             ma.setEnabled(false);
         }
 

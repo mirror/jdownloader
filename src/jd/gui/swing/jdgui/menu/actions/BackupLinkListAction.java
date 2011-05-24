@@ -40,7 +40,7 @@ public class BackupLinkListAction extends ThreadedAction {
     private static final long serialVersionUID = 823930266263085474L;
 
     public BackupLinkListAction() {
-        super("action.backuplinklist", "save");
+        super(_GUI._.action_backuplinklist(), "action.backuplinklist", "save");
     }
 
     public static byte[] getPWByte(String requestInputDialog) {
@@ -73,5 +73,20 @@ public class BackupLinkListAction extends ThreadedAction {
             JDIO.saveToFile(files[0], crypted);
         } catch (Exception ew) {
         }
+    }
+
+    @Override
+    protected String createMnemonic() {
+        return _GUI._.action_backuplinklist_mnemonic();
+    }
+
+    @Override
+    protected String createAccelerator() {
+        return _GUI._.action_backuplinklist_accelerator();
+    }
+
+    @Override
+    protected String createTooltip() {
+        return _GUI._.action_backuplinklist_tooltip();
     }
 }

@@ -4,17 +4,18 @@ import javax.swing.Icon;
 import javax.swing.JScrollPane;
 
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
-import jd.gui.swing.jdgui.views.ClosableView;
+import jd.plugins.AddonPanel;
 import net.miginfocom.swing.MigLayout;
 
+import org.jdownloader.extensions.jdpremserv.PremServExtension;
 import org.jdownloader.images.NewTheme;
 
-public class JDPremServGui extends ClosableView {
+public class JDPremServGui extends AddonPanel<PremServExtension> {
 
     private static final long serialVersionUID = 1506791566826744246L;
 
-    public JDPremServGui() {
-        super();
+    public JDPremServGui(PremServExtension owner) {
+        super(owner);
         init();
         SwitchPanel frame = new SwitchPanel() {
             private static final long serialVersionUID = -5274058584794029026L;
@@ -71,6 +72,14 @@ public class JDPremServGui extends ClosableView {
     protected void onShow() {
         // panel is now the selected tab.
 
+    }
+
+    @Override
+    protected void onDeactivated() {
+    }
+
+    @Override
+    protected void onActivated() {
     }
 
 }

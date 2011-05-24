@@ -16,15 +16,9 @@
 
 package org.jdownloader.extensions.antistandby;
 
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
-import java.util.ArrayList;
-
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.ConfigGroup;
-import jd.gui.swing.jdgui.actions.ToolBarAction;
-import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.nutils.OSDetector;
 import jd.plugins.AddonPanel;
 
@@ -38,7 +32,7 @@ public class AntiStandbyExtension extends AbstractExtension<AntiStandbyConfig> {
 
     private static final String  CONFIG_MODE = "CONFIG_MODE2";
     private String[]             modes;
-    private MenuAction           menuAction;
+
     private boolean              status;
     private JDAntiStandbyThread  asthread    = null;
     private ExtensionConfigPanel configPanel;
@@ -66,13 +60,6 @@ public class AntiStandbyExtension extends AbstractExtension<AntiStandbyConfig> {
     }
 
     @Override
-    public ArrayList<MenuAction> getMenuAction() {
-        ArrayList<MenuAction> menu = new ArrayList<MenuAction>();
-        menu.add(menuAction);
-        return menu;
-    }
-
-    @Override
     protected void stop() throws StopException {
         if (asthread != null) {
             asthread.setRunning(false);
@@ -80,26 +67,12 @@ public class AntiStandbyExtension extends AbstractExtension<AntiStandbyConfig> {
         }
     }
 
+    public boolean isQuickToggleEnabled() {
+        return true;
+    }
+
     @Override
     protected void start() throws StartException {
-        if (menuAction == null) menuAction = new MenuAction("jdantistandby", "event") {
-
-            private static final long serialVersionUID = -5269457972563036769L;
-
-            @Override
-            public void initDefaults() {
-                this.setEnabled(true);
-                this.setType(ToolBarAction.Types.TOGGLE);
-                this.addPropertyChangeListener(new PropertyChangeListener() {
-                    public void propertyChange(PropertyChangeEvent evt) {
-                        if (evt.getPropertyName() == SELECTED_KEY) {
-                            status = isSelected();
-                        }
-                    }
-                });
-            }
-
-        };
 
         switch (OSDetector.getID()) {
         case OSDetector.OS_WINDOWS_2003:

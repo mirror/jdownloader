@@ -33,7 +33,7 @@ public class CleanupDownloads extends ToolBarAction {
     private static final long serialVersionUID = -7185006215784212976L;
 
     public CleanupDownloads() {
-        super("action.remove.links", "remove");
+        super(_GUI._.action_remove_links(), "action.remove.links", "remove");
     }
 
     @Override
@@ -54,6 +54,21 @@ public class CleanupDownloads extends ToolBarAction {
 
     @Override
     public void initDefaults() {
+    }
+
+    @Override
+    protected String createMnemonic() {
+        return _GUI._.action_remove_links_mnemonic();
+    }
+
+    @Override
+    protected String createAccelerator() {
+        return _GUI._.action_remove_links_accelerator();
+    }
+
+    @Override
+    protected String createTooltip() {
+        return _GUI._.action_remove_links_tooltip();
     }
 
 }

@@ -24,13 +24,14 @@ import jd.gui.swing.jdgui.actions.ToolBarAction;
 import jd.gui.swing.jdgui.views.log.LogView;
 
 import org.appwork.storage.config.JsonConfig;
+import org.jdownloader.gui.translate._GUI;
 
 public class LogAction extends ToolBarAction {
 
     private static final long serialVersionUID = -353145605693194634L;
 
     public LogAction() {
-        super("action.log", "log");
+        super(_GUI._.action_log(), "action.log", "log");
     }
 
     @Override
@@ -42,6 +43,21 @@ public class LogAction extends ToolBarAction {
 
         JsonConfig.create(GraphicalUserInterfaceSettings.class).setLogViewVisible(true);
         SwingGui.getInstance().setContent(LogView.getInstance(), true);
+    }
+
+    @Override
+    protected String createMnemonic() {
+        return _GUI._.action_log_mnemonic();
+    }
+
+    @Override
+    protected String createAccelerator() {
+        return _GUI._.action_log_accelerator();
+    }
+
+    @Override
+    protected String createTooltip() {
+        return _GUI._.action_log_tooltip();
     }
 
 }

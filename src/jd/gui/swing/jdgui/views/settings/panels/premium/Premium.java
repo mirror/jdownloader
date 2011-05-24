@@ -98,7 +98,7 @@ public class Premium extends ConfigPanel implements ActionListener, AccountContr
     }
 
     private void initActions() {
-        new ThreadedAction("action.premiumview.refreshacc", "reconnect") {
+        new ThreadedAction(_GUI._.action_premium_refresh(), "action.premiumview.refreshacc", "reconnect") {
 
             private static final long serialVersionUID = -8727499044544169514L;
 
@@ -116,8 +116,23 @@ public class Premium extends ConfigPanel implements ActionListener, AccountContr
                 }
             }
 
+            @Override
+            protected String createMnemonic() {
+                return _GUI._.action_premium_refresh_mnemonic();
+            }
+
+            @Override
+            protected String createAccelerator() {
+                return _GUI._.action_premium_refresh_accelerator();
+            }
+
+            @Override
+            protected String createTooltip() {
+                return _GUI._.action_premium_refresh_tooltip();
+            }
+
         };
-        new ThreadedAction("action.premiumview.removeacc", "delete") {
+        new ThreadedAction(_GUI._.action_premium_remove_account(), "action.premiumview.removeacc", "delete") {
 
             private static final long serialVersionUID = -4407938288408350792L;
 
@@ -135,6 +150,21 @@ public class Premium extends ConfigPanel implements ActionListener, AccountContr
                         AccountController.getInstance().removeAccount((String) null, acc);
                     }
                 }
+            }
+
+            @Override
+            protected String createMnemonic() {
+                return _GUI._.action_premium_remove_account_mnemonic();
+            }
+
+            @Override
+            protected String createAccelerator() {
+                return _GUI._.action_premium_remove_account_accelerator();
+            }
+
+            @Override
+            protected String createTooltip() {
+                return _GUI._.action_premium_remove_account_tooltip();
             }
         };
     }

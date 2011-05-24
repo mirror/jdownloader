@@ -32,7 +32,7 @@ public class RemoveFailedAction extends ToolBarAction {
     private static final long serialVersionUID = -5425871515927494136L;
 
     public RemoveFailedAction() {
-        super("action.remove_failed", "remove_failed");
+        super(_GUI._.action_remove_failed_links(), "action.remove_failed", "remove_failed");
     }
 
     @Override
@@ -57,6 +57,21 @@ public class RemoveFailedAction extends ToolBarAction {
 
     @Override
     public void initDefaults() {
+    }
+
+    @Override
+    protected String createMnemonic() {
+        return _GUI._.action_remove_failed_links_mnemonic();
+    }
+
+    @Override
+    protected String createAccelerator() {
+        return _GUI._.action_remove_failed_links_accelerator();
+    }
+
+    @Override
+    protected String createTooltip() {
+        return _GUI._.action_remove_failed_links_tooltip();
     }
 
 }

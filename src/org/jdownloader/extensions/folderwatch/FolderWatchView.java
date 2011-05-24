@@ -18,17 +18,17 @@ package org.jdownloader.extensions.folderwatch;
 
 import javax.swing.Icon;
 
-import jd.gui.swing.jdgui.views.ClosableView;
+import jd.plugins.AddonPanel;
 
 import org.jdownloader.extensions.folderwatch.translate.T;
 import org.jdownloader.images.NewTheme;
 
-public class FolderWatchView extends ClosableView {
+public class FolderWatchView extends AddonPanel<FolderWatchExtension> {
 
     private static final long serialVersionUID = 5113064941511136310L;
 
-    public FolderWatchView() {
-        super();
+    public FolderWatchView(FolderWatchExtension owner) {
+        super(owner);
 
         init();
     }
@@ -59,6 +59,15 @@ public class FolderWatchView extends ClosableView {
     @Override
     public String getID() {
         return "folderwatchview";
+    }
+
+    @Override
+    protected void onDeactivated() {
+
+    }
+
+    @Override
+    protected void onActivated() {
     }
 
 }

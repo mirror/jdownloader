@@ -24,13 +24,14 @@ import jd.gui.swing.jdgui.actions.ToolBarAction;
 import jd.gui.swing.jdgui.views.settings.ConfigurationView;
 
 import org.appwork.storage.config.JsonConfig;
+import org.jdownloader.gui.translate._GUI;
 
 public class SettingsAction extends ToolBarAction {
 
     private static final long serialVersionUID = 2547991585530678706L;
 
     public SettingsAction() {
-        super("action.settings", "settings");
+        super(_GUI._.action_settings_menu(), "action.settings", "settings");
     }
 
     @Override
@@ -42,6 +43,21 @@ public class SettingsAction extends ToolBarAction {
 
     @Override
     public void initDefaults() {
+    }
+
+    @Override
+    protected String createMnemonic() {
+        return _GUI._.action_settings_menu_mnemonic();
+    }
+
+    @Override
+    protected String createAccelerator() {
+        return _GUI._.action_settings_menu_accelerator();
+    }
+
+    @Override
+    protected String createTooltip() {
+        return _GUI._.action_settings_menu_tooltip();
     }
 
 }

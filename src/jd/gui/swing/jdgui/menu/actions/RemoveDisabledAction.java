@@ -35,7 +35,7 @@ public class RemoveDisabledAction extends ToolBarAction {
     private static final long serialVersionUID = -5335194420202699757L;
 
     public RemoveDisabledAction() {
-        super("action.remove_disabled", "remove_disabled");
+        super(_GUI._.action_remove_disabled_links(), "action.remove_disabled", "remove_disabled");
     }
 
     @Override
@@ -75,5 +75,21 @@ public class RemoveDisabledAction extends ToolBarAction {
 
     @Override
     public void initDefaults() {
+    }
+
+    @Override
+    protected String createMnemonic() {
+        return _GUI._.action_remove_disabled_links_mnemonic();
+    }
+
+    @Override
+    protected String createAccelerator() {
+
+        return _GUI._.action_remove_disabled_links_accelerator();
+    }
+
+    @Override
+    protected String createTooltip() {
+        return _GUI._.action_remove_disabled_links_tooltip();
     }
 }

@@ -311,7 +311,9 @@ public abstract class AbstractExtension<T extends ExtensionConfigInterface> {
         return version;
     }
 
-    abstract public ArrayList<MenuAction> getMenuAction();
+    public ArrayList<MenuAction> getMenuAction() {
+        return null;
+    }
 
     public ExtensionGuiEnableAction getShowGuiAction() {
         return getGUI() != null ? getGUI().getEnabledAction() : null;
@@ -332,6 +334,10 @@ public abstract class AbstractExtension<T extends ExtensionConfigInterface> {
                 // cannot happen
             }
         }
+    }
+
+    public boolean isQuickToggleEnabled() {
+        return false;
     }
 
 }

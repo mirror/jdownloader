@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
-	<classpathentry excluding="jd/plugins/optional/neembuu/|jd/plugins/optional/remoteserv/|jd/plugins/optional/remoteserv/" kind="src" path="src"/>
+	<classpathentry excluding="jd/plugins/optional/neembuu/|jd/plugins/optional/remoteserv/|jd/plugins/optional/remoteserv/|org/jdownloader/extensions/langfileeditor/" kind="src" path="src"/>
 	<classpathentry kind="src" path="translations"/>
 	<classpathentry kind="src" path="themes"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER">

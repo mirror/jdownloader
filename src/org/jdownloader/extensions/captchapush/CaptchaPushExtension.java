@@ -1,12 +1,8 @@
 package org.jdownloader.extensions.captchapush;
 
-import java.awt.event.ActionEvent;
-import java.util.ArrayList;
-
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.controlling.captcha.CaptchaEventSender;
-import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.plugins.AddonPanel;
 
 import org.appwork.storage.config.JsonConfig;
@@ -19,7 +15,6 @@ public class CaptchaPushExtension extends AbstractExtension<CaptchaPushConfig> {
 
     private CaptchaPushConfig      config;
     private CaptchaPushConfigPanel configPanel;
-    private MenuAction             activateAction;
 
     private CaptchaPushService     service;
 
@@ -36,12 +31,12 @@ public class CaptchaPushExtension extends AbstractExtension<CaptchaPushConfig> {
 
     @Override
     protected void stop() throws StopException {
-        if (activateAction.isSelected()) stopService();
+        stopService();
     }
 
     @Override
     protected void start() throws StartException {
-        if (activateAction.isSelected()) startService();
+        startService();
     }
 
     private void startService() {
@@ -78,22 +73,6 @@ public class CaptchaPushExtension extends AbstractExtension<CaptchaPushConfig> {
     protected void initExtension() throws StartException {
         config = JsonConfig.create(CaptchaPushConfig.class);
         configPanel = new CaptchaPushConfigPanel(this, config);
-
-        activateAction = new MenuAction("captchapush", 0) {
-            private static final long serialVersionUID = 3252473048646596851L;
-
-            @Override
-            public void onAction(ActionEvent e) {
-                if (isSelected()) {
-                    startService();
-                } else {
-                    stopService();
-                }
-                config.setSelected(isSelected());
-            }
-        };
-        activateAction.setIcon(this.getIconKey());
-        activateAction.setSelected(config.isSelected());
 
         service = new CaptchaPushService(this);
 
@@ -132,15 +111,6 @@ public class CaptchaPushExtension extends AbstractExtension<CaptchaPushConfig> {
     @Override
     public AddonPanel getGUI() {
         return null;
-    }
-
-    @Override
-    public ArrayList<MenuAction> getMenuAction() {
-        ArrayList<MenuAction> menu = new ArrayList<MenuAction>();
-
-        menu.add(activateAction);
-
-        return menu;
     }
 
 }

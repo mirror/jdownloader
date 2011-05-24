@@ -24,14 +24,13 @@ import org.jdownloader.extensions.StopException;
 import org.jdownloader.extensions.chat.translate.T;
 import org.jdownloader.images.NewTheme;
 
-public class JDChatView extends AddonPanel {
+public class JDChatView extends AddonPanel<ChatExtension> {
 
     private static final long serialVersionUID = -7876057076125402969L;
-    private ChatExtension     chat;
 
     public JDChatView(ChatExtension chatExtension) {
         super(chatExtension);
-        this.chat = chatExtension;
+
         init();
     }
 
@@ -70,7 +69,7 @@ public class JDChatView extends AddonPanel {
     protected void onDeactivated() {
 
         try {
-            chat.stop();
+            getExtension().stop();
         } catch (StopException e) {
             e.printStackTrace();
         }
@@ -83,7 +82,7 @@ public class JDChatView extends AddonPanel {
         new Thread() {
             @Override
             public void run() {
-                chat.initIRC();
+                getExtension().initIRC();
             }
         }.start();
 

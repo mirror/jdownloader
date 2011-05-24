@@ -32,7 +32,7 @@ public class CleanupPackages extends ToolBarAction {
     private static final long serialVersionUID = -7185006215784212976L;
 
     public CleanupPackages() {
-        super("action.remove.packages", "remove_packages");
+        super(_GUI._.action_remove_packages(), "action.remove.packages", "remove_packages");
     }
 
     @Override
@@ -53,6 +53,21 @@ public class CleanupPackages extends ToolBarAction {
 
     @Override
     public void initDefaults() {
+    }
+
+    @Override
+    protected String createMnemonic() {
+        return _GUI._.action_remove_packages_mnemonic();
+    }
+
+    @Override
+    protected String createAccelerator() {
+        return _GUI._.action_remove_packages_accelerator();
+    }
+
+    @Override
+    protected String createTooltip() {
+        return _GUI._.action_remove_packages_tooltip();
     }
 
 }
