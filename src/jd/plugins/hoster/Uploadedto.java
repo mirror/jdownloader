@@ -126,7 +126,7 @@ public class Uploadedto extends PluginForHost {
         }
         ai.setStatus("Premium account");
         account.setValid(true);
-        long max = 50 * 1024 * 1024 * 1024l;
+        long max = 100 * 1024 * 1024 * 1024l;
         long current = Long.parseLong(traffic);
         ai.setTrafficMax(Math.max(max, current));
         ai.setTrafficLeft(current);

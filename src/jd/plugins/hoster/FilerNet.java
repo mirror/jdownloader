@@ -29,11 +29,11 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -176,7 +176,7 @@ public class FilerNet extends PluginForHost {
         this.setBrowserExclusive();
         br.getPage(link.getDownloadURL());
         br.setFollowRedirects(false);
-        if (!br.containsHTML("api.recaptcha.net")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (!br.containsHTML("api.recaptcha.net") && !br.containsHTML("google.com/recaptcha")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         return AvailableStatus.TRUE;
     }
 

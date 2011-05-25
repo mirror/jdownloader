@@ -90,6 +90,8 @@ public class UploadStationCom extends PluginForHost {
         // }
         // captchaJSPage = "http://uploadstation.com" + captchaJSPage;
         final Browser br2 = this.br.cloneBrowser();
+        br2.setDebug(true);
+        br2.getHeaders().put("Accept-Encoding", "");
         br2.getHeaders().put("User-Agent", agent);
         br2.setCustomCharset("utf-8");
         // br2.getPage(captchaJSPage);
