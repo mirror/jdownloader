@@ -85,6 +85,7 @@ import net.miginfocom.swing.MigLayout;
 
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Application;
+import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.EDTHelper;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.gui.translate._GUI;
@@ -363,11 +364,18 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
         boolean isok = false;
         for (final GraphicsDevice screen : screens) {
             final Rectangle bounds = screen.getDefaultConfiguration().getBounds();
-            int xMin = Math.max(bounds.x, loc.x);
-            int xMax = Math.min(bounds.x + bounds.width, loc.x + dim.width);
-            int yMin = Math.max(bounds.y, loc.y);
-            int yMax = Math.min(bounds.y + bounds.height, loc.y + 30);
-
+            int xMin, xMax, yMin, yMax;
+            if (CrossSystem.isWindows()) {
+                xMin = Math.max(bounds.x, loc.x);
+                xMax = Math.min(bounds.x + bounds.width, loc.x + dim.width);
+                yMin = Math.max(bounds.y, loc.y);
+                yMax = Math.min(bounds.y + bounds.height, loc.y + 30);
+            } else {
+                xMin = Math.max(bounds.x, loc.x);
+                xMax = Math.min(bounds.x + bounds.width, loc.x + dim.width);
+                yMin = Math.max(bounds.y + 30, loc.y);
+                yMax = Math.min(bounds.y - 30 + bounds.height, loc.y + 30);
+            }
             int intersectionWidth = xMax - xMin;
             int intersectionHeight = yMax - yMin;
             if (intersectionWidth > 50 && intersectionHeight >= 30) {
