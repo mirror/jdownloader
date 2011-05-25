@@ -18,7 +18,10 @@ package jd.nutils;
 
 import java.awt.Component;
 import java.awt.Dimension;
+import java.awt.GraphicsDevice;
+import java.awt.GraphicsEnvironment;
 import java.awt.Point;
+import java.awt.Rectangle;
 import java.awt.Toolkit;
 
 public class Screen {
@@ -37,10 +40,14 @@ public class Screen {
     public static Point getCenterOfComponent(Component parent, Component child) {
         Point center;
         if (parent == null || !parent.isShowing()) {
-            Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+            // use default screen device instead of toolkit screensizes. This
+            // should have the same behaviour on all systems
+            final GraphicsDevice ge = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice();
+
+            Rectangle screenSize = ge.getDefaultConfiguration().getBounds();
             int width = screenSize.width;
             int height = screenSize.height;
-            center = new Point(width / 2, height / 2);
+            center = new Point(screenSize.x + width / 2, screenSize.y + height / 2);
         } else {
             center = parent.getLocationOnScreen();
             center.x += parent.getWidth() / 2;

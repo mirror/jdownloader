@@ -18,7 +18,10 @@ package jd.gui.swing.jdgui;
 
 import java.awt.Component;
 import java.awt.Dimension;
+import java.awt.GraphicsDevice;
+import java.awt.GraphicsEnvironment;
 import java.awt.Point;
+import java.awt.Rectangle;
 import java.awt.Toolkit;
 
 import javax.swing.JFrame;
@@ -40,6 +43,7 @@ public class GUIUtils {
         int height = screenSize.height;
         Integer x = STORAGE.get("dimension." + key + ".width", -1);
         Integer y = STORAGE.get("dimension." + key + ".height", -1);
+
         if (x >= 0 && y > 0) {
             if (x > width) x = width;
             if (y > height) y = height;
@@ -53,29 +57,46 @@ public class GUIUtils {
     public static Point getLastLocation(Component parent, Component child) {
         String key = child.getName();
 
-        Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
-        int width = screenSize.width;
-        int height = screenSize.height;
+        if (STORAGE.hasProperty("location." + key + ".x") && STORAGE.hasProperty("location." + key + ".y")) {
+            Integer x = STORAGE.get("location." + key + ".x", -1);
+            Integer y = STORAGE.get("location." + key + ".y", -1);
 
-        Integer x = STORAGE.get("location." + key + ".x", -1);
-        Integer y = STORAGE.get("location." + key + ".y", -1);
-
-        if (x > 0 && y > 0) {
-            Point point = new Point(x, y);
-            if (point.x < 0) point.x = 0;
-            if (point.y < 0) point.y = 0;
-
-            /*
-             * If the saved point isn't on the screen (can happen after
-             * resolution changes) we need to put it back on screen.
-             */
-            if (point.x > width) point.x = width - 50;
-            if (point.y > height) point.y = height - 50;
-
-            return point;
+            GraphicsDevice screen = getScreenDevice(x, y);
+            if (screen != null) return new Point(x, y);
         }
+        if (parent != null) {
+            Point center = Screen.getCenterOfComponent(parent, child);
+            GraphicsDevice screen = getScreenDevice(center.x, center.y);
+            if (screen != null) return center;
+        }
+        return Screen.getCenterOfComponent(null, child);
+    }
 
-        return Screen.getCenterOfComponent(parent, child);
+    /**
+     * Gets the screen device for absolute point x,y
+     * 
+     * @param x
+     * @param y
+     * @return
+     */
+    private static GraphicsDevice getScreenDevice(int x, int y) {
+        // search screen device for this location
+        final GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
+        final GraphicsDevice[] screens = ge.getScreenDevices();
+
+        for (final GraphicsDevice screen : screens) {
+            final Rectangle bounds = screen.getDefaultConfiguration().getBounds();
+            if (x >= bounds.x && x < bounds.x + bounds.width) {
+                if (y >= bounds.y && y < bounds.y + bounds.height) {
+                    //
+                    return screen;
+
+                }
+
+            }
+
+        }
+        return null;
     }
 
     public static void restoreWindow(JFrame parent, Component component) {
@@ -104,14 +125,15 @@ public class GUIUtils {
         boolean max = false;
         if (child instanceof JFrame) {
             STORAGE.put("extendedstate." + key, ((JFrame) child).getExtendedState());
+
             if (((JFrame) child).getExtendedState() != JFrame.NORMAL) {
                 max = true;
             }
         }
         // do not save dimension if frame is not in normal state
         if (!max) {
-            STORAGE.put("dimension." + key + ".x", child.getSize().width);
-            STORAGE.put("dimension." + key + ".y", child.getSize().height);
+            STORAGE.put("dimension." + key + ".width", child.getSize().width);
+            STORAGE.put("dimension." + key + ".height", child.getSize().height);
         }
 
     }
@@ -120,10 +142,14 @@ public class GUIUtils {
         String key = parent.getName();
 
         // do not save location if frame is not in normal state
-        if (parent instanceof JFrame && ((JFrame) parent).getExtendedState() != JFrame.NORMAL) return;
+        if (parent instanceof JFrame && ((JFrame) parent).getExtendedState() != JFrame.NORMAL) {
+
+        return; }
         if (parent.isShowing()) {
             STORAGE.put("location." + key + ".x", parent.getLocationOnScreen().x);
             STORAGE.put("location." + key + ".y", parent.getLocationOnScreen().y);
+        } else {
+            System.out.println("Not showing");
         }
     }
 

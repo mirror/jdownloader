@@ -19,9 +19,12 @@ package jd.gui.swing.jdgui;
 import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.Frame;
+import java.awt.GraphicsDevice;
+import java.awt.GraphicsEnvironment;
 import java.awt.Image;
 import java.awt.KeyEventPostProcessor;
 import java.awt.KeyboardFocusManager;
+import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
@@ -74,6 +77,7 @@ import jd.gui.swing.jdgui.views.settings.sidebar.AddonConfig;
 import jd.nutils.JDFlags;
 import jd.nutils.JDImage;
 import jd.nutils.OSDetector;
+import jd.nutils.Screen;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.utils.JDUtilities;
@@ -81,6 +85,7 @@ import net.miginfocom.swing.MigLayout;
 
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Application;
+import org.appwork.utils.swing.EDTHelper;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.DownloadsView;
@@ -237,9 +242,11 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
         case ControlEvent.CONTROL_SYSTEM_EXIT:
             this.exitRequested = true;
             final String id = JDController.requestDelayExit("JDGUI");
-            new GuiRunnable<Object>() {
+
+            new EDTHelper<Object>() {
+
                 @Override
-                public Object runSave() {
+                public Object edtRun() {
                     JDGui.this.mainTabbedPane.onClose();
                     GUIUtils.saveLastLocation(JDGui.this.getMainFrame());
                     GUIUtils.saveLastDimension(JDGui.this.getMainFrame());
@@ -248,8 +255,9 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
                     JDGui.this.getMainFrame().setVisible(false);
                     JDGui.this.getMainFrame().dispose();
                     return null;
+
                 }
-            }.start();
+            }.getReturnValue();
             break;
         case ControlEvent.CONTROL_DOWNLOAD_START:
             Balloon.showIfHidden(_GUI._.ballon_download_title(), NewTheme.I().getIcon("go-next", 32), _GUI._.ballon_download_finished_started());
@@ -347,7 +355,35 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
         this.mainFrame.setPreferredSize(dim);
         this.mainFrame.setSize(dim);
         this.mainFrame.setMinimumSize(new Dimension(400, 100));
-        this.mainFrame.setLocation(GUIUtils.getLastLocation(null, this.mainFrame));
+        Point loc = GUIUtils.getLastLocation(null, this.mainFrame);
+        this.mainFrame.setLocation(loc);
+        // try to find offscreen
+        final GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
+        final GraphicsDevice[] screens = ge.getScreenDevices();
+        boolean isok = false;
+        for (final GraphicsDevice screen : screens) {
+            final Rectangle bounds = screen.getDefaultConfiguration().getBounds();
+            int xMin = Math.max(bounds.x, loc.x);
+            int xMax = Math.min(bounds.x + bounds.width, loc.x + dim.width);
+            int yMin = Math.max(bounds.y, loc.y);
+            int yMax = Math.min(bounds.y + bounds.height, loc.y + 30);
+
+            int intersectionWidth = xMax - xMin;
+            int intersectionHeight = yMax - yMin;
+            if (intersectionWidth > 50 && intersectionHeight >= 30) {
+                // ok. Titlebar is in screen.
+                isok = true;
+                break;
+
+            }
+
+        }
+        if (!isok) {
+            this.mainFrame.setPreferredSize(new Dimension(800, 600));
+            this.mainFrame.setSize(new Dimension(800, 600));
+            loc = Screen.getCenterOfComponent(null, mainFrame);
+            this.mainFrame.setLocation(loc);
+        }
 
         if (GUIUtils.STORAGE.get("extendedstate." + mainFrame.getName(), JFrame.NORMAL) == Frame.ICONIFIED) {
             this.mainFrame.setExtendedState(Frame.NORMAL);
