@@ -144,6 +144,11 @@ public class TrayExtension extends AbstractExtension<TrayConfig> implements Mous
     }
 
     @Override
+    public boolean isQuickToggleEnabled() {
+        return true;
+    }
+
+    @Override
     public String getAuthor() {
         return null;
     }

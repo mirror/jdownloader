@@ -72,7 +72,7 @@ public class AdvancedSettings extends AbstractConfigPanel implements DocumentLis
 
     @Override
     public ImageIcon getIcon() {
-        return NewTheme.I().getIcon("advancedConfig", 32);
+        return NewTheme.I().getIcon("advancedConfig", 20);
     }
 
     @Override

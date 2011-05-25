@@ -6,7 +6,7 @@ import java.awt.Dimension;
 import java.awt.Font;
 
 import javax.swing.Box;
-import javax.swing.Icon;
+import javax.swing.ImageIcon;
 import javax.swing.JCheckBox;
 import javax.swing.JLabel;
 import javax.swing.JList;
@@ -18,6 +18,7 @@ import net.miginfocom.swing.MigLayout;
 
 import org.appwork.utils.ColorUtils;
 import org.jdownloader.extensions.AbstractExtensionWrapper;
+import org.jdownloader.images.NewTheme;
 
 public class ExtensionPanelListRenderer extends JPanel implements ListCellRenderer {
 
@@ -59,8 +60,9 @@ public class ExtensionPanelListRenderer extends JPanel implements ListCellRender
         return this;
     }
 
-    private void setIcon(Icon icon) {
+    private void setIcon(ImageIcon icon) {
         lbl.setIcon(icon);
+        lbl.setDisabledIcon(NewTheme.I().getDisabledIcon(icon));
     }
 
     private void setText(String name) {

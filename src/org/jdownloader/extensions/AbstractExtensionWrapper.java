@@ -10,8 +10,8 @@ import jd.plugins.ExtensionConfigInterface;
 
 import org.appwork.storage.Storable;
 import org.appwork.utils.Application;
-import org.appwork.utils.ImageProvider.ImageProvider;
 import org.appwork.utils.images.IconIO;
+import org.jdownloader.images.NewTheme;
 import org.jdownloader.translate._JDT;
 
 /**
@@ -51,6 +51,7 @@ public class AbstractExtensionWrapper implements Storable {
         ret.extension = plg;
         ret.configInterface = plg.getConfigClass().getName();
         ret.author = plg.getAuthor();
+        ret.quickToggleEnabled = plg.isQuickToggleEnabled();
         plg.init();
 
         //
@@ -140,8 +141,8 @@ public class AbstractExtensionWrapper implements Storable {
      */
     public ImageIcon _getIcon(int size) {
         if (extension == null) {
-            // TODO implement an icon cache here?
-            return ImageProvider.scaleImageIcon(IconIO.getImageIcon(Application.getRessourceURL(iconPath)), size, size);
+
+            return NewTheme.I().getScaledInstance(NewTheme.I().getIcon(Application.getRessourceURL(iconPath)), size);
 
         } else {
             return extension.getIcon(size);

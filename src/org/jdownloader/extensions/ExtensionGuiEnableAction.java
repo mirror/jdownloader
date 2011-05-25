@@ -1,15 +1,9 @@
 package org.jdownloader.extensions;
 
-import java.awt.Graphics2D;
-import java.awt.Image;
 import java.awt.event.ActionEvent;
-import java.awt.image.BufferedImage;
 
 import javax.swing.AbstractAction;
 import javax.swing.ImageIcon;
-
-import jd.controlling.JDLogger;
-import jd.nutils.JDImage;
 
 import org.appwork.utils.Application;
 import org.jdownloader.images.NewTheme;
@@ -60,26 +54,19 @@ public class ExtensionGuiEnableAction extends AbstractAction {
         updateIcon();
     }
 
-    public ImageIcon getCheckBoxImage(final int size, boolean selected) {
-        try {
-            final Image img = plg.getIcon(32).getImage();
-            Image checkBox;
-
-            if (selected) {
-                checkBox = NewTheme.I().getImage("enabled", 12);
-            } else {
-                checkBox = NewTheme.I().getImage("disabled", 12);
-            }
-
-            BufferedImage ret = new BufferedImage(img.getWidth(null), img.getHeight(null), BufferedImage.TYPE_INT_ARGB);
-            Graphics2D g = (Graphics2D) ret.getGraphics();
-            g.drawImage(img, 0, 0, null);
-            g.drawImage(checkBox, 0, ret.getHeight() - checkBox.getHeight(null), null);
-            return new ImageIcon(JDImage.getScaledImage(ret, size, size));
-        } catch (Exception e) {
-            JDLogger.exception(e);
+    public ImageIcon getCheckBoxImage(int size, boolean selected) {
+        // ImageIcon ret = null;
+        //
+        // Image back = plg._getIcon(size).getImage();
+        // Image checkBox = NewTheme.I().getImage("checkbox_" + selected, 12);
+        // back = ImageProvider.merge(back, checkBox, 2, 0, 0,
+        // back.getHeight(null) - checkBox.getHeight(null) + 2);
+        // ret = new ImageIcon(back);
+        // return ret;
+        if (selected) {
+            return plg.getIcon(size);
+        } else {
+            return NewTheme.I().getDisabledIcon(plg.getIcon(size));
         }
-
-        return null;
     }
 }

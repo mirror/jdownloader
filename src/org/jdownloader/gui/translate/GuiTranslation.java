@@ -90,7 +90,7 @@ public interface GuiTranslation extends TranslateInterface {
     String action_changelog_tooltip();
 
     // actionm_action_//
-    @Default(lngs = { "en" }, values = { "name" })
+    @Default(lngs = { "en" }, values = { "Clear" })
     String action_clearlinkgrabber();
 
     @Default(lngs = { "en" }, values = { "-" })
@@ -99,7 +99,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "-" })
     String action_clearlinkgrabber_mnemonic();
 
-    @Default(lngs = { "en" }, values = { "tooltip" })
+    @Default(lngs = { "en" }, values = { "Clear Linkgrabber" })
     String action_clearlinkgrabber_tooltip();
 
     @Default(lngs = { "en" }, values = { "Enable/Disable Clipboard Observer" })
@@ -133,7 +133,7 @@ public interface GuiTranslation extends TranslateInterface {
     String action_help_tooltip();
 
     // action_//
-    @Default(lngs = { "en" }, values = { "name" })
+    @Default(lngs = { "en" }, values = { "Add all" })
     String action_linkgrabber_addall();
 
     @Default(lngs = { "en" }, values = { "-" })
@@ -142,10 +142,10 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "-" })
     String action_linkgrabber_addall_mnemonic();
 
-    @Default(lngs = { "en" }, values = { "tooltip" })
+    @Default(lngs = { "en" }, values = { "Add all" })
     String action_linkgrabber_addall_tooltip();
 
-    @Default(lngs = { "en" }, values = { "name" })
+    @Default(lngs = { "en" }, values = { "Log" })
     String action_log();
 
     @Default(lngs = { "en" }, values = { "-" })
@@ -154,7 +154,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "-" })
     String action_log_mnemonic();
 
-    @Default(lngs = { "en" }, values = { "tooltip" })
+    @Default(lngs = { "en" }, values = { "Show Log" })
     String action_log_tooltip();
 
     @Default(lngs = { "en" }, values = { "Move down" })
@@ -242,7 +242,7 @@ public interface GuiTranslation extends TranslateInterface {
     String action_pause_tooltip();
 
     // String action_//
-    @Default(lngs = { "en" }, values = { "name" })
+    @Default(lngs = { "en" }, values = { "Plugin Accounts" })
     String action_plugin_accounts();
 
     @Default(lngs = { "en" }, values = { "-" })
@@ -251,11 +251,11 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "-" })
     String action_plugin_accounts_mnemonic();
 
-    @Default(lngs = { "en" }, values = { "tooltip" })
+    @Default(lngs = { "en" }, values = { "Plugin Accounts" })
     String action_plugin_accounts_tooltip();
 
     // String action_//
-    @Default(lngs = { "en" }, values = { "name" })
+    @Default(lngs = { "en" }, values = { "Plugin Settings" })
     String action_plugin_config();
 
     @Default(lngs = { "en" }, values = { "-" })
@@ -268,7 +268,7 @@ public interface GuiTranslation extends TranslateInterface {
     String action_plugin_config_tooltip();
 
     // String action_//
-    @Default(lngs = { "en" }, values = { "name" })
+    @Default(lngs = { "en" }, values = { "Enable/Disable Premium" })
     String action_plugin_enable_premium();
 
     @Default(lngs = { "en" }, values = { "-" })
@@ -280,7 +280,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "tooltip" })
     String action_plugin_enable_premium_tooltip();
 
-    @Default(lngs = { "en" }, values = { "name" })
+    @Default(lngs = { "en" }, values = { "Buy Account" })
     String action_plugin_premium_buyAccount();
 
     @Default(lngs = { "en" }, values = { "-" })
@@ -293,7 +293,7 @@ public interface GuiTranslation extends TranslateInterface {
     String action_plugin_premium_buyAccount_tooltip();
 
     // String action_//
-    @Default(lngs = { "en" }, values = { "name" })
+    @Default(lngs = { "en" }, values = { "Premium Info" })
     String action_plugin_premium_info();
 
     @Default(lngs = { "en" }, values = { "-" })
@@ -306,7 +306,7 @@ public interface GuiTranslation extends TranslateInterface {
     String action_plugin_premium_info_tooltip();
 
     // String action_//
-    @Default(lngs = { "en" }, values = { "name" })
+    @Default(lngs = { "en" }, values = { "No Accounts" })
     String action_plugin_premium_noAccounts();
 
     @Default(lngs = { "en" }, values = { "-" })
@@ -331,7 +331,7 @@ public interface GuiTranslation extends TranslateInterface {
     String action_premium_manager_tooltip();
 
     // action_//
-    @Default(lngs = { "en" }, values = { "name" })
+    @Default(lngs = { "en" }, values = { "Refresh Accounts" })
     String action_premium_refresh();
 
     @Default(lngs = { "en" }, values = { "-" })
@@ -344,7 +344,7 @@ public interface GuiTranslation extends TranslateInterface {
     String action_premium_refresh_tooltip();
 
     // action_//
-    @Default(lngs = { "en" }, values = { "name" })
+    @Default(lngs = { "en" }, values = { "Remove Accounts" })
     String action_premium_remove_account();
 
     @Default(lngs = { "en" }, values = { "-" })
@@ -399,7 +399,7 @@ public interface GuiTranslation extends TranslateInterface {
     String action_reconnect_toggle_tooltip();
 
     // action_
-    @Default(lngs = { "en" }, values = { "name" })
+    @Default(lngs = { "en" }, values = { "Disable Links" })
     String action_remove_disabled_links();
 
     @Default(lngs = { "en" }, values = { "-" })
@@ -412,7 +412,7 @@ public interface GuiTranslation extends TranslateInterface {
     String action_remove_disabled_links_tooltip();
 
     // action_//
-    @Default(lngs = { "en" }, values = { "name" })
+    @Default(lngs = { "en" }, values = { "Remove Dupes" })
     String action_remove_dupe_links();
 
     @Default(lngs = { "en" }, values = { "-" })
@@ -425,7 +425,7 @@ public interface GuiTranslation extends TranslateInterface {
     String action_remove_dupe_links_tooltip();
 
     // action_//
-    @Default(lngs = { "en" }, values = { "name" })
+    @Default(lngs = { "en" }, values = { "Remove failed links" })
     String action_remove_failed_links();
 
     @Default(lngs = { "en" }, values = { "-" })
@@ -447,7 +447,7 @@ public interface GuiTranslation extends TranslateInterface {
     String action_remove_links_tooltip();
 
     // action_//
-    @Default(lngs = { "en" }, values = { "name" })
+    @Default(lngs = { "en" }, values = { "Remove offline links" })
     String action_remove_offline_links();
 
     @Default(lngs = { "en" }, values = { "-" })
@@ -469,7 +469,7 @@ public interface GuiTranslation extends TranslateInterface {
     String action_remove_packages_tooltip();
 
     // action_//
-    @Default(lngs = { "en" }, values = { "name" })
+    @Default(lngs = { "en" }, values = { "Restart" })
     String action_restart();
 
     @Default(lngs = { "en" }, values = { "-" })
@@ -478,21 +478,8 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "-" })
     String action_restart_mnemonic();
 
-    @Default(lngs = { "en" }, values = { "tooltip" })
+    @Default(lngs = { "en" }, values = { "Restart JDownloader" })
     String action_restart_tooltip();
-
-    // action_//
-    @Default(lngs = { "en" }, values = { "name" })
-    String action_restore();
-
-    @Default(lngs = { "en" }, values = { "-" })
-    String action_restore_accelerator();
-
-    @Default(lngs = { "en" }, values = { "-" })
-    String action_restore_mnemonic();
-
-    @Default(lngs = { "en" }, values = { "tooltip" })
-    String action_restore_tooltip();
 
     @Default(lngs = { "en" }, values = { "" })
     String action_seperator();
@@ -504,7 +491,7 @@ public interface GuiTranslation extends TranslateInterface {
     String action_settings_accelerator();
 
     // action_//
-    @Default(lngs = { "en" }, values = { "name" })
+    @Default(lngs = { "en" }, values = { "Settings" })
     String action_settings_menu();
 
     @Default(lngs = { "en" }, values = { "-" })
@@ -513,7 +500,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "-" })
     String action_settings_menu_mnemonic();
 
-    @Default(lngs = { "en" }, values = { "tooltip" })
+    @Default(lngs = { "en" }, values = { "Open Settings panel" })
     String action_settings_menu_tooltip();
 
     @Default(lngs = { "en" }, values = { "s" })
@@ -1047,7 +1034,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Do you want to reconnect your internet connection?" })
     String gui_reconnect_confirm();
 
-    @Default(lngs = { "en" }, values = { "Advanced!" })
+    @Default(lngs = { "en" }, values = { "Advanced Settings" })
     String gui_settings_advanced_title();
 
     @Default(lngs = { "en" }, values = { "Max. Con." })

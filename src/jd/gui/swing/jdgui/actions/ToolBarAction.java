@@ -64,7 +64,7 @@ public abstract class ToolBarAction extends JDAction {
     }
 
     public ToolBarAction(String name, String menukey, String iconkey, int id) {
-        super(menukey);
+        super(name);
 
         setId(menukey);
         this.setActionID(id);

@@ -41,6 +41,7 @@ import jd.gui.UserIO;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.gui.swing.jdgui.menu.AddonsMenu;
 import jd.gui.swing.jdgui.menu.WindowMenu;
+import jd.gui.swing.jdgui.views.settings.panels.advanced.AdvancedSettings;
 import jd.gui.swing.laf.LookAndFeelController;
 import net.miginfocom.swing.MigLayout;
 
@@ -82,11 +83,16 @@ public class ConfigSidebar extends JPanel implements ControlListener, MouseMotio
                     g2.setComposite(ac5);
                     int index = locationToIndex(mouse);
                     if (getModel().getElementAt(index) instanceof ExtensionHeader) { return; }
-                    Point p = indexToLocation(index);
-                    g2.fillRect(0, p.y, list.getWidth(), 55);
+                    if (getModel().getElementAt(index) instanceof AdvancedSettings) {
+                        Point p = indexToLocation(index);
+                        g2.fillRect(0, p.y, list.getWidth(), 25);
+                        g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f));
+                    } else {
+                        Point p = indexToLocation(index);
+                        g2.fillRect(0, p.y, list.getWidth(), 55);
 
-                    g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f));
-
+                        g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f));
+                    }
                 }
 
             }

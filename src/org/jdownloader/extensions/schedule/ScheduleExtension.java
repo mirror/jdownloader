@@ -264,6 +264,11 @@ public class ScheduleExtension extends AbstractExtension<ScheduleConfig> {
     }
 
     @Override
+    public boolean isQuickToggleEnabled() {
+        return true;
+    }
+
+    @Override
     protected void start() throws StartException {
         actions = this.getPluginConfig().getGenericProperty("Scheduler_Actions", new ArrayList<Actions>());
         if (actions == null) {

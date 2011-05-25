@@ -21,6 +21,7 @@ import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Font;
 
+import javax.swing.BorderFactory;
 import javax.swing.Icon;
 import javax.swing.JLabel;
 import javax.swing.JList;
@@ -28,6 +29,7 @@ import javax.swing.JPanel;
 import javax.swing.ListCellRenderer;
 
 import jd.gui.swing.jdgui.views.settings.ConfigPanel;
+import jd.gui.swing.jdgui.views.settings.panels.advanced.AdvancedSettings;
 import jd.gui.swing.laf.LookAndFeelController;
 import net.miginfocom.swing.MigLayout;
 
@@ -39,6 +41,8 @@ public class TreeRenderer extends JPanel implements ListCellRenderer {
 
     private static final long          serialVersionUID = -3927390875702401200L;
 
+    private static final Dimension     SMALL_DIMENSION  = new Dimension(0, 25);
+
     public static Dimension            DIMENSION        = new Dimension(0, 55);
 
     private final Font                 orgFont;
@@ -48,9 +52,9 @@ public class TreeRenderer extends JPanel implements ListCellRenderer {
 
     private Color                      f;
 
-    private Color                      a;
+    private Color                      alternateHighlight;
 
-    private Color                      b2;
+    private Color                      selectedBackground;
 
     private ExtensionPanelListRenderer extension;
 
@@ -69,13 +73,17 @@ public class TreeRenderer extends JPanel implements ListCellRenderer {
 
         // this.setBorder(BorderFactory.createEmptyBorder(0, 15, 0, 15));
         f = lbl.getForeground();
-        b2 = ColorUtils.getAlphaInstance(f, 60);
+        selectedBackground = ColorUtils.getAlphaInstance(f, 60);
 
         int c = LookAndFeelController.getInstance().getLAFOptions().getPanelHeaderColor();
         if (c >= 0) {
-            b2 = ColorUtils.getAlphaInstance((new Color(c)), 230);
+            selectedBackground = ColorUtils.getAlphaInstance((new Color(c)), 230);
         }
-        a = ColorUtils.getAlphaInstance(lbl.getForeground(), 4);
+
+        alternateHighlight = ColorUtils.getAlphaInstance(lbl.getForeground(), 4);
+        // a=NewTheme.I().getColor(ColorUtils.getAlphaInstance(lbl.getForeground(),
+        // 4));
+
         lbl.setOpaque(false);
         setOpaque(false);
         setBackground(null);
@@ -85,14 +93,29 @@ public class TreeRenderer extends JPanel implements ListCellRenderer {
     }
 
     public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+        this.setBorder(null);
         if (value instanceof AbstractExtensionWrapper) {
             return extension.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+        } else if (value instanceof AdvancedSettings) {
+            AbstractConfigPanel te = (AbstractConfigPanel) value;
+            setText(te.getTitle());
+            setIcon(te.getIcon());
+            lbl.setVerticalTextPosition(JLabel.CENTER);
+            lbl.setHorizontalTextPosition(JLabel.RIGHT);
+            lbl.setHorizontalAlignment(JLabel.CENTER);
+            setPreferredSize(SMALL_DIMENSION);
+            this.setBorder(BorderFactory.createMatteBorder(1, 0, 0, 0, selectedBackground));
 
         } else if (value instanceof AbstractConfigPanel) {
             AbstractConfigPanel te = (AbstractConfigPanel) value;
 
             setText(te.getTitle());
             setIcon(te.getIcon());
+            lbl.setVerticalTextPosition(JLabel.BOTTOM);
+            lbl.setHorizontalTextPosition(JLabel.CENTER);
+            lbl.setHorizontalAlignment(JLabel.CENTER);
+            setPreferredSize(TreeRenderer.DIMENSION);
+
         } else if (value instanceof ExtensionHeader) {
             return ((ExtensionHeader) value);
         } else {
@@ -100,12 +123,16 @@ public class TreeRenderer extends JPanel implements ListCellRenderer {
 
             setText(te.getTitle());
             setIcon(te.getIcon());
+            lbl.setVerticalTextPosition(JLabel.BOTTOM);
+            lbl.setHorizontalTextPosition(JLabel.CENTER);
+            lbl.setHorizontalAlignment(JLabel.CENTER);
+            setPreferredSize(TreeRenderer.DIMENSION);
         }
 
         if (isSelected) {
             lbl.setFont(boldFont);
             // lbl.setBorder(brd);
-            setBackground(b2);
+            setBackground(selectedBackground);
             // lbl.setForeground(b);
             setOpaque(true);
             // lbl.setForeground(b);
@@ -113,7 +140,7 @@ public class TreeRenderer extends JPanel implements ListCellRenderer {
         } else {
             lbl.setFont(orgFont);
             if (index % 2 == 0) {
-                setBackground(a);
+                setBackground(alternateHighlight);
                 setOpaque(true);
             } else {
                 setOpaque(false);
@@ -122,11 +149,6 @@ public class TreeRenderer extends JPanel implements ListCellRenderer {
         }
         // label.setPreferredSize(new Dimension(200, 20));
         return this;
-    }
-
-    @Override
-    public Dimension getPreferredSize() {
-        return TreeRenderer.DIMENSION;
     }
 
     private void setIcon(Icon icon) {

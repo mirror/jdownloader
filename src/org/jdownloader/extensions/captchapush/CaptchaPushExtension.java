@@ -89,6 +89,11 @@ public class CaptchaPushExtension extends AbstractExtension<CaptchaPushConfig> {
     }
 
     @Override
+    public boolean isQuickToggleEnabled() {
+        return true;
+    }
+
+    @Override
     public boolean hasConfigPanel() {
         return true;
     }

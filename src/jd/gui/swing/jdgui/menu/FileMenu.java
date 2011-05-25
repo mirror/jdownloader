@@ -5,7 +5,6 @@ import javax.swing.JMenuItem;
 
 import jd.gui.swing.jdgui.menu.actions.ExitAction;
 import jd.gui.swing.jdgui.menu.actions.RestartAction;
-import jd.gui.swing.jdgui.menu.actions.RestoreAction;
 import jd.gui.swing.jdgui.menu.actions.SettingsAction;
 import jd.nutils.OSDetector;
 
@@ -22,7 +21,7 @@ public class FileMenu extends JMenu {
         addSeparator();
         add(new SettingsAction());
         addSeparator();
-        add(new RestoreAction());
+
         add(new RestartAction());
 
         // add exit action, used by tray extension

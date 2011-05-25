@@ -89,7 +89,7 @@ public class InfoBarExtension extends AbstractExtension<InfoBarConfig> {
 
     @Override
     public String getIconKey() {
-        return "addons.infobar";
+        return "info";
     }
 
     @Override
