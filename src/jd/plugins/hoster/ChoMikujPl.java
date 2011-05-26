@@ -165,8 +165,6 @@ public class ChoMikujPl extends PluginForHost {
             logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        String additionalPath = link.getStringProperty("path");
-        if (additionalPath != null) link.addSubdirectory(additionalPath);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, DLLINK, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The final dllink seems not to be a file!");

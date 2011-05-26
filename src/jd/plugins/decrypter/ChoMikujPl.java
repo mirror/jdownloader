@@ -49,7 +49,6 @@ public class ChoMikujPl extends PluginForDecrypt {
         // The message used on errors in this plugin
         String error = "Error while decrypting link: " + parameter;
         br.getPage(parameter);
-        String additionalPath = param.getStringProperty("path");
         String fpName = br.getRegex("<title>(.*?) - .*? - Chomikuj\\.pl.*?</title>").getMatch(0);
         if (fpName == null) {
             fpName = br.getRegex("class=\"T_selected\">(.*?)</span>").getMatch(0);
@@ -125,26 +124,14 @@ public class ChoMikujPl extends PluginForDecrypt {
                 String finalLink = String.format("&id=%s&gallerylink=%s&", id, param.toString().replace("chomikuj.pl", "60423fhrzisweguikipo9re"));
                 DownloadLink dl = createDownloadlink(finalLink);
                 dl.setName(String.valueOf(new Random().nextInt(1000000)));
-                if (additionalPath != null) {
-                    dl.setProperty("path", additionalPath);
-                } else {
-                    dl.setProperty("path", fpName);
-                }
                 decryptedLinks.add(dl);
             }
             String[][] allFolders = br.getRegex("class=\"folders\" cellspacing=\"6\" cellpadding=\"0\" border=\"0\">[\t\n\r ]+<tr>[\t\n\r ]+<td><a href=\"(.*?)\" onclick=\"return Ts\\(\\'\\d+\\'\\)\">(.*?)</span>").getMatches();
             if (allFolders != null && allFolders.length != 0) {
                 for (String[] folder : allFolders) {
                     String folderLink = folder[0];
-                    String folderName = folder[1];
                     folderLink = "http://chomikuj.pl" + folderLink;
-                    DownloadLink folderDl = createDownloadlink(folderLink);
-                    if (additionalPath != null) {
-                        folderDl.setProperty("path", additionalPath + "\\" + folderName);
-                    } else {
-                        folderDl.setProperty("path", fpName + "\\" + folderName);
-                    }
-                    decryptedLinks.add(folderDl);
+                    decryptedLinks.add(createDownloadlink(folderLink));
                 }
             }
             progress.increase(1);
