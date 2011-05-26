@@ -16,10 +16,6 @@
 
 package org.jdownloader.extensions.langfileeditor;
 
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.util.ArrayList;
-
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.ConfigGroup;
@@ -34,7 +30,6 @@ import jd.gui.swing.jdgui.interfaces.SwitchPanelListener;
 import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.nutils.svn.Subversion;
 import jd.plugins.AddonPanel;
-
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionConfigPanel;
@@ -43,10 +38,14 @@ import org.jdownloader.extensions.StopException;
 import org.jdownloader.extensions.langfileeditor.translate.T;
 import org.jdownloader.images.NewTheme;
 
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.util.ArrayList;
+
 /**
  * Editor for jDownloader language files. Gets JDL.L() and JDL.LF() entries from
  * source and compares them to the keypairs in the language file.
- * 
+ *
  * @author Greeny
  * @author coalado
  */
@@ -54,10 +53,10 @@ import org.jdownloader.images.NewTheme;
 public class LangFileEditorExtension extends AbstractExtension<LangFileEditorConfig> implements ActionListener, ControlListener {
 
     private final SingletonPanel lfe;
-    private MenuAction           activateAction;
-    private LFEView              lfeView;
-    private String               user;
-    private String               pass;
+    private MenuAction activateAction;
+    private LFEView lfeView;
+    private String user;
+    private String pass;
     private ExtensionConfigPanel configPanel;
 
     public ExtensionConfigPanel<LangFileEditorExtension> getConfigPanel() {
@@ -125,7 +124,22 @@ public class LangFileEditorExtension extends AbstractExtension<LangFileEditorCon
 
     @Override
     protected void start() throws StartException {
-        activateAction = new MenuAction("langfileditor", 0);
+        activateAction = new MenuAction("langfileditor", "langfileditor", 0) {
+            @Override
+            protected String createMnemonic() {
+                return null;  //To change body of implemented methods use File | Settings | File Templates.
+            }
+
+            @Override
+            protected String createAccelerator() {
+                return null;  //To change body of implemented methods use File | Settings | File Templates.
+            }
+
+            @Override
+            protected String createTooltip() {
+                return null;  //To change body of implemented methods use File | Settings | File Templates.
+            }
+        };
         activateAction.setActionListener(this);
         activateAction.setIcon(this.getIconKey());
         activateAction.setSelected(false);
