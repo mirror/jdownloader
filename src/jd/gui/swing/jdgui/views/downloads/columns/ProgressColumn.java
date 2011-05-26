@@ -19,10 +19,7 @@ package jd.gui.swing.jdgui.views.downloads.columns;
 import java.awt.Color;
 import java.awt.Component;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
 
-import jd.controlling.DownloadController;
 import jd.controlling.proxy.ProxyController;
 import jd.gui.swing.components.table.JDRowHighlighter;
 import jd.gui.swing.components.table.JDTableColumn;
@@ -176,53 +173,7 @@ public class ProgressColumn extends JDTableColumn {
     @SuppressWarnings("unchecked")
     @Override
     public void sort(Object obj, final boolean sortingToggle) {
-        ArrayList<FilePackage> packages = null;
-        synchronized (DownloadController.ControllerLock) {
-            synchronized (DownloadController.getInstance().getPackages()) {
-                packages = DownloadController.getInstance().getPackages();
-                if (obj == null && packages.size() > 1) {
-                    /* header, sortiere die packages nach namen */
-                    Collections.sort(packages, new Comparator<FilePackage>() {
-                        public int compare(FilePackage a, FilePackage b) {
-                            FilePackage aa = a;
-                            FilePackage bb = b;
-                            if (sortingToggle) {
-                                aa = b;
-                                bb = a;
-                            }
-                            long ap = aa.getTotalEstimatedPackageSize() - aa.getTotalKBLoaded();
-                            long bp = bb.getTotalEstimatedPackageSize() - bb.getTotalKBLoaded();
-                            if (ap == bp) return 0;
-                            return ap < bp ? -1 : 1;
-                        }
-                    });
-                } else {
-                    /*
-                     * in obj stecken alle selektierten packages, sortiere die
-                     * links nach namen
-                     */
-                    if (obj != null) packages = (ArrayList<FilePackage>) obj;
-                    for (FilePackage fp : packages) {
-                        Collections.sort(fp.getDownloadLinkList(), new Comparator<DownloadLink>() {
-                            public int compare(DownloadLink a, DownloadLink b) {
-                                DownloadLink aa = b;
-                                DownloadLink bb = a;
-                                if (sortingToggle) {
-                                    aa = a;
-                                    bb = b;
-                                }
-                                long ap = aa.getDownloadSize() - aa.getDownloadCurrent();
-                                long bp = bb.getDownloadSize() - bb.getDownloadCurrent();
-                                if (ap == bp) return 0;
-                                return ap < bp ? -1 : 1;
-                            }
-                        });
-                    }
-                }
-            }
-        }
-        /* inform DownloadController that structure changed */
-        DownloadController.getInstance().fireStructureUpdate();
+        throw new RuntimeException("GONE");
     }
 
     @Override

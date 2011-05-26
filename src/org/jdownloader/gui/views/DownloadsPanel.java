@@ -1,14 +1,18 @@
 package org.jdownloader.gui.views;
 
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
+
 import javax.swing.JScrollPane;
 
+import jd.controlling.IOEQ;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import net.miginfocom.swing.MigLayout;
 
 import org.jdownloader.gui.views.downloads.table.DownloadsTable;
 import org.jdownloader.gui.views.downloads.table.DownloadsTableModel;
 
-public class DownloadsPanel extends SwitchPanel {
+public class DownloadsPanel extends SwitchPanel implements Runnable {
 
     /**
      * 
@@ -17,6 +21,7 @@ public class DownloadsPanel extends SwitchPanel {
     private DownloadsTable      table;
     private JScrollPane         tableScrollPane;
     private DownloadsTableModel tableModel;
+    private ScheduledFuture<?>  timer            = null;
 
     public DownloadsPanel() {
         super(new MigLayout("ins 0, wrap 1", "[grow, fill]", "[grow, fill]"));
@@ -29,11 +34,24 @@ public class DownloadsPanel extends SwitchPanel {
 
     @Override
     protected void onShow() {
-        tableModel.recreateModel();
+        table.recreateModel();
+        synchronized (this) {
+            timer = IOEQ.TIMINGQUEUE.scheduleWithFixedDelay(this, 250, 1000, TimeUnit.MILLISECONDS);
+        }
     }
 
     @Override
     protected void onHide() {
+        synchronized (this) {
+            if (timer != null) {
+                timer.cancel(false);
+                timer = null;
+            }
+        }
+    }
+
+    public void run() {
+        table.refreshModel();
     }
 
 }

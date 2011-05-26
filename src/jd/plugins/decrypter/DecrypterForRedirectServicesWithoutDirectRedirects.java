@@ -489,7 +489,7 @@ public class DecrypterForRedirectServicesWithoutDirectRedirects extends PluginFo
             if (parameter.contains("stardima.com/download/")) {
                 br.getPage("http://stardima.com/download/2.php?" + id);
             } else {
-                br.getPage("http://1lien.com/2.php?191241");
+                br.getPage("http://1lien.com/2.php?" + id);
             }
             finallink = br.getRegex("onclick=\"NewWindow\\(\\'(http://.*?)\\'").getMatch(0);
         } else if (parameter.contains("dropbox.com/")) {

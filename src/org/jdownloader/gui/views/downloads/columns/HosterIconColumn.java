@@ -3,12 +3,12 @@ package org.jdownloader.gui.views.downloads.columns;
 import javax.swing.ImageIcon;
 import javax.swing.JComponent;
 
-import jd.gui.swing.jdgui.components.StatusLabel;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PackageLinkNode;
 import jd.plugins.PluginForHost;
 
+import org.appwork.utils.swing.renderer.MultipleRenderLabel;
 import org.appwork.utils.swing.table.ExtColumn;
 import org.appwork.utils.swing.table.ExtTable;
 import org.jdownloader.gui.translate._GUI;
@@ -16,20 +16,20 @@ import org.jdownloader.images.NewTheme;
 
 public class HosterIconColumn extends ExtColumn<PackageLinkNode> {
 
-    private static final long serialVersionUID = 8856394990447477484L;
-    private StatusLabel       statuspanel      = null;
-    private DownloadLink      dLink            = null;
-    private int               counter          = 0;
-    private ImageIcon         imgResume;
-    private ImageIcon         imgPremium;
-    private String            strResume;
-    private String            strPremium;
-    private ImageIcon         imgMissing;
-    private String            strMissing;
+    private static final long   serialVersionUID = 8856394990447477484L;
+    private MultipleRenderLabel statuspanel      = null;
+    private DownloadLink        dLink            = null;
+    private int                 counter          = 0;
+    private ImageIcon           imgResume;
+    private ImageIcon           imgPremium;
+    private String              strResume;
+    private String              strPremium;
+    private ImageIcon           imgMissing;
+    private String              strMissing;
 
     public HosterIconColumn() {
         super("HosterIcon", null);
-        statuspanel = new StatusLabel();
+        statuspanel = new MultipleRenderLabel(4);
         statuspanel.setBorder(null);
         imgResume = NewTheme.I().getIcon("resume", 16);
         imgMissing = NewTheme.I().getIcon("false", 16);
@@ -51,7 +51,7 @@ public class HosterIconColumn extends ExtColumn<PackageLinkNode> {
 
     @Override
     public boolean isEnabled(PackageLinkNode obj) {
-        return false;
+        return obj.isEnabled();
     }
 
     @Override

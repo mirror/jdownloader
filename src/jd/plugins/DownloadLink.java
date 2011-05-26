@@ -54,7 +54,10 @@ import org.jdownloader.settings.GeneralSettings;
 public class DownloadLink extends Property implements Serializable, Comparable<DownloadLink>, PackageLinkNode {
 
     public static enum AvailableStatus {
-        UNCHECKED, FALSE, UNCHECKABLE, TRUE;
+        UNCHECKED,
+        FALSE,
+        UNCHECKABLE,
+        TRUE;
     }
 
     public static final int                    LINKTYPE_CONTAINER       = 1;
@@ -495,12 +498,12 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      * @return Name des Downloads
      */
     public String getName() {
-        String urlName;
         String ret = this.getForcedFileName();
         if (ret != null) return ret;
         ret = this.getFinalFileName();
         if (ret != null) return ret;
         try {
+            String urlName;
             return name == null ? ((urlName = new File(new URL(this.getDownloadURL()).toURI()).getName()) != null ? urlName : UNKNOWN_FILE_NAME) : name;
         } catch (Exception e) {
             return UNKNOWN_FILE_NAME;

@@ -26,23 +26,13 @@ import java.util.Iterator;
 import java.util.Set;
 
 import jd.config.Property;
-import jd.controlling.DownloadController;
+import jd.controlling.DownloadControllerInterface;
 import jd.gui.swing.jdgui.views.downloads.DownloadTable;
 import jd.nutils.io.JDIO;
 import jd.utils.JDUtilities;
 
-import org.appwork.utils.event.Eventsender;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.translate._JDT;
-
-class FilePackageBroadcaster extends Eventsender<FilePackageListener, FilePackageEvent> {
-
-    @Override
-    protected void fireEvent(FilePackageListener listener, FilePackageEvent event) {
-        listener.onFilePackageEvent(event);
-    }
-
-}
 
 /**
  * Diese Klasse verwaltet Pakete
@@ -62,51 +52,71 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
     private ArrayList<DownloadLink>      downloadLinkList;
     private transient static FilePackage FP               = null;
 
-    public synchronized static FilePackage getDefaultFilePackage() {
-        if (FP == null) {
-            FP = new FilePackage();
-            FP.setName(_JDT._.controller_packages_defaultname());
-        }
+    static {
+        FP = new FilePackage();
+        FP.setName(_JDT._.controller_packages_defaultname());
+    }
+
+    public static FilePackage getDefaultFilePackage() {
         return FP;
     }
 
-    private int                              linksFailed;
+    private int                                   linksFailed;
 
-    private int                              linksFinished;
+    private int                                   linksFinished;
 
-    private int                              linksInProgress;
+    private int                                   linksInProgress;
 
-    private String                           name                 = null;
+    private String                                name                 = null;
 
-    private String                           password2;
+    private String                                password2;
 
-    private boolean                          extractAfterDownload = true;
+    private boolean                               extractAfterDownload = true;
 
-    private long                             totalBytesLoaded_v2;
+    private long                                  totalBytesLoaded_v2;
 
-    private long                             totalDownloadSpeed_v2;
+    private long                                  totalDownloadSpeed_v2;
 
-    private long                             totalEstimatedPackageSize_v2;
+    private long                                  totalEstimatedPackageSize_v2;
 
-    private long                             updateTime;
+    private long                                  updateTime;
 
-    private long                             updateTime1;
+    private long                                  updateTime1;
 
-    private boolean                          isFinished;
+    private boolean                               isFinished;
 
-    private transient FilePackageBroadcaster broadcaster          = new FilePackageBroadcaster();
+    private Integer                               links_Disabled;
 
-    private Integer                          links_Disabled;
+    private String                                ListHoster           = null;
 
-    private String                           ListHoster           = null;
+    private long                                  created              = -1l;
 
-    private long                             created              = -1l;
+    private long                                  finishedDate         = -1l;
 
-    private long                             finishedDate         = -1l;
+    private transient boolean                     isExpanded           = false;
 
-    private transient boolean                isExpanded           = false;
+    private transient int                         listOrderID          = 0;
 
-    private transient int                    listOrderID          = 0;
+    private transient DownloadControllerInterface controlledby         = null;
+
+    /**
+     * @return the controlledby
+     */
+    public DownloadControllerInterface getControlledby() {
+        synchronized (this) {
+            return controlledby;
+        }
+    }
+
+    /**
+     * @param controlledby
+     *            the controlledby to set
+     */
+    public void setControlledby(DownloadControllerInterface controlledby) {
+        synchronized (this) {
+            this.controlledby = controlledby;
+        }
+    }
 
     /**
      * @return the listOrderID
@@ -123,14 +133,6 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
         this.listOrderID = listOrderID;
     }
 
-    public void addListener(FilePackageListener l) {
-        broadcaster.addListener(l);
-    }
-
-    public void removeListener(FilePackageListener l) {
-        broadcaster.removeListener(l);
-    }
-
     public static FilePackage getInstance() {
         return new FilePackage();
     }
@@ -145,8 +147,6 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
         links_Disabled = Integer.valueOf(0);
         downloadDirectory = org.appwork.storage.config.JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder();
         downloadLinkList = new ArrayList<DownloadLink>();
-        broadcaster = new FilePackageBroadcaster();
-        broadcaster.addListener(this);
         created = System.currentTimeMillis();
         finishedDate = -1l;
     }
@@ -156,8 +156,6 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
         stream.defaultReadObject();
         links_Disabled = Integer.valueOf(0);
         resetUpdateTimer();
-        broadcaster = new FilePackageBroadcaster();
-        broadcaster.addListener(this);
         isExpanded = getBooleanProperty(DownloadTable.PROPERTY_EXPANDED, false);
     }
 
@@ -178,56 +176,66 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
     }
 
     public void add(DownloadLink link) {
-        synchronized (DownloadController.ControllerLock) {
-            synchronized (downloadLinkList) {
-                if (!downloadLinkList.contains(link)) {
-                    downloadLinkList.add(link);
-                    link.setFilePackage(this);
-                    if (!link.isEnabled()) synchronized (links_Disabled) {
-                        links_Disabled++;
-                    }
-                    broadcaster.fireEvent(new FilePackageEvent(this, FilePackageEvent.DOWNLOADLINK_ADDED, link));
-                }
+        synchronized (this) {
+            if (controlledby == null) {
+
+            } else {
+                // controlledby.addDownloadLink(fp, dl)
             }
         }
-    }
 
-    public int add(int index, DownloadLink link, int repos) {
-        synchronized (DownloadController.ControllerLock) {
-            boolean newadded = false;
-            synchronized (downloadLinkList) {
-                if (downloadLinkList.contains(link)) {
-                    int posa = this.indexOf(link);
-                    if (posa <= index) {
-                        index -= ++repos;
-                    }
-                    downloadLinkList.remove(link);
-                    if (index > downloadLinkList.size() - 1) {
-                        downloadLinkList.add(link);
-                    } else if (index < 0) {
-                        downloadLinkList.add(0, link);
-                    } else
-                        downloadLinkList.add(index, link);
-                } else {
-                    if (index > downloadLinkList.size() - 1) {
-                        downloadLinkList.add(link);
-                    } else if (index < 0) {
-                        downloadLinkList.add(0, link);
-                    } else
-                        downloadLinkList.add(index, link);
-                    newadded = true;
-                }
-            }
-            if (newadded) {
+        synchronized (downloadLinkList) {
+            if (!downloadLinkList.contains(link)) {
+                downloadLinkList.add(link);
+                link.setFilePackage(this);
                 if (!link.isEnabled()) synchronized (links_Disabled) {
                     links_Disabled++;
                 }
-                link.setFilePackage(this);
-                broadcaster.fireEvent(new FilePackageEvent(this, FilePackageEvent.DOWNLOADLINK_ADDED, link));
-            } else {
-                broadcaster.fireEvent(new FilePackageEvent(this, FilePackageEvent.FILEPACKAGE_UPDATE));
+                // broadcaster.fireEvent(new FilePackageEvent(this,
+                // FilePackageEvent.DOWNLOADLINK_ADDED, link));
             }
         }
+
+    }
+
+    public int add(int index, DownloadLink link, int repos) {
+
+        boolean newadded = false;
+
+        if (downloadLinkList.contains(link)) {
+            int posa = this.indexOf(link);
+            if (posa <= index) {
+                index -= ++repos;
+            }
+            downloadLinkList.remove(link);
+            if (index > downloadLinkList.size() - 1) {
+                downloadLinkList.add(link);
+            } else if (index < 0) {
+                downloadLinkList.add(0, link);
+            } else
+                downloadLinkList.add(index, link);
+        } else {
+            if (index > downloadLinkList.size() - 1) {
+                downloadLinkList.add(link);
+            } else if (index < 0) {
+                downloadLinkList.add(0, link);
+            } else
+                downloadLinkList.add(index, link);
+            newadded = true;
+        }
+
+        if (newadded) {
+            if (!link.isEnabled()) synchronized (links_Disabled) {
+                links_Disabled++;
+            }
+            link.setFilePackage(this);
+            // broadcaster.fireEvent(new FilePackageEvent(this,
+            // FilePackageEvent.DOWNLOADLINK_ADDED, link));
+        } else {
+            // broadcaster.fireEvent(new FilePackageEvent(this,
+            // FilePackageEvent.FILEPACKAGE_UPDATE));
+        }
+
         return repos;
     }
 
@@ -501,18 +509,20 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
 
     public void remove(DownloadLink link) {
         if (link == null) return;
-        synchronized (DownloadController.ControllerLock) {
-            synchronized (downloadLinkList) {
-                boolean ret = downloadLinkList.remove(link);
-                if (ret) {
-                    if (!link.isEnabled()) synchronized (links_Disabled) {
-                        links_Disabled--;
-                    }
-                    link.setFilePackage(null);
-                    broadcaster.fireEvent(new FilePackageEvent(this, FilePackageEvent.DOWNLOADLINK_REMOVED, link));
-                    if (downloadLinkList.size() == 0) broadcaster.fireEvent(new FilePackageEvent(this, FilePackageEvent.FILEPACKAGE_EMPTY));
+
+        synchronized (downloadLinkList) {
+            boolean ret = downloadLinkList.remove(link);
+            if (ret) {
+                if (!link.isEnabled()) synchronized (links_Disabled) {
+                    links_Disabled--;
                 }
+                link.setFilePackage(null);
+                // broadcaster.fireEvent(new FilePackageEvent(this,
+                // FilePackageEvent.DOWNLOADLINK_REMOVED, link));
+                // if (downloadLinkList.size() == 0) broadcaster.fireEvent(new
+                // FilePackageEvent(this, FilePackageEvent.FILEPACKAGE_EMPTY));
             }
+
         }
     }
 
@@ -669,13 +679,15 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
             synchronized (links_Disabled) {
                 links_Disabled++;
             }
-            broadcaster.fireEvent(new FilePackageEvent(this, FilePackageEvent.FILEPACKAGE_UPDATE));
+            // broadcaster.fireEvent(new FilePackageEvent(this,
+            // FilePackageEvent.FILEPACKAGE_UPDATE));
             break;
         case DownloadLinkEvent.ENABLED:
             synchronized (links_Disabled) {
                 links_Disabled--;
             }
-            broadcaster.fireEvent(new FilePackageEvent(this, FilePackageEvent.FILEPACKAGE_UPDATE));
+            // broadcaster.fireEvent(new FilePackageEvent(this,
+            // FilePackageEvent.FILEPACKAGE_UPDATE));
             break;
         }
     }

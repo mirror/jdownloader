@@ -15,7 +15,6 @@ public class StopsignAction extends ContextMenuAction {
 
     public StopsignAction(Object obj) {
         this.obj = obj;
-
         init();
     }
 

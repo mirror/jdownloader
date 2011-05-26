@@ -1,4 +1,4 @@
-package jd.gui.swing.jdgui.views.downloads;
+package org.jdownloader.gui.views.downloads.context;
 
 import java.util.ArrayList;
 import java.util.Collections;

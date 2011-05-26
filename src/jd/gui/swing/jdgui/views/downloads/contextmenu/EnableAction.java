@@ -20,7 +20,6 @@ public class EnableAction extends ContextMenuAction {
         for (DownloadLink link : links) {
             if (!link.isEnabled()) this.links.add(link);
         }
-
         init();
     }
 

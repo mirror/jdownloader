@@ -17,9 +17,10 @@
 package jd.gui.swing.jdgui.menu.actions;
 
 import java.awt.event.ActionEvent;
-import java.util.ArrayList;
+import java.util.LinkedList;
 
 import jd.controlling.DownloadController;
+import jd.controlling.IOEQ;
 import jd.gui.UserIO;
 import jd.gui.swing.jdgui.actions.ToolBarAction;
 import jd.plugins.FilePackage;
@@ -37,18 +38,24 @@ public class CleanupPackages extends ToolBarAction {
 
     @Override
     public void onAction(ActionEvent e) {
-        if (!UserIO.isOK(UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.DONT_SHOW_AGAIN_IGNORES_CANCEL, _GUI._.jd_gui_swing_jdgui_menu_actions_CleanupPackages_message()))) return;
+        IOEQ.add(new Runnable() {
 
-        DownloadController dlc = DownloadController.getInstance();
-        ArrayList<FilePackage> packagestodelete = new ArrayList<FilePackage>();
-        synchronized (dlc.getPackages()) {
-            for (FilePackage fp : dlc.getPackages()) {
-                if (fp.getLinksListbyStatus(LinkStatus.FINISHED | LinkStatus.ERROR_ALREADYEXISTS).size() == fp.size()) packagestodelete.add(fp);
+            public void run() {
+                if (!UserIO.isOK(UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.DONT_SHOW_AGAIN_IGNORES_CANCEL, _GUI._.jd_gui_swing_jdgui_menu_actions_CleanupPackages_message()))) return;
+
+                DownloadController dlc = DownloadController.getInstance();
+                LinkedList<FilePackage> packagestodelete = new LinkedList<FilePackage>();
+                synchronized (DownloadController.ACCESSLOCK) {
+                    for (FilePackage fp : dlc.getPackages()) {
+                        if (fp.getLinksListbyStatus(LinkStatus.FINISHED | LinkStatus.ERROR_ALREADYEXISTS).size() == fp.size()) packagestodelete.add(fp);
+                    }
+                }
+                for (FilePackage fp : packagestodelete) {
+                    dlc.removePackage(fp);
+                }
             }
-        }
-        for (FilePackage fp : packagestodelete) {
-            dlc.removePackage(fp);
-        }
+        });
+
     }
 
     @Override

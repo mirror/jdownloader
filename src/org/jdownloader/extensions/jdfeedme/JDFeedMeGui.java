@@ -33,7 +33,7 @@ import javax.swing.SpinnerNumberModel;
 
 import jd.gui.UserIO;
 import jd.gui.swing.GuiRunnable;
-import jd.gui.swing.jdgui.actions.ThreadedAction;
+import jd.gui.swing.jdgui.actions.ToolBarAction;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.gui.swing.jdgui.views.ViewToolbar;
 import jd.nutils.JDFlags;
@@ -95,7 +95,7 @@ public class JDFeedMeGui extends SwitchPanel implements KeyListener, ActionListe
     }
 
     private void initActions() {
-        new ThreadedAction("Add Feed", "Add Feed", "add") {
+        new ToolBarAction("Add Feed", "Add Feed", "add") {
             private static final long serialVersionUID = 2902582806883565245L;
 
             @Override
@@ -110,7 +110,7 @@ public class JDFeedMeGui extends SwitchPanel implements KeyListener, ActionListe
              */
 
             @Override
-            public void threadedActionPerformed(final ActionEvent e) {
+            public void onAction(final ActionEvent e) {
                 table.editingStopped(null);
                 new GuiRunnable<Object>() {
 
@@ -162,7 +162,7 @@ public class JDFeedMeGui extends SwitchPanel implements KeyListener, ActionListe
             }
         };
 
-        new ThreadedAction("Remove Feed", "Remove Feed", "delete") {
+        new ToolBarAction("Remove Feed", "Remove Feed", "delete") {
             private static final long serialVersionUID = -961227173418839351L;
 
             @Override
@@ -177,20 +177,28 @@ public class JDFeedMeGui extends SwitchPanel implements KeyListener, ActionListe
              */
 
             @Override
-            public void threadedActionPerformed(ActionEvent e) {
-                int[] rows = table.getSelectedRows();
-                table.editingStopped(null);
-                if (rows.length == 0) return;
-                if (JDFlags.hasSomeFlags(UserIO.getInstance().requestConfirmDialog(0, "Remove selected Feed(s)?"), UserIO.RETURN_OK, UserIO.RETURN_DONT_SHOW_AGAIN)) {
-                    ArrayList<JDFeedMeFeed> feeds = table.getModel().getFeeds();
-                    for (int i = rows.length - 1; i >= 0; --i) {
-                        JDFeedMeFeed feed = feeds.get(rows[i]);
-                        clearPostsFromFeed(feed);
-                        feeds.remove(rows[i]);
+            public void onAction(ActionEvent e) {
+                new GuiRunnable<Object>() {
+
+                    @Override
+                    public Object runSave() {
+                        int[] rows = table.getSelectedRows();
+                        table.editingStopped(null);
+                        if (rows.length == 0) return null;
+                        if (JDFlags.hasSomeFlags(UserIO.getInstance().requestConfirmDialog(0, "Remove selected Feed(s)?"), UserIO.RETURN_OK, UserIO.RETURN_DONT_SHOW_AGAIN)) {
+                            ArrayList<JDFeedMeFeed> feeds = table.getModel().getFeeds();
+                            for (int i = rows.length - 1; i >= 0; --i) {
+                                JDFeedMeFeed feed = feeds.get(rows[i]);
+                                clearPostsFromFeed(feed);
+                                feeds.remove(rows[i]);
+                            }
+                        }
+                        table.getModel().refreshModel();
+                        table.getModel().fireTableDataChanged();
+                        return null;
                     }
-                }
-                table.getModel().refreshModel();
-                table.getModel().fireTableDataChanged();
+                }.start();
+
             }
 
             @Override
@@ -209,7 +217,7 @@ public class JDFeedMeGui extends SwitchPanel implements KeyListener, ActionListe
             }
         };
 
-        new ThreadedAction("Reset Feed", "Reset Feed", "restart") {
+        new ToolBarAction("Reset Feed", "Reset Feed", "restart") {
             private static final long serialVersionUID = -961227173618834351L;
 
             @Override
@@ -224,14 +232,13 @@ public class JDFeedMeGui extends SwitchPanel implements KeyListener, ActionListe
              */
 
             @Override
-            public void threadedActionPerformed(ActionEvent e) {
-                table.editingStopped(null);
+            public void onAction(ActionEvent e) {
 
                 new GuiRunnable<Object>() {
 
                     @Override
                     public Object runSave() {
-
+                        table.editingStopped(null);
                         int[] rows = table.getSelectedRows();
                         if (rows.length == 0) return null;
 
@@ -280,7 +287,7 @@ public class JDFeedMeGui extends SwitchPanel implements KeyListener, ActionListe
             }
         };
 
-        new ThreadedAction("Sync All Now", "Sync All Now", "download") {
+        new ToolBarAction("Sync All Now", "Sync All Now", "download") {
             private static final long serialVersionUID = -911247173617834351L;
 
             @Override
@@ -295,12 +302,13 @@ public class JDFeedMeGui extends SwitchPanel implements KeyListener, ActionListe
              */
 
             @Override
-            public void threadedActionPerformed(ActionEvent e) {
-                table.editingStopped(null);
+            public void onAction(ActionEvent e) {
+
                 new GuiRunnable<Object>() {
 
                     @Override
                     public Object runSave() {
+                        table.editingStopped(null);
                         FeedMeExtension.syncNowEvent();
                         return null;
                     }

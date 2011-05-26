@@ -49,7 +49,7 @@ public class FileColumn extends ExtColumn<PackageLinkNode> {
 
     @Override
     public boolean isEnabled(PackageLinkNode obj) {
-        return false;
+        return obj.isEnabled();
     }
 
     @Override
@@ -64,14 +64,14 @@ public class FileColumn extends ExtColumn<PackageLinkNode> {
     public JComponent getRendererComponent(ExtTable<PackageLinkNode> table, PackageLinkNode value, boolean isSelected, boolean hasFocus, int row, int column) {
         if (value instanceof FilePackage) {
             fp = (FilePackage) value;
+            jlr.setBorder(null);
             jlr.setText(fp.getName());
             jlr.setIcon(fp.isExpanded() ? icon_fp_open : icon_fp_closed);
-            jlr.setBorder(null);
         } else {
             dLink = (DownloadLink) value;
+            jlr.setBorder(leftGap);
             jlr.setIcon(dLink.getIcon());
             jlr.setText(dLink.getName());
-            jlr.setBorder(leftGap);
         }
         return jlr;
     }

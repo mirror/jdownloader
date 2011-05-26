@@ -4,7 +4,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 
 import org.appwork.utils.event.queue.Queue;
-import org.appwork.utils.event.queue.QueueAction;
 
 /**
  * InOrderExecutionQueue, use this Queue to enqueue Actions that should be run
@@ -17,20 +16,18 @@ public class IOEQ {
 
     public static final ScheduledExecutorService TIMINGQUEUE = Executors.newSingleThreadScheduledExecutor();
     private static final Queue                   INSTANCE    = new Queue("InOrderExcecutionQueue") {
+                                                                 @Override
+                                                                 public void killQueue() {
+                                                                     /*
+                                                                      * this
+                                                                      * queue
+                                                                      * can't be
+                                                                      * killed
+                                                                      */
+                                                                 }
                                                              };
 
     private IOEQ() {
-    }
-
-    /**
-     * use this function to add customized QueueActions
-     * 
-     * @param <E>
-     * @param <T>
-     * @param action
-     */
-    public static <E, T extends Throwable> void add(final QueueAction<?, T> action) {
-        INSTANCE.addAsynch(action);
     }
 
     /**
@@ -54,5 +51,9 @@ public class IOEQ {
                 return allowAsync;
             }
         });
+    }
+
+    public static Queue getQueue() {
+        return INSTANCE;
     }
 }

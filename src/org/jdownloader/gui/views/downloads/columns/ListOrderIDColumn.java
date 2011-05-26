@@ -24,4 +24,9 @@ public class ListOrderIDColumn extends ExtLongColumn<PackageLinkNode> {
         return true;
     }
 
+    @Override
+    public boolean isEnabled(PackageLinkNode obj) {
+        return obj.isEnabled();
+    }
+
 }

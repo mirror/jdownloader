@@ -1013,10 +1013,10 @@ public class Serverhandler implements Handler {
             }
         } else if (requestUrl.matches("(?is).*/action/downloads/removeall")) {
             // remove all packages in download list
-
-            final ArrayList<FilePackage> packages = new ArrayList<FilePackage>();
-            packages.addAll(DownloadController.getInstance().getPackages());
-
+            ArrayList<FilePackage> packages = null;
+            synchronized (DownloadController.ACCESSLOCK) {
+                packages = new ArrayList<FilePackage>(DownloadController.getInstance().getPackages());
+            }
             for (final FilePackage fp : packages) {
                 DownloadController.getInstance().removePackage(fp);
             }
@@ -1025,11 +1025,12 @@ public class Serverhandler implements Handler {
         } else if (requestUrl.matches("(?is).*/action/downloads/remove/.+")) {
             // remove denoted packages from download list
 
-            final ArrayList<FilePackage> packages = new ArrayList<FilePackage>();
+            ArrayList<FilePackage> packages = null;
             final ArrayList<FilePackage> removelist = new ArrayList<FilePackage>();
             final String[] packagenames = this.getHTMLDecoded(new Regex(requestUrl, ".*/action/downloads/remove/(.+)").getMatch(0).split("/"));
-
-            packages.addAll(DownloadController.getInstance().getPackages());
+            synchronized (DownloadController.ACCESSLOCK) {
+                packages = new ArrayList<FilePackage>(DownloadController.getInstance().getPackages());
+            }
 
             final int packagesSize = packages.size();
             for (int i = 0; i < packagesSize; i++) {

@@ -124,6 +124,24 @@ public class LangFileEditorExtension extends AbstractExtension<LangFileEditorCon
 
     @Override
     protected void start() throws StartException {
+<<<<<<< .mine
+        activateAction = new MenuAction("langfileditor"){
+            @Override
+            protected String createMnemonic() {
+                return null;  //To change body of implemented methods use File | Settings | File Templates.
+            }
+
+            @Override
+            protected String createAccelerator() {
+                return null;  //To change body of implemented methods use File | Settings | File Templates.
+            }
+
+            @Override
+            protected String createTooltip() {
+                return null;  //To change body of implemented methods use File | Settings | File Templates.
+            }
+        };
+=======
         activateAction = new MenuAction("langfileditor", "langfileditor", 0) {
             @Override
             protected String createMnemonic() {
@@ -140,6 +158,7 @@ public class LangFileEditorExtension extends AbstractExtension<LangFileEditorCon
                 return null;  //To change body of implemented methods use File | Settings | File Templates.
             }
         };
+>>>>>>> .r14365
         activateAction.setActionListener(this);
         activateAction.setIcon(this.getIconKey());
         activateAction.setSelected(false);

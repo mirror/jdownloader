@@ -38,7 +38,6 @@ import javax.swing.KeyStroke;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 
-import jd.controlling.DownloadController;
 import jd.event.ControlEvent;
 import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.components.table.JDRowHighlighter;
@@ -77,6 +76,8 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.Application;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.gui.views.downloads.context.RatedMenuController;
+import org.jdownloader.gui.views.downloads.context.RatedMenuItem;
 import org.jdownloader.images.NewTheme;
 
 public class DownloadTable extends JDTable implements MouseListener, KeyListener {
@@ -507,33 +508,7 @@ public class DownloadTable extends JDTable implements MouseListener, KeyListener
     }
 
     public void toggleFilePackageExpand(final FilePackage fp, final byte mode) {
-        final boolean cur = !fp.isExpanded();
-        switch (mode) {
-        case EXPCOL_CUR:
-            fp.setExpanded(cur);
-            break;
-        case EXPCOL_TOP: {
-            final ArrayList<FilePackage> packages = new ArrayList<FilePackage>(DownloadController.getInstance().getPackages());
-            final int indexfp = DownloadController.getInstance().indexOf(fp);
-            for (int index = 0; index <= indexfp; index++) {
-                final FilePackage fp2 = packages.get(index);
-                fp2.setExpanded(cur);
-            }
-        }
-            break;
-        case EXPCOL_BOT: {
-            final ArrayList<FilePackage> packages = new ArrayList<FilePackage>(DownloadController.getInstance().getPackages());
-            final int indexfp = DownloadController.getInstance().indexOf(fp);
-            for (int index = indexfp; index < packages.size(); index++) {
-                final FilePackage fp2 = packages.get(index);
-                fp2.setExpanded(cur);
-            }
-        }
-            break;
-        default:
-            return;
-        }
-        this.panel.updateTableTask(DownloadLinksPanel.REFRESH_DATA_AND_STRUCTURE_CHANGED_FAST, null);
+        /* already moved to new table */
     }
 }
 

@@ -19,16 +19,17 @@ package jd.gui.swing.jdgui.menu.actions;
 import java.awt.event.ActionEvent;
 import java.io.File;
 
+import jd.controlling.IOEQ;
 import jd.controlling.JDController;
 import jd.gui.swing.components.Balloon;
-import jd.gui.swing.jdgui.actions.ThreadedAction;
+import jd.gui.swing.jdgui.actions.ToolBarAction;
 import jd.update.JDUpdateUtils;
 import jd.utils.JDUtilities;
 
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 
-public class BackupAction extends ThreadedAction {
+public class BackupAction extends ToolBarAction {
 
     private static final long serialVersionUID = 823930266263085474L;
 
@@ -41,14 +42,21 @@ public class BackupAction extends ThreadedAction {
     }
 
     @Override
-    public void threadedActionPerformed(ActionEvent e) {
-        JDController.getInstance().syncDatabase();
-        File backupFile = JDUpdateUtils.backupDataBase();
-        if (backupFile == null) {
-            Balloon.show(_GUI._.gui_balloon_backup_title(), NewTheme.I().getIcon("save", 32), _GUI._.gui_backup_finished_failed(JDUtilities.getResourceFile("backup/")));
-        } else {
-            Balloon.show(_GUI._.gui_balloon_backup_title(), NewTheme.I().getIcon("save", 32), _GUI._.gui_backup_finished_success(backupFile.getAbsolutePath()));
-        }
+    public void onAction(ActionEvent e) {
+        IOEQ.add(new Runnable() {
+
+            public void run() {
+                JDController.getInstance().syncDatabase();
+                File backupFile = JDUpdateUtils.backupDataBase();
+                if (backupFile == null) {
+                    Balloon.show(_GUI._.gui_balloon_backup_title(), NewTheme.I().getIcon("save", 32), _GUI._.gui_backup_finished_failed(JDUtilities.getResourceFile("backup/")));
+                } else {
+                    Balloon.show(_GUI._.gui_balloon_backup_title(), NewTheme.I().getIcon("save", 32), _GUI._.gui_backup_finished_success(backupFile.getAbsolutePath()));
+                }
+            }
+
+        });
+
     }
 
     @Override

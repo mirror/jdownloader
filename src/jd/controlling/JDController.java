@@ -19,8 +19,8 @@ package jd.controlling;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.logging.Logger;
-import java.util.regex.Pattern;
 
 import jd.CPluginWrapper;
 import jd.Main;
@@ -39,7 +39,6 @@ import jd.plugins.PluginForHost;
 import jd.plugins.PluginsC;
 import jd.utils.JDUtilities;
 
-import org.appwork.utils.Regex;
 import org.appwork.utils.event.Eventsender;
 import org.jdownloader.translate._JDT;
 import org.jdownloader.update.RestartController;
@@ -455,7 +454,7 @@ public class JDController implements ControlListener {
      * 
      * @return
      */
-    public ArrayList<FilePackage> getPackages() {
+    public LinkedList<FilePackage> getPackages() {
         return JDUtilities.getDownloadController().getPackages();
     }
 
@@ -654,42 +653,12 @@ public class JDController implements ControlListener {
         return null;
     }
 
-    public ArrayList<DownloadLink> getDownloadLinksByNamePattern(final String matcher) {
-        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        final ArrayList<FilePackage> packages = JDUtilities.getDownloadController().getPackages();
-        try {
-            for (final FilePackage fp : packages) {
-                for (final DownloadLink nextDownloadLink : fp.getDownloadLinkList()) {
-                    final String name = new File(nextDownloadLink.getFileOutput()).getName();
-                    if (new Regex(name, matcher, Pattern.CASE_INSENSITIVE).matches()) {
-                        ret.add(nextDownloadLink);
-                    }
-                }
-            }
-            return ret;
-        } catch (final Exception e) {
-            JDLogger.exception(e);
-        }
-        return null;
+    public LinkedList<DownloadLink> getDownloadLinksByNamePattern(final String matcher) {
+        return DownloadController.getInstance().getDownloadLinksByNamePattern(matcher);
     }
 
-    public ArrayList<DownloadLink> getDownloadLinksByPathPattern(final String matcher) {
-        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        final ArrayList<FilePackage> packages = JDUtilities.getDownloadController().getPackages();
-        try {
-            for (final FilePackage fp : packages) {
-                for (final DownloadLink nextDownloadLink : fp.getDownloadLinkList()) {
-                    final String path = nextDownloadLink.getFileOutput();
-                    if (new Regex(path, matcher, Pattern.CASE_INSENSITIVE).matches()) {
-                        ret.add(nextDownloadLink);
-                    }
-                }
-            }
-            return ret;
-        } catch (final Exception e) {
-            JDLogger.exception(e);
-        }
-        return null;
+    public LinkedList<DownloadLink> getDownloadLinksByPathPattern(final String matcher) {
+        return DownloadController.getInstance().getDownloadLinksByPathPattern(matcher);
     }
 
     public static void distributeLinks(final String data) {

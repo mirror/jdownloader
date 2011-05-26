@@ -52,7 +52,7 @@ public class NewPackageAction extends ContextMenuAction {
         }
 
         if (JsonConfig.create(GeneralSettings.class).isAddNewLinksOnTop()) {
-            JDUtilities.getDownloadController().addPackageAt(nfp, 0, 0);
+            JDUtilities.getDownloadController().addPackageAt(nfp, 0);
         } else {
             JDUtilities.getDownloadController().addPackage(nfp);
         }

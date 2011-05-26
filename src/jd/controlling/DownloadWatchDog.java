@@ -217,19 +217,16 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         ProxyController.getInstance().resetIPBlockWaittime(null, true);
         /* reset temp unavailble times for all ips */
         ProxyController.getInstance().resetTempUnavailWaittime(null, false);
-        final ArrayList<FilePackage> fps = new ArrayList<FilePackage>();
-        synchronized (DownloadController.ControllerLock) {
-            synchronized (DownloadWatchDog.this.dlc.getPackages()) {
-                fps.addAll(DownloadWatchDog.this.dlc.getPackages());
-            }
-        }
-        for (final FilePackage filePackage : fps) {
-            for (final DownloadLink link : filePackage.getDownloadLinkList()) {
-                /*
-                 * do not reset if link is offline, finished , already exist or
-                 * pluginerror (because only plugin updates can fix this)
-                 */
-                link.getLinkStatus().resetStatus(LinkStatus.ERROR_FATAL | LinkStatus.ERROR_PLUGIN_DEFECT | LinkStatus.ERROR_ALREADYEXISTS, LinkStatus.ERROR_FILE_NOT_FOUND, LinkStatus.FINISHED);
+        synchronized (DownloadController.ACCESSLOCK) {
+
+            for (final FilePackage filePackage : DownloadController.getInstance().getPackages()) {
+                for (final DownloadLink link : filePackage.getDownloadLinkList()) {
+                    /*
+                     * do not reset if link is offline, finished , already exist
+                     * or pluginerror (because only plugin updates can fix this)
+                     */
+                    link.getLinkStatus().resetStatus(LinkStatus.ERROR_FATAL | LinkStatus.ERROR_PLUGIN_DEFECT | LinkStatus.ERROR_ALREADYEXISTS, LinkStatus.ERROR_FILE_NOT_FOUND, LinkStatus.FINISHED);
+                }
             }
         }
         DownloadController.getInstance().fireGlobalUpdate();
@@ -898,10 +895,14 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                             }
                             /* so we can work on a list without threading errors */
                             fps.clear();
-                            synchronized (DownloadController.ControllerLock) {
-                                synchronized (DownloadWatchDog.this.dlc.getPackages()) {
-                                    fps.addAll(DownloadWatchDog.this.dlc.getPackages());
-                                }
+                            synchronized (DownloadController.ACCESSLOCK) {
+                                /*
+                                 * TODO: change to a much better way, for
+                                 * example keep copy of current structure and
+                                 * build temp structure to optimize
+                                 * nextDownloadLink
+                                 */
+                                fps.addAll(DownloadWatchDog.this.dlc.getPackages());
                             }
                             inProgress = 0;
                             try {

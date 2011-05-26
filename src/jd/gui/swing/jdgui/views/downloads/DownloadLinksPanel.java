@@ -26,6 +26,7 @@ import javax.swing.JScrollPane;
 import javax.swing.Timer;
 
 import jd.controlling.DownloadController;
+import jd.controlling.DownloadController.MOVE;
 import jd.controlling.DownloadControllerEvent;
 import jd.controlling.DownloadControllerListener;
 import jd.controlling.JDLogger;
@@ -42,34 +43,34 @@ import net.miginfocom.swing.MigLayout;
 
 public class DownloadLinksPanel extends SwitchPanel implements ActionListener, DownloadControllerListener {
 
-    private static final long serialVersionUID = -6029423913449902141L;
+    private static final long         serialVersionUID                        = -6029423913449902141L;
 
-    private static final int NO_JOB = -1;
-    public final static int REFRESH_ALL_DATA_CHANGED = 1;
-    public final static int REFRESH_DATA_AND_STRUCTURE_CHANGED = 0;
-    public final static int REFRESH_DATA_AND_STRUCTURE_CHANGED_FAST = 10;
-    public static final int REFRESH_SPECIFIED_LINKS = 2;
+    private static final int          NO_JOB                                  = -1;
+    public final static int           REFRESH_ALL_DATA_CHANGED                = 1;
+    public final static int           REFRESH_DATA_AND_STRUCTURE_CHANGED      = 0;
+    public final static int           REFRESH_DATA_AND_STRUCTURE_CHANGED_FAST = 10;
+    public static final int           REFRESH_SPECIFIED_LINKS                 = 2;
 
-    private final static int UPDATE_TIMING = 250;
+    private final static int          UPDATE_TIMING                           = 250;
 
-    private static DownloadLinksPanel INSTANCE = null;
+    private static DownloadLinksPanel INSTANCE                                = null;
 
-    private int jobID = REFRESH_DATA_AND_STRUCTURE_CHANGED;
-    private ArrayList<Object> jobObjects = new ArrayList<Object>();
+    private int                       jobID                                   = REFRESH_DATA_AND_STRUCTURE_CHANGED;
+    private ArrayList<Object>         jobObjects                              = new ArrayList<Object>();
 
-    protected Logger logger = JDLogger.getLogger();
+    protected Logger                  logger                                  = JDLogger.getLogger();
 
-    private DownloadTable internalTable;
+    private DownloadTable             internalTable;
 
-    private Timer asyncUpdate;
+    private Timer                     asyncUpdate;
 
-    private long latestAsyncUpdate;
+    private long                      latestAsyncUpdate;
 
-    private FilePackageInfo filePackageInfo;
+    private FilePackageInfo           filePackageInfo;
 
-    private JScrollPane scrollPane;
+    private JScrollPane               scrollPane;
 
-    private boolean notvisible = true;
+    private boolean                   notvisible                              = true;
 
     private DownloadLinksPanel() {
         super(new MigLayout("ins 0, wrap 1", "[grow, fill]", "[grow, fill]"));
@@ -105,14 +106,13 @@ public class DownloadLinksPanel extends SwitchPanel implements ActionListener, D
         MainTabbedPane.getInstance().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).remove(ActionController.getToolBarAction("action.downloadview.movedown").getKeyStroke());
         MainTabbedPane.getInstance().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).remove(ActionController.getToolBarAction("action.downloadview.movetobottom").getKeyStroke());
     }
-    
+
     /**
-     * Override the requestFocusInWindow to request 
-     * the Focus in the underlying internal Table
+     * Override the requestFocusInWindow to request the Focus in the underlying
+     * internal Table
      */
     @Override
-    public boolean requestFocusInWindow()
-    {
+    public boolean requestFocusInWindow() {
         return internalTable.requestFocusInWindow();
     }
 
@@ -125,7 +125,7 @@ public class DownloadLinksPanel extends SwitchPanel implements ActionListener, D
         return INSTANCE;
     }
 
-    public void move(byte mode) {
+    public void move(MOVE mode) {
         ArrayList<FilePackage> fps = internalTable.getSelectedFilePackages();
         ArrayList<DownloadLink> links = internalTable.getSelectedDownloadLinks();
         if (fps.size() > 0) DownloadController.getInstance().move(fps, null, mode);
@@ -202,63 +202,63 @@ public class DownloadLinksPanel extends SwitchPanel implements ActionListener, D
             asyncUpdate.restart();
             return;
         }
-        synchronized (DownloadController.ControllerLock) {
-            synchronized (jobObjects) {
-                switch (id) {
-                case REFRESH_DATA_AND_STRUCTURE_CHANGED: {
+
+        synchronized (jobObjects) {
+            switch (id) {
+            case REFRESH_DATA_AND_STRUCTURE_CHANGED: {
+                changed = true;
+                this.jobID = REFRESH_DATA_AND_STRUCTURE_CHANGED;
+                this.jobObjects.clear();
+                break;
+            }
+            case REFRESH_ALL_DATA_CHANGED: {
+                switch (this.jobID) {
+                case REFRESH_DATA_AND_STRUCTURE_CHANGED:
+                case REFRESH_ALL_DATA_CHANGED:
+                    break;
+                case NO_JOB:
+                case REFRESH_SPECIFIED_LINKS:
                     changed = true;
-                    this.jobID = REFRESH_DATA_AND_STRUCTURE_CHANGED;
+                    this.jobID = REFRESH_ALL_DATA_CHANGED;
                     this.jobObjects.clear();
                     break;
                 }
-                case REFRESH_ALL_DATA_CHANGED: {
-                    switch (this.jobID) {
-                    case REFRESH_DATA_AND_STRUCTURE_CHANGED:
-                    case REFRESH_ALL_DATA_CHANGED:
-                        break;
-                    case NO_JOB:
-                    case REFRESH_SPECIFIED_LINKS:
-                        changed = true;
-                        this.jobID = REFRESH_ALL_DATA_CHANGED;
-                        this.jobObjects.clear();
-                        break;
+                break;
+            }
+            case REFRESH_SPECIFIED_LINKS: {
+                switch (this.jobID) {
+                case REFRESH_DATA_AND_STRUCTURE_CHANGED:
+                case REFRESH_ALL_DATA_CHANGED:
+                    break;
+                case NO_JOB:
+                case REFRESH_SPECIFIED_LINKS:
+                    this.jobID = REFRESH_SPECIFIED_LINKS;
+                    if (Param instanceof DownloadLink) {
+                        if (!jobObjects.contains(Param)) {
+                            changed = true;
+                            jobObjects.add(Param);
+                        }
+                        if (!jobObjects.contains(((DownloadLink) Param).getFilePackage())) {
+                            changed = true;
+                            jobObjects.add(((DownloadLink) Param).getFilePackage());
+                        }
+                    } else if (Param instanceof ArrayList) {
+                        for (DownloadLink dl : (ArrayList<DownloadLink>) Param) {
+                            if (!jobObjects.contains(dl)) {
+                                changed = true;
+                                jobObjects.add(dl);
+                            }
+                            if (!jobObjects.contains(dl.getFilePackage())) {
+                                changed = true;
+                                jobObjects.add(dl.getFilePackage());
+                            }
+                        }
                     }
                     break;
                 }
-                case REFRESH_SPECIFIED_LINKS: {
-                    switch (this.jobID) {
-                    case REFRESH_DATA_AND_STRUCTURE_CHANGED:
-                    case REFRESH_ALL_DATA_CHANGED:
-                        break;
-                    case NO_JOB:
-                    case REFRESH_SPECIFIED_LINKS:
-                        this.jobID = REFRESH_SPECIFIED_LINKS;
-                        if (Param instanceof DownloadLink) {
-                            if (!jobObjects.contains(Param)) {
-                                changed = true;
-                                jobObjects.add(Param);
-                            }
-                            if (!jobObjects.contains(((DownloadLink) Param).getFilePackage())) {
-                                changed = true;
-                                jobObjects.add(((DownloadLink) Param).getFilePackage());
-                            }
-                        } else if (Param instanceof ArrayList) {
-                            for (DownloadLink dl : (ArrayList<DownloadLink>) Param) {
-                                if (!jobObjects.contains(dl)) {
-                                    changed = true;
-                                    jobObjects.add(dl);
-                                }
-                                if (!jobObjects.contains(dl.getFilePackage())) {
-                                    changed = true;
-                                    jobObjects.add(dl.getFilePackage());
-                                }
-                            }
-                        }
-                        break;
-                    }
-                }
-                }
             }
+            }
+
         }
         if (!changed && (System.currentTimeMillis() - latestAsyncUpdate > UPDATE_TIMING + 100)) {
             fireTableTask();
@@ -268,13 +268,13 @@ public class DownloadLinksPanel extends SwitchPanel implements ActionListener, D
 
     private void fireTableTask() {
         latestAsyncUpdate = System.currentTimeMillis();
-        synchronized (DownloadController.ControllerLock) {
-            synchronized (jobObjects) {
-                if (isShown() && jobID != NO_JOB) fireTableChanged(this.jobID, this.jobObjects);
-                this.jobID = NO_JOB;
-                this.jobObjects.clear();
-            }
+
+        synchronized (jobObjects) {
+            if (isShown() && jobID != NO_JOB) fireTableChanged(this.jobID, this.jobObjects);
+            this.jobID = NO_JOB;
+            this.jobObjects.clear();
         }
+
     }
 
     public void actionPerformed(final ActionEvent e) {

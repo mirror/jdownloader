@@ -1,4 +1,4 @@
-package jd.gui.swing.jdgui.views.downloads;
+package org.jdownloader.gui.views.downloads.context;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -74,7 +74,6 @@ public class RatedMenuItem implements ActionListener {
     private static final Storage STORAGE = JSonStorage.getPlainStorage("RatedMenuItem");
 
     public static RatedMenuItem createSeparator() {
-        // TODO Auto-generated method stub
         return new RatedMenuItem();
     }
 
@@ -205,12 +204,10 @@ public class RatedMenuItem implements ActionListener {
     }
 
     public int getRating() {
-        // TODO Auto-generated method stub
         return this.rating;
     }
 
     public boolean isSeparator() {
-        // TODO Auto-generated method stub
         return this.sep;
     }
 

@@ -26,4 +26,9 @@ public class SizeColumn extends ExtFileSizeColumn<PackageLinkNode> {
         }
     }
 
+    @Override
+    public boolean isEnabled(PackageLinkNode obj) {
+        return obj.isEnabled();
+    }
+
 }

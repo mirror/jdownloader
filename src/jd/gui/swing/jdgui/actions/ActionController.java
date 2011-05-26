@@ -28,6 +28,7 @@ import jd.config.Property;
 import jd.controlling.ClipboardHandler;
 import jd.controlling.DownloadController;
 import jd.controlling.DownloadWatchDog;
+import jd.controlling.IOEQ;
 import jd.controlling.JDController;
 import jd.controlling.JSonWrapper;
 import jd.controlling.LinkGrabberController;
@@ -132,7 +133,7 @@ public class ActionController {
 
         };
 
-        new ThreadedAction(_GUI._.action_start_downloads(), "toolbar.control.start", "media-playback-start") {
+        new ToolBarAction(_GUI._.action_start_downloads(), "toolbar.control.start", "media-playback-start") {
             private static final long serialVersionUID = 1683169623090750199L;
 
             @Override
@@ -157,20 +158,25 @@ public class ActionController {
             }
 
             @Override
-            public void threadedActionPerformed(final ActionEvent e) {
-                if (!LinkGrabberPanel.getLinkGrabber().isNotVisible()) {
-                    ArrayList<LinkGrabberFilePackage> fps = new ArrayList<LinkGrabberFilePackage>(LinkGrabberController.getInstance().getPackages());
-                    synchronized (LinkGrabberController.ControllerLock) {
-                        synchronized (LinkGrabberPanel.getLinkGrabber()) {
-                            for (final LinkGrabberFilePackage fp : fps) {
-                                LinkGrabberPanel.getLinkGrabber().confirmPackage(fp, null, -1);
+            public void onAction(final ActionEvent e) {
+                IOEQ.add(new Runnable() {
+                    public void run() {
+                        if (!LinkGrabberPanel.getLinkGrabber().isNotVisible()) {
+                            ArrayList<LinkGrabberFilePackage> fps = new ArrayList<LinkGrabberFilePackage>(LinkGrabberController.getInstance().getPackages());
+                            synchronized (LinkGrabberController.ControllerLock) {
+                                synchronized (LinkGrabberPanel.getLinkGrabber()) {
+                                    for (final LinkGrabberFilePackage fp : fps) {
+                                        LinkGrabberPanel.getLinkGrabber().confirmPackage(fp, null, -1);
+                                    }
+                                }
                             }
+                            fps = null;
+                            UserIF.getInstance().requestPanel(UserIF.Panels.DOWNLOADLIST, null);
                         }
+                        DownloadWatchDog.getInstance().startDownloads();
                     }
-                    fps = null;
-                    UserIF.getInstance().requestPanel(UserIF.Panels.DOWNLOADLIST, null);
-                }
-                DownloadWatchDog.getInstance().startDownloads();
+                });
+
             }
 
             @Override
@@ -247,7 +253,7 @@ public class ActionController {
 
         };
 
-        new ThreadedAction(_GUI._.action_stop_downloads(), "toolbar.control.stop", "media-playback-stop") {
+        new ToolBarAction(_GUI._.action_stop_downloads(), "toolbar.control.stop", "media-playback-stop") {
             private static final long serialVersionUID = 1409143759105090751L;
 
             @Override
@@ -273,38 +279,45 @@ public class ActionController {
             }
 
             @Override
-            public void threadedActionPerformed(final ActionEvent e) {
-                if (DownloadWatchDog.getInstance().getStateMonitor().hasPassed(DownloadWatchDog.STOPPING_STATE)) return;
-                final ProgressController pc = new ProgressController(_GUI._.gui_downloadstop(), null);
-                final Thread test = new Thread() {
-                    @Override
+            public void onAction(final ActionEvent e) {
+                IOEQ.add(new Runnable() {
+
                     public void run() {
-                        try {
-                            while (true) {
-                                pc.increase(1);
+                        if (DownloadWatchDog.getInstance().getStateMonitor().hasPassed(DownloadWatchDog.STOPPING_STATE)) return;
+                        final ProgressController pc = new ProgressController(_GUI._.gui_downloadstop(), null);
+                        final Thread test = new Thread() {
+                            @Override
+                            public void run() {
                                 try {
-                                    Thread.sleep(1000);
-                                } catch (final InterruptedException e) {
-                                    break;
-                                }
-                                if (isInterrupted() || DownloadWatchDog.getInstance().getStateMonitor().isFinal() || DownloadWatchDog.getInstance().getStateMonitor().isStartState()) {
-                                    break;
+                                    while (true) {
+                                        pc.increase(1);
+                                        try {
+                                            Thread.sleep(1000);
+                                        } catch (final InterruptedException e) {
+                                            break;
+                                        }
+                                        if (isInterrupted() || DownloadWatchDog.getInstance().getStateMonitor().isFinal() || DownloadWatchDog.getInstance().getStateMonitor().isStartState()) {
+                                            break;
+                                        }
+                                    }
+                                } finally {
+                                    pc.doFinalize();
                                 }
                             }
-                        } finally {
-                            pc.doFinalize();
-                        }
-                    }
-                };
-                test.start();
-                DownloadWatchDog.getInstance().getStateMonitor().executeOnceOnState(new Runnable() {
+                        };
+                        test.start();
+                        DownloadWatchDog.getInstance().getStateMonitor().executeOnceOnState(new Runnable() {
 
-                    public void run() {
-                        test.interrupt();
+                            public void run() {
+                                test.interrupt();
+                            }
+
+                        }, DownloadWatchDog.STOPPED_STATE);
+                        DownloadWatchDog.getInstance().stopDownloads();
                     }
 
-                }, DownloadWatchDog.STOPPED_STATE);
-                DownloadWatchDog.getInstance().stopDownloads();
+                });
+
             }
 
             @Override
@@ -324,7 +337,7 @@ public class ActionController {
 
         };
 
-        new ThreadedAction(_GUI._.action_reconnect_invoke(), "toolbar.interaction.reconnect", "reconnect") {
+        new ToolBarAction(_GUI._.action_reconnect_invoke(), "toolbar.interaction.reconnect", "reconnect") {
             private static final long serialVersionUID = -1295253607970814759L;
 
             @Override
@@ -359,8 +372,9 @@ public class ActionController {
             }
 
             @Override
-            public void threadedActionPerformed(final ActionEvent e) {
+            public void onAction(final ActionEvent e) {
                 if (JDFlags.hasSomeFlags(UserIO.getInstance().requestConfirmDialog(0, _GUI._.gui_reconnect_confirm()), UserIO.RETURN_OK, UserIO.RETURN_DONT_SHOW_AGAIN)) {
+                    /* forceReconnect is running in its own thread */
                     new Thread(new Runnable() {
                         public void run() {
                             Reconnecter.getInstance().forceReconnect();
@@ -386,7 +400,7 @@ public class ActionController {
 
         };
 
-        new ThreadedAction(_GUI._.action_start_update(), "toolbar.interaction.update", "update") {
+        new ToolBarAction(_GUI._.action_start_update(), "toolbar.interaction.update", "update") {
             private static final long serialVersionUID = 4359802245569811800L;
 
             @Override
@@ -394,7 +408,8 @@ public class ActionController {
             }
 
             @Override
-            public void threadedActionPerformed(final ActionEvent e) {
+            public void onAction(final ActionEvent e) {
+                /* WebUpdate is running in its own Thread */
                 WebUpdate.doUpdateCheck(true);
             }
 
@@ -527,7 +542,7 @@ public class ActionController {
 
         };
 
-        new ThreadedAction(_GUI._.action_stopsign(), "toolbar.control.stopmark", "event") {
+        new ToolBarAction(_GUI._.action_stopsign(), "toolbar.control.stopmark", "event") {
             private static final long serialVersionUID = 4359802245569811800L;
 
             @Override
@@ -556,20 +571,27 @@ public class ActionController {
             }
 
             @Override
-            public void threadedActionPerformed(final ActionEvent e) {
-                if (DownloadWatchDog.getInstance().isStopMarkSet()) {
-                    DownloadWatchDog.getInstance().setStopMark(null);
-                } else if (DownloadWatchDog.getInstance().getActiveDownloads() > 0) {
-                    DownloadWatchDog.getInstance().setStopMark(DownloadWatchDog.STOPMARK.RANDOM);
-                } else {
-                    this.setSelected(false);
-                }
-                /* TODO:TODO */
-                // if (DownloadWatchDog.getInstance().getDownloadStatus() !=
-                // DownloadWatchDog.STATE.RUNNING &&
-                // !DownloadWatchDog.getInstance().isStopMarkSet()) {
-                // this.setEnabled(false);
-                // }
+            public void onAction(final ActionEvent e) {
+                IOEQ.add(new Runnable() {
+
+                    public void run() {
+                        if (DownloadWatchDog.getInstance().isStopMarkSet()) {
+                            DownloadWatchDog.getInstance().setStopMark(null);
+                        } else if (DownloadWatchDog.getInstance().getActiveDownloads() > 0) {
+                            DownloadWatchDog.getInstance().setStopMark(DownloadWatchDog.STOPMARK.RANDOM);
+                        } else {
+                            setSelected(false);
+                        }
+                        /* TODO:TODO */
+                        // if
+                        // (DownloadWatchDog.getInstance().getDownloadStatus()
+                        // !=
+                        // DownloadWatchDog.STATE.RUNNING &&
+                        // !DownloadWatchDog.getInstance().isStopMarkSet()) {
+                        // this.setEnabled(false);
+                        // }
+                    }
+                });
             }
 
             @Override
@@ -589,7 +611,7 @@ public class ActionController {
 
         };
 
-        new ThreadedAction(_GUI._.action_move_to_bottom(), "action.downloadview.movetobottom", "go-bottom") {
+        new ToolBarAction(_GUI._.action_move_to_bottom(), "action.downloadview.movetobottom", "go-bottom") {
             private static final long serialVersionUID = 6181260839200699153L;
 
             @Override
@@ -597,13 +619,20 @@ public class ActionController {
             }
 
             @Override
-            public void threadedActionPerformed(final ActionEvent e) {
-                if (!LinkGrabberPanel.getLinkGrabber().isNotVisible()) {
-                    LinkGrabberPanel.getLinkGrabber().move(LinkGrabberController.MOVE_BOTTOM);
-                    LinkGrabberController.getInstance().throwRefresh();
-                } else if (!DownloadLinksPanel.getDownloadLinksPanel().isNotVisible()) {
-                    DownloadLinksPanel.getDownloadLinksPanel().move(DownloadController.MOVE_BOTTOM);
-                }
+            public void onAction(final ActionEvent e) {
+                IOEQ.add(new Runnable() {
+
+                    public void run() {
+                        if (!LinkGrabberPanel.getLinkGrabber().isNotVisible()) {
+                            LinkGrabberPanel.getLinkGrabber().move(LinkGrabberController.MOVE_BOTTOM);
+                            LinkGrabberController.getInstance().throwRefresh();
+                        } else if (!DownloadLinksPanel.getDownloadLinksPanel().isNotVisible()) {
+                            DownloadLinksPanel.getDownloadLinksPanel().move(DownloadController.MOVE.BOTTOM);
+                        }
+                    }
+
+                });
+
             }
 
             @Override
@@ -621,7 +650,7 @@ public class ActionController {
                 return _GUI._.action_move_to_bottom_tooltip();
             }
         };
-        new ThreadedAction(_GUI._.action_move_to_top(), "action.downloadview.movetotop", "go-top") {
+        new ToolBarAction(_GUI._.action_move_to_top(), "action.downloadview.movetotop", "go-top") {
             private static final long serialVersionUID = 6181260839200699153L;
 
             @Override
@@ -629,13 +658,17 @@ public class ActionController {
             }
 
             @Override
-            public void threadedActionPerformed(final ActionEvent e) {
-                if (!LinkGrabberPanel.getLinkGrabber().isNotVisible()) {
-                    LinkGrabberPanel.getLinkGrabber().move(LinkGrabberController.MOVE_TOP);
-                    LinkGrabberController.getInstance().throwRefresh();
-                } else if (!DownloadLinksPanel.getDownloadLinksPanel().isNotVisible()) {
-                    DownloadLinksPanel.getDownloadLinksPanel().move(DownloadController.MOVE_TOP);
-                }
+            public void onAction(final ActionEvent e) {
+                IOEQ.add(new Runnable() {
+                    public void run() {
+                        if (!LinkGrabberPanel.getLinkGrabber().isNotVisible()) {
+                            LinkGrabberPanel.getLinkGrabber().move(LinkGrabberController.MOVE_TOP);
+                            LinkGrabberController.getInstance().throwRefresh();
+                        } else if (!DownloadLinksPanel.getDownloadLinksPanel().isNotVisible()) {
+                            DownloadLinksPanel.getDownloadLinksPanel().move(DownloadController.MOVE.TOP);
+                        }
+                    }
+                });
             }
 
             @Override
@@ -654,7 +687,7 @@ public class ActionController {
             }
         };
 
-        new ThreadedAction(_GUI._.action_move_up(), "action.downloadview.moveup", "go-up") {
+        new ToolBarAction(_GUI._.action_move_up(), "action.downloadview.moveup", "go-up") {
             private static final long serialVersionUID = 6181260839200699153L;
 
             @Override
@@ -662,13 +695,18 @@ public class ActionController {
             }
 
             @Override
-            public void threadedActionPerformed(final ActionEvent e) {
-                if (!LinkGrabberPanel.getLinkGrabber().isNotVisible()) {
-                    LinkGrabberPanel.getLinkGrabber().move(LinkGrabberController.MOVE_UP);
-                    LinkGrabberController.getInstance().throwRefresh();
-                } else if (!DownloadLinksPanel.getDownloadLinksPanel().isNotVisible()) {
-                    DownloadLinksPanel.getDownloadLinksPanel().move(DownloadController.MOVE_UP);
-                }
+            public void onAction(final ActionEvent e) {
+                IOEQ.add(new Runnable() {
+                    public void run() {
+                        if (!LinkGrabberPanel.getLinkGrabber().isNotVisible()) {
+                            LinkGrabberPanel.getLinkGrabber().move(LinkGrabberController.MOVE_UP);
+                            LinkGrabberController.getInstance().throwRefresh();
+                        } else if (!DownloadLinksPanel.getDownloadLinksPanel().isNotVisible()) {
+                            DownloadLinksPanel.getDownloadLinksPanel().move(DownloadController.MOVE.UP);
+                        }
+                    }
+                });
+
             }
 
             @Override
@@ -686,7 +724,7 @@ public class ActionController {
                 return _GUI._.action_move_up_tooltip();
             }
         };
-        new ThreadedAction(_GUI._.action_move_down(), "action.downloadview.movedown", "go-down") {
+        new ToolBarAction(_GUI._.action_move_down(), "action.downloadview.movedown", "go-down") {
             private static final long serialVersionUID = 6181260839200699153L;
 
             @Override
@@ -694,13 +732,19 @@ public class ActionController {
             }
 
             @Override
-            public void threadedActionPerformed(final ActionEvent e) {
-                if (!LinkGrabberPanel.getLinkGrabber().isNotVisible()) {
-                    LinkGrabberPanel.getLinkGrabber().move(LinkGrabberController.MOVE_DOWN);
-                    LinkGrabberController.getInstance().throwRefresh();
-                } else if (!DownloadLinksPanel.getDownloadLinksPanel().isNotVisible()) {
-                    DownloadLinksPanel.getDownloadLinksPanel().move(DownloadController.MOVE_DOWN);
-                }
+            public void onAction(final ActionEvent e) {
+                IOEQ.add(new Runnable() {
+
+                    public void run() {
+                        if (!LinkGrabberPanel.getLinkGrabber().isNotVisible()) {
+                            LinkGrabberPanel.getLinkGrabber().move(LinkGrabberController.MOVE_DOWN);
+                            LinkGrabberController.getInstance().throwRefresh();
+                        } else if (!DownloadLinksPanel.getDownloadLinksPanel().isNotVisible()) {
+                            DownloadLinksPanel.getDownloadLinksPanel().move(DownloadController.MOVE.DOWN);
+                        }
+                    }
+                });
+
             }
 
             @Override
@@ -719,7 +763,7 @@ public class ActionController {
             }
         };
 
-        new ThreadedAction(_GUI._.action_add_premium_account(), "action.premiumview.addacc", "add") {
+        new ToolBarAction(_GUI._.action_add_premium_account(), "action.premiumview.addacc", "add") {
 
             private static final long serialVersionUID = -4407938288408350792L;
 
@@ -728,7 +772,11 @@ public class ActionController {
             }
 
             @Override
-            public void threadedActionPerformed(final ActionEvent e) {
+            public void onAction(final ActionEvent e) {
+                /*
+                 * no need for IOEQ or Thread, as we want to show Dialog and
+                 * that blocks EDT anyway
+                 */
                 if (e.getSource() instanceof PluginForHost) {
                     AccountDialog.showDialog((PluginForHost) e.getSource());
                 } else {
@@ -751,7 +799,7 @@ public class ActionController {
                 return _GUI._.action_add_premium_account_tooltip();
             }
         };
-        new ThreadedAction(_GUI._.action_buy_premium_account(), "action.premium.buy", "buy") {
+        new ToolBarAction(_GUI._.action_buy_premium_account(), "action.premium.buy", "buy") {
 
             private static final long serialVersionUID = -4407938288408350792L;
 
@@ -760,7 +808,7 @@ public class ActionController {
             }
 
             @Override
-            public void threadedActionPerformed(final ActionEvent e) {
+            public void onAction(final ActionEvent e) {
                 int index = 0;
                 final ArrayList<HostPluginWrapper> plugins = JDUtilities.getPremiumPluginsForHost();
                 Collections.sort(plugins);

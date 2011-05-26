@@ -32,7 +32,7 @@ import jd.config.Property;
 import jd.controlling.JSonWrapper;
 import jd.gui.UserIO;
 import jd.gui.swing.GuiRunnable;
-import jd.gui.swing.jdgui.actions.ThreadedAction;
+import jd.gui.swing.jdgui.actions.ToolBarAction;
 import jd.gui.swing.jdgui.interfaces.DroppedPanel;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.gui.swing.jdgui.views.ViewToolbar;
@@ -70,7 +70,7 @@ public class CustomizerGui extends SwitchPanel {
     }
 
     private void initActions() {
-        new ThreadedAction("Add", "action.customize.addsetting", "add") {
+        new ToolBarAction("Add", "action.customize.addsetting", "add") {
             private static final long serialVersionUID = 2902582906883565245L;
 
             @Override
@@ -78,12 +78,12 @@ public class CustomizerGui extends SwitchPanel {
             }
 
             @Override
-            public void threadedActionPerformed(final ActionEvent e) {
-                table.editingStopped(null);
+            public void onAction(final ActionEvent e) {
                 new GuiRunnable<Object>() {
 
                     @Override
                     public Object runSave() {
+                        table.editingStopped(null);
                         String result = UserIO.getInstance().requestInputDialog(T._.action_customize_addsetting_ask());
                         if (result != null) {
                             CustomizeSetting.getSettings().add(new CustomizeSetting(result));
@@ -111,7 +111,7 @@ public class CustomizerGui extends SwitchPanel {
             }
         };
 
-        new ThreadedAction("Delete", "action.customize.removesetting", "delete") {
+        new ToolBarAction("Delete", "action.customize.removesetting", "delete") {
             private static final long serialVersionUID = -961227177718839351L;
 
             @Override
@@ -119,17 +119,26 @@ public class CustomizerGui extends SwitchPanel {
             }
 
             @Override
-            public void threadedActionPerformed(ActionEvent e) {
-                int[] rows = table.getSelectedRows();
-                table.editingStopped(null);
-                if (rows.length == 0) return;
-                if (JDFlags.hasSomeFlags(UserIO.getInstance().requestConfirmDialog(0, T._.action_customize_removesetting_ask(rows.length)), UserIO.RETURN_OK, UserIO.RETURN_DONT_SHOW_AGAIN)) {
-                    ArrayList<CustomizeSetting> settings = CustomizeSetting.getSettings();
-                    for (int i = rows.length - 1; i >= 0; --i) {
-                        settings.remove(rows[i]);
+            public void onAction(ActionEvent e) {
+                new GuiRunnable<Object>() {
+
+                    @Override
+                    public Object runSave() {
+                        int[] rows = table.getSelectedRows();
+                        table.editingStopped(null);
+                        if (rows.length == 0) return null;
+                        if (JDFlags.hasSomeFlags(UserIO.getInstance().requestConfirmDialog(0, T._.action_customize_removesetting_ask(rows.length)), UserIO.RETURN_OK, UserIO.RETURN_DONT_SHOW_AGAIN)) {
+                            ArrayList<CustomizeSetting> settings = CustomizeSetting.getSettings();
+                            for (int i = rows.length - 1; i >= 0; --i) {
+                                settings.remove(rows[i]);
+                            }
+                        }
+                        table.getModel().refreshData();
+                        return null;
+
                     }
-                }
-                table.getModel().refreshData();
+                }.start();
+
             }
 
             @Override

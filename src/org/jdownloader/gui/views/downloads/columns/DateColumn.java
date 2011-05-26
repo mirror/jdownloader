@@ -78,4 +78,9 @@ public abstract class DateColumn extends ExtTextColumn<PackageLinkNode> {
     }
 
     public abstract long getDate(PackageLinkNode node);
+
+    @Override
+    public boolean isEnabled(PackageLinkNode obj) {
+        return obj.isEnabled();
+    }
 }

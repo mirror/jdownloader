@@ -18,11 +18,13 @@ package jd.gui.swing.jdgui.menu.actions;
 
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
+import java.util.LinkedList;
 
 import jd.controlling.DownloadController;
+import jd.controlling.IOEQ;
 import jd.controlling.LinkGrabberController;
 import jd.gui.UserIO;
-import jd.gui.swing.jdgui.actions.ThreadedAction;
+import jd.gui.swing.jdgui.actions.ToolBarAction;
 import jd.gui.swing.jdgui.views.linkgrabber.LinkGrabberPanel;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
@@ -31,7 +33,7 @@ import jd.plugins.LinkStatus;
 
 import org.jdownloader.gui.translate._GUI;
 
-public class RemoveOfflineAction extends ThreadedAction {
+public class RemoveOfflineAction extends ToolBarAction {
 
     private static final long serialVersionUID = 4181319974731148936L;
 
@@ -44,35 +46,38 @@ public class RemoveOfflineAction extends ThreadedAction {
     }
 
     @Override
-    public void threadedActionPerformed(ActionEvent e) {
-        if (!UserIO.isOK(UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.DONT_SHOW_AGAIN_IGNORES_CANCEL, _GUI._.jd_gui_swing_jdgui_menu_actions_RemoveOfflineAction_message()))) return;
+    public void onAction(ActionEvent e) {
+        IOEQ.add(new Runnable() {
 
-        if (!LinkGrabberPanel.getLinkGrabber().isNotVisible()) {
-            synchronized (LinkGrabberController.ControllerLock) {
-                synchronized (LinkGrabberController.getInstance().getPackages()) {
-                    ArrayList<LinkGrabberFilePackage> selected_packages = new ArrayList<LinkGrabberFilePackage>(LinkGrabberController.getInstance().getPackages());
-                    selected_packages.add(LinkGrabberController.getInstance().getFilterPackage());
-                    for (LinkGrabberFilePackage fp2 : selected_packages) {
-                        fp2.removeOffline();
-                    }
-                }
-            }
-        } else {
-            DownloadController dlc = DownloadController.getInstance();
-            ArrayList<DownloadLink> downloadstodelete = new ArrayList<DownloadLink>();
-            synchronized (dlc.getPackages()) {
-                for (FilePackage fp : dlc.getPackages()) {
-                    synchronized (fp.getDownloadLinkList()) {
-                        for (DownloadLink dl : fp.getDownloadLinkList()) {
-                            if (dl.getLinkStatus().hasStatus(LinkStatus.ERROR_FILE_NOT_FOUND)) downloadstodelete.add(dl);
+            public void run() {
+                if (!UserIO.isOK(UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.DONT_SHOW_AGAIN_IGNORES_CANCEL, _GUI._.jd_gui_swing_jdgui_menu_actions_RemoveOfflineAction_message()))) return;
+
+                if (!LinkGrabberPanel.getLinkGrabber().isNotVisible()) {
+                    synchronized (LinkGrabberController.ControllerLock) {
+                        synchronized (LinkGrabberController.getInstance().getPackages()) {
+                            ArrayList<LinkGrabberFilePackage> selected_packages = new ArrayList<LinkGrabberFilePackage>(LinkGrabberController.getInstance().getPackages());
+                            selected_packages.add(LinkGrabberController.getInstance().getFilterPackage());
+                            for (LinkGrabberFilePackage fp2 : selected_packages) {
+                                fp2.removeOffline();
+                            }
                         }
                     }
+                } else {
+                    DownloadController dlc = DownloadController.getInstance();
+                    LinkedList<DownloadLink> downloadstodelete = new LinkedList<DownloadLink>();
+                    synchronized (DownloadController.ACCESSLOCK) {
+                        for (FilePackage fp : dlc.getPackages()) {
+                            for (DownloadLink dl : fp.getDownloadLinkList()) {
+                                if (dl.getLinkStatus().hasStatus(LinkStatus.ERROR_FILE_NOT_FOUND)) downloadstodelete.add(dl);
+                            }
+                        }
+                    }
+                    for (DownloadLink dl : downloadstodelete) {
+                        dl.getFilePackage().remove(dl);
+                    }
                 }
             }
-            for (DownloadLink dl : downloadstodelete) {
-                dl.getFilePackage().remove(dl);
-            }
-        }
+        });
     }
 
     @Override

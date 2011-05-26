@@ -119,15 +119,17 @@ public class JDPremServController {
     /* get the filepackage to use for jdpremserv */
     private FilePackage getPremServFilePackage() {
         FilePackage found = null;
-        for (final FilePackage current : DownloadController.getInstance().getPackages()) {
-            if (current.getName().equalsIgnoreCase(JDPremServController.PackageName)) {
-                found = current;
-                break;
+        synchronized (DownloadController.ACCESSLOCK) {
+            for (final FilePackage current : DownloadController.getInstance().getPackages()) {
+                if (current.getName().equalsIgnoreCase(JDPremServController.PackageName)) {
+                    found = current;
+                    break;
+                }
             }
-        }
-        if (found == null) {
-            found = FilePackage.getInstance();
-            found.setName(JDPremServController.PackageName);
+            if (found == null) {
+                found = FilePackage.getInstance();
+                found.setName(JDPremServController.PackageName);
+            }
         }
         /* we dont want postprocessing for this filepackage */
         found.setPostProcessing(false);

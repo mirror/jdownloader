@@ -144,7 +144,7 @@ public class TableTransferHandler extends TransferHandler {
                     m.setIcon(NewTheme.I().getIcon("go-top", 16));
                     m.addActionListener(new ActionListener() {
                         public void actionPerformed(ActionEvent e) {
-                            DownloadController.getInstance().move(draggingObjects, current, DownloadController.MOVE_BEGIN);
+                            DownloadController.getInstance().move(draggingObjects, current, DownloadController.MOVE.BEGIN);
                         }
                     });
 
@@ -152,7 +152,7 @@ public class TableTransferHandler extends TransferHandler {
                     m.setIcon(NewTheme.I().getIcon("go-bottom", 16));
                     m.addActionListener(new ActionListener() {
                         public void actionPerformed(ActionEvent e) {
-                            DownloadController.getInstance().move(draggingObjects, current, DownloadController.MOVE_END);
+                            DownloadController.getInstance().move(draggingObjects, current, DownloadController.MOVE.END);
                         }
                     });
 
@@ -163,7 +163,7 @@ public class TableTransferHandler extends TransferHandler {
                     m.setIcon(NewTheme.I().getIcon("go-top", 16));
                     m.addActionListener(new ActionListener() {
                         public void actionPerformed(ActionEvent e) {
-                            DownloadController.getInstance().move(draggingObjects, current, DownloadController.MOVE_BEFORE);
+                            DownloadController.getInstance().move(draggingObjects, current, DownloadController.MOVE.BEFORE);
                         }
                     });
 
@@ -171,7 +171,7 @@ public class TableTransferHandler extends TransferHandler {
                     m.setIcon(NewTheme.I().getIcon("go-bottom", 16));
                     m.addActionListener(new ActionListener() {
                         public void actionPerformed(ActionEvent e) {
-                            DownloadController.getInstance().move(draggingObjects, current, DownloadController.MOVE_AFTER);
+                            DownloadController.getInstance().move(draggingObjects, current, DownloadController.MOVE.AFTER);
                         }
                     });
                 }
@@ -189,7 +189,7 @@ public class TableTransferHandler extends TransferHandler {
                 m.setIcon(NewTheme.I().getIcon("go-top", 16));
                 m.addActionListener(new ActionListener() {
                     public void actionPerformed(ActionEvent e) {
-                        DownloadController.getInstance().move(draggingObjects, current, DownloadController.MOVE_BEFORE);
+                        DownloadController.getInstance().move(draggingObjects, current, DownloadController.MOVE.BEFORE);
                     }
 
                 });
@@ -198,7 +198,7 @@ public class TableTransferHandler extends TransferHandler {
                 m.setIcon(NewTheme.I().getIcon("go-bottom", 16));
                 m.addActionListener(new ActionListener() {
                     public void actionPerformed(ActionEvent e) {
-                        DownloadController.getInstance().move(draggingObjects, current, DownloadController.MOVE_AFTER);
+                        DownloadController.getInstance().move(draggingObjects, current, DownloadController.MOVE.AFTER);
                     }
                 });
 

@@ -24,9 +24,10 @@ import java.util.ArrayList;
 
 import jd.config.SubConfiguration;
 import jd.controlling.DownloadController;
+import jd.controlling.IOEQ;
 import jd.crypt.JDCrypt;
 import jd.gui.UserIO;
-import jd.gui.swing.jdgui.actions.ThreadedAction;
+import jd.gui.swing.jdgui.actions.ToolBarAction;
 import jd.nutils.JDHash;
 import jd.nutils.io.JDFileFilter;
 import jd.nutils.io.JDIO;
@@ -35,7 +36,7 @@ import jd.utils.JDHexUtils;
 
 import org.jdownloader.gui.translate._GUI;
 
-public class BackupLinkListAction extends ThreadedAction {
+public class BackupLinkListAction extends ToolBarAction {
 
     private static final long serialVersionUID = 823930266263085474L;
 
@@ -52,27 +53,35 @@ public class BackupLinkListAction extends ThreadedAction {
     }
 
     @Override
-    public void threadedActionPerformed(ActionEvent e) {
-        ArrayList<FilePackage> packages = DownloadController.getInstance().getPackages();
-        try {
-            // Serialize to a byte array
-            ByteArrayOutputStream bos = new ByteArrayOutputStream();
-            ObjectOutputStream out = new ObjectOutputStream(bos);
-            synchronized (DownloadController.ControllerLock) {
-                out.writeObject(packages);
+    public void onAction(ActionEvent e) {
+        IOEQ.add(new Runnable() {
+
+            public void run() {
+                try {
+                    // Serialize to a byte array
+                    ByteArrayOutputStream bos = new ByteArrayOutputStream();
+                    ObjectOutputStream out = new ObjectOutputStream(bos);
+                    synchronized (DownloadController.ACCESSLOCK) {
+                        /* MUST BE ARRAYLIST HERE */
+                        ArrayList<FilePackage> ret = new ArrayList<FilePackage>(DownloadController.getInstance().getPackages());
+                        out.writeObject(ret);
+                    }
+                    out.close();
+
+                    File[] files = UserIO.getInstance().requestFileChooser("_LOADSAVEDLC", null, null, new JDFileFilter(null, ".jdc", true), null, null, UserIO.SAVE_DIALOG);
+                    if (files == null) return;
+
+                    String defaultpw = SubConfiguration.getConfig("JDC_CONFIG").getStringProperty("password", "jddefault");
+                    String pw = UserIO.getInstance().requestInputDialog(UserIO.NO_COUNTDOWN, _GUI._.jd_gui_swing_jdgui_menu_actions_BackupLinkListAction_password(), defaultpw);
+                    if (pw == null || pw.length() == 0) return;
+                    byte[] crypted = JDCrypt.encrypt(JDHexUtils.getHexString(bos.toByteArray()), getPWByte(pw));
+                    JDIO.saveToFile(files[0], crypted);
+                } catch (Exception ew) {
+                }
             }
-            out.close();
 
-            File[] files = UserIO.getInstance().requestFileChooser("_LOADSAVEDLC", null, null, new JDFileFilter(null, ".jdc", true), null, null, UserIO.SAVE_DIALOG);
-            if (files == null) return;
+        });
 
-            String defaultpw = SubConfiguration.getConfig("JDC_CONFIG").getStringProperty("password", "jddefault");
-            String pw = UserIO.getInstance().requestInputDialog(UserIO.NO_COUNTDOWN, _GUI._.jd_gui_swing_jdgui_menu_actions_BackupLinkListAction_password(), defaultpw);
-            if (pw == null || pw.length() == 0) return;
-            byte[] crypted = JDCrypt.encrypt(JDHexUtils.getHexString(bos.toByteArray()), getPWByte(pw));
-            JDIO.saveToFile(files[0], crypted);
-        } catch (Exception ew) {
-        }
     }
 
     @Override

@@ -32,7 +32,7 @@ import jd.controlling.AccountController;
 import jd.controlling.AccountControllerEvent;
 import jd.controlling.AccountControllerListener;
 import jd.gui.UserIO;
-import jd.gui.swing.jdgui.actions.ThreadedAction;
+import jd.gui.swing.jdgui.actions.ToolBarAction;
 import jd.gui.swing.jdgui.views.ViewToolbar;
 import jd.gui.swing.jdgui.views.settings.ConfigPanel;
 import jd.nutils.JDFlags;
@@ -98,7 +98,7 @@ public class Premium extends ConfigPanel implements ActionListener, AccountContr
     }
 
     private void initActions() {
-        new ThreadedAction(_GUI._.action_premium_refresh(), "action.premiumview.refreshacc", "reconnect") {
+        new ToolBarAction(_GUI._.action_premium_refresh(), "action.premiumview.refreshacc", "reconnect") {
 
             private static final long serialVersionUID = -8727499044544169514L;
 
@@ -107,7 +107,7 @@ public class Premium extends ConfigPanel implements ActionListener, AccountContr
             }
 
             @Override
-            public void threadedActionPerformed(ActionEvent e) {
+            public void onAction(ActionEvent e) {
                 ArrayList<Account> accs = internalTable.getAllSelectedAccounts();
                 internalTable.editingStopped(null);
                 if (accs.size() == 0) return;
@@ -132,7 +132,7 @@ public class Premium extends ConfigPanel implements ActionListener, AccountContr
             }
 
         };
-        new ThreadedAction(_GUI._.action_premium_remove_account(), "action.premiumview.removeacc", "delete") {
+        new ToolBarAction(_GUI._.action_premium_remove_account(), "action.premiumview.removeacc", "delete") {
 
             private static final long serialVersionUID = -4407938288408350792L;
 
@@ -141,7 +141,7 @@ public class Premium extends ConfigPanel implements ActionListener, AccountContr
             }
 
             @Override
-            public void threadedActionPerformed(ActionEvent e) {
+            public void onAction(ActionEvent e) {
                 ArrayList<Account> accs = internalTable.getAllSelectedAccounts();
                 internalTable.editingStopped(null);
                 if (accs.size() == 0) return;

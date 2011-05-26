@@ -108,4 +108,9 @@ public class PriorityColumn extends ExtIconColumn<PackageLinkNode> {
         }
     }
 
+    @Override
+    public boolean isEnabled(PackageLinkNode obj) {
+        return obj.isEnabled();
+    }
+
 }

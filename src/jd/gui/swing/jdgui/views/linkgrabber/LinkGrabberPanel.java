@@ -33,6 +33,7 @@ import jd.config.SubConfiguration;
 import jd.controlling.DownloadController;
 import jd.controlling.DownloadWatchDog;
 import jd.controlling.GarbageController;
+import jd.controlling.IOEQ;
 import jd.controlling.LinkCheck;
 import jd.controlling.LinkCheckEvent;
 import jd.controlling.LinkCheckListener;
@@ -45,7 +46,7 @@ import jd.controlling.ProgressControllerListener;
 import jd.gui.UserIO;
 import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.components.Balloon;
-import jd.gui.swing.jdgui.actions.ThreadedAction;
+import jd.gui.swing.jdgui.actions.ToolBarAction;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.gui.swing.jdgui.views.ViewToolbar;
 import jd.nutils.JDFlags;
@@ -149,7 +150,7 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
     }
 
     public void initActions() {
-        new ThreadedAction(_GUI._.action_clearlinkgrabber(), "action.linkgrabber.clearlist", "clear") {
+        new ToolBarAction(_GUI._.action_clearlinkgrabber(), "action.linkgrabber.clearlist", "clear") {
 
             private static final long serialVersionUID = -4407938288408350792L;
 
@@ -158,30 +159,36 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
             }
 
             @Override
-            public void threadedActionPerformed(ActionEvent e) {
-                if (LGINSTANCE.getPackages().isEmpty() && LGINSTANCE.getFilterPackage().isEmpty()) return;
-                if (JDFlags.hasSomeFlags(UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.NO_COUNTDOWN | UserIO.DONT_SHOW_AGAIN_IGNORES_CANCEL, _GUI._.gui_linkgrabberv2_lg_clear_ask()), UserIO.RETURN_OK)) {
-                    synchronized (LinkGrabberController.ControllerLock) {
-                        synchronized (LGINSTANCE.getPackages()) {
-                            stopLinkGatherer();
-                            lc.abortLinkCheck();
-                            LGINSTANCE.getFilterPackage().clear();
-                            ArrayList<LinkGrabberFilePackage> selected_packages = new ArrayList<LinkGrabberFilePackage>(LGINSTANCE.getPackages());
-                            selected_packages.add(LGINSTANCE.getFilterPackage());
-                            for (LinkGrabberFilePackage fp2 : selected_packages) {
-                                fp2.setDownloadLinks(new ArrayList<DownloadLink>());
-                            }
+            public void onAction(ActionEvent e) {
+                IOEQ.add(new Runnable() {
 
-                            new GuiRunnable<Object>() {
-                                @Override
-                                public Object runSave() {
-                                    LinkgrabberView.getInstance().setInfoPanel(null);
-                                    return null;
+                    public void run() {
+                        if (LGINSTANCE.getPackages().isEmpty() && LGINSTANCE.getFilterPackage().isEmpty()) return;
+                        if (JDFlags.hasSomeFlags(UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.NO_COUNTDOWN | UserIO.DONT_SHOW_AGAIN_IGNORES_CANCEL, _GUI._.gui_linkgrabberv2_lg_clear_ask()), UserIO.RETURN_OK)) {
+                            synchronized (LinkGrabberController.ControllerLock) {
+                                synchronized (LGINSTANCE.getPackages()) {
+                                    stopLinkGatherer();
+                                    lc.abortLinkCheck();
+                                    LGINSTANCE.getFilterPackage().clear();
+                                    ArrayList<LinkGrabberFilePackage> selected_packages = new ArrayList<LinkGrabberFilePackage>(LGINSTANCE.getPackages());
+                                    selected_packages.add(LGINSTANCE.getFilterPackage());
+                                    for (LinkGrabberFilePackage fp2 : selected_packages) {
+                                        fp2.setDownloadLinks(new ArrayList<DownloadLink>());
+                                    }
+
+                                    new GuiRunnable<Object>() {
+                                        @Override
+                                        public Object runSave() {
+                                            LinkgrabberView.getInstance().setInfoPanel(null);
+                                            return null;
+                                        }
+                                    }.start();
                                 }
-                            }.start();
+                            }
                         }
                     }
-                }
+                });
+
             }
 
             @Override
@@ -199,7 +206,7 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
                 return _GUI._.action_clearlinkgrabber_tooltip();
             }
         };
-        new ThreadedAction(_GUI._.action_linkgrabber_addall(), "action.linkgrabber.addall", "download") {
+        new ToolBarAction(_GUI._.action_linkgrabber_addall(), "action.linkgrabber.addall", "download") {
 
             private static final long serialVersionUID = 6181260839200699153L;
 
@@ -208,14 +215,20 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
             }
 
             @Override
-            public void threadedActionPerformed(ActionEvent e) {
-                synchronized (LinkGrabberController.ControllerLock) {
-                    synchronized (LGINSTANCE.getPackages()) {
-                        LGINSTANCE.getFilterPackage().clear();
-                        ArrayList<LinkGrabberFilePackage> fps = new ArrayList<LinkGrabberFilePackage>(LGINSTANCE.getPackages());
+            public void onAction(ActionEvent e) {
+                IOEQ.add(new Runnable() {
+
+                    public void run() {
+                        ArrayList<LinkGrabberFilePackage> fps = null;
+                        synchronized (LinkGrabberController.ControllerLock) {
+                            synchronized (LGINSTANCE.getPackages()) {
+                                LGINSTANCE.getFilterPackage().clear();
+                                fps = new ArrayList<LinkGrabberFilePackage>(LGINSTANCE.getPackages());
+                            }
+                        }
                         confirmPackages(fps);
                     }
-                }
+                });
             }
 
             @Override
@@ -577,7 +590,7 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
         fp.setCreated(fpv2.getCreated());
         if (!fpv2.isIgnored()) {
             if (JsonConfig.create(GeneralSettings.class).isAddNewLinksOnTop()) {
-                JDUtilities.getDownloadController().addPackageAt(fp, index, 0);
+                JDUtilities.getDownloadController().addPackageAt(fp, index);
             } else {
                 JDUtilities.getDownloadController().addPackage(fp);
             }

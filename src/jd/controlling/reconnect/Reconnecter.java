@@ -62,6 +62,7 @@ public final class Reconnecter implements StateMachineInterface {
     public static final String         RECONNECT_SUCCESS_COUNTER_GLOBAL = "RECONNECT_SUCCESS_COUNTER_GLOBAL";
 
     private static final AtomicInteger reconnectCounter                 = new AtomicInteger(0);
+    private static long                lastReconnect                    = 0;
 
     /*
      * TODO: eyxternal IP check if automode is disabled
@@ -145,6 +146,10 @@ public final class Reconnecter implements StateMachineInterface {
         return reconnectCounter.get();
     }
 
+    public static long getLastReconnect() {
+        return lastReconnect;
+    }
+
     public static Reconnecter getInstance() {
         return Reconnecter.INSTANCE;
     }
@@ -216,6 +221,7 @@ public final class Reconnecter implements StateMachineInterface {
                 ret = ReconnectPluginController.getInstance().doReconnect();
                 if (ret) {
                     reconnectCounter.incrementAndGet();
+                    lastReconnect = System.currentTimeMillis();
                     break;
                 }
             }

@@ -7,7 +7,7 @@ import javax.swing.JScrollPane;
 import jd.controlling.JSonWrapper;
 import jd.gui.UserIO;
 import jd.gui.swing.GuiRunnable;
-import jd.gui.swing.jdgui.actions.ThreadedAction;
+import jd.gui.swing.jdgui.actions.ToolBarAction;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.gui.swing.jdgui.views.InfoPanel;
 import jd.gui.swing.jdgui.views.ViewToolbar;
@@ -43,7 +43,7 @@ public class FolderWatchPanel extends SwitchPanel {
     }
 
     private void initActions() {
-        new ThreadedAction("Clear", "action.folderwatch.history.clear", "clear") {
+        new ToolBarAction("Clear", "action.folderwatch.history.clear", "clear") {
             private static final long serialVersionUID = 3349495273700955040L;
 
             @Override
@@ -51,7 +51,7 @@ public class FolderWatchPanel extends SwitchPanel {
             }
 
             @Override
-            public void threadedActionPerformed(final ActionEvent e) {
+            public void onAction(final ActionEvent e) {
                 new GuiRunnable<Object>() {
                     @Override
                     public Object runSave() {
@@ -83,7 +83,7 @@ public class FolderWatchPanel extends SwitchPanel {
             }
         };
 
-        new ThreadedAction("Add", "action.folderwatch.history.reimport", "add") {
+        new ToolBarAction("Add", "action.folderwatch.history.reimport", "add") {
             private static final long serialVersionUID = 9034432457172125570L;
 
             @Override
@@ -91,7 +91,7 @@ public class FolderWatchPanel extends SwitchPanel {
             }
 
             @Override
-            public void threadedActionPerformed(final ActionEvent e) {
+            public void onAction(final ActionEvent e) {
                 new GuiRunnable<Object>() {
                     @Override
                     public Object runSave() {
