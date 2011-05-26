@@ -3,12 +3,12 @@ package org.jdownloader.settings.advanced;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import jd.GeneralSettings;
 
 import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.KeyHandler;
 import org.jdownloader.settings.AboutConfig;
+import org.jdownloader.settings.GeneralSettings;
 
 public class AdvancedConfigManager {
     private static final AdvancedConfigManager INSTANCE = new AdvancedConfigManager();

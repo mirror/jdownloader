@@ -22,7 +22,6 @@ import java.util.ArrayList;
 
 import javax.swing.JCheckBox;
 
-import jd.GeneralSettings;
 import jd.controlling.LinkGrabberController;
 import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.jdgui.views.InfoPanel;
@@ -31,6 +30,7 @@ import jd.plugins.LinkGrabberFilePackage;
 
 import org.appwork.storage.config.JsonConfig;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.settings.GeneralSettings;
 
 public class LinkGrabberInfoPanel extends InfoPanel {
 

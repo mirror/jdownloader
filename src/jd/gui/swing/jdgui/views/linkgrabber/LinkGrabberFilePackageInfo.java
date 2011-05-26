@@ -24,7 +24,6 @@ import java.awt.event.FocusListener;
 import javax.swing.JCheckBox;
 import javax.swing.JLabel;
 
-import jd.GeneralSettings;
 import jd.config.Configuration;
 import jd.controlling.LinkGrabberController;
 import jd.gui.swing.components.ComboBrowseFile;
@@ -37,6 +36,7 @@ import net.miginfocom.swing.MigLayout;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.settings.GeneralSettings;
 
 public class LinkGrabberFilePackageInfo extends JDCollapser implements ActionListener, FocusListener {
 

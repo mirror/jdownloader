@@ -27,7 +27,6 @@ import java.util.logging.Logger;
 import javax.swing.JScrollPane;
 import javax.swing.Timer;
 
-import jd.GeneralSettings;
 import jd.config.Configuration;
 import jd.config.Property;
 import jd.config.SubConfiguration;
@@ -64,6 +63,7 @@ import net.miginfocom.swing.MigLayout;
 import org.appwork.storage.config.JsonConfig;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.settings.GeneralSettings;
 
 public class LinkGrabberPanel extends SwitchPanel implements ActionListener, LinkCheckListener, ProgressControllerListener, LinkGrabberControllerListener {
 

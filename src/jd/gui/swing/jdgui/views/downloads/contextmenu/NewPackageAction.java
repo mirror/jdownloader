@@ -3,7 +3,6 @@ package jd.gui.swing.jdgui.views.downloads.contextmenu;
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 
-import jd.GeneralSettings;
 import jd.gui.UserIO;
 import jd.gui.swing.jdgui.interfaces.ContextMenuAction;
 import jd.plugins.DownloadLink;
@@ -12,6 +11,7 @@ import jd.utils.JDUtilities;
 
 import org.appwork.storage.config.JsonConfig;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.settings.GeneralSettings;
 
 public class NewPackageAction extends ContextMenuAction {
 

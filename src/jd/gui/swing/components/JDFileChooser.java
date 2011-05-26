@@ -20,11 +20,11 @@ import java.io.File;
 
 import javax.swing.JFileChooser;
 
-import jd.GeneralSettings;
 import jd.config.Configuration;
 import jd.utils.JDUtilities;
 
 import org.appwork.storage.config.JsonConfig;
+import org.jdownloader.settings.GeneralSettings;
 
 /**
  * Ein Wrapper um JFileChooser

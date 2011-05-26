@@ -21,9 +21,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.regex.Pattern;
 
-import jd.GeneralSettings;
 
 import org.appwork.utils.Regex;
+import org.jdownloader.settings.GeneralSettings;
 
 public class CustomizeSetting implements Serializable, Comparable<CustomizeSetting> {
 

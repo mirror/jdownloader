@@ -23,7 +23,6 @@ package jd.gui.swing.jdgui.views.linkgrabber;
 
 import java.util.ArrayList;
 
-import jd.GeneralSettings;
 import jd.controlling.DownloadWatchDog;
 import jd.controlling.LinkGrabberController;
 import jd.controlling.LinkGrabberControllerEvent;
@@ -37,6 +36,7 @@ import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.translate._JDT;
 
 public class DownloadAutostart implements LinkGrabberControllerListener {

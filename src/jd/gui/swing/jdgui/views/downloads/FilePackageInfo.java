@@ -26,7 +26,6 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
 
-import jd.GeneralSettings;
 import jd.controlling.DownloadController;
 import jd.gui.swing.components.ComboBrowseFile;
 import jd.gui.swing.components.JDCollapser;
@@ -40,6 +39,7 @@ import net.miginfocom.swing.MigLayout;
 
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.settings.GeneralSettings;
 
 public class FilePackageInfo extends JDCollapser implements ActionListener, FocusListener {
 

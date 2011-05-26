@@ -29,7 +29,6 @@ import java.util.logging.Logger;
 
 import javax.imageio.ImageIO;
 
-import jd.GeneralSettings;
 import jd.config.Configuration;
 import jd.config.Property;
 import jd.config.SubConfiguration;
@@ -66,6 +65,7 @@ import org.jdownloader.extensions.interfaces.RemoteSupport;
 import org.jdownloader.extensions.interfaces.Request;
 import org.jdownloader.extensions.interfaces.Response;
 import org.jdownloader.extensions.remotecontrol.helppage.HelpPage;
+import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.update.RestartController;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;

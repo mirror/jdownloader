@@ -22,9 +22,11 @@ import jd.gui.swing.jdgui.views.settings.components.Checkbox;
 import jd.gui.swing.jdgui.views.settings.components.ComboBox;
 import jd.gui.swing.jdgui.views.settings.components.LinkgrabberFilter.LinkgrabberFilter;
 
+import org.appwork.storage.config.JsonConfig;
 import org.jdownloader.gui.settings.AbstractConfigPanel;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.translate._JDT;
 
 public class Linkgrabber extends AbstractConfigPanel {
@@ -71,9 +73,18 @@ public class Linkgrabber extends AbstractConfigPanel {
 
     @Override
     public void save() {
+        GeneralSettings st = JsonConfig.create(GeneralSettings.class);
+        st.setClickNLoadEnabled(cnl.isSelected());
+        st.setLinkcheckEnabled(checkLinks.isSelected());
+        st.setCleanUpFilenames(rename.isSelected());
     }
 
     @Override
     public void updateContents() {
+        GeneralSettings st = JsonConfig.create(GeneralSettings.class);
+        cnl.setSelected(st.isClickNLoadEnabled());
+        checkLinks.setSelected(st.isLinkcheckEnabled());
+        rename.setSelected(st.isCleanUpFilenames());
+
     }
 }

@@ -21,7 +21,6 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
 
-import jd.GeneralSettings;
 import jd.HostPluginWrapper;
 import jd.config.ConfigPropertyListener;
 import jd.config.Configuration;
@@ -59,6 +58,7 @@ import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.event.DefaultEventListener;
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.settings.GeneralSettings;
 
 /**
  * Class to control toolbar actions

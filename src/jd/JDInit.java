@@ -65,6 +65,7 @@ import org.appwork.utils.swing.dialog.ProgressDialog;
 import org.appwork.utils.swing.dialog.ProgressDialog.ProgressGetter;
 import org.jdownloader.extensions.ExtensionController;
 import org.jdownloader.plugins.scanner.PluginScanner;
+import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.translate._JDT;
 import org.lobobrowser.util.OS;
 

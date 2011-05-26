@@ -1,10 +1,9 @@
-package jd;
+package org.jdownloader.settings;
 
 import java.util.ArrayList;
 
 import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.annotations.DefaultFactory;
-import org.jdownloader.settings.AboutConfig;
 
 @DefaultFactory(GeneralSettingsDefaults.class)
 public interface GeneralSettings extends ConfigInterface {
@@ -50,4 +49,36 @@ public interface GeneralSettings extends ConfigInterface {
     boolean isAutoOpenContainerAfterDownload();
 
     void setAutoOpenContainerAfterDownload(boolean b);
+
+    @AboutConfig
+    CleanAfterDownloadAction getCleanupAfterDownloadAction();
+
+    void setCleanupAfterDownloadAction(CleanAfterDownloadAction action);
+
+    @AboutConfig
+    IfFileExistsAction getIfFileExistsAction();
+
+    void setIfFileExistsAction(IfFileExistsAction action);
+
+    @AboutConfig
+    @RangeValidatorMarker(range = { 0, 100 })
+    int getMaxSimultaneDownloadsPerHost();
+
+    void setMaxSimultaneDownloadsPerHost(int num);
+
+    @AboutConfig
+    boolean isLinkcheckEnabled();
+
+    void setLinkcheckEnabled(boolean b);
+
+    @AboutConfig
+    boolean isCleanUpFilenames();
+
+    void setCleanUpFilenames(boolean b);
+
+    @AboutConfig
+    boolean isClickNLoadEnabled();
+
+    void setClickNLoadEnabled(boolean b);
+
 }

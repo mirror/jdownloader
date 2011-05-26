@@ -18,7 +18,6 @@ package jd.gui.swing.jdgui.views.settings.panels;
 
 import javax.swing.ImageIcon;
 
-import jd.GeneralSettings;
 import jd.controlling.DownloadController;
 import jd.gui.swing.jdgui.views.settings.components.Checkbox;
 import jd.gui.swing.jdgui.views.settings.components.FolderChooser;
@@ -27,6 +26,7 @@ import org.appwork.storage.config.JsonConfig;
 import org.jdownloader.gui.settings.AbstractConfigPanel;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.translate._JDT;
 
 public class ConfigPanelGeneral extends AbstractConfigPanel {

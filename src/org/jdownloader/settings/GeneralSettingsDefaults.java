@@ -1,4 +1,4 @@
-package jd;
+package org.jdownloader.settings;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -83,6 +83,48 @@ public class GeneralSettingsDefaults implements GeneralSettings {
     }
 
     public void setHashCheckEnabled(boolean b) {
+    }
+
+    public CleanAfterDownloadAction getCleanupAfterDownloadAction() {
+        return CleanAfterDownloadAction.NEVER;
+    }
+
+    public void setCleanupAfterDownloadAction(CleanAfterDownloadAction action) {
+    }
+
+    public IfFileExistsAction getIfFileExistsAction() {
+        return IfFileExistsAction.ASK_FOR_EACH_FILE;
+    }
+
+    public void setIfFileExistsAction(IfFileExistsAction action) {
+    }
+
+    public int getMaxSimultaneDownloadsPerHost() {
+        return 0;
+    }
+
+    public void setMaxSimultaneDownloadsPerHost(int num) {
+    }
+
+    public boolean isLinkcheckEnabled() {
+        return true;
+    }
+
+    public void setLinkcheckEnabled(boolean b) {
+    }
+
+    public boolean isCleanUpFilenames() {
+        return true;
+    }
+
+    public void setCleanUpFilenames(boolean b) {
+    }
+
+    public boolean isClickNLoadEnabled() {
+        return true;
+    }
+
+    public void setClickNLoadEnabled(boolean b) {
     }
 
 }

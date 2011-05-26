@@ -29,7 +29,6 @@ import java.util.regex.Pattern;
 
 import javax.swing.ImageIcon;
 
-import jd.GeneralSettings;
 import jd.config.Property;
 import jd.controlling.DownloadController;
 import jd.controlling.JDLogger;
@@ -44,6 +43,7 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.Regex;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.settings.GeneralSettings;
 
 /**
  * Hier werden alle notwendigen Informationen zu einem einzelnen Download

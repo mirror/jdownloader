@@ -25,7 +25,6 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 
-import jd.GeneralSettings;
 import jd.config.Property;
 import jd.controlling.DownloadController;
 import jd.gui.swing.jdgui.views.downloads.DownloadTable;
@@ -33,6 +32,7 @@ import jd.nutils.io.JDIO;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.event.Eventsender;
+import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.translate._JDT;
 
 class FilePackageBroadcaster extends Eventsender<FilePackageListener, FilePackageEvent> {

@@ -22,7 +22,6 @@ import java.util.Set;
 
 import javax.swing.ImageIcon;
 
-import jd.GeneralSettings;
 import jd.config.Configuration;
 import jd.config.Property;
 import jd.config.SubConfiguration;
@@ -31,6 +30,7 @@ import jd.nutils.io.JDIO;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.event.Eventsender;
+import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.translate._JDT;
 
 class LinkGrabberFilePackageBroadcaster extends Eventsender<LinkGrabberFilePackageListener, LinkGrabberFilePackageEvent> {

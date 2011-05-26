@@ -2,6 +2,8 @@ package jd.gui.swing.dialog;
 
 
  import org.jdownloader.gui.translate.*;
+import org.jdownloader.settings.GeneralSettings;
+
 import java.awt.Color;
 import java.awt.Font;
 import java.io.File;
@@ -18,7 +20,6 @@ import javax.swing.SwingConstants;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
-import jd.GeneralSettings;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.ConfigGroup;

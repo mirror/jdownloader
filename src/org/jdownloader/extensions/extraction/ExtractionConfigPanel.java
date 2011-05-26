@@ -2,7 +2,6 @@ package org.jdownloader.extensions.extraction;
 
 import java.io.File;
 
-import jd.GeneralSettings;
 import jd.gui.swing.jdgui.views.settings.components.Checkbox;
 import jd.gui.swing.jdgui.views.settings.components.FolderChooser;
 import jd.gui.swing.jdgui.views.settings.components.Spinner;
@@ -13,6 +12,7 @@ import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.extraction.translate.T;
 import org.jdownloader.gui.settings.Pair;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.settings.GeneralSettings;
 
 public class ExtractionConfigPanel extends ExtensionConfigPanel<ExtractionExtension> {
 

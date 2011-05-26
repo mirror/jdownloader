@@ -28,7 +28,6 @@ import java.util.Timer;
 import javax.swing.JViewport;
 import javax.swing.filechooser.FileFilter;
 
-import jd.GeneralSettings;
 import jd.controlling.JDController;
 import jd.controlling.JDLogger;
 import jd.controlling.ProgressController;
@@ -57,6 +56,7 @@ import org.jdownloader.extensions.extraction.split.HJSplit;
 import org.jdownloader.extensions.extraction.split.Unix;
 import org.jdownloader.extensions.extraction.split.XtreamSplit;
 import org.jdownloader.extensions.extraction.translate.T;
+import org.jdownloader.settings.GeneralSettings;
 
 public class ExtractionExtension extends AbstractExtension<ExtractionConfig> implements ControlListener, ActionListener {
     private static final int             EXTRACT_LINK            = 1000;

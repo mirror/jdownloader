@@ -43,7 +43,6 @@ import javax.swing.ScrollPaneConstants;
 import javax.swing.ToolTipManager;
 import javax.swing.WindowConstants;
 
-import jd.GeneralSettings;
 import jd.config.ConfigContainer;
 import jd.controlling.ClipboardHandler;
 import jd.controlling.DownloadController;
@@ -90,6 +89,7 @@ import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.DownloadsView;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.settings.GeneralSettings;
 
 public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
 

@@ -64,7 +64,7 @@ public class Spinner extends JSpinner implements SettingsComponent {
     /**
      * Set the Spinner renderer and editor format.
      * 
-     * @see http
+     * @see http 
      *      ://download.oracle.com/javase/1.4.2/docs/api/java/text/DecimalFormat
      *      .html
      * @param formatString

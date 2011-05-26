@@ -5,7 +5,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
 
-import jd.GeneralSettings;
 import jd.HostPluginWrapper;
 import jd.controlling.JDLogger;
 import jd.controlling.LinkGrabberController;
@@ -23,6 +22,7 @@ import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
+import org.jdownloader.settings.GeneralSettings;
 
 @OptionalPlugin(rev = "$Revision$", id = "lecturnity", interfaceversion = 7)
 public class LecturnityDownloaderExtension extends AbstractExtension<LecturnityDownloaderConfig> implements ActionListener {
