@@ -21,7 +21,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
 
-import jd.DownloadSettings;
+import jd.GeneralSettings;
 import jd.HostPluginWrapper;
 import jd.config.ConfigPropertyListener;
 import jd.config.Configuration;
@@ -505,7 +505,7 @@ public class ActionController {
 
             @Override
             public void onAction(final ActionEvent e) {
-                final String dlDir = JsonConfig.create(DownloadSettings.class).getDefaultDownloadFolder();
+                final String dlDir = JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder();
                 if (dlDir == null) { return; }
                 JDUtilities.openExplorer(new File(dlDir));
             }

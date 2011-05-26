@@ -29,6 +29,7 @@ import java.util.regex.Pattern;
 
 import javax.swing.ImageIcon;
 
+import jd.GeneralSettings;
 import jd.config.Property;
 import jd.controlling.DownloadController;
 import jd.controlling.JDLogger;
@@ -711,7 +712,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         /* try to delete folder (if its empty and NOT the default downloadfolder */
         File dlFolder = new File(this.getFileOutput()).getParentFile();
         if (dlFolder != null && dlFolder.exists() && dlFolder.isDirectory() && dlFolder.listFiles() != null && dlFolder.listFiles().length == 0) {
-            if (!new File(JDUtilities.getDefaultDownloadDirectory()).equals(dlFolder)) dlFolder.delete();
+            if (!new File(org.appwork.storage.config.JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder()).equals(dlFolder)) dlFolder.delete();
         }
     }
 

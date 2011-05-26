@@ -23,7 +23,7 @@ package jd.gui.swing.jdgui.views.linkgrabber;
 
 import java.util.ArrayList;
 
-import jd.DownloadSettings;
+import jd.GeneralSettings;
 import jd.controlling.DownloadWatchDog;
 import jd.controlling.LinkGrabberController;
 import jd.controlling.LinkGrabberControllerEvent;
@@ -55,7 +55,7 @@ public class DownloadAutostart implements LinkGrabberControllerListener {
 
     public synchronized void launchAutostart() {
         if (pc != null) abortAutostart();
-        if (!JsonConfig.create(LinkgrabberSettings.class).isAutoaddLinksAfterLinkcheck()) return;
+        if (!JsonConfig.create(GeneralSettings.class).isAutoaddLinksAfterLinkcheck()) return;
         if (LinkGrabberController.getInstance().size() == 0) return;
         pc = new ProgressController(_GUI._.controller_downloadautostart(), null);
         pc.getBroadcaster().addListener(new ProgressControllerListener() {
@@ -72,10 +72,10 @@ public class DownloadAutostart implements LinkGrabberControllerListener {
                                 if (!asked) {
                                     try {
                                         asked = true;
-                                        Dialog.getInstance().showConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _JDT._.dialog_rly_forAutoaddAfterLinkcheck_title(), _JDT._.dialog_rly_forAutoaddAfterLinkcheck_msg(JsonConfig.create(DownloadSettings.class).getDefaultDownloadFolder()), null, _JDT._.dialog_rly_forAutoaddAfterLinkcheck_ok(), _JDT._.dialog_rly_forAutoaddAfterLinkcheck_cancel());
+                                        Dialog.getInstance().showConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _JDT._.dialog_rly_forAutoaddAfterLinkcheck_title(), _JDT._.dialog_rly_forAutoaddAfterLinkcheck_msg(JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder()), null, _JDT._.dialog_rly_forAutoaddAfterLinkcheck_ok(), _JDT._.dialog_rly_forAutoaddAfterLinkcheck_cancel());
 
                                     } catch (DialogNoAnswerException e) {
-                                        JsonConfig.create(LinkgrabberSettings.class).setAutoaddLinksAfterLinkcheck(false);
+                                        JsonConfig.create(GeneralSettings.class).setAutoaddLinksAfterLinkcheck(false);
                                         return;
                                     }
                                 }

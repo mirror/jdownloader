@@ -320,7 +320,7 @@ public class JDInit {
             JDInit.LOG.finest("Fresh install?");
         }
         try {
-            if (!JDInit.TEST_INSTALLER && obj != null && (((Configuration) obj).getStringProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY) != null || JsonConfig.create(DownloadSettings.class).getDefaultDownloadFolder() != null)) {
+            if (!JDInit.TEST_INSTALLER && obj != null && (((Configuration) obj).getStringProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY) != null || JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder() != null)) {
                 final Configuration configuration = (Configuration) obj;
                 JDUtilities.setConfiguration(configuration);
                 JDInit.LOG.setLevel(configuration.getGenericProperty(Configuration.PARAM_LOGGER_LEVEL, Level.WARNING));
@@ -370,8 +370,8 @@ public class JDInit {
 
     private void convert() {
         String ddl = JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY, null);
-        if (JsonConfig.create(DownloadSettings.class).getDefaultDownloadFolder() == null) {
-            JsonConfig.create(DownloadSettings.class).setDefaultDownloadFolder(ddl);
+        if (JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder() == null) {
+            JsonConfig.create(GeneralSettings.class).setDefaultDownloadFolder(ddl);
             JDUtilities.getConfiguration().setProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY, Property.NULL);
         }
         JDUtilities.getConfiguration().save();

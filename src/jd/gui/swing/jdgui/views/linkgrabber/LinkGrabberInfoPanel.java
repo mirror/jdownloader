@@ -22,6 +22,7 @@ import java.util.ArrayList;
 
 import javax.swing.JCheckBox;
 
+import jd.GeneralSettings;
 import jd.controlling.LinkGrabberController;
 import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.jdgui.views.InfoPanel;
@@ -73,11 +74,11 @@ public class LinkGrabberInfoPanel extends InfoPanel {
 
             public void actionPerformed(ActionEvent e) {
 
-                JsonConfig.create(LinkgrabberSettings.class).setAddNewLinksOnTop(topOrBottom.isSelected());
+                JsonConfig.create(GeneralSettings.class).setAddNewLinksOnTop(topOrBottom.isSelected());
             }
 
         });
-        topOrBottom.setSelected(JsonConfig.create(LinkgrabberSettings.class).isAddNewLinksOnTop());
+        topOrBottom.setSelected(JsonConfig.create(GeneralSettings.class).isAddNewLinksOnTop());
 
         topOrBottom.setToolTipText(_GUI._.gui_tooltips_linkgrabber_topOrBottom());
         topOrBottom.setIconTextGap(3);
@@ -88,11 +89,11 @@ public class LinkGrabberInfoPanel extends InfoPanel {
 
             public void actionPerformed(ActionEvent e) {
 
-                JsonConfig.create(LinkgrabberSettings.class).setAutoDownloadStartAfterAddingEnabled(startAfterAdding.isSelected());
+                JsonConfig.create(GeneralSettings.class).setAutoDownloadStartAfterAddingEnabled(startAfterAdding.isSelected());
             }
 
         });
-        startAfterAdding.setSelected(JsonConfig.create(LinkgrabberSettings.class).isAutoDownloadStartAfterAddingEnabled());
+        startAfterAdding.setSelected(JsonConfig.create(GeneralSettings.class).isAutoDownloadStartAfterAddingEnabled());
 
         startAfterAdding.setToolTipText(_GUI._.gui_tooltips_linkgrabber_startlinksafteradd());
         startAfterAdding.setIconTextGap(3);
@@ -102,11 +103,11 @@ public class LinkGrabberInfoPanel extends InfoPanel {
         autoStart.addActionListener(new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {
-                JsonConfig.create(LinkgrabberSettings.class).setAutoaddLinksAfterLinkcheck(autoStart.isSelected());
+                JsonConfig.create(GeneralSettings.class).setAutoaddLinksAfterLinkcheck(autoStart.isSelected());
             }
 
         });
-        autoStart.setSelected(JsonConfig.create(LinkgrabberSettings.class).isAutoaddLinksAfterLinkcheck());
+        autoStart.setSelected(JsonConfig.create(GeneralSettings.class).isAutoaddLinksAfterLinkcheck());
 
         autoStart.setToolTipText(_GUI._.gui_tooltips_linkgrabber_autostart());
         autoStart.setIconTextGap(3);

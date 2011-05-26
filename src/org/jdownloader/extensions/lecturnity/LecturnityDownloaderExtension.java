@@ -5,6 +5,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
 
+import jd.GeneralSettings;
 import jd.HostPluginWrapper;
 import jd.controlling.JDLogger;
 import jd.controlling.LinkGrabberController;
@@ -16,7 +17,6 @@ import jd.plugins.AddonPanel;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.OptionalPlugin;
-import jd.utils.JDUtilities;
 
 import org.appwork.utils.Regex;
 import org.jdownloader.extensions.AbstractExtension;
@@ -29,7 +29,7 @@ public class LecturnityDownloaderExtension extends AbstractExtension<LecturnityD
 
     public final static String PROPERTY_DOWNLOADDIR = "PROPERTY_DOWNLOADDIR";
 
-    private final String       downloadDir          = JDUtilities.getDefaultDownloadDirectory() + "/lecturnity/";
+    private final String       downloadDir          = org.appwork.storage.config.JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder() + "/lecturnity/";
 
     private MenuAction         inputAction;
 

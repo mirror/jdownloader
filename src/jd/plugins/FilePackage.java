@@ -25,6 +25,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 
+import jd.GeneralSettings;
 import jd.config.Property;
 import jd.controlling.DownloadController;
 import jd.gui.swing.jdgui.views.downloads.DownloadTable;
@@ -142,7 +143,7 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
 
     private FilePackage() {
         links_Disabled = Integer.valueOf(0);
-        downloadDirectory = JDUtilities.getDefaultDownloadDirectory();
+        downloadDirectory = org.appwork.storage.config.JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder();
         downloadLinkList = new ArrayList<DownloadLink>();
         broadcaster = new FilePackageBroadcaster();
         broadcaster.addListener(this);
@@ -278,7 +279,7 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
      *         festgelegt hat
      */
     public String getDownloadDirectory() {
-        return downloadDirectory == null ? JDUtilities.getDefaultDownloadDirectory() : downloadDirectory;
+        return downloadDirectory == null ? org.appwork.storage.config.JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder() : downloadDirectory;
     }
 
     /**

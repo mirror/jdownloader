@@ -3,9 +3,9 @@ package jd.gui.swing.jdgui.views.downloads.contextmenu;
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 
+import jd.GeneralSettings;
 import jd.gui.UserIO;
 import jd.gui.swing.jdgui.interfaces.ContextMenuAction;
-import jd.gui.swing.jdgui.views.linkgrabber.LinkgrabberSettings;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.utils.JDUtilities;
@@ -51,7 +51,7 @@ public class NewPackageAction extends ContextMenuAction {
             link.setFilePackage(nfp);
         }
 
-        if (JsonConfig.create(LinkgrabberSettings.class).isAddNewLinksOnTop()) {
+        if (JsonConfig.create(GeneralSettings.class).isAddNewLinksOnTop()) {
             JDUtilities.getDownloadController().addPackageAt(nfp, 0, 0);
         } else {
             JDUtilities.getDownloadController().addPackage(nfp);

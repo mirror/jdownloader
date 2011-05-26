@@ -39,7 +39,6 @@ import javax.xml.transform.stream.StreamResult;
 
 import jd.CPluginWrapper;
 import jd.DecryptPluginWrapper;
-import jd.DownloadSettings;
 import jd.HostPluginWrapper;
 import jd.Main;
 import jd.config.Configuration;
@@ -56,7 +55,6 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginsC;
 
-import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Application;
 import org.appwork.utils.Regex;
 import org.jdownloader.translate._JDT;
@@ -545,14 +543,6 @@ public class JDUtilities {
         final NamedNodeMap att = childNode.getAttributes();
         if (att == null || att.getNamedItem(key) == null) { return null; }
         return att.getNamedItem(key).getNodeValue();
-    }
-
-    public static String getDefaultDownloadDirectory() {
-        String ret = JsonConfig.create(DownloadSettings.class).getDefaultDownloadFolder();
-        if (ret == null) {
-            ret = JDUtilities.getResourceFile("downloads").getAbsolutePath();
-        }
-        return ret;
     }
 
 }

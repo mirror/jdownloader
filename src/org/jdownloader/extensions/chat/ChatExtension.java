@@ -125,12 +125,10 @@ public class ChatExtension extends AbstractExtension<ChatConfig> {
     private JLabel                           top;
 
     private IRCConnection                    conn;
-    private SwitchPanel                      frame;
     private long                             lastAction;
     private String                           lastCommand;
     private boolean                          loggedIn;
     private ArrayList<User>                  NAMES;
-    private String                           nick;
     private boolean                          nickaway;
     private int                              nickCount            = 0;
     private String                           orgNick;
@@ -144,7 +142,6 @@ public class ChatExtension extends AbstractExtension<ChatConfig> {
     private JDChatView                       view;
 
     private JTabbedPane                      tabbedPane;
-    private JButton                          closeTab;
 
     private ChatConfigPanel                  configPanel;
     private String                           currentChannel;
@@ -181,7 +178,7 @@ public class ChatExtension extends AbstractExtension<ChatConfig> {
         }.invokeLater();
     }
 
-    public void addToText(final User user, final String style, final String msg) {
+    public void addToText( final User user, final String style, final String msg) {
         this.addToText(user, style, msg, this.textArea, this.sb);
     }
 
@@ -196,21 +193,21 @@ public class ChatExtension extends AbstractExtension<ChatConfig> {
         sb.append("<li>");
         if (user != null) {
             if (!color) {
-                sb.append("<span style='" + user.getStyle() + (this.getUser(this.conn.getNick()) == user ? ";font-weight:bold" : "") + "'>[" + df.format(dt) + "] " + user.getNickLink("pmnick") + (ChatExtension.STYLE_PM.equalsIgnoreCase(style) ? ">> " : ": ") + "</span>");
+                sb.append("<span style='").append(user.getStyle()).append(this.getUser(this.conn.getNick()) == user ? ";font-weight:bold" : "").append("'>[").append(df.format(dt)).append("] ").append(user.getNickLink("pmnick")).append(ChatExtension.STYLE_PM.equalsIgnoreCase(style) ? ">> " : ": ").append("</span>");
             } else {
-                sb.append("<span style='color:#000000" + (this.getUser(this.conn.getNick()) == user ? ";font-weight:bold" : "") + "'>[" + df.format(dt) + "] " + user.getNickLink("pmnick") + (ChatExtension.STYLE_PM.equalsIgnoreCase(style) ? ">> " : ": ") + "</span>");
+                sb.append("<span style='color:#000000").append(this.getUser(this.conn.getNick()) == user ? ";font-weight:bold" : "").append("'>[").append(df.format(dt)).append("] ").append(user.getNickLink("pmnick")).append(ChatExtension.STYLE_PM.equalsIgnoreCase(style) ? ">> " : ": ").append("</span>");
             }
         } else {
-            sb.append("<span class='time'>[" + df.format(dt) + "] </span>");
+            sb.append("<span class='time'>[").append(df.format(dt)).append("] </span>");
 
         }
         if (this.conn != null && msg.contains(this.conn.getNick())) {
             style = ChatExtension.STYLE_HIGHLIGHT;
         }
         if (style != null) {
-            sb.append("<span class='" + style + "'>" + msg + "</span>");
+            sb.append("<span class='").append(style).append("'>").append(msg).append("</span>");
         } else {
-            sb.append("<span>" + msg + "</span>");
+            sb.append("<span>").append(msg).append("</span>");
         }
 
         new GuiRunnable<Object>() {
@@ -339,26 +336,26 @@ public class ChatExtension extends AbstractExtension<ChatConfig> {
             loc = loc.toLowerCase();
         }
         final String def = "JD-[" + loc + "]_" + ("" + System.currentTimeMillis()).substring(6);
-        this.nick = getSettings().getNick();
-        if (this.nick == null || this.nick.equalsIgnoreCase("")) {
-            this.nick = UserIO.getInstance().requestInputDialog(T._.plugins_optional_jdchat_enternick());
-            if (this.nick != null && !this.nick.equalsIgnoreCase("")) {
-                this.nick += "[" + loc + "]";
+        String nick = getSettings().getNick();
+        if (nick == null || nick.equalsIgnoreCase("")) {
+            nick = UserIO.getInstance().requestInputDialog(T._.plugins_optional_jdchat_enternick());
+            if (nick != null && !nick.equalsIgnoreCase("")) {
+                nick += "[" + loc + "]";
             }
-            if (this.nick != null) {
-                this.nick = this.nick.trim();
+            if (nick != null) {
+                nick = nick.trim();
             }
             getSettings().setNick(nick);
 
         }
-        if (this.nick == null) {
-            this.nick = def;
+        if (nick == null) {
+            nick = def;
         }
-        this.nick = this.nick.trim();
+        nick = nick.trim();
         if (this.getNickCount() > 0) {
-            this.nick += "[" + this.getNickCount() + "]";
+            nick += "[" + this.getNickCount() + "]";
         }
-        return this.nick;
+        return nick;
     }
 
     public TreeMap<String, JDChatPMS> getPms() {
@@ -550,7 +547,7 @@ public class ChatExtension extends AbstractExtension<ChatConfig> {
         this.textArea.setContentType("text/html");
         this.textArea.setEditable(false);
 
-        this.frame = new SwitchPanel() {
+        SwitchPanel frame = new SwitchPanel() {
             private static final long serialVersionUID = 2138710083573682339L;
 
             @Override
@@ -561,9 +558,9 @@ public class ChatExtension extends AbstractExtension<ChatConfig> {
             public void onShow() {
             }
         };
-        this.frame.setLayout(new MigLayout("ins 0, wrap 1", "[grow,fill]", "[grow,fill][]"));
-        this.closeTab = new JButton(T._.jd_plugins_optional_jdchat_closeTab());
-        this.closeTab.addActionListener(new ActionListener() {
+        frame.setLayout(new MigLayout("ins 0, wrap 1", "[grow,fill]", "[grow,fill][]"));
+        JButton closeTab = new JButton(T._.jd_plugins_optional_jdchat_closeTab());
+        closeTab.addActionListener(new ActionListener() {
             public void actionPerformed(final ActionEvent e) {
                 if (ChatExtension.this.tabbedPane.getSelectedIndex() > 0) {
                     ChatExtension.this.delPMS(ChatExtension.this.tabbedPane.getTitleAt(ChatExtension.this.tabbedPane.getSelectedIndex()));
@@ -575,18 +572,18 @@ public class ChatExtension extends AbstractExtension<ChatConfig> {
         final JScrollPane scrollPane_userlist = new JScrollPane(this.right);
         switch (userlistposition) {
         case 0:
-            this.frame.add(this.tabbedPane, "split 2");
-            this.frame.add(scrollPane_userlist, "width 180:180:180");
+            frame.add(this.tabbedPane, "split 2");
+            frame.add(scrollPane_userlist, "width 180:180:180");
             break;
         default:
         case 1:
-            this.frame.add(scrollPane_userlist, "width 180:180:180 ,split 2");
-            this.frame.add(this.tabbedPane);
+            frame.add(scrollPane_userlist, "width 180:180:180 ,split 2");
+            frame.add(this.tabbedPane);
             break;
         }
 
-        this.frame.add(this.textField, "growx, split 2");
-        this.frame.add(this.closeTab, "w pref!");
+        frame.add(this.textField, "growx, split 2");
+        frame.add(closeTab, "w pref!");
 
         this.lastAction = System.currentTimeMillis();
         final MouseMotionListener ml = new MouseMotionListener() {
@@ -600,12 +597,12 @@ public class ChatExtension extends AbstractExtension<ChatConfig> {
             }
 
         };
-        this.frame.addMouseMotionListener(ml);
+        frame.addMouseMotionListener(ml);
         this.textArea.addMouseMotionListener(ml);
         this.textField.addMouseMotionListener(ml);
         this.right.addMouseMotionListener(ml);
-        this.frame.setSize(new Dimension(800, 600));
-        this.frame.setVisible(true);
+        frame.setSize(new Dimension(800, 600));
+        frame.setVisible(true);
 
         this.view = new JDChatView(this) {
 
@@ -619,7 +616,7 @@ public class ChatExtension extends AbstractExtension<ChatConfig> {
 
         };
 
-        this.view.setContent(this.frame);
+        this.view.setContent(frame);
     }
 
     void initIRC() {
@@ -984,11 +981,11 @@ public class ChatExtension extends AbstractExtension<ChatConfig> {
         for (final User name : this.NAMES) {
             sb.append("<li>");
             if (!color) {
-                sb.append("<span style='color:#" + name.getColor() + (name.name.equals(this.conn.getNick()) ? ";font-weight:bold;" : "") + "'>");
+                sb.append("<span style='color:#").append(name.getColor()).append(name.name.equals(this.conn.getNick()) ? ";font-weight:bold;" : "").append("'>");
             } else {
-                sb.append("<span style='color:#000000" + (name.name.equals(this.conn.getNick()) ? ";font-weight:bold;" : "") + "'>");
+                sb.append("<span style='color:#000000").append(name.name.equals(this.conn.getNick()) ? ";font-weight:bold;" : "").append("'>");
             }
-            sb.append(name.getRank() + name.getNickLink("query"));
+            sb.append(name.getRank()).append(name.getNickLink("query"));
             sb.append("</span></li>");
         }
         sb.append("</ul>");

@@ -28,6 +28,7 @@ import java.util.Timer;
 import javax.swing.JViewport;
 import javax.swing.filechooser.FileFilter;
 
+import jd.GeneralSettings;
 import jd.controlling.JDController;
 import jd.controlling.JDLogger;
 import jd.controlling.ProgressController;
@@ -186,7 +187,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
         } else {
             path = getSettings().getCustomExtractionPath();
             if (path == null) {
-                path = JDUtilities.getDefaultDownloadDirectory();
+                path = org.appwork.storage.config.JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder();
             }
         }
 
@@ -401,7 +402,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
                     }
                 }
 
-                String dif = new File(JDUtilities.getDefaultDownloadDirectory()).getAbsolutePath().replace(new File(link.getFileOutput()).getParent(), "");
+                String dif = new File(org.appwork.storage.config.JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder()).getAbsolutePath().replace(new File(link.getFileOutput()).getParent(), "");
                 if (new File(dif).isAbsolute()) {
                     dif = "";
                 }

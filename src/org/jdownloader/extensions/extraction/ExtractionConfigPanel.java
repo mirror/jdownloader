@@ -2,11 +2,11 @@ package org.jdownloader.extensions.extraction;
 
 import java.io.File;
 
+import jd.GeneralSettings;
 import jd.gui.swing.jdgui.views.settings.components.Checkbox;
 import jd.gui.swing.jdgui.views.settings.components.FolderChooser;
 import jd.gui.swing.jdgui.views.settings.components.Spinner;
 import jd.gui.swing.jdgui.views.settings.components.TextInput;
-import jd.utils.JDUtilities;
 
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.extensions.ExtensionConfigPanel;
@@ -67,7 +67,7 @@ public class ExtractionConfigPanel extends ExtensionConfigPanel<ExtractionExtens
             protected void runInEDT() {
                 toggleCustomizedPath.getComponent().setSelected(s.isCustomExtractionPathEnabled());
                 String path = s.getCustomExtractionPath();
-                if (path == null) path = new File(JDUtilities.getDefaultDownloadDirectory(), "extracted").getAbsolutePath();
+                if (path == null) path = new File(org.appwork.storage.config.JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder(), "extracted").getAbsolutePath();
                 customPath.getComponent().setText(path);
                 toggleDeleteArchives.getComponent().setSelected(s.isDeleteArchiveFilesAfterExtraction());
                 toggleOverwriteExisting.getComponent().setSelected(s.isOverwriteExistingFilesEnabled());

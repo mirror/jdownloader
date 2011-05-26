@@ -26,6 +26,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
 
+import jd.GeneralSettings;
 import jd.controlling.DownloadController;
 import jd.gui.swing.components.ComboBrowseFile;
 import jd.gui.swing.components.JDCollapser;
@@ -35,7 +36,6 @@ import jd.nutils.Formatter;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
-import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
 
 import org.jdownloader.gui.translate._GUI;
@@ -135,7 +135,7 @@ public class FilePackageInfo extends JDCollapser implements ActionListener, Focu
         brwSaveTo = new ComboBrowseFile("DownloadSaveTo");
         brwSaveTo.setEditable(true);
         brwSaveTo.setFileSelectionMode(ComboBrowseFile.DIRECTORIES_ONLY);
-        brwSaveTo.setText(JDUtilities.getDefaultDownloadDirectory());
+        brwSaveTo.setText(org.appwork.storage.config.JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder());
         brwSaveTo.addActionListener(this);
         brwSaveTo.addFocusListener(this);
         txtPassword = new JDTextField(true);

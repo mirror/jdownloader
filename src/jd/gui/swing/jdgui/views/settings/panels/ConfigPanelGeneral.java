@@ -18,9 +18,12 @@ package jd.gui.swing.jdgui.views.settings.panels;
 
 import javax.swing.ImageIcon;
 
+import jd.GeneralSettings;
+import jd.controlling.DownloadController;
 import jd.gui.swing.jdgui.views.settings.components.Checkbox;
 import jd.gui.swing.jdgui.views.settings.components.FolderChooser;
 
+import org.appwork.storage.config.JsonConfig;
 import org.jdownloader.gui.settings.AbstractConfigPanel;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
@@ -75,9 +78,19 @@ public class ConfigPanelGeneral extends AbstractConfigPanel {
 
     @Override
     public void save() {
+        GeneralSettings st = JsonConfig.create(GeneralSettings.class);
+        st.setDefaultDownloadFolder(downloadFolder.getText());
+        st.setCreatePackageNameSubFolderEnabled(subfolder.isSelected());
+        st.setHashCheckEnabled(autoCRC.isSelected());
+        st.setAutoOpenContainerAfterDownload(simpleContainer.isSelected());
     }
 
     @Override
     public void updateContents() {
+        GeneralSettings st = JsonConfig.create(GeneralSettings.class);
+        downloadFolder.setText(org.appwork.storage.config.JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder());
+        subfolder.setSelected(st.isCreatePackageNameSubFolderEnabled());
+        autoCRC.setSelected(st.isHashCheckEnabled());
+        this.simpleContainer.setSelected(st.isAutoOpenContainerAfterDownload());
     }
 }

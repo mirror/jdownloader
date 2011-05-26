@@ -29,7 +29,7 @@ import java.util.logging.Logger;
 
 import javax.imageio.ImageIO;
 
-import jd.DownloadSettings;
+import jd.GeneralSettings;
 import jd.config.Configuration;
 import jd.config.Property;
 import jd.config.SubConfiguration;
@@ -45,7 +45,6 @@ import jd.controlling.captcha.CaptchaDialogQueueEntry;
 import jd.controlling.reconnect.Reconnecter;
 import jd.controlling.reconnect.ipcheck.IPController;
 import jd.gui.swing.jdgui.views.linkgrabber.LinkGrabberPanel;
-import jd.gui.swing.jdgui.views.linkgrabber.LinkgrabberSettings;
 import jd.http.Browser;
 import jd.nutils.Formatter;
 import jd.nutils.encoding.Encoding;
@@ -266,12 +265,12 @@ public class Serverhandler implements Handler {
         } else if (requestUrl.equals("/get/grabber/isset/startafteradding")) {
             // Get whether start after adding option is set or not
 
-            final boolean value = JsonConfig.create(LinkgrabberSettings.class).isAutoDownloadStartAfterAddingEnabled();
+            final boolean value = JsonConfig.create(GeneralSettings.class).isAutoDownloadStartAfterAddingEnabled();
             response.addContent(value);
         } else if (requestUrl.equals("/get/grabber/isset/autoadding")) {
             // Get whether auto-adding option is set or not
 
-            final boolean value = JsonConfig.create(LinkgrabberSettings.class).isAutoaddLinksAfterLinkcheck();
+            final boolean value = JsonConfig.create(GeneralSettings.class).isAutoaddLinksAfterLinkcheck();
             response.addContent(value);
         } else if (requestUrl.equals("/get/downloads/all/count")) {
             // Get number of all DLs in DL-list
@@ -379,7 +378,7 @@ public class Serverhandler implements Handler {
         } else if (requestUrl.matches("(?is).*/set/downloaddir/general/.+")) {
             final String dir = new Regex(requestUrl, ".*/set/downloaddir/general/(.+)").getMatch(0);
 
-            JsonConfig.create(DownloadSettings.class).setDefaultDownloadFolder(dir);
+            JsonConfig.create(GeneralSettings.class).setDefaultDownloadFolder(dir);
             response.addContent("PARAM_DOWNLOAD_DIRECTORY=" + dir);
         } else if (requestUrl.matches("(?is).*/set/download/limit/[0-9]+")) {
             // Set download limit
@@ -405,7 +404,7 @@ public class Serverhandler implements Handler {
             Serverhandler.logger.fine("RemoteControl - Set PARAM_START_AFTER_ADDING_LINKS: " + value);
             //
 
-            JsonConfig.create(LinkgrabberSettings.class).setAutoDownloadStartAfterAddingEnabled(value);
+            JsonConfig.create(GeneralSettings.class).setAutoDownloadStartAfterAddingEnabled(value);
 
             response.addContent("PARAM_START_AFTER_ADDING_LINKS=" + value);
         } else if (requestUrl.matches("(?is).*/set/grabber/autoadding/(true|false)")) {
@@ -413,7 +412,7 @@ public class Serverhandler implements Handler {
 
             Serverhandler.logger.fine("RemoteControl - Set PARAM_START_AFTER_ADDING_LINKS_AUTO: " + value);
 
-            JsonConfig.create(LinkgrabberSettings.class).setAutoaddLinksAfterLinkcheck(value);
+            JsonConfig.create(GeneralSettings.class).setAutoaddLinksAfterLinkcheck(value);
 
             response.addContent("PARAM_START_AFTER_ADDING_LINKS_AUTO=" + value);
         } else if (requestUrl.equals("/action/start")) {

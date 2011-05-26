@@ -53,7 +53,8 @@ public class FolderChooser extends JPanel implements SettingsComponent, ActionLi
 
     public void actionPerformed(ActionEvent e) {
         try {
-            File[] ret = Dialog.getInstance().showFileChooser(id, _JDT._.gui_setting_folderchooser_title(), FileChooserSelectionMode.DIRECTORIES_ONLY, null, false, FileChooserType.SAVE_DIALOG, null);
+
+            File[] ret = Dialog.getInstance().showFileChooser(id, _JDT._.gui_setting_folderchooser_title(), FileChooserSelectionMode.DIRECTORIES_ONLY, null, false, FileChooserType.SAVE_DIALOG, new File(txt.getText()));
 
             txt.setText(ret[0].getAbsolutePath());
 
@@ -67,6 +68,10 @@ public class FolderChooser extends JPanel implements SettingsComponent, ActionLi
 
     public boolean isMultiline() {
         return false;
+    }
+
+    public String getText() {
+        return txt.getText();
     }
 
 }

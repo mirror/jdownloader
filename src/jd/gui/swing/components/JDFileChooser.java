@@ -20,7 +20,7 @@ import java.io.File;
 
 import javax.swing.JFileChooser;
 
-import jd.DownloadSettings;
+import jd.GeneralSettings;
 import jd.config.Configuration;
 import jd.utils.JDUtilities;
 
@@ -85,7 +85,7 @@ public class JDFileChooser extends JFileChooser {
         final String lastDir = JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_CURRENT_BROWSE_PATH + (id == null ? "" : id), null);
         if (lastDir != null) return new File(lastDir);
 
-        final String dlDir = JsonConfig.create(DownloadSettings.class).getDefaultDownloadFolder();
+        final String dlDir = JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder();
         if (dlDir != null) return new File(dlDir);
 
         return new File("");

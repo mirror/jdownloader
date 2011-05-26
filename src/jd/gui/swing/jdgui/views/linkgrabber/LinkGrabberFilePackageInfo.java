@@ -24,6 +24,7 @@ import java.awt.event.FocusListener;
 import javax.swing.JCheckBox;
 import javax.swing.JLabel;
 
+import jd.GeneralSettings;
 import jd.config.Configuration;
 import jd.controlling.LinkGrabberController;
 import jd.gui.swing.components.ComboBrowseFile;
@@ -107,7 +108,7 @@ public class LinkGrabberFilePackageInfo extends JDCollapser implements ActionLis
         brwSaveTo = new ComboBrowseFile("DownloadSaveTo");
         brwSaveTo.setEditable(true);
         brwSaveTo.setFileSelectionMode(ComboBrowseFile.DIRECTORIES_ONLY);
-        brwSaveTo.setText(JDUtilities.getDefaultDownloadDirectory());
+        brwSaveTo.setText(org.appwork.storage.config.JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder());
         brwSaveTo.addActionListener(this);
 
         txtPassword = new JDTextField(true);

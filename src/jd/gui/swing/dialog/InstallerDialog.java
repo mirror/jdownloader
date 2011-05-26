@@ -18,7 +18,7 @@ import javax.swing.SwingConstants;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
-import jd.DownloadSettings;
+import jd.GeneralSettings;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.ConfigGroup;
@@ -46,7 +46,7 @@ public class InstallerDialog extends AbstractDialog<Object> {
         final InstallerDialog dialog = new InstallerDialog(dlFolder);
         try {
             Dialog.getInstance().showDialog(dialog);
-            return JsonConfig.create(DownloadSettings.class).getDefaultDownloadFolder() != null;
+            return JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder() != null;
 
         } catch (DialogClosedException e) {
             e.printStackTrace();
@@ -172,7 +172,7 @@ public class InstallerDialog extends AbstractDialog<Object> {
 
         if (b) {
 
-            JsonConfig.create(DownloadSettings.class).setDefaultDownloadFolder(browseFile.getText());
+            JsonConfig.create(GeneralSettings.class).setDefaultDownloadFolder(browseFile.getText());
         }
     }
 }

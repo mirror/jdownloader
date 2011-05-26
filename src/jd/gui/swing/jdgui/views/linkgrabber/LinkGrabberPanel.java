@@ -27,9 +27,11 @@ import java.util.logging.Logger;
 import javax.swing.JScrollPane;
 import javax.swing.Timer;
 
+import jd.GeneralSettings;
 import jd.config.Configuration;
 import jd.config.Property;
 import jd.config.SubConfiguration;
+import jd.controlling.DownloadController;
 import jd.controlling.DownloadWatchDog;
 import jd.controlling.GarbageController;
 import jd.controlling.LinkCheck;
@@ -496,14 +498,14 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
             confirmPackage(all.get(i), null, i);
         }
         LGINSTANCE.throwLinksAdded();
-        if (JsonConfig.create(LinkgrabberSettings.class).isAutoDownloadStartAfterAddingEnabled()) {
+        if (JsonConfig.create(GeneralSettings.class).isAutoDownloadStartAfterAddingEnabled()) {
             DownloadWatchDog.getInstance().startDownloads();
         }
     }
 
     private void addToDownloadDirs(String downloadDirectory, String packageName) {
-        if (packageName.length() < 5 || downloadDirectory.equalsIgnoreCase(JDUtilities.getDefaultDownloadDirectory())) return;
-        LinkgrabberSettings storage = JsonConfig.create(LinkgrabberSettings.class);
+        if (packageName.length() < 5 || downloadDirectory.equalsIgnoreCase(org.appwork.storage.config.JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder())) return;
+        GeneralSettings storage = JsonConfig.create(GeneralSettings.class);
         ArrayList<String[]> history = storage.getDownloadFolderHistory();
 
         history.add(new String[] { downloadDirectory, packageName });
@@ -574,7 +576,7 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
         /* set same add date to package and files */
         fp.setCreated(fpv2.getCreated());
         if (!fpv2.isIgnored()) {
-            if (JsonConfig.create(LinkgrabberSettings.class).isAddNewLinksOnTop()) {
+            if (JsonConfig.create(GeneralSettings.class).isAddNewLinksOnTop()) {
                 JDUtilities.getDownloadController().addPackageAt(fp, index, 0);
             } else {
                 JDUtilities.getDownloadController().addPackage(fp);

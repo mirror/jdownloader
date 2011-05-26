@@ -9,8 +9,8 @@
 //    This program is distributed in the hope that it will be useful,
 //    but WITHOUT ANY WARRANTY; without even the implied warranty of
 //    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-//    GNU General Public License for more details.
-//
+//    GNU General Public License for more details. 
+// 
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
@@ -21,7 +21,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.regex.Pattern;
 
-import jd.utils.JDUtilities;
+import jd.GeneralSettings;
 
 import org.appwork.utils.Regex;
 
@@ -61,7 +61,7 @@ public class CustomizeSetting implements Serializable, Comparable<CustomizeSetti
 
     private String            packageName;
 
-    private String            downloadDir      = JDUtilities.getDefaultDownloadDirectory();
+    private String            downloadDir      = org.appwork.storage.config.JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder();
 
     private boolean           extract          = true;
 

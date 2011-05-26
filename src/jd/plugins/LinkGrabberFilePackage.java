@@ -22,6 +22,7 @@ import java.util.Set;
 
 import javax.swing.ImageIcon;
 
+import jd.GeneralSettings;
 import jd.config.Configuration;
 import jd.config.Property;
 import jd.config.SubConfiguration;
@@ -99,7 +100,7 @@ public class LinkGrabberFilePackage extends Property implements LinkGrabberFileP
 
     public LinkGrabberFilePackage() {
         created = System.currentTimeMillis();
-        downloadDirectory = JDUtilities.getDefaultDownloadDirectory();
+        downloadDirectory = org.appwork.storage.config.JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder();
         name = JDUtilities.removeEndingPoints(_JDT._.controller_packages_defaultname());
         useSubDir = JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_PACKETNAME_AS_SUBFOLDER, false);
         // TODO
