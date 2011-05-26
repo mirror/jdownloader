@@ -90,7 +90,7 @@ public class ProgressController implements MessageListener, Comparable<ProgressC
     }
 
     public ProgressController(Type type, String name, String statusText, long max, String iconKey) {
-        this(type, name, statusText, max, NewTheme.I().getIcon(iconKey, ICONSIZE));
+        this(type, name, statusText, max, iconKey == null ? null : NewTheme.I().getIcon(iconKey, ICONSIZE));
 
     }
 
