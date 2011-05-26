@@ -40,8 +40,8 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginUtils;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -60,9 +60,9 @@ public class LnkCrptWs extends PluginForDecrypt {
         final String parameter = param.toString();
         setBrowserExclusive();
         br.getHeaders().put("User-Agent", RandomUserAgent.generate());
+        br.getHeaders().put("Accept-Language", "en-EN");
         final String containerId = new Regex(parameter, "dir/([a-zA-Z0-9]+)").getMatch(0);
         br.setReadTimeout(150000);
-        // logger.info("br.ReadTimeout " + br.getReadTimeout());
         try {
             br.getPage("http://linkcrypt.ws/dir/" + containerId);
         } catch (final Exception e) {
@@ -72,31 +72,11 @@ public class LnkCrptWs extends PluginForDecrypt {
             throw e;
         }
         if (br.containsHTML("Error 404 - Ordner nicht gefunden")) { throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore.")); }
-        // check for a password. Store latest password in DB
-        Form password = br.getForm(0);
-        if (password != null && password.hasInputFieldByName("password")) {
-            // Password Protected
-            String latestPassword = getPluginConfig().getStringProperty("PASSWORD");
-            if (latestPassword != null) {
-                password.put("password", latestPassword);
-                br.submitForm(password);
-            }
-            // no defaultpassword, or defaultpassword is wrong
-            password = br.getForm(0);
-            if (password != null && password.hasInputFieldByName("password")) {
-                latestPassword = PluginUtils.askPassword(this);
-                password.put("password", latestPassword);
-                br.setDebug(true);
-                br.submitForm(password);
-                password = br.getForm(0);
-                if (password != null && password.hasInputFieldByName("password")) { throw new DecrypterException(DecrypterException.PASSWORD); }
-                getPluginConfig().setProperty("PASSWORD", latestPassword);
-                getPluginConfig().save();
-            }
-        }
         // Different captcha types
         boolean valid = true;
-        if (br.containsHTML("CaptX|ColorX|TextX")) {
+        // Key-Captchas not supported yet
+        if (br.containsHTML("Key-Captcha")) { throw new DecrypterException(DecrypterException.CAPTCHA); }
+        if (br.containsHTML("CaptX|TextX")) {
             final int max_attempts = 3;
             for (int attempts = 0; attempts < max_attempts; attempts++) {
                 if (valid && attempts > 0) {
@@ -105,35 +85,53 @@ public class LnkCrptWs extends PluginForDecrypt {
                 final Form[] captchas = br.getForms();
                 String url = null;
                 for (final Form captcha : captchas) {
-                    if (captcha != null && br.containsHTML("CaptX|ColorX|TextX")) {
-                        url = captcha.getRegex("src=\"([^\"]*\\.php\\?secid=[^\"]*)\"[^>]*style=\"cursor:(?![^>]*display[^>]*none)").getMatch(0);
-                        if (url == null) {
-                            url = captcha.getRegex("style=\"cursor:(?![^>]*display[^>]*none)src=\"([^\"]*\\.php\\?secid=[^\"]*)\"").getMatch(1);
-                        }
-                        if (url == null && captcha != null && !captcha.hasInputFieldByName("key")) {
-                            url = captcha.getRegex("src=\"(.*?secid.*?)\"").getMatch(0);
-                        }
+                    if (captcha != null && br.containsHTML("CaptX|TextX")) {
+                        url = captcha.getRegex("src=\"(.*?secid.*?)\"").getMatch(0);
                         if (url != null) {
                             valid = false;
                             final String capDescription = captcha.getRegex("<b>(.*?)</b>").getMatch(0);
                             final File file = this.getLocalCaptchaFile();
                             br.cloneBrowser().getDownload(file, url);
-                            // progress.setInitials(String.valueOf(max_attempts
-                            // - attempts));
                             final Point p = UserIO.getInstance().requestClickPositionDialog(file, "LinkCrypt.ws | " + String.valueOf(max_attempts - attempts), capDescription);
                             captcha.put("x", p.x + "");
                             captcha.put("y", p.y + "");
                             br.submitForm(captcha);
-                            if (!br.containsHTML("CaptX|ColorX|TextX")) {
+                            if (!br.containsHTML("CaptX|TextX")) {
                                 valid = true;
                             }
                         }
                     }
                 }
             }
-            // progress.setInitials("LC");
         }
         if (!valid) { throw new DecrypterException(DecrypterException.CAPTCHA); }
+        // check for a password. Store latest password in DB
+        Form password = br.getForm(0);
+        if (password != null && password.hasInputFieldByName("password")) {
+            String latestPassword = getPluginConfig().getStringProperty("PASSWORD");
+            if (latestPassword != null) {
+                password.put("password", latestPassword);
+                br.submitForm(password);
+            }
+            // no defaultpassword, or defaultpassword is wrong
+            for (int i = 0; i <= 3; i++) {
+                password = br.getForm(0);
+                if (password != null && password.hasInputFieldByName("password")) {
+                    latestPassword = Plugin.getUserInput(null, param);
+                    password.put("password", latestPassword);
+                    br.submitForm(password);
+                    password = br.getForm(0);
+                    if (password != null && password.hasInputFieldByName("password")) {
+                        continue;
+                    }
+                    getPluginConfig().setProperty("PASSWORD", latestPassword);
+                    getPluginConfig().save();
+                    break;
+                }
+                break;
+            }
+        }
+        if (password != null && password.hasInputFieldByName("password")) { throw new DecrypterException(DecrypterException.PASSWORD); }
         // Look for containers
         final String[] containers = br.getRegex("eval(.*?)\n").getColumn(0);
         for (final String c : containers) {
