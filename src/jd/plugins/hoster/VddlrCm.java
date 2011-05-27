@@ -152,6 +152,8 @@ public class VddlrCm extends PluginForHost {
         }
         if (key == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
 
+        br.setFollowRedirects(true);
+        br.getPage(dllink);
         final String postdata = getAMFRequest(key, value);
         final String url = "http://www.viddler.com/amfgateway.action";
         br.getHeaders().put("Content-Type", "application/x-amf");

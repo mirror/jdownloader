@@ -47,14 +47,14 @@ public class AniLinkzCom extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
-        this.br.getHeaders().put("Referer", null);
-        this.br.getPage(parameter);
-        final Browser br2 = this.br.cloneBrowser();
+        br.getHeaders().put("Referer", null);
+        br.getPage(parameter);
+        final Browser br2 = br.cloneBrowser();
         // set filepackage
-        final String filepackage = this.br.getRegex("<h3>(.*?)</h3>").getMatch(0);
+        final String filepackage = br.getRegex("<h3>(.*?)</h3>").getMatch(0);
         // get Mirrors
         int mirrorCount = 0;
-        final String[] img = this.br.getRegex("(/images/src\\d+\\.png)").getColumn(0);
+        final String[] img = br.getRegex("(/images/src\\d+\\.png)").getColumn(0);
         for (int i = img.length - 1; i > 0; i--) {
             br2.openGetConnection(img[i]);
             if (br2.getRequest().getHttpConnection().getResponseCode() == 404) {
@@ -71,16 +71,16 @@ public class AniLinkzCom extends PluginForDecrypt {
         progress.setRange(mirrorCount);
         for (int i = 0; i <= mirrorCount; i++) {
             progress.increase(1);
-            String escapeAll = this.br.getRegex("escapeall\\('(.*)'\\)\\)\\);").getMatch(0);
+            String escapeAll = br.getRegex("escapeall\\('(.*)'\\)\\)\\);").getMatch(0);
             if (escapeAll != null) {
                 escapeAll = escapeAll.replaceAll("[A-Z~!@#\\$\\*\\{\\}\\[\\]\\-\\+\\.]?", "");
             } else {
-                this.logger.warning("Decrypter out of date for link: " + parameter);
+                logger.warning("Decrypter out of date for link: " + parameter);
                 return null;
             }
             unescape.add(Encoding.htmlDecode(escapeAll));
             dllinks = new Regex(unescape.get(i), "(href|url|file)=\"?(.*?)\"").getColumn(1);
-            if ((dllinks == null) || (dllinks.length == 0)) {
+            if (dllinks == null || dllinks.length == 0) {
                 dllinks = new Regex(unescape.get(i), "src=\"(.*?)\"").getColumn(0);
             }
             if (dllinks.length > 0) {
@@ -139,21 +139,21 @@ public class AniLinkzCom extends PluginForDecrypt {
                     if (mirror == null) {
                         mirror = new Regex(dllink, "http://.*?\\.(\\w+\\.\\w+)/.*?").getMatch(0);
                     }
-                    if ((mirrorCount == 0) && (new Regex(mirror, AniLinkzCom.PATTERN_UNSUPPORTED_HOSTER).count() == 1)) {
-                        this.logger.warning(mirror + " is not supported yet! Link: " + parameter);
+                    if (mirrorCount == 0 && new Regex(mirror, PATTERN_UNSUPPORTED_HOSTER).count() == 1) {
+                        logger.warning(mirror + " is not supported yet! Link: " + parameter);
                         return null;
                     }
-                    if ((new Regex(dllink, AniLinkzCom.PATTERN_SUPPORTED_FILE_EXTENSION).count() == 1) || (new Regex(dllink, AniLinkzCom.PATTERN_SUPPORTED_HOSTER).count() == 1)) {
+                    if (new Regex(dllink, PATTERN_SUPPORTED_FILE_EXTENSION).count() == 1 || new Regex(dllink, PATTERN_SUPPORTED_HOSTER).count() == 1) {
                         String ext = dllink.substring(dllink.lastIndexOf("."));
                         if (ext.length() > 3) {
                             ext = ext.substring(0, 4);
                         }
-                        final DownloadLink dl = this.createDownloadlink(dllink.trim());
+                        final DownloadLink dl = createDownloadlink(dllink.trim());
                         final FilePackage fp = FilePackage.getInstance();
                         fp.setName(filepackage.trim());
                         dl.setFilePackage(fp);
                         dl.setProperty("removeReferer", true);
-                        if ((ext != null) && (new Regex(dllink, AniLinkzCom.PATTERN_SUPPORTED_HOSTER).count() == 0)) {
+                        if (ext != null && new Regex(dllink, PATTERN_SUPPORTED_HOSTER).count() == 0) {
                             final String filename = filepackage + "_mirror_" + (i + 1) + "_" + mirror + ext;
                             dl.setFinalFileName(filename.trim());
                         }
@@ -163,11 +163,11 @@ public class AniLinkzCom extends PluginForDecrypt {
                 }
             }
             if (mirrorCount > i) {
-                this.br.getPage(parameter + (i + 2) + "/");
+                br.getPage(parameter + (i + 2) + "/");
             }
         }
         if (decryptedLinks.size() == 0) {
-            this.logger.warning("Decrypter out of date for link: " + parameter);
+            logger.warning("Decrypter out of date for link: " + parameter);
             return null;
         }
         return decryptedLinks;
