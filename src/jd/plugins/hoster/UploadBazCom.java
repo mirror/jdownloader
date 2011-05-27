@@ -38,16 +38,15 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploadfa.com" }, urls = { "http://(www\\.)?uploadfa\\.com/[a-z0-9]{12}" }, flags = { 0 })
-public class UploadFaCom extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploadbaz.com" }, urls = { "http://(www\\.)?uploadbaz\\.com/[a-z0-9]{12}" }, flags = { 0 })
+public class UploadBazCom extends PluginForHost {
 
-    public UploadFaCom(PluginWrapper wrapper) {
+    public UploadBazCom(PluginWrapper wrapper) {
         super(wrapper);
         // this.enablePremium(COOKIE_HOST + "/premium.html");
     }
 
-    // XfileSharingProBasic Version 2.3.0.0, added extra errorhandling, don't
-    // set finalfilename
+    // XfileSharingProBasic Version 2.3.0.1
     @Override
     public String getAGBLink() {
         return COOKIE_HOST + "/tos.html";
@@ -55,7 +54,7 @@ public class UploadFaCom extends PluginForHost {
 
     private String              BRBEFORE     = "";
     private static final String PASSWORDTEXT = "(<br><b>Password:</b> <input|<br><b>Passwort:</b> <input)";
-    private static final String COOKIE_HOST  = "http://uploadfa.com";
+    private static final String COOKIE_HOST  = "http://uploadbaz.com";
     public boolean              NOPREMIUM    = false;
 
     @Override
@@ -80,7 +79,6 @@ public class UploadFaCom extends PluginForHost {
                         filename = new Regex(BRBEFORE, "Filename.*?nowrap.*?>(.*?)</td").getMatch(0);
                         if (filename == null) {
                             filename = new Regex(BRBEFORE, "File Name.*?nowrap>(.*?)</td").getMatch(0);
-                            if (filename == null) filename = new Regex(BRBEFORE, "<Title>Download (.*?)</Title>").getMatch(0);
                         }
                     }
                 }
@@ -102,7 +100,7 @@ public class UploadFaCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         filename = filename.replaceAll("(</b>|<b>|\\.html)", "");
-        link.setName(filename.trim());
+        link.setFinalFileName(filename.trim());
         if (filesize != null && !filesize.equals("")) {
             logger.info("Filesize found, filesize = " + filesize);
             link.setDownloadSize(SizeFormatter.getSize(filesize));
@@ -183,11 +181,12 @@ public class UploadFaCom extends PluginForHost {
                 logger.info("Detected captcha method \"Re Captcha\" for this host");
                 PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
                 jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
-                rc.parse();
+                rc.setForm(dlForm);
+                String id = this.br.getRegex("\\?k=([A-Za-z0-9%_\\+\\- ]+)\"").getMatch(0);
+                rc.setId(id);
                 rc.load();
                 File cf = rc.downloadCaptcha(getLocalCaptchaFile());
                 String c = getCaptchaCode(cf, downloadLink);
-                waitTime(timeBefore, downloadLink);
                 rc.prepareForm(c);
                 logger.info("Put captchacode " + c + " obtained by captcha metod \"Re Captcha\" in the form and submitted it.");
                 dlForm = rc.getForm();
@@ -212,6 +211,7 @@ public class UploadFaCom extends PluginForHost {
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
+            doSomething();
             checkServerErrors();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -351,7 +351,6 @@ public class UploadFaCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable via premium");
             }
         }
-        if (new Regex(BRBEFORE, "(Refresh this page in some minutes\\.<|>This server is in maintenance mode)").matches()) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server in maintenance mode", 60 * 60 * 1000l);
     }
 
     private String decodeDownloadLink(String s) {
