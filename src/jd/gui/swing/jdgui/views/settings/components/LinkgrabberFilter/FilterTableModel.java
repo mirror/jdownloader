@@ -14,7 +14,7 @@ import org.appwork.utils.swing.table.ExtTableHeaderRenderer;
 import org.appwork.utils.swing.table.ExtTableModel;
 import org.appwork.utils.swing.table.columns.ExtCheckColumn;
 import org.appwork.utils.swing.table.columns.ExtComboColumn;
-import org.jdownloader.extensions.antireconnect.translate.T;
+import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 
 public class FilterTableModel extends ExtTableModel<LinkFilter> {
@@ -32,7 +32,7 @@ public class FilterTableModel extends ExtTableModel<LinkFilter> {
     @Override
     protected void initColumns() {
 
-        this.addColumn(new ExtCheckColumn<LinkFilter>(T._.settings_linkgrabber_filter_columns_enabled()) {
+        this.addColumn(new ExtCheckColumn<LinkFilter>(_GUI._.settings_linkgrabber_filter_columns_enabled()) {
 
             public ExtTableHeaderRenderer getHeaderRenderer(final JTableHeader jTableHeader) {
 
@@ -77,18 +77,60 @@ public class FilterTableModel extends ExtTableModel<LinkFilter> {
                 object.setEnabled(value);
             }
         });
+        this.addColumn(new ExtComboColumn<LinkFilter>(_GUI._.settings_linkgrabber_filter_columns_blackwhite(), new DefaultComboBoxModel(new String[] { _GUI._.settings_linkgrabber_filter_columns_blackwhite_exclude(), _GUI._.settings_linkgrabber_filter_columns_blackwhite_include() })) {
 
+            @Override
+            protected int getComboBoxItem(LinkFilter value) {
+                return value.isBlacklist() ? 0 : 1;
+            }
+
+            public boolean isEnabled(LinkFilter obj) {
+                return obj.isEnabled();
+            }
+
+            @Override
+            protected int getMaxWidth() {
+                return 90;
+            }
+
+            @Override
+            public int getMinWidth() {
+                return getMaxWidth();
+            }
+
+            @Override
+            public boolean isHidable() {
+                return false;
+            }
+
+            public boolean isSortable(LinkFilter obj) {
+                return true;
+            }
+
+            @Override
+            public boolean isEditable(LinkFilter obj) {
+                return true;
+            }
+
+            @Override
+            protected void setSelectedIndex(int value, LinkFilter object) {
+
+                object.setBlacklist(value == 0);
+
+            }
+
+        });
         String[] combo = new String[LinkFilter.Types.values().length];
         for (int i = 0; i < combo.length; i++) {
             switch (LinkFilter.Types.values()[i]) {
             case FILENAME:
-                combo[i] = T._.settings_linkgrabber_filter_types_filename();
+                combo[i] = _GUI._.settings_linkgrabber_filter_types_filename();
                 break;
             case PLUGIN:
-                combo[i] = T._.settings_linkgrabber_filter_types_plugin();
+                combo[i] = _GUI._.settings_linkgrabber_filter_types_plugin();
                 break;
             case URL:
-                combo[i] = T._.settings_linkgrabber_filter_types_url();
+                combo[i] = _GUI._.settings_linkgrabber_filter_types_url();
                 break;
             default:
                 combo[i] = LinkFilter.Types.values()[i].name();
@@ -101,7 +143,7 @@ public class FilterTableModel extends ExtTableModel<LinkFilter> {
             map.put(options[i].getHost(), options[i]);
             map.put(options[i].getPattern() + "", options[i]);
         }
-        this.addColumn(new ExtComboColumn<LinkFilter>(T._.settings_linkgrabber_filter_columns_type(), new DefaultComboBoxModel(combo)) {
+        this.addColumn(new ExtComboColumn<LinkFilter>(_GUI._.settings_linkgrabber_filter_columns_type(), new DefaultComboBoxModel(combo)) {
 
             @Override
             protected int getComboBoxItem(LinkFilter value) {
@@ -160,7 +202,7 @@ public class FilterTableModel extends ExtTableModel<LinkFilter> {
         });
         this.addColumn(new FilterColumn());
 
-        this.addColumn(new ExtCheckColumn<LinkFilter>(T._.settings_linkgrabber_filter_columns_advanced()) {
+        this.addColumn(new ExtCheckColumn<LinkFilter>(_GUI._.settings_linkgrabber_filter_columns_advanced()) {
             public ExtTableHeaderRenderer getHeaderRenderer(final JTableHeader jTableHeader) {
 
                 final ExtTableHeaderRenderer ret = new ExtTableHeaderRenderer(this, jTableHeader) {

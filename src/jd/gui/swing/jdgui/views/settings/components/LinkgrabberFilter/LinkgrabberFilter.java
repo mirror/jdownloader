@@ -12,7 +12,7 @@ import net.miginfocom.swing.MigLayout;
 
 import org.appwork.utils.swing.HelpNotifier;
 import org.appwork.utils.swing.HelpNotifierCallbackListener;
-import org.jdownloader.extensions.antireconnect.translate.T;
+import org.jdownloader.gui.translate._GUI;
 
 public class LinkgrabberFilter extends JPanel implements SettingsComponent {
     private JToolBar    tb;
@@ -39,7 +39,7 @@ public class LinkgrabberFilter extends JPanel implements SettingsComponent {
             public void onHelpNotifyHidden(JComponent c) {
             }
 
-        }, T._.settings_linkgrabber_filter_test_helpurl());
+        }, _GUI._.settings_linkgrabber_filter_test_helpurl());
         add(new JScrollPane(table));
         add(txt, "split 2,growx,pushx");
         add(test, "shrinkx");

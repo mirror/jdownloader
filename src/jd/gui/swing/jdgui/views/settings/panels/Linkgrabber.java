@@ -19,7 +19,6 @@ package jd.gui.swing.jdgui.views.settings.panels;
 import javax.swing.ImageIcon;
 
 import jd.gui.swing.jdgui.views.settings.components.Checkbox;
-import jd.gui.swing.jdgui.views.settings.components.ComboBox;
 import jd.gui.swing.jdgui.views.settings.components.LinkgrabberFilter.LinkgrabberFilter;
 
 import org.appwork.storage.config.JsonConfig;
@@ -36,7 +35,6 @@ public class Linkgrabber extends AbstractConfigPanel {
     private Checkbox          cnl;
     private Checkbox          rename;
     private LinkgrabberFilter filter;
-    private ComboBox          blackOrWhite;
 
     public String getTitle() {
         return _JDT._.gui_settings_linkgrabber_title();
@@ -59,8 +57,6 @@ public class Linkgrabber extends AbstractConfigPanel {
         this.addHeader(_GUI._.gui_config_linkgrabber_ignorelist(), NewTheme.I().getIcon("filter", 32));
         this.addDescription(_JDT._.gui_settings_linkgrabber_filter_description());
         filter = new LinkgrabberFilter();
-        blackOrWhite = new ComboBox(new String[] { _GUI._.settings_linkgrabber_filter_blackorwhite_black(), _GUI._.settings_linkgrabber_filter_blackorwhite_white() });
-        addPair(_GUI._.gui_config_linkgrabber_filter_type(), blackOrWhite);
 
         add(filter);
 

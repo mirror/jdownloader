@@ -11,7 +11,7 @@ import jd.plugins.Account;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.utils.swing.table.columns.ExtComponentColumn;
-import org.jdownloader.extensions.antireconnect.translate.T;
+import org.jdownloader.gui.translate._GUI;
 
 public class ActionColumn extends ExtComponentColumn<Account> {
 
@@ -24,7 +24,7 @@ public class ActionColumn extends ExtComponentColumn<Account> {
     private PremiumzoneAction premzone;
 
     public ActionColumn() {
-        super(T._.premiumaccounttablemodel_column_actions());
+        super(_GUI._.premiumaccounttablemodel_column_actions());
         renderer = new JPanel(new MigLayout("ins 2", "[]", "[]"));
         editor = new JPanel(new MigLayout("ins 2", "[]", "[]"));
         renew = new RenewAction();

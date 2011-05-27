@@ -54,10 +54,7 @@ import org.jdownloader.settings.GeneralSettings;
 public class DownloadLink extends Property implements Serializable, Comparable<DownloadLink>, PackageLinkNode {
 
     public static enum AvailableStatus {
-        UNCHECKED,
-        FALSE,
-        UNCHECKABLE,
-        TRUE;
+        UNCHECKED, FALSE, UNCHECKABLE, TRUE;
     }
 
     public static final int                    LINKTYPE_CONTAINER       = 1;

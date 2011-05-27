@@ -22,7 +22,7 @@ import org.appwork.utils.swing.table.columns.ExtDateColumn;
 import org.appwork.utils.swing.table.columns.ExtPasswordEditorColumn;
 import org.appwork.utils.swing.table.columns.ExtProgressColumn;
 import org.appwork.utils.swing.table.columns.ExtTextColumn;
-import org.jdownloader.extensions.antireconnect.translate.T;
+import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 
 public class PremiumAccountTableModel extends ExtTableModel<Account> {
@@ -52,7 +52,7 @@ public class PremiumAccountTableModel extends ExtTableModel<Account> {
     @Override
     protected void initColumns() {
 
-        this.addColumn(new ExtCheckColumn<Account>(T._.premiumaccounttablemodel_column_enabled()) {
+        this.addColumn(new ExtCheckColumn<Account>(_GUI._.premiumaccounttablemodel_column_enabled()) {
 
             public ExtTableHeaderRenderer getHeaderRenderer(final JTableHeader jTableHeader) {
 
@@ -100,7 +100,7 @@ public class PremiumAccountTableModel extends ExtTableModel<Account> {
             }
         });
         this.addColumn(new ActionColumn());
-        this.addColumn(new ExtTextColumn<Account>(T._.premiumaccounttablemodel_column_hoster()) {
+        this.addColumn(new ExtTextColumn<Account>(_GUI._.premiumaccounttablemodel_column_hoster()) {
 
             @Override
             public boolean isEnabled(Account obj) {
@@ -138,7 +138,7 @@ public class PremiumAccountTableModel extends ExtTableModel<Account> {
 
         });
 
-        this.addColumn(new ExtTextColumn<Account>(T._.premiumaccounttablemodel_column_user()) {
+        this.addColumn(new ExtTextColumn<Account>(_GUI._.premiumaccounttablemodel_column_user()) {
 
             @Override
             public boolean isHidable() {
@@ -175,7 +175,7 @@ public class PremiumAccountTableModel extends ExtTableModel<Account> {
                 return value.getUser();
             }
         });
-        this.addColumn(new ExtPasswordEditorColumn<Account>(T._.premiumaccounttablemodel_column_password()) {
+        this.addColumn(new ExtPasswordEditorColumn<Account>(_GUI._.premiumaccounttablemodel_column_password()) {
             @Override
             public boolean isHidable() {
                 return false;
@@ -207,7 +207,7 @@ public class PremiumAccountTableModel extends ExtTableModel<Account> {
             }
         });
 
-        this.addColumn(new ExtDateColumn<Account>(T._.premiumaccounttablemodel_column_expiredate()) {
+        this.addColumn(new ExtDateColumn<Account>(_GUI._.premiumaccounttablemodel_column_expiredate()) {
             @Override
             public boolean isEnabled(Account obj) {
                 return obj.isEnabled();
@@ -239,7 +239,7 @@ public class PremiumAccountTableModel extends ExtTableModel<Account> {
             }
         });
 
-        this.addColumn(new ExtProgressColumn<Account>(T._.premiumaccounttablemodel_column_trafficleft()) {
+        this.addColumn(new ExtProgressColumn<Account>(_GUI._.premiumaccounttablemodel_column_trafficleft()) {
             @Override
             public boolean isEnabled(Account obj) {
                 return obj.isEnabled();
@@ -254,13 +254,13 @@ public class PremiumAccountTableModel extends ExtTableModel<Account> {
             protected String getString(Account ac) {
                 AccountInfo ai = ac.getAccountInfo();
                 if (!ac.isValid()) {
-                    return T._.premiumaccounttablemodel_column_trafficleft_invalid();
+                    return _GUI._.premiumaccounttablemodel_column_trafficleft_invalid();
                 } else if (ai == null) {
-                    return T._.premiumaccounttablemodel_column_trafficleft_unchecked();
+                    return _GUI._.premiumaccounttablemodel_column_trafficleft_unchecked();
                 } else {
                     // COL_PROGRESS = COL_PROGRESS_NORMAL;
                     if (ai.isUnlimitedTraffic()) {
-                        return T._.premiumaccounttablemodel_column_trafficleft_unlimited();
+                        return _GUI._.premiumaccounttablemodel_column_trafficleft_unlimited();
                     } else {
                         return Formatter.formatReadable(ai.getTrafficLeft()) + "/" + Formatter.formatReadable(ai.getTrafficMax());
 

@@ -7,6 +7,16 @@ public class LinkFilter {
 
     }
 
+    private boolean blacklist = true;
+
+    public boolean isBlacklist() {
+        return blacklist;
+    }
+
+    public void setBlacklist(boolean blacklist) {
+        this.blacklist = blacklist;
+    }
+
     private boolean enabled;
     private boolean fullRegex;
 

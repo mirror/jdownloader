@@ -17,7 +17,7 @@ import org.appwork.utils.swing.table.columns.ExtCheckColumn;
 import org.appwork.utils.swing.table.columns.ExtComboColumn;
 import org.appwork.utils.swing.table.columns.ExtPasswordEditorColumn;
 import org.appwork.utils.swing.table.columns.ExtTextColumn;
-import org.jdownloader.extensions.antireconnect.translate.T;
+import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 
 public class AuthTableModel extends ExtTableModel<AuthenticationInfo> {
@@ -43,7 +43,7 @@ public class AuthTableModel extends ExtTableModel<AuthenticationInfo> {
     @Override
     protected void initColumns() {
 
-        this.addColumn(new ExtCheckColumn<AuthenticationInfo>(T._.authtablemodel_column_enabled()) {
+        this.addColumn(new ExtCheckColumn<AuthenticationInfo>(_GUI._.authtablemodel_column_enabled()) {
 
             public ExtTableHeaderRenderer getHeaderRenderer(final JTableHeader jTableHeader) {
 
@@ -88,13 +88,13 @@ public class AuthTableModel extends ExtTableModel<AuthenticationInfo> {
                 object.setEnabled(value);
             }
         });
-        this.addColumn(new ExtComboColumn<AuthenticationInfo>(T._.authtablemodel_column_type(), null) {
+        this.addColumn(new ExtComboColumn<AuthenticationInfo>(_GUI._.authtablemodel_column_type(), null) {
             @Override
             public boolean isHidable() {
                 return false;
             }
 
-            private ComboBoxModel typeModel = new DefaultComboBoxModel(new String[] { T._.authtablemodel_column_type_http(), T._.authtablemodel_column_type_ftp() });
+            private ComboBoxModel typeModel = new DefaultComboBoxModel(new String[] { _GUI._.authtablemodel_column_type_http(), _GUI._.authtablemodel_column_type_ftp() });
 
             @Override
             public ComboBoxModel updateModel(ComboBoxModel dataModel, AuthenticationInfo value) {
@@ -132,7 +132,7 @@ public class AuthTableModel extends ExtTableModel<AuthenticationInfo> {
             }
 
         });
-        this.addColumn(new ExtTextColumn<AuthenticationInfo>(T._.authtablemodel_column_host()) {
+        this.addColumn(new ExtTextColumn<AuthenticationInfo>(_GUI._.authtablemodel_column_host()) {
             @Override
             public boolean isHidable() {
                 return false;
@@ -161,7 +161,7 @@ public class AuthTableModel extends ExtTableModel<AuthenticationInfo> {
             }
 
         });
-        this.addColumn(new ExtTextColumn<AuthenticationInfo>(T._.authtablemodel_column_username()) {
+        this.addColumn(new ExtTextColumn<AuthenticationInfo>(_GUI._.authtablemodel_column_username()) {
             @Override
             public boolean isHidable() {
                 return false;
@@ -189,7 +189,7 @@ public class AuthTableModel extends ExtTableModel<AuthenticationInfo> {
 
         });
 
-        this.addColumn(new ExtPasswordEditorColumn<AuthenticationInfo>(T._.authtablemodel_column_password()) {
+        this.addColumn(new ExtPasswordEditorColumn<AuthenticationInfo>(_GUI._.authtablemodel_column_password()) {
             @Override
             public boolean isHidable() {
                 return false;

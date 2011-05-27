@@ -14,7 +14,7 @@ import org.appwork.utils.swing.table.ExtTableModel;
 import org.appwork.utils.swing.table.columns.ExtComboColumn;
 import org.appwork.utils.swing.table.columns.ExtCompoundColumn;
 import org.appwork.utils.swing.table.columns.ExtTextColumn;
-import org.jdownloader.extensions.antireconnect.translate.T;
+import org.jdownloader.gui.translate._GUI;
 
 public class FilterColumn extends ExtCompoundColumn<LinkFilter> {
 
@@ -22,7 +22,7 @@ public class FilterColumn extends ExtCompoundColumn<LinkFilter> {
     private ExtComboColumn<LinkFilter> combo;
 
     public FilterColumn() {
-        super(T._.settings_linkgrabber_filter_columns_regex(), null);
+        super(_GUI._.settings_linkgrabber_filter_columns_regex(), null);
 
         txt = new ExtTextColumn<LinkFilter>("") {
 
