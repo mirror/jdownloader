@@ -53,18 +53,18 @@ public class FilestoreTo extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
         // All other browsers seem to be blocked
-        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows; U; Windows NT 6.1; de; rv:1.9.2.16) Gecko/20110319 Firefox/3.6.16");
+        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows; U; Windows NT 6.1; de; rv:1.9.2.17) Gecko/20110420 Firefox/3.6.17");
         String url = downloadLink.getDownloadURL();
         String downloadName = null;
         String downloadSize = null;
-        for (int i = 1; i < 10; i++) {
+        for (int i = 1; i < 5; i++) {
             try {
                 br.getPage(url);
             } catch (Exception e) {
                 continue;
             }
-            if (!br.containsHTML("<strong>Download-Datei wurde nicht gefunden</strong")) {
-                downloadName = Encoding.htmlDecode(br.getRegex("<td colspan=\"2\" style=\"font\\-weight:bold; color:#DD0000;\">(.*?)</td>").getMatch(0));
+            if (!br.containsHTML("(>Download\\-Datei wurde nicht gefunden<|Entweder wurde die Datei von unseren Servern entfernt oder der Download-Link war falsch)")) {
+                downloadName = Encoding.htmlDecode(br.getRegex(">Dateiname:</td>[\t\n\r ]+<td colspan=\"2\" style=\"[A-Za-z0-9\\-;:# ]+\">(.*?)</td>").getMatch(0));
                 downloadSize = br.getRegex("<td width=\"220\" style=\"font\\-weight:bold;\">(.*?)</td>").getMatch(0);
                 if (downloadName != null) {
                     downloadLink.setName(downloadName);
@@ -73,7 +73,7 @@ public class FilestoreTo extends PluginForHost {
                 }
             }
         }
-        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
     }
 
     @Override
