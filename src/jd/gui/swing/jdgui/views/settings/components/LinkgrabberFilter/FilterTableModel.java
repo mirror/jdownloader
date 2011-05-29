@@ -19,6 +19,8 @@ import org.jdownloader.images.NewTheme;
 
 public class FilterTableModel extends ExtTableModel<LinkFilter> {
 
+    private static final long serialVersionUID = -7756459932564776739L;
+
     public FilterTableModel(String id) {
         super(id);
         fill();
@@ -34,9 +36,13 @@ public class FilterTableModel extends ExtTableModel<LinkFilter> {
 
         this.addColumn(new ExtCheckColumn<LinkFilter>(_GUI._.settings_linkgrabber_filter_columns_enabled()) {
 
+            private static final long serialVersionUID = -4667150369226691276L;
+
             public ExtTableHeaderRenderer getHeaderRenderer(final JTableHeader jTableHeader) {
 
                 final ExtTableHeaderRenderer ret = new ExtTableHeaderRenderer(this, jTableHeader) {
+
+                    private static final long serialVersionUID = 3938290423337000265L;
 
                     @Override
                     public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
@@ -78,6 +84,8 @@ public class FilterTableModel extends ExtTableModel<LinkFilter> {
             }
         });
         this.addColumn(new ExtComboColumn<LinkFilter>(_GUI._.settings_linkgrabber_filter_columns_blackwhite(), new DefaultComboBoxModel(new String[] { _GUI._.settings_linkgrabber_filter_columns_blackwhite_exclude(), _GUI._.settings_linkgrabber_filter_columns_blackwhite_include() })) {
+
+            private static final long serialVersionUID = 8475648905225363397L;
 
             @Override
             protected int getComboBoxItem(LinkFilter value) {
@@ -145,6 +153,8 @@ public class FilterTableModel extends ExtTableModel<LinkFilter> {
         }
         this.addColumn(new ExtComboColumn<LinkFilter>(_GUI._.settings_linkgrabber_filter_columns_type(), new DefaultComboBoxModel(combo)) {
 
+            private static final long serialVersionUID = -4412876997430100402L;
+
             @Override
             protected int getComboBoxItem(LinkFilter value) {
                 return value.getType().ordinal();
@@ -203,9 +213,13 @@ public class FilterTableModel extends ExtTableModel<LinkFilter> {
         this.addColumn(new FilterColumn());
 
         this.addColumn(new ExtCheckColumn<LinkFilter>(_GUI._.settings_linkgrabber_filter_columns_advanced()) {
+            private static final long serialVersionUID = -9104378643478603148L;
+
             public ExtTableHeaderRenderer getHeaderRenderer(final JTableHeader jTableHeader) {
 
                 final ExtTableHeaderRenderer ret = new ExtTableHeaderRenderer(this, jTableHeader) {
+
+                    private static final long serialVersionUID = 2051980596953422289L;
 
                     @Override
                     public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {

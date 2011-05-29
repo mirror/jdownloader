@@ -182,7 +182,7 @@ public class InfoBarExtension extends AbstractExtension<InfoBarConfig> {
     }
 
     @Override
-    public AddonPanel getGUI() {
+    public AddonPanel<InfoBarExtension> getGUI() {
         return null;
     }
 

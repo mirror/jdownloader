@@ -23,7 +23,6 @@ import javax.swing.ImageIcon;
 import jd.controlling.LinkGrabberController;
 import jd.controlling.LinkGrabberPackagingEvent;
 import jd.gui.swing.jdgui.menu.MenuAction;
-import jd.plugins.AddonPanel;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkGrabberFilePackage;
 
@@ -137,8 +136,7 @@ public class PackageCustomizerExtension extends AbstractExtension<PackageCustomi
     }
 
     @Override
-    public AddonPanel getGUI() {
-
+    public CustomizerView getGUI() {
         return view;
     }
 

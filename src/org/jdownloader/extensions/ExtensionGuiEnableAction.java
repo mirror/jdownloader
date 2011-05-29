@@ -10,13 +10,13 @@ import org.jdownloader.images.NewTheme;
 
 public class ExtensionGuiEnableAction extends AbstractAction {
 
-    private static final long serialVersionUID = 6997360773808826159L;
-    private AbstractExtension plg;
-    private ImageIcon         icon16Enabled;
-    private ImageIcon         icon16Disabled;
-    private boolean           java15;
+    private static final long    serialVersionUID = 6997360773808826159L;
+    private AbstractExtension<?> plg;
+    private ImageIcon            icon16Enabled;
+    private ImageIcon            icon16Disabled;
+    private boolean              java15;
 
-    public ExtensionGuiEnableAction(AbstractExtension plg) {
+    public ExtensionGuiEnableAction(AbstractExtension<?> plg) {
         super(plg.getName());
         this.plg = plg;
         java15 = Application.getJavaVersion() < 16000000;

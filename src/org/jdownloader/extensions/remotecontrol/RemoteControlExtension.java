@@ -126,7 +126,7 @@ public class RemoteControlExtension extends AbstractExtension<RemoteControlConfi
     }
 
     @Override
-    public AddonPanel getGUI() {
+    public AddonPanel<RemoteControlExtension> getGUI() {
         return null;
     }
 

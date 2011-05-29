@@ -18,6 +18,7 @@ import org.jdownloader.gui.translate._GUI;
 
 public class FilterColumn extends ExtCompoundColumn<LinkFilter> {
 
+    private static final long          serialVersionUID = -4066544229005850863L;
     private ExtTextColumn<LinkFilter>  txt;
     private ExtComboColumn<LinkFilter> combo;
 
@@ -25,6 +26,8 @@ public class FilterColumn extends ExtCompoundColumn<LinkFilter> {
         super(_GUI._.settings_linkgrabber_filter_columns_regex(), null);
 
         txt = new ExtTextColumn<LinkFilter>("") {
+
+            private static final long serialVersionUID = -3818106880945441886L;
 
             @Override
             public boolean isEditable(LinkFilter obj) {
@@ -54,6 +57,8 @@ public class FilterColumn extends ExtCompoundColumn<LinkFilter> {
             map.put(options[i].getHost(), i);
         }
         combo = new ExtComboColumn<LinkFilter>("", new DefaultComboBoxModel(options)) {
+
+            private static final long serialVersionUID = -3321450267594884039L;
 
             @Override
             protected int getComboBoxItem(LinkFilter value) {

@@ -263,7 +263,7 @@ public class ScriptLauncherExtension extends AbstractExtension<ScriptLauncherCon
     }
 
     @Override
-    public AddonPanel getGUI() {
+    public AddonPanel<ScriptLauncherExtension> getGUI() {
         return null;
     }
 

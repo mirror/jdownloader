@@ -10,7 +10,8 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 
 public class RemoveAction extends AbstractAction {
-    private FilterTable table;
+    private static final long serialVersionUID = -477419276505058907L;
+    private FilterTable       table;
 
     public RemoveAction(FilterTable table) {
         this.table = table;

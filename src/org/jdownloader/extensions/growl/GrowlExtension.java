@@ -95,7 +95,7 @@ public class GrowlExtension extends AbstractExtension<GrowlConfig> implements Co
     }
 
     @Override
-    public AddonPanel getGUI() {
+    public AddonPanel<GrowlExtension> getGUI() {
         return null;
     }
 

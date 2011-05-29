@@ -113,7 +113,7 @@ public class WebinterfaceClassicExtension extends AbstractExtension<Webinterface
     }
 
     @Override
-    public AddonPanel getGUI() {
+    public AddonPanel<WebinterfaceClassicExtension> getGUI() {
         return null;
     }
 

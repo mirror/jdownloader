@@ -850,7 +850,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
     }
 
     @Override
-    public AddonPanel getGUI() {
+    public AddonPanel<ExtractionExtension> getGUI() {
         return null;
     }
 

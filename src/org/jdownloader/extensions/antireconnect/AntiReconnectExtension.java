@@ -118,7 +118,7 @@ public class AntiReconnectExtension extends AbstractExtension<AntiReconnectConfi
     }
 
     @Override
-    public AddonPanel getGUI() {
+    public AddonPanel<AntiReconnectExtension> getGUI() {
         return null;
     }
 

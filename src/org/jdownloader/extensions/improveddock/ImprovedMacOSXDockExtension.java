@@ -107,7 +107,7 @@ public class ImprovedMacOSXDockExtension extends AbstractExtension<ImprovedMacOS
     }
 
     @Override
-    public AddonPanel getGUI() {
+    public AddonPanel<ImprovedMacOSXDockExtension> getGUI() {
         return null;
     }
 

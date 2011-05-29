@@ -159,7 +159,7 @@ public class TrayExtension extends AbstractExtension<TrayConfig> implements Mous
     }
 
     @Override
-    public AddonPanel getGUI() {
+    public AddonPanel<TrayExtension> getGUI() {
         return null;
     }
 

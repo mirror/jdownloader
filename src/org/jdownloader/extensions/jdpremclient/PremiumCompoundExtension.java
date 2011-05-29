@@ -227,7 +227,7 @@ public class PremiumCompoundExtension extends AbstractExtension<PremiumCompoundC
     }
 
     @Override
-    public AddonPanel getGUI() {
+    public AddonPanel<PremiumCompoundExtension> getGUI() {
         return null;
     }
 

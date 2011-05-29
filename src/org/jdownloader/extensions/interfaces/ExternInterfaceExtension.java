@@ -107,7 +107,7 @@ public class ExternInterfaceExtension extends AbstractExtension<ExternInterfaceC
     }
 
     @Override
-    public AddonPanel getGUI() {
+    public AddonPanel<ExternInterfaceExtension> getGUI() {
         return null;
     }
 

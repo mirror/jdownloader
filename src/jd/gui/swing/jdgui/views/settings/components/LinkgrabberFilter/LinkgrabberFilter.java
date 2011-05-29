@@ -15,10 +15,11 @@ import org.appwork.utils.swing.HelpNotifierCallbackListener;
 import org.jdownloader.gui.translate._GUI;
 
 public class LinkgrabberFilter extends JPanel implements SettingsComponent {
-    private JToolBar    tb;
-    private FilterTable table;
-    private JTextField  txt;
-    private JButton     test;
+    private static final long serialVersionUID = 6070464296168772795L;
+    private JToolBar          tb;
+    private FilterTable       table;
+    private JTextField        txt;
+    private JButton           test;
 
     public LinkgrabberFilter() {
         super(new MigLayout("ins 0,wrap 1", "[grow,fill]", "[][grow,fill][]"));

@@ -317,7 +317,7 @@ public class ConfigSidebar extends JPanel implements ControlListener, MouseMotio
 
     public synchronized SwitchPanel getSelectedPanel() {
         if (list.getSelectedValue() instanceof AbstractExtensionWrapper) {
-            AbstractExtension ext = ((AbstractExtensionWrapper) list.getSelectedValue())._getExtension();
+            AbstractExtension<?> ext = ((AbstractExtensionWrapper) list.getSelectedValue())._getExtension();
             if (ext == null) {
                 try {
                     ((AbstractExtensionWrapper) list.getSelectedValue()).init();

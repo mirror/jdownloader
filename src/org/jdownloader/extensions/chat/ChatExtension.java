@@ -178,7 +178,7 @@ public class ChatExtension extends AbstractExtension<ChatConfig> {
         }.invokeLater();
     }
 
-    public void addToText( final User user, final String style, final String msg) {
+    public void addToText(final User user, final String style, final String msg) {
         this.addToText(user, style, msg, this.textArea, this.sb);
     }
 
@@ -1047,8 +1047,7 @@ public class ChatExtension extends AbstractExtension<ChatConfig> {
     }
 
     @Override
-    public AddonPanel getGUI() {
-
+    public AddonPanel<ChatExtension> getGUI() {
         return view;
     }
 

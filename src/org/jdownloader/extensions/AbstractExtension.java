@@ -293,7 +293,7 @@ public abstract class AbstractExtension<T extends ExtensionConfigInterface> {
         return true;
     }
 
-    public abstract AddonPanel getGUI();
+    public abstract AddonPanel<? extends AbstractExtension<T>> getGUI();
 
     public boolean isDefaultEnabled() {
         return false;

@@ -522,7 +522,7 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig> impleme
     }
 
     @Override
-    public AddonPanel getGUI() {
+    public AddonPanel<ShutdownExtension> getGUI() {
         return null;
     }
 

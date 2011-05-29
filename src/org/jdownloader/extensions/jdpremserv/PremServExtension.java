@@ -119,7 +119,7 @@ public class PremServExtension extends AbstractExtension<PremServConfig> impleme
     }
 
     @Override
-    public AddonPanel getGUI() {
+    public AddonPanel<PremServExtension> getGUI() {
         return null;
     }
 

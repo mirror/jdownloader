@@ -252,9 +252,9 @@ public class HelpPage {
 
         // Generates tables for all addons that are able to communicate with
         // RemoteControl
-        ArrayList<AbstractExtension> addons = ExtensionController.getInstance().getEnabledExtensions();
+        ArrayList<AbstractExtension<?>> addons = ExtensionController.getInstance().getEnabledExtensions();
 
-        for (AbstractExtension addon : addons) {
+        for (AbstractExtension<?> addon : addons) {
 
             if (addon instanceof RemoteSupport) {
                 ((RemoteSupport) addon).initCmdTable();

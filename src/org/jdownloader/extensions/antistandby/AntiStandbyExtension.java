@@ -112,7 +112,7 @@ public class AntiStandbyExtension extends AbstractExtension<AntiStandbyConfig> {
     }
 
     @Override
-    public AddonPanel getGUI() {
+    public AddonPanel<AntiStandbyExtension> getGUI() {
         return null;
     }
 

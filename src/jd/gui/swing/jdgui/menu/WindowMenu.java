@@ -55,15 +55,15 @@ public class WindowMenu extends JMenu {
 
     private void updateMenu() {
 
-        ArrayList<AbstractExtension> pluginsOptional = ExtensionController.getInstance().getEnabledExtensions();
-        Collections.sort(pluginsOptional, new Comparator<AbstractExtension>() {
+        ArrayList<AbstractExtension<?>> pluginsOptional = ExtensionController.getInstance().getEnabledExtensions();
+        Collections.sort(pluginsOptional, new Comparator<AbstractExtension<?>>() {
 
-            public int compare(AbstractExtension o1, AbstractExtension o2) {
+            public int compare(AbstractExtension<?> o1, AbstractExtension<?> o2) {
                 return o1.getName().compareTo(o2.getName());
             }
         });
 
-        for (final AbstractExtension plg : pluginsOptional) {
+        for (final AbstractExtension<?> plg : pluginsOptional) {
             if (!plg.isEnabled()) continue;
 
             if (plg.getShowGuiAction() != null) {

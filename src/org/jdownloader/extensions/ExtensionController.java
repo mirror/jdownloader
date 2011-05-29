@@ -252,8 +252,8 @@ public class ExtensionController {
      * 
      * @return
      */
-    public ArrayList<AbstractExtension> getEnabledExtensions() {
-        ArrayList<AbstractExtension> ret = new ArrayList<AbstractExtension>();
+    public ArrayList<AbstractExtension<?>> getEnabledExtensions() {
+        ArrayList<AbstractExtension<?>> ret = new ArrayList<AbstractExtension<?>>();
         for (AbstractExtensionWrapper aew : list) {
             if (aew._getExtension() != null && aew._getExtension().isEnabled()) ret.add(aew._getExtension());
         }

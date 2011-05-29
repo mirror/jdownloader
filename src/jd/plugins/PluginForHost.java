@@ -243,6 +243,8 @@ public abstract class PluginForHost extends Plugin implements FavIconRequestor {
         if (config != null && config.getEntries().size() > 0) {
             m = new MenuAction(_GUI._.action_plugin_config(), "plugins.configs", 1) {
 
+                private static final long serialVersionUID = -5376242428242330373L;
+
                 @Override
                 protected String createMnemonic() {
                     return _GUI._.action_plugin_config_mnemonic();
@@ -263,6 +265,8 @@ public abstract class PluginForHost extends Plugin implements FavIconRequestor {
             menuList.add(m);
             menuList.add(new MenuAction(Types.SEPARATOR) {
 
+                private static final long serialVersionUID = -5071061048221401102L;
+
                 @Override
                 protected String createMnemonic() {
                     return null;
@@ -281,6 +285,8 @@ public abstract class PluginForHost extends Plugin implements FavIconRequestor {
         }
 
         MenuAction premiumAction = new MenuAction(_GUI._.action_plugin_accounts(), "accounts", 0) {
+
+            private static final long serialVersionUID = -1987064249424203910L;
 
             @Override
             protected String createMnemonic() {
@@ -311,6 +317,8 @@ public abstract class PluginForHost extends Plugin implements FavIconRequestor {
                         if (a.getPass() == null || a.getPass().trim().length() == 0) continue;
                         account = new MenuAction(i++ + ". " + _JDT._.jd_plugins_PluginsForHost_account()) {
 
+                            private static final long serialVersionUID = 8808632091567875643L;
+
                             @Override
                             protected String createMnemonic() {
                                 return null;
@@ -330,6 +338,8 @@ public abstract class PluginForHost extends Plugin implements FavIconRequestor {
                     } else {
                         if (a.getUser() == null || a.getUser().trim().length() == 0) continue;
                         account = new MenuAction(i++ + ". " + a.getUser()) {
+
+                            private static final long serialVersionUID = -8277393315361677608L;
 
                             @Override
                             protected String createMnemonic() {
@@ -352,6 +362,8 @@ public abstract class PluginForHost extends Plugin implements FavIconRequestor {
 
                     if (m == null) {
                         m = new MenuAction(_GUI._.action_plugin_enable_premium(), "plugins.PluginForHost.enable_premium", 100 + c - 1) {
+
+                            private static final long serialVersionUID = 1487783746694078208L;
 
                             @Override
                             protected String createMnemonic() {
@@ -377,6 +389,8 @@ public abstract class PluginForHost extends Plugin implements FavIconRequestor {
                     AccountMenuItemSyncer.getInstance().map(a, m);
 
                     m = new MenuAction(_GUI._.action_plugin_premium_info(), "plugins.PluginForHost.premiumInfo", 200 + c - 1) {
+
+                        private static final long serialVersionUID = -9129239333353281936L;
 
                         @Override
                         protected String createMnemonic() {
@@ -408,6 +422,8 @@ public abstract class PluginForHost extends Plugin implements FavIconRequestor {
         } else {
             menuList.add(m = new MenuAction(_GUI._.action_plugin_premium_noAccounts(), "plugins.menu.noaccounts", 2) {
 
+                private static final long serialVersionUID = -2329091953907925997L;
+
                 @Override
                 protected String createMnemonic() {
                     return _GUI._.action_plugin_premium_noAccounts_mnemonic();
@@ -426,6 +442,8 @@ public abstract class PluginForHost extends Plugin implements FavIconRequestor {
             m.setActionListener(this);
         }
         menuList.add(m = new MenuAction(_GUI._.action_plugin_premium_buyAccount(), "plugins.menu.buyaccount", 3) {
+
+            private static final long serialVersionUID = 4684046655398621492L;
 
             @Override
             protected String createMnemonic() {

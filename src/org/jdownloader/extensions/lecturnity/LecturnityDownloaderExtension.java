@@ -211,7 +211,7 @@ public class LecturnityDownloaderExtension extends AbstractExtension<LecturnityD
     }
 
     @Override
-    public AddonPanel getGUI() {
+    public AddonPanel<LecturnityDownloaderExtension> getGUI() {
         return null;
     }
 

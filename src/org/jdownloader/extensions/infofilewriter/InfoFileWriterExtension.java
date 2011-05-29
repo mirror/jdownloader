@@ -227,7 +227,7 @@ public class InfoFileWriterExtension extends AbstractExtension<InfoFileWriterCon
     }
 
     @Override
-    public AddonPanel getGUI() {
+    public AddonPanel<InfoFileWriterExtension> getGUI() {
         return null;
     }
 

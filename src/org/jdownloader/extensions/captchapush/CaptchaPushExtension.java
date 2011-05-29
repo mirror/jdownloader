@@ -119,7 +119,7 @@ public class CaptchaPushExtension extends AbstractExtension<CaptchaPushConfig> {
     }
 
     @Override
-    public AddonPanel getGUI() {
+    public AddonPanel<CaptchaPushExtension> getGUI() {
         return null;
     }
 

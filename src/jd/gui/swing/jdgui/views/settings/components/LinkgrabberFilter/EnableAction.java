@@ -8,7 +8,8 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 
 public class EnableAction extends AbstractAction {
-    private FilterTable table;
+    private static final long serialVersionUID = 8434201391290149067L;
+    private FilterTable       table;
 
     public EnableAction(FilterTable table) {
         this.table = table;
