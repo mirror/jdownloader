@@ -69,37 +69,29 @@ import org.xml.sax.InputSource;
  */
 public class JDUtilities {
 
-    private static final Logger      LOGGER        = JDLogger.getLogger();
+    private static final Logger      LOGGER              = JDLogger.getLogger();
 
     /**
      * Die Konfiguration
      */
-    private static Configuration     CONFIGURATION = null;
+    private static Configuration     CONFIGURATION       = null;
 
-    private static DatabaseConnector DB_CONNECT    = null;
+    private static DatabaseConnector DB_CONNECT          = null;
 
-    /**
-     * @param dB_CONNECT
-     *            the dB_CONNECT to set
-     */
-    public static void setDB_CONNECT(DatabaseConnector dB_CONNECT) {
-        DB_CONNECT = dB_CONNECT;
-    }
+    public static final int          RUNTYPE_LOCAL       = 1;
 
-    public static final int    RUNTYPE_LOCAL       = 1;
+    public static final int          RUNTYPE_LOCAL_JARED = 2;
 
-    public static final int    RUNTYPE_LOCAL_JARED = 2;
-
-    private static File        JD_HOME             = null;
+    private static File              JD_HOME             = null;
 
     /**
      * nur 1 UserIO Dialog gleichzeitig (z.b. PW, Captcha)
      */
-    public static final Object USERIO_LOCK         = new Object();
+    public static final Object       USERIO_LOCK         = new Object();
 
-    private static String      REVISION;
+    private static String            REVISION;
 
-    private static long        REVISIONINT         = -1;
+    private static long              REVISIONINT         = -1;
 
     /**
      * Diese Klasse fuegt eine Komponente einem Container hinzu
@@ -245,11 +237,6 @@ public class JDUtilities {
         }
     }
 
-    public static void setJDHomeDirectory(File home) {
-        if (home == null) return;
-        JD_HOME = home;
-    }
-
     public static String getJDTitle() {
         final StringBuilder ret = new StringBuilder("JDownloader");
 
@@ -379,11 +366,6 @@ public class JDUtilities {
     public static int getRunType() {
         final String caller = (Thread.currentThread().getContextClassLoader().getResource("jd") + "");
         return (caller.matches("jar\\:.*\\.jar\\!.*")) ? RUNTYPE_LOCAL_JARED : RUNTYPE_LOCAL;
-    }
-
-    private static URL getResourceURL(final String resource) {
-
-        return Application.getRessourceURL(resource);
     }
 
     /**

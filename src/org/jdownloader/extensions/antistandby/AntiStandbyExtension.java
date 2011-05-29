@@ -30,12 +30,12 @@ import org.jdownloader.extensions.antistandby.translate.T;
 
 public class AntiStandbyExtension extends AbstractExtension<AntiStandbyConfig> {
 
-    private static final String  CONFIG_MODE = "CONFIG_MODE2";
-    private String[]             modes;
+    private static final String                        CONFIG_MODE = "CONFIG_MODE2";
+    private String[]                                   modes;
 
-    private boolean              status;
-    private JDAntiStandbyThread  asthread    = null;
-    private ExtensionConfigPanel configPanel;
+    private boolean                                    status;
+    private JDAntiStandbyThread                        asthread    = null;
+    private ExtensionConfigPanel<AntiStandbyExtension> configPanel;
 
     public boolean isStatus() {
         return status;

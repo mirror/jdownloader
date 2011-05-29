@@ -62,10 +62,7 @@ public class MuslimAssCom extends PluginForDecrypt {
             decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(finallink)));
             return decryptedLinks;
         }
-        if (externID == null) {
-            logger.warning("muslimass decrypter broken for link: " + parameter);
-            return null;
-        }
-        return decryptedLinks;
+        logger.warning("muslimass decrypter broken for link: " + parameter);
+        return null;
     }
 }

@@ -37,7 +37,7 @@ public class LecturnityDownloaderExtension extends AbstractExtension<LecturnityD
 
     private Browser            br;
 
-    public ExtensionConfigPanel getConfigPanel() {
+    public ExtensionConfigPanel<LecturnityDownloaderExtension> getConfigPanel() {
         return null;
     }
 
@@ -171,6 +171,8 @@ public class LecturnityDownloaderExtension extends AbstractExtension<LecturnityD
         logger.finest("Lecturnity: Loaded Host-Plugin!");
 
         inputAction = new MenuAction("Lecturnity", "lecturnity", 0) {
+
+            private static final long serialVersionUID = -815492241241067056L;
 
             @Override
             protected String createMnemonic() {

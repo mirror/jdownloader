@@ -8,6 +8,7 @@ import jd.controlling.authentication.AuthenticationInfo;
 import jd.gui.swing.jdgui.views.settings.panels.components.SettingsTable;
 
 public class AuthTable extends SettingsTable<AuthenticationInfo> {
+    private static final long serialVersionUID = 1L;
 
     public AuthTable() {
         super(new AuthTableModel());

@@ -11,6 +11,7 @@ import org.jdownloader.settings.advanced.AdvancedConfigEventListener;
 import org.jdownloader.settings.advanced.AdvancedConfigManager;
 
 public class AdvancedTableModel extends ExtTableModel<AdvancedConfigEntry> implements AdvancedConfigEventListener {
+    private static final long serialVersionUID = 1L;
 
     public AdvancedTableModel(String id) {
         super(id);
@@ -34,6 +35,7 @@ public class AdvancedTableModel extends ExtTableModel<AdvancedConfigEntry> imple
     @Override
     protected void initColumns() {
         addColumn(new ExtTextColumn<AdvancedConfigEntry>("Key") {
+            private static final long serialVersionUID = 1L;
 
             @Override
             protected String getToolTip(AdvancedConfigEntry obj) {
@@ -47,6 +49,7 @@ public class AdvancedTableModel extends ExtTableModel<AdvancedConfigEntry> imple
         });
         addColumn(new AdvancedValueColumn());
         addColumn(new ExtTextColumn<AdvancedConfigEntry>("Type") {
+            private static final long serialVersionUID = 1L;
 
             @Override
             public int getDefaultWidth() {

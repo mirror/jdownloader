@@ -5,6 +5,7 @@ import jd.gui.swing.jdgui.views.settings.panels.components.SettingsTable;
 import org.jdownloader.settings.advanced.AdvancedConfigEntry;
 
 public class AdvancedTable extends SettingsTable<AdvancedConfigEntry> {
+    private static final long serialVersionUID = 1L;
 
     public AdvancedTable() {
         super(new AdvancedTableModel("AdvancedTable"));

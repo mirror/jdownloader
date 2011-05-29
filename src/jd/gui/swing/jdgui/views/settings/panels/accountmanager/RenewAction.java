@@ -8,6 +8,8 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 
 public class RenewAction extends TableBarAction {
+    private static final long serialVersionUID = 8346982706972553448L;
+
     public RenewAction() {
 
         this.putValue(NAME, _GUI._.settings_accountmanager_renew());

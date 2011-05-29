@@ -9,7 +9,8 @@ import jd.gui.swing.jdgui.views.settings.components.SettingsComponent;
 import net.miginfocom.swing.MigLayout;
 
 public class AccountManager extends JPanel implements SettingsComponent {
-    private static final AccountManager INSTANCE = new AccountManager();
+    private static final long           serialVersionUID = 1473756660999062848L;
+    private static final AccountManager INSTANCE         = new AccountManager();
 
     /**
      * get the only existing instance of AccountManager. This is a singleton

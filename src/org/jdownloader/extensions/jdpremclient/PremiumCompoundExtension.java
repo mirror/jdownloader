@@ -42,15 +42,15 @@ import org.jdownloader.extensions.jdpremclient.translate.T;
 
 public class PremiumCompoundExtension extends AbstractExtension<PremiumCompoundConfig> {
 
-    private static final Object                  LOCK                = new Object();
-    private static boolean                       replaced            = false;
-    private static boolean                       init                = false;
-    private static boolean                       enabled             = false;
-    private static String                        jdpremServer        = null;
-    private static boolean                       preferLocalAccounts = false;
+    private static final Object                            LOCK                = new Object();
+    private static boolean                                 replaced            = false;
+    private static boolean                                 init                = false;
+    private static boolean                                 enabled             = false;
+    private static String                                  jdpremServer        = null;
+    private static boolean                                 preferLocalAccounts = false;
 
-    private static final HashMap<String, String> premShareHosts      = new HashMap<String, String>();
-    private ExtensionConfigPanel                 configPanel;
+    private static final HashMap<String, String>           premShareHosts      = new HashMap<String, String>();
+    private ExtensionConfigPanel<PremiumCompoundExtension> configPanel;
 
     public PremiumCompoundExtension() {
         super(T._.jd_plugins_optional_jdpremium_name());

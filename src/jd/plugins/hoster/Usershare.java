@@ -536,13 +536,6 @@ public class Usershare extends PluginForHost {
         return true;
     }
 
-    private String getFileID(String dlurl) {
-        Regex fileidregex = new Regex(dlurl, COOKIE_HOST.replace("http://", "") + "/" + "(.*?)/(.*?)");
-        String fileid = fileidregex.getMatch(1);
-        if (fileid == null || !fileid.matches("[a-z0-9]+{12}")) fileid = fileidregex.getMatch(0);
-        return fileid;
-    }
-
     @Override
     public void reset() {
     }

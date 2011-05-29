@@ -23,7 +23,7 @@ import jd.plugins.AddonPanel;
 import org.jdownloader.extensions.customizer.translate.T;
 import org.jdownloader.images.NewTheme;
 
-public class CustomizerView extends AddonPanel {
+public class CustomizerView extends AddonPanel<PackageCustomizerExtension> {
 
     private static final long serialVersionUID = -8077441680881378656L;
 

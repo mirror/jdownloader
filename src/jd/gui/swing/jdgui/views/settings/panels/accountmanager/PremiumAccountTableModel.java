@@ -27,6 +27,8 @@ import org.jdownloader.images.NewTheme;
 
 public class PremiumAccountTableModel extends ExtTableModel<Account> {
 
+    private static final long serialVersionUID = 3120481189794897020L;
+
     public PremiumAccountTableModel() {
         super("PremiumAccountTableModel2");
         fill();
@@ -54,9 +56,13 @@ public class PremiumAccountTableModel extends ExtTableModel<Account> {
 
         this.addColumn(new ExtCheckColumn<Account>(_GUI._.premiumaccounttablemodel_column_enabled()) {
 
+            private static final long serialVersionUID = 1515656228974789237L;
+
             public ExtTableHeaderRenderer getHeaderRenderer(final JTableHeader jTableHeader) {
 
                 final ExtTableHeaderRenderer ret = new ExtTableHeaderRenderer(this, jTableHeader) {
+
+                    private static final long serialVersionUID = 3224931991570756349L;
 
                     @Override
                     public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
@@ -102,6 +108,8 @@ public class PremiumAccountTableModel extends ExtTableModel<Account> {
         this.addColumn(new ActionColumn());
         this.addColumn(new ExtTextColumn<Account>(_GUI._.premiumaccounttablemodel_column_hoster()) {
 
+            private static final long serialVersionUID = -3693931358975303164L;
+
             @Override
             public boolean isEnabled(Account obj) {
                 return obj.isEnabled();
@@ -140,6 +148,8 @@ public class PremiumAccountTableModel extends ExtTableModel<Account> {
 
         this.addColumn(new ExtTextColumn<Account>(_GUI._.premiumaccounttablemodel_column_user()) {
 
+            private static final long serialVersionUID = -8070328156326837828L;
+
             @Override
             public boolean isHidable() {
                 return false;
@@ -176,6 +186,8 @@ public class PremiumAccountTableModel extends ExtTableModel<Account> {
             }
         });
         this.addColumn(new ExtPasswordEditorColumn<Account>(_GUI._.premiumaccounttablemodel_column_password()) {
+            private static final long serialVersionUID = 3180414754658474808L;
+
             @Override
             public boolean isHidable() {
                 return false;
@@ -208,6 +220,8 @@ public class PremiumAccountTableModel extends ExtTableModel<Account> {
         });
 
         this.addColumn(new ExtDateColumn<Account>(_GUI._.premiumaccounttablemodel_column_expiredate()) {
+            private static final long serialVersionUID = 5067606909520874358L;
+
             @Override
             public boolean isEnabled(Account obj) {
                 return obj.isEnabled();
@@ -240,6 +254,8 @@ public class PremiumAccountTableModel extends ExtTableModel<Account> {
         });
 
         this.addColumn(new ExtProgressColumn<Account>(_GUI._.premiumaccounttablemodel_column_trafficleft()) {
+            private static final long serialVersionUID = -8376056840172682617L;
+
             @Override
             public boolean isEnabled(Account obj) {
                 return obj.isEnabled();

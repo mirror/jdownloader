@@ -23,9 +23,10 @@ import org.jdownloader.translate._JDT;
 
 public class AdvancedSettings extends AbstractConfigPanel implements DocumentListener {
 
-    private JTextField    filterText;
-    private String        filterHelp;
-    private AdvancedTable table;
+    private static final long serialVersionUID = 1L;
+    private JTextField        filterText;
+    private String            filterHelp;
+    private AdvancedTable     table;
 
     public String getTitle() {
         return _GUI._.gui_settings_advanced_title();
@@ -38,10 +39,12 @@ public class AdvancedSettings extends AbstractConfigPanel implements DocumentLis
 
         filterText = new JTextField() {
 
+            private static final long serialVersionUID = 1L;
+
             @Override
             protected void paintComponent(Graphics g) {
                 super.paintComponent(g);
-                ;
+
                 Graphics2D g2 = (Graphics2D) g;
                 Composite comp = g2.getComposite();
 

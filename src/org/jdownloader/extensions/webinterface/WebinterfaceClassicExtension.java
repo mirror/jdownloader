@@ -37,17 +37,17 @@ import org.jdownloader.extensions.StopException;
 import org.jdownloader.extensions.webinterface.translate.T;
 
 public class WebinterfaceClassicExtension extends AbstractExtension<WebinterfaceClassicConfig> {
-    static public WebinterfaceClassicExtension instance;
-    static final String                        PROPERTY_HTTPS            = "PARAM_HTTPS";
-    static final String                        PROPERTY_LOGIN            = "PARAM_LOGIN";
-    static final String                        PROPERTY_PASS             = "PARAM_PASS";
-    static final String                        PROPERTY_PORT             = "PARAM_PORT";
-    static final String                        PROPERTY_REFRESH          = "PARAM_REFRESH";
-    static final String                        PROPERTY_REFRESH_INTERVAL = "PARAM_REFRESH_INTERVAL";
-    static final String                        PROPERTY_LOCALHOST_ONLY   = "PROPERTY_LOCALHOST_ONLY";
+    static public WebinterfaceClassicExtension                 instance;
+    static final String                                        PROPERTY_HTTPS            = "PARAM_HTTPS";
+    static final String                                        PROPERTY_LOGIN            = "PARAM_LOGIN";
+    static final String                                        PROPERTY_PASS             = "PARAM_PASS";
+    static final String                                        PROPERTY_PORT             = "PARAM_PORT";
+    static final String                                        PROPERTY_REFRESH          = "PARAM_REFRESH";
+    static final String                                        PROPERTY_REFRESH_INTERVAL = "PARAM_REFRESH_INTERVAL";
+    static final String                                        PROPERTY_LOCALHOST_ONLY   = "PROPERTY_LOCALHOST_ONLY";
 
-    static final String                        PROPERTY_USER             = "PARAM_USER";
-    private ExtensionConfigPanel               configPanel;
+    static final String                                        PROPERTY_USER             = "PARAM_USER";
+    private ExtensionConfigPanel<WebinterfaceClassicExtension> configPanel;
 
     public ExtensionConfigPanel<WebinterfaceClassicExtension> getConfigPanel() {
         return configPanel;

@@ -18,7 +18,6 @@ package jd.gui.swing.jdgui.views.settings.panels;
 
 import javax.swing.ImageIcon;
 
-import jd.controlling.DownloadController;
 import jd.gui.swing.jdgui.views.settings.components.Checkbox;
 import jd.gui.swing.jdgui.views.settings.components.FolderChooser;
 

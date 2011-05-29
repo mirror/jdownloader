@@ -59,26 +59,26 @@ import org.jdownloader.images.NewTheme;
 
 public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig> implements FileMonitoringListener, ActionListener {
 
-    private JSonWrapper          subConfig;
+    private JSonWrapper                                subConfig;
 
-    private boolean              isEnabled            = false;
+    private boolean                                    isEnabled            = false;
 
-    private FolderWatchPanel     historyGui           = null;
-    private FolderWatchView      view                 = null;
+    private FolderWatchPanel                           historyGui           = null;
+    private FolderWatchView                            view                 = null;
 
-    private Vector<String>       folderlist;
-    private boolean              folderlistHasChanged = false;
+    private Vector<String>                             folderlist;
+    private boolean                                    folderlistHasChanged = false;
 
-    private boolean              isOption_recursive;
-    private boolean              isOption_import;
-    private boolean              isOption_importAndDelete;
-    private boolean              isOption_history;
+    private boolean                                    isOption_recursive;
+    private boolean                                    isOption_import;
+    private boolean                                    isOption_importAndDelete;
+    private boolean                                    isOption_history;
 
-    private JList                guiFolderList;
+    private JList                                      guiFolderList;
 
-    private FileMonitoring       monitoringThread;
+    private FileMonitoring                             monitoringThread;
 
-    private ExtensionConfigPanel configPanel;
+    private ExtensionConfigPanel<FolderWatchExtension> configPanel;
 
     public ExtensionConfigPanel<FolderWatchExtension> getConfigPanel() {
         return configPanel;

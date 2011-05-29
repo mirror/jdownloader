@@ -25,6 +25,11 @@ public class CaptchaPushExtension extends AbstractExtension<CaptchaPushConfig> {
     }
 
     @Override
+    public boolean isDefaultEnabled() {
+        return true;
+    }
+
+    @Override
     public String getIconKey() {
         return "ocr";
     }
@@ -80,7 +85,7 @@ public class CaptchaPushExtension extends AbstractExtension<CaptchaPushConfig> {
     }
 
     @Override
-    public ExtensionConfigPanel getConfigPanel() {
+    public ExtensionConfigPanel<CaptchaPushExtension> getConfigPanel() {
         return configPanel;
     }
 

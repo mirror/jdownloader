@@ -80,11 +80,8 @@ public class FickPornoNet extends PluginForDecrypt {
             logger.info("This link is probably broken: " + parameter);
             throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
         }
-        if (externID == null) {
-            logger.warning("fickporno decrypter broken for link: " + parameter);
-            return null;
-        }
-        return decryptedLinks;
+        logger.warning("fickporno decrypter broken for link: " + parameter);
+        return null;
     }
 
 }

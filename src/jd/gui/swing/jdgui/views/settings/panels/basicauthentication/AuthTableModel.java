@@ -21,6 +21,7 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 
 public class AuthTableModel extends ExtTableModel<AuthenticationInfo> {
+    private static final long serialVersionUID = 1L;
 
     public AuthTableModel() {
         super("AuthTableModel");
@@ -44,10 +45,12 @@ public class AuthTableModel extends ExtTableModel<AuthenticationInfo> {
     protected void initColumns() {
 
         this.addColumn(new ExtCheckColumn<AuthenticationInfo>(_GUI._.authtablemodel_column_enabled()) {
+            private static final long serialVersionUID = 1L;
 
             public ExtTableHeaderRenderer getHeaderRenderer(final JTableHeader jTableHeader) {
 
                 final ExtTableHeaderRenderer ret = new ExtTableHeaderRenderer(this, jTableHeader) {
+                    private static final long serialVersionUID = 1L;
 
                     @Override
                     public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
@@ -89,6 +92,8 @@ public class AuthTableModel extends ExtTableModel<AuthenticationInfo> {
             }
         });
         this.addColumn(new ExtComboColumn<AuthenticationInfo>(_GUI._.authtablemodel_column_type(), null) {
+            private static final long serialVersionUID = 1L;
+
             @Override
             public boolean isHidable() {
                 return false;
@@ -133,6 +138,8 @@ public class AuthTableModel extends ExtTableModel<AuthenticationInfo> {
 
         });
         this.addColumn(new ExtTextColumn<AuthenticationInfo>(_GUI._.authtablemodel_column_host()) {
+            private static final long serialVersionUID = 1L;
+
             @Override
             public boolean isHidable() {
                 return false;
@@ -162,6 +169,8 @@ public class AuthTableModel extends ExtTableModel<AuthenticationInfo> {
 
         });
         this.addColumn(new ExtTextColumn<AuthenticationInfo>(_GUI._.authtablemodel_column_username()) {
+            private static final long serialVersionUID = 1L;
+
             @Override
             public boolean isHidable() {
                 return false;
@@ -190,6 +199,8 @@ public class AuthTableModel extends ExtTableModel<AuthenticationInfo> {
         });
 
         this.addColumn(new ExtPasswordEditorColumn<AuthenticationInfo>(_GUI._.authtablemodel_column_password()) {
+            private static final long serialVersionUID = 1L;
+
             @Override
             public boolean isHidable() {
                 return false;

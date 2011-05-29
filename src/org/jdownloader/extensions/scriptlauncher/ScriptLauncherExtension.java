@@ -54,7 +54,7 @@ public class ScriptLauncherExtension extends AbstractExtension<ScriptLauncherCon
 
     private static final String              ADD_CHECKBOX = "ADD_CHECKBOX";
 
-    public ExtensionConfigPanel getConfigPanel() {
+    public ExtensionConfigPanel<ScriptLauncherExtension> getConfigPanel() {
         return null;
     }
 
@@ -143,6 +143,8 @@ public class ScriptLauncherExtension extends AbstractExtension<ScriptLauncherCon
             ArrayList<String> launcherprops = readScriptConfiguration(i);
             String scriptname = scripts.get(i).getName().split("\\.")[0];
             ma = new MenuAction(scriptname, scriptname, i + 1000) {
+
+                private static final long serialVersionUID = 1125069504424802790L;
 
                 @Override
                 protected String createMnemonic() {
@@ -272,6 +274,8 @@ public class ScriptLauncherExtension extends AbstractExtension<ScriptLauncherCon
         MenuAction ma;
         menu.add(ma = new MenuAction(getName(), getName(), 0) {
 
+            private static final long serialVersionUID = -7570203495485474304L;
+
             @Override
             protected String createMnemonic() {
                 return null;
@@ -294,6 +298,8 @@ public class ScriptLauncherExtension extends AbstractExtension<ScriptLauncherCon
 
         if (menuitems.size() == 0) {
             ma.addMenuItem(ma = new MenuAction(T._.plugins_optional_JDScriptLauncher_noscripts(), T._.plugins_optional_JDScriptLauncher_noscripts(), 0) {
+
+                private static final long serialVersionUID = 4845907145304761177L;
 
                 @Override
                 protected String createMnemonic() {

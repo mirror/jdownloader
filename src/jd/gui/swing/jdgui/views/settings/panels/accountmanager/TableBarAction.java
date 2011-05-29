@@ -5,7 +5,8 @@ import javax.swing.AbstractAction;
 import jd.plugins.Account;
 
 public abstract class TableBarAction extends AbstractAction {
-    protected Account account;
+    private static final long serialVersionUID = 5527701560420863832L;
+    protected Account         account;
 
     public Account getAccount() {
         return account;

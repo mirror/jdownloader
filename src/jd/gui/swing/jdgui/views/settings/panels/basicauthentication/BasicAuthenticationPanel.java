@@ -9,7 +9,8 @@ import jd.gui.swing.jdgui.views.settings.components.SettingsComponent;
 import net.miginfocom.swing.MigLayout;
 
 public class BasicAuthenticationPanel extends JPanel implements SettingsComponent {
-    private static final BasicAuthenticationPanel INSTANCE = new BasicAuthenticationPanel();
+    private static final long                     serialVersionUID = 1L;
+    private static final BasicAuthenticationPanel INSTANCE         = new BasicAuthenticationPanel();
 
     /**
      * get the only existing instance of AccountManager. This is a singleton

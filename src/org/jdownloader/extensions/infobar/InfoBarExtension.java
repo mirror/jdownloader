@@ -24,17 +24,17 @@ public class InfoBarExtension extends AbstractExtension<InfoBarConfig> {
         return true;
     }
 
-    private static final String  PROPERTY_OPACITY      = "PROPERTY_OPACITY";
+    private static final String                    PROPERTY_OPACITY      = "PROPERTY_OPACITY";
 
-    private static final String  PROPERTY_DROPLOCATION = "PROPERTY_DROPLOCATION";
+    private static final String                    PROPERTY_DROPLOCATION = "PROPERTY_DROPLOCATION";
 
-    private static final String  PROPERTY_DOCKING      = "PROPERTY_DOCKING";
+    private static final String                    PROPERTY_DOCKING      = "PROPERTY_DOCKING";
 
-    private MenuAction           activateAction;
+    private MenuAction                             activateAction;
 
-    private InfoDialog           infoDialog;
+    private InfoDialog                             infoDialog;
 
-    private ExtensionConfigPanel configPanel;
+    private ExtensionConfigPanel<InfoBarExtension> configPanel;
 
     public ExtensionConfigPanel<InfoBarExtension> getConfigPanel() {
         return configPanel;

@@ -122,6 +122,8 @@ public class InfoFileWriterExtension extends AbstractExtension<InfoFileWriterCon
             final Property obj = (Property) event.getCaller();
             final MenuAction m = new MenuAction("Create InfoFile", T._.jd_plugins_optional_JDInfoFileWriter_createInfoFile(), 1337) {
 
+                private static final long serialVersionUID = 3571965392155396021L;
+
                 @Override
                 protected String createMnemonic() {
                     return null;

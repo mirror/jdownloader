@@ -85,6 +85,8 @@ public class AddonsMenu extends JMenu {
                     } else {
                         MenuAction m = new MenuAction(plg.getConfigID(), plg.getName(), plg.getIconKey()) {
 
+                            private static final long serialVersionUID = -985890347522920606L;
+
                             @Override
                             protected String createMnemonic() {
                                 return plg.getName();

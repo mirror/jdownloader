@@ -103,10 +103,7 @@ public class HqMatureTubeCom extends PluginForDecrypt {
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
-        if (externID == null) {
-            logger.warning("hqmaturetube decrypter broken for link: " + parameter);
-            return null;
-        }
-        return decryptedLinks;
+        logger.warning("hqmaturetube decrypter broken for link: " + parameter);
+        return null;
     }
 }

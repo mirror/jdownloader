@@ -30,7 +30,6 @@ import javax.swing.Timer;
 import jd.config.Configuration;
 import jd.config.Property;
 import jd.config.SubConfiguration;
-import jd.controlling.DownloadController;
 import jd.controlling.DownloadWatchDog;
 import jd.controlling.GarbageController;
 import jd.controlling.IOEQ;

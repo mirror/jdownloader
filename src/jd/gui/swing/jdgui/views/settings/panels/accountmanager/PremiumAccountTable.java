@@ -5,6 +5,8 @@ import jd.plugins.Account;
 
 public class PremiumAccountTable extends SettingsTable<Account> {
 
+    private static final long serialVersionUID = -2166408567306279016L;
+
     public PremiumAccountTable() {
 
         super(new PremiumAccountTableModel());

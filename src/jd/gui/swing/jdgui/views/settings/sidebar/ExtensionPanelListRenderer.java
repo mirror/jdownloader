@@ -21,14 +21,14 @@ import org.jdownloader.extensions.AbstractExtensionWrapper;
 import org.jdownloader.images.NewTheme;
 
 public class ExtensionPanelListRenderer extends JPanel implements ListCellRenderer {
-
-    private JLabel    lbl;
-    private Font      orgFont;
-    private Font      boldFont;
-    private Color     f;
-    private Color     b2;
-    private Color     a;
-    private JCheckBox cb;
+    private static final long serialVersionUID = 1L;
+    private JLabel            lbl;
+    private Font              orgFont;
+    private Font              boldFont;
+    private Color             f;
+    private Color             b2;
+    private Color             a;
+    private JCheckBox         cb;
 
     public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
         AbstractExtensionWrapper ext = (AbstractExtensionWrapper) value;

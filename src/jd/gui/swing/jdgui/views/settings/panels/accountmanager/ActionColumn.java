@@ -15,7 +15,8 @@ import org.jdownloader.gui.translate._GUI;
 
 public class ActionColumn extends ExtComponentColumn<Account> {
 
-    public static final int   SIZE = 16;
+    private static final long serialVersionUID = 7870055602973900671L;
+    public static final int   SIZE             = 16;
     private JPanel            renderer;
     private JPanel            editor;
     private RenewAction       renew;

@@ -12,14 +12,11 @@ import org.jdownloader.extensions.chat.translate.T;
 
 public class ChatConfigPanel extends ExtensionConfigPanel<ChatExtension> {
 
-    /**
-     * 
-     */
     private static final long serialVersionUID = 1L;
     private ChatConfig        config;
     private TextInput         nick;
     private Checkbox          userColors;
-    private ComboBox          userPosition;
+    private ComboBox<String>  userPosition;
     private TextArea          perform;
 
     public ChatConfigPanel(ChatExtension chatExtension, ChatConfig config) {
@@ -32,7 +29,7 @@ public class ChatConfigPanel extends ExtensionConfigPanel<ChatExtension> {
     private void initComponents() {
         nick = new TextInput();
         userColors = new Checkbox();
-        userPosition = new ComboBox(T._.settings_userlist_position_right(), T._.settings_userlist_position_left());
+        userPosition = new ComboBox<String>(T._.settings_userlist_position_right(), T._.settings_userlist_position_left());
         perform = new TextArea();
     }
 

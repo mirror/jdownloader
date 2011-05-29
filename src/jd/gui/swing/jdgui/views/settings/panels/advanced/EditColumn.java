@@ -19,7 +19,10 @@ import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.advanced.AdvancedConfigEntry;
 
 public class EditColumn extends ExtComponentColumn<AdvancedConfigEntry> {
+    private static final long serialVersionUID = 1L;
+
     class InfoAction extends AbstractAction {
+        private static final long   serialVersionUID = 1L;
         private AdvancedConfigEntry value;
 
         public InfoAction() {
@@ -51,6 +54,7 @@ public class EditColumn extends ExtComponentColumn<AdvancedConfigEntry> {
     }
 
     class ResetAction extends AbstractAction {
+        private static final long   serialVersionUID = 1L;
         private AdvancedConfigEntry value;
 
         public ResetAction() {

@@ -33,6 +33,7 @@ import org.jdownloader.images.NewTheme;
 import org.jdownloader.translate._JDT;
 
 public class ExtensionsTable extends SettingsTable<AbstractExtensionWrapper> implements SettingsComponent {
+    private static final long serialVersionUID = 1L;
 
     public ExtensionsTable() {
         super(new InternalTableModel());
@@ -62,10 +63,12 @@ public class ExtensionsTable extends SettingsTable<AbstractExtensionWrapper> imp
         protected void initColumns() {
 
             this.addColumn(new ExtCheckColumn<AbstractExtensionWrapper>(_GUI._.extensiontablemodel_column_enabled()) {
+                private static final long serialVersionUID = 1L;
 
                 public ExtTableHeaderRenderer getHeaderRenderer(final JTableHeader jTableHeader) {
 
                     final ExtTableHeaderRenderer ret = new ExtTableHeaderRenderer(this, jTableHeader) {
+                        private static final long serialVersionUID = 1L;
 
                         @Override
                         public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {

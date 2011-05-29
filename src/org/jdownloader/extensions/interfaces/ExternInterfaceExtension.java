@@ -122,11 +122,11 @@ public class ExternInterfaceExtension extends AbstractExtension<ExternInterfaceC
 
     }
 
-    private RequestHandler       handler;
-    private HttpServer           server    = null;
-    private ExtensionConfigPanel configPanel;
-    private final static String  LOCALONLY = "localonly";
-    private static String        jdpath    = JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath() + File.separator + "JDownloader.jar";
+    private RequestHandler                                 handler;
+    private HttpServer                                     server    = null;
+    private ExtensionConfigPanel<ExternInterfaceExtension> configPanel;
+    private final static String                            LOCALONLY = "localonly";
+    private static String                                  jdpath    = JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath() + File.separator + "JDownloader.jar";
 
     public ExtensionConfigPanel<ExternInterfaceExtension> getConfigPanel() {
         return configPanel;

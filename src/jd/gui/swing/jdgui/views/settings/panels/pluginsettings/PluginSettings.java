@@ -10,7 +10,7 @@ import org.jdownloader.images.NewTheme;
 import org.jdownloader.translate._JDT;
 
 public class PluginSettings extends AbstractConfigPanel {
-
+    private static final long   serialVersionUID = 1L;
     private PluginSettingsPanel psp;
 
     public String getTitle() {

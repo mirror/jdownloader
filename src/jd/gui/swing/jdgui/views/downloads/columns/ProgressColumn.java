@@ -170,7 +170,6 @@ public class ProgressColumn extends JDTableColumn {
         return false;
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public void sort(Object obj, final boolean sortingToggle) {
         throw new RuntimeException("GONE");

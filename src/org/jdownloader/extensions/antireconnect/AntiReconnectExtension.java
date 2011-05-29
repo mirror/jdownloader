@@ -33,23 +33,23 @@ import org.jdownloader.extensions.StopException;
 import org.jdownloader.extensions.antireconnect.translate.T;
 
 public class AntiReconnectExtension extends AbstractExtension<AntiReconnectConfig> {
-    private static final String   CONFIG_MODE         = "CONFIG_MODE";
-    private static final String   CONFIG_IPS          = "CONFIG_IPS";
-    private static final String   CONFIG_TIMEOUT      = "CONFIG_TIMEOUT";
-    private static final String   CONFIG_EACH         = "CONFIG_EACH";
-    private static final String   CONFIG_OLDDOWNLOADS = "CONFIG_OLDDOWNLOADS";
-    private static final String   CONFIG_NEWDOWNLOADS = "CONFIG_NEWDOWNLOADS";
-    private static final String   CONFIG_OLDRECONNECT = "CONFIG_OLDRECONNECT";
-    private static final String   CONFIG_NEWRECONNECT = "CONFIG_NEWRECONNECT";
-    private static final String   CONFIG_OLDSPEED     = "CONFIG_OLDSPEED";
-    private static final String   CONFIG_NEWSPEED     = "CONFIG_NEWSPEED";
+    private static final String                          CONFIG_MODE         = "CONFIG_MODE";
+    private static final String                          CONFIG_IPS          = "CONFIG_IPS";
+    private static final String                          CONFIG_TIMEOUT      = "CONFIG_TIMEOUT";
+    private static final String                          CONFIG_EACH         = "CONFIG_EACH";
+    private static final String                          CONFIG_OLDDOWNLOADS = "CONFIG_OLDDOWNLOADS";
+    private static final String                          CONFIG_NEWDOWNLOADS = "CONFIG_NEWDOWNLOADS";
+    private static final String                          CONFIG_OLDRECONNECT = "CONFIG_OLDRECONNECT";
+    private static final String                          CONFIG_NEWRECONNECT = "CONFIG_NEWRECONNECT";
+    private static final String                          CONFIG_OLDSPEED     = "CONFIG_OLDSPEED";
+    private static final String                          CONFIG_NEWSPEED     = "CONFIG_NEWSPEED";
 
-    private String[]              availableModes;
+    private String[]                                     availableModes;
 
-    private JDAntiReconnectThread asthread            = null;
-    private ExtensionConfigPanel  configPanel;
+    private JDAntiReconnectThread                        asthread            = null;
+    private ExtensionConfigPanel<AntiReconnectExtension> configPanel;
 
-    public ExtensionConfigPanel getConfigPanel() {
+    public ExtensionConfigPanel<AntiReconnectExtension> getConfigPanel() {
         return configPanel;
     }
 

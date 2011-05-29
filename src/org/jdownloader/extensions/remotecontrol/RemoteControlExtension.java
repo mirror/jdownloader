@@ -41,15 +41,15 @@ import org.jdownloader.extensions.remotecontrol.translate.T;
 @OptionalPlugin(rev = "$Revision$", id = "remotecontrol", interfaceversion = 7)
 public class RemoteControlExtension extends AbstractExtension<RemoteControlConfig> {
 
-    private static final String  PARAM_PORT      = "PORT";
-    private static final String  PARAM_LOCALHOST = "LOCALHOST";
-    private static final String  PARAM_ENABLED   = "ENABLED";
+    private static final String                          PARAM_PORT      = "PORT";
+    private static final String                          PARAM_LOCALHOST = "LOCALHOST";
+    private static final String                          PARAM_ENABLED   = "ENABLED";
 
-    private final JSonWrapper    subConfig;
+    private final JSonWrapper                            subConfig;
 
-    private HttpServer           server;
+    private HttpServer                                   server;
 
-    private ExtensionConfigPanel configPanel;
+    private ExtensionConfigPanel<RemoteControlExtension> configPanel;
 
     public ExtensionConfigPanel<RemoteControlExtension> getConfigPanel() {
         return configPanel;

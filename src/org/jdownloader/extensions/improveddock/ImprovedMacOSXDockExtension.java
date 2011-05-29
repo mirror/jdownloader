@@ -48,7 +48,7 @@ public class ImprovedMacOSXDockExtension extends AbstractExtension<ImprovedMacOS
 
     private MacDockIconChanger updateThread;
 
-    public ExtensionConfigPanel getConfigPanel() {
+    public ExtensionConfigPanel<ImprovedMacOSXDockExtension> getConfigPanel() {
         return null;
     }
 

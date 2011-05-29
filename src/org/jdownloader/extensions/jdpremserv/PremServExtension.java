@@ -32,9 +32,9 @@ import org.jdownloader.extensions.jdpremserv.gui.JDPremServGui;
 
 public class PremServExtension extends AbstractExtension<PremServConfig> implements ControlListener {
 
-    private JDPremServGui        tab;
+    private JDPremServGui                           tab;
 
-    private ExtensionConfigPanel configPanel;
+    private ExtensionConfigPanel<PremServExtension> configPanel;
 
     public ExtensionConfigPanel<PremServExtension> getConfigPanel() {
         return configPanel;

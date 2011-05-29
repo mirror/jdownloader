@@ -509,6 +509,8 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
             MenuAction m;
             MenuAction container = new MenuAction("Extract", "optional.extraction.linkmenu.container", 0) {
 
+                private static final long serialVersionUID = 6976229914297269865L;
+
                 @Override
                 protected String createMnemonic() {
                     return null;
@@ -530,6 +532,8 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
                 link = (DownloadLink) event.getCaller();
 
                 container.addMenuItem(m = new MenuAction("Extract Link", "optional.extraction.linkmenu.extract", EXTRACT_LINK) {
+
+                    private static final long serialVersionUID = 8648569972779344623L;
 
                     @Override
                     protected String createMnemonic() {
@@ -560,6 +564,8 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
                 m.setProperty(MENU_LINKS, ((DownloadTable) ((JViewport) DownloadLinksPanel.getDownloadLinksPanel().getScrollPane().getComponent(0)).getComponent(0)).getSelectedDownloadLinks());
                 container.addMenuItem(m = new MenuAction("Autoextract", "optional.extraction.linkmenu.autoextract", SET_LINK_AUTOEXTRACT) {
 
+                    private static final long serialVersionUID = -6049435417230844732L;
+
                     @Override
                     protected String createMnemonic() {
                         return null;
@@ -583,6 +589,8 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
                 m.setProperty(MENU_LINKS, ((DownloadTable) ((JViewport) DownloadLinksPanel.getDownloadLinksPanel().getScrollPane().getComponent(0)).getComponent(0)).getSelectedDownloadLinks());
                 container.addMenuItem(new MenuAction(Types.SEPARATOR) {
 
+                    private static final long serialVersionUID = -8990247058181516475L;
+
                     @Override
                     protected String createMnemonic() {
                         return null;
@@ -599,6 +607,8 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
                     }
                 });
                 container.addMenuItem(m = new MenuAction("Extract To", "optional.extraction.linkmenu.setextract", SET_EXTRACT_TO) {
+
+                    private static final long serialVersionUID = -7772646110444791318L;
 
                     @Override
                     protected String createMnemonic() {
@@ -633,6 +643,8 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
                 if (dir == null) break;
                 container.addMenuItem(m = new MenuAction("Open Extract folder", "optional.extraction.linkmenu.openextract3", OPEN_EXTRACT) {
 
+                    private static final long serialVersionUID = 212186274511234351L;
+
                     @Override
                     protected String createMnemonic() {
                         return null;
@@ -663,6 +675,8 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
 
                 container.addMenuItem(m = new MenuAction("Extract Package", "optional.extraction.linkmenu.package.extract", EXTRACT_PACKAGE) {
 
+                    private static final long serialVersionUID = 5329598452469482639L;
+
                     @Override
                     protected String createMnemonic() {
                         return null;
@@ -682,6 +696,8 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
                 m.setIcon(getIconKey());
                 m.setActionListener(this);
                 container.addMenuItem(m = new MenuAction("Auto Extract Package", "optional.extraction.linkmenu.package.autoextract", SET_PACKAGE_AUTOEXTRACT) {
+
+                    private static final long serialVersionUID = 8363153410685078199L;
 
                     @Override
                     protected String createMnemonic() {

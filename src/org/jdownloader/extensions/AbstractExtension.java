@@ -98,21 +98,16 @@ public abstract class AbstractExtension<T extends ExtensionConfigInterface> {
     protected ExtensionConfigPanel createPanelFromContainer(ConfigContainer initSettings) {
 
         final AddonConfig cp = AddonConfig.getInstance(initSettings, "", false);
-        ExtensionConfigPanel<AbstractExtension> ret = new ExtensionConfigPanel<AbstractExtension>(this, false) {
+        ExtensionConfigPanel<AbstractExtension<T>> ret = new ExtensionConfigPanel<AbstractExtension<T>>(this, false) {
 
-            /**
-             * 
-             */
             private static final long serialVersionUID = 1L;
 
             @Override
             protected void onShow() {
-
             }
 
             @Override
             protected void onHide() {
-
             }
 
             @Override
@@ -222,11 +217,8 @@ public abstract class AbstractExtension<T extends ExtensionConfigInterface> {
      * @param class1
      * @return
      */
-    @SuppressWarnings("unchecked")
     private T buildStore() {
-
         return JsonConfig.create(Application.getResource("cfg/" + getClass().getName()), getConfigClass());
-
     }
 
     /**

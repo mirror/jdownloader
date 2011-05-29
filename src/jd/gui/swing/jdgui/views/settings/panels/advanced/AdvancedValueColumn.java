@@ -25,6 +25,7 @@ import org.jdownloader.settings.advanced.RangeValidator;
 
 public class AdvancedValueColumn extends ExtCompoundColumn<AdvancedConfigEntry> {
 
+    private static final long                         serialVersionUID = 1L;
     private ExtTextColumn<AdvancedConfigEntry>        stringColumn;
     private ExtCheckColumn<AdvancedConfigEntry>       booleanColumn;
     private ExtTextColumn<AdvancedConfigEntry>        defaultColumn;
@@ -50,6 +51,8 @@ public class AdvancedValueColumn extends ExtCompoundColumn<AdvancedConfigEntry> 
 
     private void initColumns() {
         stringColumn = new ExtTextColumn<AdvancedConfigEntry>(getName()) {
+            private static final long serialVersionUID = 1L;
+
             protected void prepareTableCellRendererComponent(final JLabel jlr) {
                 jlr.setHorizontalAlignment(SwingConstants.RIGHT);
             }
@@ -71,6 +74,8 @@ public class AdvancedValueColumn extends ExtCompoundColumn<AdvancedConfigEntry> 
         };
         register(stringColumn);
         defaultColumn = new ExtTextColumn<AdvancedConfigEntry>(getName()) {
+            private static final long serialVersionUID = 1L;
+
             protected void prepareTableCellRendererComponent(final JLabel jlr) {
                 jlr.setHorizontalAlignment(SwingConstants.RIGHT);
             }
@@ -88,7 +93,7 @@ public class AdvancedValueColumn extends ExtCompoundColumn<AdvancedConfigEntry> 
             @Override
             protected void setStringValue(String value, AdvancedConfigEntry object) {
 
-                Object newV = JSonStorage.restoreFromString(value, new TypeRef(object.getType()) {
+                Object newV = JSonStorage.restoreFromString(value, new TypeRef<Object>(object.getType()) {
                 }, null);
                 if (newV != null) {
                     object.setValue(newV);
@@ -102,6 +107,8 @@ public class AdvancedValueColumn extends ExtCompoundColumn<AdvancedConfigEntry> 
         };
         register(defaultColumn);
         booleanColumn = new ExtCheckColumn<AdvancedConfigEntry>(getName()) {
+
+            private static final long serialVersionUID = 1L;
 
             @Override
             protected boolean getBooleanValue(AdvancedConfigEntry value) {
@@ -124,13 +131,9 @@ public class AdvancedValueColumn extends ExtCompoundColumn<AdvancedConfigEntry> 
 
         longColumn = new ExtSpinnerColumn<AdvancedConfigEntry>(getName()) {
 
-            private SpinnerNumberModel lm;
-            private SpinnerNumberModel dm;
+            private static final long serialVersionUID = 1L;
 
             protected void init() {
-                lm = new SpinnerNumberModel(0, Long.MIN_VALUE, Long.MAX_VALUE, 1);
-                dm = new SpinnerNumberModel(0.0d, Long.MIN_VALUE, Long.MAX_VALUE, 1);
-
             }
 
             @Override
@@ -191,6 +194,8 @@ public class AdvancedValueColumn extends ExtCompoundColumn<AdvancedConfigEntry> 
         register(longColumn);
 
         enumColumn = new ExtComboColumn<AdvancedConfigEntry>(getName(), null) {
+            private static final long serialVersionUID = 1L;
+
             public ComboBoxModel updateModel(final ComboBoxModel dataModel, final AdvancedConfigEntry value) {
 
                 Object[] values;
@@ -214,8 +219,7 @@ public class AdvancedValueColumn extends ExtCompoundColumn<AdvancedConfigEntry> 
 
             @Override
             protected int getComboBoxItem(AdvancedConfigEntry value) {
-
-                return ((Enum) value.getValue()).ordinal();
+                return ((Enum<?>) value.getValue()).ordinal();
             }
 
             @Override
@@ -236,7 +240,6 @@ public class AdvancedValueColumn extends ExtCompoundColumn<AdvancedConfigEntry> 
                 } catch (NoSuchMethodException e) {
                     e.printStackTrace();
                 }
-                ;
             }
         };
         register(enumColumn);

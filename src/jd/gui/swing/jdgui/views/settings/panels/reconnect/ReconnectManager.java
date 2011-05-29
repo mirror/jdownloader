@@ -26,9 +26,10 @@ import org.jdownloader.images.NewTheme;
 import org.jdownloader.translate._JDT;
 
 public class ReconnectManager extends MigPanel implements SettingsComponent, ActionListener, DefaultEventListener<StorageEvent<?>> {
-    private JComboBox combobox;
-    private JButton   autoButton;
-    private MigPanel  card;
+    private static final long serialVersionUID = 1L;
+    private JComboBox         combobox;
+    private JButton           autoButton;
+    private MigPanel          card;
 
     public ReconnectManager() {
         super("ins 0,wrap 2", "[grow,fill][]", "");
