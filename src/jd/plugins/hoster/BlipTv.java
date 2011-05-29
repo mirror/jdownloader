@@ -18,7 +18,6 @@ package jd.plugins.hoster;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -29,14 +28,14 @@ import jd.plugins.PluginForHost;
 /**
  * @author typek_pb
  */
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "blip.tv" }, urls = { "http://[\\w\\.]*?blip\\.tv/file/\\d+.*" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "blip.tv" }, urls = { "http://(\\w+\\.)?blip\\.tv/(file/\\d+(/)?|[\\p{L}\\w-%]+/[\\p{L}\\w-%]+)" }, flags = { 0 })
 public class BlipTv extends PluginForHost {
 
-    public BlipTv(PluginWrapper wrapper) {
+    private String dlink = null;
+
+    public BlipTv(final PluginWrapper wrapper) {
         super(wrapper);
     }
-
-    private String dlink = null;
 
     @Override
     public String getAGBLink() {
@@ -44,9 +43,14 @@ public class BlipTv extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink link) throws Exception {
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
+    }
+
+    @Override
+    public void handleFree(final DownloadLink link) throws Exception {
         requestFileInformation(link);
-        if (dlink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dlink == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dlink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             dl.getConnection().disconnect();
@@ -56,19 +60,36 @@ public class BlipTv extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        br.forceDebug(true);
+        setBrowserExclusive();
         br.getPage(link.getDownloadURL());
-        String filename = br.getRegex("player.setPostsTitle[(]\"(.*?)\"[)]").getMatch(0);
-        if (filename == null || filename.trim().length() == 0) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-
-        dlink = new Regex(Encoding.htmlDecode(br.toString()), "player.setPrimaryMediaUrl[(]\"(.*?)\"[)]").getMatch(0);
-        if (dlink == null || dlink.trim().length() == 0) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-
-        String ext = new Regex(dlink, "[.]([a-zA-Z0-9]*)[?]").getMatch(0);
-        if (ext == null || ext.trim().length() == 0) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-
-        filename = filename.trim();
-        link.setFinalFileName(filename + "." + ext);
+        /* 0.95xx comp */
+        if (br.getRedirectLocation() != null) {
+            // deutsche Umlaute fuehren in der 0.95xx zu einem redirect loop!
+            br.getPage(br.getRedirectLocation().replaceAll("%83%C2", ""));
+        }
+        String id = br.getRegex("data-posts-id=\"(\\d+)").getMatch(0);
+        if (id == null) {
+            id = br.getRegex("\tdata-episode=\"(\\d+)").getMatch(0);
+        }
+        if (id == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        String filename = br.getRegex("<title>(.*?)\\s\\|").getMatch(0);
+        br.getPage("http://blip.tv/rss/flash/" + id);
+        if (filename == null) {
+            filename = br.getRegex("<item>.*?<title>(.*?)</title>").getMatch(0);
+        }
+        dlink = br.getRegex("<enclosure url=\"(.*?)\"").getMatch(0);
+        if (dlink == null) {
+            dlink = br.getRegex("<media:content url=\"(.*?)\"").getMatch(0);
+        }
+        if (dlink == null || filename == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        String ext = dlink.substring(dlink.lastIndexOf("."), dlink.length());
+        ext = ext == null ? ".flv" : ext;
+        if (filename.endsWith(".")) {
+            filename = filename.substring(0, filename.length() - 1);
+        }
+        link.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ext);
         br.setFollowRedirects(true);
         try {
             if (!br.openGetConnection(dlink).getContentType().contains("html")) {
@@ -77,14 +98,11 @@ public class BlipTv extends PluginForHost {
                 return AvailableStatus.TRUE;
             }
         } finally {
-            if (br.getHttpConnection() != null) br.getHttpConnection().disconnect();
+            if (br.getHttpConnection() != null) {
+                br.getHttpConnection().disconnect();
+            }
         }
         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
     }
 
     @Override
@@ -92,10 +110,10 @@ public class BlipTv extends PluginForHost {
     }
 
     @Override
-    public void resetPluginGlobals() {
+    public void resetDownloadlink(final DownloadLink link) {
     }
 
     @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetPluginGlobals() {
     }
 }
