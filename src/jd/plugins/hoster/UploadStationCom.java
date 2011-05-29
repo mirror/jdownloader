@@ -30,11 +30,11 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -107,6 +107,7 @@ public class UploadStationCom extends PluginForHost {
             handleCaptchaErrors(br2, downloadLink);
             handleErrors(br2, downloadLink);
             logger.info("There seems to be an error, no captcha is shown!");
+            logger.warning(br2.toString());
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         Boolean failed = true;

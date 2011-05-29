@@ -60,12 +60,14 @@ public class MsCreNt extends PluginForDecrypt {
             br.getPage("http://musicore.net/ajax/release.php?id=" + topicID);
             br.setFollowRedirects(false);
             String redirectlinks[] = br.getRegex("(\\'|\")(http://r\\.musicore\\.net/\\?id=.*?url=.*?)(\\'|\")").getColumn(1);
+            if (redirectlinks == null || redirectlinks.length == 0) redirectlinks = br.getRegex("<a href=\"(/redirect/.*?)\"").getColumn(0);
             if (redirectlinks == null || redirectlinks.length == 0) return null;
             br.getPage("http://musicore.net/ajax/ftp.php?id=" + topicID);
             String ftpLinks[] = br.getRegex("\"(ftp://\\d+:[a-z0-9]+@ftp\\.musicore\\.ru/.*?)\"").getColumn(0);
             progress.setRange(redirectlinks.length);
             for (String redirectlink : redirectlinks) {
                 redirectlink = Encoding.htmlDecode(redirectlink);
+                if (!redirectlink.contains("musicore.net")) redirectlink = "https://musicore.net" + redirectlink;
                 br.getPage(redirectlink);
                 String finallink = br.getRedirectLocation();
                 if (finallink == null) finallink = br.getRegex("URL=(.*?)\"").getMatch(0);

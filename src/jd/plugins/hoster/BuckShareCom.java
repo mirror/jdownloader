@@ -69,7 +69,7 @@ public class BuckShareCom extends PluginForHost {
             logger.warning("file is 99,99% offline, throwing \"file not found\" now...");
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        Regex additionalRegex = new Regex(BRBEFORE, "color:#F00\">You have requested the file:</span></small>[\t\n\r ]+<h3>(.*?)<span style=\"color:#A0A0A4;\">\\&nbsp;\\((.*?)\\)</span> </h3>");
+        Regex additionalRegex = new Regex(BRBEFORE, "<h3>(.*?)<span style=\"color:#A0A0A4;\">\\&nbsp;\\((.*?)\\)</span> </h3>");
         String filename = new Regex(BRBEFORE, "You have requested.*?http://.*?[a-z0-9]{12}/(.*?)</font>").getMatch(0);
         if (filename == null) {
             filename = new Regex(BRBEFORE, "fname\"( type=\"hidden\")? value=\"(.*?)\"").getMatch(1);
@@ -94,9 +94,7 @@ public class BuckShareCom extends PluginForHost {
             filesize = new Regex(BRBEFORE, "<small>\\((.*?)\\)</small>").getMatch(0);
             if (filesize == null) {
                 filesize = new Regex(BRBEFORE, "</font>[ ]+\\((.*?)\\)(.*?)</font>").getMatch(0);
-                if (filesize == null) {
-                    filesize = additionalRegex.getMatch(1);
-                }
+                if (filesize == null) filesize = additionalRegex.getMatch(1);
             }
         }
         if (filename == null || filename.equals("")) {
