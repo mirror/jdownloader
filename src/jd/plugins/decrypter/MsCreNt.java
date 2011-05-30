@@ -29,7 +29,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "musicore.net" }, urls = { "http(s)?://(www\\.)?(r\\.)?musicore\\.net/(forums/index\\.php\\?/topic/\\d+-|forums/index\\.php\\?showtopic=\\d+|\\?id=[A-Za-z0-9]+\\&url=[a-zA-Z0-9=\\+/\\-]+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "musicore.net" }, urls = { "http(s)?://(www\\.)?(r\\.)?musicore\\.net/forums/index\\.php\\?(/topic/\\d+\\-|showtopic=\\d+|\\?id=[A-Za-z0-9]+\\&url=[a-zA-Z0-9=\\+/\\-]+|/forum/\\d+\\-[A-Za-z0-9]+/(page_.+)?)" }, flags = { 0 })
 public class MsCreNt extends PluginForDecrypt {
 
     public MsCreNt(PluginWrapper wrapper) {
@@ -43,27 +43,18 @@ public class MsCreNt extends PluginForDecrypt {
         parameter = Encoding.htmlDecode(parameter);
         br.setCookiesExclusive(true);
         br.setFollowRedirects(false);
-        if (!parameter.contains("musicore.net/forums/index.php?")) {
-            br.getPage(parameter);
-            if (br.containsHTML("(An error occurred|We\\'re sorry for the inconvenience)")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
-            String finallink = br.getRedirectLocation();
-            if (finallink == null) {
-                logger.warning("Decrypter is defect, browser contains: " + br.toString());
-                return null;
-            }
-            decryptedLinks.add(createDownloadlink(finallink));
-        } else {
+        if (new Regex(parameter, ".*?(/topic/|showtopic=)").matches()) {
             String topicID = new Regex(parameter, "(topic/|showtopic=)(\\d+)").getMatch(1);
             if (topicID == null) return null;
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             br.setFollowRedirects(true);
             br.getPage("http://musicore.net/ajax/release.php?id=" + topicID);
             br.setFollowRedirects(false);
-            String redirectlinks[] = br.getRegex("(\\'|\")(http://r\\.musicore\\.net/\\?id=.*?url=.*?)(\\'|\")").getColumn(1);
+            String[] redirectlinks = br.getRegex("(\\'|\")(http://r\\.musicore\\.net/\\?id=.*?url=.*?)(\\'|\")").getColumn(1);
             if (redirectlinks == null || redirectlinks.length == 0) redirectlinks = br.getRegex("<a href=\"(/redirect/.*?)\"").getColumn(0);
             if (redirectlinks == null || redirectlinks.length == 0) return null;
             br.getPage("http://musicore.net/ajax/ftp.php?id=" + topicID);
-            String ftpLinks[] = br.getRegex("\"(ftp://\\d+:[a-z0-9]+@ftp\\.musicore\\.ru/.*?)\"").getColumn(0);
+            String[] ftpLinks = br.getRegex("\"(ftp://\\d+:[a-z0-9]+@ftp\\.musicore\\.ru/.*?)\"").getColumn(0);
             progress.setRange(redirectlinks.length);
             for (String redirectlink : redirectlinks) {
                 redirectlink = Encoding.htmlDecode(redirectlink);
@@ -72,8 +63,7 @@ public class MsCreNt extends PluginForDecrypt {
                 String finallink = br.getRedirectLocation();
                 if (finallink == null) finallink = br.getRegex("URL=(.*?)\"").getMatch(0);
                 if (finallink == null) {
-                    logger.warning("finallink from the following link had to be regexes and could not be found by the direct redirect: " + parameter);
-                    logger.warning("Browser contains test: " + br.toString());
+                    logger.warning("Decrypter broken for link: " + parameter);
                     finallink = br.getRegex("URL=(.*?)\"").getMatch(0);
                 }
                 decryptedLinks.add(createDownloadlink(finallink));
@@ -84,6 +74,25 @@ public class MsCreNt extends PluginForDecrypt {
                     decryptedLinks.add(createDownloadlink(ftpLink));
                 }
             }
+        } else if (parameter.contains("musicore.net/forums/index.php?/forum/")) {
+            br.getPage(parameter);
+            String[] allLinks = br.getRegex("id=\"tid\\-link\\-\\d+\" href=\"(http.*?)\"").getColumn(0);
+            if (allLinks == null || allLinks.length == 0) allLinks = br.getRegex("<ul class=\\'last_post\\'>[\t\n\r ]+<li>[\t\n\r ]+<a href=\\'(http.*?)\\'").getColumn(0);
+            if (allLinks == null || allLinks.length == 0) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            for (String forumLink : allLinks)
+                decryptedLinks.add(createDownloadlink(forumLink));
+        } else {
+            br.getPage(parameter);
+            if (br.containsHTML("(An error occurred|We\\'re sorry for the inconvenience)")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+            String finallink = br.getRedirectLocation();
+            if (finallink == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            decryptedLinks.add(createDownloadlink(finallink));
         }
         return decryptedLinks;
 
