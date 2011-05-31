@@ -10,7 +10,6 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.swing.renderer.MultipleRenderLabel;
 import org.appwork.utils.swing.table.ExtColumn;
-import org.appwork.utils.swing.table.ExtTable;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 
@@ -63,7 +62,7 @@ public class HosterIconColumn extends ExtColumn<PackageLinkNode> {
     public void setValue(Object value, PackageLinkNode object) {
     }
 
-    public JComponent getRendererComponent(ExtTable<PackageLinkNode> table, PackageLinkNode value, boolean isSelected, boolean hasFocus, int row, int column) {
+    public void configureRendererComponent(PackageLinkNode value, boolean isSelected, boolean hasFocus, int row, int column) {
         if (value instanceof FilePackage) {
             statuspanel.setText("FilePackage", null);
         } else {
@@ -89,7 +88,29 @@ public class HosterIconColumn extends ExtColumn<PackageLinkNode> {
             }
             statuspanel.clearIcons(counter);
         }
+
+    }
+
+    @Override
+    public JComponent getEditorComponent(PackageLinkNode value, boolean isSelected, int row, int column) {
+        return null;
+    }
+
+    @Override
+    public JComponent getRendererComponent(PackageLinkNode value, boolean isSelected, boolean hasFocus, int row, int column) {
         return statuspanel;
+    }
+
+    @Override
+    public void resetEditor() {
+    }
+
+    @Override
+    public void resetRenderer() {
+    }
+
+    @Override
+    public void configureEditorComponent(PackageLinkNode value, boolean isSelected, int row, int column) {
     }
 
 }

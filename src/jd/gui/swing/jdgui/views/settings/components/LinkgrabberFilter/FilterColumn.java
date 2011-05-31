@@ -10,7 +10,6 @@ import javax.swing.ListCellRenderer;
 import jd.HostPluginWrapper;
 
 import org.appwork.utils.swing.table.ExtColumn;
-import org.appwork.utils.swing.table.ExtTableModel;
 import org.appwork.utils.swing.table.columns.ExtComboColumn;
 import org.appwork.utils.swing.table.columns.ExtCompoundColumn;
 import org.appwork.utils.swing.table.columns.ExtTextColumn;
@@ -61,7 +60,7 @@ public class FilterColumn extends ExtCompoundColumn<LinkFilter> {
             private static final long serialVersionUID = -3321450267594884039L;
 
             @Override
-            protected int getComboBoxItem(LinkFilter value) {
+            protected int getSelectedIndex(LinkFilter value) {
                 Integer ret = map.get(value.getRegex());
                 if (ret == null) return 0;
                 return ret;
@@ -106,12 +105,6 @@ public class FilterColumn extends ExtCompoundColumn<LinkFilter> {
         default:
             return txt;
         }
-    }
-
-    @Override
-    public void setModelToCompounds(ExtTableModel<LinkFilter> model) {
-        txt.setModel(model);
-        combo.setModel(model);
     }
 
     @Override

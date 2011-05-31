@@ -82,10 +82,19 @@ public class ActionColumn extends ExtComponentColumn<Account> {
     }
 
     @Override
-    protected JComponent getEditorComponent(Account value, boolean isSelected, int row, int column) {
-        setAccount(value);
+    protected JComponent getInternalEditorComponent(Account value, boolean isSelected, int row, int column) {
 
         return editor;
+    }
+
+    @Override
+    public void configureEditorComponent(Account value, boolean isSelected, int row, int column) {
+        setAccount(value);
+    }
+
+    @Override
+    public void configureRendererComponent(Account value, boolean isSelected, boolean hasFocus, int row, int column) {
+        setAccount(value);
     }
 
     private void setAccount(Account value) {
@@ -97,8 +106,8 @@ public class ActionColumn extends ExtComponentColumn<Account> {
     }
 
     @Override
-    protected JComponent getRendererComponent(Account value, boolean isSelected, int row, int column) {
-        setAccount(value);
+    protected JComponent getInternalRendererComponent(Account value, boolean isSelected, boolean hasFocus, int row, int column) {
+
         return renderer;
     }
 

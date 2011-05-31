@@ -14,7 +14,6 @@ import org.appwork.storage.TypeRef;
 import org.appwork.utils.reflection.Clazz;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.table.ExtColumn;
-import org.appwork.utils.swing.table.ExtTableModel;
 import org.appwork.utils.swing.table.columns.ExtCheckColumn;
 import org.appwork.utils.swing.table.columns.ExtComboColumn;
 import org.appwork.utils.swing.table.columns.ExtCompoundColumn;
@@ -117,9 +116,9 @@ public class AdvancedValueColumn extends ExtCompoundColumn<AdvancedConfigEntry> 
 
             @Override
             protected void init() {
-                this.checkBoxRend.setHorizontalAlignment(SwingConstants.RIGHT);
+                this.renderer.setHorizontalAlignment(SwingConstants.RIGHT);
 
-                this.checkBoxEdit.setHorizontalAlignment(SwingConstants.RIGHT);
+                this.editor.setHorizontalAlignment(SwingConstants.RIGHT);
             }
 
             @Override
@@ -218,7 +217,7 @@ public class AdvancedValueColumn extends ExtCompoundColumn<AdvancedConfigEntry> 
             }
 
             @Override
-            protected int getComboBoxItem(AdvancedConfigEntry value) {
+            protected int getSelectedIndex(AdvancedConfigEntry value) {
                 return ((Enum<?>) value.getValue()).ordinal();
             }
 
@@ -266,14 +265,6 @@ public class AdvancedValueColumn extends ExtCompoundColumn<AdvancedConfigEntry> 
             return enumColumn;
         } else {
             return defaultColumn;
-        }
-
-    }
-
-    @Override
-    public void setModelToCompounds(ExtTableModel<AdvancedConfigEntry> model) {
-        for (ExtColumn<AdvancedConfigEntry> ex : columns) {
-            ex.setModel(model);
         }
 
     }

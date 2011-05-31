@@ -127,7 +127,7 @@ public class AuthTableModel extends ExtTableModel<AuthenticationInfo> {
             }
 
             @Override
-            protected int getComboBoxItem(AuthenticationInfo value) {
+            protected int getSelectedIndex(AuthenticationInfo value) {
                 return value.getType().ordinal();
             }
 

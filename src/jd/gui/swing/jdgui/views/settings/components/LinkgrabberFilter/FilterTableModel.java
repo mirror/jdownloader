@@ -88,7 +88,7 @@ public class FilterTableModel extends ExtTableModel<LinkFilter> {
             private static final long serialVersionUID = 8475648905225363397L;
 
             @Override
-            protected int getComboBoxItem(LinkFilter value) {
+            protected int getSelectedIndex(LinkFilter value) {
                 return value.isBlacklist() ? 0 : 1;
             }
 
@@ -156,7 +156,7 @@ public class FilterTableModel extends ExtTableModel<LinkFilter> {
             private static final long serialVersionUID = -4412876997430100402L;
 
             @Override
-            protected int getComboBoxItem(LinkFilter value) {
+            protected int getSelectedIndex(LinkFilter value) {
                 return value.getType().ordinal();
             }
 

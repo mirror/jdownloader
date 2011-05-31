@@ -22,7 +22,6 @@ import jd.gui.swing.components.BrowseFile;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.utils.swing.table.ExtColumn;
-import org.appwork.utils.swing.table.ExtTable;
 import org.appwork.utils.swing.table.ExtTableModel;
 import org.jdesktop.swingx.renderer.JRendererLabel;
 import org.jdownloader.extensions.customizer.CustomizeSetting;
@@ -30,25 +29,24 @@ import org.jdownloader.extensions.customizer.CustomizeSetting;
 public class DownloadDirColumn extends ExtColumn<CustomizeSetting> {
 
     private static final long    serialVersionUID = 1687752044574718418L;
-    private final JRendererLabel jlr;
-    private final BrowseFile     file;
+    private final JRendererLabel renderer;
+    private final BrowseFile     editor;
 
     public DownloadDirColumn(String name, ExtTableModel<CustomizeSetting> table) {
         super(name, table);
         setClickcount(2);
 
-        jlr = new JRendererLabel();
-        jlr.setBorder(null);
+        renderer = new JRendererLabel();
 
-        file = new BrowseFile(new MigLayout("ins 0", "[fill,grow]2[min!]", "[21!]"));
-        file.setFileSelectionMode(BrowseFile.DIRECTORIES_ONLY);
-        file.setButtonText("...");
-        file.getTextField().setBorder(null);
+        editor = new BrowseFile(new MigLayout("ins 0", "[fill,grow]2[min!]", "[21!]"));
+        editor.setFileSelectionMode(BrowseFile.DIRECTORIES_ONLY);
+        editor.setButtonText("...");
+        editor.getTextField().setBorder(null);
     }
 
     @Override
     public Object getCellEditorValue() {
-        return file.getText();
+        return editor.getText();
     }
 
     @Override
@@ -67,20 +65,37 @@ public class DownloadDirColumn extends ExtColumn<CustomizeSetting> {
     }
 
     @Override
-    public JComponent getEditorComponent(ExtTable<CustomizeSetting> table, CustomizeSetting value, boolean isSelected, int row, int column) {
-        file.setText(((CustomizeSetting) value).getDownloadDir());
-        return file;
+    public void configureEditorComponent(CustomizeSetting value, boolean isSelected, int row, int column) {
+        editor.setText(((CustomizeSetting) value).getDownloadDir());
     }
 
     @Override
-    public JComponent getRendererComponent(ExtTable<CustomizeSetting> table, CustomizeSetting value, boolean isSelected, boolean hasFocus, int row, int column) {
-        jlr.setText(((CustomizeSetting) value).getDownloadDir());
-        return jlr;
+    public void configureRendererComponent(CustomizeSetting value, boolean isSelected, boolean hasFocus, int row, int column) {
+        renderer.setText(((CustomizeSetting) value).getDownloadDir());
     }
 
     @Override
     public void setValue(Object value, CustomizeSetting object) {
         object.setDownloadDir((String) value);
+    }
+
+    @Override
+    public JComponent getEditorComponent(CustomizeSetting value, boolean isSelected, int row, int column) {
+        return editor;
+    }
+
+    @Override
+    public JComponent getRendererComponent(CustomizeSetting value, boolean isSelected, boolean hasFocus, int row, int column) {
+        return renderer;
+    }
+
+    @Override
+    public void resetEditor() {
+    }
+
+    @Override
+    public void resetRenderer() {
+        renderer.setBorder(null);
     }
 
 }

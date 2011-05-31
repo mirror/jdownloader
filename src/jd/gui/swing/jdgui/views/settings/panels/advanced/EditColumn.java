@@ -134,18 +134,31 @@ public class EditColumn extends ExtComponentColumn<AdvancedConfigEntry> {
     }
 
     @Override
-    protected JComponent getEditorComponent(AdvancedConfigEntry value, boolean isSelected, int row, int column) {
+    public void configureEditorComponent(AdvancedConfigEntry value, boolean isSelected, int row, int column) {
         editorInfo.setEntry(value);
         editorReset.setEntry(value);
-        reset.setToolTipText("Reset to " + value.getDefault());
-        // rendererReset = new ResetAction();
+    }
+
+    @Override
+    public void configureRendererComponent(AdvancedConfigEntry value, boolean isSelected, boolean hasFocus, int row, int column) {
+        rendererInfo.setEntry(value);
+        rendererReset.setEntry(value);
+    }
+
+    @Override
+    protected String getToolTip(AdvancedConfigEntry obj) {
+        return "Reset to " + obj.getDefault();
+    }
+
+    @Override
+    protected JComponent getInternalEditorComponent(AdvancedConfigEntry value, boolean isSelected, int row, int column) {
+
         return editor;
     }
 
     @Override
-    protected JComponent getRendererComponent(AdvancedConfigEntry value, boolean isSelected, int row, int column) {
-        rendererInfo.setEntry(value);
-        rendererReset.setEntry(value);
+    protected JComponent getInternalRendererComponent(AdvancedConfigEntry value, boolean isSelected, boolean hasFocus, int row, int column) {
+
         return renderer;
     }
 
