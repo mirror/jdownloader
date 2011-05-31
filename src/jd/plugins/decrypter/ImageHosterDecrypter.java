@@ -144,11 +144,9 @@ public class ImageHosterDecrypter extends PluginForDecrypt {
                 }
             }
 
-            logger.info("finallink = " + finallink);
         }
         if (finallink == null) {
             logger.warning("Imagehoster-Decrypter broken for link: " + parameter);
-            logger.warning(br.toString());
             return null;
         }
         finallink = "directhttp://" + finallink;
