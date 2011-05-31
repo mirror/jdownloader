@@ -99,7 +99,14 @@ public class DownloadController implements DownloadControllerListener, DownloadC
     private final AtomicLong structureChanged = new AtomicLong(0);
 
     public static enum MOVE {
-        BEFORE, AFTER, BEGIN, END, TOP, BOTTOM, UP, DOWN
+        BEFORE,
+        AFTER,
+        BEGIN,
+        END,
+        TOP,
+        BOTTOM,
+        UP,
+        DOWN
     }
 
     private LinkedList<FilePackage>                 packages       = new LinkedList<FilePackage>();
@@ -516,6 +523,7 @@ public class DownloadController implements DownloadControllerListener, DownloadC
         synchronized (ACCESSLOCK) {
             for (final FilePackage fp : packages) {
                 for (DownloadLink nextDownloadLink : fp.getDownloadLinkList()) {
+                    if (nextDownloadLink == link) continue;
                     if ((nextDownloadLink.getLinkStatus().hasStatus(LinkStatus.FINISHED)) && nextDownloadLink.getFileOutput().equalsIgnoreCase(link.getFileOutput())) {
                         if (new File(nextDownloadLink.getFileOutput()).exists()) {
                             /*

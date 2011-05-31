@@ -26,6 +26,8 @@ import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.parser.html.Form.MethodType;
+import jd.plugins.Account;
+import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -35,12 +37,14 @@ import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "piggyshare.com" }, urls = { "http://(www\\.)?piggyshare\\.com/file/[a-z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "piggyshare.com" }, urls = { "http://(www\\.)?piggyshare\\.com/file/[a-z0-9]+" }, flags = { 2 })
 public class PiggyShareCom extends PluginForHost {
 
     public PiggyShareCom(PluginWrapper wrapper) {
         super(wrapper);
+        this.enablePremium("http://piggyshare.com/premium");
     }
 
     private static final String FILEIDREGEX   = "piggyshare\\.com/file/(.+)";
@@ -186,6 +190,69 @@ public class PiggyShareCom extends PluginForHost {
         if (br.containsHTML("statusText:\"Your download link has expired\\!\"")) {
             logger.info("Downloadlink expired, retrying...");
             throw new PluginException(LinkStatus.ERROR_RETRY, "Downloadlink expired");
+        }
+    }
+
+    @Override
+    public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
+        this.requestFileInformation(downloadLink);
+        this.login(account);
+        br.setFollowRedirects(false);
+        br.getPage(downloadLink.getDownloadURL());
+        String url = br.getRedirectLocation();
+        if (url == null) {
+            url = br.getRegex("(http://st\\d+\\.piggyshare\\.com/download/[a-z0-9]+/[a-z0-9]+/[a-z0-9]+/.*?)(\"|')").getMatch(0);
+        }
+        if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, url, true, 0);
+        if (dl.getConnection().getContentType().contains("html")) {
+            this.br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        this.dl.startDownload();
+    }
+
+    @Override
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
+        final AccountInfo ai = new AccountInfo();
+        this.setBrowserExclusive();
+        try {
+            this.login(account);
+        } catch (final PluginException e) {
+            account.setValid(false);
+            return ai;
+        }
+        br.getPage("http://piggyshare.com/dashboard");
+        if (!br.containsHTML("<b>Premium</b>")) {
+            account.setValid(false);
+            return ai;
+        }
+        String expire = br.getRegex("validity period:.*?>(\\d+-\\d+-\\d+ \\d+:\\d+)").getMatch(0);
+        if (expire != null) {
+            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy-MM-dd HH:mm", null));
+            account.setValid(true);
+            ai.setUnlimitedTraffic();
+        } else {
+            account.setValid(false);
+        }
+        return ai;
+    }
+
+    public void login(final Account account) throws Exception {
+        this.setBrowserExclusive();
+        this.br.forceDebug(true);
+        br.setCookie("http://piggyshare.com", "lang", "en");
+        this.br.setFollowRedirects(true);
+        final String user = Encoding.urlEncode(account.getUser());
+        final String pass = Encoding.urlEncode(account.getPass());
+        this.br.postPage("http://piggyshare.com/user/~login/1", "login=" + user + "&password=" + pass);
+        String status = br.getRegex("status:\"(.*?)\"").getMatch(0);
+        if (!"logged".equalsIgnoreCase(status)) {
+            AccountInfo ai = account.getAccountInfo();
+            if (ai == null) ai = new AccountInfo();
+            String txt = br.getRegex("statusText:\"(.*?)\"").getMatch(0);
+            if (txt != null) ai.setStatus(txt);
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
     }
 
