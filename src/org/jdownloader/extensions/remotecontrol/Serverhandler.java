@@ -100,6 +100,17 @@ public class Serverhandler implements Handler {
         element.setAttribute("file_speed", dl.getDownloadSpeed() + "");
         element.setAttribute("file_size", Formatter.formatReadable(dl.getDownloadSize()));
         element.setAttribute("file_downloaded", Formatter.formatReadable(dl.getDownloadCurrent()));
+        /* Also show the file's priority, raw status, and download URL */
+        element.setAttribute("file_priority", dl.getPriority() + "");
+        StringBuilder rawstatus = new StringBuilder();
+        for (int num = 0; num < 32; num++) {
+            if (dl.getLinkStatus().hasStatus(1 << num)) {
+                if (rawstatus.length() != 0) rawstatus.append("|");
+                rawstatus.append(LinkStatus.toString(1 << num));
+            }
+        }
+        element.setAttribute("file_rawstatus", rawstatus.toString());
+        element.setAttribute("file_download_url", dl.getDownloadURL().toString());
         return element;
     }
 
@@ -115,6 +126,12 @@ public class Serverhandler implements Handler {
         element.setAttribute("package_loaded", Formatter.formatReadable(fp.getTotalKBLoaded()));
         element.setAttribute("package_size", Formatter.formatReadable(fp.getTotalEstimatedPackageSize()));
         element.setAttribute("package_todo", Formatter.formatReadable(fp.getTotalEstimatedPackageSize() - fp.getTotalKBLoaded()));
+        /*
+         * Also show download directory, and whether or not it's expanded in the
+         * GUI
+         */
+        if (fp.hasDownloadDirectory()) element.setAttribute("package_downloaddir", fp.getDownloadDirectory());
+        element.setAttribute("package_isexpanded", fp.getBooleanProperty("expanded", false) ? "true" : "false");
         return element;
     }
 
@@ -1099,7 +1116,7 @@ public class Serverhandler implements Handler {
             final ArrayList<AbstractExtension<?>> addons = ExtensionController.getInstance().getEnabledExtensions();
             Object cmdResponse = null;
 
-            for (final AbstractExtension<?> addon : addons) {
+            for (final AbstractExtension addon : addons) {
 
                 if (addon instanceof RemoteSupport) {
                     cmdResponse = ((RemoteSupport) addon).handleRemoteCmd(requestUrl);

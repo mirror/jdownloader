@@ -56,16 +56,19 @@ import org.appwork.utils.formatter.SizeFormatter;
 public class Megauploadcom extends PluginForHost {
 
     private static enum STATUS {
-        ONLINE, OFFLINE, API, BLOCKED
+        ONLINE,
+        OFFLINE,
+        API,
+        BLOCKED
     }
 
-    private static final String MU_PARAM_PORT = "MU_PARAM_PORT_NEW1";
-    private final static String[] ports = new String[] { "80", "800", "1723" };
-    private static String wwwWorkaround = null;
-    private static final Object LOCK = new Object();
+    private static final String   MU_PARAM_PORT   = "MU_PARAM_PORT_NEW1";
+    private final static String[] ports           = new String[] { "80", "800", "1723" };
+    private static String         wwwWorkaround   = null;
+    private static final Object   LOCK            = new Object();
 
-    private static final Object LOGINLOCK = new Object();
-    private static int simultanpremium = 1;
+    private static final Object   LOGINLOCK       = new Object();
+    private static int            simultanpremium = 1;
 
     private synchronized void handleWaittimeWorkaround(final DownloadLink link, final Browser br) throws PluginException {
         if (br.containsHTML("gencap\\.php\\?")) {
@@ -109,11 +112,11 @@ public class Megauploadcom extends PluginForHost {
         }
     }
 
-    private boolean onlyapi = false;
+    private boolean             onlyapi            = false;
 
-    private String wait = null;
+    private String              wait               = null;
 
-    private static String agent = RandomUserAgent.generate();
+    private static String       agent              = RandomUserAgent.generate();
 
     /*
      * every jd session starts with 1=default, because no waittime does not work
@@ -122,9 +125,9 @@ public class Megauploadcom extends PluginForHost {
      * try to workaround the waittime, 0=no waittime, 1 = default, other = 60
      * secs
      */
-    private static int WaittimeWorkaround = 1;
+    private static int          WaittimeWorkaround = 1;
 
-    private static final Object PREMLOCK = new Object();
+    private static final Object PREMLOCK           = new Object();
 
     public Megauploadcom(final PluginWrapper wrapper) {
         super(wrapper);
@@ -156,9 +159,11 @@ public class Megauploadcom extends PluginForHost {
 
     @Override
     public boolean checkLinks(final DownloadLink urls[]) {
-        if (urls == null || urls.length == 0) { return false; }
+        /* linkcheck seesm to be broken or blocked */
+        if (urls == null || urls.length == 0 || true) { return false; }
         this.checkWWWWorkaround();
         final Browser br = new Browser();
+        antiJDBlock(br);
         br.getHeaders().put("Cache-Control", null);
         final LinkedHashMap<String, String> map = new LinkedHashMap<String, String>();
         int i = 0;

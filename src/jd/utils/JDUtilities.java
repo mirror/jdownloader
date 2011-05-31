@@ -191,6 +191,17 @@ public class JDUtilities {
         return CONFIGURATION;
     }
 
+    /* please keep this */
+    public static void setDB_CONNECT(DatabaseConnector dB_CONNECT) {
+        DB_CONNECT = dB_CONNECT;
+    }
+
+    /* please keep this */
+    public static void setJDHomeDirectory(File home) {
+        if (home == null) return;
+        JD_HOME = home;
+    }
+
     /**
      * Gibt den verwendeten Controller zurueck
      * 

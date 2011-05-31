@@ -163,7 +163,7 @@ public class DownloadController implements DownloadControllerListener, DownloadC
     }
 
     /**
-     * request saving of current FilePackages/DownloadLinks with a 5 sec delay
+     * request saving of current FilePackages/DownloadLinks with a 20 sec delay
      */
     public void saveDownloadLinksAsync() {
         synchronized (ACCESSLOCK) {
@@ -174,7 +174,7 @@ public class DownloadController implements DownloadControllerListener, DownloadC
                     saveDownloadLinksSyncnonThread();
                 }
 
-            }, 5, TimeUnit.SECONDS);
+            }, 20, TimeUnit.SECONDS);
         }
     }
 

@@ -28,7 +28,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pastebin.com" }, urls = { "http://[\\w\\.]*?pastebin\\.com/[0-9A-Za-z]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pastebin.com" }, urls = { "http://[\\w\\.]*?pastebin\\.com/(raw.*?=)?[0-9A-Za-z]+" }, flags = { 0 })
 public class PasteBinCom extends PluginForDecrypt {
 
     public PasteBinCom(PluginWrapper wrapper) {
@@ -43,6 +43,9 @@ public class PasteBinCom extends PluginForDecrypt {
         /* Error handling for invalid links */
         if (br.containsHTML("(Unknown paste ID|Unknown paste ID, it may have expired or been deleted)")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.nolinks", "Perhaps wrong URL or there are no links to add."));
         String plaintxt = br.getRegex("<textarea(.*?)</textarea>").getMatch(0);
+        if (plaintxt == null && parameter.contains("raw.php")) {
+            plaintxt = br.toString();
+        }
         if (plaintxt == null) return null;
         // Find all those links
         String[] links = HTMLParser.getHttpLinks(plaintxt, "");

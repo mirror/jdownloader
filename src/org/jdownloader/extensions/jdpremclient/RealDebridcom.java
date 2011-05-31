@@ -226,6 +226,7 @@ public class RealDebridcom extends PluginForHost implements JDPremInterface {
                 String url = Encoding.urlEncode(link.getDownloadURL());
                 genlink = br.getPage("http://www.real-debrid.com/lib/ajax/generator.php?login=" + user + "&pass=" + pw + "&lang=en&link=" + url + "&sl=1");
                 if (!genlink.startsWith("http://")) {
+                    if (genlink.contains("Your file is unavailable on the hoster")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
                     logger.severe("RealDebrid(Error): " + genlink);
                     if (genlink.contains("limit")) {
                         /* limit reached for this host */

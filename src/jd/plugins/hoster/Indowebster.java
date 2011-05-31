@@ -18,11 +18,11 @@ package jd.plugins.hoster;
 
 import jd.PluginWrapper;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -68,7 +68,7 @@ public class Indowebster extends PluginForHost {
         }
         br.getPage("http://www.indowebster.com/" + ad_url);
         String dllink = br.getRegex("id=\"link\\-download\" align=\"center\"><a href=\"(http://.*?)\"").getMatch(0);
-        dllink = br.getRegex("\"(http://www\\d+\\.indowebster\\.com/.*?)\"").getMatch(0);
+        if (dllink == null) dllink = br.getRegex("\"(http://www\\d+\\.indowebster\\.com/.*?)\"").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dllink = dllink.trim();
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
