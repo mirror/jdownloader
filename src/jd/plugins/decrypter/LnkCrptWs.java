@@ -186,7 +186,7 @@ public class LnkCrptWs extends PluginForDecrypt {
             progress.setRange(forms.length - 8);
             for (final Form form : forms) {
                 Browser clone;
-                if (form.getInputField("key") != null && form.getInputField("key").getValue() != null && form.getInputField("key").getValue().length() > 0) {
+                if (form.getInputField("file") != null && form.getInputField("file").getValue() != null && form.getInputField("file").getValue().length() > 0) {
                     progress.increase(1);
                     clone = br.cloneBrowser();
                     clone.submitForm(form);
