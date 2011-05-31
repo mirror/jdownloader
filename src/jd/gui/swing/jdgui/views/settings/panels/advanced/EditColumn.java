@@ -111,6 +111,18 @@ public class EditColumn extends ExtComponentColumn<AdvancedConfigEntry> {
         // add(info);
     }
 
+    @Override
+    public void resetEditor() {
+        editor.setBackground(null);
+        editor.setOpaque(false);
+    }
+
+    @Override
+    public void resetRenderer() {
+        renderer.setBackground(null);
+        renderer.setOpaque(false);
+    }
+
     private JButton getButton(AbstractAction action) {
         final JButton bt = new JButton(action);
 

@@ -36,6 +36,8 @@ public class PremServExtension extends AbstractExtension<PremServConfig> impleme
 
     private ExtensionConfigPanel<PremServExtension> configPanel;
 
+    private JDPremServGui                           gui;
+
     public ExtensionConfigPanel<PremServExtension> getConfigPanel() {
         return configPanel;
     }
@@ -46,6 +48,8 @@ public class PremServExtension extends AbstractExtension<PremServConfig> impleme
 
     public PremServExtension() throws StartException {
         super(null);
+
+        gui = new JDPremServGui(this);
 
     }
 
@@ -120,7 +124,7 @@ public class PremServExtension extends AbstractExtension<PremServConfig> impleme
 
     @Override
     public AddonPanel<PremServExtension> getGUI() {
-        return null;
+        return gui;
     }
 
     @Override

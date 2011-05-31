@@ -111,4 +111,16 @@ public class ActionColumn extends ExtComponentColumn<Account> {
         return renderer;
     }
 
+    @Override
+    public void resetEditor() {
+        editor.setBackground(null);
+        editor.setOpaque(false);
+    }
+
+    @Override
+    public void resetRenderer() {
+        renderer.setBackground(null);
+        renderer.setOpaque(false);
+    }
+
 }
