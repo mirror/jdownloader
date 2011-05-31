@@ -57,9 +57,6 @@ public class FilesMailRu extends PluginForHost {
     private static final String UNAVAILABLE2 = ">In process<";
     private static final String INFOREGEX    = "<td class=\"name\">(.*?<td class=\"do\">.*?)</td>";
 
-    // private static final boolean RESUME = true;
-    // private static final int MAXCHUNKS = -10;
-
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
         if (!keepCookies) this.setBrowserExclusive();
@@ -141,27 +138,11 @@ public class FilesMailRu extends PluginForHost {
         if (!premium) goToSleep(downloadLink);
         // Errorhandling, sometimes the link which is usually renewed by the
         // linkgrabber doesn't work and needs to be refreshed again!
-        int chunks = -10;
-        boolean resume = true;
-        if (downloadLink.getStringProperty("disablechunks") != null) {
-            chunks = 1;
-        }
+        int chunks = 1;
         if (premium) chunks = 0;
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL(), resume, chunks);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL(), true, chunks);
         if (dl.getConnection().getResponseCode() == 503) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Too many simultan downloads!"); }
         dl.startDownload();
-        /* DO NOT use download.reset() within plugin */
-        /*
-         * DO NOT check startDownload, because download abort will return with
-         * false, so your previous handling caused an endless loop
-         */
-        if (downloadLink.getLinkStatus().getErrorMessage() != null) {
-            if (downloadLink.getLinkStatus().getErrorMessage().contains("Service Temporarily Unavailable")) {
-                downloadLink.setProperty("disablechunks", "disable");
-                downloadLink.setChunksProgress(null);
-                throw new PluginException(LinkStatus.ERROR_RETRY, "Chunkerror");
-            }
-        }
     }
 
     public void goToSleep(DownloadLink downloadLink) throws PluginException {
