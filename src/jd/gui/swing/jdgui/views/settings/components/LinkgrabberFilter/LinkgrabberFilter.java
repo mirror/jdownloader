@@ -8,6 +8,7 @@ import javax.swing.JTextField;
 import javax.swing.JToolBar;
 
 import jd.gui.swing.jdgui.views.settings.components.SettingsComponent;
+import jd.gui.swing.jdgui.views.settings.components.StateUpdateListener;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.utils.swing.HelpNotifier;
@@ -26,24 +27,32 @@ public class LinkgrabberFilter extends JPanel implements SettingsComponent {
         tb = new JToolBar();
         tb.setFloatable(false);
         table = new FilterTable();
-        tb.add(new JButton(new NewAction(table)));
-        tb.add(new JButton(new RemoveAction(table)));
+        table.addMouseListener(new ContextMenuListener(this));
+        tb.add(new JButton(new NewAction(this)));
+        tb.add(new JButton(new RemoveAction(this)));
 
         txt = new JTextField();
-        test = new JButton(new TestAction(table));
+        test = new JButton(new TestAction(this));
         add(tb);
         HelpNotifier.register(txt, new HelpNotifierCallbackListener() {
 
             public void onHelpNotifyShown(JComponent c) {
+                test.setEnabled(false);
             }
 
             public void onHelpNotifyHidden(JComponent c) {
+                test.setEnabled(true);
             }
 
         }, _GUI._.settings_linkgrabber_filter_test_helpurl());
         add(new JScrollPane(table));
         add(txt, "split 2,growx,pushx");
-        add(test, "shrinkx");
+
+        add(test, "shrinkx,height 22!");
+    }
+
+    public FilterTable getTable() {
+        return table;
     }
 
     public String getConstraints() {
@@ -52,5 +61,14 @@ public class LinkgrabberFilter extends JPanel implements SettingsComponent {
 
     public boolean isMultiline() {
         return false;
+    }
+
+    public String getTestText() {
+        if (txt.getText().equals(_GUI._.settings_linkgrabber_filter_test_helpurl()) || txt.getText().trim().length() == 0) return null;
+        return txt.getText();
+    }
+
+    public void addStateUpdateListener(StateUpdateListener listener) {
+        throw new IllegalStateException("Not implemented");
     }
 }

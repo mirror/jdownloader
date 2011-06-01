@@ -10,10 +10,13 @@ import javax.swing.JSeparator;
 
 public class ContextMenuListener implements MouseListener {
 
-    private FilterTable table;
+    private FilterTable       table;
+    private LinkgrabberFilter linkgrabberFilter;
 
-    public ContextMenuListener(FilterTable filterTable) {
-        this.table = filterTable;
+    public ContextMenuListener(LinkgrabberFilter linkgrabberFilter) {
+        this.table = linkgrabberFilter.getTable();
+        this.linkgrabberFilter = linkgrabberFilter;
+
     }
 
     public void mouseClicked(MouseEvent e) {
@@ -53,10 +56,8 @@ public class ContextMenuListener implements MouseListener {
         ArrayList<LinkFilter> selected = table.getExtTableModel().getSelectedObjects();
         popup.add(new JMenuItem(new NewAction(table)));
         popup.add(new JMenuItem(new RemoveAction(selected)));
-        popup.add(new JMenuItem(new EnableAction(table)));
-        popup.add(new JMenuItem(new DisableAction(table)));
         popup.add(new JSeparator());
-        popup.add(new JMenuItem(new TestAction(table)));
+        popup.add(new JMenuItem(new TestAction(linkgrabberFilter)));
         return popup;
     }
 

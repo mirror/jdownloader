@@ -6,6 +6,7 @@ import javax.swing.JScrollPane;
 import javax.swing.JToolBar;
 
 import jd.gui.swing.jdgui.views.settings.components.SettingsComponent;
+import jd.gui.swing.jdgui.views.settings.components.StateUpdateListener;
 import net.miginfocom.swing.MigLayout;
 
 public class AccountManager extends JPanel implements SettingsComponent {
@@ -41,6 +42,10 @@ public class AccountManager extends JPanel implements SettingsComponent {
         add(tb);
         add(new JScrollPane(table));
 
+    }
+
+    public void addStateUpdateListener(StateUpdateListener listener) {
+        throw new IllegalStateException("Not implemented");
     }
 
     public String getConstraints() {

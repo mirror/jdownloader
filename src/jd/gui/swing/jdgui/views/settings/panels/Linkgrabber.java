@@ -17,11 +17,15 @@
 package jd.gui.swing.jdgui.views.settings.panels;
 
 import javax.swing.ImageIcon;
+import javax.swing.JTextArea;
 
 import jd.gui.swing.jdgui.views.settings.components.Checkbox;
+import jd.gui.swing.jdgui.views.settings.components.ComboBox;
+import jd.gui.swing.jdgui.views.settings.components.StateUpdateListener;
 import jd.gui.swing.jdgui.views.settings.components.LinkgrabberFilter.LinkgrabberFilter;
 
 import org.appwork.storage.config.JsonConfig;
+import org.jdownloader.controlling.LinkFilterController;
 import org.jdownloader.gui.settings.AbstractConfigPanel;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
@@ -35,6 +39,8 @@ public class Linkgrabber extends AbstractConfigPanel {
     private Checkbox          cnl;
     private Checkbox          rename;
     private LinkgrabberFilter filter;
+    private ComboBox<String>  blackOrWhite;
+    private JTextArea         desc;
 
     public String getTitle() {
         return _JDT._.gui_settings_linkgrabber_title();
@@ -57,9 +63,27 @@ public class Linkgrabber extends AbstractConfigPanel {
         this.addHeader(_GUI._.gui_config_linkgrabber_ignorelist(), NewTheme.I().getIcon("filter", 32));
         this.addDescription(_JDT._.gui_settings_linkgrabber_filter_description());
         filter = new LinkgrabberFilter();
+        blackOrWhite = new ComboBox<String>(new String[] { _GUI._.settings_linkgrabber_filter_blackorwhite_black(), _GUI._.settings_linkgrabber_filter_blackorwhite_white() });
+        addPair(_GUI._.gui_config_linkgrabber_filter_type(), blackOrWhite);
+        // add(new JSeparator(), "gapleft 37,spanx,growx,pushx,gaptop 10");
+        desc = addDescriptionPlain("");
+        blackOrWhite.addStateUpdateListener(new StateUpdateListener() {
 
+            public void onStateUpdated() {
+                updateDescription();
+            }
+        });
+        updateDescription();
         add(filter);
 
+    }
+
+    protected void updateDescription() {
+        if (blackOrWhite.getSelectedIndex() == 0) {
+            desc.setText(_GUI._.settings_linkgrabber_filter_blackorwhite_black_description());
+        } else {
+            desc.setText(_GUI._.settings_linkgrabber_filter_blackorwhite_white_description());
+        }
     }
 
     @Override
@@ -73,6 +97,7 @@ public class Linkgrabber extends AbstractConfigPanel {
         st.setClickNLoadEnabled(cnl.isSelected());
         st.setLinkcheckEnabled(checkLinks.isSelected());
         st.setCleanUpFilenames(rename.isSelected());
+        LinkFilterController.getInstance().setBlacklist(blackOrWhite.getSelectedIndex() == 0);
     }
 
     @Override
@@ -81,6 +106,7 @@ public class Linkgrabber extends AbstractConfigPanel {
         cnl.setSelected(st.isClickNLoadEnabled());
         checkLinks.setSelected(st.isLinkcheckEnabled());
         rename.setSelected(st.isCleanUpFilenames());
+        blackOrWhite.setSelectedIndex(LinkFilterController.getInstance().isBlacklist() ? 0 : 1);
 
     }
 }

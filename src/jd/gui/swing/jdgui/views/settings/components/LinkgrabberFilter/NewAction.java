@@ -4,6 +4,7 @@ import java.awt.event.ActionEvent;
 
 import javax.swing.AbstractAction;
 
+import org.jdownloader.controlling.LinkFilterController;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 
@@ -12,7 +13,13 @@ public class NewAction extends AbstractAction {
      * 
      */
     private static final long serialVersionUID = 1L;
+
     private FilterTable       table;
+
+    public NewAction(LinkgrabberFilter linkgrabberFilter) {
+        this(linkgrabberFilter.getTable());
+
+    }
 
     public NewAction(FilterTable table) {
         this.table = table;
@@ -21,7 +28,8 @@ public class NewAction extends AbstractAction {
     }
 
     public void actionPerformed(ActionEvent e) {
-
+        LinkFilterController.getInstance().add(new LinkFilter(true, LinkFilter.Types.FILENAME, ""));
+        ((FilterTableModel) table.getExtTableModel()).fill();
     }
 
 }

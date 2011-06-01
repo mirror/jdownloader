@@ -3,10 +3,10 @@ package org.jdownloader.settings.advanced;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-
 import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.KeyHandler;
+import org.jdownloader.controlling.LinkFilterSettings;
 import org.jdownloader.settings.AboutConfig;
 import org.jdownloader.settings.GeneralSettings;
 
@@ -24,6 +24,7 @@ public class AdvancedConfigManager {
         configInterfaces = new ArrayList<AdvancedConfigEntry>();
         eventSender = new AdvancedConfigEventSender();
         this.register(JsonConfig.create(GeneralSettings.class));
+        register(JsonConfig.create(LinkFilterSettings.class));
     }
 
     public AdvancedConfigEventSender getEventSender() {

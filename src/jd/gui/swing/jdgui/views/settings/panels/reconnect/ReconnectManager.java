@@ -15,6 +15,7 @@ import javax.swing.ListCellRenderer;
 import jd.controlling.reconnect.ReconnectPluginController;
 import jd.controlling.reconnect.RouterPlugin;
 import jd.gui.swing.jdgui.views.settings.components.SettingsComponent;
+import jd.gui.swing.jdgui.views.settings.components.StateUpdateListener;
 
 import org.appwork.app.gui.MigPanel;
 import org.appwork.storage.StorageEvent;
@@ -81,6 +82,10 @@ public class ReconnectManager extends MigPanel implements SettingsComponent, Act
             }
         };
 
+    }
+
+    public void addStateUpdateListener(StateUpdateListener listener) {
+        throw new IllegalStateException("Not implemented");
     }
 
     protected void setView(final JComponent gui) {

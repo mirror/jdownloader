@@ -35,16 +35,21 @@ public abstract class AbstractConfigPanel extends SwitchPanel {
     }
 
     public JTextArea addDescription(String description) {
+        JTextArea txt = addDescriptionPlain(description);
+        add(new JSeparator(), "gapleft 37,spanx,growx,pushx,gapbottom 5");
+        return txt;
+    }
+
+    public JTextArea addDescriptionPlain(String description) {
         JTextArea txt = new JTextArea();
         txt.setEditable(false);
         txt.setLineWrap(true);
         txt.setWrapStyleWord(true);
         txt.setFocusable(false);
         txt.setEnabled(false);
-
         txt.setText(description);
         add(txt, "gaptop 0,spanx,growx,pushx,gapleft 37,gapbottom 5,wmin 10");
-        add(new JSeparator(), "gapleft 37,spanx,growx,pushx,gapbottom 5");
+
         return txt;
     }
 

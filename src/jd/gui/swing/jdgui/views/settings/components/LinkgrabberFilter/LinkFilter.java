@@ -1,10 +1,16 @@
 package jd.gui.swing.jdgui.views.settings.components.LinkgrabberFilter;
 
-public class LinkFilter {
+import org.appwork.storage.Storable;
+
+public class LinkFilter implements Storable {
 
     enum Types {
         URL, PLUGIN, FILENAME
 
+    }
+
+    private LinkFilter() {
+        // required by Storable
     }
 
     private boolean blacklist = true;

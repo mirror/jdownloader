@@ -15,6 +15,7 @@ import jd.gui.UserIO;
 import jd.gui.swing.jdgui.menu.AddonsMenu;
 import jd.gui.swing.jdgui.menu.WindowMenu;
 import jd.gui.swing.jdgui.views.settings.components.SettingsComponent;
+import jd.gui.swing.jdgui.views.settings.components.StateUpdateListener;
 import jd.gui.swing.jdgui.views.settings.panels.components.SettingsTable;
 
 import org.appwork.utils.swing.dialog.Dialog;
@@ -40,6 +41,10 @@ public class ExtensionsTable extends SettingsTable<AbstractExtensionWrapper> imp
         addRowHighlighter(new SelectionHighlighter(null, new Color(200, 200, 200, 80)));
         setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
+    }
+
+    public void addStateUpdateListener(StateUpdateListener listener) {
+        throw new IllegalStateException("Not implemented");
     }
 
     private static class InternalTableModel extends ExtTableModel<AbstractExtensionWrapper> {

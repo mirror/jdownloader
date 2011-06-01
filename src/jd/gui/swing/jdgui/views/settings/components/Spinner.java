@@ -1,55 +1,55 @@
 package jd.gui.swing.jdgui.views.settings.components;
 
 import javax.swing.JSpinner;
+import javax.swing.SpinnerModel;
 import javax.swing.SpinnerNumberModel;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 
 public class Spinner extends JSpinner implements SettingsComponent {
 
     /**
      * 
      */
-    private static final long serialVersionUID = 1L;
+    private static final long               serialVersionUID = 1L;
+    private StateUpdateEventSender<Spinner> eventSender;
+    private boolean                         setting;
 
     public Spinner(int min, int max) {
 
         super(new SpinnerNumberModel(min, min, max, 1));
         setEditor(new JSpinner.NumberEditor(this, "#"));
-        // final DefaultFormatterFactory factory = new
-        // DefaultFormatterFactory(new NumberFormatter() {
-        //
-        // @Override
-        // public void setMinimum(Comparable minimum) {
-        // ((SpinnerNumberModel) Spinner.this.getModel()).setMinimum(minimum);
-        // }
-        //
-        // @Override
-        // public Comparable getMinimum() {
-        // return ((SpinnerNumberModel) Spinner.this.getModel()).getMinimum();
-        // }
-        //
-        // @Override
-        // public void setMaximum(Comparable max) {
-        // ((SpinnerNumberModel) Spinner.this.getModel()).setMaximum(max);
-        // }
-        //
-        // @Override
-        // public Comparable getMaximum() {
-        // return ((SpinnerNumberModel) Spinner.this.getModel()).getMaximum();
-        // }
-        //
-        // @Override
-        // public String valueToString(Object value) throws ParseException {
-        // return super.valueToString(value);
-        // }
-        //
-        // @Override
-        // public Object stringToValue(String text) throws ParseException {
-        // return super.stringToValue(text);
-        // }
-        //
-        // });
-        // ((JSpinner.DefaultEditor)
-        // getEditor()).getTextField().setFormatterFactory(factory);
+        eventSender = new StateUpdateEventSender<Spinner>();
+        this.addChangeListener(new ChangeListener() {
+
+            public void stateChanged(ChangeEvent e) {
+                if (!setting) {
+                    eventSender.fireEvent(new StateUpdateEvent<Spinner>(Spinner.this));
+                }
+            }
+        });
+
+    }
+
+    @Override
+    public void setModel(SpinnerModel model) {
+        setting = true;
+        try {
+            super.setModel(model);
+        } finally {
+            setting = false;
+        }
+
+    }
+
+    @Override
+    public void setValue(Object value) {
+        setting = true;
+        try {
+            super.setValue(value);
+        } finally {
+            setting = false;
+        }
 
     }
 
@@ -71,6 +71,10 @@ public class Spinner extends JSpinner implements SettingsComponent {
      */
     public void setFormat(String formatString) {
         setEditor(new JSpinner.NumberEditor(this, formatString));
+    }
+
+    public void addStateUpdateListener(StateUpdateListener listener) {
+        eventSender.addListener(listener);
     }
 
 }

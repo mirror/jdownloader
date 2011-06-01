@@ -16,6 +16,7 @@ import jd.controlling.reconnect.Reconnecter;
 import jd.controlling.reconnect.ipcheck.IP;
 import jd.controlling.reconnect.ipcheck.IPController;
 import jd.gui.swing.jdgui.views.settings.components.SettingsComponent;
+import jd.gui.swing.jdgui.views.settings.components.StateUpdateListener;
 import jd.nutils.Formatter;
 import jd.utils.JDUtilities;
 
@@ -97,6 +98,10 @@ public class ReconnectTester extends MigPanel implements SettingsComponent, Acti
 
     public boolean isMultiline() {
         return true;
+    }
+
+    public void addStateUpdateListener(StateUpdateListener listener) {
+        throw new IllegalStateException("Not implemented");
     }
 
     public String getConstraints() {

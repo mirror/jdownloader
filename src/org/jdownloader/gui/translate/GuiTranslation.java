@@ -554,6 +554,33 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Activate the Stop marker on current selection" })
     String action_stopsign_tooltip();
 
+    @Default(lngs = { "en" }, values = { "Use Logins" })
+    String authtablemodel_column_enabled();
+
+    @Default(lngs = { "en" }, values = { "Host/URL" })
+    String authtablemodel_column_host();
+
+    @Default(lngs = { "en" }, values = { "...enter Domain here" })
+    String authtablemodel_column_host_help();
+
+    @Default(lngs = { "en" }, values = { "Password" })
+    String authtablemodel_column_password();
+
+    @Default(lngs = { "en" }, values = { "Servertype" })
+    String authtablemodel_column_type();
+
+    @Default(lngs = { "en" }, values = { "ftp://" })
+    String authtablemodel_column_type_ftp();
+
+    @Default(lngs = { "en" }, values = { "http://" })
+    String authtablemodel_column_type_http();
+
+    @Default(lngs = { "en" }, values = { "Username" })
+    String authtablemodel_column_username();
+
+    @Default(lngs = { "en" }, values = { "...enter Username here" })
+    String authtablemodel_column_username_help();
+
     @Default(lngs = { "en" }, values = { "Download started" })
     String ballon_download_finished_started();
 
@@ -1670,6 +1697,39 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Choose Plugin" })
     String pluginsettings_combo_label();
 
+    @Default(lngs = { "en" }, values = { "Account" })
+    String premiumaccounttablemodel_account();
+
+    @Default(lngs = { "en" }, values = { "Actions" })
+    String premiumaccounttablemodel_column_actions();
+
+    @Default(lngs = { "en" }, values = { "Enabled" })
+    String premiumaccounttablemodel_column_enabled();
+
+    @Default(lngs = { "en" }, values = { "Expire Date" })
+    String premiumaccounttablemodel_column_expiredate();
+
+    @Default(lngs = { "en" }, values = { "Hoster" })
+    String premiumaccounttablemodel_column_hoster();
+
+    @Default(lngs = { "en" }, values = { "Password" })
+    String premiumaccounttablemodel_column_password();
+
+    @Default(lngs = { "en" }, values = { "Download Traffic left" })
+    String premiumaccounttablemodel_column_trafficleft();
+
+    @Default(lngs = { "en" }, values = { "" })
+    String premiumaccounttablemodel_column_trafficleft_invalid();
+
+    @Default(lngs = { "en" }, values = { "" })
+    String premiumaccounttablemodel_column_trafficleft_unchecked();
+
+    @Default(lngs = { "en" }, values = { "Unlimited" })
+    String premiumaccounttablemodel_column_trafficleft_unlimited();
+
+    @Default(lngs = { "en" }, values = { "Username" })
+    String premiumaccounttablemodel_column_user();
+
     @Default(lngs = { "en" }, values = { "Minimize" })
     String ProgressControllerDialog_minimize();
 
@@ -1730,11 +1790,56 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Run Test" })
     String settings_linkgrabber_filter_action_test();
 
+    @Default(lngs = { "en" }, values = { "Linkfilter test on %s1" })
+    String settings_linkgrabber_filter_action_test_title(String filter);
+
     @Default(lngs = { "en" }, values = { "Blacklist (Ignore the following links. Allow all others)" })
     String settings_linkgrabber_filter_blackorwhite_black();
 
+    @Default(lngs = { "en" }, values = { "If you use a Blacklist, you can set up rules for links you do not want to download here. All links matching the following rules will not be grabbed by JDownloader." })
+    String settings_linkgrabber_filter_blackorwhite_black_description();
+
     @Default(lngs = { "en" }, values = { "Whitelist (Allow the following links. Ignore all others)" })
     String settings_linkgrabber_filter_blackorwhite_white();
+
+    @Default(lngs = { "en" }, values = { "If you use a Whitelist, JDownloader will not grab any links at all by default. You have to define rules for each linktyp you want to download. A Whitelist needs at least one entry to get active. \r\nOnly the following links will be accepted:" })
+    String settings_linkgrabber_filter_blackorwhite_white_description();
+
+    @Default(lngs = { "en" }, values = { "Advanced Mode (Filter is a full Regular Expression)" })
+    String settings_linkgrabber_filter_columns_advanced();
+
+    @Default(lngs = { "en" }, values = { "Exclude/Include" })
+    String settings_linkgrabber_filter_columns_blackwhite();
+
+    @Default(lngs = { "en" }, values = { "Ignore" })
+    String settings_linkgrabber_filter_columns_blackwhite_exclude();
+
+    @Default(lngs = { "en" }, values = { "Always add" })
+    String settings_linkgrabber_filter_columns_blackwhite_include();
+
+    @Default(lngs = { "en" }, values = { "Case sensitivy (Filter is case sensitive)" })
+    String settings_linkgrabber_filter_columns_case();
+
+    @Default(lngs = { "en" }, values = { "Enable/Disable" })
+    String settings_linkgrabber_filter_columns_enabled();
+
+    @Default(lngs = { "en" }, values = { "Filter" })
+    String settings_linkgrabber_filter_columns_regex();
+
+    @Default(lngs = { "en" }, values = { "Type" })
+    String settings_linkgrabber_filter_columns_type();
+
+    @Default(lngs = { "en" }, values = { "Enter any URL to do a filter test run..." })
+    String settings_linkgrabber_filter_test_helpurl();
+
+    @Default(lngs = { "en" }, values = { "Filename" })
+    String settings_linkgrabber_filter_types_filename();
+
+    @Default(lngs = { "en" }, values = { "Plugin" })
+    String settings_linkgrabber_filter_types_plugin();
+
+    @Default(lngs = { "en" }, values = { "URL" })
+    String settings_linkgrabber_filter_types_url();
 
     @Default(lngs = { "en" }, values = { "Are you sure that you want to exit JDownloader?" })
     String sys_ask_rlyclose();
@@ -1771,100 +1876,4 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Please enter!" })
     String userio_input_title();
-
-    @Default(lngs = { "en" }, values = { "Enter any URL to do a filter test run..." })
-    String settings_linkgrabber_filter_test_helpurl();
-
-    @Default(lngs = { "en" }, values = { "Enable/Disable" })
-    String settings_linkgrabber_filter_columns_enabled();
-
-    @Default(lngs = { "en" }, values = { "Filter" })
-    String settings_linkgrabber_filter_columns_regex();
-
-    @Default(lngs = { "en" }, values = { "Type" })
-    String settings_linkgrabber_filter_columns_type();
-
-    @Default(lngs = { "en" }, values = { "Filename" })
-    String settings_linkgrabber_filter_types_filename();
-
-    @Default(lngs = { "en" }, values = { "URL" })
-    String settings_linkgrabber_filter_types_url();
-
-    @Default(lngs = { "en" }, values = { "Plugin" })
-    String settings_linkgrabber_filter_types_plugin();
-
-    @Default(lngs = { "en" }, values = { "Advanced Mode (Filter is a full Regular Expression)" })
-    String settings_linkgrabber_filter_columns_advanced();
-
-    @Default(lngs = { "en" }, values = { "Case sensitivy (Filter is case sensitive)" })
-    String settings_linkgrabber_filter_columns_case();
-
-    @Default(lngs = { "en" }, values = { "Enabled" })
-    String premiumaccounttablemodel_column_enabled();
-
-    @Default(lngs = { "en" }, values = { "Hoster" })
-    String premiumaccounttablemodel_column_hoster();
-
-    @Default(lngs = { "en" }, values = { "Account" })
-    String premiumaccounttablemodel_account();
-
-    @Default(lngs = { "en" }, values = { "Username" })
-    String premiumaccounttablemodel_column_user();
-
-    @Default(lngs = { "en" }, values = { "Password" })
-    String premiumaccounttablemodel_column_password();
-
-    @Default(lngs = { "en" }, values = { "Expire Date" })
-    String premiumaccounttablemodel_column_expiredate();
-
-    @Default(lngs = { "en" }, values = { "Download Traffic left" })
-    String premiumaccounttablemodel_column_trafficleft();
-
-    @Default(lngs = { "en" }, values = { "" })
-    String premiumaccounttablemodel_column_trafficleft_invalid();
-
-    @Default(lngs = { "en" }, values = { "" })
-    String premiumaccounttablemodel_column_trafficleft_unchecked();
-
-    @Default(lngs = { "en" }, values = { "Unlimited" })
-    String premiumaccounttablemodel_column_trafficleft_unlimited();
-
-    @Default(lngs = { "en" }, values = { "Actions" })
-    String premiumaccounttablemodel_column_actions();
-
-    @Default(lngs = { "en" }, values = { "Host/URL" })
-    String authtablemodel_column_host();
-
-    @Default(lngs = { "en" }, values = { "Use Logins" })
-    String authtablemodel_column_enabled();
-
-    @Default(lngs = { "en" }, values = { "Username" })
-    String authtablemodel_column_username();
-
-    @Default(lngs = { "en" }, values = { "Servertype" })
-    String authtablemodel_column_type();
-
-    @Default(lngs = { "en" }, values = { "http://" })
-    String authtablemodel_column_type_http();
-
-    @Default(lngs = { "en" }, values = { "ftp://" })
-    String authtablemodel_column_type_ftp();
-
-    @Default(lngs = { "en" }, values = { "Password" })
-    String authtablemodel_column_password();
-
-    @Default(lngs = { "en" }, values = { "...enter Domain here" })
-    String authtablemodel_column_host_help();
-
-    @Default(lngs = { "en" }, values = { "...enter Username here" })
-    String authtablemodel_column_username_help();
-
-    @Default(lngs = { "en" }, values = { "Exclude/Include" })
-    String settings_linkgrabber_filter_columns_blackwhite();
-
-    @Default(lngs = { "en" }, values = { "Exclude" })
-    String settings_linkgrabber_filter_columns_blackwhite_exclude();
-
-    @Default(lngs = { "en" }, values = { "Include" })
-    String settings_linkgrabber_filter_columns_blackwhite_include();
 }

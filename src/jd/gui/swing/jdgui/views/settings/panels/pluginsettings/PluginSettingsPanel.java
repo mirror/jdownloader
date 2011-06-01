@@ -14,6 +14,7 @@ import jd.DecryptPluginWrapper;
 import jd.HostPluginWrapper;
 import jd.PluginWrapper;
 import jd.gui.swing.jdgui.views.settings.components.SettingsComponent;
+import jd.gui.swing.jdgui.views.settings.components.StateUpdateListener;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.app.gui.MigPanel;
@@ -30,6 +31,10 @@ public class PluginSettingsPanel extends JPanel implements SettingsComponent, Ac
     private ImageIcon                     decryterIcon;
     private MigPanel                      card;
     protected PluginConfigPanel           configPanel;
+
+    public void addStateUpdateListener(StateUpdateListener listener) {
+        throw new IllegalStateException("Not implemented");
+    }
 
     public PluginSettingsPanel() {
         super(new MigLayout("ins 0,wrap 1", "[grow,fill]", "[]15[grow,fill][]"));
