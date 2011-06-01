@@ -35,7 +35,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vkontakte.ru" }, urls = { "http://(www\\.)?vkontakte\\.ru/(audio\\.php\\?id=\\d+|video(-)?\\d+_\\d+|videos\\d+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vkontakte.ru" }, urls = { "http://(www\\.)?(vkontakte\\.ru|vk\\.com)/(audio\\.php\\?id=\\d+|video(-)?\\d+_\\d+|videos\\d+)" }, flags = { 0 })
 public class VKontakteRu extends PluginForDecrypt implements ProgressControllerListener {
 
     /* must be static so all plugins share same lock */
@@ -58,7 +58,7 @@ public class VKontakteRu extends PluginForDecrypt implements ProgressControllerL
         }
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setFollowRedirects(false);
-        String parameter = param.toString();
+        String parameter = param.toString().replace("vk.com/", "vkontakte.ru/");
         br.setCookiesExclusive(true);
         synchronized (LOCK) {
             if (!getUserLogin()) return null;
