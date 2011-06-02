@@ -49,7 +49,7 @@ public class RDMdthk extends PluginForDecrypt {
             // replace http with hrtmp to differ hoster links from
 
             DownloadLink link = createDownloadlink(param.toString().replace("http://", "hrtmp://") + "&q=" + q);
-            link.setFilePackage(filePackage);
+            filePackage.add(link);
             if ("M".equals(q)) {
                 link.setFinalFileName(title.trim() + "(medium_quality)" + ".mp4");
             } else if ("L".equals(q)) {

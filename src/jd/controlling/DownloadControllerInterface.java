@@ -5,7 +5,7 @@ import jd.plugins.FilePackage;
 
 public interface DownloadControllerInterface {
 
-    void addFilePackage(FilePackage fp);
+    void addDownloadLinks(FilePackage fp, DownloadLink... dl);
 
-    void addDownloadLink(FilePackage fp, DownloadLink dl);
+    void removeDownloadLinks(FilePackage fp, DownloadLink... dl);
 }

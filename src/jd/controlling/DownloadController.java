@@ -46,54 +46,6 @@ class DownloadControllerBroadcaster extends Eventsender<DownloadControllerListen
     }
 }
 
-// class Optimizer {
-//
-// private final HashMap<String, ArrayList<DownloadLink>> url_links = new
-// HashMap<String, ArrayList<DownloadLink>>();
-//
-// private final Object lock = new Object();
-//
-// private static Optimizer INSTANCE = null;
-//
-// private DownloadController INSTANCE2 = null;
-//
-// public synchronized static Optimizer getINSTANCE(final DownloadController
-// INSTANCE2) {
-// if (INSTANCE == null) {
-// INSTANCE = new Optimizer(INSTANCE2);
-// }
-// return INSTANCE;
-// }
-//
-// private Optimizer(final DownloadController INSTANCE2) {
-// this.INSTANCE2 = INSTANCE2;
-// init();
-// }
-//
-// private void init() {
-// final ArrayList<DownloadLink> links = INSTANCE2.getAllDownloadLinks();
-// for (final DownloadLink link : links) {
-// final String url = link.getDownloadURL().trim();
-// if (url != null) {
-// if (!url_links.containsKey(url)) {
-// url_links.put(url, new ArrayList<DownloadLink>());
-// }
-// final ArrayList<DownloadLink> tmp = url_links.get(url);
-// if (!tmp.contains(link)) {
-// tmp.add(link);
-// }
-// }
-// }
-// }
-//
-// public ArrayList<DownloadLink> getLinkswithURL(final String url) {
-// if (url == null || url.length() == 0) return null;
-// synchronized (lock) {
-// return url_links.get(url.trim());
-// }
-// }
-// }
-
 public class DownloadController implements DownloadControllerListener, DownloadControllerInterface {
 
     private final AtomicLong structureChanged = new AtomicLong(0);
@@ -149,7 +101,6 @@ public class DownloadController implements DownloadControllerListener, DownloadC
         }
         for (final FilePackage filePackage : packages) {
             filePackage.setControlledby(this);
-            filePackage.update_linksDisabled();
         }
         refreshListOrderIDS();
         return;
@@ -207,11 +158,11 @@ public class DownloadController implements DownloadControllerListener, DownloadC
             FilePackage fp;
             while (iterator.hasNext()) {
                 fp = iterator.next();
-                if (fp.getDownloadLinkList().size() == 0) {
+                if (fp.getControlledDownloadLinks().size() == 0) {
                     iterator.remove();
                     continue;
                 }
-                it = fp.getDownloadLinkList().iterator();
+                it = fp.getControlledDownloadLinks().iterator();
                 while (it.hasNext()) {
                     localLink = it.next();
                     /*
@@ -223,7 +174,7 @@ public class DownloadController implements DownloadControllerListener, DownloadC
 
                     if (localLink.getLinkStatus().isFinished() && JDUtilities.getConfiguration().getIntegerProperty(Configuration.PARAM_FINISHED_DOWNLOADS_ACTION, 3) == 1) {
                         it.remove();
-                        if (fp.getDownloadLinkList().size() == 0) {
+                        if (fp.size() == 0) {
                             iterator.remove();
                             continue;
                         }
@@ -273,7 +224,6 @@ public class DownloadController implements DownloadControllerListener, DownloadC
 
                     }
                 }
-                fp.resetUpdateTimer();
             }
             return new LinkedList<FilePackage>(packages);
         }
@@ -290,7 +240,7 @@ public class DownloadController implements DownloadControllerListener, DownloadC
             while (it.hasNext()) {
                 FilePackage fp = it.next();
                 fp.setListOrderID(id++);
-                Iterator<DownloadLink> it2 = fp.getDownloadLinkList().iterator();
+                Iterator<DownloadLink> it2 = fp.getControlledDownloadLinks().iterator();
                 while (it2.hasNext()) {
                     DownloadLink dl = it2.next();
                     dl.setListOrderID(id++);
@@ -415,12 +365,18 @@ public class DownloadController implements DownloadControllerListener, DownloadC
                 @Override
                 protected Void run() throws RuntimeException {
                     boolean removed = false;
+                    ArrayList<DownloadLink> stop = null;
                     synchronized (ACCESSLOCK) {
                         if (fp.getControlledby() != null) {
                             fp.setControlledby(null);
-                            fp.abortDownload();
-                            packages.remove(fp);
-                            removed = true;
+                            stop = new ArrayList<DownloadLink>(fp.getControlledDownloadLinks());
+                            fp.getControlledDownloadLinks();
+                            removed = packages.remove(fp);
+                        }
+                    }
+                    if (stop != null) {
+                        for (DownloadLink dl : stop) {
+                            dl.setAborted(true);
                         }
                     }
                     if (removed) {
@@ -453,7 +409,26 @@ public class DownloadController implements DownloadControllerListener, DownloadC
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         synchronized (ACCESSLOCK) {
             for (final FilePackage fp : packages) {
-                ret.addAll(fp.getDownloadLinkList());
+                ret.addAll(fp.getControlledDownloadLinks());
+            }
+        }
+        return ret;
+    }
+
+    /**
+     * return a list of all DownloadLinks from a given FilePackage with status
+     * 
+     * @param fp
+     * @param status
+     * @return
+     */
+    public ArrayList<DownloadLink> getDownloadLinksbyStatus(FilePackage fp, int status) {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        synchronized (ACCESSLOCK) {
+            for (DownloadLink dl : fp.getControlledDownloadLinks()) {
+                if (dl.getLinkStatus().hasStatus(status)) {
+                    ret.add(dl);
+                }
             }
         }
         return ret;
@@ -472,7 +447,7 @@ public class DownloadController implements DownloadControllerListener, DownloadC
             for (final FilePackage fp : packages) {
                 ds.addPackages(1);
                 ds.addDownloadLinks(fp.size());
-                for (final DownloadLink l : fp.getDownloadLinkList()) {
+                for (final DownloadLink l : fp.getControlledDownloadLinks()) {
                     linkStatus = l.getLinkStatus();
                     isEnabled = l.isEnabled();
                     if (!linkStatus.hasStatus(LinkStatus.ERROR_ALREADYEXISTS) && isEnabled) {
@@ -503,7 +478,7 @@ public class DownloadController implements DownloadControllerListener, DownloadC
             final String correctUrl = url.trim();
             synchronized (ACCESSLOCK) {
                 for (final FilePackage fp : packages) {
-                    for (DownloadLink dl : fp.getDownloadLinkList()) {
+                    for (DownloadLink dl : fp.getControlledDownloadLinks()) {
                         if (correctUrl.equalsIgnoreCase(dl.getDownloadURL())) return true;
                     }
                 }
@@ -522,7 +497,7 @@ public class DownloadController implements DownloadControllerListener, DownloadC
         if (link == null) return null;
         synchronized (ACCESSLOCK) {
             for (final FilePackage fp : packages) {
-                for (DownloadLink nextDownloadLink : fp.getDownloadLinkList()) {
+                for (DownloadLink nextDownloadLink : fp.getControlledDownloadLinks()) {
                     if (nextDownloadLink == link) continue;
                     if ((nextDownloadLink.getLinkStatus().hasStatus(LinkStatus.FINISHED)) && nextDownloadLink.getFileOutput().equalsIgnoreCase(link.getFileOutput())) {
                         if (new File(nextDownloadLink.getFileOutput()).exists()) {
@@ -800,7 +775,7 @@ public class DownloadController implements DownloadControllerListener, DownloadC
         Pattern pat = Pattern.compile(matcher, Pattern.CASE_INSENSITIVE);
         synchronized (ACCESSLOCK) {
             for (final FilePackage fp : packages) {
-                for (final DownloadLink nextDownloadLink : fp.getDownloadLinkList()) {
+                for (final DownloadLink nextDownloadLink : fp.getControlledDownloadLinks()) {
                     if (pat.matcher(nextDownloadLink.getName()).matches()) {
                         ret.add(nextDownloadLink);
                     }
@@ -822,7 +797,7 @@ public class DownloadController implements DownloadControllerListener, DownloadC
         Pattern pat = Pattern.compile(matcher, Pattern.CASE_INSENSITIVE);
         synchronized (ACCESSLOCK) {
             for (final FilePackage fp : packages) {
-                for (final DownloadLink nextDownloadLink : fp.getDownloadLinkList()) {
+                for (final DownloadLink nextDownloadLink : fp.getControlledDownloadLinks()) {
                     if (pat.matcher(nextDownloadLink.getFileOutput()).matches()) {
                         ret.add(nextDownloadLink);
                     }
@@ -832,10 +807,84 @@ public class DownloadController implements DownloadControllerListener, DownloadC
         return ret;
     }
 
-    public void addFilePackage(FilePackage fp) {
+    /**
+     * add DownloadLinks to the FilePackage
+     */
+    public void addDownloadLinks(final FilePackage fp, final DownloadLink... dls) {
+        if (fp != null && dls != null && dls.length > 0) {
+            IOEQ.getQueue().add(new QueueAction<Void, RuntimeException>() {
+
+                @Override
+                protected Void run() throws RuntimeException {
+                    boolean addFP = false;
+                    synchronized (ACCESSLOCK) {
+                        addFP = fp.getControlledby() == null;
+                    }
+                    if (addFP) {
+                        DownloadController.this.addPackage(fp);
+                    }
+                    boolean added = false;
+                    LinkedList<DownloadLink> links = new LinkedList<DownloadLink>();
+                    for (DownloadLink dl : dls) {
+                        links.add(dl);
+                    }
+                    DownloadLink dl;
+                    synchronized (ACCESSLOCK) {
+                        LinkedList<DownloadLink> list = fp.getControlledDownloadLinks();
+                        Iterator<DownloadLink> it = links.iterator();
+                        /*
+                         * remove DownloadLinks that are already in this
+                         * FilePackage
+                         */
+                        while (it.hasNext()) {
+                            dl = it.next();
+                            if (list.contains(dl)) {
+                                it.remove();
+                            }
+                        }
+                        /* add the remaining ones to the FilePackage */
+                        if (links.size() > 0) {
+                            added = true;
+                            list.addAll(links);
+                        }
+                    }
+                    if (added) {
+                        structureChanged.incrementAndGet();
+                        broadcaster.fireEvent(new DownloadControllerEvent(DownloadController.this, DownloadControllerEvent.ADD_DOWNLOADLINK, links));
+                    }
+                    return null;
+                }
+            });
+        }
     }
 
-    public void addDownloadLink(FilePackage fp, DownloadLink dl) {
+    /**
+     * remove DownloadLinks from a FilePackage
+     */
+    public void removeDownloadLinks(final FilePackage fp, final DownloadLink... dl) {
+        if (fp != null && dl != null && dl.length > 0) {
+            IOEQ.getQueue().add(new QueueAction<Void, RuntimeException>() {
+
+                @Override
+                protected Void run() throws RuntimeException {
+                    boolean removed = false;
+                    synchronized (ACCESSLOCK) {
+                        LinkedList<DownloadLink> list = fp.getControlledDownloadLinks();
+                        if (list.remove(dl)) {
+                            removed = true;
+                        }
+                    }
+                    if (removed) {
+                        structureChanged.incrementAndGet();
+                        broadcaster.fireEvent(new DownloadControllerEvent(DownloadController.this, DownloadControllerEvent.REMOVE_DOWNLOADLINK, dl));
+                        if (fp.getControlledDownloadLinks().size() == 0) {
+                            DownloadController.this.removePackage(fp);
+                        }
+                    }
+                    return null;
+                }
+            });
+        }
     }
 
 }

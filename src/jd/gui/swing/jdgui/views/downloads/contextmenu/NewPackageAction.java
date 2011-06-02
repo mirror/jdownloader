@@ -3,6 +3,7 @@ package jd.gui.swing.jdgui.views.downloads.contextmenu;
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 
+import jd.controlling.DownloadController;
 import jd.gui.UserIO;
 import jd.gui.swing.jdgui.interfaces.ContextMenuAction;
 import jd.plugins.DownloadLink;
@@ -21,7 +22,6 @@ public class NewPackageAction extends ContextMenuAction {
 
     public NewPackageAction(ArrayList<DownloadLink> links) {
         this.links = links;
-
         init();
     }
 
@@ -48,8 +48,10 @@ public class NewPackageAction extends ContextMenuAction {
 
         for (DownloadLink link : links) {
             link.addSourcePluginPassword(link.getFilePackage().getPassword());
-            link.setFilePackage(nfp);
+            /* TODO: speed optimize */
+            link.getFilePackage().remove(link);
         }
+        DownloadController.getInstance().move(links, nfp, DownloadController.MOVE.BEGIN);
 
         if (JsonConfig.create(GeneralSettings.class).isAddNewLinksOnTop()) {
             JDUtilities.getDownloadController().addPackageAt(nfp, 0);

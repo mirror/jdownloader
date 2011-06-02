@@ -88,7 +88,7 @@ public class DeGroopsYahooCom extends PluginForDecrypt {
                         if (fpName != null) {
                             FilePackage fp = FilePackage.getInstance();
                             fp.setName(fpName.trim());
-                            dl.setFilePackage(fp);
+                            fp.add(dl);
                         } else {
                             logger.warning("fpName regex failed...");
                         }
@@ -124,7 +124,7 @@ public class DeGroopsYahooCom extends PluginForDecrypt {
                         if (fpName != null) {
                             FilePackage fp = FilePackage.getInstance();
                             fp.setName(fpName.trim());
-                            dl.setFilePackage(fp);
+                            fp.add(dl);
                         } else {
                             logger.warning("fpName regex failed...");
                         }

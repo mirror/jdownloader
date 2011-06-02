@@ -82,7 +82,8 @@ public class ProgressColumn extends JDTableColumn {
                 progress.setMaximum(Math.max(1, fp.getTotalEstimatedPackageSize()));
                 progress.setValue(fp.getTotalKBLoaded());
             }
-            progress.setString(fp.getFilePackageInfo().getProgressString());
+            // progress.setString(fp.getFilePackageInfo().getProgressString());
+            progress.setString("GONE");
             COL_PROGRESS = COL_PROGRESS_NORMAL;
             return progress;
         } else {
@@ -102,24 +103,24 @@ public class ProgressColumn extends JDTableColumn {
             } else if ((dLink.getLinkStatus().hasStatus(LinkStatus.ERROR_IP_BLOCKED) && ProxyController.getInstance().getRemainingIPBlockWaittime(dLink.getHost()) > 0)) {
                 progress.setMaximum(dLink.getLinkStatus().getTotalWaitTime());
                 COL_PROGRESS = COL_PROGRESS_ERROR;
-                progress.setString(dLink.getDownloadLinkInfo().getFormattedWaittime());
+                progress.setString("GONE");
                 progress.setValue(dLink.getLinkStatus().getRemainingWaittime());
                 return progress;
             } else if ((dLink.getLinkStatus().hasStatus(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE) && ProxyController.getInstance().getRemainingTempUnavailWaittime(dLink.getHost()) > 0)) {
                 progress.setMaximum(dLink.getLinkStatus().getTotalWaitTime());
                 COL_PROGRESS = COL_PROGRESS_ERROR;
-                progress.setString(dLink.getDownloadLinkInfo().getFormattedWaittime());
+                progress.setString("GONE");
                 progress.setValue(dLink.getLinkStatus().getRemainingWaittime());
                 return progress;
             } else if (dLink.getLinkStatus().isFinished()) {
                 progress.setMaximum(100);
-                progress.setString(dLink.getDownloadLinkInfo().getFormattedSize());
+                progress.setString("GONE");
                 progress.setValue(100);
                 COL_PROGRESS = COL_PROGRESS_NORMAL;
                 return progress;
             } else if (dLink.getDownloadCurrent() > 0 || dLink.getDownloadSize() > 0) {
                 progress.setMaximum(dLink.getDownloadSize());
-                progress.setString(dLink.getDownloadLinkInfo().getProgressString());
+                progress.setString("GONE");
                 progress.setValue(dLink.getDownloadCurrent());
                 COL_PROGRESS = COL_PROGRESS_NORMAL;
                 return progress;

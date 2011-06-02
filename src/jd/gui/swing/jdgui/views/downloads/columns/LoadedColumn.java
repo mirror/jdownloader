@@ -56,15 +56,7 @@ public class LoadedColumn extends JDTableColumn {
 
     @Override
     public Component myTableCellRendererComponent(JDTableModel table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
-        if (value instanceof FilePackage) {
-            fp = (FilePackage) value;
-            jlr.setText(fp.getFilePackageInfo().getFormattedLoaded());
-            jlr.setToolTipText(fp.getFilePackageInfo().getFormattedLoaded());
-        } else {
-            dLink = (DownloadLink) value;
-            jlr.setText(dLink.getDownloadLinkInfo().getFormattedLoaded());
-            jlr.setToolTipText(dLink.getDownloadLinkInfo().getFormattedLoaded());
-        }
+        jlr.setText("GONE");
         return jlr;
     }
 

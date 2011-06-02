@@ -57,7 +57,7 @@ public class MndCm extends PluginForDecrypt {
                 DownloadLink link = createDownloadlink("http://www.jamendo.com/en/track/" + Track[0]);
                 link.setName(Track[1]);
                 link.setAvailable(true);
-                link.setFilePackage(fp);
+                fp.add(link);
                 if (getPluginConfig().getBooleanProperty(ENABLE_SUBFOLDERS)) {
                     link.addSubdirectory(Album);
                 }

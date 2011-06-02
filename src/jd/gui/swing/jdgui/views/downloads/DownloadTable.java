@@ -68,9 +68,7 @@ import jd.gui.swing.jdgui.views.downloads.contextmenu.SetPasswordAction;
 import jd.gui.swing.jdgui.views.downloads.contextmenu.StopsignAction;
 import jd.nutils.OSDetector;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLinkInfoCache;
 import jd.plugins.FilePackage;
-import jd.plugins.FilePackageInfoCache;
 import jd.plugins.LinkStatus;
 import jd.utils.JDUtilities;
 
@@ -280,14 +278,10 @@ public class DownloadTable extends JDTable implements MouseListener, KeyListener
                     }
                     return null;
                 case DownloadLinksPanel.REFRESH_ALL_DATA_CHANGED:
-                    DownloadLinkInfoCache.reset();
-                    FilePackageInfoCache.reset();
                     DownloadTable.this.getJDTableModel().fireTableDataChanged();
                     return null;
                 case DownloadLinksPanel.REFRESH_DATA_AND_STRUCTURE_CHANGED:
                 case DownloadLinksPanel.REFRESH_DATA_AND_STRUCTURE_CHANGED_FAST:
-                    DownloadLinkInfoCache.reset();
-                    FilePackageInfoCache.reset();
                     final int[] rows = DownloadTable.this.getSelectedRows();
                     final ArrayList<Object> selected = new ArrayList<Object>();
                     for (final int row : rows) {
@@ -320,7 +314,7 @@ public class DownloadTable extends JDTable implements MouseListener, KeyListener
         final ArrayList<DownloadLink> links = this.getSelectedDownloadLinks();
         final ArrayList<FilePackage> fps = this.getSelectedFilePackages();
         for (final FilePackage filePackage : fps) {
-            for (final DownloadLink dl : filePackage.getDownloadLinkList()) {
+            for (final DownloadLink dl : filePackage.getControlledDownloadLinks()) {
                 if (!links.contains(dl)) {
                     links.add(dl);
                 }

@@ -54,7 +54,10 @@ import org.jdownloader.settings.GeneralSettings;
 public class DownloadLink extends Property implements Serializable, Comparable<DownloadLink>, PackageLinkNode {
 
     public static enum AvailableStatus {
-        UNCHECKED, FALSE, UNCHECKABLE, TRUE;
+        UNCHECKED,
+        FALSE,
+        UNCHECKABLE,
+        TRUE;
     }
 
     public static final int                    LINKTYPE_CONTAINER       = 1;
@@ -209,11 +212,9 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      */
     public DownloadLink(PluginForHost plugin, String name, String host, String urlDownload, boolean isEnabled) {
         this.defaultplugin = plugin;
-
         priority = 0;
         setName(name);
-        sourcePluginPasswordList = new ArrayList<String>();
-
+        sourcePluginPasswordList = null;
         downloadMax = 0;
         this.host = host == null ? null : host.toLowerCase();
         this.isEnabled = isEnabled;
@@ -229,7 +230,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
                 PluginForHost plg = defaultplugin.getWrapper().getNewPluginInstance();
                 plg.setBrowser(new Browser());
                 plg.correctDownloadLink(this);
-            } catch (Exception e) {
+            } catch (Throwable e) {
                 JDLogger.exception(e);
             }
         }
@@ -255,9 +256,10 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     }
 
     public DownloadLink addSourcePluginPassword(String sourcePluginPassword) {
-        if (sourcePluginPassword == null || sourcePluginPassword.trim().length() == 0) return this;
-        String pwadd = sourcePluginPassword.trim();
-        synchronized (sourcePluginPasswordList) {
+        if (sourcePluginPassword == null || sourcePluginPassword.length() == 0) return this;
+        synchronized (this) {
+            String pwadd = sourcePluginPassword.trim();
+            if (sourcePluginPasswordList == null) sourcePluginPasswordList = new ArrayList<String>();
             if (!sourcePluginPasswordList.contains(pwadd)) sourcePluginPasswordList.add(pwadd);
             return this;
         }
@@ -265,15 +267,19 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
 
     public void addSourcePluginPasswords(String[] sourcePluginPasswords) {
         if (sourcePluginPasswords == null || sourcePluginPasswords.length == 0) return;
-        for (String sourcePluginPassword : sourcePluginPasswords) {
-            addSourcePluginPassword(sourcePluginPassword);
+        synchronized (this) {
+            for (String sourcePluginPassword : sourcePluginPasswords) {
+                addSourcePluginPassword(sourcePluginPassword);
+            }
         }
     }
 
     public void addSourcePluginPasswordList(ArrayList<String> sourcePluginPasswords) {
         if (sourcePluginPasswords == null || sourcePluginPasswords.size() == 0) return;
-        for (int i = 0; i < sourcePluginPasswords.size(); i++) {
-            addSourcePluginPassword(sourcePluginPasswords.get(i));
+        synchronized (this) {
+            for (String pw : sourcePluginPasswords) {
+                addSourcePluginPassword(pw);
+            }
         }
     }
 
@@ -446,9 +452,6 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      * @return FilePackage
      */
     public FilePackage getFilePackage() {
-        if (filePackage == null) {
-            setFilePackage(FilePackage.getDefaultFilePackage());
-        }
         return filePackage;
     }
 
@@ -823,9 +826,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      *            Soll dieser DownloadLink aktiviert sein oder nicht
      */
     public void setEnabled(boolean isEnabled) {
-
         this.getLinkStatus().removeStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-
         this.isEnabled = isEnabled;
         if (!isEnabled) {
             setAborted(true);
@@ -842,27 +843,12 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     }
 
     /**
-     * Setzt das FilePackage fuer diesen Download
+     * set the FilePackage that contains this DownloadLink
      * 
      * @param filePackage
      */
-    public void setFilePackage(FilePackage filePackage) {
-
-        if (filePackage != null && filePackage == this.filePackage) {
-            if (!filePackage.contains(this)) {
-                filePackage.add(this);
-            }
-
-            return;
-        }
-        if (this.filePackage != null) {
-            this.filePackage.remove(this);
-        }
+    protected void _setFilePackage(FilePackage filePackage) {
         this.filePackage = filePackage;
-
-        if (filePackage != null && !filePackage.contains(this)) {
-            filePackage.add(this);
-        }
     }
 
     public void setLinkType(int linktypeContainer) {
@@ -932,7 +918,9 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     }
 
     public DownloadLink setSourcePluginPasswordList(ArrayList<String> sourcePluginPassword) {
-        sourcePluginPasswordList = sourcePluginPassword;
+        synchronized (this) {
+            sourcePluginPasswordList = sourcePluginPassword;
+        }
         return this;
     }
 
@@ -1072,11 +1060,17 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         return JDIO.getFileType(JDIO.getFileExtension(getFileOutput()));
     }
 
+    /**
+     * return a Set of all Hoster of the given DownloadLinks
+     * 
+     * @param links
+     * @return
+     */
     public static Set<String> getHosterList(ArrayList<DownloadLink> links) {
-        HashMap<String, String> hosters = new HashMap<String, String>();
+        HashMap<String, Object> hosters = new HashMap<String, Object>();
         for (DownloadLink dl : links) {
             if (!hosters.containsKey(dl.getHost())) {
-                hosters.put(dl.getHost(), "");
+                hosters.put(dl.getHost(), null);
             }
         }
         return hosters.keySet();
@@ -1119,10 +1113,6 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      */
     public boolean hasCustomIcon() {
         return this.customIcon != null && this.customIconText != null;
-    }
-
-    public DownloadLinkInfo getDownloadLinkInfo() {
-        return DownloadLinkInfoCache.getInstance().get(this);
     }
 
 }

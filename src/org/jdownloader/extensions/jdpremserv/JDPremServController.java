@@ -3,6 +3,7 @@ package org.jdownloader.extensions.jdpremserv;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedList;
 
 import jd.config.Configuration;
 import jd.controlling.DistributeData;
@@ -52,25 +53,29 @@ public class JDPremServController {
     }
 
     public synchronized void cleanUp() {
-        final ArrayList<DownloadLink> remove = new ArrayList<DownloadLink>();
-        for (final DownloadLink link : this.premServFilePackage.getDownloadLinkList()) {
-            Long last = this.lastAccessLinks.get(link);
-            if (last == null) {
-                last = 0l;
-            }
-            Integer reqs = this.requestedDownloads.get(link);
-            if (reqs == null) {
-                reqs = 0;
-            }
-            if (reqs == 0 && last + 1000 * 60 * 10 < System.currentTimeMillis()) {
-                remove.add(link);
-                link.deleteFile(true, true);
-                this.requestedDownloads.remove(link);
-                this.lastAccessLinks.remove(link);
-                this.requestedLinks.values().remove(link);
+        final LinkedList<DownloadLink> remove = new LinkedList<DownloadLink>();
+        synchronized (DownloadController.ACCESSLOCK) {
+            for (final DownloadLink link : this.premServFilePackage.getControlledDownloadLinks()) {
+                Long last = this.lastAccessLinks.get(link);
+                if (last == null) {
+                    last = 0l;
+                }
+                Integer reqs = this.requestedDownloads.get(link);
+                if (reqs == null) {
+                    reqs = 0;
+                }
+                if (reqs == 0 && last + 1000 * 60 * 10 < System.currentTimeMillis()) {
+                    remove.add(link);
+                }
             }
         }
-        this.premServFilePackage.remove(remove);
+        for (DownloadLink link : remove) {
+            link.deleteFile(true, true);
+            this.requestedDownloads.remove(link);
+            this.lastAccessLinks.remove(link);
+            this.requestedLinks.values().remove(link);
+        }
+        this.premServFilePackage.remove(remove.toArray(new DownloadLink[remove.size()]));
     }
 
     public synchronized DownloadLink getDownloadLink(final String url) {
@@ -86,7 +91,7 @@ public class JDPremServController {
             final String hostUrl = found.get(0).getDownloadURL();
             retLink = null;
             /* search premservfilepackage for downloadlink with this url */
-            for (final DownloadLink current : this.premServFilePackage.getDownloadLinkList()) {
+            for (final DownloadLink current : this.premServFilePackage.getControlledDownloadLinks()) {
                 if (current.getDownloadURL().equalsIgnoreCase(hostUrl)) {
                     retLink = current;
                     break;
@@ -133,10 +138,8 @@ public class JDPremServController {
         }
         /* we dont want postprocessing for this filepackage */
         found.setPostProcessing(false);
-        if (found.getDownloadLinkList() != null) {
-            for (final DownloadLink link : found.getDownloadLinkList()) {
-                this.lastAccessLinks.put(link, System.currentTimeMillis());
-            }
+        for (final DownloadLink link : found.getControlledDownloadLinks()) {
+            this.lastAccessLinks.put(link, System.currentTimeMillis());
         }
         return found;
     }

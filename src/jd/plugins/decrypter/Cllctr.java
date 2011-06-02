@@ -32,15 +32,15 @@ import jd.plugins.PluginForDecrypt;
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "collectr.net" }, urls = { "http://[\\w\\.]*?collectr\\.net/(out/(\\d+/)?\\d+|links/\\w+)" }, flags = { 0 })
 public class Cllctr extends PluginForDecrypt {
 
-    private static final String PAT_SUPPORTED_OUT = "http://[\\w\\.]*?collectr\\.net/out/(\\d+/)?\\d+";
-    private static final String PATTERN_AB_18 = "Hast du das 18 Lebensjahr bereits abgeschlossen\\?.*";
+    private static final String PAT_SUPPORTED_OUT    = "http://[\\w\\.]*?collectr\\.net/out/(\\d+/)?\\d+";
+    private static final String PATTERN_AB_18        = "Hast du das 18 Lebensjahr bereits abgeschlossen\\?.*";
     private static final String PAT_SUPPORTED_FOLDER = "http://[\\w\\.]*?collectr\\.net/links/(\\w+)";
-    private static final String PATTERN_GETLINK = "<a href=\"javascript:getLink\\(lnk\\[(\\d+)\\]\\)\">(.+?)  #\\d+</a>";
-    private static final String PATTERN_SAPCHA = "useSaptcha\\s+=\\s+(\\d+);";
-    private static final String PATTERN_FOLDERNAME = "<span id=\"title\">(.+?)</span>";
-    private static final String PATTERN_DURL = "<key>(.+?)</key>";
-    private static final String JAMES_GETLINK = "http://collectr.net/james.php?do=getLink";
-    private static final String JAMES_SAPTCHA = "http://collectr.net/james.php?do=saptcha";
+    private static final String PATTERN_GETLINK      = "<a href=\"javascript:getLink\\(lnk\\[(\\d+)\\]\\)\">(.+?)  #\\d+</a>";
+    private static final String PATTERN_SAPCHA       = "useSaptcha\\s+=\\s+(\\d+);";
+    private static final String PATTERN_FOLDERNAME   = "<span id=\"title\">(.+?)</span>";
+    private static final String PATTERN_DURL         = "<key>(.+?)</key>";
+    private static final String JAMES_GETLINK        = "http://collectr.net/james.php?do=getLink";
+    private static final String JAMES_SAPTCHA        = "http://collectr.net/james.php?do=saptcha";
 
     public Cllctr(PluginWrapper wrapper) {
         super(wrapper);
@@ -87,7 +87,7 @@ public class Cllctr extends PluginForDecrypt {
                 br.postPage(JAMES_GETLINK, post);
                 String dUrl = br.getRegex(PATTERN_DURL).getMatch(0);
                 DownloadLink dLink = createDownloadlink(dUrl);
-                dLink.setFilePackage(fp);
+                fp.add(dLink);
                 decryptedLinks.add(dLink);
             }
         }

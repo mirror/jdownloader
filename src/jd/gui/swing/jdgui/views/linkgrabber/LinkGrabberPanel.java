@@ -52,9 +52,7 @@ import jd.nutils.JDFlags;
 import jd.nutils.io.JDIO;
 import jd.nutils.jobber.Jobber;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLinkInfoCache;
 import jd.plugins.FilePackage;
-import jd.plugins.FilePackageInfoCache;
 import jd.plugins.LinkGrabberFilePackage;
 import jd.plugins.LinkStatus;
 import jd.utils.JDUtilities;
@@ -481,8 +479,6 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
 
     @Override
     public void onShow() {
-        DownloadLinkInfoCache.setMaxItems(internalTable);
-        FilePackageInfoCache.setMaxItems(internalTable);
         notvisible = false;
         LGINSTANCE.addListener(this);
         fireTableChanged();
@@ -563,7 +559,7 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
                 if (link.isAvailabilityStatusChecked()) avail = link.isAvailable();
                 link.getLinkStatus().reset();
                 if (!avail) link.getLinkStatus().addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
-                link.setFilePackage(fp);
+                fp.add(link);
             }
             fpv2.setDownloadLinks(new ArrayList<DownloadLink>());
         } else {
@@ -577,7 +573,7 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
                     link.getLinkStatus().reset();
                     if (!avail) link.getLinkStatus().addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
                     linkListHost.add(link);
-                    link.setFilePackage(fp);
+                    fp.add(link);
                     ++files;
                 }
             }

@@ -28,6 +28,7 @@ import java.util.Timer;
 import javax.swing.JViewport;
 import javax.swing.filechooser.FileFilter;
 
+import jd.controlling.DownloadController;
 import jd.controlling.JDController;
 import jd.controlling.JDLogger;
 import jd.controlling.ProgressController;
@@ -268,10 +269,12 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
         case EXTRACT_PACKAGE:
             if (fps == null) return;
             ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
-            for (FilePackage fp : fps) {
-                for (DownloadLink l : fp.getDownloadLinkList()) {
-                    if (l.getLinkStatus().isFinished()) {
-                        links.add(l);
+            synchronized (DownloadController.ACCESSLOCK) {
+                for (FilePackage fp : fps) {
+                    for (DownloadLink l : fp.getControlledDownloadLinks()) {
+                        if (l.getLinkStatus().isFinished()) {
+                            links.add(l);
+                        }
                     }
                 }
             }

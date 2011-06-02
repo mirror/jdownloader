@@ -92,7 +92,7 @@ public class GameOneDeA extends PluginForDecrypt {
             }
             final DownloadLink dlLink = createDownloadlink(dllink);
             dlLink.setName(filename + ".flv");
-            dlLink.setFilePackage(fp);
+            fp.add(dlLink);
             decryptedLinks.add(dlLink);
             progress.increase(1);
         }

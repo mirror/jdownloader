@@ -56,15 +56,7 @@ public class RemainingColumn extends JDTableColumn {
 
     @Override
     public Component myTableCellRendererComponent(JDTableModel table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
-        if (value instanceof FilePackage) {
-            fp = (FilePackage) value;
-            jlr.setText(fp.getFilePackageInfo().getFormattedRemaining());
-            jlr.setToolTipText(fp.getFilePackageInfo().getFormattedRemaining());
-        } else {
-            dLink = (DownloadLink) value;
-            jlr.setText(dLink.getDownloadLinkInfo().getFormattedRemaining());
-            jlr.setToolTipText(dLink.getDownloadLinkInfo().getFormattedRemaining());
-        }
+        jlr.setText("GONE");
         return jlr;
     }
 

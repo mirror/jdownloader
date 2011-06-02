@@ -221,7 +221,7 @@ public class JDSimpleWebserverRequestHandler {
                             package_id = Formatter.filterInt(ids[0].toString());
                             download_id = Formatter.filterInt(ids[1].toString());
 
-                            links.add(JDUtilities.getController().getPackages().get(package_id).getDownloadLinkList().get(download_id));
+                            links.add(JDUtilities.getController().getPackages().get(package_id).getControlledDownloadLinks().get(download_id));
                         }
                     }
 

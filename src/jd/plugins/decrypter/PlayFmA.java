@@ -70,7 +70,7 @@ public class PlayFmA extends PluginForDecrypt {
         fp.setName(fpName.trim());
         for (final String url : song) {
             final DownloadLink dlLink = createDownloadlink("http://www.play.fm/" + url);
-            dlLink.setFilePackage(fp);
+            fp.add(dlLink);
             decryptedLinks.add(dlLink);
         }
 

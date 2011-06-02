@@ -176,7 +176,7 @@ public class FrShrdFldr extends PluginForDecrypt {
                     dlink.setName(Encoding.htmlDecode(dlName));
                     dlink.setDownloadSize(SizeFormatter.getSize(dlSize.replace(",", "")));
                     dlink.setAvailable(true);
-                    dlink.setFilePackage(fp);
+                    fp.add(dlink);
                     decryptedLinks.add(dlink);
                 }
 

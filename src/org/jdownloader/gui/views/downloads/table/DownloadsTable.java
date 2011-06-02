@@ -117,7 +117,7 @@ public class DownloadsTable extends ExtTable<PackageLinkNode> {
                 if (!links.contains(node)) links.add((DownloadLink) node);
             } else {
                 if (!fps.contains(node)) fps.add((FilePackage) node);
-                for (final DownloadLink dl : ((FilePackage) node).getDownloadLinkList()) {
+                for (final DownloadLink dl : ((FilePackage) node).getControlledDownloadLinks()) {
                     if (!links.contains(dl)) {
                         links.add(dl);
                     }

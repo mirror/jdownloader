@@ -151,7 +151,7 @@ public class AniLinkzCom extends PluginForDecrypt {
                         final DownloadLink dl = createDownloadlink(dllink.trim());
                         final FilePackage fp = FilePackage.getInstance();
                         fp.setName(filepackage.trim());
-                        dl.setFilePackage(fp);
+                        fp.add(dl);
                         dl.setProperty("removeReferer", true);
                         if (ext != null && new Regex(dllink, PATTERN_SUPPORTED_HOSTER).count() == 0) {
                             final String filename = filepackage + "_mirror_" + (i + 1) + "_" + mirror + ext;

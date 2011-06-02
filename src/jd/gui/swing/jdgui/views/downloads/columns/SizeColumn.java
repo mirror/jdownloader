@@ -56,15 +56,7 @@ public class SizeColumn extends JDTableColumn {
 
     @Override
     public Component myTableCellRendererComponent(JDTableModel table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
-        if (value instanceof FilePackage) {
-            fp = (FilePackage) value;
-            jlr.setText(fp.getFilePackageInfo().getFormattedSize());
-            jlr.setToolTipText(fp.getFilePackageInfo().getFormattedSize());
-        } else {
-            dLink = (DownloadLink) value;
-            jlr.setText(dLink.getDownloadLinkInfo().getFormattedSize());
-            jlr.setToolTipText(dLink.getDownloadLinkInfo().getFormattedSize());
-        }
+        jlr.setText("GONE");
         return jlr;
     }
 

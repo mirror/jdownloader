@@ -229,7 +229,7 @@ public class DistributeData extends Thread {
                                          * child does not have custom one
                                          */
                                         if (!link.isDefaultFilePackage() && dLink.isDefaultFilePackage()) {
-                                            dLink.setFilePackage(link.getFilePackage());
+                                            link.getFilePackage().add(dLink);
                                         }
                                     }
 

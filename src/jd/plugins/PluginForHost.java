@@ -512,15 +512,15 @@ public abstract class PluginForHost extends Plugin implements FavIconRequestor {
                 try {
                     final DownloadLink link = new DownloadLink((PluginForHost) wrapper.getPlugin(), file.substring(file.lastIndexOf("/") + 1, file.length()), getHost(), file, true);
                     links.add(link);
-                    if (fp != null) {
-                        link.setFilePackage(fp);
-                    }
                 } catch (IllegalArgumentException e) {
                     JDLogger.exception(e);
                 } catch (SecurityException e) {
                     JDLogger.exception(e);
                 }
             }
+        }
+        if (link != null && fp != null) {
+            fp.addLinks(links);
         }
         return links;
     }

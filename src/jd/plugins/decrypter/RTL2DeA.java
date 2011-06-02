@@ -89,7 +89,7 @@ public class RTL2DeA extends PluginForDecrypt {
                 for (int i = 0; i < title.getLength(); i++) {
                     final DownloadLink dlLink = createDownloadlink(name.item(i).getTextContent());
                     dlLink.setName(title.item(i).getTextContent().replace("\"", "") + ".flv");
-                    dlLink.setFilePackage(fp);
+                    fp.add(dlLink);
                     decryptedLinks.add(dlLink);
                 }
             }

@@ -140,7 +140,9 @@ public abstract class PluginsC extends Plugin {
                 next.setSourcePluginComment(comment);
                 next.setLoadedPluginForContainer(this);
                 /* forward custom package */
-                if (!srcLink.isDefaultFilePackage()) next.setFilePackage(srcLink.getFilePackage());
+                if (!srcLink.isDefaultFilePackage()) {
+                    srcLink.getFilePackage().add(next);
+                }
                 /* hide links? */
                 if (hideLinks()) {
                     next.setLinkType(DownloadLink.LINKTYPE_CONTAINER);

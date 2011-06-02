@@ -35,11 +35,11 @@ import jd.plugins.PluginForDecrypt;
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "linkprotect.in" }, urls = { "http://[\\w\\.]*?linkprotect\\.in/index.php\\?site=folder&id=[\\w]{1,50}" }, flags = { 0 })
 public class LnkPrtctn extends PluginForDecrypt {
 
-    static private final Pattern patternName = Pattern.compile("Ordnername: <b>(.*?)</b>");
-    static private final Pattern patternPassword = Pattern.compile("<input type=\"text\" name=\"pw\" class=\"[a-zA-Z0-9]{1,50}\" size=\"[0-9]{1,3}\" />");
+    static private final Pattern patternName          = Pattern.compile("Ordnername: <b>(.*?)</b>");
+    static private final Pattern patternPassword      = Pattern.compile("<input type=\"text\" name=\"pw\" class=\"[a-zA-Z0-9]{1,50}\" size=\"[0-9]{1,3}\" />");
     static private final Pattern patternPasswordWrong = Pattern.compile("<b>Passwort falsch!</b>");
-    static private final Pattern patternCaptcha = Pattern.compile("<img src=\"(.*?securimage_show.*?)\"");
-    static private final Pattern patternDownload = Pattern.compile("http://[\\w\\.]*?linkprotect\\.in/includes/dl.php\\?id=[a-zA-Z0-9]{1,50}");
+    static private final Pattern patternCaptcha       = Pattern.compile("<img src=\"(.*?securimage_show.*?)\"");
+    static private final Pattern patternDownload      = Pattern.compile("http://[\\w\\.]*?linkprotect\\.in/includes/dl.php\\?id=[a-zA-Z0-9]{1,50}");
 
     public LnkPrtctn(PluginWrapper wrapper) {
         super(wrapper);
@@ -128,7 +128,7 @@ public class LnkPrtctn extends PluginForDecrypt {
                     br.getPage(link);
                     String finalLink = br.getRedirectLocation();
                     DownloadLink dlLink = createDownloadlink(finalLink);
-                    dlLink.setFilePackage(fp);
+                    fp.add(dlLink);
                     decryptedLinks.add(dlLink);
                 }
             }

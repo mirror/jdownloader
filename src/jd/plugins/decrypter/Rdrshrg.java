@@ -55,7 +55,7 @@ public class Rdrshrg extends PluginForDecrypt {
             link = new Regex(Encoding.htmlDecode(link), "\"0\"><frame src\\=\"(.*?)\" name\\=\"GO_SAVE\"").getMatch(0);
             DownloadLink dl = createDownloadlink(link);
             dl.addSourcePluginPassword(pass);
-            dl.setFilePackage(fp);
+            fp.add(dl);
             decryptedLinks.add(dl);
             progress.increase(1);
         }

@@ -228,7 +228,6 @@ public class FilePackageInfo extends JDCollapser implements ActionListener, Focu
         } else if (source == chbPostProcessing) {
             fp.setPostProcessing(chbPostProcessing.isSelected());
         }
-        DownloadController.getInstance().fireDownloadLinkUpdate(fp.get(0));
     }
 
     @Override
@@ -244,22 +243,24 @@ public class FilePackageInfo extends JDCollapser implements ActionListener, Focu
                         progressBarFilePackage.setMaximums(null);
                         progressBarDownloadLink.setMaximums(null);
                         if (fp != null) {
-                            long[] max = new long[fp.getDownloadLinkList().size()];
-                            long[] values = new long[fp.getDownloadLinkList().size()];
+                            long[] max = new long[fp.size()];
+                            long[] values = new long[fp.size()];
                             int i = 0;
-                            for (DownloadLink dl : fp.getDownloadLinkList()) {
-                                max[i] = Math.max(1, dl.getDownloadSize());
-                                if (dl.getLinkStatus().hasStatus(LinkStatus.ERROR_FILE_NOT_FOUND)) {
-                                    values[i] = -1;
-                                } else {
-                                    values[i] = Math.max(0, dl.getDownloadCurrent());
+                            synchronized (DownloadController.ACCESSLOCK) {
+                                for (DownloadLink dl : fp.getControlledDownloadLinks()) {
+                                    max[i] = Math.max(1, dl.getDownloadSize());
+                                    if (dl.getLinkStatus().hasStatus(LinkStatus.ERROR_FILE_NOT_FOUND)) {
+                                        values[i] = -1;
+                                    } else {
+                                        values[i] = Math.max(0, dl.getDownloadCurrent());
+                                    }
+                                    i++;
                                 }
-                                i++;
                             }
                             progressBarFilePackage.setMaximums(max);
                             progressBarFilePackage.setValues(values);
                             lblSize.setText(Formatter.formatReadable(fp.getTotalKBLoaded()) + "/" + Formatter.formatReadable(fp.getTotalEstimatedPackageSize()));
-                            lblFiles.setText(_GUI._.gui_fileinfopanel_packagetab_lbl_files(fp.getDownloadLinkList().size()));
+                            lblFiles.setText(_GUI._.gui_fileinfopanel_packagetab_lbl_files(fp.size()));
                             lblSize.setToolTipText(fp.getTotalKBLoaded() + " / " + fp.getTotalEstimatedPackageSize());
                         }
                         if (downloadLink != null) {

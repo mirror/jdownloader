@@ -220,7 +220,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         synchronized (DownloadController.ACCESSLOCK) {
 
             for (final FilePackage filePackage : DownloadController.getInstance().getPackages()) {
-                for (final DownloadLink link : filePackage.getDownloadLinkList()) {
+                for (final DownloadLink link : filePackage.getControlledDownloadLinks()) {
                     /*
                      * do not reset if link is offline, finished , already exist
                      * or pluginerror (because only plugin updates can fix this)
@@ -385,7 +385,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         final int maxPerHost = this.getSimultanDownloadNumPerHost();
         try {
             for (final FilePackage filePackage : this.dlc.getPackages()) {
-                for (final Iterator<DownloadLink> it2 = filePackage.getDownloadLinkList().iterator(); it2.hasNext();) {
+                for (final Iterator<DownloadLink> it2 = filePackage.getControlledDownloadLinks().iterator(); it2.hasNext();) {
                     nextDownloadLink = it2.next();
                     if (nextDownloadLink.getDefaultPlugin() == null || !nextDownloadLink.isEnabled() || nextDownloadLink.getLinkStatus().hasStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE)) {
                         /*
@@ -610,20 +610,22 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
             return false;
         }
         if (stop instanceof FilePackage) {
-            for (final DownloadLink dl : ((FilePackage) stop).getDownloadLinkList()) {
-                synchronized (sessionHistory) {
-                    if (sessionHistory.contains(dl)) {
-                        /*
-                         * we already started this download in current session,
-                         * so stopmark reached
-                         */
+            synchronized (DownloadController.ACCESSLOCK) {
+                for (final DownloadLink dl : ((FilePackage) stop).getControlledDownloadLinks()) {
+                    synchronized (sessionHistory) {
+                        if (sessionHistory.contains(dl)) {
+                            /*
+                             * we already started this download in current
+                             * session, so stopmark reached
+                             */
+                            continue;
+                        }
+                    }
+                    if (dl.isEnabled() && dl.getLinkStatus().isFinished()) {
                         continue;
                     }
+                    return false;
                 }
-                if (dl.isEnabled() && dl.getLinkStatus().isFinished()) {
-                    continue;
-                }
-                return false;
             }
             return true;
         }
@@ -757,7 +759,6 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                 if (entry == null || entry == STOPMARK.NONE) {
                     entry = STOPMARK.NONE;
                 }
-                final Object oldStopMark = DownloadWatchDog.this.currentstopMark;
                 if (entry == STOPMARK.RANDOM) {
                     /* user wants to set a random stopmark */
                     synchronized (DownloadWatchDog.this.DownloadControllers) {
@@ -785,7 +786,6 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                     stopMark.setSelected(true);
                     stopMark.setEnabled(true);
                     stopMark.setToolTipText(_JDT._.jd_controlling_DownloadWatchDog_stopmark_filepackage(((FilePackage) entry).getName()));
-                    DownloadController.getInstance().fireDownloadLinkUpdate(((FilePackage) entry).get(0));
                 } else if (entry == STOPMARK.HIDDEN) {
                     stopMark.setSelected(true);
                     stopMark.setEnabled(true);
@@ -793,12 +793,6 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                 } else if (entry == STOPMARK.NONE) {
                     stopMark.setSelected(false);
                     stopMark.setToolTipText(_JDT._.jd_gui_swing_jdgui_actions_actioncontroller_toolbar_control_stopmark_tooltip());
-                }
-                /* refresh old stopmark */
-                if (oldStopMark instanceof DownloadLink) {
-                    DownloadController.getInstance().fireDownloadLinkUpdate(oldStopMark);
-                } else if (oldStopMark instanceof FilePackage) {
-                    DownloadController.getInstance().fireDownloadLinkUpdate(((FilePackage) oldStopMark).get(0));
                 }
             }
         }, true);
@@ -867,7 +861,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                 public void run() {
                     this.setName("DownloadWatchDog");
                     try {
-                        ArrayList<DownloadLink> links;
+                        LinkedList<DownloadLink> links;
                         final ArrayList<FilePackage> fps = new ArrayList<FilePackage>();
                         DownloadLink link;
                         LinkStatus linkStatus;
@@ -907,7 +901,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                             inProgress = 0;
                             try {
                                 for (final FilePackage filePackage : fps) {
-                                    links = filePackage.getDownloadLinkList();
+                                    links = filePackage.getControlledDownloadLinks();
                                     for (int i = 0; i < links.size(); i++) {
                                         link = links.get(i);
                                         if (link.getDefaultPlugin() == null) {

@@ -64,7 +64,7 @@ public class HosterColumn extends JDTableColumn {
             jlr.setToolTipText(strLoadingFrom + fp.getHoster());
         } else {
             dLink = (DownloadLink) value;
-            jlr.setToolTipText(dLink.getDownloadLinkInfo().getLoadingFrom());
+            jlr.setToolTipText(dLink.getHost());
             jlr.setText(dLink.getDefaultPlugin().getSessionInfo());
             jlr.setIcon(dLink.getDefaultPlugin().getHosterIconScaled());
         }

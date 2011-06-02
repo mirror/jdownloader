@@ -47,7 +47,7 @@ public class ClpfshD extends PluginForDecrypt {
     private void addLink(final CryptedLink cryptedLink, final ArrayList<DownloadLink> decryptedLinks, final String name, final DownloadLink downloadLink, final DestinationFormat convertTo) {
         final FilePackage filePackage = FilePackage.getInstance();
         filePackage.setName("ClipFish " + convertTo.getText() + "(" + convertTo.getExtFirst() + ")");
-        downloadLink.setFilePackage(filePackage);
+        filePackage.add(downloadLink);
         downloadLink.setFinalFileName(name + ".tmp");
         downloadLink.setBrowserUrl(cryptedLink.getCryptedUrl());
         downloadLink.setSourcePluginComment("Convert to " + convertTo.getText());

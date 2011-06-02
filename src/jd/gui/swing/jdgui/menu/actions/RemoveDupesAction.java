@@ -68,7 +68,7 @@ public class RemoveDupesAction extends ToolBarAction {
                     LinkedList<DownloadLink> downloadstodelete = new LinkedList<DownloadLink>();
                     synchronized (DownloadController.ACCESSLOCK) {
                         for (FilePackage fp : dlc.getPackages()) {
-                            downloadstodelete.addAll(fp.getLinksListbyStatus(LinkStatus.ERROR_ALREADYEXISTS));
+                            downloadstodelete.addAll(dlc.getDownloadLinksbyStatus(fp, LinkStatus.ERROR_ALREADYEXISTS));
                         }
                     }
                     for (DownloadLink dl : downloadstodelete) {

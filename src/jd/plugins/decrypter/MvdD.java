@@ -43,7 +43,7 @@ public class MvdD extends PluginForDecrypt {
         thislink.setProperty("ALLOW_DUPE", true);
         final FilePackage filePackage = FilePackage.getInstance();
         filePackage.setName("MyVideo " + convertTo.getText() + "(" + convertTo.getExtFirst() + ")");
-        thislink.setFilePackage(filePackage);
+        filePackage.add(thislink);
         thislink.setBrowserUrl(parameter);
         thislink.setFinalFileName(name + ".tmp");
         thislink.setSourcePluginComment("Convert to " + convertTo.getText());

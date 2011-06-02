@@ -65,7 +65,7 @@ public final class Replacer {
 
         if (key.equalsIgnoreCase("LAST_FINISHED_PACKAGE.AUTO_PASSWORD")) { return dLink.getFilePackage().getPasswordAuto().toString(); }
 
-        if (key.equalsIgnoreCase("LAST_FINISHED_PACKAGE.FILELIST")) { return dLink.getFilePackage().getDownloadLinkList().toString(); }
+        if (key.equalsIgnoreCase("LAST_FINISHED_PACKAGE.FILELIST")) { return dLink.getFilePackage().getControlledDownloadLinks().toString(); }
 
         if (key.equalsIgnoreCase("LAST_FINISHED_PACKAGE.PACKAGENAME")) {
             final String name = dLink.getFilePackage().getName();
@@ -76,7 +76,11 @@ public final class Replacer {
             }
         }
 
-        if (key.equalsIgnoreCase("LAST_FINISHED_PACKAGE.COMMENT")) { return dLink.getFilePackage().getComment(); }
+        if (key.equalsIgnoreCase("LAST_FINISHED_PACKAGE.COMMENT")) {
+            String comment = dLink.getFilePackage().getComment();
+            if (comment == null) comment = "";
+            return comment;
+        }
 
         if (key.equalsIgnoreCase("LAST_FINISHED_PACKAGE.DOWNLOAD_DIRECTORY")) { return dLink.getFilePackage().getDownloadDirectory(); }
 

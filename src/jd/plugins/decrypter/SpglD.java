@@ -67,7 +67,7 @@ public class SpglD extends PluginForDecrypt {
     private void addLink(final ArrayList<DownloadLink> decryptedLinks, final DownloadLink downloadLink, final DestinationFormat convertTo, final String comment, final CryptedLink cryptedLink) {
         final FilePackage filePackage = FilePackage.getInstance();
         filePackage.setName("Spielel.de" + convertTo.getText() + "(" + convertTo.getExtFirst() + ")");
-        downloadLink.setFilePackage(filePackage);
+        filePackage.add(downloadLink);
         downloadLink.setSourcePluginComment(comment);
         downloadLink.setBrowserUrl(cryptedLink.getCryptedUrl());
         downloadLink.setProperty("convertto", convertTo.name());
@@ -137,7 +137,7 @@ public class SpglD extends PluginForDecrypt {
                 final String ending = regex.getMatch(2);
                 if (imgLink != null) {
                     final DownloadLink dlLink = this.createDownloadlink(imgLink);
-                    dlLink.setFilePackage(filePackage);
+                    filePackage.add(dlLink);
                     dlLink.setFinalFileName(title.trim() + "-" + count + ending);
                     dlLink.setName(dlLink.getFinalFileName());
                     if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_PACKETNAME_AS_SUBFOLDER, false) == false) {

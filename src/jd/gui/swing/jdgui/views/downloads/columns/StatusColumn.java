@@ -100,7 +100,9 @@ public class StatusColumn extends JDTableColumn {
                 statuspanel.setIcon(counter, imgStopMark, null, strStopMark);
                 counter++;
             }
-            statuspanel.setText(fp.getFilePackageInfo().getStatusString(), null);
+            // statuspanel.setText(fp.getFilePackageInfo().getStatusString(),
+            // null);
+            statuspanel.setText("GONE", null);
             statuspanel.clearIcons(counter);
         } else {
             dLink = (DownloadLink) value;
@@ -152,7 +154,7 @@ public class StatusColumn extends JDTableColumn {
                 statuspanel.setIcon(counter, ico, null, dLink.getCustomIconText());
                 counter++;
             }
-            statuspanel.setText(dLink.getDownloadLinkInfo().getStatusString(), null);
+            statuspanel.setText(dLink.getLinkStatus().getStatusString(), null);
             statuspanel.clearIcons(counter);
         }
         return statuspanel;

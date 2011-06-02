@@ -55,7 +55,7 @@ public class Brds4Chnrg extends PluginForDecrypt {
                 String image404 = br.getRegex("(http://.+)").getMatch(0);
                 DownloadLink dl = createDownloadlink(image404);
                 dl.setAvailableStatus(AvailableStatus.TRUE);
-                dl.setFilePackage(fp);
+                fp.add(dl);
                 decryptedLinks.add(dl);
             } else if (images.length == 0) {
                 return decryptedLinks;
@@ -73,7 +73,7 @@ public class Brds4Chnrg extends PluginForDecrypt {
                 for (String image : images) {
                     DownloadLink dl = createDownloadlink(image);
                     dl.setAvailableStatus(AvailableStatus.TRUE);
-                    dl.setFilePackage(fp);
+                    fp.add(dl);
                     decryptedLinks.add(dl);
                 }
             }

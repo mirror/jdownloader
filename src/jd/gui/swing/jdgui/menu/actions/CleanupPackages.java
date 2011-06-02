@@ -47,7 +47,7 @@ public class CleanupPackages extends ToolBarAction {
                 LinkedList<FilePackage> packagestodelete = new LinkedList<FilePackage>();
                 synchronized (DownloadController.ACCESSLOCK) {
                     for (FilePackage fp : dlc.getPackages()) {
-                        if (fp.getLinksListbyStatus(LinkStatus.FINISHED | LinkStatus.ERROR_ALREADYEXISTS).size() == fp.size()) packagestodelete.add(fp);
+                        if (dlc.getDownloadLinksbyStatus(fp, LinkStatus.FINISHED | LinkStatus.ERROR_ALREADYEXISTS).size() == fp.size()) packagestodelete.add(fp);
                     }
                 }
                 for (FilePackage fp : packagestodelete) {

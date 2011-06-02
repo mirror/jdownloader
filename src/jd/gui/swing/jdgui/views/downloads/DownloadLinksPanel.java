@@ -35,9 +35,7 @@ import jd.gui.swing.jdgui.MainTabbedPane;
 import jd.gui.swing.jdgui.actions.ActionController;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLinkInfoCache;
 import jd.plugins.FilePackage;
-import jd.plugins.FilePackageInfoCache;
 import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
 
@@ -172,8 +170,6 @@ public class DownloadLinksPanel extends SwitchPanel implements ActionListener, D
     }
 
     public void onShow() {
-        DownloadLinkInfoCache.setMaxItems(internalTable);
-        FilePackageInfoCache.setMaxItems(internalTable);
         updateTableTask(REFRESH_DATA_AND_STRUCTURE_CHANGED_FAST, null);
         JDUtilities.getDownloadController().addListener(this);
         internalTable.removeKeyListener(internalTable);

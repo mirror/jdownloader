@@ -98,7 +98,7 @@ public class GrvShrkCm extends PluginForDecrypt {
             // Aus '#' wird 'number'
             dlLink.setProperty("Name", ret.get("Name").replace("#", "number+").replaceAll("\\s\\W|\\W\\s", "").replaceAll("\\W$", "+").replace(" ", "+"));
             decryptedLinks.add(dlLink);
-            dlLink.setFilePackage(fp);
+            fp.add(dlLink);
         }
         try {
             progress.setFinished();
@@ -199,7 +199,7 @@ public class GrvShrkCm extends PluginForDecrypt {
                 }
                 final FilePackage fp = FilePackage.getInstance();
                 fp.setName(fpName.trim());
-                dlLink.setFilePackage(fp);
+                fp.add(dlLink);
                 // Im finalen Link sind nur \w und '+' Zeichen erlaubt.
                 // Aus '#' wird 'number'
                 dlLink.setProperty("Name", titleContent.get("Name").replace("#", "number+").replaceAll("\\s\\W|\\W\\s", "").replaceAll("\\W$", "+").replace(" ", "+"));
@@ -300,7 +300,7 @@ public class GrvShrkCm extends PluginForDecrypt {
             // Aus '#' wird 'number'
             dlLink.setProperty("Name", ret.get("Name").replace("#", "number+").replaceAll("\\s\\W|\\W\\s", "").replaceAll("\\W$", "+").replace(" ", "+"));
             decryptedLinks.add(dlLink);
-            dlLink.setFilePackage(fp);
+            fp.add(dlLink);
         }
         try {
             progress.setFinished();

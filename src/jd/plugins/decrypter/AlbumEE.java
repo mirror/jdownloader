@@ -45,12 +45,12 @@ import jd.utils.locale.JDL;
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "album.ee" }, urls = { "http://[\\w\\.]*?(album.ee|mallorca.as.album.ee|static1.album.ee|beta.album.ee|ru.album.ee|en.album.ee)/(album|node)/[0-9]+/[0-9]+(\\?page=[0-9]+)?" }, flags = { 0 })
 public class AlbumEE extends PluginForDecrypt implements ProgressControllerListener {
 
-    private Pattern fileNamePattern = Pattern.compile("\">(photo|foto|Фото).*?<b>(.*?)</b></p>");
-    private Pattern albumNamePattern = Pattern.compile(">.*?(album|альбом).*?<a href=\"album[/0-9]+\".*?>(.*?)</a></p>");
-    private Pattern nextPagePattern = Pattern.compile("<a href=\"(album[/0-9]+\\?page=[0-9]+)\">(Next|Järgmine|Следующая)</a>");
+    private Pattern fileNamePattern    = Pattern.compile("\">(photo|foto|Фото).*?<b>(.*?)</b></p>");
+    private Pattern albumNamePattern   = Pattern.compile(">.*?(album|альбом).*?<a href=\"album[/0-9]+\".*?>(.*?)</a></p>");
+    private Pattern nextPagePattern    = Pattern.compile("<a href=\"(album[/0-9]+\\?page=[0-9]+)\">(Next|Järgmine|Следующая)</a>");
     private Pattern singleLinksPattern = Pattern.compile("<div class=\"img\"><a href=\"(node/[0-9]+/[0-9]+)\"><img src");
-    private Pattern pictureURLPattern = Pattern.compile("<img src=\"(http://[\\w\\.]*?album.*?/files/.*?)\" alt");
-    private boolean abort = false;
+    private Pattern pictureURLPattern  = Pattern.compile("<img src=\"(http://[\\w\\.]*?album.*?/files/.*?)\" alt");
+    private boolean abort              = false;
 
     public AlbumEE(PluginWrapper wrapper) {
         super(wrapper);
@@ -118,7 +118,7 @@ public class AlbumEE extends PluginForDecrypt implements ProgressControllerListe
             if (pictureURL == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             dlLink = createDownloadlink(pictureURL);
             if (filename != null) dlLink.setFinalFileName(filename);
-            if (fp != null) dlLink.setFilePackage(fp);
+            if (fp != null) fp.add(dlLink);
             decryptedLinks.add(dlLink);
             progress.increase(1);
         }

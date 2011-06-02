@@ -61,7 +61,6 @@ import jd.gui.swing.jdgui.views.linkgrabber.contextmenu.SelectHostAction;
 import jd.gui.swing.jdgui.views.linkgrabber.contextmenu.SplitHosterAction;
 import jd.nutils.OSDetector;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLinkInfoCache;
 import jd.plugins.LinkGrabberFilePackage;
 import jd.plugins.LinkStatus;
 import jd.utils.MenuScroller;
@@ -127,7 +126,6 @@ public class LinkGrabberTable extends JDTable implements MouseListener, KeyListe
         new GuiRunnable<Object>() {
             @Override
             public Object runSave() {
-                DownloadLinkInfoCache.reset();
                 final Rectangle viewRect = linkgrabber.getScrollPane().getViewport().getViewRect();
                 int[] rows = getSelectedRows();
                 final ArrayList<Object> selected = new ArrayList<Object>();

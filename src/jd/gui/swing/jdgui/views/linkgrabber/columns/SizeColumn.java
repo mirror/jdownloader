@@ -32,10 +32,10 @@ import org.jdesktop.swingx.renderer.JRendererLabel;
 
 public class SizeColumn extends JDTableColumn {
 
-    private static final long serialVersionUID = 2228210790952050305L;
-    private DownloadLink dLink;
+    private static final long      serialVersionUID = 2228210790952050305L;
+    private DownloadLink           dLink;
     private LinkGrabberFilePackage fp;
-    private JRendererLabel jlr;
+    private JRendererLabel         jlr;
 
     public SizeColumn(String name, JDTableModel table) {
         super(name, table);
@@ -60,7 +60,7 @@ public class SizeColumn extends JDTableColumn {
             jlr.setText(fp.getDownloadSize(false) > 0 ? Formatter.formatReadable(fp.getDownloadSize(false)) : "~");
         } else if (value instanceof DownloadLink) {
             dLink = (DownloadLink) value;
-            jlr.setText(dLink.getDownloadLinkInfo().getFormattedSize());
+            jlr.setText("GONE");
         }
         return jlr;
     }

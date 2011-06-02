@@ -295,7 +295,7 @@ public class Serverhandler implements Handler {
             int counter = 0;
 
             for (final FilePackage fp : JDUtilities.getController().getPackages()) {
-                counter += fp.getDownloadLinkList().size();
+                counter += fp.getControlledDownloadLinks().size();
             }
 
             response.addContent(counter);
@@ -305,7 +305,7 @@ public class Serverhandler implements Handler {
             int counter = 0;
 
             for (final FilePackage fp : JDUtilities.getController().getPackages()) {
-                for (final DownloadLink dl : fp.getDownloadLinkList()) {
+                for (final DownloadLink dl : fp.getControlledDownloadLinks()) {
                     if (dl.getLinkStatus().isPluginActive()) {
                         counter++;
                     }
@@ -319,7 +319,7 @@ public class Serverhandler implements Handler {
             int counter = 0;
 
             for (final FilePackage fp : JDUtilities.getController().getPackages()) {
-                for (final DownloadLink dl : fp.getDownloadLinkList()) {
+                for (final DownloadLink dl : fp.getControlledDownloadLinks()) {
                     if (dl.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
                         counter++;
                     }
@@ -333,7 +333,7 @@ public class Serverhandler implements Handler {
             for (final FilePackage fp : JDUtilities.getController().getPackages()) {
                 final Element fp_xml = this.addFilePackage(xml, fp);
 
-                for (final DownloadLink dl : fp.getDownloadLinkList()) {
+                for (final DownloadLink dl : fp.getControlledDownloadLinks()) {
                     fp_xml.appendChild(this.addDownloadLink(xml, dl));
                 }
             }
@@ -345,7 +345,7 @@ public class Serverhandler implements Handler {
             for (final FilePackage fp : JDUtilities.getController().getPackages()) {
                 final Element fp_xml = this.addFilePackage(xml, fp);
 
-                for (final DownloadLink dl : fp.getDownloadLinkList()) {
+                for (final DownloadLink dl : fp.getControlledDownloadLinks()) {
                     if (dl.getLinkStatus().isPluginActive()) {
                         fp_xml.appendChild(this.addDownloadLink(xml, dl));
                     }
@@ -359,7 +359,7 @@ public class Serverhandler implements Handler {
             for (final FilePackage fp : JDUtilities.getController().getPackages()) {
                 final Element fp_xml = this.addFilePackage(xml, fp);
 
-                for (final DownloadLink dl : fp.getDownloadLinkList()) {
+                for (final DownloadLink dl : fp.getControlledDownloadLinks()) {
                     if (dl.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
                         fp_xml.appendChild(this.addDownloadLink(xml, dl));
                     }

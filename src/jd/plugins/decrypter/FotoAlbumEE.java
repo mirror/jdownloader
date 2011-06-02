@@ -35,12 +35,12 @@ import jd.utils.locale.JDL;
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fotoalbum.ee" }, urls = { "http://[\\w\\.]*?(pseudaholic\\.|nastazzy\\.)?fotoalbum\\.ee/photos/.+(/sets|/[0-9]+)?(/[0-9]+)?" }, flags = { 0 })
 public class FotoAlbumEE extends PluginForDecrypt implements ProgressControllerListener {
 
-    private Pattern setNamePattern = Pattern.compile("sets/[0-9]+/\">(<b>)?(.*?)(</b>)?</a>", Pattern.DOTALL);
-    private Pattern setLinkPattern = Pattern.compile("<b><a href=\"/(photos/.*?/sets/[0-9]+)\">.*?</a></b> \\(([0-9]+)\\)", Pattern.DOTALL | Pattern.CASE_INSENSITIVE);
-    private Pattern nextPagePattern = Pattern.compile("<a href=\"(\\?page=[0-9]+)\" title=\"Proovi nooleklahve\">j.*?rgmised");
+    private Pattern setNamePattern     = Pattern.compile("sets/[0-9]+/\">(<b>)?(.*?)(</b>)?</a>", Pattern.DOTALL);
+    private Pattern setLinkPattern     = Pattern.compile("<b><a href=\"/(photos/.*?/sets/[0-9]+)\">.*?</a></b> \\(([0-9]+)\\)", Pattern.DOTALL | Pattern.CASE_INSENSITIVE);
+    private Pattern nextPagePattern    = Pattern.compile("<a href=\"(\\?page=[0-9]+)\" title=\"Proovi nooleklahve\">j.*?rgmised");
     private Pattern singleLinksPattern = Pattern.compile("<a href=\"(/photos/.*?/[0-9]+)\" alt=\"\" class=\"photolink");
-    private Pattern pictureURLPattern = Pattern.compile("<img src=\"(http://[\\w\\.]*?fotoalbum\\.ee/fotoalbum/.*?)\" border=\"0\" alt=\"(.*?)\" vspace=\"3\"><", Pattern.CASE_INSENSITIVE);
-    private boolean abort = false;
+    private Pattern pictureURLPattern  = Pattern.compile("<img src=\"(http://[\\w\\.]*?fotoalbum\\.ee/fotoalbum/.*?)\" border=\"0\" alt=\"(.*?)\" vspace=\"3\"><", Pattern.CASE_INSENSITIVE);
+    private boolean abort              = false;
 
     public FotoAlbumEE(PluginWrapper wrapper) {
         super(wrapper);
@@ -111,7 +111,7 @@ public class FotoAlbumEE extends PluginForDecrypt implements ProgressControllerL
             if (pictureURL == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             dlLink = createDownloadlink(pictureURL);
             // if (filename != null) dlLink.setFinalFileName(filename);
-            if (fp != null) dlLink.setFilePackage(fp);
+            if (fp != null) fp.add(dlLink);
             decryptedLinks.add(dlLink);
             progress.increase(1);
         }

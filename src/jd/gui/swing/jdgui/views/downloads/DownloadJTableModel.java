@@ -60,7 +60,7 @@ public class DownloadJTableModel extends JDTableModel {
             for (FilePackage fp : DownloadController.getInstance().getPackages()) {
                 list.add(fp);
                 if (fp.isExpanded()) {
-                    for (DownloadLink dl : fp.getDownloadLinkList()) {
+                    for (DownloadLink dl : fp.getControlledDownloadLinks()) {
                         list.add(dl);
                     }
                 }

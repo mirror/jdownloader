@@ -69,7 +69,7 @@ public class ReverBnationCom extends PluginForDecrypt {
             dlLink.setProperty("orgName", dlLink.getName());
             FilePackage fp = FilePackage.getInstance();
             fp.setName(titleContent[nameCounter + 1]);
-            dlLink.setFilePackage(fp);
+            fp.add(dlLink);
             decryptedLinks.add(dlLink);
             nameCounter += 2;
         }

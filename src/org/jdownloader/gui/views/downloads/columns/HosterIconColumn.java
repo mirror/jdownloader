@@ -84,7 +84,7 @@ public class HosterIconColumn extends ExtColumn<PackageLinkNode> {
                 if (plg == null) plg = dLink.getDefaultPlugin();
                 String s = plg.getSessionInfo();
                 statuspanel.setText(s, null);
-                statuspanel.setIcon(-1, plg.getHosterIconScaled(), null, dLink.getDownloadLinkInfo().getLoadingFrom());
+                statuspanel.setIcon(-1, plg.getHosterIconScaled(), null, dLink.getHost());
             }
             statuspanel.clearIcons(counter);
         }
