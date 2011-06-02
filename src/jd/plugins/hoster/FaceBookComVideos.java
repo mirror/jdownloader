@@ -22,6 +22,7 @@ import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
+import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
@@ -54,7 +55,7 @@ public class FaceBookComVideos extends PluginForHost {
         final Account aa = AccountController.getInstance().getValidAccount(this);
         if (aa == null || !aa.isValid()) throw new PluginException(LinkStatus.ERROR_FATAL, "Kann Links ohne gültigen Account nicht überprüfen");
         br.setFollowRedirects(true);
-        login(aa, false);
+        login(aa, false, br);
         br.getPage(link.getDownloadURL());
         String getThisPage = br.getRegex("window\\.location\\.replace\\(\"(http:.*?)\"").getMatch(0);
         if (getThisPage != null) br.getPage(getThisPage.replace("\\", ""));
@@ -94,7 +95,7 @@ public class FaceBookComVideos extends PluginForHost {
         }
     }
 
-    private String decodeUnicode(final String s) {
+    public String decodeUnicode(final String s) {
         final Pattern p = Pattern.compile("\\\\u([0-9a-fA-F]{4})");
         String res = s;
         final Matcher m = p.matcher(res);
@@ -108,7 +109,7 @@ public class FaceBookComVideos extends PluginForHost {
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
         try {
-            login(account, true);
+            login(account, true, br);
         } catch (final PluginException e) {
             account.setValid(false);
             return ai;
@@ -163,13 +164,13 @@ public class FaceBookComVideos extends PluginForHost {
     }
 
     @SuppressWarnings("unchecked")
-    public void login(final Account account, final boolean force) throws Exception {
+    public void login(final Account account, final boolean force, Browser br) throws Exception {
         synchronized (LOCK) {
             // Load cookies
             br.setCookiesExclusive(false);
             final Object ret = account.getProperty("cookies", null);
-            boolean acmatch = Encoding.urlEncode(account.getUser()).matches(account.getStringProperty("name", account.getUser()));
-            if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).matches(account.getStringProperty("pass", account.getPass()));
+            boolean acmatch = Encoding.urlEncode(account.getUser()).matches(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
+            if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).matches(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
             if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
                 final HashMap<String, String> cookies = (HashMap<String, String>) ret;
                 if (cookies.containsKey("c_user") && cookies.containsKey("xs") && account.isValid()) {
@@ -191,13 +192,14 @@ public class FaceBookComVideos extends PluginForHost {
             if (br.getCookie(FACEBOOKMAINPAGE, "c_user") == null || br.getCookie(FACEBOOKMAINPAGE, "xs") == null) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE); }
             // Save cookies
             final HashMap<String, String> cookies = new HashMap<String, String>();
-            final Cookies add = this.br.getCookies(FACEBOOKMAINPAGE);
+            final Cookies add = br.getCookies(FACEBOOKMAINPAGE);
             for (final Cookie c : add.getCookies()) {
                 cookies.put(c.getKey(), c.getValue());
             }
             account.setProperty("name", Encoding.urlEncode(account.getUser()));
             account.setProperty("pass", Encoding.urlEncode(account.getPass()));
             account.setProperty("cookies", cookies);
+            account.setValid(true);
         }
     }
 

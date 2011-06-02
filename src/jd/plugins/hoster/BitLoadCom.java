@@ -69,7 +69,7 @@ public class BitLoadCom extends PluginForHost {
         br.setCookie("http://www.bitload.com", "locale", "de");
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("(>Datei nicht gefunden|>Die Datei wurde aufgrund von Urheberrechtsverletzung von unseren Servern entfernt)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        Regex nameAndSize = br.getRegex("Ihre Datei <strong>(.*?) \\((\\d+,\\d+ .*?)\\)</strong> wird angefordert");
+        Regex nameAndSize = br.getRegex("Ihre Datei <strong>(.*?) \\(([0-9,\\.]+ .*?)\\)</strong> wird angefordert");
         String filename = nameAndSize.getMatch(0);
         if (filename == null) filename = br.getRegex("Sie möchten <strong>(.*?)</strong> schauen <br/>").getMatch(0);
         if (filename == null) filename = br.getRegex("Sie haben folgende Datei angefordert.*?>(.*?)</").getMatch(0);
@@ -81,7 +81,7 @@ public class BitLoadCom extends PluginForHost {
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setName(filename.trim());
         // Streamlinks show no filesize
-        if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize.replace(",", ".")));
+        if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize.replace(".", "").replace(",", ".")));
         return AvailableStatus.TRUE;
     }
 

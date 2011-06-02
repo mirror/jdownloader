@@ -97,7 +97,7 @@ public class DeGroopsYahooCom extends PluginForDecrypt {
                     decryptedLinks.add(dl);
                 }
             } else {
-                String fpName = br.getRegex("<div class=\"ygrp-box-content\">[\t\n\r ]+<h3>(.*?)</h3>").getMatch(0);
+                String fpName = br.getRegex("<div class=\"ygrp-box\\-content\">[\t\n\r ]+<h3>(.*?)</h3>").getMatch(0);
                 // Handling for photos and albums
                 String[] galleries = br.getRegex("<div class=\"ygrp-right-album\">[\t\n\r ]+<div>[\t\n\r]+<a href=\"(/.*?)\"").getColumn(0);
                 if (galleries == null || galleries.length == 0) galleries = br.getRegex("<a href=\"(/group/[a-z0-9]+/photos/album/\\d+/pic/list)\"").getColumn(0);
