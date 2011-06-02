@@ -21,6 +21,7 @@ import java.io.IOException;
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -52,6 +53,9 @@ public class QuickLoadTo extends PluginForHost {
         if (filename == null) {
             filename = br.getRegex("14 Tage kostenlos downloaden\" class=\"vtip\">(.*?) - 14 Tage kostenlos downloaden</a>").getMatch(0);
         }
+        if (filename == null) {
+            filename = br.getRegex("<title>Quickload.to (.*?)</title>").getMatch(0);
+        }
         dllink = br.getRegex("name=\"src\" value=\"(http://.*?)\"").getMatch(0);
         if (dllink == null) {
             dllink = br.getRegex("type=\"video/divx\" src=\"(http://.*?)\"").getMatch(0);
@@ -61,7 +65,12 @@ public class QuickLoadTo extends PluginForHost {
         }
         if (filename == null || dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         filename = filename.trim();
-        downloadLink.setFinalFileName(filename + ".avi");
+        String extension = new Regex(filename, ".+\\.(.+)").getMatch(0);
+        if (extension == null) {
+            downloadLink.setFinalFileName(filename + ".avi");
+        } else {
+            downloadLink.setFinalFileName(filename);
+        }
         Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
