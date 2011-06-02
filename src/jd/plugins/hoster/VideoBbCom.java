@@ -18,6 +18,8 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
+import jd.http.RandomUserAgent;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
@@ -27,7 +29,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.TimeFormatter;
 
@@ -36,6 +37,7 @@ public class VideoBbCom extends PluginForHost {
 
     private static final Object LOCK     = new Object();
     private static final String MAINPAGE = "http://www.videobb.com/";
+    private final String        ua       = RandomUserAgent.generate();
 
     public VideoBbCom(final PluginWrapper wrapper) {
         super(wrapper);
@@ -53,30 +55,20 @@ public class VideoBbCom extends PluginForHost {
             account.setValid(false);
             return ai;
         }
-        if (!this.isPremium()) {
-            final String balance = this.br.getMatch("content_detail profile.*?\\$([\\d\\.]+)\r\n");
-            ai.setAccountBalance((long) (Double.parseDouble(balance) * 100));
-            ai.setValidUntil(System.currentTimeMillis() + (356 * 24 * 60 * 60 * 1000l));
-            ai.setStatus(JDL.L("plugins.hoster.videobbcom.accounttype", "Accounttype: Collectors Account"));
-        } else {
-            final String expire = this.br.getRegex("Premium active until.*?<strong>(.*?)</strong>").getMatch(0);
+        if (this.isPremium()) {
+            final String expire = this.br.getRegex(">Premium<.*?until (.*?)</span").getMatch(0);
             if (expire != null) {
-                ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd.MM.yyyy", null) + (1000l * 60 * 60 * 24));
+                ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd MMM yyyy", null) + (1000l * 60 * 60 * 24));
             } else {
                 this.logger.warning("Couldn't get the expire date, stopping premium!");
                 ai.setExpired(true);
                 account.setValid(false);
                 return ai;
             }
-            final String status = this.br.getRegex("Premium status.*?<strong>(.*?)</strong>").getMatch(0);
-            if (status != null) {
-                ai.setStatus("Premium Status: " + status);
-            }
-            final String fileUpload = this.br.getRegex("Files overall.*?<strong>(\\d+)</strong>").getMatch(0);
-            if (fileUpload != null) {
-                ai.setFilesNum(Integer.parseInt(fileUpload));
-            }
+            ai.setUnlimitedTraffic();
             account.setValid(true);
+        } else {
+            account.setValid(false);
         }
         return ai;
     }
@@ -129,29 +121,42 @@ public class VideoBbCom extends PluginForHost {
 
     public boolean isPremium() throws IOException {
         this.br.getPage(VideoBbCom.MAINPAGE + "my_profile.php");
-        if (this.br.getRegex("Account Type:</span> <span><b>Premium</b>").matches()) { return true; }
+        String type = br.getRegex("Account Type:<.*?(>Premium<)").getMatch(0);
+        if (type != null) { return true; }
         return false;
+    }
+
+    private void prepareBrowser(final Browser br) {
+        try {
+            if (br == null) { return; }
+            this.br.getHeaders().put("Accept-Encoding", "");
+            br.getHeaders().put("User-Agent", ua);
+            br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
+            br.getHeaders().put("Accept-Language", "en-us,de;q=0.7,en;q=0.3");
+            br.getHeaders().put("Pragma", null);
+            br.getHeaders().put("Cache-Control", null);
+        } catch (Throwable e) {
+            /* setCookie throws exception in 09580 */
+        }
     }
 
     public void login(final Account account) throws Exception {
         synchronized (VideoBbCom.LOCK) {
             this.setBrowserExclusive();
             this.br.forceDebug(true);
+            prepareBrowser(br);
             this.br.setFollowRedirects(true);
-            this.br.getHeaders().put("Referer", VideoBbCom.MAINPAGE + "index.php");
             final String user = Encoding.urlEncode(account.getUser());
             final String pass = Encoding.urlEncode(account.getPass());
+            br.getPage("http://www.videobb.com/index.php");
             this.br.postPage(VideoBbCom.MAINPAGE + "login.php", "login_username=" + user + "&login_password=" + pass);
-            if (this.br.containsHTML("msgicon_error")) {
+            String cookie = br.getCookie("http://www.videobb.com", "P_sk");
+            if (cookie == null || "deleted".equalsIgnoreCase(cookie)) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE); }
+            if (this.br.containsHTML("The username or password you entered is incorrect")) {
                 final String error = this.br.getRegex("msgicon_error\">(.*?)</div>").getMatch(0);
                 this.logger.warning("Error: " + error);
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
-            // if (!this.isPremium()) {
-            // this.logger.warning("This account is no a premium account!");
-            // throw new PluginException(LinkStatus.ERROR_PREMIUM,
-            // PluginException.VALUE_ID_PREMIUM_DISABLE);
-            // }
         }
     }
 
