@@ -168,8 +168,8 @@ public class FaceBookComVideos extends PluginForHost {
             // Load cookies
             br.setCookiesExclusive(false);
             final Object ret = account.getProperty("cookies", null);
-            boolean acmatch = account.getUser().matches(account.getStringProperty("name", account.getUser()));
-            if (acmatch) acmatch = account.getPass().matches(account.getStringProperty("pass", account.getPass()));
+            boolean acmatch = Encoding.urlEncode(account.getUser()).matches(account.getStringProperty("name", account.getUser()));
+            if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).matches(account.getStringProperty("pass", account.getPass()));
             if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
                 final HashMap<String, String> cookies = (HashMap<String, String>) ret;
                 if (cookies.containsKey("c_user") && cookies.containsKey("xs") && account.isValid()) {
@@ -185,7 +185,7 @@ public class FaceBookComVideos extends PluginForHost {
             if (loginForm == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
             loginForm.remove("persistent");
             loginForm.remove(null);
-            loginForm.put("email", account.getUser());
+            loginForm.put("email", Encoding.urlEncode(account.getUser()));
             loginForm.put("pass", Encoding.urlEncode(account.getPass()));
             br.submitForm(loginForm);
             if (br.getCookie(FACEBOOKMAINPAGE, "c_user") == null || br.getCookie(FACEBOOKMAINPAGE, "xs") == null) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE); }
@@ -195,8 +195,8 @@ public class FaceBookComVideos extends PluginForHost {
             for (final Cookie c : add.getCookies()) {
                 cookies.put(c.getKey(), c.getValue());
             }
-            account.setProperty("name", account.getUser());
-            account.setProperty("pass", account.getPass());
+            account.setProperty("name", Encoding.urlEncode(account.getUser()));
+            account.setProperty("pass", Encoding.urlEncode(account.getPass()));
             account.setProperty("cookies", cookies);
         }
     }

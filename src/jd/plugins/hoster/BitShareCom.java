@@ -28,11 +28,11 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -178,7 +178,6 @@ public class BitShareCom extends PluginForHost {
         this.setBrowserExclusive();
         br.getHeaders().put("User-Agent", agent);
         br.setCookie(MAINPAGE, "language_selection", "EN");
-        br.getPage("http://bitshare.com");
         br.postPage("http://bitshare.com/login.html", "user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()) + "&rememberlogin=&submit=Login");
         if (!br.containsHTML("\\(<b>Premium</b>\\)")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
@@ -192,21 +191,20 @@ public class BitShareCom extends PluginForHost {
             account.setValid(false);
             return ai;
         }
-        br.getPage("http://bitshare.com");
         br.getPage("http://bitshare.com/myaccount.html");
-        String space = br.getRegex(">Used Space:</td>[\t\n\r ]+<td><b>(.*?)</b></td>").getMatch(0);
+        String filesNum = br.getRegex("<a href=\"http://bitshare\\.com/myfiles\\.html\">(\\d+) files</a>").getMatch(0);
+        if (filesNum != null) ai.setFilesNum(Integer.parseInt(filesNum));
+        String space = br.getRegex("<b>Storage</b><br />(.*?) / 1000").getMatch(0);
         if (space != null) ai.setUsedSpace(space.trim());
-        String points = br.getRegex(">BitShare Points:</td>[\t\n\r ]+<td><b>(.*?)</b></td>").getMatch(0);
-        if (points != null) ai.setPremiumPoints(points);
         account.setValid(true);
         ai.setUnlimitedTraffic();
-        String expire = br.getRegex(">Valid until:</td>[\t\n\r ]+<td><b>(.*?)</b></td>").getMatch(0);
+        String expire = br.getRegex("Valid until: (.*?)</div>").getMatch(0);
         if (expire == null) {
             ai.setExpired(true);
             account.setValid(false);
             return ai;
         } else {
-            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy-MM-dd hh:mm", null));
+            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire.trim(), "yyyy-MM-dd", null));
         }
         ai.setStatus("Premium User");
         return ai;
@@ -239,7 +237,7 @@ public class BitShareCom extends PluginForHost {
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
             if (br.getURL().contains("filenotfound")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            if (br.containsHTML("(<title>404 Not Found</title>|<h1>404 Not Found</h1>)")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 10 * 60 * 1000l);
+            if (br.containsHTML("(<title>404 Not Found</title>|<h1>404 Not Found</h1>|bad try)")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 10 * 60 * 1000l);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
