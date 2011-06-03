@@ -69,11 +69,8 @@ public class TurboBitNet extends PluginForHost {
         br.setFollowRedirects(true);
         br.getHeaders().put("User-Agent", UA);
         br.getHeaders().put("Referer", downloadLink.getDownloadURL());
-        // To get the english version of the page which then usually redirects
-        // us to our link again!
-        br.getPage("http://turbobit.net/en");
-        // Little errorhandling in case there we're on the wrong page!
-        if (!br.getURL().equals(downloadLink.getDownloadURL())) br.getPage(downloadLink.getDownloadURL());
+        br.setCookie("http://turbobit.net/", "user_lang_change", "en");
+        br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("(<div class=\"code\\-404\">404</div>|Файл не найден\\. Возможно он был удален\\.<br|File was not found\\.|It could possibly be deleted\\.)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String fileName = br.getRegex("<title>[ \t\r\n]+(Download|Datei downloaden) (.*?)\\. Free download without registration from TurboBit\\.net").getMatch(1);
         if (fileName == null) {
@@ -175,10 +172,9 @@ public class TurboBitNet extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getHeaders().put("User-Agent", UA);
-        br.setCookie("http://turbobit.net/", "lang", "english");
+        br.setCookie("http://turbobit.net/", "user_lang_change", "en");
         br.setCustomCharset("UTF-8");
         br.getPage("http://turbobit.net");
-        br.getPage("http://turbobit.net/en");
         br.postPage("http://www.turbobit.net/user/login", "user%5Blogin%5D=" + Encoding.urlEncode(account.getUser()) + "&user%5Bpass%5D=" + Encoding.urlEncode(account.getPass()) + "&user%5Bmemory%5D=on&user%5Bsubmit%5D=Login");
         if (!br.containsHTML("yesturbo")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         if (br.getCookie("http://turbobit.net/", "sid") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
