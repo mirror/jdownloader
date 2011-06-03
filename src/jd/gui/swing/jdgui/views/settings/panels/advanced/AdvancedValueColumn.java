@@ -5,7 +5,6 @@ import java.util.ArrayList;
 
 import javax.swing.ComboBoxModel;
 import javax.swing.DefaultComboBoxModel;
-import javax.swing.JLabel;
 import javax.swing.SpinnerNumberModel;
 import javax.swing.SwingConstants;
 
@@ -18,6 +17,7 @@ import org.appwork.utils.swing.table.columns.ExtCheckColumn;
 import org.appwork.utils.swing.table.columns.ExtComboColumn;
 import org.appwork.utils.swing.table.columns.ExtCompoundColumn;
 import org.appwork.utils.swing.table.columns.ExtSpinnerColumn;
+import org.appwork.utils.swing.table.columns.ExtTextAreaColumn;
 import org.appwork.utils.swing.table.columns.ExtTextColumn;
 import org.jdownloader.settings.advanced.AdvancedConfigEntry;
 import org.jdownloader.settings.advanced.RangeValidator;
@@ -27,7 +27,7 @@ public class AdvancedValueColumn extends ExtCompoundColumn<AdvancedConfigEntry> 
     private static final long                         serialVersionUID = 1L;
     private ExtTextColumn<AdvancedConfigEntry>        stringColumn;
     private ExtCheckColumn<AdvancedConfigEntry>       booleanColumn;
-    private ExtTextColumn<AdvancedConfigEntry>        defaultColumn;
+    private ExtTextAreaColumn<AdvancedConfigEntry>    defaultColumn;
     private ArrayList<ExtColumn<AdvancedConfigEntry>> columns;
     private ExtSpinnerColumn<AdvancedConfigEntry>     longColumn;
     private ExtComboColumn<AdvancedConfigEntry>       enumColumn;
@@ -51,9 +51,9 @@ public class AdvancedValueColumn extends ExtCompoundColumn<AdvancedConfigEntry> 
     private void initColumns() {
         stringColumn = new ExtTextColumn<AdvancedConfigEntry>(getName()) {
             private static final long serialVersionUID = 1L;
+            {
+                renderer.setHorizontalAlignment(SwingConstants.RIGHT);
 
-            protected void prepareTableCellRendererComponent(final JLabel jlr) {
-                jlr.setHorizontalAlignment(SwingConstants.RIGHT);
             }
 
             @Override
@@ -72,11 +72,11 @@ public class AdvancedValueColumn extends ExtCompoundColumn<AdvancedConfigEntry> 
             }
         };
         register(stringColumn);
-        defaultColumn = new ExtTextColumn<AdvancedConfigEntry>(getName()) {
+        defaultColumn = new ExtTextAreaColumn<AdvancedConfigEntry>(getName()) {
             private static final long serialVersionUID = 1L;
 
-            protected void prepareTableCellRendererComponent(final JLabel jlr) {
-                jlr.setHorizontalAlignment(SwingConstants.RIGHT);
+            {
+                renderer.setHorizontalAlignment(SwingConstants.RIGHT);
             }
 
             @Override
@@ -114,9 +114,9 @@ public class AdvancedValueColumn extends ExtCompoundColumn<AdvancedConfigEntry> 
                 return (Boolean) value.getValue();
             }
 
-            @Override
-            protected void init() {
+            {
                 this.renderer.setHorizontalAlignment(SwingConstants.RIGHT);
+                renderer.setHorizontalTextPosition(SwingConstants.LEFT);
 
                 this.editor.setHorizontalAlignment(SwingConstants.RIGHT);
             }
@@ -131,9 +131,6 @@ public class AdvancedValueColumn extends ExtCompoundColumn<AdvancedConfigEntry> 
         longColumn = new ExtSpinnerColumn<AdvancedConfigEntry>(getName()) {
 
             private static final long serialVersionUID = 1L;
-
-            protected void init() {
-            }
 
             @Override
             protected SpinnerNumberModel getModel(AdvancedConfigEntry value, Number n) {

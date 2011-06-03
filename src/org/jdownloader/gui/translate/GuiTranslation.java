@@ -1921,4 +1921,7 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "SOCKS-5-Protocol Proxy Server " })
     String gui_column_proxytype_socks_tt();
+
+    @Default(lngs = { "en" }, values = { "Proxy Rotation requires at least one active entry." })
+    String proxytablemodel_atleast_one_rotate_required();
 }

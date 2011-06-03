@@ -15,6 +15,7 @@ import jd.controlling.proxy.ProxyInfo;
 import org.appwork.utils.event.DefaultEventListener;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.appwork.utils.swing.EDTRunner;
+import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.table.ExtTableHeaderRenderer;
 import org.appwork.utils.swing.table.ExtTableModel;
 import org.appwork.utils.swing.table.columns.ExtCheckColumn;
@@ -45,13 +46,13 @@ public class ProxyTableModel extends ExtTableModel<ProxyInfo> {
         });
     }
 
-    private void fill() {
+    void fill() {
 
         new EDTRunner() {
 
             @Override
             protected void runInEDT() {
-
+                System.out.println("Refill");
                 ArrayList<ProxyInfo> selection = getSelectedObjects();
                 tableData = new ArrayList<ProxyInfo>(ProxyController.getInstance().getList());
                 fireTableStructureChanged();
@@ -331,11 +332,20 @@ public class ProxyTableModel extends ExtTableModel<ProxyInfo> {
 
             @Override
             protected void setBooleanValue(final boolean value, final ProxyInfo object) {
-                IOEQ.add(new Runnable() {
-                    public void run() {
-                        ProxyController.getInstance().setproxyRotationEnabled(object, value);
+
+                ProxyController.getInstance().setproxyRotationEnabled(object, value);
+                if (!value) {
+                    if (ProxyController.getInstance().getListForRotation().size() == 0) {
+                        if (object == ProxyController.getInstance().getNone()) {
+                            Dialog.getInstance().showMessageDialog(_GUI._.proxytablemodel_atleast_one_rotate_required());
+                            ProxyController.getInstance().setproxyRotationEnabled(object, true);
+                        } else {
+                            Dialog.getInstance().showMessageDialog(_GUI._.proxytablemodel_atleast_one_rotate_required());
+                            ProxyController.getInstance().setproxyRotationEnabled(ProxyController.getInstance().getNone(), true);
+                        }
                     }
-                });
+                }
+
             }
         });
         this.addColumn(new ExtRadioColumn<ProxyInfo>(_GUI._.gui_column_defaultproxy(), this) {

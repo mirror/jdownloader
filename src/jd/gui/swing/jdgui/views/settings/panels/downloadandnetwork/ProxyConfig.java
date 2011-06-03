@@ -13,7 +13,6 @@ import javax.swing.ListSelectionModel;
 
 import jd.controlling.proxy.ProxyInfo;
 import jd.gui.swing.jdgui.views.settings.ConfigPanel;
-import jd.gui.swing.jdgui.views.settings.panels.components.SettingsTable;
 
 import org.jdownloader.gui.settings.AbstractConfigPanel;
 import org.jdownloader.images.NewTheme;
@@ -25,13 +24,13 @@ public class ProxyConfig extends AbstractConfigPanel {
         return _JDT._.gui_settings_proxy_title();
     }
 
-    private static final long        serialVersionUID = -521958649780869375L;
+    private static final long serialVersionUID = -521958649780869375L;
 
-    private SettingsTable<ProxyInfo> table;
+    private ProxyTable        table;
 
-    private JButton                  btnAdd;
+    private JButton           btnAdd;
 
-    private JButton                  btnRemove;
+    private JButton           btnRemove;
 
     public ProxyConfig() {
         super();
@@ -39,7 +38,7 @@ public class ProxyConfig extends AbstractConfigPanel {
         this.addHeader(getTitle(), NewTheme.I().getIcon("proxy_rotate", 32));
         this.addDescription(_JDT._.gui_settings_proxy_description());
 
-        table = new SettingsTable<ProxyInfo>(new ProxyTableModel()) {
+        table = new ProxyTable() {
             /**
              * 
              */
@@ -106,6 +105,7 @@ public class ProxyConfig extends AbstractConfigPanel {
 
     @Override
     public void updateContents() {
+        table.update();
     }
 
 }

@@ -9,6 +9,8 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
+import org.appwork.storage.config.ConfigEventListener;
+import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.event.DefaultEventSender;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
@@ -16,7 +18,7 @@ import org.appwork.utils.net.httpconnection.HTTPProxy.TYPE;
 import org.appwork.utils.net.httpconnection.HTTPProxyUtils;
 import org.jdownloader.settings.InternetConnectionSettings;
 
-public class ProxyController {
+public class ProxyController implements ConfigEventListener {
 
     private static final ProxyController              INSTANCE     = new ProxyController();
 
@@ -38,13 +40,23 @@ public class ProxyController {
         return eventSender;
     }
 
+    public void onConfigValueModified(ConfigInterface config, String key, Object newValue) {
+        System.out.println("Reload");
+        config.getStorageHandler().getEventSender().removeListener(this);
+        loadProxySettings();
+        config.getStorageHandler().getEventSender().addListener(this);
+    }
+
     private ProxyController() {
         eventSender = new DefaultEventSender<ProxyEvent<ProxyInfo>>();
         config = JsonConfig.create(InternetConnectionSettings.class);
+
         none = new ProxyInfo(HTTPProxy.NONE);
-        setDefaultProxy(none);
+
         initDirects();
         loadProxySettings();
+        saveProxySettings();
+        config.getStorageHandler().getEventSender().addListener(this);
         ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
 
             @Override
@@ -109,46 +121,69 @@ public class ProxyController {
     }
 
     private void loadProxySettings() {
+
+        setDefaultProxy(none);
         ArrayList<ProxyData> ret = config.getCustomProxyList();
+        boolean rotCheck = false;
+        synchronized (proxies) {
 
-        // restore customs
-        if (ret != null) {
-            for (ProxyData proxyData : ret) {
-                ProxyInfo proxy = null;
-                try {
-                    // we do not restore direct
+            proxies.clear();
 
-                    /* convert proxyData to ProxyInfo */
-                    proxies.add(proxy = new ProxyInfo(proxyData));
-                    if (proxyData.isDefaultProxy()) {
-                        setDefaultProxy(proxy);
-                    }
+            // restore customs
+            if (ret != null) {
+                for (ProxyData proxyData : ret) {
+                    ProxyInfo proxy = null;
+                    try {
+                        // we do not restore direct
 
-                } catch (final Throwable e) {
-                    JDLogger.exception(e);
-                }
-            }
-        }
-        // restore directs
-        ArrayList<DirectGatewayData> ret2 = config.getDirectGatewayList();
-        if (ret2 != null) {
-            for (DirectGatewayData d : ret2) {
-                ProxyInfo p = getDirectProxyByGatewayIP(d.getIp());
-                if (p != null) {
-                    p.setProxyRotationEnabled(d.isProxyRotationEnabled());
-                    if (d.isDefault()) {
-                        setDefaultProxy(p);
+                        /* convert proxyData to ProxyInfo */
+                        proxies.add(proxy = new ProxyInfo(proxyData));
+                        if (proxyData.isDefaultProxy()) {
+                            setDefaultProxy(proxy);
+                        }
+                        if (proxy.isProxyRotationEnabled()) rotCheck = true;
+
+                    } catch (final Throwable e) {
+                        JDLogger.exception(e);
                     }
                 }
             }
         }
+        synchronized (directs) {
+            directs.clear();
 
-        if (config.isNoneDefault()) {
-            setDefaultProxy(none);
+            // restore directs
+            ArrayList<DirectGatewayData> ret2 = config.getDirectGatewayList();
+            if (ret2 != null) {
+                for (DirectGatewayData d : ret2) {
+                    ProxyInfo p = getDirectProxyByGatewayIP(d.getIp());
+                    if (p != null) {
+                        p.setProxyRotationEnabled(d.isProxyRotationEnabled());
+                        if (p.isProxyRotationEnabled()) rotCheck = true;
+                        if (d.isDefault()) {
+                            setDefaultProxy(p);
+                        }
+                    }
+                }
+            }
         }
+
+        // if (config.isNoneDefault()) {
+        // setDefaultProxy(none);
+        //
+        // }
 
         none.setProxyRotationEnabled(config.isNoneRotationEnabled());
-        saveProxySettings();
+        if (none.isProxyRotationEnabled()) rotCheck = true;
+
+        if (!rotCheck) {
+            // we need at least one rotation
+            none.setProxyRotationEnabled(true);
+            config.setNoneRotationEnabled(true);
+        }
+        if (none == defaultproxy) config.setNoneDefault(true);
+        eventSender.fireEvent(new ProxyEvent<ProxyInfo>(ProxyController.this, ProxyEvent.Types.REFRESH, null));
+
     }
 
     private ProxyInfo getDirectProxyByGatewayIP(String gatewayIP) {
@@ -463,5 +498,32 @@ public class ProxyController {
                 }
             }
         }
+    }
+
+    public ArrayList<ProxyInfo> getListForRotation() {
+        ArrayList<ProxyInfo> ret = new ArrayList<ProxyInfo>();
+
+        if (none.isProxyRotationEnabled()) ret.add(none);
+
+        synchronized (directs) {
+            for (ProxyInfo pi : directs) {
+                if (pi.isProxyRotationEnabled()) ret.add(pi);
+
+            }
+
+        }
+
+        synchronized (proxies) {
+            for (ProxyInfo pi : proxies) {
+                if (pi.isProxyRotationEnabled()) ret.add(pi);
+
+            }
+
+        }
+        return ret;
+    }
+
+    public ProxyInfo getNone() {
+        return none;
     }
 }
