@@ -1889,7 +1889,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "%s1 (direct)" })
     String gui_column_host_direct(String host);
 
-    @Default(lngs = { "en" }, values = { "Direct (No Proxy)" })
+    @Default(lngs = { "en" }, values = { "No Proxy" })
     String gui_column_proxytype_no_proxy();
 
     @Default(lngs = { "en" }, values = { "Direct WAN IP" })
@@ -1906,4 +1906,19 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Set Defaultproxy here" })
     String gui_column_proxytype_default();
+
+    @Default(lngs = { "en" }, values = { "Direct Gateway" })
+    String gui_column_proxytype_direct();
+
+    @Default(lngs = { "en" }, values = { "If you have several external gateways, you can use each like a different external ip." })
+    String gui_column_proxytype_direct_tt();
+
+    @Default(lngs = { "en" }, values = { "No Proxy! Use the default direct connection." })
+    String gui_column_proxytype_no_proxy_tt();
+
+    @Default(lngs = { "en" }, values = { "Hypertext Transfer Protocol (HTTP Proxy)" })
+    String gui_column_proxytype_http_tt();
+
+    @Default(lngs = { "en" }, values = { "SOCKS-5-Protocol Proxy Server " })
+    String gui_column_proxytype_socks_tt();
 }

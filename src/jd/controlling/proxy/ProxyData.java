@@ -6,14 +6,15 @@ import org.appwork.storage.Storable;
 public class ProxyData implements Storable {
 
     public ProxyData() {
+        // required by Storable
     }
 
-    public static enum STATUS {
+    public static enum StatusID {
         OK, OFFLINE, INVALIDAUTH
     }
 
-    public static enum TYPE {
-        NONE, DIRECT, SOCKS5, HTTP
+    public static enum Type {
+        SOCKS5, HTTP
     }
 
     private String host = null;
@@ -81,7 +82,7 @@ public class ProxyData implements Storable {
     /**
      * @return the status
      */
-    public STATUS getStatus() {
+    public StatusID getStatus() {
         return status;
     }
 
@@ -89,14 +90,14 @@ public class ProxyData implements Storable {
      * @param status
      *            the status to set
      */
-    public void setStatus(STATUS status) {
+    public void setStatus(StatusID status) {
         this.status = status;
     }
 
     /**
      * @return the type
      */
-    public TYPE getType() {
+    public Type getType() {
         return type;
     }
 
@@ -104,16 +105,25 @@ public class ProxyData implements Storable {
      * @param type
      *            the type to set
      */
-    public void setType(TYPE type) {
+    public void setType(Type type) {
         this.type = type;
     }
 
-    private String user = null;
-    private String pass = null;
-    private int port = 0;
-    private STATUS status = STATUS.OK;
-    private TYPE type = TYPE.NONE;
-    private boolean proxyRotationEnabled = true;
+    private String   user                 = null;
+    private String   pass                 = null;
+    private int      port                 = 0;
+    private StatusID status               = StatusID.OK;
+    private Type     type                 = Type.HTTP;
+    private boolean  proxyRotationEnabled = true;
+    private boolean  defaultProxy;
+
+    public boolean isDefaultProxy() {
+        return defaultProxy;
+    }
+
+    public void setDefaultProxy(boolean defaultProxy) {
+        this.defaultProxy = defaultProxy;
+    }
 
     /**
      * @return the enabled

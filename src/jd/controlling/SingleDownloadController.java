@@ -197,7 +197,7 @@ public class SingleDownloadController extends Thread implements BrowserSettings,
                              * disable proxy in case something went wrong with
                              * it
                              */
-                            ProxyController.getInstance().setEnabled(proxyInfo, false);
+                            ProxyController.getInstance().setproxyRotationEnabled(proxyInfo, false);
                         }
                     }
                 } catch (PluginException e) {
@@ -735,7 +735,7 @@ public class SingleDownloadController extends Thread implements BrowserSettings,
                 downloadLink.setLivePlugin(null);
                 if (proxyInfo != null) {
                     if (!proxyInfo.getProxy().getStatus().equals(HTTPProxy.STATUS.OK)) {
-                        ProxyController.getInstance().setEnabled(proxyInfo, false);
+                        ProxyController.getInstance().setproxyRotationEnabled(proxyInfo, false);
                     }
                     proxyInfo.decreaseActiveDownloads(downloadLink.getHost());
                 }

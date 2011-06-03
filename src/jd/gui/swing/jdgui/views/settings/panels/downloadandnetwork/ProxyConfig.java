@@ -46,6 +46,21 @@ public class ProxyConfig extends AbstractConfigPanel {
             private static final long serialVersionUID = 7638505074419527640L;
 
             @Override
+            protected void onSelectionChanged(ArrayList<ProxyInfo> selected) {
+                boolean canremove = false;
+                if (selected != null) {
+                    for (ProxyInfo pi : selected) {
+                        if (pi.getProxy().isRemote()) {
+                            canremove = true;
+                            break;
+                        }
+                    }
+                }
+
+                btnRemove.setEnabled(canremove);
+            }
+
+            @Override
             protected boolean onShortcutDelete(final ArrayList<ProxyInfo> selectedObjects, final KeyEvent evt, final boolean direct) {
                 new ProxyDeleteAction(selectedObjects).actionPerformed(null);
                 return true;
@@ -60,7 +75,7 @@ public class ProxyConfig extends AbstractConfigPanel {
         JToolBar toolbar = new JToolBar();
         toolbar.setFloatable(false);
         btnAdd = new JButton(_JDT._.basics_add(), NewTheme.I().getIcon("add", 20));
-        btnRemove = new JButton(_JDT._.basics_remove(), NewTheme.I().getIcon("delete", 20));
+        btnRemove = new JButton(_JDT._.basics_remove(), NewTheme.I().getIcon("remove", 20));
         btnAdd.addActionListener(new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {

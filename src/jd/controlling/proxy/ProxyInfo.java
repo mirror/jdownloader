@@ -2,19 +2,19 @@ package jd.controlling.proxy;
 
 import java.util.HashMap;
 
-import jd.controlling.proxy.ProxyData.STATUS;
-import jd.controlling.proxy.ProxyData.TYPE;
+import jd.controlling.proxy.ProxyData.StatusID;
+import jd.controlling.proxy.ProxyData.Type;
 
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 
 public class ProxyInfo {
 
     private final HTTPProxy                proxy;
-    private boolean                        proxyRotationEnabled        = true;
+    private boolean                        proxyRotationEnabled = true;
 
-    private final HashMap<String, Integer> activeHosts    = new HashMap<String, Integer>();
-    private final HashMap<String, Long>    ipblockedHosts = new HashMap<String, Long>();
-    private final HashMap<String, Long>    unavailHosts   = new HashMap<String, Long>();
+    private final HashMap<String, Integer> activeHosts          = new HashMap<String, Integer>();
+    private final HashMap<String, Long>    ipblockedHosts       = new HashMap<String, Long>();
+    private final HashMap<String, Long>    unavailHosts         = new HashMap<String, Long>();
 
     /**
      * @return the enabled
@@ -37,8 +37,9 @@ public class ProxyInfo {
         ret.setHost(proxy.getHost());
         ret.setUser(proxy.getUser());
         ret.setPort(proxy.getPort());
-        ret.setType(TYPE.valueOf(proxy.getType().name()));
-        ret.setStatus(STATUS.valueOf(proxy.getStatus().name()));
+        ret.setType(Type.valueOf(proxy.getType().name()));
+        ret.setStatus(StatusID.valueOf(proxy.getStatus().name()));
+
         return ret;
     }
 

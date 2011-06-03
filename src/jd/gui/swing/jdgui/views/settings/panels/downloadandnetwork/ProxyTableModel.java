@@ -51,8 +51,11 @@ public class ProxyTableModel extends ExtTableModel<ProxyInfo> {
 
             @Override
             protected void runInEDT() {
+
+                ArrayList<ProxyInfo> selection = getSelectedObjects();
                 tableData = new ArrayList<ProxyInfo>(ProxyController.getInstance().getList());
                 fireTableStructureChanged();
+                setSelectedObjects(selection);
             }
         };
     }
@@ -60,7 +63,7 @@ public class ProxyTableModel extends ExtTableModel<ProxyInfo> {
     @Override
     protected void initColumns() {
 
-        DefaultComboBoxModel model = new DefaultComboBoxModel(new String[] { _GUI._.gui_column_proxytype_wanip(), _GUI._.gui_column_proxytype_http(), _GUI._.gui_column_proxytype_socks5() });
+        DefaultComboBoxModel model = new DefaultComboBoxModel(new String[] { _GUI._.gui_column_proxytype_http(), _GUI._.gui_column_proxytype_socks5() });
         this.addColumn(new ExtComboColumn<ProxyInfo>(_GUI._.gui_column_proxytype(), model) {
 
             @Override
@@ -69,6 +72,7 @@ public class ProxyTableModel extends ExtTableModel<ProxyInfo> {
                 switch (obj.getProxy().getType()) {
 
                 case NONE:
+                case DIRECT:
                     return false;
 
                 default:
@@ -88,7 +92,33 @@ public class ProxyTableModel extends ExtTableModel<ProxyInfo> {
 
             @Override
             public String getStringValue(ProxyInfo value) {
-                return _GUI._.gui_column_proxytype_no_proxy();
+                switch (value.getProxy().getType()) {
+
+                case NONE:
+                    return _GUI._.gui_column_proxytype_no_proxy();
+                case DIRECT:
+                    return _GUI._.gui_column_proxytype_direct();
+
+                }
+                throw new RuntimeException("Unknown Proxy Type");
+
+            }
+
+            @Override
+            protected String getToolTip(ProxyInfo obj) {
+                switch (obj.getProxy().getType()) {
+
+                case NONE:
+                    return _GUI._.gui_column_proxytype_no_proxy_tt();
+                case DIRECT:
+                    return _GUI._.gui_column_proxytype_direct_tt();
+                case HTTP:
+                    return _GUI._.gui_column_proxytype_http_tt();
+                case SOCKS5:
+                    return _GUI._.gui_column_proxytype_socks_tt();
+                default:
+                    throw new RuntimeException("Unknown Proxy Type");
+                }
             }
 
             @Override
@@ -105,13 +135,13 @@ public class ProxyTableModel extends ExtTableModel<ProxyInfo> {
             protected int getSelectedIndex(ProxyInfo value) {
                 switch (value.getProxy().getType()) {
                 case DIRECT:
-                    return 0;
-                case HTTP:
-                    return 1;
                 case NONE:
                     return -1;
+                case HTTP:
+                    return 0;
+
                 case SOCKS5:
-                    return 2;
+                    return 1;
                 default:
                     throw new RuntimeException("Unknown Proxy Type");
                 }
@@ -129,13 +159,13 @@ public class ProxyTableModel extends ExtTableModel<ProxyInfo> {
                 // case 0:
                 // object.getProxy().setType(HTTPProxy.TYPE.NONE);
                 // return;
+                // case 0:
+                // object.getProxy().setType(HTTPProxy.TYPE.DIRECT);
+                // return;
                 case 0:
-                    object.getProxy().setType(HTTPProxy.TYPE.DIRECT);
-                    return;
-                case 1:
                     object.getProxy().setType(HTTPProxy.TYPE.HTTP);
                     return;
-                case 2:
+                case 1:
                     object.getProxy().setType(HTTPProxy.TYPE.SOCKS5);
                     return;
                 default:
@@ -249,6 +279,7 @@ public class ProxyTableModel extends ExtTableModel<ProxyInfo> {
 
             @Override
             public String getStringValue(ProxyInfo value) {
+
                 return value.getProxy().getStatus().name();
             }
         });
@@ -302,7 +333,7 @@ public class ProxyTableModel extends ExtTableModel<ProxyInfo> {
             protected void setBooleanValue(final boolean value, final ProxyInfo object) {
                 IOEQ.add(new Runnable() {
                     public void run() {
-                        ProxyController.getInstance().setEnabled(object, value);
+                        ProxyController.getInstance().setproxyRotationEnabled(object, value);
                     }
                 });
             }

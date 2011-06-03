@@ -20,11 +20,16 @@ public class ProxyDeleteAction extends AbstractAction {
 
     @Override
     public boolean isEnabled() {
-        if (this.selected != null) {
-            if (selected.size() == 1 && selected.get(0).getProxy().isNone()) return false;
-            return true;
+        boolean canremove = false;
+        if (selected != null) {
+            for (ProxyInfo pi : selected) {
+                if (pi.getProxy().isRemote()) {
+                    canremove = true;
+                    break;
+                }
+            }
         }
-        return false;
+        return canremove;
     }
 
     /**

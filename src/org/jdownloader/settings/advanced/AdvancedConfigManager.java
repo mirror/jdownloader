@@ -9,6 +9,7 @@ import org.appwork.storage.config.KeyHandler;
 import org.jdownloader.controlling.LinkFilterSettings;
 import org.jdownloader.settings.AboutConfig;
 import org.jdownloader.settings.GeneralSettings;
+import org.jdownloader.settings.InternetConnectionSettings;
 
 public class AdvancedConfigManager {
     private static final AdvancedConfigManager INSTANCE = new AdvancedConfigManager();
@@ -25,6 +26,7 @@ public class AdvancedConfigManager {
         eventSender = new AdvancedConfigEventSender();
         this.register(JsonConfig.create(GeneralSettings.class));
         register(JsonConfig.create(LinkFilterSettings.class));
+        register(JsonConfig.create(InternetConnectionSettings.class));
     }
 
     public AdvancedConfigEventSender getEventSender() {

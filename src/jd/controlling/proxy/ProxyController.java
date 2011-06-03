@@ -1,7 +1,7 @@
 package jd.controlling.proxy;
 
-import java.io.File;
-import java.util.LinkedList;
+import java.net.InetAddress;
+import java.util.ArrayList;
 
 import jd.controlling.JDLogger;
 import jd.plugins.Account;
@@ -9,24 +9,26 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.Application;
+import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.event.DefaultEventSender;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
+import org.appwork.utils.net.httpconnection.HTTPProxy.TYPE;
+import org.appwork.utils.net.httpconnection.HTTPProxyUtils;
+import org.jdownloader.settings.InternetConnectionSettings;
 
 public class ProxyController {
 
     private static final ProxyController              INSTANCE     = new ProxyController();
 
-    private LinkedList<ProxyInfo>                     proxies      = new LinkedList<ProxyInfo>();
-
+    private ArrayList<ProxyInfo>                      proxies      = new ArrayList<ProxyInfo>();
+    private ArrayList<ProxyInfo>                      directs      = new ArrayList<ProxyInfo>();
     private ProxyInfo                                 defaultproxy = null;
 
     private DefaultEventSender<ProxyEvent<ProxyInfo>> eventSender  = null;
 
     private ProxyInfo                                 none         = null;
-    private File                                      settingsFile = null;
+
+    private InternetConnectionSettings                config;
 
     public static final ProxyController getInstance() {
         return INSTANCE;
@@ -38,7 +40,10 @@ public class ProxyController {
 
     private ProxyController() {
         eventSender = new DefaultEventSender<ProxyEvent<ProxyInfo>>();
-        settingsFile = Application.getResource("cfg/proxysettings.json");
+        config = JsonConfig.create(InternetConnectionSettings.class);
+        none = new ProxyInfo(HTTPProxy.NONE);
+        setDefaultProxy(none);
+        initDirects();
         loadProxySettings();
         ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
 
@@ -55,65 +60,104 @@ public class ProxyController {
         });
     }
 
-    private void saveProxySettings() {
-        synchronized (proxies) {
-            ProxyDataList ret = new ProxyDataList();
-            int index = 0;
-            for (ProxyInfo proxy : proxies) {
-                ret.add(proxy.toProxyData());
-                if (defaultproxy == proxy) {
-                    ret.setDefaultProxy(index);
-                }
-                index++;
+    private void initDirects() {
+        synchronized (directs) {
+            for (InetAddress ip : HTTPProxyUtils.getLocalIPs()) {
+                HTTPProxy p = new HTTPProxy(TYPE.DIRECT);
+                p.setLocalIP(ip);
+                directs.add(new ProxyInfo(p));
             }
-            JSonStorage.saveTo(settingsFile, true, null, JSonStorage.serializeToJson(ret));
+            if (directs.size() <= 1) {
+                // we can use non if we have only one WAN ips anyway
+                directs.clear();
+            }
         }
     }
 
+    private void saveProxySettings() {
+        synchronized (proxies) {
+            ArrayList<ProxyData> ret = new ArrayList<ProxyData>();
+
+            for (ProxyInfo proxy : proxies) {
+                ProxyData pd = proxy.toProxyData();
+                pd.setDefaultProxy(proxy == defaultproxy);
+                ret.add(pd);
+
+            }
+            config.setCustomProxyList(ret);
+        }
+
+        synchronized (directs) {
+            ArrayList<DirectGatewayData> ret = new ArrayList<DirectGatewayData>();
+
+            for (ProxyInfo proxy : directs) {
+                DirectGatewayData d = new DirectGatewayData();
+                d.setDefault(proxy == defaultproxy);
+                d.setIp(proxy.getProxy().getLocalIP().getHostAddress());
+                d.setProxyRotationEnabled(proxy.isProxyRotationEnabled());
+
+                ret.add(d);
+
+            }
+            config.setDirectGatewayList(ret);
+        }
+        // ProxyData n = none.toProxyData();
+        // config.setNoneProxy();
+        config.setNoneDefault(none == defaultproxy);
+        config.setNoneRotationEnabled(none.isProxyRotationEnabled());
+
+    }
+
     private void loadProxySettings() {
-        ProxyDataList ret = JSonStorage.restoreFrom(settingsFile, true, null, new TypeRef<ProxyDataList>() {
-        }, new ProxyDataList());
-        if (ret.size() == 0) {
-            /*
-             * no proxysettings available, create new proxylist with 'none' only
-             * and make it default
-             */
-            none = new ProxyInfo(HTTPProxy.NONE);
-            defaultproxy = none;
-            proxies.add(none);
-        } else {
-            none = null;
+        ArrayList<ProxyData> ret = config.getCustomProxyList();
+
+        // restore customs
+        if (ret != null) {
             for (ProxyData proxyData : ret) {
                 ProxyInfo proxy = null;
                 try {
+                    // we do not restore direct
+
                     /* convert proxyData to ProxyInfo */
                     proxies.add(proxy = new ProxyInfo(proxyData));
-                    if (proxy.getProxy().getType().equals(HTTPProxy.TYPE.NONE)) {
-                        none = proxy;
+                    if (proxyData.isDefaultProxy()) {
+                        setDefaultProxy(proxy);
                     }
+
                 } catch (final Throwable e) {
                     JDLogger.exception(e);
                 }
             }
-            /* restore defaultProxy */
-            try {
-                defaultproxy = null;
-                defaultproxy = proxies.get(ret.getDefaultProxy());
-            } catch (final Throwable e) {
-                /* invalid default proxy, set to first one */
-                JDLogger.exception(e);
-            }
-            if (none == null) {
-                /* add missing none proxy */
-                none = new ProxyInfo(HTTPProxy.NONE);
-                proxies.add(0, none);
-            }
-            if (defaultproxy == null) {
-                /* in case we could not restore defaultproxy, we use 'none' */
-                defaultproxy = none;
-            }
-
         }
+        // restore directs
+        ArrayList<DirectGatewayData> ret2 = config.getDirectGatewayList();
+        if (ret2 != null) {
+            for (DirectGatewayData d : ret2) {
+                ProxyInfo p = getDirectProxyByGatewayIP(d.getIp());
+                if (p != null) {
+                    p.setProxyRotationEnabled(d.isProxyRotationEnabled());
+                    if (d.isDefault()) {
+                        setDefaultProxy(p);
+                    }
+                }
+            }
+        }
+
+        if (config.isNoneDefault()) {
+            setDefaultProxy(none);
+        }
+
+        none.setProxyRotationEnabled(config.isNoneRotationEnabled());
+        saveProxySettings();
+    }
+
+    private ProxyInfo getDirectProxyByGatewayIP(String gatewayIP) {
+        synchronized (directs) {
+            for (ProxyInfo pi : directs) {
+                if (pi.getProxy().getLocalIP().getHostAddress().equalsIgnoreCase(gatewayIP)) { return pi; }
+            }
+        }
+        return null;
     }
 
     public void init() {
@@ -124,8 +168,20 @@ public class ProxyController {
      * 
      * @return
      */
-    public LinkedList<ProxyInfo> getList() {
-        return new LinkedList<ProxyInfo>(proxies);
+    public ArrayList<ProxyInfo> getList() {
+        ArrayList<ProxyInfo> ret = new ArrayList<ProxyInfo>();
+
+        ret.add(none);
+
+        synchronized (directs) {
+            ret.addAll(directs);
+        }
+
+        synchronized (proxies) {
+
+            ret.addAll(proxies);
+        }
+        return ret;
     }
 
     /**
@@ -180,55 +236,80 @@ public class ProxyController {
      * @param proxy
      * @param enabled
      */
-    public void setEnabled(ProxyInfo proxy, boolean enabled) {
+    public void setproxyRotationEnabled(ProxyInfo proxy, boolean enabled) {
         if (proxy == null) return;
         if (proxy.isProxyRotationEnabled() == enabled) return;
-        synchronized (proxies) {
-            if (!proxies.contains(proxy)) return;
-            proxy.setProxyRotationEnabled(enabled);
+        proxy.setProxyRotationEnabled(enabled);
 
-        }
         eventSender.fireEvent(new ProxyEvent<ProxyInfo>(this, ProxyEvent.Types.REFRESH, null));
     }
 
     /** removes given proxy from proxylist */
     public void remove(ProxyInfo proxy) {
         if (proxy == null) return;
-        /* none proxy cant get removed */
-        if (proxy == none) return;
-        if (proxy.getProxy().isNone()) return;
+
         synchronized (proxies) {
-            if (!proxies.remove(proxy)) return;
-            if (proxies.size() == 1) {
-                /*
-                 * if only one proxy is left, then we will set none as default
-                 * and enabled
-                 */
-                none.setProxyRotationEnabled(true);
-                defaultproxy = none;
+            if (proxies.remove(proxy)) {
+                if (proxy == defaultproxy) {
+                    setDefaultProxy(none);
+                }
+            } else {
+                return;
             }
         }
+
         eventSender.fireEvent(new ProxyEvent<ProxyInfo>(this, ProxyEvent.Types.REMOVED, proxy));
     }
 
     public ProxyInfo getProxyForDownload(PluginForHost plugin, Account acc) {
-        synchronized (proxies) {
-            final String host = plugin.getHost();
-            final int maxactive = plugin.getMaxSimultanDownload(acc);
-            for (ProxyInfo info : proxies) {
-                if (!info.isProxyRotationEnabled()) {
+        final String host = plugin.getHost();
+        final int maxactive = plugin.getMaxSimultanDownload(acc);
+        if (acc != null) {
+            /* an account must be used or waittime must be over */
+            /*
+             * only the default proxy may use accounts, to prevent accountblocks
+             * because of simultan ip's using it
+             */
+            int active = defaultproxy.activeDownloadsbyHosts(host);
+            if (active < maxactive) return defaultproxy;
+
+            return null;
+        }
+
+        if (none.isProxyRotationEnabled()) {
+            /* only use enabled proxies */
+
+            if (none.getRemainingIPBlockWaittime(host) <= 0 && none.getRemainingTempUnavailWaittime(host) <= 0) {
+                /* active downloads must be less than allowed download */
+                int active = none.activeDownloadsbyHosts(host);
+                if (active < maxactive) return none;
+            }
+        }
+        synchronized (directs) {
+
+            for (ProxyInfo info : directs) {
+                if (info.isProxyRotationEnabled()) {
                     /* only use enabled proxies */
-                    continue;
+
+                    if (info.getRemainingIPBlockWaittime(host) <= 0 && info.getRemainingTempUnavailWaittime(host) <= 0) {
+                        /* active downloads must be less than allowed download */
+                        int active = info.activeDownloadsbyHosts(host);
+                        if (active < maxactive) return info;
+                    }
                 }
-                /* an account must be used or waittime must be over */
-                /*
-                 * only the default proxy may use accounts, to prevent
-                 * accountblocks because of simultan ip's using it
-                 */
-                if ((info == defaultproxy && acc != null) || (info.getRemainingIPBlockWaittime(host) <= 0 && info.getRemainingTempUnavailWaittime(host) <= 0)) {
-                    /* active downloads must be less than allowed download */
-                    int active = info.activeDownloadsbyHosts(host);
-                    if (active < maxactive) return info;
+            }
+        }
+        synchronized (proxies) {
+
+            for (ProxyInfo info : proxies) {
+                if (info.isProxyRotationEnabled()) {
+                    /* only use enabled proxies */
+
+                    if (info.getRemainingIPBlockWaittime(host) <= 0 && info.getRemainingTempUnavailWaittime(host) <= 0) {
+                        /* active downloads must be less than allowed download */
+                        int active = info.activeDownloadsbyHosts(host);
+                        if (active < maxactive) return info;
+                    }
                 }
             }
         }
@@ -237,15 +318,29 @@ public class ProxyController {
 
     /* optimize for speed */
     public long getRemainingIPBlockWaittime(final String host) {
-        Long ret = null;
+        long ret = -1;
+        if (none.isProxyRotationEnabled()) {
+            ret = Math.max(0, none.getRemainingIPBlockWaittime(host));
+        }
         synchronized (proxies) {
             for (ProxyInfo info : proxies) {
-                if (!info.isProxyRotationEnabled()) {
+                if (info.isProxyRotationEnabled()) {
                     /* only use enabled proxies */
-                    continue;
+
+                    long ret2 = ret = Math.max(0, info.getRemainingIPBlockWaittime(host));
+                    if (ret2 < ret) ret = ret2;
                 }
-                long ret2 = info.getRemainingIPBlockWaittime(host);
-                if (ret == null || ret2 < ret) ret = ret2;
+            }
+        }
+
+        synchronized (directs) {
+            for (ProxyInfo info : directs) {
+                if (info.isProxyRotationEnabled()) {
+                    /* only use enabled proxies */
+
+                    long ret2 = ret = Math.max(0, info.getRemainingIPBlockWaittime(host));
+                    if (ret2 < ret) ret = ret2;
+                }
             }
         }
         return ret;
@@ -253,60 +348,119 @@ public class ProxyController {
 
     /* optimize for speed */
     public long getRemainingTempUnavailWaittime(final String host) {
-        Long ret = null;
+        long ret = -1;
+        if (none.isProxyRotationEnabled()) {
+            ret = Math.max(0, none.getRemainingTempUnavailWaittime(host));
+        }
         synchronized (proxies) {
             for (ProxyInfo info : proxies) {
-                if (!info.isProxyRotationEnabled()) {
+                if (info.isProxyRotationEnabled()) {
                     /* only use enabled proxies */
-                    continue;
+
+                    long ret2 = ret = Math.max(0, info.getRemainingTempUnavailWaittime(host));
+                    if (ret2 < ret) ret = ret2;
                 }
-                long ret2 = info.getRemainingTempUnavailWaittime(host);
-                if (ret == null || ret2 < ret) ret = ret2;
+            }
+        }
+
+        synchronized (directs) {
+            for (ProxyInfo info : directs) {
+                if (info.isProxyRotationEnabled()) {
+                    /* only use enabled proxies */
+
+                    long ret2 = ret = Math.max(0, info.getRemainingTempUnavailWaittime(host));
+                    if (ret2 < ret) ret = ret2;
+                }
             }
         }
         return ret;
     }
 
     public boolean hasRemainingIPBlockWaittime(final String host) {
+
+        if (none.isProxyRotationEnabled()) {
+
+            if (none.getRemainingIPBlockWaittime(host) > 0) return true;
+        }
         synchronized (proxies) {
             for (ProxyInfo info : proxies) {
-                if (!info.isProxyRotationEnabled()) {
+                if (info.isProxyRotationEnabled()) {
                     /* only use enabled proxies */
-                    continue;
+
+                    if (info.getRemainingIPBlockWaittime(host) > 0) return true;
                 }
-                if (info.getRemainingIPBlockWaittime(host) > 0) return true;
+            }
+        }
+
+        synchronized (directs) {
+            for (ProxyInfo info : directs) {
+                if (info.isProxyRotationEnabled()) {
+                    /* only use enabled proxies */
+                    if (info.getRemainingIPBlockWaittime(host) > 0) return true;
+                }
             }
         }
         return false;
     }
 
     public boolean hasTempUnavailWaittime(final String host) {
+
+        if (none.isProxyRotationEnabled()) {
+
+            if (none.getRemainingTempUnavailWaittime(host) > 0) return true;
+        }
         synchronized (proxies) {
             for (ProxyInfo info : proxies) {
-                if (!info.isProxyRotationEnabled()) {
+                if (info.isProxyRotationEnabled()) {
                     /* only use enabled proxies */
-                    continue;
+
+                    if (info.getRemainingTempUnavailWaittime(host) > 0) return true;
                 }
-                if (info.getRemainingTempUnavailWaittime(host) > 0) return true;
+            }
+        }
+
+        synchronized (directs) {
+            for (ProxyInfo info : directs) {
+                if (info.isProxyRotationEnabled()) {
+                    /* only use enabled proxies */
+                    if (info.getRemainingTempUnavailWaittime(host) > 0) return true;
+                }
             }
         }
         return false;
     }
 
     public void resetTempUnavailWaittime(final String host, boolean onlyLocal) {
-        synchronized (proxies) {
-            for (ProxyInfo info : proxies) {
-                if (onlyLocal && info.getProxy().isRemote()) continue;
-                info.resetTempUnavailWaittime(host);
+
+        none.resetTempUnavailWaittime(host);
+        synchronized (directs) {
+            for (ProxyInfo info : directs) {
+                info.resetIPBlockWaittime(host);
+            }
+        }
+        if (!onlyLocal) {
+            synchronized (proxies) {
+                for (ProxyInfo info : proxies) {
+                    // if (onlyLocal && info.getProxy().isRemote()) continue;
+                    info.resetTempUnavailWaittime(host);
+                }
             }
         }
     }
 
     public void resetIPBlockWaittime(final String host, boolean onlyLocal) {
-        synchronized (proxies) {
-            for (ProxyInfo info : proxies) {
-                if (onlyLocal && info.getProxy().isRemote()) continue;
+        none.resetIPBlockWaittime(host);
+        synchronized (directs) {
+            for (ProxyInfo info : directs) {
                 info.resetIPBlockWaittime(host);
+            }
+        }
+        if (!onlyLocal) {
+            synchronized (proxies) {
+                for (ProxyInfo info : proxies) {
+                    // if (onlyLocal && info.getProxy().isRemote()) continue;
+                    info.resetIPBlockWaittime(host);
+                }
             }
         }
     }

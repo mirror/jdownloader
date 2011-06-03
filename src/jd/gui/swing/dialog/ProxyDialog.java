@@ -30,7 +30,7 @@ public class ProxyDialog extends AbstractDialog<HTTPProxy> implements CaretListe
     private JTextField        txtUser;
     private JTextField        txtPass;
 
-    private final String[]    types            = new String[] { _GUI._.jd_gui_swing_dialog_ProxyDialog_http(), _GUI._.jd_gui_swing_dialog_ProxyDialog_socks5(), _GUI._.jd_gui_swing_dialog_ProxyDialog_localip() };
+    private final String[]    types            = new String[] { _GUI._.jd_gui_swing_dialog_ProxyDialog_http(), _GUI._.jd_gui_swing_dialog_ProxyDialog_socks5() };
     private JLabel            lblUser;
     private JLabel            lblPass;
     private JLabel            lblPort;
@@ -94,23 +94,20 @@ public class ProxyDialog extends AbstractDialog<HTTPProxy> implements CaretListe
         if (BinaryLogic.containsSome(mask, Dialog.RETURN_CLOSED)) return null;
         if (BinaryLogic.containsSome(mask, Dialog.RETURN_CANCEL)) return null;
         try {
-            boolean nopw = false;
+
             HTTPProxy.TYPE type = null;
             if (cmbType.getSelectedIndex() == 0) {
                 type = HTTPProxy.TYPE.HTTP;
             } else if (cmbType.getSelectedIndex() == 1) {
                 type = HTTPProxy.TYPE.SOCKS5;
-            } else if (cmbType.getSelectedIndex() == 2) {
-                nopw = true;
-                type = HTTPProxy.TYPE.DIRECT;
             } else {
                 return null;
             }
             HTTPProxy ret = new HTTPProxy(type, txtHost.getText(), Integer.parseInt(txtPort.getText().trim()));
-            if (!nopw) {
-                ret.setPass(txtPass.getText());
-                ret.setUser(txtUser.getText());
-            }
+
+            ret.setPass(txtPass.getText());
+            ret.setUser(txtUser.getText());
+
             return ret;
         } catch (final Throwable e) {
             JDLogger.exception(e);
