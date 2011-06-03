@@ -452,6 +452,8 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      * @return FilePackage
      */
     public FilePackage getFilePackage() {
+        /* TODO: pseudo fix */
+        if (filePackage == null) return FilePackage.getDefaultFilePackage();
         return filePackage;
     }
 
