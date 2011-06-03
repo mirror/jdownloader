@@ -73,7 +73,7 @@ public class PremServUserTableModel extends ExtTableModel<PremServUser> {
             private static final long serialVersionUID = 6114502185773645379L;
 
             @Override
-            protected String getStringValue(PremServUser value) {
+            public String getStringValue(PremServUser value) {
                 return value.getUsername();
             }
 
@@ -83,7 +83,7 @@ public class PremServUserTableModel extends ExtTableModel<PremServUser> {
             private static final long serialVersionUID = -5058123494364026340L;
 
             @Override
-            protected String getStringValue(PremServUser value) {
+            public String getStringValue(PremServUser value) {
                 return value.getPassword();
             }
 
@@ -128,7 +128,7 @@ public class PremServUserTableModel extends ExtTableModel<PremServUser> {
             }
 
             @Override
-            protected String getStringValue(PremServUser value) {
+            public String getStringValue(PremServUser value) {
                 return value.getHosters() + "";
             }
 
@@ -160,7 +160,7 @@ public class PremServUserTableModel extends ExtTableModel<PremServUser> {
             }
 
             @Override
-            protected String getStringValue(PremServUser value) {
+            public String getStringValue(PremServUser value) {
                 return SizeFormatter.formatBytes(value.calculateTotalTraffic());
             }
 
@@ -171,7 +171,7 @@ public class PremServUserTableModel extends ExtTableModel<PremServUser> {
             private static final long serialVersionUID = 4904311453829598265L;
 
             @Override
-            protected String getStringValue(PremServUser value) {
+            public String getStringValue(PremServUser value) {
                 return SizeFormatter.formatBytes(value.getAllowedTrafficPerMonth());
             }
 

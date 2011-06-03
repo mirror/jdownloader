@@ -113,21 +113,21 @@ public class ProxyData implements Storable {
     private int port = 0;
     private STATUS status = STATUS.OK;
     private TYPE type = TYPE.NONE;
-    private boolean enabled = true;
+    private boolean proxyRotationEnabled = true;
 
     /**
      * @return the enabled
      */
-    public boolean isEnabled() {
-        return enabled;
+    public boolean isProxyRotationEnabled() {
+        return proxyRotationEnabled;
     }
 
     /**
      * @param enabled
      *            the enabled to set
      */
-    public void setEnabled(boolean enabled) {
-        this.enabled = enabled;
+    public void setProxyRotationEnabled(boolean enabled) {
+        this.proxyRotationEnabled = enabled;
     }
 
 }

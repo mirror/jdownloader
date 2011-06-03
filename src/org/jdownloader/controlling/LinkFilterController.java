@@ -2,7 +2,6 @@ package org.jdownloader.controlling;
 
 import java.util.ArrayList;
 
-import jd.gui.swing.jdgui.views.settings.components.LinkgrabberFilter.LinkFilter;
 
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;

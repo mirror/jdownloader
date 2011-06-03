@@ -10,7 +10,7 @@ import org.appwork.utils.net.httpconnection.HTTPProxy;
 public class ProxyInfo {
 
     private final HTTPProxy                proxy;
-    private boolean                        enabled        = true;
+    private boolean                        proxyRotationEnabled        = true;
 
     private final HashMap<String, Integer> activeHosts    = new HashMap<String, Integer>();
     private final HashMap<String, Long>    ipblockedHosts = new HashMap<String, Long>();
@@ -19,21 +19,21 @@ public class ProxyInfo {
     /**
      * @return the enabled
      */
-    public boolean isEnabled() {
-        return enabled;
+    public boolean isProxyRotationEnabled() {
+        return proxyRotationEnabled;
     }
 
     /**
      * @param enabled
      *            the enabled to set
      */
-    protected void setEnabled(boolean enabled) {
-        this.enabled = enabled;
+    protected void setProxyRotationEnabled(boolean enabled) {
+        this.proxyRotationEnabled = enabled;
     }
 
     public ProxyData toProxyData() {
         ProxyData ret = new ProxyData();
-        ret.setEnabled(this.isEnabled());
+        ret.setProxyRotationEnabled(this.isProxyRotationEnabled());
         ret.setHost(proxy.getHost());
         ret.setUser(proxy.getUser());
         ret.setPort(proxy.getPort());
@@ -47,7 +47,7 @@ public class ProxyInfo {
         this.proxy.setPass(proxyData.getPass());
         this.proxy.setUser(proxyData.getUser());
         this.proxy.setStatus(HTTPProxy.STATUS.valueOf(proxyData.getStatus().name()));
-        this.enabled = proxyData.isEnabled();
+        this.proxyRotationEnabled = proxyData.isProxyRotationEnabled();
     }
 
     public ProxyInfo(HTTPProxy proxy) {

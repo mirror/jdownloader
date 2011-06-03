@@ -2,7 +2,6 @@ package org.jdownloader.controlling;
 
 import java.util.ArrayList;
 
-import jd.gui.swing.jdgui.views.settings.components.LinkgrabberFilter.LinkFilter;
 
 import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;

@@ -17,16 +17,16 @@ import org.appwork.utils.net.httpconnection.HTTPProxy;
 
 public class ProxyController {
 
-    private static final ProxyController INSTANCE = new ProxyController();
+    private static final ProxyController              INSTANCE     = new ProxyController();
 
-    private LinkedList<ProxyInfo> proxies = new LinkedList<ProxyInfo>();
+    private LinkedList<ProxyInfo>                     proxies      = new LinkedList<ProxyInfo>();
 
-    private ProxyInfo defaultproxy = null;
+    private ProxyInfo                                 defaultproxy = null;
 
-    private DefaultEventSender<ProxyEvent<ProxyInfo>> eventSender = null;
+    private DefaultEventSender<ProxyEvent<ProxyInfo>> eventSender  = null;
 
-    private ProxyInfo none = null;
-    private File settingsFile = null;
+    private ProxyInfo                                 none         = null;
+    private File                                      settingsFile = null;
 
     public static final ProxyController getInstance() {
         return INSTANCE;
@@ -182,24 +182,11 @@ public class ProxyController {
      */
     public void setEnabled(ProxyInfo proxy, boolean enabled) {
         if (proxy == null) return;
-        if (proxy.isEnabled() == enabled) return;
+        if (proxy.isProxyRotationEnabled() == enabled) return;
         synchronized (proxies) {
             if (!proxies.contains(proxy)) return;
-            proxy.setEnabled(enabled);
-            boolean enableNone = true;
-            for (ProxyInfo pro : proxies) {
-                if (pro.isEnabled()) {
-                    enableNone = false;
-                    break;
-                }
-            }
-            /*
-             * if no proxy is enabled, at least the none proxy must always be
-             * enabled
-             */
-            if (enableNone) {
-                none.setEnabled(true);
-            }
+            proxy.setProxyRotationEnabled(enabled);
+
         }
         eventSender.fireEvent(new ProxyEvent<ProxyInfo>(this, ProxyEvent.Types.REFRESH, null));
     }
@@ -217,7 +204,7 @@ public class ProxyController {
                  * if only one proxy is left, then we will set none as default
                  * and enabled
                  */
-                none.setEnabled(true);
+                none.setProxyRotationEnabled(true);
                 defaultproxy = none;
             }
         }
@@ -229,7 +216,7 @@ public class ProxyController {
             final String host = plugin.getHost();
             final int maxactive = plugin.getMaxSimultanDownload(acc);
             for (ProxyInfo info : proxies) {
-                if (!info.isEnabled()) {
+                if (!info.isProxyRotationEnabled()) {
                     /* only use enabled proxies */
                     continue;
                 }
@@ -253,7 +240,7 @@ public class ProxyController {
         Long ret = null;
         synchronized (proxies) {
             for (ProxyInfo info : proxies) {
-                if (!info.isEnabled()) {
+                if (!info.isProxyRotationEnabled()) {
                     /* only use enabled proxies */
                     continue;
                 }
@@ -269,7 +256,7 @@ public class ProxyController {
         Long ret = null;
         synchronized (proxies) {
             for (ProxyInfo info : proxies) {
-                if (!info.isEnabled()) {
+                if (!info.isProxyRotationEnabled()) {
                     /* only use enabled proxies */
                     continue;
                 }
@@ -283,7 +270,7 @@ public class ProxyController {
     public boolean hasRemainingIPBlockWaittime(final String host) {
         synchronized (proxies) {
             for (ProxyInfo info : proxies) {
-                if (!info.isEnabled()) {
+                if (!info.isProxyRotationEnabled()) {
                     /* only use enabled proxies */
                     continue;
                 }
@@ -296,7 +283,7 @@ public class ProxyController {
     public boolean hasTempUnavailWaittime(final String host) {
         synchronized (proxies) {
             for (ProxyInfo info : proxies) {
-                if (!info.isEnabled()) {
+                if (!info.isProxyRotationEnabled()) {
                     /* only use enabled proxies */
                     continue;
                 }

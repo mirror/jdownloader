@@ -1,4 +1,4 @@
-package jd.gui.swing.jdgui.views.settings.components.LinkgrabberFilter;
+package jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter;
 
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
@@ -7,6 +7,8 @@ import java.util.ArrayList;
 import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
 import javax.swing.JSeparator;
+
+import org.jdownloader.controlling.LinkFilter;
 
 public class ContextMenuListener implements MouseListener {
 

@@ -635,7 +635,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "DefaultProxy" })
     String gui_column_defaultproxy();
 
-    @Default(lngs = { "en" }, values = { "Host" })
+    @Default(lngs = { "en" }, values = { "Host/IP" })
     String gui_column_host();
 
     @Default(lngs = { "en" }, values = { "Password" })
@@ -1808,14 +1808,14 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Advanced Mode (Filter is a full Regular Expression)" })
     String settings_linkgrabber_filter_columns_advanced();
 
-    @Default(lngs = { "en" }, values = { "Exclude/Include" })
+    @Default(lngs = { "en" }, values = { "Action" })
     String settings_linkgrabber_filter_columns_blackwhite();
 
-    @Default(lngs = { "en" }, values = { "Ignore" })
-    String settings_linkgrabber_filter_columns_blackwhite_exclude();
+    @Default(lngs = { "en" }, values = { "contains not" })
+    String settings_linkgrabber_filter_columns_blackwhite_contains_not();
 
-    @Default(lngs = { "en" }, values = { "Always add" })
-    String settings_linkgrabber_filter_columns_blackwhite_include();
+    @Default(lngs = { "en" }, values = { "contains" })
+    String settings_linkgrabber_filter_columns_blackwhite_contains();
 
     @Default(lngs = { "en" }, values = { "Case sensitivy (Filter is case sensitive)" })
     String settings_linkgrabber_filter_columns_case();
@@ -1826,7 +1826,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Filter" })
     String settings_linkgrabber_filter_columns_regex();
 
-    @Default(lngs = { "en" }, values = { "Type" })
+    @Default(lngs = { "en" }, values = { "Link Type" })
     String settings_linkgrabber_filter_columns_type();
 
     @Default(lngs = { "en" }, values = { "Enter any URL to do a filter test run..." })
@@ -1835,10 +1835,10 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Filename" })
     String settings_linkgrabber_filter_types_filename();
 
-    @Default(lngs = { "en" }, values = { "Plugin" })
+    @Default(lngs = { "en" }, values = { "Host" })
     String settings_linkgrabber_filter_types_plugin();
 
-    @Default(lngs = { "en" }, values = { "URL" })
+    @Default(lngs = { "en" }, values = { "Link (URL)" })
     String settings_linkgrabber_filter_types_url();
 
     @Default(lngs = { "en" }, values = { "Are you sure that you want to exit JDownloader?" })
@@ -1876,4 +1876,34 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Please enter!" })
     String userio_input_title();
+
+    @Default(lngs = { "en" }, values = { "is" })
+    String settings_linkgrabber_filter_columns_blackwhite_is();
+
+    @Default(lngs = { "en" }, values = { "is not" })
+    String settings_linkgrabber_filter_columns_blackwhite_is_not();
+
+    @Default(lngs = { "en" }, values = { "Direct (No Proxy)" })
+    String gui_column_host_no_proxy();
+
+    @Default(lngs = { "en" }, values = { "%s1 (direct)" })
+    String gui_column_host_direct(String host);
+
+    @Default(lngs = { "en" }, values = { "Direct (No Proxy)" })
+    String gui_column_proxytype_no_proxy();
+
+    @Default(lngs = { "en" }, values = { "Direct WAN IP" })
+    String gui_column_proxytype_wanip();
+
+    @Default(lngs = { "en" }, values = { "HTTP Proxy" })
+    String gui_column_proxytype_http();
+
+    @Default(lngs = { "en" }, values = { "Socks 5 Proxy" })
+    String gui_column_proxytype_socks5();
+
+    @Default(lngs = { "en" }, values = { "Use for Proxy Rotation" })
+    String gui_column_proxytype_rotation_check();
+
+    @Default(lngs = { "en" }, values = { "Set Defaultproxy here" })
+    String gui_column_proxytype_default();
 }

@@ -1,4 +1,6 @@
-package jd.gui.swing.jdgui.views.settings.components.LinkgrabberFilter;
+package jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter;
+
+import org.jdownloader.controlling.LinkFilter;
 
 import jd.gui.swing.jdgui.views.settings.panels.components.SettingsTable;
 

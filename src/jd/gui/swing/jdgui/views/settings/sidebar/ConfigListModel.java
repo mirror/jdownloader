@@ -36,7 +36,7 @@ public class ConfigListModel extends DefaultListModel {
         addElement(new DownloadControll());
 
         // addElement(new ToolbarController());
-        addElement(new jd.gui.swing.jdgui.views.settings.panels.Linkgrabber());
+        addElement(new jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.Linkgrabber());
         addElement(new ReconnectSettings());
         addElement(new ProxyConfig());
         addElement(new AccountManagerSettings());

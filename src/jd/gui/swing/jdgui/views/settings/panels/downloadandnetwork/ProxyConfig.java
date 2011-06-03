@@ -1,6 +1,5 @@
 package jd.gui.swing.jdgui.views.settings.panels.downloadandnetwork;
 
-import java.awt.Color;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
@@ -14,9 +13,8 @@ import javax.swing.ListSelectionModel;
 
 import jd.controlling.proxy.ProxyInfo;
 import jd.gui.swing.jdgui.views.settings.ConfigPanel;
+import jd.gui.swing.jdgui.views.settings.panels.components.SettingsTable;
 
-import org.appwork.utils.swing.table.ExtTable;
-import org.appwork.utils.swing.table.SelectionHighlighter;
 import org.jdownloader.gui.settings.AbstractConfigPanel;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.translate._JDT;
@@ -27,21 +25,21 @@ public class ProxyConfig extends AbstractConfigPanel {
         return _JDT._.gui_settings_proxy_title();
     }
 
-    private static final long   serialVersionUID = -521958649780869375L;
+    private static final long        serialVersionUID = -521958649780869375L;
 
-    private ExtTable<ProxyInfo> table;
+    private SettingsTable<ProxyInfo> table;
 
-    private JButton             btnAdd;
+    private JButton                  btnAdd;
 
-    private JButton             btnRemove;
+    private JButton                  btnRemove;
 
     public ProxyConfig() {
         super();
 
-        this.addHeader(getTitle(), NewTheme.I().getIcon("proxy", 32));
+        this.addHeader(getTitle(), NewTheme.I().getIcon("proxy_rotate", 32));
         this.addDescription(_JDT._.gui_settings_proxy_description());
 
-        table = new ExtTable<ProxyInfo>(new ProxyTableModel(), "proxyTable") {
+        table = new SettingsTable<ProxyInfo>(new ProxyTableModel()) {
             /**
              * 
              */
@@ -54,7 +52,7 @@ public class ProxyConfig extends AbstractConfigPanel {
             }
         };
         table.setSearchEnabled(true);
-        table.addRowHighlighter(new SelectionHighlighter(null, new Color(200, 200, 200, 80)));
+
         table.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
         table.addMouseListener(new ProxyContextMenu(table));
         JScrollPane sp = new JScrollPane(table);

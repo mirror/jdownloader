@@ -1,4 +1,4 @@
-package jd.gui.swing.jdgui.views.settings.components.LinkgrabberFilter;
+package jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter;
 
 import java.awt.Component;
 import java.util.HashMap;
@@ -13,6 +13,7 @@ import org.appwork.utils.swing.table.ExtColumn;
 import org.appwork.utils.swing.table.columns.ExtComboColumn;
 import org.appwork.utils.swing.table.columns.ExtCompoundColumn;
 import org.appwork.utils.swing.table.columns.ExtTextColumn;
+import org.jdownloader.controlling.LinkFilter;
 import org.jdownloader.gui.translate._GUI;
 
 public class FilterColumn extends ExtCompoundColumn<LinkFilter> {
@@ -39,7 +40,7 @@ public class FilterColumn extends ExtCompoundColumn<LinkFilter> {
             }
 
             @Override
-            protected String getStringValue(LinkFilter value) {
+            public String getStringValue(LinkFilter value) {
                 return value.getRegex();
             }
 
@@ -67,7 +68,7 @@ public class FilterColumn extends ExtCompoundColumn<LinkFilter> {
             }
 
             public boolean isEnabled(LinkFilter obj) {
-                return true;
+                return FilterColumn.this.isEnabled(obj);
             }
 
             @Override

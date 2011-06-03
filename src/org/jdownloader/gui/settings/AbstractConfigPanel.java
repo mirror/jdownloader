@@ -147,7 +147,7 @@ public abstract class AbstractConfigPanel extends SwitchPanel {
             return comp;
 
         } else if (comp instanceof JScrollPane) {
-            super.add(comp, "gapleft 37,spanx,growx,pushx,height 60:n:n");
+            super.add(comp, "gapleft 37,spanx,growx,pushx,height 60:n:n,pushy,growy");
             return comp;
         } else {
             super.add(comp, "growx, pushx,spanx");

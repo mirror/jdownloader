@@ -1,4 +1,4 @@
-package jd.gui.swing.jdgui.views.settings.components.LinkgrabberFilter;
+package jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter;
 
 import javax.swing.JButton;
 import javax.swing.JComponent;
@@ -33,7 +33,7 @@ public class LinkgrabberFilter extends JPanel implements SettingsComponent {
 
         txt = new JTextField();
         test = new JButton(new TestAction(this));
-        add(tb);
+
         HelpNotifier.register(txt, new HelpNotifierCallbackListener() {
 
             public void onHelpNotifyShown(JComponent c) {
@@ -46,6 +46,8 @@ public class LinkgrabberFilter extends JPanel implements SettingsComponent {
 
         }, _GUI._.settings_linkgrabber_filter_test_helpurl());
         add(new JScrollPane(table));
+        add(tb);
+
         add(txt, "split 2,growx,pushx");
 
         add(test, "shrinkx,height 22!");

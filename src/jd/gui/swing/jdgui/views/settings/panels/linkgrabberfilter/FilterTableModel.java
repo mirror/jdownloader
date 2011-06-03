@@ -1,4 +1,4 @@
-package jd.gui.swing.jdgui.views.settings.components.LinkgrabberFilter;
+package jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter;
 
 import java.awt.Component;
 import java.util.HashMap;
@@ -8,14 +8,16 @@ import javax.swing.JTable;
 import javax.swing.table.JTableHeader;
 
 import jd.HostPluginWrapper;
-import jd.gui.swing.jdgui.views.settings.components.LinkgrabberFilter.LinkFilter.Types;
 
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.table.ExtTableHeaderRenderer;
 import org.appwork.utils.swing.table.ExtTableModel;
 import org.appwork.utils.swing.table.columns.ExtCheckColumn;
 import org.appwork.utils.swing.table.columns.ExtComboColumn;
+import org.jdownloader.controlling.LinkFilter;
 import org.jdownloader.controlling.LinkFilterController;
+import org.jdownloader.controlling.LinkFilterOperator;
+import org.jdownloader.controlling.LinkFilter.Types;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 
@@ -92,51 +94,7 @@ public class FilterTableModel extends ExtTableModel<LinkFilter> {
                 object.setEnabled(value);
             }
         });
-        this.addColumn(new ExtComboColumn<LinkFilter>(_GUI._.settings_linkgrabber_filter_columns_blackwhite(), new DefaultComboBoxModel(new String[] { _GUI._.settings_linkgrabber_filter_columns_blackwhite_exclude(), _GUI._.settings_linkgrabber_filter_columns_blackwhite_include() })) {
 
-            private static final long serialVersionUID = 8475648905225363397L;
-
-            @Override
-            protected int getSelectedIndex(LinkFilter value) {
-                return value.isBlacklist() ? 0 : 1;
-            }
-
-            public boolean isEnabled(LinkFilter obj) {
-                return obj.isEnabled();
-            }
-
-            @Override
-            protected int getMaxWidth() {
-                return 90;
-            }
-
-            @Override
-            public int getMinWidth() {
-                return getMaxWidth();
-            }
-
-            @Override
-            public boolean isHidable() {
-                return false;
-            }
-
-            public boolean isSortable(LinkFilter obj) {
-                return true;
-            }
-
-            @Override
-            public boolean isEditable(LinkFilter obj) {
-                return true;
-            }
-
-            @Override
-            protected void setSelectedIndex(int value, LinkFilter object) {
-
-                object.setBlacklist(value == 0);
-
-            }
-
-        });
         String[] combo = new String[LinkFilter.Types.values().length];
         for (int i = 0; i < combo.length; i++) {
             switch (LinkFilter.Types.values()[i]) {
@@ -215,6 +173,52 @@ public class FilterTableModel extends ExtTableModel<LinkFilter> {
                     }
                 }
                 object.setType(nValue);
+
+            }
+
+        });
+
+        this.addColumn(new ExtComboColumn<LinkFilter>(_GUI._.settings_linkgrabber_filter_columns_blackwhite(), new DefaultComboBoxModel(new String[] { _GUI._.settings_linkgrabber_filter_columns_blackwhite_contains_not(), _GUI._.settings_linkgrabber_filter_columns_blackwhite_contains(), _GUI._.settings_linkgrabber_filter_columns_blackwhite_is(), _GUI._.settings_linkgrabber_filter_columns_blackwhite_is_not() })) {
+
+            private static final long serialVersionUID = 8475648905225363397L;
+
+            @Override
+            protected int getSelectedIndex(LinkFilter value) {
+                return value.getOperator().ordinal();
+            }
+
+            public boolean isEnabled(LinkFilter obj) {
+                return obj.isEnabled();
+            }
+
+            @Override
+            protected int getMaxWidth() {
+                return 90;
+            }
+
+            @Override
+            public int getMinWidth() {
+                return getMaxWidth();
+            }
+
+            @Override
+            public boolean isHidable() {
+                return false;
+            }
+
+            public boolean isSortable(LinkFilter obj) {
+                return true;
+            }
+
+            @Override
+            public boolean isEditable(LinkFilter obj) {
+                return true;
+            }
+
+            @Override
+            protected void setSelectedIndex(int value, LinkFilter object) {
+
+                object.setOperator(LinkFilterOperator.values()[value]);
 
             }
 

@@ -69,7 +69,7 @@ public abstract class DateColumn extends ExtTextColumn<PackageLinkNode> {
     }
 
     @Override
-    protected String getStringValue(PackageLinkNode value) {
+    public String getStringValue(PackageLinkNode value) {
         long dateLong = getDate(value);
         if (dateLong <= 0) return "";
         date.setTime(dateLong);

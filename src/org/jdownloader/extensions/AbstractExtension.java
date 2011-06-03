@@ -137,7 +137,7 @@ public abstract class AbstractExtension<T extends ExtensionConfigInterface> {
     }
 
     /**
-     * use {@link #setEnabled(false)} to stop the extension.
+     * use {@link #setProxyRotationEnabled(false)} to stop the extension.
      * 
      * @throws StopException
      */

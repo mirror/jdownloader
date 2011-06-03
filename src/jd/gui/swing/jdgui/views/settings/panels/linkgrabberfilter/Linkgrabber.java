@@ -14,7 +14,7 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package jd.gui.swing.jdgui.views.settings.panels;
+package jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter;
 
 import javax.swing.ImageIcon;
 import javax.swing.JTextArea;
@@ -22,7 +22,6 @@ import javax.swing.JTextArea;
 import jd.gui.swing.jdgui.views.settings.components.Checkbox;
 import jd.gui.swing.jdgui.views.settings.components.ComboBox;
 import jd.gui.swing.jdgui.views.settings.components.StateUpdateListener;
-import jd.gui.swing.jdgui.views.settings.components.LinkgrabberFilter.LinkgrabberFilter;
 
 import org.appwork.storage.config.JsonConfig;
 import org.jdownloader.controlling.LinkFilterController;
@@ -71,6 +70,7 @@ public class Linkgrabber extends AbstractConfigPanel {
 
             public void onStateUpdated() {
                 updateDescription();
+                LinkFilterController.getInstance().setBlacklist(blackOrWhite.getSelectedIndex() == 0);
             }
         });
         updateDescription();

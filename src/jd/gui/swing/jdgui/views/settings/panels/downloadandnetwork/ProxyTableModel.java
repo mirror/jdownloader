@@ -1,8 +1,11 @@
 package jd.gui.swing.jdgui.views.settings.panels.downloadandnetwork;
 
+import java.awt.Component;
 import java.util.ArrayList;
 
-import javax.swing.Icon;
+import javax.swing.DefaultComboBoxModel;
+import javax.swing.JTable;
+import javax.swing.table.JTableHeader;
 
 import jd.controlling.IOEQ;
 import jd.controlling.proxy.ProxyController;
@@ -10,61 +13,109 @@ import jd.controlling.proxy.ProxyEvent;
 import jd.controlling.proxy.ProxyInfo;
 
 import org.appwork.utils.event.DefaultEventListener;
+import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.appwork.utils.swing.EDTRunner;
+import org.appwork.utils.swing.table.ExtTableHeaderRenderer;
 import org.appwork.utils.swing.table.ExtTableModel;
 import org.appwork.utils.swing.table.columns.ExtCheckColumn;
+import org.appwork.utils.swing.table.columns.ExtComboColumn;
 import org.appwork.utils.swing.table.columns.ExtPasswordEditorColumn;
 import org.appwork.utils.swing.table.columns.ExtRadioColumn;
+import org.appwork.utils.swing.table.columns.ExtSpinnerColumn;
 import org.appwork.utils.swing.table.columns.ExtTextColumn;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 
-public class ProxyTableModel extends ExtTableModel<ProxyInfo> implements DefaultEventListener<ProxyEvent<ProxyInfo>> {
+public class ProxyTableModel extends ExtTableModel<ProxyInfo> {
 
     private static final long serialVersionUID = -5584463272737285033L;
-    private Icon              icon;
+
+    // private Icon icon;
 
     public ProxyTableModel() {
-        super("proxyTable");
-        tableData = new ArrayList<ProxyInfo>(ProxyController.getInstance().getList());
-        icon = NewTheme.I().getIcon("proxy", 20);
-        ProxyController.getInstance().getEventSender().addListener(this);
+        super("proxyTable2");
+        // icon = NewTheme.I().getIcon("proxy", 20);
+
+        fill();
+        ProxyController.getInstance().getEventSender().addListener(new DefaultEventListener<ProxyEvent<ProxyInfo>>() {
+
+            public void onEvent(ProxyEvent<ProxyInfo> event) {
+                fill();
+            }
+        });
+    }
+
+    private void fill() {
+
+        new EDTRunner() {
+
+            @Override
+            protected void runInEDT() {
+                tableData = new ArrayList<ProxyInfo>(ProxyController.getInstance().getList());
+                fireTableStructureChanged();
+            }
+        };
     }
 
     @Override
     protected void initColumns() {
-        this.addColumn(new ExtCheckColumn<ProxyInfo>(_GUI._.gui_column_use(), this) {
 
-            private static final long serialVersionUID = 6843580898685333774L;
+        DefaultComboBoxModel model = new DefaultComboBoxModel(new String[] { _GUI._.gui_column_proxytype_wanip(), _GUI._.gui_column_proxytype_http(), _GUI._.gui_column_proxytype_socks5() });
+        this.addColumn(new ExtComboColumn<ProxyInfo>(_GUI._.gui_column_proxytype(), model) {
 
             @Override
             public boolean isEditable(ProxyInfo obj) {
+
+                switch (obj.getProxy().getType()) {
+
+                case NONE:
+                    return false;
+
+                default:
+                    return true;
+                }
+            }
+
+            @Override
+            public int getDefaultWidth() {
+                return 200;
+            }
+
+            @Override
+            public int getMinWidth() {
+                return 100;
+            }
+
+            @Override
+            public String getStringValue(ProxyInfo value) {
+                return _GUI._.gui_column_proxytype_no_proxy();
+            }
+
+            @Override
+            public boolean isEnabled(ProxyInfo obj) {
                 return true;
             }
 
-            @Override
-            protected boolean getBooleanValue(ProxyInfo value) {
-                return value.isEnabled();
-            }
+            /**
+             * 
+             */
+            private static final long serialVersionUID = 1L;
 
             @Override
-            protected void setBooleanValue(final boolean value, final ProxyInfo object) {
-                IOEQ.add(new Runnable() {
-                    public void run() {
-                        ProxyController.getInstance().setEnabled(object, value);
-                    }
-                });
-            }
-        });
-        this.addColumn(new ExtTextColumn<ProxyInfo>(_GUI._.gui_column_host(), this) {
+            protected int getSelectedIndex(ProxyInfo value) {
+                switch (value.getProxy().getType()) {
+                case DIRECT:
+                    return 0;
+                case HTTP:
+                    return 1;
+                case NONE:
+                    return -1;
+                case SOCKS5:
+                    return 2;
+                default:
+                    throw new RuntimeException("Unknown Proxy Type");
+                }
 
-            private static final long serialVersionUID = -7209180150340921804L;
-
-            @Override
-            protected String getStringValue(ProxyInfo value) {
-                if (value.getProxy().isDirect()) return "DIRECT";
-                if (value.getProxy().isNone()) return "NONE";
-                return value.getProxy().getHost();
             }
 
             @Override
@@ -72,7 +123,28 @@ public class ProxyTableModel extends ExtTableModel<ProxyInfo> implements Default
                 return false;
             }
 
+            @Override
+            protected void setSelectedIndex(int value, ProxyInfo object) {
+                switch (value) {
+                // case 0:
+                // object.getProxy().setType(HTTPProxy.TYPE.NONE);
+                // return;
+                case 0:
+                    object.getProxy().setType(HTTPProxy.TYPE.DIRECT);
+                    return;
+                case 1:
+                    object.getProxy().setType(HTTPProxy.TYPE.HTTP);
+                    return;
+                case 2:
+                    object.getProxy().setType(HTTPProxy.TYPE.SOCKS5);
+                    return;
+                default:
+                    throw new RuntimeException("Unknown Proxy Type");
+                }
+            }
         });
+
+        this.addColumn(new HostColumn());
         this.addColumn(new ExtTextColumn<ProxyInfo>(_GUI._.gui_column_user(), this) {
 
             private static final long serialVersionUID = -7209180150340921804L;
@@ -84,13 +156,18 @@ public class ProxyTableModel extends ExtTableModel<ProxyInfo> implements Default
             }
 
             @Override
+            public boolean isHidable() {
+                return false;
+            }
+
+            @Override
             protected void setStringValue(String value, ProxyInfo object) {
                 if (object.getProxy().isLocal()) return;
                 object.getProxy().setUser(value);
             }
 
             @Override
-            protected String getStringValue(ProxyInfo value) {
+            public String getStringValue(ProxyInfo value) {
                 if (value.getProxy().isLocal()) return "";
                 return value.getProxy().getUser();
             }
@@ -107,15 +184,21 @@ public class ProxyTableModel extends ExtTableModel<ProxyInfo> implements Default
             }
 
             @Override
+            public boolean isHidable() {
+                return false;
+            }
+
+            @Override
             protected void setStringValue(String value, ProxyInfo object) {
                 if (object.getProxy().isLocal()) return;
                 object.getProxy().setPass(value);
             }
 
             @Override
-            protected String getStringValue(ProxyInfo value) {
+            public String getStringValue(ProxyInfo value) {
+
                 if (value.getProxy().isLocal()) return "";
-                return "******";
+                return super.getStringValue(value);
             }
 
             @Override
@@ -125,16 +208,34 @@ public class ProxyTableModel extends ExtTableModel<ProxyInfo> implements Default
             }
 
         });
-        this.addColumn(new ExtTextColumn<ProxyInfo>(_GUI._.gui_column_port(), this) {
-
-            private static final long serialVersionUID = -7209180150340921804L;
+        this.addColumn(new ExtSpinnerColumn<ProxyInfo>(_GUI._.gui_column_port()) {
 
             @Override
-            protected String getStringValue(ProxyInfo value) {
+            protected Number getNumber(ProxyInfo value) {
+                return value.getProxy().getPort();
+            }
+
+            @Override
+            public boolean isHidable() {
+                return false;
+            }
+
+            @Override
+            public boolean isEditable(final ProxyInfo obj) {
+                if (obj.getProxy().isLocal()) return false;
+                return true;
+            }
+
+            @Override
+            protected void setNumberValue(Number value, ProxyInfo object) {
+                object.getProxy().setPort(value.intValue());
+            }
+
+            @Override
+            public String getStringValue(ProxyInfo value) {
                 if (value.getProxy().isLocal()) return "";
                 return value.getProxy().getPort() + "";
             }
-
         });
 
         this.addColumn(new ExtTextColumn<ProxyInfo>(_GUI._.gui_column_proxystatus(), this) {
@@ -142,32 +243,107 @@ public class ProxyTableModel extends ExtTableModel<ProxyInfo> implements Default
             private static final long serialVersionUID = -7209180150340921804L;
 
             @Override
-            protected String getStringValue(ProxyInfo value) {
+            public boolean isHidable() {
+                return false;
+            }
+
+            @Override
+            public String getStringValue(ProxyInfo value) {
                 return value.getProxy().getStatus().name();
             }
         });
-        this.addColumn(new ExtTextColumn<ProxyInfo>(_GUI._.gui_column_proxytype(), this) {
+        this.addColumn(new ExtCheckColumn<ProxyInfo>(_GUI._.gui_column_use(), this) {
 
-            private static final long serialVersionUID = -7209180150340921804L;
+            private static final long serialVersionUID = -4667150369226691276L;
 
-            @Override
-            protected String getStringValue(ProxyInfo value) {
-                return value.getProxy().getType().name();
+            public ExtTableHeaderRenderer getHeaderRenderer(final JTableHeader jTableHeader) {
+
+                final ExtTableHeaderRenderer ret = new ExtTableHeaderRenderer(this, jTableHeader) {
+
+                    private static final long serialVersionUID = 3938290423337000265L;
+
+                    @Override
+                    public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+                        super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+                        setIcon(NewTheme.I().getIcon("proxy_rotate", 14));
+                        // defaultProxy
+                        setHorizontalAlignment(CENTER);
+                        setText(null);
+                        setToolTipText(_GUI._.gui_column_proxytype_rotation_check());
+                        return this;
+                    }
+
+                };
+
+                return ret;
             }
 
             @Override
-            protected Icon getIcon(ProxyInfo value) {
-                return icon;
+            protected int getMaxWidth() {
+                return 30;
+            }
+
+            @Override
+            public boolean isHidable() {
+                return false;
+            }
+
+            @Override
+            protected boolean getBooleanValue(ProxyInfo value) {
+                return value.isProxyRotationEnabled();
+            }
+
+            @Override
+            public boolean isEditable(ProxyInfo obj) {
+                return true;
+            }
+
+            @Override
+            protected void setBooleanValue(final boolean value, final ProxyInfo object) {
+                IOEQ.add(new Runnable() {
+                    public void run() {
+                        ProxyController.getInstance().setEnabled(object, value);
+                    }
+                });
             }
         });
-
         this.addColumn(new ExtRadioColumn<ProxyInfo>(_GUI._.gui_column_defaultproxy(), this) {
+            public ExtTableHeaderRenderer getHeaderRenderer(final JTableHeader jTableHeader) {
+
+                final ExtTableHeaderRenderer ret = new ExtTableHeaderRenderer(this, jTableHeader) {
+
+                    private static final long serialVersionUID = 3938290423337000265L;
+
+                    @Override
+                    public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+                        super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+                        setIcon(NewTheme.I().getIcon("defaultProxy", 14));//
+                        setHorizontalAlignment(CENTER);
+                        setText(null);
+                        setToolTipText(_GUI._.gui_column_proxytype_default());
+                        return this;
+                    }
+
+                };
+
+                return ret;
+            }
+
+            @Override
+            protected int getMaxWidth() {
+                return 30;
+            }
 
             private static final long serialVersionUID = 6843580898685333774L;
 
             @Override
             public boolean isEditable(ProxyInfo obj) {
                 return true;
+            }
+
+            @Override
+            public boolean isHidable() {
+                return false;
             }
 
             @Override
@@ -184,24 +360,5 @@ public class ProxyTableModel extends ExtTableModel<ProxyInfo> implements Default
                 });
             }
         });
-    }
-
-    public void onEvent(ProxyEvent<ProxyInfo> event) {
-        if (event.getType().equals(ProxyEvent.Types.ADDED) || event.getType().equals(ProxyEvent.Types.REMOVED)) {
-            new EDTRunner() {
-                @Override
-                protected void runInEDT() {
-                    tableData = new ArrayList<ProxyInfo>(ProxyController.getInstance().getList());
-                    ProxyTableModel.this.fireTableStructureChanged();
-                }
-            };
-        } else {
-            new EDTRunner() {
-                @Override
-                protected void runInEDT() {
-                    ProxyTableModel.this.fireTableStructureChanged();
-                }
-            };
-        }
     }
 }

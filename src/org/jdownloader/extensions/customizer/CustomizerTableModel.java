@@ -45,7 +45,7 @@ public class CustomizerTableModel extends ExtTableModel<CustomizeSetting> {
             }
 
             @Override
-            protected String getStringValue(CustomizeSetting value) {
+            public String getStringValue(CustomizeSetting value) {
                 return value.getName();
             }
 
@@ -95,7 +95,7 @@ public class CustomizerTableModel extends ExtTableModel<CustomizeSetting> {
             }
 
             @Override
-            protected String getStringValue(CustomizeSetting value) {
+            public String getStringValue(CustomizeSetting value) {
                 return value.getRegex();
             }
 
@@ -140,7 +140,7 @@ public class CustomizerTableModel extends ExtTableModel<CustomizeSetting> {
             }
 
             @Override
-            protected String getStringValue(CustomizeSetting value) {
+            public String getStringValue(CustomizeSetting value) {
                 return value.getPackageName();
             }
 
@@ -226,7 +226,7 @@ public class CustomizerTableModel extends ExtTableModel<CustomizeSetting> {
             }
 
             @Override
-            protected String getStringValue(CustomizeSetting value) {
+            public String getStringValue(CustomizeSetting value) {
                 return value.getPassword();
             }
 

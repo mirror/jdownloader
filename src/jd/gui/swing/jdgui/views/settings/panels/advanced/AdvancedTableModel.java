@@ -43,7 +43,7 @@ public class AdvancedTableModel extends ExtTableModel<AdvancedConfigEntry> imple
             }
 
             @Override
-            protected String getStringValue(AdvancedConfigEntry value) {
+            public String getStringValue(AdvancedConfigEntry value) {
                 return value.getKey();
             }
         });
@@ -57,7 +57,7 @@ public class AdvancedTableModel extends ExtTableModel<AdvancedConfigEntry> imple
             }
 
             @Override
-            protected String getStringValue(AdvancedConfigEntry value) {
+            public String getStringValue(AdvancedConfigEntry value) {
                 return value.getTypeString();
             }
         });

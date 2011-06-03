@@ -1,10 +1,10 @@
-package jd.gui.swing.jdgui.views.settings.components.LinkgrabberFilter;
+package org.jdownloader.controlling;
 
 import org.appwork.storage.Storable;
 
 public class LinkFilter implements Storable {
 
-    enum Types {
+    public enum Types {
         URL, PLUGIN, FILENAME
 
     }
@@ -64,8 +64,9 @@ public class LinkFilter implements Storable {
         this.enabled = enabled;
     }
 
-    private Types  type;
-    private String regex;
+    private Types              type;
+    private String             regex;
+    private LinkFilterOperator operator = LinkFilterOperator.CONTAINS;
 
     public LinkFilter(boolean enabled, Types type, String regex) {
         this.enabled = enabled;
@@ -75,6 +76,14 @@ public class LinkFilter implements Storable {
 
     public boolean isEnabled() {
         return enabled;
+    }
+
+    public void setOperator(LinkFilterOperator linkFilterOperator) {
+        operator = linkFilterOperator;
+    }
+
+    public LinkFilterOperator getOperator() {
+        return operator;
     }
 
 }

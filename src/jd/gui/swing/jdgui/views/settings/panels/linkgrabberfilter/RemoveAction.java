@@ -1,4 +1,4 @@
-package jd.gui.swing.jdgui.views.settings.components.LinkgrabberFilter;
+package jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter;
 
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import javax.swing.AbstractAction;
 
 import org.appwork.utils.swing.table.utils.MinimumSelectionObserver;
+import org.jdownloader.controlling.LinkFilter;
 import org.jdownloader.controlling.LinkFilterController;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;

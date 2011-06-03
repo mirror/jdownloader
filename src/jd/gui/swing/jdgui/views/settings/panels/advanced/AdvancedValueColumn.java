@@ -57,7 +57,7 @@ public class AdvancedValueColumn extends ExtCompoundColumn<AdvancedConfigEntry> 
             }
 
             @Override
-            protected String getStringValue(AdvancedConfigEntry value) {
+            public String getStringValue(AdvancedConfigEntry value) {
                 return value.getValue() + "";
             }
 
@@ -85,7 +85,7 @@ public class AdvancedValueColumn extends ExtCompoundColumn<AdvancedConfigEntry> 
             }
 
             @Override
-            protected String getStringValue(AdvancedConfigEntry value) {
+            public String getStringValue(AdvancedConfigEntry value) {
                 return JSonStorage.toString(value.getValue());
             }
 
@@ -185,7 +185,7 @@ public class AdvancedValueColumn extends ExtCompoundColumn<AdvancedConfigEntry> 
             }
 
             @Override
-            protected String getStringValue(AdvancedConfigEntry value) {
+            public String getStringValue(AdvancedConfigEntry value) {
                 return value.getValue() + "";
             }
 

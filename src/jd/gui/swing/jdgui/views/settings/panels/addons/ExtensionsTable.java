@@ -159,7 +159,7 @@ public class ExtensionsTable extends SettingsTable<AbstractExtensionWrapper> imp
                 }
 
                 @Override
-                protected String getStringValue(AbstractExtensionWrapper value) {
+                public String getStringValue(AbstractExtensionWrapper value) {
                     return value.getName();
                 }
 

@@ -146,7 +146,7 @@ public class AuthTableModel extends ExtTableModel<AuthenticationInfo> {
             }
 
             @Override
-            protected String getStringValue(AuthenticationInfo value) {
+            public String getStringValue(AuthenticationInfo value) {
 
                 return value.getHostmask();
 
@@ -177,7 +177,7 @@ public class AuthTableModel extends ExtTableModel<AuthenticationInfo> {
             }
 
             @Override
-            protected String getStringValue(AuthenticationInfo value) {
+            public String getStringValue(AuthenticationInfo value) {
                 return value.getUsername();
             }
 

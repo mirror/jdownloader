@@ -137,7 +137,7 @@ public class PremiumAccountTableModel extends ExtTableModel<Account> {
             }
 
             @Override
-            protected String getStringValue(Account value) {
+            public String getStringValue(Account value) {
                 if (getWidth() < 60) return "";
 
                 return value.getHoster();
@@ -180,7 +180,7 @@ public class PremiumAccountTableModel extends ExtTableModel<Account> {
             }
 
             @Override
-            protected String getStringValue(Account value) {
+            public String getStringValue(Account value) {
                 return value.getUser();
             }
         });
