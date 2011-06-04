@@ -155,6 +155,8 @@ public class FilePackage extends Property implements Serializable, PackageLinkNo
         downloadDirectory = org.appwork.storage.config.JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder();
         controlledLinks = new LinkedList<DownloadLink>();
         created = System.currentTimeMillis();
+        /* till refactoring is complete */
+        this.downloadLinkList = new ArrayList<DownloadLink>();
     }
 
     /**
