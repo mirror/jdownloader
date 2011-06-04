@@ -42,25 +42,25 @@ public class VideoBbCom extends PluginForHost {
     public VideoBbCom(final PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.videobb.com/premium.php");
-        this.setStartIntervall(3000l);
+        setStartIntervall(3000l);
     }
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        this.setBrowserExclusive();
+        setBrowserExclusive();
         try {
-            this.login(account);
+            login(account);
         } catch (final PluginException e) {
             account.setValid(false);
             return ai;
         }
-        if (this.isPremium()) {
-            final String expire = this.br.getRegex(">Premium<.*?until (.*?)</span").getMatch(0);
+        if (isPremium()) {
+            final String expire = br.getRegex(">Premium<.*?until (.*?)</span").getMatch(0);
             if (expire != null) {
-                ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd MMM yyyy", null) + (1000l * 60 * 60 * 24));
+                ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd MMM yyyy", null) + 1000l * 60 * 60 * 24);
             } else {
-                this.logger.warning("Couldn't get the expire date, stopping premium!");
+                logger.warning("Couldn't get the expire date, stopping premium!");
                 ai.setExpired(true);
                 account.setValid(false);
                 return ai;
@@ -78,6 +78,21 @@ public class VideoBbCom extends PluginForHost {
         return "http://www.videobb.com/terms.php";
     }
 
+    private String getFinalLink(final DownloadLink downloadLink, final String token) throws IOException {
+        final String link = downloadLink.getDownloadURL();
+        br.getPage(link);
+        final String setting = Encoding.Base64Decode(br.getRegex("<param value=\"setting=(.*?)\"").getMatch(0));
+        if (setting == null || !setting.contains("http://")) { return null; }
+        br.getPage(setting);
+        if (!br.containsHTML("token")) { return null; }
+        String dllink = Encoding.Base64Decode(br.getRegex(token + "\":\"(.*?)\",").getMatch(0));
+        if (dllink == null) { return null; }
+        if (isPremium()) {
+            dllink = dllink + "&d=" + link.replaceFirst(":", Encoding.urlEncode(":"));
+        }
+        return dllink;
+    }
+
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return -1;
@@ -85,45 +100,59 @@ public class VideoBbCom extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
-        this.setBrowserExclusive();
-        this.br.getPage(downloadLink.getDownloadURL());
-        final String setting = Encoding.Base64Decode(this.br.getRegex("<param value=\"setting=(.*?)\"").getMatch(0));
-        if ((setting == null) || !setting.contains("http://")) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-        this.br.getPage(setting);
-        if (!this.br.containsHTML("token")) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-        final String dllink = Encoding.Base64Decode(this.br.getRegex("token1\":\"(.*?)\",").getMatch(0));
-        this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, dllink, false, 1);
-        if (!(this.dl.getConnection().isContentDisposition())) {
-            this.br.followConnection();
+        requestFileInformation(downloadLink);
+        final String dllink = getFinalLink(downloadLink, "token1");
+        if (dllink == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
+        if (!dl.getConnection().isContentDisposition()) {
+            br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        this.dl.setFilenameFix(true);
-        this.dl.startDownload();
+        dl.setFilenameFix(true);
+        dl.startDownload();
     }
 
     @Override
     public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
-        this.requestFileInformation(downloadLink);
-        this.login(account);
-        this.br.forceDebug(true);
-        final String link = downloadLink.getDownloadURL();
-        if (link == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-        this.br.setFollowRedirects(true);
-        this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, link, true, 1);
-        if (this.dl.getConnection().getContentType().contains("html")) {
-            this.logger.warning("The final dllink seems not to be a file!");
-            this.br.followConnection();
-            if (this.br.containsHTML("(<title>404 Not Found</title>|<h1>404 Not Found</h1>)")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 10 * 60 * 1000l); }
+        requestFileInformation(downloadLink);
+        login(account);
+        final String dllink = getFinalLink(downloadLink, "token3");
+        if (dllink == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
+        if (dl.getConnection().getContentType().contains("html")) {
+            logger.warning("The final dllink seems not to be a file!");
+            br.followConnection();
+            if (br.containsHTML("(<title>404 Not Found</title>|<h1>404 Not Found</h1>)")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 10 * 60 * 1000l); }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        this.dl.startDownload();
+        dl.startDownload();
     }
 
     public boolean isPremium() throws IOException {
-        this.br.getPage(VideoBbCom.MAINPAGE + "my_profile.php");
-        String type = br.getRegex("Account Type:<.*?(>Premium<)").getMatch(0);
+        br.getPage(VideoBbCom.MAINPAGE + "my_profile.php");
+        final String type = br.getRegex("Account Type:<.*?(>Premium<)").getMatch(0);
         if (type != null) { return true; }
         return false;
+    }
+
+    public void login(final Account account) throws Exception {
+        synchronized (VideoBbCom.LOCK) {
+            setBrowserExclusive();
+            br.forceDebug(true);
+            prepareBrowser(br);
+            br.setFollowRedirects(true);
+            final String user = Encoding.urlEncode(account.getUser());
+            final String pass = Encoding.urlEncode(account.getPass());
+            br.getPage("http://www.videobb.com/index.php");
+            br.postPage(VideoBbCom.MAINPAGE + "login.php", "login_username=" + user + "&login_password=" + pass);
+            final String cookie = br.getCookie("http://www.videobb.com", "P_sk");
+            if (cookie == null || "deleted".equalsIgnoreCase(cookie)) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE); }
+            if (br.containsHTML("The username or password you entered is incorrect")) {
+                final String error = br.getRegex("msgicon_error\">(.*?)</div>").getMatch(0);
+                logger.warning("Error: " + error);
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
+        }
     }
 
     private void prepareBrowser(final Browser br) {
@@ -135,37 +164,18 @@ public class VideoBbCom extends PluginForHost {
             br.getHeaders().put("Accept-Language", "en-us,de;q=0.7,en;q=0.3");
             br.getHeaders().put("Pragma", null);
             br.getHeaders().put("Cache-Control", null);
-        } catch (Throwable e) {
+        } catch (final Throwable e) {
             /* setCookie throws exception in 09580 */
-        }
-    }
-
-    public void login(final Account account) throws Exception {
-        synchronized (VideoBbCom.LOCK) {
-            this.setBrowserExclusive();
-            this.br.forceDebug(true);
-            prepareBrowser(br);
-            this.br.setFollowRedirects(true);
-            final String user = Encoding.urlEncode(account.getUser());
-            final String pass = Encoding.urlEncode(account.getPass());
-            br.getPage("http://www.videobb.com/index.php");
-            this.br.postPage(VideoBbCom.MAINPAGE + "login.php", "login_username=" + user + "&login_password=" + pass);
-            String cookie = br.getCookie("http://www.videobb.com", "P_sk");
-            if (cookie == null || "deleted".equalsIgnoreCase(cookie)) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE); }
-            if (this.br.containsHTML("The username or password you entered is incorrect")) {
-                final String error = this.br.getRegex("msgicon_error\">(.*?)</div>").getMatch(0);
-                this.logger.warning("Error: " + error);
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-            }
         }
     }
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         try {
-            this.br.getPage(downloadLink.getDownloadURL());
-            if (this.br.containsHTML(">Video is not available</font>")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-            final String filename = this.br.getRegex("content=\"videobb - (.*?)\"  name=\"title\"").getMatch(0);
+            setBrowserExclusive();
+            br.getPage(downloadLink.getDownloadURL());
+            if (br.containsHTML(">Video is not available</font>")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+            final String filename = br.getRegex("content=\"videobb - (.*?)\"  name=\"title\"").getMatch(0);
             if (filename == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
             downloadLink.setName(filename.trim());
             return AvailableStatus.TRUE;
