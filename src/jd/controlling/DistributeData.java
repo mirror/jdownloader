@@ -228,9 +228,7 @@ public class DistributeData extends Thread {
                                          * forward parent filepackage if set and
                                          * child does not have custom one
                                          */
-                                        if (!link.isDefaultFilePackage() && dLink.isDefaultFilePackage()) {
-                                            link.getFilePackage().add(dLink);
-                                        }
+                                        link.getFilePackage().add(dLink);
                                     }
 
                                     synchronized (newdecryptedLinks) {
@@ -375,7 +373,7 @@ public class DistributeData extends Thread {
         for (final HostPluginWrapper pHost : pHostAll) {
             try {
                 if (pHost.canHandle(decrypted.getDownloadURL())) {
-                    final ArrayList<DownloadLink> dLinks = pHost.getPlugin().getDownloadLinks(decrypted.getDownloadURL(), decrypted.isDefaultFilePackage() ? null : decrypted.getFilePackage());
+                    final ArrayList<DownloadLink> dLinks = pHost.getPlugin().getDownloadLinks(decrypted.getDownloadURL(), decrypted.getFilePackage());
                     gothost = true;
                     if (!pHost.isEnabled()) {
                         break;

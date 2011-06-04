@@ -72,7 +72,7 @@ public class HosterColumn extends JDTableColumn {
     public Component myTableCellRendererComponent(JDTableModel table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
         if (value instanceof FilePackage) {
             fp = (FilePackage) value;
-            jlr.setText(fp.getHoster());
+            jlr.setText("GONE");
             return jlr;
         } else {
             dLink = (DownloadLink) value;

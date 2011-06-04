@@ -85,7 +85,15 @@ public class RAFDownload extends DownloadInterface {
                      */
                     String hashType = null;
                     boolean success = false;
-                    DownloadLink sfv = downloadLink.getFilePackage().getSFV();
+                    DownloadLink sfv = null;
+                    synchronized (downloadLink.getFilePackage()) {
+                        for (DownloadLink dl : downloadLink.getFilePackage().getControlledDownloadLinks()) {
+                            if (dl.getFileOutput().toLowerCase().endsWith(".sfv")) {
+                                sfv = dl;
+                                break;
+                            }
+                        }
+                    }
                     if (sfv != null && sfv.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
                         downloadLink.getLinkStatus().setStatusText(_JDT._.system_download_doCRC2("CRC32"));
                         downloadLink.requestGuiUpdate();

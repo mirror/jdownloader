@@ -28,6 +28,7 @@ import jd.controlling.PasswordListController;
 import jd.controlling.ProgressController;
 import jd.nutils.jobber.JDRunnable;
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 
 import org.jdownloader.extensions.extraction.translate.T;
 
@@ -119,9 +120,9 @@ public class ExtractionController extends Thread implements JDRunnable {
                     extractor.close();
                     return;
                 }
-
-                passwordList.add(archive.getFirstDownloadLink().getFilePackage().getPassword());
-                passwordList.addAll(archive.getFirstDownloadLink().getFilePackage().getPasswordAuto());
+                String pw = archive.getFirstDownloadLink().getFilePackage().getPassword();
+                if (pw != null) passwordList.add(pw);
+                passwordList.addAll(FilePackage.getPasswordAuto(archive.getFirstDownloadLink().getFilePackage()));
                 String dlpw = archive.getFirstDownloadLink().getStringProperty("pass", null);
                 if (dlpw != null) passwordList.add(dlpw);
                 passwordList.addAll(PasswordListController.getInstance().getPasswordList());

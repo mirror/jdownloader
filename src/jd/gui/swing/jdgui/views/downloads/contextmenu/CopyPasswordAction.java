@@ -48,6 +48,7 @@ public class CopyPasswordAction extends ContextMenuAction {
         String pw;
         for (DownloadLink link : links) {
             pw = link.getFilePackage().getPassword();
+            if (pw == null) continue;
             if (!list.contains(pw) && pw.length() > 0) {
                 if (list.size() > 0) sb.append("\r\n");
                 list.add(pw);

@@ -28,7 +28,6 @@ import jd.gui.swing.jdgui.views.downloads.columns.ProxyColumn;
 import jd.gui.swing.jdgui.views.downloads.columns.RemainingColumn;
 import jd.gui.swing.jdgui.views.downloads.columns.SizeColumn;
 import jd.gui.swing.jdgui.views.downloads.columns.StatusColumn;
-import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
 import org.jdownloader.gui.translate._GUI;
@@ -60,8 +59,8 @@ public class DownloadJTableModel extends JDTableModel {
             for (FilePackage fp : DownloadController.getInstance().getPackages()) {
                 list.add(fp);
                 if (fp.isExpanded()) {
-                    for (DownloadLink dl : fp.getControlledDownloadLinks()) {
-                        list.add(dl);
+                    synchronized (fp) {
+                        list.addAll(fp.getControlledDownloadLinks());
                     }
                 }
             }

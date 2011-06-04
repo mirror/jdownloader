@@ -271,9 +271,11 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
             ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
             synchronized (DownloadController.ACCESSLOCK) {
                 for (FilePackage fp : fps) {
-                    for (DownloadLink l : fp.getControlledDownloadLinks()) {
-                        if (l.getLinkStatus().isFinished()) {
-                            links.add(l);
+                    synchronized (fp) {
+                        for (DownloadLink l : fp.getControlledDownloadLinks()) {
+                            if (l.getLinkStatus().isFinished()) {
+                                links.add(l);
+                            }
                         }
                     }
                 }

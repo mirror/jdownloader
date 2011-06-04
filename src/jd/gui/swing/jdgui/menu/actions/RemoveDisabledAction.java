@@ -65,8 +65,10 @@ public class RemoveDisabledAction extends ToolBarAction {
                     LinkedList<DownloadLink> downloadstodelete = new LinkedList<DownloadLink>();
                     synchronized (DownloadController.ACCESSLOCK) {
                         for (FilePackage fp : dlc.getPackages()) {
-                            for (DownloadLink dl : fp.getControlledDownloadLinks()) {
-                                if (!dl.isEnabled()) downloadstodelete.add(dl);
+                            synchronized (fp) {
+                                for (DownloadLink dl : fp.getControlledDownloadLinks()) {
+                                    if (!dl.isEnabled()) downloadstodelete.add(dl);
+                                }
                             }
                         }
                     }

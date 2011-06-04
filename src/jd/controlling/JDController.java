@@ -568,7 +568,8 @@ public class JDController implements ControlListener {
                         }
                         String comment = filePackage.getComment();
                         if (comment == null) comment = "";
-                        final String password = filePackage.getPassword();
+                        String password = filePackage.getPassword();
+                        if (password == null) password = "";
                         JDFlags.hasAllFlags(UserIO.getInstance().requestConfirmDialog(UserIO.NO_COUNTDOWN | UserIO.STYLE_HTML, _JDT._.container_message_title(), String.format(html, JDIO.getFileExtension(file).toLowerCase(), _JDT._.container_message_title(), _JDT._.container_message_uploaded(), uploader, _JDT._.container_message_created(), app, _JDT._.container_message_comment(), comment, _JDT._.container_message_password(), password)), UserIO.RETURN_OK);
 
                     }

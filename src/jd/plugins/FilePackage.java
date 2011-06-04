@@ -16,7 +16,6 @@
 
 package jd.plugins;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -26,7 +25,6 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.config.Property;
 import jd.controlling.DownloadControllerInterface;
@@ -53,14 +51,39 @@ public class FilePackage extends Property implements Serializable, PackageLinkNo
     private String                       downloadDirectory;
 
     /* keep for comp. with old stable */
+    @Deprecated
     private ArrayList<DownloadLink>      downloadLinkList;
     private transient static FilePackage FP               = null;
 
     static {
-        FP = new FilePackage();
+        FP = new FilePackage() {
+            /**
+             * 
+             */
+            private static final long serialVersionUID = 1L;
+
+            @Override
+            public void _add(DownloadLink... links) {
+            }
+
+            @Override
+            public LinkedList<DownloadLink> getControlledDownloadLinks() {
+                return new LinkedList<DownloadLink>();
+            }
+
+            @Override
+            public void remove(DownloadLink... links) {
+            }
+        };
         FP.setName(_JDT._.controller_packages_defaultname());
     }
 
+    /**
+     * returns defaultFilePackage, used only to avoid NullPointerExceptions, you
+     * cannot add/remove links in it
+     * 
+     * @return
+     */
     public static FilePackage getDefaultFilePackage() {
         return FP;
     }
@@ -91,7 +114,8 @@ public class FilePackage extends Property implements Serializable, PackageLinkNo
     /* no longer in use, pay attention when removing */
     @Deprecated
     private Integer                               links_Disabled;
-
+    /* no longer in use, pay attention when removing */
+    @Deprecated
     private String                                ListHoster           = null;
 
     private long                                  created              = -1l;
@@ -100,13 +124,11 @@ public class FilePackage extends Property implements Serializable, PackageLinkNo
 
     private transient boolean                     isExpanded           = false;
 
-    private transient int                         listOrderID          = 0;
+    private transient int                         listOrderID          = -1;
 
     private transient DownloadControllerInterface controlledby         = null;
 
     private transient LinkedList<DownloadLink>    controlledLinks      = null;
-
-    private transient AtomicInteger               disabledLinks        = new AtomicInteger(0);
 
     /**
      * @return the controlledby
@@ -157,6 +179,7 @@ public class FilePackage extends Property implements Serializable, PackageLinkNo
         created = System.currentTimeMillis();
         /* till refactoring is complete */
         this.downloadLinkList = new ArrayList<DownloadLink>();
+        setName(null);
     }
 
     /**
@@ -170,7 +193,6 @@ public class FilePackage extends Property implements Serializable, PackageLinkNo
     private void readObject(ObjectInputStream stream) throws IOException, ClassNotFoundException {
         /* deserialize object and then fill other stuff(transient..) */
         stream.defaultReadObject();
-        disabledLinks = new AtomicInteger(0);
         isExpanded = getBooleanProperty(DownloadTable.PROPERTY_EXPANDED, false);
         /* convert ArrayList to LinkedList */
         if (downloadLinkList != null) {
@@ -242,46 +264,6 @@ public class FilePackage extends Property implements Serializable, PackageLinkNo
         _add(link);
     }
 
-    public int add(int index, DownloadLink link, int repos) {
-
-        boolean newadded = false;
-
-        if (downloadLinkList.contains(link)) {
-            int posa = this.indexOf(link);
-            if (posa <= index) {
-                index -= ++repos;
-            }
-            downloadLinkList.remove(link);
-            if (index > downloadLinkList.size() - 1) {
-                downloadLinkList.add(link);
-            } else if (index < 0) {
-                downloadLinkList.add(0, link);
-            } else
-                downloadLinkList.add(index, link);
-        } else {
-            if (index > downloadLinkList.size() - 1) {
-                downloadLinkList.add(link);
-            } else if (index < 0) {
-                downloadLinkList.add(0, link);
-            } else
-                downloadLinkList.add(index, link);
-            newadded = true;
-        }
-
-        if (newadded) {
-            if (!link.isEnabled()) synchronized (links_Disabled) {
-                links_Disabled++;
-            }
-            // broadcaster.fireEvent(new FilePackageEvent(this,
-            // FilePackageEvent.DOWNLOADLINK_ADDED, link));
-        } else {
-            // broadcaster.fireEvent(new FilePackageEvent(this,
-            // FilePackageEvent.FILEPACKAGE_UPDATE));
-        }
-
-        return repos;
-    }
-
     /**
      * add the given DownloadLinks to this FilePackage. delegates the call to
      * the DownloadControllerInterface if it is set
@@ -302,11 +284,12 @@ public class FilePackage extends Property implements Serializable, PackageLinkNo
     public void _add(DownloadLink... links) {
         if (links == null || links.length == 0) return;
         if (this.controlledby == null) {
-            for (DownloadLink link : links) {
-                if (!this.controlledLinks.contains(link)) {
-                    link._setFilePackage(this);
-                    this.controlledLinks.add(link);
-                    if (!link.isEnabled()) disabledLinks.incrementAndGet();
+            synchronized (this) {
+                for (DownloadLink link : links) {
+                    if (!this.controlledLinks.contains(link)) {
+                        link._setFilePackage(this);
+                        this.controlledLinks.add(link);
+                    }
                 }
             }
         } else {
@@ -332,13 +315,6 @@ public class FilePackage extends Property implements Serializable, PackageLinkNo
         this.extractAfterDownload = postProcessing;
     }
 
-    public void addLinksAt(ArrayList<DownloadLink> links, int index) {
-        int repos = 0;
-        for (int i = 0; i < links.size(); i++) {
-            repos = add(index + i, links.get(i), repos);
-        }
-    }
-
     /**
      * return the comment of this FilePackage if set
      * 
@@ -349,20 +325,12 @@ public class FilePackage extends Property implements Serializable, PackageLinkNo
     }
 
     /**
-     * @return Gibt den Downloadpfad zurück den der user für dieses paket
-     *         festgelegt hat
+     * return the download folder of this FilePackage
+     * 
+     * @return
      */
     public String getDownloadDirectory() {
-        return downloadDirectory == null ? org.appwork.storage.config.JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder() : downloadDirectory;
-    }
-
-    /**
-     * @return Gibt nur den namen des Downloadverzeichnisses zurück. ACHTUNG! es
-     *         wird nur der Directory-NAME zurückgegeben, nicht der ganze Pfad
-     */
-    public String getDownloadDirectoryName() {
-        if (!hasDownloadDirectory()) { return "."; }
-        return new File(downloadDirectory).getName();
+        return downloadDirectory;
     }
 
     /**
@@ -452,29 +420,37 @@ public class FilePackage extends Property implements Serializable, PackageLinkNo
         return isFinished;
     }
 
+    /**
+     * return the name of this FilePackage
+     * 
+     * @return
+     */
     public String getName() {
-        return name == null ? "" : name;
+        return name;
     }
 
     /**
+     * return post processing password for this FilePackage, if it is set
      * 
-     * @return Gibt das Archivpasswort zurück das der User für dieses paket
-     *         angegeben hat
+     * @return
      */
     public String getPassword() {
-        return password2 == null ? "" : password2;
+        return password2;
     }
 
     /**
-     * returns a list of archivepasswords set by downloadlinks
+     * return a list of passwords of all DownloadLinks for post processing
      */
-    public ArrayList<String> getPasswordAuto() {
-        ArrayList<String> pwList = new ArrayList<String>();
-        synchronized (downloadLinkList) {
-            for (DownloadLink element : downloadLinkList) {
-                if (element.getSourcePluginPasswordList() != null) {
-                    for (String pw : element.getSourcePluginPasswordList()) {
-                        if (!pwList.contains(pw)) pwList.add(pw);
+    public static Set<String> getPasswordAuto(FilePackage fp) {
+        Set<String> pwList = new HashSet<String>();
+        if (fp == null) return pwList;
+        synchronized (fp) {
+            for (DownloadLink element : fp.getControlledDownloadLinks()) {
+                ArrayList<String> pws = null;
+                if ((pws = element.getSourcePluginPasswordList()) != null) {
+                    for (String pw : pws) {
+                        if (pw == null) continue;
+                        pwList.add(pw);
                     }
                 }
             }
@@ -503,20 +479,6 @@ public class FilePackage extends Property implements Serializable, PackageLinkNo
         updateCollectives();
         return size() - linksFinished;
 
-    }
-
-    /**
-     * Gibt die erste gefundene sfv datei im Paket zurück
-     * 
-     * @return
-     */
-    public DownloadLink getSFV() {
-        synchronized (downloadLinkList) {
-            for (DownloadLink dl : downloadLinkList) {
-                if (dl.getFileOutput().toLowerCase().endsWith(".sfv")) return dl;
-            }
-        }
-        return null;
     }
 
     /**
@@ -561,20 +523,6 @@ public class FilePackage extends Property implements Serializable, PackageLinkNo
     }
 
     /**
-     * @return True/false, je nach dem ob ein Downloadirectory festgelegt wurde
-     */
-    public boolean hasDownloadDirectory() {
-        return downloadDirectory != null && downloadDirectory.length() > 0;
-    }
-
-    @Deprecated
-    public int indexOf(DownloadLink link) {
-        synchronized (downloadLinkList) {
-            return downloadLinkList.indexOf(link);
-        }
-    }
-
-    /**
      * remove the given DownloadLinks from this FilePackage. delegates remove
      * call to DownloadControllerInterface if it is set
      * 
@@ -583,10 +531,11 @@ public class FilePackage extends Property implements Serializable, PackageLinkNo
     public void remove(DownloadLink... links) {
         if (links == null || links.length == 0) return;
         if (this.controlledby == null) {
-            for (DownloadLink link : links) {
-                if ((this.controlledLinks.remove(link))) {
-                    link._setFilePackage(null);
-                    if (!link.isEnabled()) disabledLinks.decrementAndGet();
+            synchronized (this) {
+                for (DownloadLink link : links) {
+                    if ((this.controlledLinks.remove(link))) {
+                        link._setFilePackage(null);
+                    }
                 }
             }
         } else {
@@ -603,15 +552,29 @@ public class FilePackage extends Property implements Serializable, PackageLinkNo
         this.comment = comment;
     }
 
+    /**
+     * set the download folder for this FilePackage
+     * 
+     * @param subFolder
+     */
     public void setDownloadDirectory(String subFolder) {
         downloadDirectory = JDUtilities.removeEndingPoints(subFolder);
+        if (downloadDirectory == null) {
+            downloadDirectory = org.appwork.storage.config.JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder();
+        }
     }
 
+    /**
+     * set the name of this FilePackage
+     * 
+     * @param name
+     */
     public void setName(String name) {
         if (name == null || name.length() == 0) {
-            this.name = JDUtilities.removeEndingPoints(getDefaultFilePackage().name);
-        } else
+            this.name = JDUtilities.removeEndingPoints(_JDT._.controller_packages_defaultname());
+        } else {
             this.name = JDUtilities.removeEndingPoints(JDIO.validateFileandPathName(name));
+        }
         this.name = this.name.trim();
     }
 
@@ -631,19 +594,6 @@ public class FilePackage extends Property implements Serializable, PackageLinkNo
      */
     public int size() {
         return controlledLinks.size();
-    }
-
-    public String getHoster() {
-        if (ListHoster == null) {
-            Set<String> hosterList = new HashSet<String>();
-            synchronized (downloadLinkList) {
-                for (DownloadLink dl : downloadLinkList) {
-                    hosterList.add(dl.getHost());
-                }
-            }
-            ListHoster = hosterList.toString();
-        }
-        return ListHoster;
     }
 
     @Override
@@ -727,7 +677,7 @@ public class FilePackage extends Property implements Serializable, PackageLinkNo
      * disabledLinks
      */
     public boolean isEnabled() {
-        if (controlledLinks.size() <= disabledLinks.get()) return false;
+        // if (controlledLinks.size() <= disabledLinks.get()) return false;
         return true;
     }
 

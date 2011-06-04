@@ -70,8 +70,10 @@ public class DownloadsTableModel extends ExtTableModel<PackageLinkNode> {
                     for (FilePackage fp : DownloadController.getInstance().getPackages()) {
                         newtableData.add(fp);
                         if (fp.isExpanded()) {
-                            for (DownloadLink dl : fp.getControlledDownloadLinks()) {
-                                newtableData.add(dl);
+                            synchronized (fp) {
+                                for (DownloadLink dl : fp.getControlledDownloadLinks()) {
+                                    newtableData.add(dl);
+                                }
                             }
                         }
                     }
@@ -153,8 +155,10 @@ public class DownloadsTableModel extends ExtTableModel<PackageLinkNode> {
                             }
                         }
                         if (fp.isExpanded()) {
-                            for (DownloadLink dl : fp.getControlledDownloadLinks()) {
-                                newtableData.add(dl);
+                            synchronized (fp) {
+                                for (DownloadLink dl : fp.getControlledDownloadLinks()) {
+                                    newtableData.add(dl);
+                                }
                             }
                         }
                     }

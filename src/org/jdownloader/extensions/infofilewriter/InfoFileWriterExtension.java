@@ -20,6 +20,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Set;
 
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -102,7 +103,9 @@ public class InfoFileWriterExtension extends AbstractExtension<InfoFileWriterCon
 
             if (subConfig.getBooleanProperty(PARAM_ONLYPASSWORD, false)) {
                 // only set if password is availale
-                if ((dl.getFilePackage().getPassword() == null || dl.getFilePackage().getPassword().trim().length() == 0) && (dl.getFilePackage().getPasswordAuto() == null || dl.getFilePackage().getPasswordAuto().size() == 0)) return;
+                String pw = dl.getFilePackage().getPassword();
+                Set<String> pws = FilePackage.getPasswordAuto(dl.getFilePackage());
+                if ((pw == null || pw.length() == 0) && (pws.size() == 0)) return;
             }
             if (subConfig.getIntegerProperty(PARAM_CREATION, 0) == 0) {
                 FilePackage fp = dl.getFilePackage();

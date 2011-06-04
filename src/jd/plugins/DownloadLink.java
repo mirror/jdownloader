@@ -432,9 +432,9 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
 
     public String getFileOutput0() {
         String sfo = this.getStringProperty(DownloadLink.STATIC_OUTPUTFILE, null);
-        if (getFilePackage() == FilePackage.getDefaultFilePackage() && sfo != null && new File(sfo).exists()) return sfo;
+        if (this.isDefaultFilePackage() && sfo != null && new File(sfo).exists()) return sfo;
 
-        if (getFilePackage() != null && getFilePackage().getDownloadDirectory() != null && getFilePackage().getDownloadDirectory().length() > 0) {
+        if (getFilePackage().getDownloadDirectory() != null && getFilePackage().getDownloadDirectory().length() > 0) {
             if (subdirectory != null) {
                 return new File(new File(getFilePackage().getDownloadDirectory(), File.separator + subdirectory), getName()).getAbsolutePath();
             } else {
@@ -446,13 +446,12 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     }
 
     /**
-     * Gibt das Filepacket des Links zurueck. Kann auch null sein!! (Gui
-     * abhaengig)
+     * return the FilePackage that contains this DownloadLink, if none is set it
+     * will return defaultFilePackage
      * 
-     * @return FilePackage
+     * @return
      */
     public FilePackage getFilePackage() {
-        /* TODO: pseudo fix */
         if (filePackage == null) return FilePackage.getDefaultFilePackage();
         return filePackage;
     }
@@ -845,11 +844,13 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     }
 
     /**
-     * set the FilePackage that contains this DownloadLink
+     * set the FilePackage that contains this DownloadLink, DO NOT USE this if
+     * you want to add this DownloadLink to a FilePackage
      * 
      * @param filePackage
      */
-    protected void _setFilePackage(FilePackage filePackage) {
+    public void _setFilePackage(FilePackage filePackage) {
+        if (this.filePackage != null && filePackage != null) { throw new RuntimeException("UPS"); }
         this.filePackage = filePackage;
     }
 

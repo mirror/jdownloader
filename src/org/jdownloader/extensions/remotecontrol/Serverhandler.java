@@ -130,7 +130,7 @@ public class Serverhandler implements Handler {
          * Also show download directory, and whether or not it's expanded in the
          * GUI
          */
-        if (fp.hasDownloadDirectory()) element.setAttribute("package_downloaddir", fp.getDownloadDirectory());
+        element.setAttribute("package_downloaddir", fp.getDownloadDirectory());
         element.setAttribute("package_isexpanded", fp.getBooleanProperty("expanded", false) ? "true" : "false");
         return element;
     }
@@ -295,7 +295,7 @@ public class Serverhandler implements Handler {
             int counter = 0;
 
             for (final FilePackage fp : JDUtilities.getController().getPackages()) {
-                counter += fp.getControlledDownloadLinks().size();
+                counter += fp.size();
             }
 
             response.addContent(counter);
@@ -303,11 +303,14 @@ public class Serverhandler implements Handler {
             // Get number of current DLs
 
             int counter = 0;
-
-            for (final FilePackage fp : JDUtilities.getController().getPackages()) {
-                for (final DownloadLink dl : fp.getControlledDownloadLinks()) {
-                    if (dl.getLinkStatus().isPluginActive()) {
-                        counter++;
+            synchronized (DownloadController.ACCESSLOCK) {
+                for (final FilePackage fp : JDUtilities.getController().getPackages()) {
+                    synchronized (fp) {
+                        for (final DownloadLink dl : fp.getControlledDownloadLinks()) {
+                            if (dl.getLinkStatus().isPluginActive()) {
+                                counter++;
+                            }
+                        }
                     }
                 }
             }
@@ -317,11 +320,14 @@ public class Serverhandler implements Handler {
             // Get number of finished DLs
 
             int counter = 0;
-
-            for (final FilePackage fp : JDUtilities.getController().getPackages()) {
-                for (final DownloadLink dl : fp.getControlledDownloadLinks()) {
-                    if (dl.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
-                        counter++;
+            synchronized (DownloadController.ACCESSLOCK) {
+                for (final FilePackage fp : JDUtilities.getController().getPackages()) {
+                    synchronized (fp) {
+                        for (final DownloadLink dl : fp.getControlledDownloadLinks()) {
+                            if (dl.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
+                                counter++;
+                            }
+                        }
                     }
                 }
             }
@@ -329,25 +335,29 @@ public class Serverhandler implements Handler {
             response.addContent(counter);
         } else if (requestUrl.equals("/get/downloads/all/list")) {
             // Get DLList
-
-            for (final FilePackage fp : JDUtilities.getController().getPackages()) {
-                final Element fp_xml = this.addFilePackage(xml, fp);
-
-                for (final DownloadLink dl : fp.getControlledDownloadLinks()) {
-                    fp_xml.appendChild(this.addDownloadLink(xml, dl));
+            synchronized (DownloadController.ACCESSLOCK) {
+                for (final FilePackage fp : JDUtilities.getController().getPackages()) {
+                    final Element fp_xml = this.addFilePackage(xml, fp);
+                    synchronized (fp) {
+                        for (final DownloadLink dl : fp.getControlledDownloadLinks()) {
+                            fp_xml.appendChild(this.addDownloadLink(xml, dl));
+                        }
+                    }
                 }
             }
 
             response.addContent(xml);
         } else if (requestUrl.equals("/get/downloads/current/list")) {
             // Get current DLs
-
-            for (final FilePackage fp : JDUtilities.getController().getPackages()) {
-                final Element fp_xml = this.addFilePackage(xml, fp);
-
-                for (final DownloadLink dl : fp.getControlledDownloadLinks()) {
-                    if (dl.getLinkStatus().isPluginActive()) {
-                        fp_xml.appendChild(this.addDownloadLink(xml, dl));
+            synchronized (DownloadController.ACCESSLOCK) {
+                for (final FilePackage fp : JDUtilities.getController().getPackages()) {
+                    final Element fp_xml = this.addFilePackage(xml, fp);
+                    synchronized (fp) {
+                        for (final DownloadLink dl : fp.getControlledDownloadLinks()) {
+                            if (dl.getLinkStatus().isPluginActive()) {
+                                fp_xml.appendChild(this.addDownloadLink(xml, dl));
+                            }
+                        }
                     }
                 }
             }
@@ -355,13 +365,15 @@ public class Serverhandler implements Handler {
             response.addContent(xml);
         } else if (requestUrl.equals("/get/downloads/finished/list")) {
             // Get finished DLs
-
-            for (final FilePackage fp : JDUtilities.getController().getPackages()) {
-                final Element fp_xml = this.addFilePackage(xml, fp);
-
-                for (final DownloadLink dl : fp.getControlledDownloadLinks()) {
-                    if (dl.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
-                        fp_xml.appendChild(this.addDownloadLink(xml, dl));
+            synchronized (DownloadController.ACCESSLOCK) {
+                for (final FilePackage fp : JDUtilities.getController().getPackages()) {
+                    final Element fp_xml = this.addFilePackage(xml, fp);
+                    synchronized (fp) {
+                        for (final DownloadLink dl : fp.getControlledDownloadLinks()) {
+                            if (dl.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
+                                fp_xml.appendChild(this.addDownloadLink(xml, dl));
+                            }
+                        }
                     }
                 }
             }

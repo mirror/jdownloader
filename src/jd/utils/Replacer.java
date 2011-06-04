@@ -25,6 +25,7 @@ import jd.controlling.JSonWrapper;
 import jd.controlling.reconnect.ipcheck.IPController;
 import jd.nutils.Formatter;
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 
 import org.appwork.utils.Application;
 import org.jdownloader.translate._JDT;
@@ -63,10 +64,10 @@ public final class Replacer {
 
         if (key.equalsIgnoreCase("LAST_FINISHED_PACKAGE.PASSWORD")) { return dLink.getFilePackage().getPassword(); }
 
-        if (key.equalsIgnoreCase("LAST_FINISHED_PACKAGE.AUTO_PASSWORD")) { return dLink.getFilePackage().getPasswordAuto().toString(); }
-
-        if (key.equalsIgnoreCase("LAST_FINISHED_PACKAGE.FILELIST")) { return dLink.getFilePackage().getControlledDownloadLinks().toString(); }
-
+        if (key.equalsIgnoreCase("LAST_FINISHED_PACKAGE.AUTO_PASSWORD")) { return FilePackage.getPasswordAuto(dLink.getFilePackage()).toString(); }
+        synchronized (dLink.getFilePackage()) {
+            if (key.equalsIgnoreCase("LAST_FINISHED_PACKAGE.FILELIST")) { return dLink.getFilePackage().getControlledDownloadLinks().toString(); }
+        }
         if (key.equalsIgnoreCase("LAST_FINISHED_PACKAGE.PACKAGENAME")) {
             final String name = dLink.getFilePackage().getName();
             if (name == null || name.equals("") || name.equals(_JDT._.controller_packages_defaultname())) {

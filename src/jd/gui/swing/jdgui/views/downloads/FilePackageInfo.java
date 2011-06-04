@@ -26,7 +26,6 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
 
-import jd.controlling.DownloadController;
 import jd.gui.swing.components.ComboBrowseFile;
 import jd.gui.swing.components.JDCollapser;
 import jd.gui.swing.components.JDTextField;
@@ -109,7 +108,7 @@ public class FilePackageInfo extends JDCollapser implements ActionListener, Focu
         txtName.setText(fp.getName());
         txtComment.setText(fp.getComment());
         txtPassword.setText(fp.getPassword());
-        txtPassword2.setText(fp.getPasswordAuto().toString());
+        txtPassword2.setText(FilePackage.getPasswordAuto(fp).toString());
         brwSaveTo.setText(fp.getDownloadDirectory());
         chbPostProcessing.setSelected(fp.isPostProcessing());
         /* neuzeichnen */
@@ -246,7 +245,7 @@ public class FilePackageInfo extends JDCollapser implements ActionListener, Focu
                             long[] max = new long[fp.size()];
                             long[] values = new long[fp.size()];
                             int i = 0;
-                            synchronized (DownloadController.ACCESSLOCK) {
+                            synchronized (fp) {
                                 for (DownloadLink dl : fp.getControlledDownloadLinks()) {
                                     max[i] = Math.max(1, dl.getDownloadSize());
                                     if (dl.getLinkStatus().hasStatus(LinkStatus.ERROR_FILE_NOT_FOUND)) {

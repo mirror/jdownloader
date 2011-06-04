@@ -218,14 +218,16 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         /* reset temp unavailble times for all ips */
         ProxyController.getInstance().resetTempUnavailWaittime(null, false);
         synchronized (DownloadController.ACCESSLOCK) {
-
             for (final FilePackage filePackage : DownloadController.getInstance().getPackages()) {
-                for (final DownloadLink link : filePackage.getControlledDownloadLinks()) {
-                    /*
-                     * do not reset if link is offline, finished , already exist
-                     * or pluginerror (because only plugin updates can fix this)
-                     */
-                    link.getLinkStatus().resetStatus(LinkStatus.ERROR_FATAL | LinkStatus.ERROR_PLUGIN_DEFECT | LinkStatus.ERROR_ALREADYEXISTS, LinkStatus.ERROR_FILE_NOT_FOUND, LinkStatus.FINISHED);
+                synchronized (filePackage) {
+                    for (final DownloadLink link : filePackage.getControlledDownloadLinks()) {
+                        /*
+                         * do not reset if link is offline, finished , already
+                         * exist or pluginerror (because only plugin updates can
+                         * fix this)
+                         */
+                        link.getLinkStatus().resetStatus(LinkStatus.ERROR_FATAL | LinkStatus.ERROR_PLUGIN_DEFECT | LinkStatus.ERROR_ALREADYEXISTS, LinkStatus.ERROR_FILE_NOT_FOUND, LinkStatus.FINISHED);
+                    }
                 }
             }
         }
@@ -610,7 +612,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
             return false;
         }
         if (stop instanceof FilePackage) {
-            synchronized (DownloadController.ACCESSLOCK) {
+            synchronized (stop) {
                 for (final DownloadLink dl : ((FilePackage) stop).getControlledDownloadLinks()) {
                     synchronized (sessionHistory) {
                         if (sessionHistory.contains(dl)) {

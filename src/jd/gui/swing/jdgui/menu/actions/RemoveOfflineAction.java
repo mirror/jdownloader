@@ -67,9 +67,7 @@ public class RemoveOfflineAction extends ToolBarAction {
                     LinkedList<DownloadLink> downloadstodelete = new LinkedList<DownloadLink>();
                     synchronized (DownloadController.ACCESSLOCK) {
                         for (FilePackage fp : dlc.getPackages()) {
-                            for (DownloadLink dl : fp.getControlledDownloadLinks()) {
-                                if (dl.getLinkStatus().hasStatus(LinkStatus.ERROR_FILE_NOT_FOUND)) downloadstodelete.add(dl);
-                            }
+                            downloadstodelete.addAll(DownloadController.getInstance().getDownloadLinksbyStatus(fp, LinkStatus.ERROR_FILE_NOT_FOUND));
                         }
                     }
                     for (DownloadLink dl : downloadstodelete) {

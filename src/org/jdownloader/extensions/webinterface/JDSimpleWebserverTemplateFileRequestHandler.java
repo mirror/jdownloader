@@ -87,34 +87,36 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
 
             DownloadLink next = null;
             int i = 1;
-            for (Iterator<DownloadLink> it = fp.getControlledDownloadLinks().iterator(); it.hasNext(); i++) {
-                Hashtable<Object, Object> h_info = new Hashtable<Object, Object>();
-                next = it.next();
-                if (next.isEnabled()) {
-                    switch (next.getLinkStatus().getLatestStatus()) {
-                    case LinkStatus.FINISHED:
-                        Single_Status = "finished";
-                        break;
-                    case LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS:
-                        Single_Status = "running";
-                        break;
-                    default:
-                        Single_Status = "activated";
+            synchronized (fp) {
+                for (Iterator<DownloadLink> it = fp.getControlledDownloadLinks().iterator(); it.hasNext(); i++) {
+                    Hashtable<Object, Object> h_info = new Hashtable<Object, Object>();
+                    next = it.next();
+                    if (next.isEnabled()) {
+                        switch (next.getLinkStatus().getLatestStatus()) {
+                        case LinkStatus.FINISHED:
+                            Single_Status = "finished";
+                            break;
+                        case LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS:
+                            Single_Status = "running";
+                            break;
+                        default:
+                            Single_Status = "activated";
+                        }
+                    } else {
+                        Single_Status = "deactivated";
                     }
-                } else {
-                    Single_Status = "deactivated";
-                }
-                double percent = next.getPercent() / 100.0;
+                    double percent = next.getPercent() / 100.0;
 
-                h_info.put("info_percent", f.format(percent));
-                h_info.put("download_status", Single_Status);
-                h_info.put("info_var", i + ". " + next.getName());
-                h_info.put("info_value", Formatter.formatReadable(next.getDownloadSpeed()) + "/s " + f.format(next.getPercent() / 100.0) + " %| " + next.getDownloadCurrent() + "/" + next.getDownloadSize() + " bytes");
-                h_info.put("download_id", i - 1);/*
-                                                  * von 0 anfangen für js
-                                                  * skripte
-                                                  */
-                v_info.addElement(h_info);
+                    h_info.put("info_percent", f.format(percent));
+                    h_info.put("download_status", Single_Status);
+                    h_info.put("info_var", i + ". " + next.getName());
+                    h_info.put("info_value", Formatter.formatReadable(next.getDownloadSpeed()) + "/s " + f.format(next.getPercent() / 100.0) + " %| " + next.getDownloadCurrent() + "/" + next.getDownloadSize() + " bytes");
+                    h_info.put("download_id", i - 1);/*
+                                                      * von 0 anfangen für js
+                                                      * skripte
+                                                      */
+                    v_info.addElement(h_info);
+                }
             }
             t.setParam("all_infos", v_info);
         }
