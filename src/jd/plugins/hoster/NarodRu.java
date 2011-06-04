@@ -23,16 +23,16 @@ import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "narod.ru" }, urls = { "http://[\\w\\.]*?narod\\.ru/disk/(\\d+/.*|start/[0-9]+\\.[0-9a-z]+-narod\\.yandex\\.ru/[0-9]{6,15}/[0-9a-z]+/[a-zA-Z0-9%.]+)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "narod.ru" }, urls = { "http://(www\\.)?narod(\\.yandex)?\\.ru/disk/(\\d+/.+|start/[0-9]+\\.[0-9a-z]+-narod\\.yandex\\.ru/[0-9]{6,15}/[0-9a-z]+/[a-zA-Z0-9%.]+)" }, flags = { 0 })
 public class NarodRu extends PluginForHost {
 
     public NarodRu(PluginWrapper wrapper) {
@@ -45,9 +45,11 @@ public class NarodRu extends PluginForHost {
     }
 
     public void correctDownloadLink(DownloadLink link) {
-        // Correct added link because some guys are spreading narod direct links
+        // Correct added links because some guys are spreading narod direct
+        // links
         // which only causes problems so correcting the link is the best
         // solution here
+        link.setUrlDownload(link.getDownloadURL().replace("narod.yandex.ru/", "narod.ru/"));
         if (link.getDownloadURL().contains("/start/")) {
             String linkid = new Regex(link.getDownloadURL(), "/start/[0-9]+\\.[0-9a-z]+-narod\\.yandex\\.ru/([0-9]{6,15})/[0-9a-z]+/[a-zA-Z0-9%.]+").getMatch(0);
             String filename = new Regex(link.getDownloadURL(), "/start/[0-9]+\\.[0-9a-z]+-narod\\.yandex\\.ru/[0-9]{6,15}/[0-9a-z]+/([a-zA-Z0-9%.]+)").getMatch(0);
@@ -68,14 +70,13 @@ public class NarodRu extends PluginForHost {
         if (name == null) name = br.getRegex(Pattern.compile("class=\"name\"><i class=.*?></i>(.*?)</dt>")).getMatch(0);
         if (name == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String md5Hash = br.getRegex(Pattern.compile("<dt class=\"size\">md5:</dt>.*<dd class=\"size\">(.*?)</dd>", Pattern.DOTALL)).getMatch(0);
-        if (md5Hash == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String fileSize = br.getRegex(Pattern.compile("<td class=\"l-download-info-right\">.*?<dl class=\"b-download-item g-line\">.*?<dt class=\"size\">.*?</dt>.*?<dd class=\"size\">(.*?).</dd>", Pattern.DOTALL)).getMatch(0);
         if (fileSize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         fileSize = fileSize.replaceAll("Г", "G");
         fileSize = fileSize.replaceAll("М", "M");
         fileSize = fileSize.replaceAll("к", "k");
         fileSize = fileSize + "b";
-        downloadLink.setMD5Hash(md5Hash.trim());
+        if (md5Hash != null) downloadLink.setMD5Hash(md5Hash.trim());
         downloadLink.setName(name.trim());
         downloadLink.setDownloadSize(SizeFormatter.getSize(fileSize));
         return AvailableStatus.TRUE;
