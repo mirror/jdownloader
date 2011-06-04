@@ -237,7 +237,7 @@ public class FilePackage extends Property implements Serializable, PackageLinkNo
      * @param link
      */
     public void add(DownloadLink link) {
-        add(link);
+        _add(link);
     }
 
     public int add(int index, DownloadLink link, int repos) {
@@ -288,7 +288,7 @@ public class FilePackage extends Property implements Serializable, PackageLinkNo
      */
     public void addLinks(ArrayList<DownloadLink> links) {
         if (links == null || links.size() == 0) return;
-        add(links.toArray(new DownloadLink[links.size()]));
+        _add(links.toArray(new DownloadLink[links.size()]));
     }
 
     /**
@@ -297,7 +297,7 @@ public class FilePackage extends Property implements Serializable, PackageLinkNo
      * 
      * @param links
      */
-    public void add(DownloadLink... links) {
+    public void _add(DownloadLink... links) {
         if (links == null || links.length == 0) return;
         if (this.controlledby == null) {
             for (DownloadLink link : links) {

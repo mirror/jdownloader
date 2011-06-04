@@ -34,7 +34,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "shareplace.com" }, urls = { "http://[\\w\\.]*?shareplace\\.com/\\?[\\w]+(/.*?)?" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "shareplace.com" }, urls = { "http://[\\w\\.]*?shareplace\\.(com|org)/\\?[\\w]+(/.*?)?" }, flags = { 0 })
 public class Shareplacecom extends PluginForHost {
 
     private String url;
@@ -46,6 +46,11 @@ public class Shareplacecom extends PluginForHost {
     @Override
     public String getAGBLink() {
         return "http://shareplace.com/rules.php";
+    }
+
+    @Override
+    public void correctDownloadLink(final DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replaceFirst("\\.org", ".com"));
     }
 
     @Override
