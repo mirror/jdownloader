@@ -61,7 +61,6 @@ public class BlipTv extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        br.forceDebug(true);
         setBrowserExclusive();
         br.getPage(link.getDownloadURL());
         /* 0.95xx comp */
