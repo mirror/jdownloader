@@ -191,7 +191,7 @@ public class FilePackage extends Property implements Serializable, PackageLinkNo
         downloadLinkList = new ArrayList<DownloadLink>(controlledLinks);
         out.defaultWriteObject();
         /* free ArrayList */
-        downloadLinkList = null;
+        downloadLinkList.clear();
     }
 
     /**
