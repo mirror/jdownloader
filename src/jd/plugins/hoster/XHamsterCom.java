@@ -22,13 +22,13 @@ import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xhamster.com" }, urls = { "http://[\\w\\.]*?xhamster\\.com/movies/[0-9]+/.*?\\.html" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xhamster.com" }, urls = { "http://(www\\.)?xhamster\\.com/movies/[0-9]+/.*?\\.html" }, flags = { 0 })
 public class XHamsterCom extends PluginForHost {
 
     public XHamsterCom(PluginWrapper wrapper) {
@@ -45,8 +45,8 @@ public class XHamsterCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("Video Not found") || br.containsHTML("403 Forbidden")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
+        if (br.containsHTML("(Video Not found|403 Forbidden)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("<title>(.*?) \\- xHamster\\.com</title>").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("<meta name=\"description\" content=\"(.*?)\"").getMatch(0);
             if (filename == null) {
