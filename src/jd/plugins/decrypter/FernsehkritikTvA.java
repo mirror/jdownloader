@@ -49,7 +49,7 @@ public class FernsehkritikTvA extends PluginForDecrypt {
         }
         final String episode = new Regex(parameter, "folge-(\\d+)").getMatch(0);
         if (episode == null) { return null; }
-        if (Integer.parseInt(episode) < 69) {
+        if (Integer.valueOf(episode) < 69) {
             final String[] finallinks = br.getRegex("\n\\s+<a href=\"(.*?)\">.*?").getColumn(0);
             final String title = br.getRegex("<a id=\"eptitle\".*?>(.*?)<").getMatch(0);
             if (finallinks == null || finallinks.length == 0 || title == null) { return null; }

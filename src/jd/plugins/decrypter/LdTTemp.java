@@ -17,11 +17,17 @@
 package jd.plugins.decrypter;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
+import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.controlling.reconnect.Reconnecter;
+import jd.gui.UserIO;
+import jd.http.Browser;
 import jd.http.RandomUserAgent;
+import jd.parser.html.Form;
 import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
@@ -35,57 +41,92 @@ import jd.utils.JDUtilities;
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "lof.cc" }, urls = { "http://[\\w\\.]*?(lof\\.cc|92\\.241\\.168\\.5)/[!a-zA-Z0-9_]+" }, flags = { 0 })
 public class LdTTemp extends PluginForDecrypt {
 
-    public LdTTemp(PluginWrapper wrapper) {
+    public static final Object   LOCK                = new Object();
+    private static final Pattern PATTERN_WAITTIME    = Pattern.compile("<p>Du musst noch (\\d+) Sekunden warten bis du", Pattern.CASE_INSENSITIVE);
+    private static final Pattern PATTERN_CAPTCHA     = Pattern.compile("(api\\.recaptcha\\.net|Das war leider Falsch|das Falsche Captcha eingegeben)", Pattern.CASE_INSENSITIVE);
+    private static long          LATEST_BLOCK_DETECT = 0;
+    private static long          LATEST_RECONNECT    = 0;
+
+    private synchronized static boolean limitsReached(final Browser br, final int waittime) throws IOException {
+        int ret = -100;
+        if (br == null) {
+            ret = UserIO.RETURN_OK;
+        } else {
+            if (System.currentTimeMillis() - LATEST_BLOCK_DETECT < 60000) { return true; }
+            if (System.currentTimeMillis() - LATEST_RECONNECT < 15000) { return false; }
+            UserIO.setCountdownTime(waittime);
+            ret = UserIO.getInstance().requestConfirmDialog(0, "Wartezeit", "Ein Limit wurde erreicht!\r\nSie können entweder einen \"Reconnect\" durchführen oder die Wartezeit abbrechen.\r\nOder einfach nichts tun und die Wartezeit ablaufen lassen.\r\n", null, "Reconnect", "Abbrechen");
+        }
+        if (ret != -100) {
+            if (UserIO.isOK(ret)) {
+                try {
+                    jd.controlling.reconnect.ipcheck.IPController.getInstance().invalidate();
+                } catch (final Throwable e) {
+                    /* not in 9580 stable */
+                }
+                if (Reconnecter.waitForNewIP(15000, false)) {
+                    LATEST_RECONNECT = System.currentTimeMillis();
+                    return true;
+                }
+            } else {
+                LATEST_BLOCK_DETECT = System.currentTimeMillis();
+            }
+            return true;
+        }
+        return false;
+    }
+
+    public LdTTemp(final PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    public static final Object LOCK = new Object();
-
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+    @Override
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         synchronized (LOCK) {
-            ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-            String parameter = param.toString();
+            final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+            final String parameter = param.toString();
             br.getPage(parameter);
-            String waittime = br.getRegex("<p>Du musst noch (\\d+) Sekunden warten bis du").getMatch(0);
-            if (waittime != null) {
-                int wait = Integer.parseInt(waittime);
-                if (wait > 80) {
-                    logger.warning(wait + " Sekunden Wartezeit: Limit erreicht!");
-                    logger.warning(br.toString());
-                    return null;
-                }
-                sleep(wait * 1001l, param);
-            }
-            for (int i = 0; i <= 5; i++) {
-                PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+            int i;
+            for (i = 0; i < 5; i++) {
+                final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+                final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
                 rc.parse();
                 rc.load();
-                File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                String c = getCaptchaCode(cf, param);
+                final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+                final String c = getCaptchaCode(cf, param);
                 rc.setCode(c);
-                if (br.containsHTML("(api.recaptcha.net|Das war leider Falsch)")) continue;
-                if (br.containsHTML("das Falsche Captcha eingegeben")) {
-                    sleep(60 * 1001l, param);
-                    br.getHeaders().put("User-Agent", RandomUserAgent.generate());
+                if (br.getRegex(PATTERN_WAITTIME).matches()) {
+                    final int waittime = Integer.valueOf(br.getRegex(PATTERN_WAITTIME).getMatch(0));
+                    if (waittime > 50 && limitsReached(br, waittime)) {
+
+                        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
+                        br.clearCookies(br.getHost());
+                    } else {
+                        sleep(waittime * 1001l, param);
+                    }
                     br.getPage(parameter);
+                    i = 0;
+                    continue;
+                } else if (br.getRegex(PATTERN_CAPTCHA).matches()) {
                     continue;
                 }
                 break;
             }
-            if (br.containsHTML("(api.recaptcha.net|Das war leider Falsch|das Falsche Captcha eingegeben)")) throw new DecrypterException(DecrypterException.CAPTCHA);
-            String links[] = br.getRegex("<a href=\"(http.*?)\" target=\"_blank\" onclick=").getColumn(0);
+            if (br.getRegex(PATTERN_CAPTCHA).matches()) { throw new DecrypterException(DecrypterException.CAPTCHA); }
+            if (br.getRegex(PATTERN_WAITTIME).matches()) { return null; }
+            final Form allLinks = br.getForm(0);
+            String links[] = allLinks.getRegex("<a href=\"(http.*?)\" target=\"_blank\" onclick=").getColumn(0);
             if (links == null || links.length == 0) {
                 logger.warning("First LdTTemp regex failed, trying the second one...");
                 links = HTMLParser.getHttpLinks(br.toString(), "");
             }
-            if (links.length == 0) return null;
-            for (String finallink : links) {
-                if (!finallink.contains("iload.to") && !finallink.contains("lof.cc") && !finallink.endsWith(".gif") && !finallink.endsWith(".swf")) decryptedLinks.add(createDownloadlink(finallink));
+            if (links.length == 0) { return null; }
+            for (final String finallink : links) {
+                if (!finallink.contains("iload.to") && !finallink.contains("lof.cc") && !finallink.endsWith(".gif") && !finallink.endsWith(".swf")) {
+                    decryptedLinks.add(createDownloadlink(finallink));
+                }
             }
-
             return decryptedLinks;
         }
     }
-
 }
