@@ -42,14 +42,16 @@ import jd.utils.JDUtilities;
 public class Rlnks extends PluginForDecrypt {
 
     ProgressController          progress;
-    private final String        PASSWORDTEXT = "password";
-    private static final String ua           = RandomUserAgent.generate();
+    private final String        PASSWORDTEXT     = "password";
+    private int                 DYNAMIC_WAITTIME = 0;
+    private static final String ua               = RandomUserAgent.generate();
+    public static final Object  LOCK             = new Object();
 
     public Rlnks(final PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private boolean decryptContainer(final String page, final String cryptedLink, final String containerFormat, final ArrayList<DownloadLink> decryptedLinks) throws IOException {
+    private synchronized boolean decryptContainer(final String page, final String cryptedLink, final String containerFormat, final ArrayList<DownloadLink> decryptedLinks) throws IOException {
         final String containerURL = new Regex(page, "(download\\.php\\?id=[a-zA-z0-9]+\\&" + containerFormat + "=\\d+)").getMatch(0);
         if (containerURL != null) {
             final File container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + "." + containerFormat);
@@ -65,36 +67,140 @@ public class Rlnks extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
-        this.progress = progress;
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
-        setBrowserExclusive();
-        br.setFollowRedirects(true);
-        br.getHeaders().put("User-Agent", ua);
-        final String page = br.getPage(parameter);
+        synchronized (LOCK) {
+            this.progress = progress;
+            final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+            final String parameter = param.toString();
+            setBrowserExclusive();
+            br.setFollowRedirects(true);
+            br.getHeaders().put("User-Agent", ua);
+            final String page = br.getPage(parameter);
 
-        // Handle Captcha and/or password
+            // Handle Captcha and/or password
+            Form allForm = br.getFormbyProperty("name", "form");
+
+            if (allForm != null) {
+                for (int i = 0; i <= 5; i++) {
+                    if (allForm.containsHTML(PASSWORDTEXT)) {
+                        final String passCode = getPassword(param);
+                        allForm.put(PASSWORDTEXT, passCode);
+                    }
+                    if (allForm.containsHTML("captcha")) {
+                        allForm.remove("button");
+                        final String captchaLink = allForm.getRegex("src=\"(.*?)\"").getMatch(0);
+                        if (captchaLink == null) { return null; }
+                        final File captchaFile = this.getLocalCaptchaFile();
+                        Browser.download(captchaFile, br.cloneBrowser().openGetConnection("http://relink.us/" + captchaLink));
+                        final Point p = UserIO.getInstance().requestClickPositionDialog(captchaFile, "relink.us | " + String.valueOf(i + 1) + "/5", null);
+                        allForm.put("button.x", String.valueOf(p.x));
+                        allForm.put("button.y", String.valueOf(p.y));
+                    }
+                    br.submitForm(allForm);
+                    if (br.getURL().contains("error.php")) {
+                        br.getPage(parameter);
+                    }
+                    allForm = br.getFormbyProperty("name", "form");
+                    if (allForm != null) {
+                        continue;
+                    }
+                    break;
+                }
+                if (allForm != null && allForm.getRegex(PASSWORDTEXT).matches()) { throw new DecrypterException(DecrypterException.PASSWORD); }
+                if (allForm != null && allForm.getRegex("captcha").matches()) { throw new DecrypterException(DecrypterException.CAPTCHA); }
+            }
+
+            progress.setRange(0);
+            /* use cnl2 button if available */
+            if (br.containsHTML("cnl2.swf")) {
+                final String flashVars = br.getRegex("flashVars\" value=\"(.*?)\"").getMatch(0);
+                if (flashVars != null) {
+                    final Browser cnlbr = new Browser();
+                    cnlbr.setConnectTimeout(5000);
+                    cnlbr.getHeaders().put("jd.randomNumber", System.getProperty("jd.randomNumber"));
+                    try {
+                        cnlbr.postPage("http://127.0.0.1:9666/flash/addcrypted2", flashVars);
+                        if (cnlbr.containsHTML("success")) { return decryptedLinks; }
+                    } catch (final Throwable e) {
+                    }
+                }
+            }
+            if (!br.containsHTML("download.php\\?id=[a-f0-9]+") && !br.containsHTML("getFile\\(")) { return null; }
+            if (!decryptContainer(page, parameter, "dlc", decryptedLinks)) {
+                if (!decryptContainer(page, parameter, "ccf", decryptedLinks)) {
+                    decryptContainer(page, parameter, "rsdf", decryptedLinks);
+                }
+            }
+            if (decryptedLinks.isEmpty()) {
+                this.decryptLinks(decryptedLinks);
+                final String more_links[] = new Regex(page, Pattern.compile("<a href=\"(go\\.php\\?id=[a-zA-Z0-9]+\\&seite=\\d+)\">", Pattern.CASE_INSENSITIVE)).getColumn(0);
+                for (final String link : more_links) {
+                    br.getPage("http://relink.us/" + link);
+                    this.decryptLinks(decryptedLinks);
+                }
+            }
+            if (decryptedLinks.isEmpty() && br.containsHTML("swf/cnl2.swf")) { throw new DecrypterException("CNL2 only, open this link in Browser"); }
+            return decryptedLinks;
+        }
+    }
+
+    private void decryptLinks(final ArrayList<DownloadLink> decryptedLinks) throws Exception {
+        br.setFollowRedirects(false);
+        final String[] matches = br.getRegex("getFile\\('(cid=\\w*?&lid=\\d*?)'\\)").getColumn(0);
+        int i = 0;
+        try {
+            progress.addToMax(matches.length);
+            for (final String match : matches) {
+                try {
+                    progress.setInitials(String.valueOf(i += 1));
+                } catch (final Throwable e) {
+                }
+                Browser brc = null;
+                brc = br.cloneBrowser();
+                brc.setCookiesExclusive(true);
+                brc.getHeaders().put("User-Agent", RandomUserAgent.generate());
+                Thread.sleep(DYNAMIC_WAITTIME + 4000);
+                getCaptcha("http://www.relink.us/frame.php?" + match);
+                if (brc != null && brc.getRedirectLocation() != null && brc.getRedirectLocation().contains("relink.us/getfile")) {
+                    brc.getPage(brc.getRedirectLocation());
+                }
+                if (brc.getRedirectLocation() != null) {
+                    decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(brc.getRedirectLocation())));
+                    break;
+                } else {
+                    final String url = brc.getRegex("iframe.*?src=\"(.*?)\"").getMatch(0);
+                    if (url != null) {
+                        decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(url)));
+                    } else {
+                        /* as bot detected */
+                        return;
+                    }
+                }
+                progress.increase(1);
+            }
+        } finally {
+            br.setFollowRedirects(true);
+        }
+    }
+
+    private synchronized Boolean getCaptcha(final String partLink) throws Exception {
+        br.getPage(partLink);
         Form allForm = br.getFormbyProperty("name", "form");
-
         if (allForm != null) {
             for (int i = 0; i <= 5; i++) {
-                if (allForm.containsHTML(PASSWORDTEXT)) {
-                    final String passCode = getPassword(param);
-                    allForm.put(PASSWORDTEXT, passCode);
-                }
                 if (allForm.containsHTML("captcha")) {
                     allForm.remove("button");
                     final String captchaLink = allForm.getRegex("src=\"(.*?)\"").getMatch(0);
                     if (captchaLink == null) { return null; }
                     final File captchaFile = this.getLocalCaptchaFile();
-                    Browser.download(captchaFile, br.cloneBrowser().openGetConnection("http://relink.us/" + captchaLink));
+                    Browser.download(captchaFile, br.cloneBrowser().openGetConnection("http://www.relink.us/" + captchaLink));
                     final Point p = UserIO.getInstance().requestClickPositionDialog(captchaFile, "relink.us | " + String.valueOf(i + 1) + "/5", null);
                     allForm.put("button.x", String.valueOf(p.x));
                     allForm.put("button.y", String.valueOf(p.y));
                 }
+                DYNAMIC_WAITTIME += 500;
                 br.submitForm(allForm);
                 if (br.getURL().contains("error.php")) {
-                    br.getPage(parameter);
+                    br.getPage(partLink);
                 }
                 allForm = br.getFormbyProperty("name", "form");
                 if (allForm != null) {
@@ -104,82 +210,9 @@ public class Rlnks extends PluginForDecrypt {
             }
             if (allForm != null && allForm.getRegex(PASSWORDTEXT).matches()) { throw new DecrypterException(DecrypterException.PASSWORD); }
             if (allForm != null && allForm.getRegex("captcha").matches()) { throw new DecrypterException(DecrypterException.CAPTCHA); }
-        }
-
-        progress.setRange(0);
-        /* use cnl2 button if available */
-        if (br.containsHTML("cnl2.swf")) {
-            final String flashVars = br.getRegex("flashVars\" value=\"(.*?)\"").getMatch(0);
-            if (flashVars != null) {
-                final Browser cnlbr = new Browser();
-                cnlbr.setConnectTimeout(5000);
-                cnlbr.getHeaders().put("jd.randomNumber", System.getProperty("jd.randomNumber"));
-                try {
-                    cnlbr.postPage("http://127.0.0.1:9666/flash/addcrypted2", flashVars);
-                    if (cnlbr.containsHTML("success")) { return decryptedLinks; }
-                } catch (final Throwable e) {
-                }
-            }
-        }
-        if (!br.containsHTML("download.php\\?id=[a-f0-9]+") && !br.containsHTML("getFile\\(")) { return null; }
-        if (!decryptContainer(page, parameter, "dlc", decryptedLinks)) {
-            if (!decryptContainer(page, parameter, "ccf", decryptedLinks)) {
-                decryptContainer(page, parameter, "rsdf", decryptedLinks);
-            }
-        }
-        if (decryptedLinks.isEmpty()) {
-            this.decryptLinks(decryptedLinks);
-            final String more_links[] = new Regex(page, Pattern.compile("<a href=\"(go\\.php\\?id=[a-zA-Z0-9]+\\&seite=\\d+)\">", Pattern.CASE_INSENSITIVE)).getColumn(0);
-            for (final String link : more_links) {
-                br.getPage("http://relink.us/" + link);
-                this.decryptLinks(decryptedLinks);
-            }
-        }
-        if (decryptedLinks.isEmpty() && br.containsHTML("swf/cnl2.swf")) { throw new DecrypterException("CNL2 only, open this link in Browser"); }
-        return decryptedLinks;
-    }
-
-    private void decryptLinks(final ArrayList<DownloadLink> decryptedLinks) throws IOException {
-        br.setFollowRedirects(false);
-        final String[] matches = br.getRegex("getFile\\('(cid=\\w*?&lid=\\d*?)'\\)").getColumn(0);
-        try {
-            progress.addToMax(matches.length);
-            for (final String match : matches) {
-                try {
-                    Browser brc = null;
-                    brc = br.cloneBrowser();
-                    // brc.setCookiesExclusive(true);
-                    brc.getHeaders().put("User-Agent", RandomUserAgent.generate());
-                    try {
-                        Thread.sleep(2000);
-                    } catch (final Exception e) {
-                    }
-                    brc.getPage("http://www.relink.us/frame.php?" + match);
-                    if (brc != null && brc.getRedirectLocation() != null && brc.getRedirectLocation().contains("relink.us/getfile")) {
-                        try {
-                            Thread.sleep(150);
-                        } catch (final Exception e) {
-                        }
-                        brc.getPage(brc.getRedirectLocation());
-                    }
-                    if (brc.getRedirectLocation() != null) {
-                        decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(brc.getRedirectLocation())));
-                        break;
-                    } else {
-                        final String url = brc.getRegex("iframe.*?src=\"(.*?)\"").getMatch(0);
-                        if (url != null) {
-                            decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(url)));
-                        } else {
-                            /* as bot detected */
-                            return;
-                        }
-                    }
-                } catch (final Exception e) {
-                }
-                progress.increase(1);
-            }
-        } finally {
-            br.setFollowRedirects(true);
+            return true;
+        } else {
+            return false;
         }
     }
 
