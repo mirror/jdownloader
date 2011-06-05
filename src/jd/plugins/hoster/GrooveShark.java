@@ -181,7 +181,7 @@ public class GrooveShark extends PluginForHost {
             final String token = ajax.getRegex("Token\":\"(\\w+)\"").getMatch(0);
             // Limitations after ~20 Songs
             if (token == null) {
-                if (ajax.containsHTML("attacker")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 300 * 1000L); }
+                if (ajax.containsHTML("attacker") || ajax.containsHTML("\"Token\":false")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 300 * 1000L); }
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             final String Name = downloadLink.getStringProperty("Name");
@@ -202,7 +202,7 @@ public class GrooveShark extends PluginForHost {
             final String Token = downloadLink.getDownloadURL().substring(downloadLink.getDownloadURL().lastIndexOf("/") + 1);
             // Limitations after ~20 Songs
             if (Token == null) {
-                if (br.containsHTML("attacker")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 300 * 1000L); }
+                if (br.containsHTML("attacker") || br.containsHTML("\"Token\":false")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 300 * 1000L); }
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             handleDownload(downloadLink, country, sid, Token);
