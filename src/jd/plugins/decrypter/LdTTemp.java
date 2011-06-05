@@ -55,7 +55,7 @@ public class LdTTemp extends PluginForDecrypt {
             if (System.currentTimeMillis() - LATEST_BLOCK_DETECT < 60000) { return true; }
             if (System.currentTimeMillis() - LATEST_RECONNECT < 15000) { return false; }
             UserIO.setCountdownTime(waittime);
-            ret = UserIO.getInstance().requestConfirmDialog(0, "Wartezeit", "Ein Limit wurde erreicht!\r\nSie können entweder einen \"Reconnect\" durchführen oder die Wartezeit abbrechen.\r\nOder einfach nichts tun und die Wartezeit ablaufen lassen.\r\n", null, "Reconnect", "Abbrechen");
+            ret = UserIO.getInstance().requestConfirmDialog(0, "Wartezeit", "Ein Limit wurde erreicht!\r\nSie können entweder einen \"Reconnect\" durchführen, die Wartezeit überspringen oder die Wartezeit ablaufen lassen.\r\n", null, "Reconnect", "Wartezeit überspringen");
         }
         if (ret != -100) {
             if (UserIO.isOK(ret)) {
