@@ -51,10 +51,10 @@ public class PutLockerCom extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
         if (br.containsHTML(">This file doesn\\'t exist, or has been removed \\.<") || br.getURL().contains("?404")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        Regex fileInfo = br.getRegex("class=\"site-content\">[\t\n\r ]+<h1>(.*?)<strong>\\( (.*?) \\)</strong></h1>");
-        String filename = fileInfo.getMatch(0);
-        if (filename == null) filename = br.getRegex("<title>PutLocker - (.*?)</title>").getMatch(0);
-        String filesize = fileInfo.getMatch(1);
+        Regex fileInfo = br.getRegex("class=\"site\\-content\">[\t\n\r ]+<h1>(<span class=\"hd_marker\">HD:</span> )?(.*?)<strong>\\( (.*?) \\)</strong></h1>");
+        String filename = fileInfo.getMatch(1);
+        if (filename == null) filename = br.getRegex("<title>PutLocker \\- (.*?)</title>").getMatch(0);
+        String filesize = fileInfo.getMatch(2);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         // User sometimes adds random stuff to filenames when downloading so we
         // better set the final name here

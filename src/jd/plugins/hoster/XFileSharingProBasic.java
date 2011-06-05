@@ -222,9 +222,7 @@ public class XFileSharingProBasic extends PluginForHost {
             checkServerErrors();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (passCode != null) {
-            downloadLink.setProperty("pass", passCode);
-        }
+        if (passCode != null) downloadLink.setProperty("pass", passCode);
         dl.startDownload();
     }
 
@@ -332,9 +330,7 @@ public class XFileSharingProBasic extends PluginForHost {
             }
             logger.info("Final downloadlink = " + dllink + " starting the download...");
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
-            if (passCode != null) {
-                link.setProperty("pass", passCode);
-            }
+            if (passCode != null) link.setProperty("pass", passCode);
             if (dl.getConnection().getContentType().contains("html")) {
                 logger.warning("The final dllink seems not to be a file!");
                 br.followConnection();
@@ -365,12 +361,8 @@ public class XFileSharingProBasic extends PluginForHost {
     }
 
     public String handlePassword(String passCode, Form pwform, DownloadLink thelink) throws IOException, PluginException {
-        if (thelink.getStringProperty("pass", null) == null) {
-            passCode = Plugin.getUserInput("Password?", thelink);
-        } else {
-            /* gespeicherten PassCode holen */
-            passCode = thelink.getStringProperty("pass", null);
-        }
+        passCode = thelink.getStringProperty("pass", null);
+        if (passCode == null) passCode = Plugin.getUserInput("Password?", thelink);
         pwform.put("password", passCode);
         logger.info("Put password \"" + passCode + "\" entered by user in the DLForm.");
         return passCode;
