@@ -365,15 +365,15 @@ public class FileSonicCom extends PluginForHost {
          * error that more are possible and resume should also not work ;)
          */
         this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, downloadUrl, true, 1);
+        if (this.dl.getConnection().getResponseCode() == 404) {
+            this.dl.getConnection().disconnect();
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         if (this.dl.getConnection() != null && this.dl.getConnection().getContentType() != null && (this.dl.getConnection().getContentType().contains("html") || this.dl.getConnection().getContentType().contains("unknown"))) {
             this.br.followConnection();
 
             this.errorHandling(downloadLink, this.br);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        if (this.dl.getConnection().getResponseCode() == 404) {
-            this.dl.getConnection().disconnect();
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (passCode != null) {
             downloadLink.setProperty("pass", passCode);
@@ -410,13 +410,13 @@ public class FileSonicCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, url, true, 0);
-        if (this.dl.getConnection() != null && this.dl.getConnection().getContentType() != null && (this.dl.getConnection().getContentType().contains("html") || this.dl.getConnection().getContentType().contains("unknown"))) {
-            this.br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
         if (this.dl.getConnection().getResponseCode() == 404) {
             this.dl.getConnection().disconnect();
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        if (this.dl.getConnection() != null && this.dl.getConnection().getContentType() != null && (this.dl.getConnection().getContentType().contains("html") || this.dl.getConnection().getContentType().contains("unknown"))) {
+            this.br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         this.dl.startDownload();
     }
