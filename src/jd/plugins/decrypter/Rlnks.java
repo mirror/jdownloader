@@ -42,16 +42,15 @@ import jd.utils.JDUtilities;
 public class Rlnks extends PluginForDecrypt {
 
     ProgressController          progress;
-    private final String        PASSWORDTEXT     = "password";
-    private int                 DYNAMIC_WAITTIME = 0;
-    private static final String ua               = RandomUserAgent.generate();
-    public static final Object  LOCK             = new Object();
+    private final String        PASSWORDTEXT = "password";
+    private static final String ua           = RandomUserAgent.generate();
+    public static final Object  LOCK         = new Object();
 
     public Rlnks(final PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private synchronized boolean decryptContainer(final String page, final String cryptedLink, final String containerFormat, final ArrayList<DownloadLink> decryptedLinks) throws IOException {
+    private boolean decryptContainer(final String page, final String cryptedLink, final String containerFormat, final ArrayList<DownloadLink> decryptedLinks) throws IOException {
         final String containerURL = new Regex(page, "(download\\.php\\?id=[a-zA-z0-9]+\\&" + containerFormat + "=\\d+)").getMatch(0);
         if (containerURL != null) {
             final File container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + "." + containerFormat);
@@ -82,7 +81,7 @@ public class Rlnks extends PluginForDecrypt {
             if (allForm != null) {
                 for (int i = 0; i <= 5; i++) {
                     if (allForm.containsHTML(PASSWORDTEXT)) {
-                        final String passCode = getPassword(param);
+                        final String passCode = Plugin.getUserInput(null, param);
                         allForm.put(PASSWORDTEXT, passCode);
                     }
                     if (allForm.containsHTML("captcha")) {
@@ -90,7 +89,7 @@ public class Rlnks extends PluginForDecrypt {
                         final String captchaLink = allForm.getRegex("src=\"(.*?)\"").getMatch(0);
                         if (captchaLink == null) { return null; }
                         final File captchaFile = this.getLocalCaptchaFile();
-                        Browser.download(captchaFile, br.cloneBrowser().openGetConnection("http://relink.us/" + captchaLink));
+                        Browser.download(captchaFile, br.cloneBrowser().openGetConnection("http://www.relink.us/" + captchaLink));
                         final Point p = UserIO.getInstance().requestClickPositionDialog(captchaFile, "relink.us | " + String.valueOf(i + 1) + "/5", null);
                         allForm.put("button.x", String.valueOf(p.x));
                         allForm.put("button.y", String.valueOf(p.y));
@@ -158,7 +157,7 @@ public class Rlnks extends PluginForDecrypt {
                 brc = br.cloneBrowser();
                 brc.setCookiesExclusive(true);
                 brc.getHeaders().put("User-Agent", RandomUserAgent.generate());
-                Thread.sleep(DYNAMIC_WAITTIME + 4000);
+                Thread.sleep(2333);
                 getCaptcha("http://www.relink.us/frame.php?" + match);
                 if (brc != null && brc.getRedirectLocation() != null && brc.getRedirectLocation().contains("relink.us/getfile")) {
                     brc.getPage(brc.getRedirectLocation());
@@ -182,7 +181,7 @@ public class Rlnks extends PluginForDecrypt {
         }
     }
 
-    private synchronized Boolean getCaptcha(final String partLink) throws Exception {
+    private Boolean getCaptcha(final String partLink) throws Exception {
         br.getPage(partLink);
         Form allForm = br.getFormbyProperty("name", "form");
         if (allForm != null) {
@@ -197,7 +196,6 @@ public class Rlnks extends PluginForDecrypt {
                     allForm.put("button.x", String.valueOf(p.x));
                     allForm.put("button.y", String.valueOf(p.y));
                 }
-                DYNAMIC_WAITTIME += 500;
                 br.submitForm(allForm);
                 if (br.getURL().contains("error.php")) {
                     br.getPage(partLink);
@@ -214,11 +212,6 @@ public class Rlnks extends PluginForDecrypt {
         } else {
             return false;
         }
-    }
-
-    private String getPassword(final CryptedLink param) throws DecrypterException {
-        final String passCode = Plugin.getUserInput(null, param);
-        return passCode;
     }
 
 }
