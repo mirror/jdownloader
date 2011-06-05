@@ -17,6 +17,7 @@
 package jd.config;
 
 import java.awt.event.ActionListener;
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -25,8 +26,25 @@ import javax.swing.ImageIcon;
 import javax.swing.JComponent;
 
 import jd.controlling.ListController;
+import jd.http.Browser;
 
 public class ConfigEntry implements Serializable {
+    public static void main(String[] args) {
+        Browser br = new Browser();
+        br.setDebug(true);
+        while (true) {
+            try {
+                String ret = br.postPage("http://uploaded.to/api/filemultiple", "apikey=hP5Y37ulYfr8gSsS97LCT7kG5Gqp8Uug&id_0=zz1iia&id_1=rit6vp&id_2=3xmmv6&id_3=p8j0up&id_4=n7f4f3&id_5=x14b0w&id_6=q02r03&id_7=ika829&id_8=uk2ev4&id_9=er85js&id_10=lr19v9&id_11=x0kmya&id_12=4y2nw2&id_13=nm9wti&id_14=qatrth&id_15=mxsuhp&id_16=tnknyc&id_17=0buwni&id_18=tn6p9f&id_19=a1fr9x&id_20=yxwv2x&id_21=sjplyq&id_22=gznxrf&id_23=ynk29f&id_24=iffczp&id_25=divijk&id_26=0sp9ro&id_27=0kou34&id_28=v0fbmq&id_29=befwej&id_30=gouoy8&id_31=ind8oy&id_32=5palc1&id_33=hfnt73&id_34=mpiqzo&id_35=a1yamz&id_36=30geg8&id_37=9amk6y&id_38=l32y3h&id_39=i8b45e&id_40=7kiehj&id_41=sz0lbs&id_42=cp9n52&id_43=jly5nf&id_44=ii5r2h&id_45=4h00pa&id_46=hspog2&id_47=48ofu4&id_48=srjvnc&id_49=vinxie&id_50=hbghoy&id_51=pf9krk&id_52=0mcylm&id_53=40ejti&id_54=ayw6e4&id_55=syk8i4");
+                if (!ret.startsWith("online")) {
+                    System.out.println(ret);
+                }
+                System.out.println("_" + ret.length());
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+        }
+    }
 
     public static enum PropertyType {
         NONE, NORMAL, NEEDS_RESTART;
@@ -48,57 +66,57 @@ public class ConfigEntry implements Serializable {
 
     }
 
-    private static final long serialVersionUID = 7422046260361380162L;
+    private static final long            serialVersionUID = 7422046260361380162L;
 
     /**
      * Generelle Variablen
      */
-    private final int type;
-    private ConfigGroup group;
-    private String label;
-    private Object defaultValue;
-    private boolean enabled = true;
-    private Property propertyInstance = null;
-    private String propertyName = null;
-    private PropertyType propertyType = PropertyType.NORMAL;
-    private GuiConfigListener guiListener;
+    private final int                    type;
+    private ConfigGroup                  group;
+    private String                       label;
+    private Object                       defaultValue;
+    private boolean                      enabled          = true;
+    private Property                     propertyInstance = null;
+    private String                       propertyName     = null;
+    private PropertyType                 propertyType     = PropertyType.NORMAL;
+    private GuiConfigListener            guiListener;
 
     /**
      * Variablen fuer den Vergleich mit einem anderen ConfigEntry.
      */
-    private ConfigEntry conditionEntry;
-    private Boolean compareValue;
-    private final ArrayList<ConfigEntry> listener = new ArrayList<ConfigEntry>();
+    private ConfigEntry                  conditionEntry;
+    private Boolean                      compareValue;
+    private final ArrayList<ConfigEntry> listener         = new ArrayList<ConfigEntry>();
 
     /**
      * Variablen fuer einen Button-Eintrag.
      */
-    private String description;
-    private ActionListener actionListener;
-    private ImageIcon imageIcon;
+    private String                       description;
+    private ActionListener               actionListener;
+    private ImageIcon                    imageIcon;
 
     /**
      * Variablen fuer einen ListController-Eintrag.
      */
-    private transient ListController controller;
+    private transient ListController     controller;
 
     /**
      * Variablen fuer einen ComboBox- oder RadioField-Eintrag.
      */
-    private Object[] list;
+    private Object[]                     list;
 
     /**
      * Variablen fuer einen Spinner-Eintrag.
      */
-    private int start;
-    private int end;
-    private int step = 1;
+    private int                          start;
+    private int                          end;
+    private int                          step             = 1;
 
     /**
      * Variablen fuer einen Komponenten-Eintrag.
      */
-    private JComponent component;
-    private String constraints;
+    private JComponent                   component;
+    private String                       constraints;
 
     /**
      * Konstruktor fuer Komponenten die nix brauchen. z.B. JSeparator

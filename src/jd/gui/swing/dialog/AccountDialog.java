@@ -22,8 +22,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 
+import javax.swing.Icon;
 import javax.swing.JButton;
-import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -31,19 +31,28 @@ import javax.swing.JPasswordField;
 import javax.swing.JTextField;
 
 import jd.HostPluginWrapper;
+import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.gui.UserIO;
-import jd.gui.swing.jdgui.actions.ActionController;
 import jd.gui.swing.jdgui.views.settings.JDLabelListRenderer;
+import jd.gui.swing.jdgui.views.settings.panels.accountmanager.BuyAction;
 import jd.plugins.Account;
 import jd.plugins.PluginForHost;
+import jd.plugins.hoster.FileSonicCom;
 import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.swing.components.searchcombo.SearchComboBox;
+import org.appwork.utils.logging.Log;
+import org.appwork.utils.swing.HelpNotifier;
+import org.appwork.utils.swing.HelpNotifierCallbackListener;
 import org.appwork.utils.swing.dialog.AbstractDialog;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
+import org.appwork.utils.swing.dialog.ProgressDialog;
+import org.appwork.utils.swing.dialog.ProgressDialog.ProgressGetter;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 
@@ -51,14 +60,63 @@ public class AccountDialog extends AbstractDialog<Integer> {
 
     private static final long serialVersionUID = -2099080199110932990L;
 
-    public static void showDialog(final PluginForHost pluginForHost) {
-        final AccountDialog dialog = new AccountDialog(pluginForHost);
+    public static void showDialog(final PluginForHost pluginForHost, Account acc) {
+        final AccountDialog dialog = new AccountDialog(pluginForHost, acc);
 
         try {
             Dialog.getInstance().showDialog(dialog);
             final Account ac = new Account(dialog.getUsername(), dialog.getPassword());
-            AccountController.getInstance().addAccount(dialog.getHoster().getPlugin(), ac);
 
+            ProgressDialog pd = new ProgressDialog(new ProgressGetter() {
+
+                public void run() throws Exception {
+                    AccountController.getInstance().updateAccountInfo(dialog.getHoster().getPlugin(), ac, true);
+
+                    Log.L.info(JSonStorage.toString(ac.getAccountInfo()));
+
+                }
+
+                public String getString() {
+                    return null;
+                }
+
+                public int getProgress() {
+                    return -1;
+                }
+            }, 0, _GUI._.accountdialog_check(), _GUI._.accountdialog_check_msg(), NewTheme.I().getScaledInstance(dialog.getHoster().getIconUnscaled(), 32));
+
+            try {
+                Dialog.getInstance().showDialog(pd);
+            } catch (DialogClosedException e) {
+
+                throw e;
+            } catch (DialogCanceledException e) {
+                if (pd.getThrowable() == null) { throw e; }
+
+            }
+
+            if (ac.getAccountInfo() != null) {
+                if (ac.getAccountInfo().isExpired()) {
+                    Dialog.getInstance().showConfirmDialog(0, _GUI._.accountdialog_check_expired_title(), _GUI._.accountdialog_check_expired(ac.getAccountInfo().getStatus()), null, _GUI._.accountdialog_check_expired_renew(), null);
+
+                    AccountController.getInstance().addAccount(dialog.getHoster().getPlugin(), ac);
+                    return;
+
+                } else if (!ac.isValid()) {
+
+                    Dialog.getInstance().showMessageDialog(_GUI._.accountdialog_check_invalid(ac.getAccountInfo().getStatus()));
+
+                } else {
+                    Dialog.getInstance().showMessageDialog(_GUI._.accountdialog_check_valid(ac.getAccountInfo().getStatus()));
+                    AccountController.getInstance().addAccount(dialog.getHoster().getPlugin(), ac);
+                    return;
+
+                }
+            } else {
+                Throwable t = pd.getThrowable();
+                if (t != null) Dialog.getInstance().showExceptionDialog(_GUI._.accountdialog_check_failed(), _GUI._.accountdialog_check_failed_msg(), t);
+            }
+            showDialog(dialog.getHoster().getPlugin(), ac);
         } catch (DialogClosedException e) {
             e.printStackTrace();
         } catch (DialogCanceledException e) {
@@ -67,17 +125,18 @@ public class AccountDialog extends AbstractDialog<Integer> {
 
     }
 
-    private JComboBox           hoster;
+    private SearchComboBox<HostPluginWrapper> hoster;
 
-    private JTextField          name;
+    private JTextField                        name;
 
-    private JPasswordField      pass;
+    JPasswordField                            pass;
+    private final PluginForHost               plugin;
 
-    private final PluginForHost plugin;
+    private Account                           defaultAccount;
 
-    private AccountDialog(final PluginForHost plugin) {
+    private AccountDialog(final PluginForHost plugin, Account acc) {
         super(UserIO.NO_ICON, _GUI._.jd_gui_swing_components_AccountDialog_title(), null, null, null);
-
+        this.defaultAccount = acc;
         this.plugin = plugin;
     }
 
@@ -106,34 +165,78 @@ public class AccountDialog extends AbstractDialog<Integer> {
                 return a.getHost().compareToIgnoreCase(b.getHost());
             }
         });
-        final HostPluginWrapper[] array = plugins.toArray(new HostPluginWrapper[plugins.size()]);
-        this.hoster = new JComboBox(array);
+        // final HostPluginWrapper[] array = plugins.toArray(new
+        // HostPluginWrapper[plugins.size()]);
+
+        hoster = new SearchComboBox<HostPluginWrapper>(plugins) {
+
+            @Override
+            protected Icon getIcon(HostPluginWrapper value) {
+                return value.getIconScaled();
+            }
+
+            @Override
+            protected String getText(HostPluginWrapper value) {
+                return value.getHost();
+            }
+        };
+
         if (this.plugin != null) {
             try {
                 this.hoster.setSelectedItem(this.plugin.getWrapper());
             } catch (final Exception e) {
             }
+        } else {
+            PluginWrapper plg = HostPluginWrapper.getWrapper(FileSonicCom.class.getName());
+            if (plg != null) {
+                try {
+                    hoster.setSelectedItem(plg);
+                } catch (final Exception e) {
+                }
+            }
         }
+
         this.hoster.setRenderer(new JDLabelListRenderer());
 
         final JButton link = new JButton(NewTheme.I().getIcon("money", 16));
         link.setToolTipText(_GUI._.gui_menu_action_premium_buy_name());
         link.addActionListener(new ActionListener() {
             public void actionPerformed(final ActionEvent e) {
-                ActionController.getToolBarAction("action.premium.buy").actionPerformed(new ActionEvent(AccountDialog.this.getHoster(), 0, "buyaccount"));
+                new BuyAction(getHoster(), null).actionPerformed(null);
             }
         });
 
         final JPanel panel = new JPanel(new MigLayout("ins 0, wrap 2", "[][grow,fill]"));
         panel.add(new JLabel(_GUI._.jd_gui_swing_components_AccountDialog_hoster()));
-        panel.add(this.hoster, "split 2");
-        panel.add(link);
+        panel.add(this.hoster, "split 2,height 24!");
+        panel.add(link, "height 24!");
 
         panel.add(new JLabel(_GUI._.jd_gui_swing_components_AccountDialog_name()));
         panel.add(this.name = new JTextField());
 
+        HelpNotifier.register(name, new HelpNotifierCallbackListener() {
+
+            public void onHelpNotifyShown(JComponent c) {
+            }
+
+            public void onHelpNotifyHidden(JComponent c) {
+            }
+        }, _GUI._.jd_gui_swing_components_AccountDialog_help_username());
+
         panel.add(new JLabel(_GUI._.jd_gui_swing_components_AccountDialog_pass()));
-        panel.add(this.pass = new JPasswordField());
+        panel.add(this.pass = new JPasswordField(), "");
+        HelpNotifier.register(pass, new HelpNotifierCallbackListener() {
+
+            public void onHelpNotifyShown(JComponent c) {
+            }
+
+            public void onHelpNotifyHidden(JComponent c) {
+            }
+        }, "                 ");
+        if (defaultAccount != null) {
+            name.setText(defaultAccount.getUser());
+        }
+        // pass.setVisible(false);
         return panel;
     }
 

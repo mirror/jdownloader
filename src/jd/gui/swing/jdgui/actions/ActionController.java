@@ -19,9 +19,7 @@ package jd.gui.swing.jdgui.actions;
 import java.awt.event.ActionEvent;
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Collections;
 
-import jd.HostPluginWrapper;
 import jd.config.ConfigPropertyListener;
 import jd.config.Configuration;
 import jd.config.Property;
@@ -39,13 +37,11 @@ import jd.event.ControlEvent;
 import jd.event.ControlIDListener;
 import jd.gui.UserIF;
 import jd.gui.UserIO;
-import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.SwingGui;
 import jd.gui.swing.dialog.AccountDialog;
 import jd.gui.swing.jdgui.components.premiumbar.PremiumStatus;
 import jd.gui.swing.jdgui.views.downloads.DownloadLinksPanel;
 import jd.gui.swing.jdgui.views.linkgrabber.LinkGrabberPanel;
-import jd.gui.swing.jdgui.views.settings.JDLabelListRenderer;
 import jd.gui.swing.jdgui.views.settings.panels.addons.ExtensionManager;
 import jd.gui.swing.jdgui.views.settings.panels.passwords.PasswordList;
 import jd.nutils.JDFlags;
@@ -57,7 +53,6 @@ import jd.utils.WebUpdate;
 import org.appwork.storage.StorageValueChangeEvent;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.event.DefaultEventListener;
-import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.settings.GeneralSettings;
 
@@ -778,9 +773,9 @@ public class ActionController {
                  * that blocks EDT anyway
                  */
                 if (e.getSource() instanceof PluginForHost) {
-                    AccountDialog.showDialog((PluginForHost) e.getSource());
+                    AccountDialog.showDialog((PluginForHost) e.getSource(), null);
                 } else {
-                    AccountDialog.showDialog(null);
+                    AccountDialog.showDialog(null, null);
                 }
             }
 
@@ -799,57 +794,6 @@ public class ActionController {
                 return _GUI._.action_add_premium_account_tooltip();
             }
         };
-        new ToolBarAction(_GUI._.action_buy_premium_account(), "action.premium.buy", "buy") {
-
-            private static final long serialVersionUID = -4407938288408350792L;
-
-            @Override
-            public void initDefaults() {
-            }
-
-            @Override
-            public void onAction(final ActionEvent e) {
-                int index = 0;
-                final ArrayList<HostPluginWrapper> plugins = JDUtilities.getPremiumPluginsForHost();
-                Collections.sort(plugins);
-                final HostPluginWrapper[] data = plugins.toArray(new HostPluginWrapper[plugins.size()]);
-                if (e.getSource() instanceof HostPluginWrapper) {
-                    for (int i = 0; i < data.length; i++) {
-                        final HostPluginWrapper w = data[i];
-                        if (e.getSource() == w) {
-                            index = i;
-                            break;
-                        }
-                    }
-                }
-                final int i = index;
-                final int selection = new GuiRunnable<Integer>() {
-
-                    @Override
-                    public Integer runSave() {
-                        return UserIO.getInstance().requestComboDialog(UserIO.NO_COUNTDOWN, _GUI._.jd_gui_swing_jdgui_actions_ActionController_buy_title(), _GUI._.jd_gui_swing_jdgui_actions_ActionController_buy_message(), data, i, null, _GUI._.jd_gui_swing_jdgui_actions_ActionController_continue(), null, new JDLabelListRenderer());
-                    }
-                }.getReturnValue();
-                if (selection < 0) { return; }
-                CrossSystem.openURLOrShowMessage(data[selection].getPlugin().getBuyPremiumUrl());
-            }
-
-            @Override
-            protected String createMnemonic() {
-                return _GUI._.action_buy_premium_account_mnemonic();
-            }
-
-            @Override
-            protected String createAccelerator() {
-                return _GUI._.action_buy_premium_account_accelerator();
-            }
-
-            @Override
-            protected String createTooltip() {
-                return _GUI._.action_buy_premium_account_tooltip();
-            }
-        };
-
         new ToolBarAction(_GUI._.action_settings(), "addonsMenu.configuration", "extension") {
             private static final long serialVersionUID = -3613887193435347389L;
 

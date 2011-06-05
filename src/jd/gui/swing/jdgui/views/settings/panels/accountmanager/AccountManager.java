@@ -37,10 +37,11 @@ public class AccountManager extends JPanel implements SettingsComponent {
         table = new PremiumAccountTable();
         tb.add(new JButton(new NewAction(table)));
         tb.add(new JButton(new RemoveAction(table)));
-        tb.add(new JButton(new BuyAction(table)));
+        tb.add(new JButton(new BuyAction(null, table)));
         tb.add(new JButton(new RefreshAction(table)));
-        add(tb);
+
         add(new JScrollPane(table));
+        add(tb);
 
     }
 

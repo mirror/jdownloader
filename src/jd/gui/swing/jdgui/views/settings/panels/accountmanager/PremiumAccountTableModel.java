@@ -10,11 +10,14 @@ import javax.swing.table.JTableHeader;
 
 import jd.HostPluginWrapper;
 import jd.controlling.AccountController;
+import jd.controlling.AccountControllerEvent;
+import jd.controlling.AccountControllerListener;
 import jd.nutils.Formatter;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.utils.JDUtilities;
 
+import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.table.ExtTableHeaderRenderer;
 import org.appwork.utils.swing.table.ExtTableModel;
 import org.appwork.utils.swing.table.columns.ExtCheckColumn;
@@ -32,23 +35,35 @@ public class PremiumAccountTableModel extends ExtTableModel<Account> {
     public PremiumAccountTableModel() {
         super("PremiumAccountTableModel2");
         fill();
+        AccountController.getInstance().addListener(new AccountControllerListener() {
+
+            public void onAccountControllerEvent(AccountControllerEvent event) {
+                fill();
+            }
+        });
     }
 
     private void fill() {
-        ArrayList<HostPluginWrapper> plugins = HostPluginWrapper.getHostWrapper();
+        final ArrayList<HostPluginWrapper> plugins = HostPluginWrapper.getHostWrapper();
+        new EDTRunner() {
 
-        synchronized (this.tableData) {
-            tableData.clear();
+            @Override
+            protected void runInEDT() {
+                synchronized (tableData) {
+                    tableData.clear();
 
-            for (HostPluginWrapper plugin : plugins) {
-                ArrayList<Account> accs = AccountController.getInstance().getAllAccounts(plugin.getHost());
-                for (Account acc : accs) {
-                    tableData.add(acc);
-                    acc.setHoster(plugin.getHost());
+                    for (HostPluginWrapper plugin : plugins) {
+                        ArrayList<Account> accs = AccountController.getInstance().getAllAccounts(plugin.getHost());
+                        for (Account acc : accs) {
+                            tableData.add(acc);
+                            acc.setHoster(plugin.getHost());
+                        }
+
+                    }
                 }
-
             }
-        }
+        };
+
     }
 
     @Override
@@ -171,12 +186,13 @@ public class PremiumAccountTableModel extends ExtTableModel<Account> {
 
             @Override
             public boolean isEditable(Account obj) {
-                return obj.isEnabled();
+                return true;
             }
 
             @Override
             protected void setStringValue(String value, Account object) {
                 object.setUser(value);
+                AccountController.getInstance().updateAccountInfo((String) null, object, true);
             }
 
             @Override
@@ -215,6 +231,7 @@ public class PremiumAccountTableModel extends ExtTableModel<Account> {
             @Override
             protected void setStringValue(String value, Account object) {
                 object.setPass(value);
+                AccountController.getInstance().updateAccountInfo((String) null, object, true);
             }
         });
 

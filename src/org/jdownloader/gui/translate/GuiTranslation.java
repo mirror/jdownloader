@@ -1924,4 +1924,52 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Proxy Rotation requires at least one active entry." })
     String proxytablemodel_atleast_one_rotate_required();
+
+    @Default(lngs = { "en" }, values = { "Buy a Premium Account" })
+    String buyaction_title();
+
+    @Default(lngs = { "en" }, values = { "Most Hosters offer a \"Premium Mode\". Download in Premium Mode is usually much faster." })
+    String buyaction_message();
+
+    @Default(lngs = { "en" }, values = { "Continue" })
+    String buyaction_title_buy_account();
+
+    @Default(lngs = { "en" }, values = { "Check Account" })
+    String accountdialog_check();
+
+    @Default(lngs = { "en" }, values = { "JDownloader checks if logins are correct" })
+    String accountdialog_check_msg();
+
+    @Default(lngs = { "en" }, values = { "Cannot add Account because %s1" })
+    String accountdialog_check_invalid(String status);
+
+    @Default(lngs = { "en" }, values = { "Verified logins:\r\n%s1" })
+    String accountdialog_check_valid(String status);
+
+    @Default(lngs = { "en" }, values = { "Accountcheck Failed" })
+    String accountdialog_check_failed();
+
+    @Default(lngs = { "en" }, values = { "Account check failed.\r\nPlease make sure that your entered logins are correct." })
+    String accountdialog_check_failed_msg();
+
+    @Default(lngs = { "en" }, values = { "Accountlogins are correct, but your Account has expired." })
+    String accountdialog_check_expired(String status);
+
+    @Default(lngs = { "en" }, values = { "Renew Account?" })
+    String accountdialog_check_expired_title();
+
+    @Default(lngs = { "en" }, values = { "Renew/Extend Account now!" })
+    String accountdialog_check_expired_renew();
+
+    @Default(lngs = { "en" }, values = { "Enter Username..." })
+    String jd_gui_swing_components_AccountDialog_help_username();
+
+    @Default(lngs = { "en" }, values = { "Enter Password..." })
+    String jd_gui_swing_components_AccountDialog_help_password();
+
+    @Default(lngs = { "en" }, values = { "Really remove %s1 account(s)?" })
+    String account_remove_action_title(int num);
+
+    @Default(lngs = { "en" }, values = { "Really remove %s1" })
+    String account_remove_action_msg(String string);
 }
