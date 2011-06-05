@@ -27,12 +27,12 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -59,7 +59,7 @@ public class PrzeklejPl extends PluginForHost {
     }
 
     private static final String REGISTEREDONLY = "> możesz pobrać, jeżeli jesteś zalogowany";
-    private static final String NOFREEMESSAGE = "Only downloadable for registered users";
+    private static final String NOFREEMESSAGE  = "Only downloadable for registered users";
     private static final String FINALLINKREGEX = "class=\"download\" href=\"(.*?)\"";
 
     @Override
@@ -139,7 +139,7 @@ public class PrzeklejPl extends PluginForHost {
         br.getHeaders().put("Referer", "");
         br.setCustomCharset("utf-8");
         br.postPage("http://www.przeklej.pl/loguj", "login%5Blogin%5D=" + account.getUser() + "&login%5Bpass%5D=" + account.getPass());
-        if (!br.containsHTML("<html><head><meta http-equiv=\"refresh\" content=\"0;url=http://www\\.przeklej\\.pl/\"/></head></html>")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        if (!br.containsHTML("<html><head><meta http\\-equiv=\"refresh\" content=\"0;url=http://www\\.przeklej\\.pl/\"/></head></html>")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
 
     @Override

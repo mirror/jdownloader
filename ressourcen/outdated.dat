@@ -567,3 +567,7 @@ jd/plugins/hoster/AnyFilesNet.class
 jd/plugins/hoster/NukeShareCom.class
 jd/captcha/methods/4shrws
 jd/plugins/hoster/UploadFaCom.class
+jd/plugins/hoster/ShareBaseTo.class
+jd/plugins/hoster/AppSceneOrg.class
+jd/plugins/hoster/DivxUpFileCom.class
+jd/plugins/hoster/MyStreamTo.class
