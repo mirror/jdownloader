@@ -18,30 +18,35 @@ package jd.gui.swing.jdgui.views.settings.panels;
 
 import javax.swing.ImageIcon;
 
-import jd.gui.swing.jdgui.views.settings.panels.accountmanager.AccountManager;
+import jd.gui.swing.jdgui.views.settings.components.Spinner;
 
 import org.jdownloader.gui.settings.AbstractConfigPanel;
+import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.translate._JDT;
 
-public class AccountManagerSettings extends AbstractConfigPanel {
+public class GUISettings extends AbstractConfigPanel {
 
-    private static final long serialVersionUID = -7963763730328793139L;
+    private static final long serialVersionUID = 1L;
+    private Spinner           captchaSize;
 
     public String getTitle() {
-        return _JDT._.gui_settings_premium_title();
+        return _JDT._.gui_settings__gui_title();
     }
 
-    public AccountManagerSettings() {
+    public GUISettings() {
         super();
-        this.addHeader(getTitle(), NewTheme.I().getIcon("premium", 32));
-        this.addDescriptionPlain(_JDT._.gui_settings_premium_description());
-        add(AccountManager.getInstance());
+        captchaSize = new Spinner(50, 500);
+        captchaSize.setFormat("#'%'");
+        this.addHeader(getTitle(), NewTheme.I().getIcon("barrierfreesettings", 32));
+        this.addDescription(_JDT._.gui_settings_barrierfree_description());
+        this.addPair(_GUI._.gui_config_barrierfree_captchasize(), captchaSize);
+
     }
 
     @Override
     public ImageIcon getIcon() {
-        return NewTheme.I().getIcon("premium", 32);
+        return NewTheme.I().getIcon("gui", 32);
     }
 
     @Override

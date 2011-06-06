@@ -14,39 +14,33 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package jd.gui.swing.jdgui.views.settings.panels;
+package jd.gui.swing.jdgui.views.settings.panels.accountmanager;
 
 import javax.swing.ImageIcon;
 
-import jd.gui.swing.jdgui.views.settings.components.Spinner;
-
 import org.jdownloader.gui.settings.AbstractConfigPanel;
-import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.translate._JDT;
 
-public class BarrierFree extends AbstractConfigPanel {
+public class AccountManagerSettings extends AbstractConfigPanel {
 
-    private static final long serialVersionUID = 1L;
-    private Spinner           captchaSize;
+    private static final long serialVersionUID = -7963763730328793139L;
 
     public String getTitle() {
-        return _JDT._.gui_settings_barrierfree_title();
+        return _JDT._.gui_settings_premium_title();
     }
 
-    public BarrierFree() {
+    public AccountManagerSettings() {
         super();
-        captchaSize = new Spinner(50, 500);
-        captchaSize.setFormat("#'%'");
-        this.addHeader(getTitle(), NewTheme.I().getIcon("barrierfreesettings", 32));
-        this.addDescription(_JDT._.gui_settings_barrierfree_description());
-        this.addPair(_GUI._.gui_config_barrierfree_captchasize(), captchaSize);
 
+        this.addHeader(getTitle(), NewTheme.I().getIcon("premium", 32));
+        this.addDescriptionPlain(_JDT._.gui_settings_premium_description());
+        add(AccountManager.getInstance());
     }
 
     @Override
     public ImageIcon getIcon() {
-        return NewTheme.I().getIcon("barrierfreesettings", 32);
+        return NewTheme.I().getIcon("premium", 32);
     }
 
     @Override
@@ -55,5 +49,6 @@ public class BarrierFree extends AbstractConfigPanel {
 
     @Override
     public void updateContents() {
+
     }
 }

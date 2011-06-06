@@ -1,21 +1,37 @@
 package jd.controlling.proxy;
 
+import java.lang.reflect.Method;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.Proxy;
+import java.net.ProxySelector;
+import java.net.SocketAddress;
+import java.net.URI;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.logging.Level;
+import java.util.prefs.Preferences;
 
 import jd.controlling.JDLogger;
+import jd.controlling.proxy.ProxyData.Type;
 import jd.plugins.Account;
 import jd.plugins.PluginForHost;
 
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
+import org.appwork.storage.JSonStorage;
 import org.appwork.storage.config.ConfigEventListener;
 import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.JsonConfig;
+import org.appwork.storage.config.KeyHandler;
+import org.appwork.utils.Regex;
 import org.appwork.utils.event.DefaultEventSender;
+import org.appwork.utils.logging.Log;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.appwork.utils.net.httpconnection.HTTPProxy.TYPE;
 import org.appwork.utils.net.httpconnection.HTTPProxyUtils;
+import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.settings.InternetConnectionSettings;
 
 public class ProxyController implements ConfigEventListener {
@@ -72,6 +88,124 @@ public class ProxyController implements ConfigEventListener {
         });
     }
 
+    public static ArrayList<ProxyData> autoConfig() {
+        ArrayList<ProxyData> ret = new ArrayList<ProxyData>();
+        try {
+            if (CrossSystem.isWindows()) { return ProxyController.checkReg(); }
+            /* we enable systemproxies to query them for a test getPage */
+            System.setProperty("java.net.useSystemProxies", "true");
+
+            List<Proxy> l;
+            l = ProxySelector.getDefault().select(new URI("http://www.appwork.org"));
+
+            for (final Proxy p : l) {
+                final SocketAddress ad = p.address();
+                if (ad != null && ad instanceof InetSocketAddress) {
+                    final InetSocketAddress isa = (InetSocketAddress) ad;
+                    if (isa.getHostName().trim().length() == 0) {
+                        continue;
+                    }
+                    switch (p.type()) {
+                    case HTTP:
+                        ProxyData pd = new ProxyData();
+                        pd.setHost(isa.getHostName());
+                        pd.setPort(isa.getPort());
+                        pd.setType(Type.HTTP);
+                        ret.add(pd);
+
+                        break;
+                    case SOCKS:
+                        pd = new ProxyData();
+                        pd.setHost(isa.getHostName());
+                        pd.setPort(isa.getPort());
+                        pd.setType(Type.SOCKS5);
+                        ret.add(pd);
+                        break;
+                    }
+                }
+            }
+        } catch (final Throwable e1) {
+            Log.exception(Level.WARNING, e1);
+        } finally {
+            System.setProperty("java.net.useSystemProxies", "false");
+
+        }
+        return ret;
+    }
+
+    private static byte[] toCstr(final String str) {
+        final byte[] result = new byte[str.length() + 1];
+        for (int i = 0; i < str.length(); i++) {
+            result[i] = (byte) str.charAt(i);
+        }
+        result[str.length()] = 0;
+        return result;
+    }
+
+    /**
+     * Checks windows registry for proxy settings
+     */
+    private static ArrayList<ProxyData> checkReg() {
+        ArrayList<ProxyData> ret = new ArrayList<ProxyData>();
+        try {
+            final Preferences userRoot = Preferences.userRoot();
+            final Class<?> clz = userRoot.getClass();
+            final Method openKey = clz.getDeclaredMethod("openKey", byte[].class, int.class, int.class);
+            openKey.setAccessible(true);
+
+            final Method closeKey = clz.getDeclaredMethod("closeKey", int.class);
+            closeKey.setAccessible(true);
+            final Method winRegQueryValue = clz.getDeclaredMethod("WindowsRegQueryValueEx", int.class, byte[].class);
+            winRegQueryValue.setAccessible(true);
+
+            byte[] valb = null;
+            String val = null;
+            String key = null;
+            Integer handle = -1;
+
+            // Query Internet Settings for Proxy
+            key = "Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings";
+            try {
+                handle = (Integer) openKey.invoke(userRoot, ProxyController.toCstr(key), 0x20019, 0x20019);
+                valb = (byte[]) winRegQueryValue.invoke(userRoot, handle.intValue(), ProxyController.toCstr("ProxyServer"));
+                val = valb != null ? new String(valb).trim() : null;
+            } finally {
+                closeKey.invoke(Preferences.userRoot(), handle);
+            }
+            if (val != null) {
+                for (String vals : val.split(";")) {
+                    /* parse ip */
+                    String proxyurl = new Regex(vals, "(\\d+\\.\\d+\\.\\d+\\.\\d+)").getMatch(0);
+                    if (proxyurl == null) {
+                        /* parse domain name */
+                        proxyurl = new Regex(vals, "=(.*?)($|:)").getMatch(0);
+                    }
+                    final String port = new Regex(vals, ":(\\d+)").getMatch(0);
+                    if (proxyurl != null) {
+                        if (vals.trim().contains("socks")) {
+                            final int rPOrt = port != null ? Integer.parseInt(port) : 1080;
+                            ProxyData pd = new ProxyData();
+                            pd.setHost(proxyurl);
+                            pd.setPort(rPOrt);
+                            pd.setType(Type.SOCKS5);
+                            ret.add(pd);
+                        } else {
+                            final int rPOrt = port != null ? Integer.parseInt(port) : 8080;
+                            ProxyData pd = new ProxyData();
+                            pd.setHost(proxyurl);
+                            pd.setPort(rPOrt);
+                            pd.setType(Type.HTTP);
+                            ret.add(pd);
+                        }
+                    }
+                }
+            }
+        } catch (final Throwable e) {
+            Log.exception(Level.WARNING, e);
+        }
+        return ret;
+    }
+
     private void initDirects() {
         synchronized (directs) {
             for (InetAddress ip : HTTPProxyUtils.getLocalIPs()) {
@@ -124,20 +258,25 @@ public class ProxyController implements ConfigEventListener {
 
         setDefaultProxy(none);
         ArrayList<ProxyData> ret = config.getCustomProxyList();
+        ArrayList<ProxyData> autoProxies = autoConfig();
+        System.out.println("Found  defaultProxies" + JSonStorage.toString(autoProxies));
         boolean rotCheck = false;
         synchronized (proxies) {
 
             proxies.clear();
 
+            HashMap<String, ProxyInfo> dupeMap = new HashMap<String, ProxyInfo>();
+            ProxyInfo proxy = null;
             // restore customs
             if (ret != null) {
                 for (ProxyData proxyData : ret) {
-                    ProxyInfo proxy = null;
+
                     try {
                         // we do not restore direct
 
                         /* convert proxyData to ProxyInfo */
                         proxies.add(proxy = new ProxyInfo(proxyData));
+                        dupeMap.put(proxyData.getHost() + ":" + proxyData.getPort() + "_" + proxyData.getType(), proxy);
                         if (proxyData.isDefaultProxy()) {
                             setDefaultProxy(proxy);
                         }
@@ -148,6 +287,21 @@ public class ProxyController implements ConfigEventListener {
                     }
                 }
             }
+
+            for (ProxyData proxyData : autoProxies) {
+                ProxyInfo dupe = dupeMap.get(proxyData.getHost() + ":" + proxyData.getPort() + "_" + proxyData.getType());
+                if (dupe == null) {
+                    proxies.add(proxy = new ProxyInfo(proxyData));
+                    dupeMap.put(proxyData.getHost() + ":" + proxyData.getPort() + "_" + proxyData.getType(), proxy);
+                }
+                if (!config.isNoneDefault() && defaultproxy == none) {
+                    setDefaultProxy(proxy);
+                    if (rotCheck) {
+                        proxy.setProxyRotationEnabled(true);
+                    }
+                }
+            }
+
         }
         synchronized (directs) {
             directs.clear();
@@ -525,5 +679,8 @@ public class ProxyController implements ConfigEventListener {
 
     public ProxyInfo getNone() {
         return none;
+    }
+
+    public void onConfigValidatorError(ConfigInterface config, Throwable validateException, KeyHandler methodHandler) {
     }
 }

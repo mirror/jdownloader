@@ -3,11 +3,12 @@ package jd.gui.swing.jdgui.views.settings.panels.basicauthentication;
 import javax.swing.JButton;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
-import javax.swing.JToolBar;
 
 import jd.gui.swing.jdgui.views.settings.components.SettingsComponent;
 import jd.gui.swing.jdgui.views.settings.components.StateUpdateListener;
 import net.miginfocom.swing.MigLayout;
+
+import org.appwork.app.gui.MigPanel;
 
 public class BasicAuthenticationPanel extends JPanel implements SettingsComponent {
     private static final long                     serialVersionUID = 1L;
@@ -22,7 +23,7 @@ public class BasicAuthenticationPanel extends JPanel implements SettingsComponen
         return BasicAuthenticationPanel.INSTANCE;
     }
 
-    private JToolBar  tb;
+    private MigPanel  tb;
     private AuthTable table;
 
     /**
@@ -30,15 +31,16 @@ public class BasicAuthenticationPanel extends JPanel implements SettingsComponen
      * Access the only existing instance by using {@link #getInstance()}.
      */
     private BasicAuthenticationPanel() {
-        super(new MigLayout("ins 0,wrap 1", "[grow,fill]", "[][grow,fill][]"));
+        super(new MigLayout("ins 0,wrap 1", "[grow,fill]", "[grow,fill][]"));
 
-        tb = new JToolBar();
-        tb.setFloatable(false);
+        tb = new MigPanel("ins 0", "[][][grow,fill]", "");
+
         table = new AuthTable();
-        tb.add(new JButton(new NewAction(table)));
-        tb.add(new JButton(new RemoveAction(table)));
-        add(tb);
+        tb.add(new JButton(new NewAction(table)), "sg 1");
+        tb.add(new JButton(new RemoveAction(table)), "sg 1");
+
         add(new JScrollPane(table));
+        add(tb);
 
     }
 

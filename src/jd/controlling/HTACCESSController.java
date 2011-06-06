@@ -28,14 +28,18 @@ import jd.nutils.encoding.Encoding;
 
 import org.appwork.utils.Regex;
 
+@Deprecated
+/**
+ * @Deprecated Only here for stable plugin compatibility
+ */
 public class HTACCESSController implements ActionListener, ListController {
-    private transient static SubConfiguration CONFIG = null;
+    private transient static SubConfiguration   CONFIG   = null;
     private transient HashMap<String, String[]> LIST;
     private transient static HTACCESSController INSTANCE = null;
 
-    private final Timer asyncSaveIntervalTimer;
+    private final Timer                         asyncSaveIntervalTimer;
 
-    private boolean saveinprogress;
+    private boolean                             saveinprogress;
 
     public static synchronized HTACCESSController getInstance() {
         if (INSTANCE == null) {

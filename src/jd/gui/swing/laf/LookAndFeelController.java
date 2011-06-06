@@ -25,7 +25,6 @@ import javax.swing.UIManager.LookAndFeelInfo;
 import jd.JDInitFlags;
 import jd.controlling.JDLogger;
 import jd.crypt.JDCrypt;
-import jd.gui.swing.jdgui.GraphicalUserInterfaceSettings;
 import jd.nutils.OSDetector;
 import jd.utils.JDHexUtils;
 
@@ -35,6 +34,7 @@ import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Application;
 import org.appwork.utils.logging.Log;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 
 public class LookAndFeelController {
     private static final String                DE_JAVASOFT_PLAF_SYNTHETICA_SYNTHETICA_SIMPLE2D_LOOK_AND_FEEL = "de.javasoft.plaf.synthetica.SyntheticaSimple2DLookAndFeel";
@@ -71,7 +71,7 @@ public class LookAndFeelController {
 
     public LookAndFeelWrapper getPlaf() {
         String ret = config.getLookAndFeel();
-        if (ret == null) {
+        if (ret == null || "".equals(ret)) {
             ret = LookAndFeelController.DE_JAVASOFT_PLAF_SYNTHETICA_SYNTHETICA_SIMPLE2D_LOOK_AND_FEEL;
         }
         return new LookAndFeelWrapper(ret);
@@ -181,24 +181,24 @@ public class LookAndFeelController {
             JDLogger.getLogger().info("Use Look & Feel: " + laf);
 
             preSetup(laf);
+            String str = NewTheme.I().getText("lafoptions/" + laf + ".json");
+            if (str != null) {
+
+                lafOptions = JSonStorage.restoreFromString(str, new TypeRef<LAFOptions>() {
+                }, new LAFOptions());
+
+            } else {
+                Log.L.warning("Not LAF Options found: " + laf + ".json");
+
+                lafOptions = new LAFOptions();
+                Log.L.info(JSonStorage.toString(lafOptions));
+            }
+            defaultLAF = laf.equals(DE_JAVASOFT_PLAF_SYNTHETICA_SYNTHETICA_SIMPLE2D_LOOK_AND_FEEL);
 
             if (laf.contains("Synthetica")) {
 
                 try {
-                    defaultLAF = laf.equals(DE_JAVASOFT_PLAF_SYNTHETICA_SYNTHETICA_SIMPLE2D_LOOK_AND_FEEL);
 
-                    String str = NewTheme.I().getText("lafoptions/" + laf + ".json");
-                    if (str != null) {
-
-                        lafOptions = JSonStorage.restoreFromString(str, new TypeRef<LAFOptions>() {
-                        }, new LAFOptions());
-
-                    } else {
-                        Log.L.warning("Not LAF Options found: " + laf + ".json");
-
-                        lafOptions = new LAFOptions();
-                        Log.L.info(JSonStorage.toString(lafOptions));
-                    }
                     de.javasoft.plaf.synthetica.SyntheticaLookAndFeel.setLookAndFeel(laf);
                     de.javasoft.plaf.synthetica.SyntheticaLookAndFeel.setExtendedFileChooserEnabled(false);
 

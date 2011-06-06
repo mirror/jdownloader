@@ -21,13 +21,13 @@ import java.awt.Color;
 import javax.swing.Icon;
 import javax.swing.JComponent;
 
-import jd.gui.swing.jdgui.GraphicalUserInterfaceSettings;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.gui.swing.jdgui.views.ClosableView;
 
 import org.appwork.storage.config.JsonConfig;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 
 public class ConfigurationView extends ClosableView {
 

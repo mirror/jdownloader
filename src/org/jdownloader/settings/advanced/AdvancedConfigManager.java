@@ -3,16 +3,20 @@ package org.jdownloader.settings.advanced;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import org.appwork.storage.config.ConfigEventListener;
 import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.KeyHandler;
+import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.controlling.LinkFilterSettings;
+import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.settings.AboutConfig;
 import org.jdownloader.settings.AccountSettings;
 import org.jdownloader.settings.GeneralSettings;
+import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 import org.jdownloader.settings.InternetConnectionSettings;
 
-public class AdvancedConfigManager {
+public class AdvancedConfigManager implements ConfigEventListener {
     private static final AdvancedConfigManager INSTANCE = new AdvancedConfigManager();
 
     public static AdvancedConfigManager getInstance() {
@@ -29,6 +33,7 @@ public class AdvancedConfigManager {
         register(JsonConfig.create(LinkFilterSettings.class));
         register(JsonConfig.create(InternetConnectionSettings.class));
         register(JsonConfig.create(AccountSettings.class));
+        register(JsonConfig.create(GraphicalUserInterfaceSettings.class));
     }
 
     public AdvancedConfigEventSender getEventSender() {
@@ -36,7 +41,7 @@ public class AdvancedConfigManager {
     }
 
     public void register(ConfigInterface cf) {
-
+        cf.getStorageHandler().getEventSender().addListener(this);
         HashMap<KeyHandler, Boolean> map = new HashMap<KeyHandler, Boolean>();
 
         for (KeyHandler m : cf.getStorageHandler().getMap().values()) {
@@ -62,5 +67,13 @@ public class AdvancedConfigManager {
     public ArrayList<AdvancedConfigEntry> list() {
 
         return configInterfaces;
+    }
+
+    public void onConfigValueModified(ConfigInterface config, String key, Object newValue) {
+    }
+
+    public void onConfigValidatorError(ConfigInterface config, Throwable validateException, KeyHandler methodHandler) {
+        Dialog.getInstance().showErrorDialog(_GUI._.AdvancedConfigmanager_error_validator(config.getStorageHandler().getConfigInterface().getClass().getSimpleName(), methodHandler.getKey(), validateException.getMessage()));
+
     }
 }

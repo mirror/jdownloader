@@ -5,7 +5,6 @@ import java.awt.Component;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
-import jd.gui.swing.jdgui.GuiConfig;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.gui.swing.jdgui.views.settings.panels.ConfigPanelGeneral;
 import jd.gui.swing.jdgui.views.settings.sidebar.ConfigSidebar;
@@ -13,20 +12,21 @@ import net.miginfocom.swing.MigLayout;
 
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.swing.EDTRunner;
+import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 
 public class ConfigurationPanel extends SwitchPanel implements ListSelectionListener {
 
-    private static final long serialVersionUID = -6554600142198250742L;
-    private ConfigSidebar     sidebar;
-    private SwitchPanel       panel;
-    private GuiConfig         cfg;
+    private static final long              serialVersionUID = -6554600142198250742L;
+    private ConfigSidebar                  sidebar;
+    private SwitchPanel                    panel;
+    private GraphicalUserInterfaceSettings cfg;
 
     public ConfigurationPanel() {
         super(new MigLayout("ins 0", "[200!,grow,fill][grow,fill]", "[grow,fill]"));
         sidebar = new ConfigSidebar();
 
         add(sidebar, "");
-        cfg = JsonConfig.create(GuiConfig.class);
+        cfg = JsonConfig.create(GraphicalUserInterfaceSettings.class);
         // add(viewport);
         sidebar.addListener(this);
         Class<?> selected = null;

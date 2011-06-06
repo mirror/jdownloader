@@ -701,4 +701,7 @@ public interface JdownloaderTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "All Settings found here are for Advanced Users only! Do not change anything here if you do not know 100% what you are doing." })
     String gui_settings_advanced_description();
+
+    @Default(lngs = { "en" }, values = { "Look And Feel" })
+    String gui_settings__gui_title();
 }

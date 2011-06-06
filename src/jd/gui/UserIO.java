@@ -26,7 +26,6 @@ import javax.swing.filechooser.FileFilter;
 
 import jd.gui.swing.dialog.CaptchaDialog;
 import jd.gui.swing.dialog.ClickPositionDialog;
-import jd.gui.swing.jdgui.GraphicalUserInterfaceSettings;
 import jd.nutils.JDFlags;
 
 import org.appwork.storage.config.JsonConfig;
@@ -36,6 +35,7 @@ import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 
 public class UserIO {
 

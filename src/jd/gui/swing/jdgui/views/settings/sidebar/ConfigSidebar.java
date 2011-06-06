@@ -47,6 +47,7 @@ import net.miginfocom.swing.MigLayout;
 
 import org.appwork.storage.config.ConfigEventListener;
 import org.appwork.storage.config.ConfigInterface;
+import org.appwork.storage.config.KeyHandler;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.Dialog;
@@ -352,5 +353,8 @@ public class ConfigSidebar extends JPanel implements ControlListener, MouseMotio
                 repaint();
             }
         };
+    }
+
+    public void onConfigValidatorError(ConfigInterface config, Throwable validateException, KeyHandler methodHandler) {
     }
 }

@@ -31,7 +31,7 @@ public class RemoveAction extends AbstractAction {
         this.table = authTable;
         this.putValue(NAME, _GUI._.settings_auth_delete());
         this.putValue(AbstractAction.SMALL_ICON, NewTheme.I().getIcon("remove", 20));
-        this.setEnabled(selection.size() > 0);
+        this.setEnabled(selection != null && selection.size() > 0);
 
     }
 

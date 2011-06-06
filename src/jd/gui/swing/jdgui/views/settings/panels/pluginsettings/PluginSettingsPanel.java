@@ -111,7 +111,7 @@ public class PluginSettingsPanel extends JPanel implements SettingsComponent, Ac
 
             @Override
             protected void runInEDT() {
-
+                System.out.println("SWITCH");
                 card.removeAll();
                 if (configPanel != null) {
                     configPanel.setHidden();
@@ -119,6 +119,7 @@ public class PluginSettingsPanel extends JPanel implements SettingsComponent, Ac
                 configPanel = PluginConfigPanel.create(selectedItem);
                 configPanel.setShown();
                 card.add(configPanel);
+                revalidate();
             }
         };
     }

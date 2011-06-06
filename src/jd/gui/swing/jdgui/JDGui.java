@@ -90,6 +90,7 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.DownloadsView;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.GeneralSettings;
+import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 
 public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
 

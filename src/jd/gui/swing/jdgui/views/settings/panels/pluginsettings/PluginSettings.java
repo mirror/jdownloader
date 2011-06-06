@@ -20,7 +20,7 @@ public class PluginSettings extends AbstractConfigPanel {
     public PluginSettings() {
         super();
         this.addHeader(getTitle(), NewTheme.I().getIcon("plugin", 32));
-        this.addDescription(_JDT._.gui_settings_plugins_description(HostPluginWrapper.getHostWrapper().size() + DecryptPluginWrapper.getDecryptWrapper().size()));
+        this.addDescriptionPlain(_JDT._.gui_settings_plugins_description(HostPluginWrapper.getHostWrapper().size() + DecryptPluginWrapper.getDecryptWrapper().size()));
 
         add(psp = new PluginSettingsPanel());
 

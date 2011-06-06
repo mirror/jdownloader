@@ -6,12 +6,12 @@ import java.util.Comparator;
 
 import javax.swing.DefaultListModel;
 
-import jd.gui.swing.jdgui.views.settings.panels.AccountManagerSettings;
-import jd.gui.swing.jdgui.views.settings.panels.BarrierFree;
 import jd.gui.swing.jdgui.views.settings.panels.BasicAuthentication;
 import jd.gui.swing.jdgui.views.settings.panels.ConfigPanelGeneral;
 import jd.gui.swing.jdgui.views.settings.panels.DownloadControll;
+import jd.gui.swing.jdgui.views.settings.panels.GUISettings;
 import jd.gui.swing.jdgui.views.settings.panels.ReconnectSettings;
+import jd.gui.swing.jdgui.views.settings.panels.accountmanager.AccountManagerSettings;
 import jd.gui.swing.jdgui.views.settings.panels.advanced.AdvancedSettings;
 import jd.gui.swing.jdgui.views.settings.panels.downloadandnetwork.ProxyConfig;
 import jd.gui.swing.jdgui.views.settings.panels.pluginsettings.PluginSettings;
@@ -34,7 +34,7 @@ public class ConfigListModel extends DefaultListModel {
 
         addElement(new ConfigPanelGeneral());
         addElement(new DownloadControll());
-
+        addElement(new GUISettings());
         // addElement(new ToolbarController());
         addElement(new jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.Linkgrabber());
         addElement(new ReconnectSettings());
@@ -46,8 +46,6 @@ public class ConfigListModel extends DefaultListModel {
 
         addElement(new PluginSettings());
         // addElement(new ExtensionManager());
-
-        addElement(new BarrierFree());
 
         addElement(new AdvancedSettings());
         boolean first = true;

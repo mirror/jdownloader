@@ -1972,4 +1972,7 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Really remove %s1" })
     String account_remove_action_msg(String string);
+
+    @Default(lngs = { "en" }, values = { "This value is not allowed for %s1.%s2!\r\n%s3" })
+    String AdvancedConfigmanager_error_validator(String configname, String key, String error);
 }

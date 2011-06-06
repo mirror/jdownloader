@@ -35,7 +35,7 @@ public class BasicAuthentication extends AbstractConfigPanel {
     public BasicAuthentication() {
         super();
         this.addHeader(getTitle(), NewTheme.I().getIcon("basicauth", 32));
-        this.addDescription(_JDT._.gui_settings_basicauth_description());
+        this.addDescriptionPlain(_JDT._.gui_settings_basicauth_description());
 
         add(BasicAuthenticationPanel.getInstance());
     }

@@ -19,12 +19,12 @@ package jd.gui.swing.jdgui.menu.actions;
 import java.awt.event.ActionEvent;
 
 import jd.gui.swing.SwingGui;
-import jd.gui.swing.jdgui.GraphicalUserInterfaceSettings;
 import jd.gui.swing.jdgui.actions.ToolBarAction;
 import jd.gui.swing.jdgui.views.settings.ConfigurationView;
 
 import org.appwork.storage.config.JsonConfig;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 
 public class SettingsAction extends ToolBarAction {
 

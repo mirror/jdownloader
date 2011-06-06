@@ -8,12 +8,12 @@ import java.util.ArrayList;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JScrollPane;
-import javax.swing.JToolBar;
 import javax.swing.ListSelectionModel;
 
 import jd.controlling.proxy.ProxyInfo;
 import jd.gui.swing.jdgui.views.settings.ConfigPanel;
 
+import org.appwork.app.gui.MigPanel;
 import org.jdownloader.gui.settings.AbstractConfigPanel;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.translate._JDT;
@@ -36,7 +36,7 @@ public class ProxyConfig extends AbstractConfigPanel {
         super();
 
         this.addHeader(getTitle(), NewTheme.I().getIcon("proxy_rotate", 32));
-        this.addDescription(_JDT._.gui_settings_proxy_description());
+        this.addDescriptionPlain(_JDT._.gui_settings_proxy_description());
 
         table = new ProxyTable() {
             /**
@@ -71,8 +71,7 @@ public class ProxyConfig extends AbstractConfigPanel {
         table.addMouseListener(new ProxyContextMenu(table));
         JScrollPane sp = new JScrollPane(table);
         this.add(sp, "gapleft 37,growx, pushx,spanx,pushy,growy");
-        JToolBar toolbar = new JToolBar();
-        toolbar.setFloatable(false);
+        MigPanel toolbar = new MigPanel("ins 0", "[][][grow,fill]", "");
         btnAdd = new JButton(_JDT._.basics_add(), NewTheme.I().getIcon("add", 20));
         btnRemove = new JButton(_JDT._.basics_remove(), NewTheme.I().getIcon("remove", 20));
         btnAdd.addActionListener(new ActionListener() {
@@ -87,8 +86,8 @@ public class ProxyConfig extends AbstractConfigPanel {
                 new ProxyDeleteAction(table.getExtTableModel().getSelectedObjects()).actionPerformed(e);
             }
         });
-        toolbar.add(btnAdd);
-        toolbar.add(btnRemove);
+        toolbar.add(btnAdd, "sg 1");
+        toolbar.add(btnRemove, "sg 1");
 
         add(toolbar, "gapleft 37,growx,spanx");
 

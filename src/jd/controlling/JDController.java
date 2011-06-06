@@ -328,7 +328,7 @@ public class JDController implements ControlListener {
             LOGGER.info("Save Passwordlist");
             PasswordListController.getInstance().saveSync();
             LOGGER.info("Save HTACCESSlist");
-            HTACCESSController.getInstance().saveSync();
+
             if (!quickmode) {
                 LOGGER.info("Wait for delayExit");
                 waitDelayExit();
@@ -358,8 +358,7 @@ public class JDController implements ControlListener {
         FavIconController.getInstance().saveSyncnonThread();
         LOGGER.info("Sync Passwordlist");
         PasswordListController.getInstance().saveSync();
-        LOGGER.info("Sync HTACCESSlist");
-        HTACCESSController.getInstance().saveSync();
+
     }
 
     /**

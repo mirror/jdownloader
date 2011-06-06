@@ -8,6 +8,7 @@ import javax.swing.ImageIcon;
 
 import org.appwork.storage.config.ConfigEventListener;
 import org.appwork.storage.config.ConfigInterface;
+import org.appwork.storage.config.KeyHandler;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.gui.settings.AbstractConfigPanel;
 
@@ -18,6 +19,9 @@ public abstract class ExtensionConfigPanel<T extends AbstractExtension> extends 
     protected T               extension;
 
     private Header            header;
+
+    public void onConfigValidatorError(ConfigInterface config, Throwable validateException, KeyHandler methodHandler) {
+    }
 
     public ExtensionConfigPanel(T plg, boolean clean) {
         super();

@@ -20,7 +20,6 @@ import jd.config.ConfigContainer;
 import jd.gui.swing.jdgui.views.downloads.DownloadView;
 import jd.gui.swing.jdgui.views.linkgrabber.LinkgrabberView;
 import jd.gui.swing.jdgui.views.settings.ConfigPanel;
-import jd.gui.swing.jdgui.views.settings.panels.premium.Premium;
 import jd.gui.userio.NoUserIF;
 
 public abstract class UserIF {

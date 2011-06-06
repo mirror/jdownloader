@@ -73,10 +73,19 @@ public class BuyAction extends AbstractAction {
         try {
 
             final ComboBoxDialog d = new ComboBoxDialog(0, _GUI._.buyaction_title(), _GUI._.buyaction_message(), options, 0, NewTheme.I().getIcon("buy", 32), _GUI._.buyaction_title_buy_account(), null, null) {
+                private SearchComboBox<HostPluginWrapper> combo;
+
+                @Override
+                protected void packed() {
+                    super.packed();
+                    combo.requestFocus();
+
+                }
+
                 @Override
                 protected JComboBox getComboBox(final Object[] options2) {
 
-                    final SearchComboBox<HostPluginWrapper> ret = new SearchComboBox<HostPluginWrapper>(plugins) {
+                    combo = new SearchComboBox<HostPluginWrapper>(plugins) {
 
                         @Override
                         protected Icon getIcon(HostPluginWrapper value) {
@@ -90,15 +99,15 @@ public class BuyAction extends AbstractAction {
                         }
                     };
                     final ComboBoxDialog _this = this;
-                    ret.addActionListener(new ActionListener() {
+                    combo.addActionListener(new ActionListener() {
 
                         public void actionPerformed(ActionEvent e) {
-                            _this.setIcon(NewTheme.I().getScaledInstance(((HostPluginWrapper) ret.getSelectedItem()).getIconUnscaled(), 32));
+                            _this.setIcon(NewTheme.I().getScaledInstance(((HostPluginWrapper) combo.getSelectedItem()).getIconUnscaled(), 32));
                         }
                     });
-                    ret.setSelectedItem(defaultSelection);
+                    combo.setSelectedItem(defaultSelection);
 
-                    return ret;
+                    return combo;
                 }
 
             };

@@ -205,7 +205,7 @@ public class AccountDialog extends AbstractDialog<Integer> {
                 new BuyAction(getHoster(), null).actionPerformed(null);
             }
         });
-
+        link.setFocusable(false);
         final JPanel panel = new JPanel(new MigLayout("ins 0, wrap 2", "[][grow,fill]"));
         panel.add(new JLabel(_GUI._.jd_gui_swing_components_AccountDialog_hoster()));
         panel.add(this.hoster, "split 2,height 24!");
@@ -236,9 +236,15 @@ public class AccountDialog extends AbstractDialog<Integer> {
         if (defaultAccount != null) {
             name.setText(defaultAccount.getUser());
         }
-        // pass.setVisible(false);
-        hoster.requestFocus();
+
         return panel;
+    }
+
+    @Override
+    protected void packed() {
+        super.packed();
+        hoster.requestFocus();
+
     }
 
 }
