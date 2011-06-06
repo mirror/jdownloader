@@ -21,26 +21,41 @@ import jd.controlling.AccountController;
 
 public class Account extends Property {
 
-    private static final long           serialVersionUID      = -7578649066389032068L;
+    private static final long serialVersionUID      = -7578649066389032068L;
 
-    private String                      user;
-    private String                      pass;
+    private String            user;
+    private String            pass;
 
-    private boolean                     enabled               = true;
-    private boolean                     valid                 = true;
+    private boolean           enabled               = true;
+    private boolean           valid                 = true;
 
-    private transient long              tmpDisabledIntervalv3 = 10 * 60 * 1000;
-    private transient boolean           tempDisabled          = false;
-    private transient long              tmpDisabledTime       = 0;
+    private transient long    tmpDisabledIntervalv3 = 10 * 60 * 1000;
+    private transient boolean tempDisabled          = false;
+    private transient long    tmpDisabledTime       = 0;
 
-    private String                      hoster                = null;
-    private AccountInfo                 accinfo               = null;
+    private String            hoster                = null;
+    private AccountInfo       accinfo               = null;
+    /**
+     * if an account becomes invalid, or outdated, we can set active to false.
+     * enabled should be used for user en/disable active should be used to
+     * en/disable the account programmatically
+     */
+    private boolean           active;
 
-    private long                        updatetime            = 0;
+    public boolean isActive() {
 
-    private int                         maxDownloads          = 0;
+        return active;
+    }
 
-    private transient AccountController ac                    = null;
+    public void setActive(boolean active) {
+        this.active = active;
+    }
+
+    private long                        updatetime   = 0;
+
+    private int                         maxDownloads = 0;
+
+    private transient AccountController ac           = null;
 
     /**
      * 
@@ -131,6 +146,7 @@ public class Account extends Property {
     private void readObject(final java.io.ObjectInputStream stream) throws java.io.IOException, ClassNotFoundException {
         /* nach dem deserialisieren sollen die transienten neu geholt werden */
         stream.defaultReadObject();
+
         tmpDisabledIntervalv3 = 10 * 60 * 1000l;
         tempDisabled = false;
         tmpDisabledTime = 0;

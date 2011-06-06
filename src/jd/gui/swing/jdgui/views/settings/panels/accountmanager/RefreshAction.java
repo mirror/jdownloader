@@ -33,27 +33,32 @@ public class RefreshAction extends AbstractAction {
     }
 
     public void actionPerformed(ActionEvent e) {
-        ArrayList<Account> list;
-        if (selection != null) {
-            list = selection;
-        } else {
-            list = new ArrayList<Account>();
-            final ArrayList<HostPluginWrapper> plugins = HostPluginWrapper.getHostWrapper();
 
-            for (HostPluginWrapper plugin : plugins) {
-                ArrayList<Account> accs = AccountController.getInstance().getAllAccounts(plugin.getHost());
-                for (Account acc : accs) {
-                    list.add(acc);
-                    acc.setHoster(plugin.getHost());
+        new Thread("AccountChecker") {
+            public void run() {
+                ArrayList<Account> list;
+                if (selection != null) {
+                    list = selection;
+                } else {
+                    list = new ArrayList<Account>();
+                    final ArrayList<HostPluginWrapper> plugins = HostPluginWrapper.getHostWrapper();
+
+                    for (HostPluginWrapper plugin : plugins) {
+                        ArrayList<Account> accs = AccountController.getInstance().getAllAccounts(plugin.getHost());
+                        for (Account acc : accs) {
+                            list.add(acc);
+                            acc.setHoster(plugin.getHost());
+                        }
+
+                    }
+
                 }
-
+                for (int i = 0; i < list.size(); i++) {
+                    Account acc = list.get(i);
+                    AccountController.getInstance().updateAccountInfo((String) null, acc, false);
+                }
             }
-
-        }
-        for (int i = 0; i < list.size(); i++) {
-            Account acc = list.get(i);
-            AccountController.getInstance().updateAccountInfo((String) null, acc, false);
-        }
+        }.start();
 
     }
 

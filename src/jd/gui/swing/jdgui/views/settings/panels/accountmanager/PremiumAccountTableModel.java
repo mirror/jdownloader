@@ -114,9 +114,17 @@ public class PremiumAccountTableModel extends ExtTableModel<Account> {
             }
 
             @Override
-            protected void setBooleanValue(boolean value, Account object) {
+            protected void setBooleanValue(boolean value, final Account object) {
                 object.setEnabled(value);
-                if (value) AccountController.getInstance().updateAccountInfo((String) null, object, true);
+                if (value) {
+
+                    new Thread("Single Account Updater: " + object.getHoster() + " - " + object.getUser()) {
+                        public void run() {
+                            // AccountController.getInstance().updateAccountInfo((String)
+                            // null, object, true);
+                        }
+                    }.start();
+                }
             }
         });
         this.addColumn(new ActionColumn());

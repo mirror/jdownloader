@@ -31,25 +31,30 @@ public class RemoveAction extends AbstractAction {
     }
 
     public void actionPerformed(ActionEvent e) {
-        ArrayList<Account> selection = table.getExtTableModel().getSelectedObjects();
+        final ArrayList<Account> selection = table.getExtTableModel().getSelectedObjects();
         if (selection != null && selection.size() > 0) {
-            StringBuilder sb = new StringBuilder();
-            for (Account account : selection) {
-                if (sb.length() > 0) sb.append("\r\n");
-                sb.append(account.getHoster() + "-Account (" + account.getUser() + ")");
-            }
-            try {
-                Dialog.getInstance().showConfirmDialog(0, _GUI._.account_remove_action_title(selection.size()),
+            new Thread() {
+                public void run() {
+                    StringBuilder sb = new StringBuilder();
+                    for (Account account : selection) {
+                        if (sb.length() > 0) sb.append("\r\n");
+                        sb.append(account.getHoster() + "-Account (" + account.getUser() + ")");
+                    }
+                    try {
+                        Dialog.getInstance().showConfirmDialog(Dialog.STYLE_LARGE, _GUI._.account_remove_action_title(selection.size()),
 
-                _GUI._.account_remove_action_msg(selection.size() > 1 ? sb.toString() : "\r\n" + sb.toString()));
-                for (Account account : selection) {
-                    AccountController.getInstance().removeAccount((String) null, account);
+                        _GUI._.account_remove_action_msg(selection.size() <= 1 ? sb.toString() : "\r\n" + sb.toString()));
+                        for (Account account : selection) {
+                            AccountController.getInstance().removeAccount((String) null, account);
+                        }
+                    } catch (DialogClosedException e1) {
+                        e1.printStackTrace();
+                    } catch (DialogCanceledException e1) {
+                        e1.printStackTrace();
+                    }
                 }
-            } catch (DialogClosedException e1) {
-                e1.printStackTrace();
-            } catch (DialogCanceledException e1) {
-                e1.printStackTrace();
-            }
+            }.start();
+
         }
 
     }

@@ -237,6 +237,7 @@ public class AccountDialog extends AbstractDialog<Integer> {
             name.setText(defaultAccount.getUser());
         }
         // pass.setVisible(false);
+        hoster.requestFocus();
         return panel;
     }
 

@@ -36,7 +36,6 @@ public class AccountManagerSettings extends AbstractConfigPanel {
         super();
         this.addHeader(getTitle(), NewTheme.I().getIcon("premium", 32));
         this.addDescriptionPlain(_JDT._.gui_settings_premium_description());
-
         add(AccountManager.getInstance());
     }
 

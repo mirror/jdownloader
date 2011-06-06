@@ -30,7 +30,7 @@ public class AccountManager extends JPanel implements SettingsComponent {
      * Access the only existing instance by using {@link #getInstance()}.
      */
     private AccountManager() {
-        super(new MigLayout("ins 0,wrap 1", "[grow,fill]", "[][grow,fill][]"));
+        super(new MigLayout("ins 0,wrap 1", "[grow,fill]", "[grow,fill][][]"));
 
         tb = new JToolBar();
         tb.setFloatable(false);

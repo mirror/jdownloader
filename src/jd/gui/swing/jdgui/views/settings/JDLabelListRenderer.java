@@ -38,6 +38,8 @@ public class JDLabelListRenderer extends DefaultListCellRenderer {
         JLabel label = (JLabel) super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
         label.setText(((JDLabelContainer) value).getLabel());
         label.setIcon(((JDLabelContainer) value).getIcon());
+        setOpaque(false);
+        putClientProperty("Synthetica.opaque", Boolean.FALSE);
         return label;
     }
 }

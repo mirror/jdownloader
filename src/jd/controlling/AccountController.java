@@ -16,17 +16,16 @@
 
 package jd.controlling;
 
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map.Entry;
 import java.util.TreeMap;
 import java.util.logging.Logger;
-
-import javax.swing.Timer;
 
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
@@ -39,44 +38,45 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
+import org.appwork.shutdown.ShutdownController;
+import org.appwork.shutdown.ShutdownEvent;
+import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.event.Eventsender;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.settings.AccountData;
+import org.jdownloader.settings.AccountSettings;
 import org.jdownloader.translate._JDT;
 
-public class AccountController extends SubConfiguration implements ActionListener, AccountControllerListener {
+public class AccountController implements AccountControllerListener {
 
-    private static final long                                                    serialVersionUID           = -7560087582989096645L;
+    private static final long                                                    serialVersionUID          = -7560087582989096645L;
 
-    public static final String                                                   PROPERTY_ACCOUNT_SELECTION = "ACCOUNT_SELECTION";
+    private static HashMap<String, ArrayList<Account>>                           hosteraccounts            = null;
 
-    private static TreeMap<String, ArrayList<Account>>                           hosteraccounts             = null;
+    private static HashMap<String, ArrayList<Account>>                           blockedAccounts           = new HashMap<String, ArrayList<Account>>();
 
-    private static TreeMap<String, ArrayList<Account>>                           blockedAccounts            = new TreeMap<String, ArrayList<Account>>();
+    private static AccountController                                             INSTANCE                  = new AccountController();
 
-    private static AccountController                                             INSTANCE                   = new AccountController();
+    private final Eventsender<AccountControllerListener, AccountControllerEvent> broadcaster               = new Eventsender<AccountControllerListener, AccountControllerEvent>() {
 
-    private final Eventsender<AccountControllerListener, AccountControllerEvent> broadcaster                = new Eventsender<AccountControllerListener, AccountControllerEvent>() {
+                                                                                                               @Override
+                                                                                                               protected void fireEvent(final AccountControllerListener listener, final AccountControllerEvent event) {
+                                                                                                                   listener.onAccountControllerEvent(event);
+                                                                                                               }
 
-                                                                                                                @Override
-                                                                                                                protected void fireEvent(final AccountControllerListener listener, final AccountControllerEvent event) {
-                                                                                                                    listener.onAccountControllerEvent(event);
-                                                                                                                }
+                                                                                                           };
 
-                                                                                                            };
+    private long                                                                 lastballoon               = 0;
 
-    private final Timer                                                          asyncSaveIntervalTimer;
+    private long                                                                 waittimeAccountInfoUpdate = 15 * 60 * 1000l;
 
-    private boolean                                                              saveinprogress             = false;
+    private Logger                                                               logger                    = JDLogger.getLogger();
 
-    private long                                                                 lastballoon                = 0;
+    private AccountSettings                                                      config;
 
-    private long                                                                 waittimeAccountInfoUpdate  = 15 * 60 * 1000l;
+    private static final long                                                    BALLOON_INTERVAL          = 30 * 60 * 1000l;
 
-    private Logger                                                               logger                     = JDLogger.getLogger();
-
-    private static final long                                                    BALLOON_INTERVAL           = 30 * 60 * 1000l;
-
-    public static final Object                                                   ACCOUNT_LOCK               = new Object();
+    public static final Object                                                   ACCOUNT_LOCK              = new Object();
 
     public long getUpdateTime() {
         return waittimeAccountInfoUpdate;
@@ -111,11 +111,15 @@ public class AccountController extends SubConfiguration implements ActionListene
                                                                        };
 
     private AccountController() {
-        super("AccountController");
-        asyncSaveIntervalTimer = new Timer(2000, this);
-        // asyncSaveIntervalTimer.setInitialDelay(2000); // this.initialDelay =
-        // delay;
-        asyncSaveIntervalTimer.setRepeats(false);
+        super();
+        config = JsonConfig.create(AccountSettings.class);
+        ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
+
+            @Override
+            public void run() {
+                save();
+            }
+        });
         hosteraccounts = loadAccounts();
         final Collection<ArrayList<Account>> accsc = hosteraccounts.values();
         for (final ArrayList<Account> accs : accsc) {
@@ -124,6 +128,24 @@ public class AccountController extends SubConfiguration implements ActionListene
             }
         }
         broadcaster.addListener(this);
+    }
+
+    protected void save() {
+
+        HashMap<String, ArrayList<AccountData>> ret = new HashMap<String, ArrayList<AccountData>>();
+        for (Iterator<Entry<String, ArrayList<Account>>> it = hosteraccounts.entrySet().iterator(); it.hasNext();) {
+            Entry<String, ArrayList<Account>> next = it.next();
+            if (next.getValue().size() > 0) {
+                ArrayList<AccountData> list = new ArrayList<AccountData>();
+                ret.put(next.getKey(), list);
+                for (Account a : next.getValue()) {
+
+                    list.add(AccountData.create(a));
+                }
+            }
+
+        }
+        config.setAccounts(ret);
     }
 
     public AccountInfo updateAccountInfo(final PluginForHost host, final Account account, final boolean forceupdate) {
@@ -262,8 +284,52 @@ public class AccountController extends SubConfiguration implements ActionListene
         broadcaster.removeListener(l);
     }
 
-    private TreeMap<String, ArrayList<Account>> loadAccounts() {
-        return getGenericProperty("accountlist", new TreeMap<String, ArrayList<Account>>());
+    private synchronized HashMap<String, ArrayList<Account>> loadAccounts() {
+
+        HashMap<String, ArrayList<AccountData>> dat = config.getAccounts();
+        if (dat == null) {
+            dat = restore();
+        }
+        HashMap<String, ArrayList<Account>> ret = new HashMap<String, ArrayList<Account>>();
+
+        for (Iterator<Entry<String, ArrayList<AccountData>>> it = dat.entrySet().iterator(); it.hasNext();) {
+            Entry<String, ArrayList<AccountData>> next = it.next();
+            if (next.getValue().size() > 0) {
+                ArrayList<Account> list = new ArrayList<Account>();
+
+                ret.put(next.getKey(), list);
+
+                for (AccountData ad : next.getValue()) {
+                    list.add(ad.toAccount());
+                }
+            }
+        }
+        return ret;
+    }
+
+    /**
+     * Restores accounts from old database
+     * 
+     * @return
+     */
+    private HashMap<String, ArrayList<AccountData>> restore() {
+        SubConfiguration sub = new SubConfiguration("AccountController");
+        TreeMap<String, ArrayList<Account>> tree = sub.getGenericProperty("accountlist", new TreeMap<String, ArrayList<Account>>());
+        HashMap<String, ArrayList<AccountData>> ret = new HashMap<String, ArrayList<AccountData>>();
+
+        for (Iterator<Entry<String, ArrayList<Account>>> it = tree.entrySet().iterator(); it.hasNext();) {
+            Entry<String, ArrayList<Account>> next = it.next();
+            if (next.getValue().size() > 0) {
+                ArrayList<AccountData> list = new ArrayList<AccountData>();
+                ret.put(next.getKey(), list);
+                for (Account a : next.getValue()) {
+                    list.add(AccountData.create(a));
+                }
+            }
+
+        }
+        config.setAccounts(ret);
+        return ret;
     }
 
     public void addAccount(final PluginForHost pluginForHost, final Account account) {
@@ -420,24 +486,18 @@ public class AccountController extends SubConfiguration implements ActionListene
         return removeAccount(pluginForHost.getHost(), account);
     }
 
-    public void actionPerformed(final ActionEvent arg0) {
-        if (arg0.getSource() == asyncSaveIntervalTimer) {
-            saveSync();
-        }
-    }
-
     public void onAccountControllerEvent(final AccountControllerEvent event) {
         switch (event.getEventID()) {
         case AccountControllerEvent.ACCOUNT_ADDED:
             JDUtilities.getConfiguration().setProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true);
             JDUtilities.getConfiguration().save();
-            saveAsync();
+            // <> saveAsync();
             break;
         case AccountControllerEvent.ACCOUNT_REMOVED:
         case AccountControllerEvent.ACCOUNT_UPDATE:
         case AccountControllerEvent.ACCOUNT_EXPIRED:
         case AccountControllerEvent.ACCOUNT_INVALID:
-            saveAsync();
+            // saveAsync();
             break;
         default:
             break;
@@ -450,34 +510,6 @@ public class AccountController extends SubConfiguration implements ActionListene
         } else {
             this.broadcaster.fireEvent(new AccountControllerEvent(this, AccountControllerEvent.ACCOUNT_UPDATE, null, account));
         }
-    }
-
-    public void saveAsync() {
-        if (!saveinprogress) {
-            asyncSaveIntervalTimer.restart();
-        }
-    }
-
-    public void saveSync() {
-        if (!saveinprogress) {
-            new Thread() {
-                @Override
-                public void run() {
-                    saveSyncnonThread();
-                }
-            }.start();
-        }
-    }
-
-    public void saveSyncnonThread() {
-        asyncSaveIntervalTimer.stop();
-        final String id = JDController.requestDelayExit("accountcontroller");
-        synchronized (hosteraccounts) {
-            saveinprogress = true;
-            save();
-            saveinprogress = false;
-        }
-        JDController.releaseDelayExit(id);
     }
 
     public Account getValidAccount(final PluginForHost pluginForHost) {
@@ -500,7 +532,7 @@ public class AccountController extends SubConfiguration implements ActionListene
         Account ret = null;
         synchronized (hosteraccounts) {
             final ArrayList<Account> accounts = new ArrayList<Account>(getAllAccounts(host));
-            if (getBooleanProperty(PROPERTY_ACCOUNT_SELECTION, true)) {
+            if (config.isUseAccountWithMostTrafficLeft()) {
                 Collections.sort(accounts, COMPARE_MOST_TRAFFIC_LEFT);
             }
             // final int accountsSize = accounts.size();
