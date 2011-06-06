@@ -38,8 +38,8 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextPane;
 import javax.swing.UIManager;
-import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.UIManager.LookAndFeelInfo;
+import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.border.EmptyBorder;
 
 import jd.config.SubConfiguration;
@@ -279,7 +279,6 @@ public class Main {
             Main.log(log, "Local: " + JDUtilities.getResourceFile(".").getAbsolutePath());
 
             Main.log(log, "Start java -jar -Xmx512m JDownloader.jar in " + JDUtilities.getResourceFile(".").getAbsolutePath());
-            JDUtilities.getDatabaseConnector().shutdownDatabase();
             if (!NORESTART) JDUtilities.runCommand("java", new String[] { "-Xmx512m", "-jar", "JDownloader.jar", "-rfu" }, JDUtilities.getResourceFile(".").getAbsolutePath(), 0);
 
             if (!GUILESS) logWindow.setText(log.toString());

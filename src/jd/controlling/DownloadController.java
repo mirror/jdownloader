@@ -34,6 +34,8 @@ import jd.plugins.PluginForHost;
 import jd.plugins.PluginsC;
 import jd.utils.JDUtilities;
 
+import org.appwork.shutdown.ShutdownController;
+import org.appwork.shutdown.ShutdownEvent;
 import org.appwork.utils.Exceptions;
 import org.appwork.utils.event.Eventsender;
 import org.appwork.utils.event.queue.QueueAction;
@@ -79,6 +81,18 @@ public class DownloadController implements DownloadControllerListener, DownloadC
     private DownloadController() {
         initDownloadLinks();
         broadcaster.addListener(this);
+        ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
+
+            @Override
+            public void run() {
+                saveDownloadLinksSyncnonThread();
+            }
+
+            @Override
+            public String toString() {
+                return "save downloadlist...";
+            }
+        });
     }
 
     public void addListener(final DownloadControllerListener l) {
@@ -111,13 +125,11 @@ public class DownloadController implements DownloadControllerListener, DownloadC
      * DownloadController
      */
     public void saveDownloadLinksSyncnonThread() {
-        final String id = JDController.requestDelayExit("downloadcontroller");
         synchronized (ACCESSLOCK) {
             asyncSaveTimer = null;
             ArrayList<FilePackage> packages = new ArrayList<FilePackage>(this.packages);
             JDUtilities.getDatabaseConnector().saveLinks(packages);
         }
-        JDController.releaseDelayExit(id);
     }
 
     /**
@@ -129,7 +141,12 @@ public class DownloadController implements DownloadControllerListener, DownloadC
             asyncSaveTimer = IOEQ.TIMINGQUEUE.schedule(new Runnable() {
 
                 public void run() {
-                    saveDownloadLinksSyncnonThread();
+                    final String id = JDController.requestDelayExit("downloadcontroller");
+                    try {
+                        saveDownloadLinksSyncnonThread();
+                    } finally {
+                        JDController.releaseDelayExit(id);
+                    }
                 }
 
             }, 20, TimeUnit.SECONDS);

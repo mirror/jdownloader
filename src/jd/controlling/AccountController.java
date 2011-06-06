@@ -119,6 +119,11 @@ public class AccountController implements AccountControllerListener {
             public void run() {
                 save();
             }
+
+            @Override
+            public String toString() {
+                return "save accounts...";
+            }
         });
         hosteraccounts = loadAccounts();
         final Collection<ArrayList<Account>> accsc = hosteraccounts.values();

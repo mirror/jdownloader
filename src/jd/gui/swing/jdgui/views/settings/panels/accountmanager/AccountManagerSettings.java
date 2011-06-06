@@ -25,6 +25,7 @@ import org.jdownloader.translate._JDT;
 public class AccountManagerSettings extends AbstractConfigPanel {
 
     private static final long serialVersionUID = -7963763730328793139L;
+    private AccountManager    acm              = null;
 
     public String getTitle() {
         return _JDT._.gui_settings_premium_title();
@@ -35,7 +36,7 @@ public class AccountManagerSettings extends AbstractConfigPanel {
 
         this.addHeader(getTitle(), NewTheme.I().getIcon("premium", 32));
         this.addDescriptionPlain(_JDT._.gui_settings_premium_description());
-        add(AccountManager.getInstance());
+        add(acm = new AccountManager(this));
     }
 
     @Override
@@ -49,6 +50,6 @@ public class AccountManagerSettings extends AbstractConfigPanel {
 
     @Override
     public void updateContents() {
-
+        ((PremiumAccountTableModel) acm.getTable().getExtTableModel()).fill();
     }
 }

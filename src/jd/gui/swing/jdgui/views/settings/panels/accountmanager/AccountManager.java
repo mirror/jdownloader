@@ -11,17 +11,7 @@ import net.miginfocom.swing.MigLayout;
 import org.appwork.app.gui.MigPanel;
 
 public class AccountManager extends JPanel implements SettingsComponent {
-    private static final long           serialVersionUID = 1473756660999062848L;
-    private static final AccountManager INSTANCE         = new AccountManager();
-
-    /**
-     * get the only existing instance of AccountManager. This is a singleton
-     * 
-     * @return
-     */
-    public static AccountManager getInstance() {
-        return AccountManager.INSTANCE;
-    }
+    private static final long   serialVersionUID = 1473756660999062848L;
 
     private MigPanel            tb;
     private PremiumAccountTable table;
@@ -29,21 +19,31 @@ public class AccountManager extends JPanel implements SettingsComponent {
     /**
      * Create a new instance of AccountManager. This is a singleton class.
      * Access the only existing instance by using {@link #getInstance()}.
+     * 
+     * @param accountManagerSettings
      */
-    private AccountManager() {
+    public AccountManager(AccountManagerSettings accountManagerSettings) {
         super(new MigLayout("ins 0,wrap 1", "[grow,fill]", "[grow,fill][][]"));
 
         tb = new MigPanel("ins 0", "[][][][][grow,fill]", "");
 
-        table = new PremiumAccountTable();
+        table = new PremiumAccountTable(accountManagerSettings);
+
         tb.add(new JButton(new NewAction(table)), "sg 1");
         tb.add(new JButton(new RemoveAction(table)), "sg 1");
         tb.add(new JButton(new BuyAction(null, table)), "sg 1");
-        tb.add(new JButton(new RefreshAction(table)), "sg 1");
+        tb.add(new JButton(new RefreshAction(null)), "sg 1");
 
         add(new JScrollPane(table));
         add(tb);
 
+    }
+
+    /**
+     * @return the table
+     */
+    public PremiumAccountTable getTable() {
+        return table;
     }
 
     public void addStateUpdateListener(StateUpdateListener listener) {
@@ -57,4 +57,5 @@ public class AccountManager extends JPanel implements SettingsComponent {
     public boolean isMultiline() {
         return false;
     }
+
 }

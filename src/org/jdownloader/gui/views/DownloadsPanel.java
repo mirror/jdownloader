@@ -36,6 +36,7 @@ public class DownloadsPanel extends SwitchPanel implements Runnable {
     protected void onShow() {
         table.recreateModel();
         synchronized (this) {
+            if (timer != null) timer.cancel(false);
             timer = IOEQ.TIMINGQUEUE.scheduleWithFixedDelay(this, 250, 1000, TimeUnit.MILLISECONDS);
         }
     }

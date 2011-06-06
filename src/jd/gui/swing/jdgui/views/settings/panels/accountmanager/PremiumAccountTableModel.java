@@ -3,15 +3,20 @@ package jd.gui.swing.jdgui.views.settings.panels.accountmanager;
 import java.awt.Component;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
 import javax.swing.Icon;
 import javax.swing.JTable;
 import javax.swing.table.JTableHeader;
 
 import jd.HostPluginWrapper;
+import jd.controlling.AccountChecker;
+import jd.controlling.AccountCheckerEventListener;
 import jd.controlling.AccountController;
 import jd.controlling.AccountControllerEvent;
 import jd.controlling.AccountControllerListener;
+import jd.controlling.IOEQ;
 import jd.nutils.Formatter;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
@@ -28,42 +33,61 @@ import org.appwork.utils.swing.table.columns.ExtTextColumn;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 
-public class PremiumAccountTableModel extends ExtTableModel<Account> {
+public class PremiumAccountTableModel extends ExtTableModel<Account> implements AccountCheckerEventListener {
 
-    private static final long serialVersionUID = 3120481189794897020L;
+    private static final long      serialVersionUID       = 3120481189794897020L;
 
-    public PremiumAccountTableModel() {
+    private AccountManagerSettings accountManagerSettings = null;
+
+    private ScheduledFuture<?>     timer;
+    private ScheduledFuture<?>     timer2;
+    private volatile long          lastFillRequest        = 0;
+
+    public PremiumAccountTableModel(final AccountManagerSettings accountManagerSettings) {
         super("PremiumAccountTableModel2");
-        fill();
+        this.accountManagerSettings = accountManagerSettings;
         AccountController.getInstance().addListener(new AccountControllerListener() {
 
             public void onAccountControllerEvent(AccountControllerEvent event) {
-                fill();
-            }
-        });
-    }
-
-    private void fill() {
-        final ArrayList<HostPluginWrapper> plugins = HostPluginWrapper.getHostWrapper();
-        new EDTRunner() {
-
-            @Override
-            protected void runInEDT() {
-                synchronized (tableData) {
-                    tableData.clear();
-
-                    for (HostPluginWrapper plugin : plugins) {
-                        ArrayList<Account> accs = AccountController.getInstance().getAllAccounts(plugin.getHost());
-                        for (Account acc : accs) {
-                            tableData.add(acc);
-                            acc.setHoster(plugin.getHost());
-                        }
-
-                    }
+                if (accountManagerSettings.isShown()) {
+                    fill();
                 }
             }
-        };
+        });
+        if (AccountChecker.getInstance().isRunning()) {
+            onCheckStarted();
+        }
+        AccountChecker.getInstance().getEventSender().addListener(this);
+    }
 
+    public void fill() {
+        synchronized (PremiumAccountTableModel.this) {
+            lastFillRequest = System.currentTimeMillis();
+            if (timer2 == null) {
+                timer2 = IOEQ.TIMINGQUEUE.schedule(new Runnable() {
+                    public void run() {
+                        boolean delayAgain = false;
+                        synchronized (PremiumAccountTableModel.this) {
+                            delayAgain = System.currentTimeMillis() - lastFillRequest > 50;
+                        }
+                        if (!delayAgain) {
+                            synchronized (PremiumAccountTableModel.this) {
+                                timer = null;
+                            }
+                            System.out.println("refill");
+                            _refill();
+                        } else {
+                            synchronized (PremiumAccountTableModel.this) {
+                                System.out.println("refill delayed");
+                                timer2 = null;
+                                fill();
+                            }
+                        }
+                    }
+
+                }, 50, TimeUnit.MILLISECONDS);
+            }
+        }
     }
 
     @Override
@@ -116,15 +140,7 @@ public class PremiumAccountTableModel extends ExtTableModel<Account> {
             @Override
             protected void setBooleanValue(boolean value, final Account object) {
                 object.setEnabled(value);
-                if (value) {
-
-                    new Thread("Single Account Updater: " + object.getHoster() + " - " + object.getUser()) {
-                        public void run() {
-                            // AccountController.getInstance().updateAccountInfo((String)
-                            // null, object, true);
-                        }
-                    }.start();
-                }
+                if (value) AccountChecker.getInstance().check(object, true);
             }
         });
         this.addColumn(new ActionColumn());
@@ -139,9 +155,7 @@ public class PremiumAccountTableModel extends ExtTableModel<Account> {
 
             @Override
             protected Icon getIcon(Account value) {
-
                 return JDUtilities.getPluginForHost(value.getHoster()).getHosterIconScaled();
-
             }
 
             @Override
@@ -200,7 +214,7 @@ public class PremiumAccountTableModel extends ExtTableModel<Account> {
             @Override
             protected void setStringValue(String value, Account object) {
                 object.setUser(value);
-                AccountController.getInstance().updateAccountInfo((String) null, object, true);
+                AccountChecker.getInstance().check(object, true);
             }
 
             @Override
@@ -239,7 +253,7 @@ public class PremiumAccountTableModel extends ExtTableModel<Account> {
             @Override
             protected void setStringValue(String value, Account object) {
                 object.setPass(value);
-                AccountController.getInstance().updateAccountInfo((String) null, object, true);
+                AccountChecker.getInstance().check(object, true);
             }
         });
 
@@ -253,7 +267,7 @@ public class PremiumAccountTableModel extends ExtTableModel<Account> {
 
             @Override
             protected int getMaxWidth() {
-                return 90;
+                return 100;
             }
 
             @Override
@@ -263,7 +277,7 @@ public class PremiumAccountTableModel extends ExtTableModel<Account> {
 
             @Override
             public int getMinWidth() {
-                return 90;
+                return 100;
             }
 
             @Override
@@ -344,5 +358,59 @@ public class PremiumAccountTableModel extends ExtTableModel<Account> {
             }
         });
 
+    }
+
+    public void onCheckStarted() {
+        synchronized (this) {
+            if (timer != null) timer.cancel(false);
+            timer = IOEQ.TIMINGQUEUE.scheduleWithFixedDelay(new Runnable() {
+                public void run() {
+                    _update();
+                }
+
+            }, 250, 1000, TimeUnit.MILLISECONDS);
+        }
+    }
+
+    public void onCheckStopped() {
+        synchronized (this) {
+            timer.cancel(false);
+        }
+        _update();
+    }
+
+    protected void _update() {
+        if (accountManagerSettings.isShown()) {
+            new EDTRunner() {
+                @Override
+                protected void runInEDT() {
+                    final ArrayList<Account> selected = PremiumAccountTableModel.this.getSelectedObjects();
+                    PremiumAccountTableModel.this.fireTableDataChanged();
+                    PremiumAccountTableModel.this.setSelectedObjects(selected);
+                }
+            };
+        }
+    }
+
+    protected void _refill() {
+        if (accountManagerSettings.isShown()) {
+            final ArrayList<Account> newtableData = new ArrayList<Account>(tableData);
+            for (HostPluginWrapper plugin : HostPluginWrapper.getHostWrapper()) {
+                ArrayList<Account> accs = AccountController.getInstance().getAllAccounts(plugin.getHost());
+                for (Account acc : accs) {
+                    newtableData.add(acc);
+                    acc.setHoster(plugin.getHost());
+                }
+            }
+            new EDTRunner() {
+                @Override
+                protected void runInEDT() {
+                    final ArrayList<Account> selected = PremiumAccountTableModel.this.getSelectedObjects();
+                    tableData = newtableData;
+                    PremiumAccountTableModel.this.fireTableStructureChanged();
+                    PremiumAccountTableModel.this.setSelectedObjects(selected);
+                }
+            };
+        }
     }
 }

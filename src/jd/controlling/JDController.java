@@ -334,7 +334,6 @@ public class JDController implements ControlListener {
                 waitDelayExit();
             }
             LOGGER.info("Shutdown Database");
-            JDUtilities.getDatabaseConnector().shutdownDatabase();
             LOGGER.info("Release Single Instance Lock");
             try {
                 /*

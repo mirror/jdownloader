@@ -78,10 +78,11 @@ public class DownloadsTableModel extends ExtTableModel<PackageLinkNode> {
                         }
                     }
                 }
-                final ArrayList<PackageLinkNode> selected = DownloadsTableModel.this.getSelectedObjects();
+
                 new EDTRunner() {
                     @Override
                     protected void runInEDT() {
+                        final ArrayList<PackageLinkNode> selected = DownloadsTableModel.this.getSelectedObjects();
                         tableData = newtableData;
                         DownloadsTableModel.this.fireTableStructureChanged();
                         DownloadsTableModel.this.setSelectedObjects(selected);
@@ -104,7 +105,9 @@ public class DownloadsTableModel extends ExtTableModel<PackageLinkNode> {
                 new EDTRunner() {
                     @Override
                     protected void runInEDT() {
+                        final ArrayList<PackageLinkNode> selected = DownloadsTableModel.this.getSelectedObjects();
                         DownloadsTableModel.this.fireTableDataChanged();
+                        DownloadsTableModel.this.setSelectedObjects(selected);
                     }
                 };
             }
@@ -118,10 +121,6 @@ public class DownloadsTableModel extends ExtTableModel<PackageLinkNode> {
         IOEQ.add(new Runnable() {
 
             public void run() {
-                if (tableChangesDone.incrementAndGet() != tableChangesReq.get()) {
-                    System.out.println("skip tableMod_toggle");
-                    return;
-                }
                 boolean doToggle = true;
                 switch (mode) {
                 case CURRENT:
@@ -163,10 +162,14 @@ public class DownloadsTableModel extends ExtTableModel<PackageLinkNode> {
                         }
                     }
                 }
-                final ArrayList<PackageLinkNode> selected = DownloadsTableModel.this.getSelectedObjects();
+                if (tableChangesDone.incrementAndGet() != tableChangesReq.get()) {
+                    System.out.println("skip tableMod_toggle");
+                    return;
+                }
                 new EDTRunner() {
                     @Override
                     protected void runInEDT() {
+                        final ArrayList<PackageLinkNode> selected = DownloadsTableModel.this.getSelectedObjects();
                         tableData = newtableData;
                         DownloadsTableModel.this.fireTableStructureChanged();
                         DownloadsTableModel.this.setSelectedObjects(selected);

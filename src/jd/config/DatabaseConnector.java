@@ -37,6 +37,8 @@ import jd.controlling.JDLogger;
 import jd.nutils.io.JDIO;
 import jd.utils.JDUtilities;
 
+import org.appwork.shutdown.ShutdownController;
+import org.appwork.shutdown.ShutdownEvent;
 import org.appwork.utils.IO;
 
 public class DatabaseConnector implements Serializable {
@@ -120,7 +122,23 @@ public class DatabaseConnector implements Serializable {
                 }
             }
         }
+        ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
 
+            @Override
+            public void run() {
+                shutdownDatabase();
+            }
+
+            @Override
+            public int getHookPriority() {
+                return 0;
+            }
+
+            @Override
+            public String toString() {
+                return "save database...";
+            }
+        });
     }
 
     /**
