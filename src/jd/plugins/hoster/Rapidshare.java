@@ -231,7 +231,7 @@ public class Rapidshare extends PluginForHost {
                     idlist.append(",").append(Rapidshare.getID(u.getDownloadURL()));
                     namelist.append(",").append(this.getName(u));
                 }
-                final String req = "http://api.rapidshare.com/cgi-bin/rsapi.cgi?sub=checkfiles_v1&files=" + idlist.toString().substring(1) + "&filenames=" + namelist.toString().substring(1) + "&incmd5=1";
+                final String req = "https://api.rapidshare.com/cgi-bin/rsapi.cgi?sub=checkfiles_v1&files=" + idlist.toString().substring(1) + "&filenames=" + namelist.toString().substring(1) + "&incmd5=1";
 
                 this.queryAPI(null, req, null);
 
