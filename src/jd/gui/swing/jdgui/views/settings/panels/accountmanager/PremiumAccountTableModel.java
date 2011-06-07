@@ -22,6 +22,7 @@ import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.utils.JDUtilities;
 
+import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.table.ExtTableHeaderRenderer;
 import org.appwork.utils.swing.table.ExtTableModel;
@@ -40,12 +41,22 @@ public class PremiumAccountTableModel extends ExtTableModel<Account> implements 
     private AccountManagerSettings accountManagerSettings = null;
 
     private ScheduledFuture<?>     timer;
-    private ScheduledFuture<?>     timer2;
-    private volatile long          lastFillRequest        = 0;
+
+    private DelayedRunnable        delayedFill;
+
+    private volatile boolean       checkRunning           = false;
 
     public PremiumAccountTableModel(final AccountManagerSettings accountManagerSettings) {
         super("PremiumAccountTableModel2");
         this.accountManagerSettings = accountManagerSettings;
+        delayedFill = new DelayedRunnable(IOEQ.TIMINGQUEUE, 250l) {
+
+            @Override
+            public void delayedrun() {
+                _refill();
+            }
+
+        };
         AccountController.getInstance().addListener(new AccountControllerListener() {
 
             public void onAccountControllerEvent(AccountControllerEvent event) {
@@ -61,33 +72,7 @@ public class PremiumAccountTableModel extends ExtTableModel<Account> implements 
     }
 
     public void fill() {
-        synchronized (PremiumAccountTableModel.this) {
-            lastFillRequest = System.currentTimeMillis();
-            if (timer2 == null) {
-                timer2 = IOEQ.TIMINGQUEUE.schedule(new Runnable() {
-                    public void run() {
-                        boolean delayAgain = false;
-                        synchronized (PremiumAccountTableModel.this) {
-                            delayAgain = System.currentTimeMillis() - lastFillRequest > 50;
-                        }
-                        if (!delayAgain) {
-                            synchronized (PremiumAccountTableModel.this) {
-                                timer = null;
-                            }
-                            System.out.println("refill");
-                            _refill();
-                        } else {
-                            synchronized (PremiumAccountTableModel.this) {
-                                System.out.println("refill delayed");
-                                timer2 = null;
-                                fill();
-                            }
-                        }
-                    }
-
-                }, 50, TimeUnit.MILLISECONDS);
-            }
-        }
+        delayedFill.run();
     }
 
     @Override
@@ -305,6 +290,14 @@ public class PremiumAccountTableModel extends ExtTableModel<Account> implements 
             }
 
             @Override
+            public void configureRendererComponent(final Account value, final boolean isSelected, final boolean hasFocus, final int row, final int column) {
+                super.configureRendererComponent(value, isSelected, hasFocus, row, column);
+                if (checkRunning) {
+                    this.renderer.setIndeterminate(AccountChecker.getInstance().contains(value));
+                }
+            }
+
+            @Override
             protected String getString(Account ac) {
                 AccountInfo ai = ac.getAccountInfo();
                 if (!ac.isValid()) {
@@ -361,6 +354,7 @@ public class PremiumAccountTableModel extends ExtTableModel<Account> implements 
     }
 
     public void onCheckStarted() {
+        checkRunning = true;
         synchronized (this) {
             if (timer != null) timer.cancel(false);
             timer = IOEQ.TIMINGQUEUE.scheduleWithFixedDelay(new Runnable() {
@@ -373,6 +367,7 @@ public class PremiumAccountTableModel extends ExtTableModel<Account> implements 
     }
 
     public void onCheckStopped() {
+        checkRunning = false;
         synchronized (this) {
             timer.cancel(false);
         }

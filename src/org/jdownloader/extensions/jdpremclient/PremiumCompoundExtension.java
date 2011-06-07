@@ -27,6 +27,8 @@ import jd.config.ConfigEntry;
 import jd.config.ConfigEntry.PropertyType;
 import jd.config.ConfigGroup;
 import jd.config.SubConfiguration;
+import jd.controlling.AccountChecker;
+import jd.controlling.AccountChecker.AccountCheckJob;
 import jd.controlling.AccountController;
 import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.plugins.Account;
@@ -169,10 +171,14 @@ public class PremiumCompoundExtension extends AbstractExtension<PremiumCompoundC
                 new Thread(new Runnable() {
                     public void run() {
                         try {
+                            ArrayList<AccountCheckJob> jobs = new ArrayList<AccountCheckJob>();
                             for (String key : premShareHosts.keySet()) {
                                 for (Account acc : AccountController.getInstance().getAllAccounts(key)) {
-                                    AccountController.getInstance().updateAccountInfo(key, acc, true);
+                                    jobs.add(AccountChecker.getInstance().check(acc, true));
                                 }
+                            }
+                            for (AccountCheckJob job : jobs) {
+                                job.waitChecked();
                             }
                         } finally {
                             enabled = true;

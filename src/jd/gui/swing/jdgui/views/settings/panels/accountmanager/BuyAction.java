@@ -13,6 +13,7 @@ import javax.swing.JComboBox;
 
 import jd.HostPluginWrapper;
 import jd.PluginWrapper;
+import jd.controlling.IOEQ;
 import jd.plugins.Account;
 import jd.plugins.hoster.FileSonicCom;
 import jd.utils.JDUtilities;
@@ -85,7 +86,7 @@ public class BuyAction extends AbstractAction {
                 @Override
                 protected JComboBox getComboBox(final Object[] options2) {
 
-                    combo = new SearchComboBox<HostPluginWrapper>(plugins) {
+                    combo = new SearchComboBox<HostPluginWrapper>(plugins, IOEQ.TIMINGQUEUE) {
 
                         @Override
                         protected Icon getIcon(HostPluginWrapper value) {

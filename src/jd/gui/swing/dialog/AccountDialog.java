@@ -32,7 +32,9 @@ import javax.swing.JTextField;
 
 import jd.HostPluginWrapper;
 import jd.PluginWrapper;
+import jd.controlling.AccountChecker;
 import jd.controlling.AccountController;
+import jd.controlling.IOEQ;
 import jd.gui.UserIO;
 import jd.gui.swing.jdgui.views.settings.JDLabelListRenderer;
 import jd.gui.swing.jdgui.views.settings.panels.accountmanager.BuyAction;
@@ -70,10 +72,9 @@ public class AccountDialog extends AbstractDialog<Integer> {
             ProgressDialog pd = new ProgressDialog(new ProgressGetter() {
 
                 public void run() throws Exception {
-                    AccountController.getInstance().updateAccountInfo(dialog.getHoster().getPlugin(), ac, true);
-
+                    ac.setHoster(dialog.getHoster().getPlugin().getHost());
+                    AccountChecker.getInstance().check(ac, true);
                     Log.L.info(JSonStorage.toString(ac.getAccountInfo()));
-
                 }
 
                 public String getString() {
@@ -168,7 +169,7 @@ public class AccountDialog extends AbstractDialog<Integer> {
         // final HostPluginWrapper[] array = plugins.toArray(new
         // HostPluginWrapper[plugins.size()]);
 
-        hoster = new SearchComboBox<HostPluginWrapper>(plugins) {
+        hoster = new SearchComboBox<HostPluginWrapper>(plugins, IOEQ.TIMINGQUEUE) {
 
             @Override
             protected Icon getIcon(HostPluginWrapper value) {

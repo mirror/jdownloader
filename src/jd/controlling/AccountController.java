@@ -153,10 +153,6 @@ public class AccountController implements AccountControllerListener {
         config.setAccounts(ret);
     }
 
-    public AccountInfo updateAccountInfo(final PluginForHost host, final Account account, final boolean forceupdate) {
-        return updateAccountInfo(host.getHost(), account, forceupdate);
-    }
-
     public AccountInfo updateAccountInfo(final String host, final Account account, final boolean forceupdate) {
         final String hostname = host != null ? host : getHosterName(account);
         if (hostname == null) {

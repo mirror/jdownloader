@@ -1,5 +1,6 @@
 package jd.controlling;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.concurrent.atomic.AtomicLong;
@@ -9,7 +10,7 @@ import jd.plugins.AccountInfo;
 
 public class AccountChecker {
 
-    class AccountCheckJob {
+    public class AccountCheckJob {
 
         private Account     account;
         private boolean     isChecked  = false;
@@ -17,9 +18,12 @@ public class AccountChecker {
         private boolean     force      = false;
         private AccountInfo ai         = null;
 
-        public AccountCheckJob(Account account, boolean force) {
+        private AccountCheckJob(Account account, boolean force) {
             this.account = account;
             this.force = force;
+            synchronized (AccountCheckJob.this) {
+                accountJobs.add(account);
+            }
         }
 
         public AccountCheckJob(Account account) {
@@ -34,6 +38,7 @@ public class AccountChecker {
                 isChecking = false;
                 synchronized (AccountCheckJob.this) {
                     isChecked = true;
+                    accountJobs.remove(account);
                     AccountCheckJob.this.notify();
                 }
                 jobsDone.incrementAndGet();
@@ -71,6 +76,7 @@ public class AccountChecker {
 
     private HashMap<String, Thread>                      checkThreads  = new HashMap<String, Thread>();
     private HashMap<String, LinkedList<AccountCheckJob>> jobs          = new HashMap<String, LinkedList<AccountCheckJob>>();
+    private ArrayList<Account>                           accountJobs   = new ArrayList<Account>();
     private AtomicLong                                   jobsRequested = new AtomicLong(0);
     private AtomicLong                                   jobsDone      = new AtomicLong(0);
 
@@ -151,5 +157,11 @@ public class AccountChecker {
 
     public boolean isRunning() {
         return this.jobsRequested.get() != this.jobsDone.get();
+    }
+
+    public boolean contains(Account account) {
+        synchronized (AccountChecker.this) {
+            return this.accountJobs.contains(account);
+        }
     }
 }
