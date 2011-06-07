@@ -21,9 +21,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 
-import jd.config.Configuration;
 import jd.controlling.JDLogger;
-import jd.controlling.JSonWrapper;
 import jd.http.Request;
 import jd.nutils.JDHash;
 import jd.nutils.io.JDIO;
@@ -33,8 +31,10 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
+import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Hash;
 import org.appwork.utils.Regex;
+import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.translate._JDT;
 
 public class RAFDownload extends DownloadInterface {
@@ -77,7 +77,8 @@ public class RAFDownload extends DownloadInterface {
             /*
              * CRC/SFV Check
              */
-            if (JSonWrapper.get("DOWNLOAD").getBooleanProperty(Configuration.PARAM_DO_CRC, true)) {
+
+            if (JsonConfig.create(GeneralSettings.class).isHashCheckEnabled()) {
                 synchronized (HASHCHECKLOCK) {
                     /*
                      * we only want one hashcheck running at the same time. many
@@ -300,9 +301,9 @@ public class RAFDownload extends DownloadInterface {
         PluginForHost plugin = downloadLink.getLivePlugin();
         if (plugin != null) plugin.setDownloadInterface(dl);
         if (i == 0) {
-            dl.setChunkNum(JSonWrapper.get("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2));
+            dl.setChunkNum(JsonConfig.create(GeneralSettings.class).getMaxChunksPerFile());
         } else {
-            dl.setChunkNum(i < 0 ? Math.min(i * -1, JSonWrapper.get("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2)) : i);
+            dl.setChunkNum(i < 0 ? Math.min(i * -1, JsonConfig.create(GeneralSettings.class).getMaxChunksPerFile()) : i);
         }
         dl.setResume(b);
         return dl;

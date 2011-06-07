@@ -45,8 +45,10 @@ import org.appwork.controlling.StateMonitor;
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownVetoException;
 import org.appwork.shutdown.ShutdownVetoListener;
+import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Application;
 import org.appwork.utils.net.throttledconnection.ThrottledConnectionManager;
+import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.translate._JDT;
 
 public class DownloadWatchDog implements DownloadControllerListener, StateMachineInterface, ShutdownVetoListener {
@@ -103,6 +105,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
     private final ThrottledConnectionManager                           connectionManager;
     private StateMonitor                                               stateMonitor          = null;
     private int                                                        lastReconnectCounter  = 0;
+    private GeneralSettings                                            config;
 
     /**
      * Hier kann de Status des Downloads gespeichert werden.
@@ -115,9 +118,10 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
     }
 
     private DownloadWatchDog() {
-        this.connectionManager = new ThrottledConnectionManager();
-        this.connectionManager.setIncommingBandwidthLimit(JSonWrapper.get("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0) * 1024);
+        config = JsonConfig.create(GeneralSettings.class);
 
+        this.connectionManager = new ThrottledConnectionManager();
+        this.connectionManager.setIncommingBandwidthLimit(config.getDownloadSpeedLimit() * 1024);
         stateMachine = new StateMachine(this, IDLE_STATE, STOPPED_STATE);
         stateMonitor = new StateMonitor(stateMachine);
         this.dlc = DownloadController.getInstance();
@@ -196,7 +200,8 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
             if (f == null) { return false; }
         }
         /* Set 500MB extra Buffer */
-        long spaceneeded = 1024l * 1024 * JSonWrapper.get("DOWNLOAD").getLongProperty(Configuration.PARAM_SAVESPACE, 512);
+
+        long spaceneeded = 1024l * 1024 * config.getForcedFreeSpaceOnDisk();
         /* calc the needed space for the current running downloads */
         synchronized (this.DownloadControllers) {
             for (final SingleDownloadController con : this.DownloadControllers) {
@@ -451,7 +456,8 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
      * @return
      */
     public int getForbiddenReconnectDownloadNum() {
-        final boolean allowinterrupt = JSonWrapper.get("DOWNLOAD").getBooleanProperty("PARAM_DOWNLOAD_AUTORESUME_ON_RECONNECT", true);
+        final boolean allowinterrupt = config.isInterruptResumeableDownloadsEnable();
+
         int ret = 0;
         synchronized (this.DownloadControllers) {
             for (final SingleDownloadController con : DownloadControllers) {
@@ -470,7 +476,8 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
      * @return
      */
     public int getSimultanDownloadNum() {
-        return JSonWrapper.get("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, 2);
+
+        return config.getMaxSimultaneDownloads();
     }
 
     /**
@@ -480,7 +487,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
      */
     public int getSimultanDownloadNumPerHost() {
         int ret = 0;
-        if ((ret = JSonWrapper.get("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN_PER_HOST, 0)) == 0) { return Integer.MAX_VALUE; }
+        if ((ret = config.getMaxSimultaneDownloadsPerHost()) == 0) { return Integer.MAX_VALUE; }
         return ret;
     }
 
@@ -532,7 +539,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
             /* reconnect in progress */
             return false;
         }
-        if (Reconnecter.getInstance().isAutoReconnectEnabled() && JSonWrapper.get("DOWNLOAD").getBooleanProperty("PARAM_DOWNLOAD_PREFER_RECONNECT", true) && IPController.getInstance().isInvalidated()) {
+        if (Reconnecter.getInstance().isAutoReconnectEnabled() && config.isDownloadControllerPrefersReconnectEnabled() && IPController.getInstance().isInvalidated()) {
             /*
              * auto reconnect is enabled and downloads are waiting for reconnect
              * and user set to wait for reconnect
@@ -563,23 +570,33 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
      * 
      * @param value
      */
+    private int speedBeforePause = 0;
+
     public void pauseDownloadWatchDog(final boolean value) {
         IOEQ.add(new Runnable() {
+
             public void run() {
                 if (DownloadWatchDog.this.paused == value) { return; }
                 DownloadWatchDog.this.paused = value;
                 if (value) {
                     ActionController.getToolBarAction("toolbar.control.pause").setSelected(true);
-                    JSonWrapper.get("DOWNLOAD").setProperty("MAXSPEEDBEFOREPAUSE", JSonWrapper.get("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0));
-                    JSonWrapper.get("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, JSonWrapper.get("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_PAUSE_SPEED, 10));
-                    DownloadWatchDog.LOG.info("Pause enabled: Reducing downloadspeed to " + JSonWrapper.get("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_PAUSE_SPEED, 10) + " KiB/s");
+                    speedBeforePause = config.getDownloadSpeedLimit();
+
+                    config.setDownloadSpeedLimit(config.getPauseSpeed());
+                    // JSonWrapper.get("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED,
+                    // JSonWrapper.get("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_PAUSE_SPEED,
+                    // 10));
+                    DownloadWatchDog.LOG.info("Pause enabled: Reducing downloadspeed to " + config.getPauseSpeed() + " KiB/s");
                 } else {
-                    JSonWrapper.get("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, JSonWrapper.get("DOWNLOAD").getIntegerProperty("MAXSPEEDBEFOREPAUSE", 0));
-                    JSonWrapper.get("DOWNLOAD").setProperty("MAXSPEEDBEFOREPAUSE", null);
+                    config.setDownloadSpeedLimit(speedBeforePause);
+                    // JSonWrapper.get("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED,
+                    // JSonWrapper.get("DOWNLOAD").getIntegerProperty("MAXSPEEDBEFOREPAUSE",
+                    // 0));
+                    speedBeforePause = 0;
                     DownloadWatchDog.LOG.info("Pause disabled: Switch back to old downloadspeed");
                     ActionController.getToolBarAction("toolbar.control.pause").setSelected(false);
                 }
-                JSonWrapper.get("DOWNLOAD").save();
+
             }
         }, true);
     }

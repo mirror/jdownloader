@@ -26,27 +26,24 @@ import javax.swing.SwingUtilities;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
-import jd.config.Configuration;
-import jd.config.Property;
 import jd.controlling.DownloadWatchDog;
-import jd.controlling.JSonWrapper;
-import jd.event.ControlEvent;
-import jd.event.ControlListener;
 import jd.gui.swing.components.JDSpinner;
 import jd.gui.swing.jdgui.components.modules.ModuleStatus;
 import jd.gui.swing.jdgui.components.premiumbar.PremiumStatus;
 import jd.gui.swing.laf.LookAndFeelController;
 import jd.nutils.Formatter;
-import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
 
+import org.appwork.storage.config.ConfigEventListener;
+import org.appwork.storage.config.ConfigInterface;
+import org.appwork.storage.config.JsonConfig;
+import org.appwork.storage.config.KeyHandler;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.settings.GeneralSettings;
 
-public class StatusBar extends JPanel implements ChangeListener, ControlListener {
+public class StatusBar extends JPanel implements ChangeListener, ConfigEventListener {
 
     private static final long serialVersionUID = 3676496738341246846L;
-
-    private final JSonWrapper dlConfig;
 
     private JDSpinner         spMaxChunks;
 
@@ -54,9 +51,12 @@ public class StatusBar extends JPanel implements ChangeListener, ControlListener
 
     private JDSpinner         spMaxSpeed;
 
-    public StatusBar() {
-        dlConfig = JSonWrapper.get("DOWNLOAD");
+    private GeneralSettings   config;
 
+    public StatusBar() {
+
+        config = JsonConfig.create(GeneralSettings.class);
+        config.getStorageHandler().getEventSender().addListener(this);
         initGUI();
     }
 
@@ -70,16 +70,17 @@ public class StatusBar extends JPanel implements ChangeListener, ControlListener
 
         }
 
-        JDUtilities.getController().addControlListener(this);
         spMaxSpeed = new JDSpinner(_GUI._.gui_statusbar_speed());
         spMaxSpeed.getSpinner().addChangeListener(this);
         spMaxSpeed.getSpinner().setModel(new SpinnerNumberModel(0, 0, Integer.MAX_VALUE, 50));
         try {
-            spMaxSpeed.setValue(dlConfig.getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0));
+            spMaxSpeed.setValue(JsonConfig.create(GeneralSettings.class).getDownloadSpeedLimit());
         } catch (Throwable e) {
             spMaxSpeed.setValue(0);
-            dlConfig.setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0);
-            dlConfig.save();
+            // dlConfig.setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0);
+            //
+            // dlConfig.save();
+            JsonConfig.create(GeneralSettings.class).setDownloadSpeedLimit(0);
         }
         spMaxSpeed.setToolTipText(_GUI._.gui_tooltip_statusbar_speedlimiter());
         colorizeSpinnerSpeed();
@@ -87,11 +88,13 @@ public class StatusBar extends JPanel implements ChangeListener, ControlListener
         spMaxDls = new JDSpinner(_GUI._.gui_statusbar_sim_ownloads(), "h 20!");
         spMaxDls.getSpinner().setModel(new SpinnerNumberModel(2, 1, 20, 1));
         try {
-            spMaxDls.setValue(dlConfig.getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, 2));
+            spMaxDls.setValue(JsonConfig.create(GeneralSettings.class).getMaxSimultaneDownloads());
         } catch (Throwable e) {
             spMaxDls.setValue(2);
-            dlConfig.setProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, 2);
-            dlConfig.save();
+            // dlConfig.setProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN,
+            // 2);
+            // dlConfig.save();
+            JsonConfig.create(GeneralSettings.class).setMaxSimultaneDownloads(2);
         }
         spMaxDls.setToolTipText(_GUI._.gui_tooltip_statusbar_simultan_downloads());
         spMaxDls.getSpinner().addChangeListener(this);
@@ -99,10 +102,11 @@ public class StatusBar extends JPanel implements ChangeListener, ControlListener
         spMaxChunks = new JDSpinner(_GUI._.gui_statusbar_maxChunks(), "h 20!");
         spMaxChunks.getSpinner().setModel(new SpinnerNumberModel(2, 1, 20, 1));
         try {
-            spMaxChunks.setValue(dlConfig.getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2));
+            spMaxChunks.setValue(JsonConfig.create(GeneralSettings.class).getMaxChunksPerFile());
         } catch (Throwable e) {
-            dlConfig.setProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2);
-            dlConfig.save();
+            // dlConfig.setProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2);
+            // dlConfig.save();
+            JsonConfig.create(GeneralSettings.class).setMaxChunksPerFile(2);
         }
         spMaxChunks.setToolTipText(_GUI._.gui_tooltip_statusbar_max_chunks());
         spMaxChunks.getSpinner().addChangeListener(this);
@@ -122,40 +126,6 @@ public class StatusBar extends JPanel implements ChangeListener, ControlListener
             spMaxSpeed.setColor(new Color(255, 12, 3));
         } else {
             spMaxSpeed.setColor(null);
-        }
-    }
-
-    public void controlEvent(ControlEvent event) {
-        if (event.getEventID() == ControlEvent.CONTROL_JDPROPERTY_CHANGED) {
-            final Property p = (Property) event.getCaller();
-            if (event.getParameter().equals(Configuration.PARAM_DOWNLOAD_MAX_SPEED)) {
-                SwingUtilities.invokeLater(new Runnable() {
-                    public void run() {
-                        DownloadWatchDog.getInstance().getConnectionManager().setIncommingBandwidthLimit(p.getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0) * 1024);
-                        setSpinnerSpeed(p.getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0));
-                    }
-                });
-            } else if (event.getParameter().equals(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN)) {
-                SwingUtilities.invokeLater(new Runnable() {
-                    public void run() {
-                        try {
-                            spMaxDls.setValue(p.getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, 2));
-                        } catch (Throwable e) {
-                            spMaxDls.setValue(2);
-                        }
-                    }
-                });
-            } else if (event.getParameter().equals(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS)) {
-                SwingUtilities.invokeLater(new Runnable() {
-                    public void run() {
-                        try {
-                            spMaxChunks.setValue(p.getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 1));
-                        } catch (Throwable e) {
-                            spMaxChunks.setValue(1);
-                        }
-                    }
-                });
-            }
         }
     }
 
@@ -183,14 +153,57 @@ public class StatusBar extends JPanel implements ChangeListener, ControlListener
 
     public void stateChanged(ChangeEvent e) {
         if (e.getSource() == spMaxSpeed.getSpinner()) {
-            dlConfig.setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, spMaxSpeed.getValue());
-            dlConfig.save();
+            // dlConfig.setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED,
+            // spMaxSpeed.getValue());
+            // dlConfig.save();
+            config.setDownloadSpeedLimit(spMaxSpeed.getValue());
         } else if (e.getSource() == spMaxDls.getSpinner()) {
-            dlConfig.setProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, spMaxDls.getValue());
-            dlConfig.save();
+            // dlConfig.setProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN,
+            // spMaxDls.getValue());
+            // dlConfig.save();
+            config.setMaxSimultaneDownloads(spMaxDls.getValue());
         } else if (e.getSource() == spMaxChunks.getSpinner()) {
-            dlConfig.setProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, spMaxChunks.getValue());
-            dlConfig.save();
+            // dlConfig.setProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS,
+            // spMaxChunks.getValue());
+            // dlConfig.save();
+            config.setMaxChunksPerFile(spMaxChunks.getValue());
+        }
+    }
+
+    public void onConfigValidatorError(ConfigInterface config, Throwable validateException, KeyHandler methodHandler) {
+    }
+
+    public void onConfigValueModified(ConfigInterface config2, String key, Object newValue) {
+
+        if ("downloadSpeedLimit".equalsIgnoreCase(key)) {
+            SwingUtilities.invokeLater(new Runnable() {
+                public void run() {
+                    DownloadWatchDog.getInstance().getConnectionManager().setIncommingBandwidthLimit(config.getDownloadSpeedLimit() * 1024);
+                    setSpinnerSpeed(config.getDownloadSpeedLimit());
+                }
+            });
+        } else if ("MaxSimultaneDownloads".equalsIgnoreCase(key)) {
+            SwingUtilities.invokeLater(new Runnable() {
+                public void run() {
+                    try {
+                        spMaxDls.setValue(config.getMaxSimultaneDownloads());
+                    } catch (Throwable e) {
+                        config.setMaxSimultaneDownloads(2);
+                        spMaxDls.setValue(2);
+                    }
+                }
+            });
+        } else if ("MaxChunksPerFile".equalsIgnoreCase(key)) {
+            SwingUtilities.invokeLater(new Runnable() {
+                public void run() {
+                    try {
+                        spMaxChunks.setValue(config.getMaxChunksPerFile());
+                    } catch (Throwable e) {
+                        spMaxChunks.setValue(1);
+                        config.setMaxChunksPerFile(1);
+                    }
+                }
+            });
         }
     }
 

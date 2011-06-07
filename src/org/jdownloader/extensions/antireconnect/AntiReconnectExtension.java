@@ -26,11 +26,13 @@ import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.plugins.AddonPanel;
 import jd.utils.JDUtilities;
 
+import org.appwork.storage.config.JsonConfig;
 import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
 import org.jdownloader.extensions.antireconnect.translate.T;
+import org.jdownloader.settings.GeneralSettings;
 
 public class AntiReconnectExtension extends AbstractExtension<AntiReconnectConfig> {
     private static final String                          CONFIG_MODE         = "CONFIG_MODE";
@@ -97,13 +99,13 @@ public class AntiReconnectExtension extends AbstractExtension<AntiReconnectConfi
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), CONFIG_EACH, T._.gui_config_antireconnect_each(), 1, 300000, 1000).setDefaultValue(10000));
 
         config.setGroup(new ConfigGroup(T._.gui_config_antireconnect_oldgroup(), "settings"));
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), CONFIG_OLDDOWNLOADS, T._.gui_config_antireconnect_olddownloads(), 1, 20, 1).setDefaultValue(JDUtilities.getConfiguration().getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN)));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), CONFIG_OLDDOWNLOADS, T._.gui_config_antireconnect_olddownloads(), 1, 20, 1).setDefaultValue(JsonConfig.create(GeneralSettings.class).getMaxSimultaneDownloads()));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), CONFIG_OLDRECONNECT, T._.gui_config_antireconnect_oldreconnect()).setDefaultValue(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_ALLOW_RECONNECT)));
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), CONFIG_OLDSPEED, T._.gui_config_antireconnect_oldspeed(), 0, 500000, 10).setDefaultValue(JDUtilities.getConfiguration().getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED)));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), CONFIG_OLDSPEED, T._.gui_config_antireconnect_oldspeed(), 0, 500000, 10).setDefaultValue(JsonConfig.create(GeneralSettings.class).getDownloadSpeedLimit()));
         config.setGroup(new ConfigGroup(T._.gui_config_antireconnect_newgroup(), "settings"));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), CONFIG_NEWDOWNLOADS, T._.gui_config_antireconnect_newdownloads(), 1, 20, 1).setDefaultValue(3));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), CONFIG_NEWRECONNECT, T._.gui_config_antireconnect_newreconnect()).setDefaultValue(false));
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), CONFIG_NEWSPEED, T._.gui_config_antireconnect_newspeed(), 0, 500000, 10).setDefaultValue(JDUtilities.getConfiguration().getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED)));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), CONFIG_NEWSPEED, T._.gui_config_antireconnect_newspeed(), 0, 500000, 10).setDefaultValue(JsonConfig.create(GeneralSettings.class).getDownloadSpeedLimit()));
 
     }
 

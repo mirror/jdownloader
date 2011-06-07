@@ -219,8 +219,8 @@ public class JDInit {
         Browser.setGlobalLogger(JDLogger.getLogger());
 
         /* init default global Timeouts */
-        Browser.setGlobalReadTimeout(JSonWrapper.get("DOWNLOAD").getIntegerProperty(UpdaterConstants.PARAM_DOWNLOAD_READ_TIMEOUT, 100000));
-        Browser.setGlobalConnectTimeout(JSonWrapper.get("DOWNLOAD").getIntegerProperty(UpdaterConstants.PARAM_DOWNLOAD_CONNECT_TIMEOUT, 100000));
+        Browser.setGlobalReadTimeout(JsonConfig.create(GeneralSettings.class).getHttpReadTimeout());
+        Browser.setGlobalConnectTimeout(JsonConfig.create(GeneralSettings.class).getHttpConnectTimeout());
 
         if (JSonWrapper.get("DOWNLOAD").getBooleanProperty(UpdaterConstants.USE_PROXY, false)) {
             final String host = JSonWrapper.get("DOWNLOAD").getStringProperty(UpdaterConstants.PROXY_HOST, "");

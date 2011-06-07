@@ -27,7 +27,6 @@ import jd.controlling.DistributeData;
 import jd.controlling.DownloadController;
 import jd.controlling.DownloadWatchDog;
 import jd.controlling.JDLogger;
-import jd.controlling.JSonWrapper;
 import jd.controlling.LinkGrabberController;
 import jd.controlling.PasswordListController;
 import jd.controlling.reconnect.Reconnecter;
@@ -39,7 +38,9 @@ import jd.plugins.LinkGrabberFilePackage;
 import jd.plugins.LinkStatus;
 import jd.utils.JDUtilities;
 
+import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Regex;
+import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.update.RestartController;
 
 public class JDSimpleWebserverRequestHandler {
@@ -120,7 +121,9 @@ public class JDSimpleWebserverRequestHandler {
                     if (setspeed < 0) {
                         setspeed = 0;
                     }
-                    JSonWrapper.get("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, setspeed);
+                    // JSonWrapper.get("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED,
+                    // setspeed);
+                    JsonConfig.create(GeneralSettings.class).setDownloadSpeedLimit(setspeed);
                 }
 
                 if (requestParameter.containsKey("maxdls")) {
@@ -131,7 +134,9 @@ public class JDSimpleWebserverRequestHandler {
                     if (maxdls > 20) {
                         maxdls = 20;
                     }
-                    JSonWrapper.get("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, maxdls);
+                    // JSonWrapper.get("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN,
+                    // maxdls);
+                    JsonConfig.create(GeneralSettings.class).setMaxSimultaneDownloads(maxdls);
                 }
 
                 if (!requestParameter.containsKey("selected_dowhat_link_adder")) {

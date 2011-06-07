@@ -20,17 +20,16 @@ import java.awt.Color;
 
 import javax.swing.JLabel;
 
-import jd.config.ConfigPropertyListener;
-import jd.config.Configuration;
-import jd.config.Property;
 import jd.controlling.DownloadWatchDog;
-import jd.controlling.JDController;
-import jd.controlling.JSonWrapper;
 
+import org.appwork.storage.config.ConfigEventListener;
+import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.JsonConfig;
+import org.appwork.storage.config.KeyHandler;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.Graph;
 import org.appwork.utils.swing.graph.Limiter;
+import org.jdownloader.settings.GeneralSettings;
 
 public class SpeedMeterPanel extends Graph {
 
@@ -53,24 +52,36 @@ public class SpeedMeterPanel extends Graph {
         Color a = new Color((int) Long.parseLong(config.getLimitColorA(), 16), true);
         Color b = new Color((int) Long.parseLong(config.getLimitColorB(), 16), true);
         speedLimiter = new Limiter(a, b);
-        speedLimiter.setValue(JSonWrapper.get("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0) * 1024);
-        JDController.getInstance().addControlListener(new ConfigPropertyListener(Configuration.PARAM_DOWNLOAD_MAX_SPEED) {
+        speedLimiter.setValue(JsonConfig.create(GeneralSettings.class).getDownloadSpeedLimit() * 1024);
+        JsonConfig.create(GeneralSettings.class).getStorageHandler().getEventSender().addListener(new ConfigEventListener() {
 
-            @Override
-            public void onPropertyChanged(Property source, String key) {
+            public void onConfigValueModified(ConfigInterface config, String key, Object newValue) {
+                if ("downloadSpeedLimit".equalsIgnoreCase(key)) {
+                    new EDTRunner() {
 
-                resetAverage();
-                speedLimiter.setValue(source.getIntegerProperty(key, 0) * 1024);
-                // repaint immediately
-                new EDTRunner() {
+                        @Override
+                        protected void runInEDT() {
 
-                    @Override
-                    protected void runInEDT() {
-                        repaint();
-                    }
-                };
+                            resetAverage();
+                            speedLimiter.setValue(JsonConfig.create(GeneralSettings.class).getDownloadSpeedLimit() * 1024);
+                            // repaint immediately
+                            new EDTRunner() {
+
+                                @Override
+                                protected void runInEDT() {
+                                    repaint();
+                                }
+                            };
+                        }
+                    };
+                }
+
+            }
+
+            public void onConfigValidatorError(ConfigInterface config, Throwable validateException, KeyHandler methodHandler) {
             }
         });
+
         setLimiter(new Limiter[] { speedLimiter });
         if (start) start();
     }

@@ -16,12 +16,11 @@
 
 package org.jdownloader.extensions.schedule.modules;
 
-import jd.config.Configuration;
-import jd.controlling.JSonWrapper;
-
+import org.appwork.storage.config.JsonConfig;
 import org.jdownloader.extensions.schedule.SchedulerModule;
 import org.jdownloader.extensions.schedule.SchedulerModuleInterface;
 import org.jdownloader.extensions.schedule.translate.T;
+import org.jdownloader.settings.GeneralSettings;
 
 @SchedulerModule
 public class SetChunk implements SchedulerModuleInterface {
@@ -39,8 +38,10 @@ public class SetChunk implements SchedulerModuleInterface {
     }
 
     public void execute(String parameter) {
-        JSonWrapper.get("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, Integer.parseInt(parameter));
-        JSonWrapper.get("DOWNLOAD").save();
+        // JSonWrapper.get("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS,
+        // );
+        // JSonWrapper.get("DOWNLOAD").save();
+        JsonConfig.create(GeneralSettings.class).setMaxChunksPerFile(Integer.parseInt(parameter));
     }
 
     public String getTranslation() {

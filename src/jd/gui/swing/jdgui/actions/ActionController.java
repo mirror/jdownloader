@@ -28,7 +28,6 @@ import jd.controlling.DownloadController;
 import jd.controlling.DownloadWatchDog;
 import jd.controlling.IOEQ;
 import jd.controlling.JDController;
-import jd.controlling.JSonWrapper;
 import jd.controlling.LinkGrabberController;
 import jd.controlling.ProgressController;
 import jd.controlling.reconnect.Reconnecter;
@@ -51,8 +50,12 @@ import jd.utils.JDUtilities;
 import jd.utils.WebUpdate;
 
 import org.appwork.storage.StorageValueChangeEvent;
+import org.appwork.storage.config.ConfigEventListener;
+import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.JsonConfig;
+import org.appwork.storage.config.KeyHandler;
 import org.appwork.utils.event.DefaultEventListener;
+import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.settings.GeneralSettings;
 
@@ -210,19 +213,34 @@ public class ActionController {
                         }
                     }
                 });
-                JDController.getInstance().addControlListener(new ConfigPropertyListener(Configuration.PARAM_DOWNLOAD_PAUSE_SPEED) {
-                    @Override
-                    public void onPropertyChanged(final Property source, final String key) {
-                        setToolTipText(_GUI._.gui_menu_action_break2_desc(JSonWrapper.get("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_PAUSE_SPEED, 10) + ""));
+                JsonConfig.create(GeneralSettings.class).getStorageHandler().getEventSender().addListener(new ConfigEventListener() {
+
+                    public void onConfigValueModified(ConfigInterface config, String key, Object newValue) {
+                        if ("pausespeed".equalsIgnoreCase(key)) {
+                            new EDTRunner() {
+
+                                @Override
+                                protected void runInEDT() {
+                                    setToolTipText(_GUI._.gui_menu_action_break2_desc(JsonConfig.create(GeneralSettings.class).getPauseSpeed()));
+
+                                }
+                            };
+                        }
+
+                    }
+
+                    public void onConfigValidatorError(ConfigInterface config, Throwable validateException, KeyHandler methodHandler) {
                     }
                 });
+
             }
 
             @Override
             public void initDefaults() {
                 this.setEnabled(false);
                 this.setType(ToolBarAction.Types.TOGGLE);
-                this.setToolTipText(_GUI._.gui_menu_action_break2_desc(JSonWrapper.get("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_PAUSE_SPEED, 10) + ""));
+                setToolTipText(_GUI._.gui_menu_action_break2_desc(JsonConfig.create(GeneralSettings.class).getPauseSpeed()));
+
             }
 
             @Override

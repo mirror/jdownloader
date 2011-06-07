@@ -27,17 +27,19 @@ import jd.controlling.JDLogger;
 import jd.nutils.OSDetector;
 import jd.utils.JDUtilities;
 
+import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Regex;
+import org.jdownloader.settings.GeneralSettings;
 
 public class JDAntiReconnectThread extends Thread implements Runnable {
 
-    private boolean               running       = true;
-    private boolean               run           = false;
-    private boolean               clients       = false;
-    private ArrayList<String>     iplist        = new ArrayList<String>();
-    private String                lastIpsString = "";
-    private String                lastIp        = "";
-    private final Logger          logger;
+    private boolean                      running       = true;
+    private boolean                      run           = false;
+    private boolean                      clients       = false;
+    private ArrayList<String>            iplist        = new ArrayList<String>();
+    private String                       lastIpsString = "";
+    private String                       lastIp        = "";
+    private final Logger                 logger;
     private final AntiReconnectExtension jdAntiReconnect;
 
     public JDAntiReconnectThread(AntiReconnectExtension jdAntiReconnect) {
@@ -184,12 +186,12 @@ public class JDAntiReconnectThread extends Thread implements Runnable {
             this.clients = clients2;
             if (clients2 == true) {
                 JDUtilities.getConfiguration().setProperty(Configuration.PARAM_ALLOW_RECONNECT, jdAntiReconnect.getPluginConfig().getBooleanProperty("CONFIG_NEWRECONNECT"));
-                JDUtilities.getConfiguration().setProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, jdAntiReconnect.getPluginConfig().getIntegerProperty("CONFIG_NEWDOWNLOADS"));
-                JDUtilities.getConfiguration().setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, jdAntiReconnect.getPluginConfig().getIntegerProperty("CONFIG_NEWSPEED"));
+                JsonConfig.create(GeneralSettings.class).setMaxSimultaneDownloads(jdAntiReconnect.getPluginConfig().getIntegerProperty("CONFIG_NEWDOWNLOADS"));
+                JsonConfig.create(GeneralSettings.class).setDownloadSpeedLimit(jdAntiReconnect.getPluginConfig().getIntegerProperty("CONFIG_NEWSPEED"));
             } else {
                 JDUtilities.getConfiguration().setProperty(Configuration.PARAM_ALLOW_RECONNECT, jdAntiReconnect.getPluginConfig().getBooleanProperty("CONFIG_OLDRECONNECT"));
-                JDUtilities.getConfiguration().setProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, jdAntiReconnect.getPluginConfig().getIntegerProperty("CONFIG_OLDDOWNLOADS"));
-                JDUtilities.getConfiguration().setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, jdAntiReconnect.getPluginConfig().getIntegerProperty("CONFIG_OLDSPEED"));
+                JsonConfig.create(GeneralSettings.class).setMaxSimultaneDownloads(jdAntiReconnect.getPluginConfig().getIntegerProperty("CONFIG_OLDDOWNLOADS"));
+                JsonConfig.create(GeneralSettings.class).setDownloadSpeedLimit(jdAntiReconnect.getPluginConfig().getIntegerProperty("CONFIG_OLDSPEED"));
             }
         }
     }

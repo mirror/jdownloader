@@ -28,12 +28,10 @@ import java.util.Map.Entry;
 import java.util.Vector;
 import java.util.logging.Logger;
 
-import jd.config.Configuration;
 import jd.controlling.ByteArray;
 import jd.controlling.DownloadWatchDog;
 import jd.controlling.GarbageController;
 import jd.controlling.JDLogger;
-import jd.controlling.JSonWrapper;
 import jd.http.Browser;
 import jd.http.Request;
 import jd.http.URLConnectionAdapter;
@@ -46,11 +44,13 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-import org.appwork.update.updateclient.UpdaterConstants;
+import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Regex;
 import org.appwork.utils.net.httpconnection.HTTPConnection.RequestMethod;
 import org.appwork.utils.net.throttledconnection.MeteredThrottledInputStream;
 import org.appwork.utils.speedmeter.AverageSpeedMeter;
+import org.jdownloader.settings.GeneralSettings;
+import org.jdownloader.settings.IfFileExistsAction;
 import org.jdownloader.translate._JDT;
 
 abstract public class DownloadInterface {
@@ -113,7 +113,7 @@ abstract public class DownloadInterface {
             this.clonedconnection = false;
             this.dl = dl;
             setPriority(Thread.MIN_PRIORITY);
-            MAX_BUFFERSIZE = JSonWrapper.get("DOWNLOAD").getIntegerProperty("MAXBUFFERSIZE", 1000) * 1024;
+            MAX_BUFFERSIZE = JsonConfig.create(GeneralSettings.class).getMaxBufferSize() * 1024;
         }
 
         private void addChunkBytesLoaded(long limit) {
@@ -763,8 +763,8 @@ abstract public class DownloadInterface {
         linkStatus.setStatusText(_JDT._.download_connection_normal());
         browser = plugin.getBrowser().cloneBrowser();
         downloadLink.setDownloadInstance(this);
-        requestTimeout = JSonWrapper.get("DOWNLOAD").getIntegerProperty(UpdaterConstants.PARAM_DOWNLOAD_CONNECT_TIMEOUT, 100000);
-        readTimeout = JSonWrapper.get("DOWNLOAD").getIntegerProperty(UpdaterConstants.PARAM_DOWNLOAD_READ_TIMEOUT, 100000);
+        requestTimeout = JsonConfig.create(GeneralSettings.class).getHttpConnectTimeout();
+        readTimeout = JsonConfig.create(GeneralSettings.class).getHttpReadTimeout();
     }
 
     public DownloadInterface(PluginForHost plugin, DownloadLink downloadLink, Request request) throws IOException, PluginException {
@@ -1219,7 +1219,8 @@ abstract public class DownloadInterface {
             }
         }
         if (fileOutput.exists()) {
-            if (JSonWrapper.get("DOWNLOAD").getIntegerProperty(Configuration.PARAM_FILE_EXISTS, 1) == 0) {
+            // TODO: handle all options!?
+            if (JsonConfig.create(GeneralSettings.class).getIfFileExistsAction() == IfFileExistsAction.OVERWRITE_FILE) {
                 if (!new File(downloadLink.getFileOutput()).delete()) {
                     linkstatus.addStatus(LinkStatus.ERROR_FATAL);
                     linkstatus.setErrorMessage(_JDT._.system_download_errors_couldnotoverwrite());

@@ -235,7 +235,7 @@ public class Serverhandler implements Handler {
         } else if (requestUrl.equals("/get/speedlimit")) {
             // Get speed limit
 
-            final int value = JSonWrapper.get("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0);
+            final int value = JsonConfig.create(GeneralSettings.class).getDownloadSpeedLimit();
             response.addContent(value);
         } else if (requestUrl.equals("/get/downloadstatus")) {
             // Get download status
@@ -414,8 +414,10 @@ public class Serverhandler implements Handler {
 
             final Integer newdllimit = Integer.parseInt(new Regex(requestUrl, ".*/set/download/limit/([0-9]+)").getMatch(0));
             Serverhandler.logger.fine("RemoteControl - Set max. Downloadspeed: " + newdllimit.toString());
-            JSonWrapper.get("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, newdllimit.toString());
-            JSonWrapper.get("DOWNLOAD").save();
+            // JSonWrapper.get("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED,
+            // newdllimit.toString());
+            JsonConfig.create(GeneralSettings.class).setDownloadSpeedLimit(newdllimit);
+            // JSonWrapper.get("DOWNLOAD").save();
 
             response.addContent("PARAM_DOWNLOAD_MAX_SPEED=" + newdllimit);
         } else if (requestUrl.matches("(?is).*/set/download/max/[0-9]+")) {
@@ -423,8 +425,11 @@ public class Serverhandler implements Handler {
 
             final Integer newsimdl = Integer.parseInt(new Regex(requestUrl, ".*/set/download/max/([0-9]+)").getMatch(0));
             Serverhandler.logger.fine("RemoteControl - Set max. sim. Downloads: " + newsimdl.toString());
-            JSonWrapper.get("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, newsimdl.toString());
-            JSonWrapper.get("DOWNLOAD").save();
+            // JSonWrapper.get("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN,
+            // newsimdl.toString());
+            //
+            // JSonWrapper.get("DOWNLOAD").save();
+            JsonConfig.create(GeneralSettings.class).setMaxSimultaneDownloads(newsimdl);
 
             response.addContent("PARAM_DOWNLOAD_MAX_SIMULTAN=" + newsimdl);
         } else if (requestUrl.matches("(?is).*/set/grabber/startafteradding/(true|false)")) {

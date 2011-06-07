@@ -41,22 +41,26 @@ public class Configuration extends SubConfiguration implements Serializable {
 
     public static final String PARAM_ALLOW_RECONNECT                  = "ALLOW_RECONNECT";
 
-    public static final String PARAM_DO_CRC                           = "DO_CRC";
+    // public static final String PARAM_DO_CRC = "DO_CRC";
 
     public static final String PARAM_DOWNLOAD_DIRECTORY               = "DOWNLOAD_DIRECTORY";
 
-    public static final String PARAM_DOWNLOAD_MAX_CHUNKS              = "DOWNLOAD_MAX_CHUNKS";
+    // public static final String PARAM_DOWNLOAD_MAX_CHUNKS =
+    // "DOWNLOAD_MAX_CHUNKS";
 
-    public static final String PARAM_DOWNLOAD_PAUSE_SPEED             = "PAUSE_SPEED";
+    // public static final String PARAM_DOWNLOAD_PAUSE_SPEED = "PAUSE_SPEED";
 
-    public static final String PARAM_DOWNLOAD_MAX_SIMULTAN            = "DOWNLOAD_MAX_SIMULTAN";
+    // public static final String PARAM_DOWNLOAD_MAX_SIMULTAN =
+    // "DOWNLOAD_MAX_SIMULTAN";
 
-    public static final String PARAM_DOWNLOAD_MAX_SIMULTAN_PER_HOST   = "DOWNLOAD_MAX_SIMULTAN_PER_HOST";
+    // public static final String PARAM_DOWNLOAD_MAX_SIMULTAN_PER_HOST =
+    // "DOWNLOAD_MAX_SIMULTAN_PER_HOST";
 
-    public static final String PARAM_DOWNLOAD_MAX_SPEED               = "DOWNLOAD_MAX_SPEED_V2";
-    public static final String PARAM_SAVESPACE                        = "PARAM_SAVESPACE2";
+    // public static final String PARAM_DOWNLOAD_MAX_SPEED =
+    // "DOWNLOAD_MAX_SPEED_V2";
+    // public static final String PARAM_SAVESPACE = "PARAM_SAVESPACE2";
 
-    public static final String PARAM_FILE_EXISTS                      = "FILE_EXISTS";
+    // public static final String PARAM_FILE_EXISTS = "FILE_EXISTS";
 
     public static final String PARAM_FINISHED_DOWNLOADS_ACTION        = "FINISHED_DOWNLOADS_ACTION";
 

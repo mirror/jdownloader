@@ -35,7 +35,6 @@ import jd.controlling.FavIconController;
 import jd.controlling.FavIconRequestor;
 import jd.controlling.JDLogger;
 import jd.controlling.JDPluginLogger;
-import jd.controlling.JSonWrapper;
 import jd.controlling.SingleDownloadController;
 import jd.controlling.captcha.CaptchaController;
 import jd.gui.UserIF;
@@ -49,9 +48,11 @@ import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.download.DownloadInterface;
 
+import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Regex;
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.translate._JDT;
 
 /**
@@ -145,7 +146,6 @@ public abstract class PluginForHost extends Plugin implements FavIconRequestor {
 
     private static int                         currentConnections     = 0;
 
-    public static final String                 PARAM_MAX_RETRIES      = "MAX_RETRIES";
     protected DownloadInterface                dl                     = null;
     private int                                maxConnections         = 50;
 
@@ -561,7 +561,7 @@ public abstract class PluginForHost extends Plugin implements FavIconRequestor {
     }
 
     public int getMaxRetries() {
-        return JSonWrapper.get("DOWNLOAD").getIntegerProperty(PARAM_MAX_RETRIES, 3);
+        return JsonConfig.create(GeneralSettings.class).getMaxPluginRetries();
     }
 
     public int getMaxSimultanFreeDownloadNum() {

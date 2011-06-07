@@ -47,9 +47,12 @@ import jd.utils.JDUtilities;
 import org.appwork.controlling.StateMachine;
 import org.appwork.controlling.StateMachineInterface;
 import org.appwork.controlling.StateMonitor;
+import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Regex;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.settings.GeneralSettings;
+import org.jdownloader.settings.IfFileExistsAction;
 import org.jdownloader.translate._JDT;
 
 /**
@@ -58,11 +61,12 @@ import org.jdownloader.translate._JDT;
  * @author astaldo/JD-Team
  */
 public class SingleDownloadController extends Thread implements BrowserSettings, StateMachineInterface {
-    public static final String                        WAIT_TIME_ON_CONNECTION_LOSS = "WAIT_TIME_ON_CONNECTION_LOSS";
+    // public static final String WAIT_TIME_ON_CONNECTION_LOSS =
+    // "WAIT_TIME_ON_CONNECTION_LOSS";
 
-    private static final Object                       DUPELOCK                     = new Object();
+    private static final Object                       DUPELOCK      = new Object();
 
-    private boolean                                   aborted                      = false;
+    private boolean                                   aborted       = false;
 
     /**
      * Das Plugin, das den aktuellen Download steuert
@@ -76,24 +80,24 @@ public class SingleDownloadController extends Thread implements BrowserSettings,
     /**
      * Der Logger
      */
-    private JDPluginLogger                            logger                       = null;
+    private JDPluginLogger                            logger        = null;
 
     private long                                      startTime;
 
-    private Account                                   account                      = null;
-    private SingleDownloadControllerHandler           handler                      = null;
+    private Account                                   account       = null;
+    private SingleDownloadControllerHandler           handler       = null;
 
-    private ProxyInfo                                 proxyInfo                    = null;
+    private ProxyInfo                                 proxyInfo     = null;
 
-    private HTTPProxy                                 httpproxy                    = null;
+    private HTTPProxy                                 httpproxy     = null;
 
     private StateMachine                              stateMachine;
 
     private StateMonitor                              stateMonitor;
 
-    public static final org.appwork.controlling.State IDLE_STATE                   = new org.appwork.controlling.State("IDLE");
-    public static final org.appwork.controlling.State RUNNING_STATE                = new org.appwork.controlling.State("RUNNING");
-    public static final org.appwork.controlling.State FINAL_STATE                  = new org.appwork.controlling.State("FINAL_STATE");
+    public static final org.appwork.controlling.State IDLE_STATE    = new org.appwork.controlling.State("IDLE");
+    public static final org.appwork.controlling.State RUNNING_STATE = new org.appwork.controlling.State("RUNNING");
+    public static final org.appwork.controlling.State FINAL_STATE   = new org.appwork.controlling.State("FINAL_STATE");
     static {
         IDLE_STATE.addChildren(RUNNING_STATE);
         RUNNING_STATE.addChildren(FINAL_STATE);
@@ -367,7 +371,7 @@ public class SingleDownloadController extends Thread implements BrowserSettings,
         // - prerequisite: 'skip link' option selected
         // TODO WORKAROUND FOR NOW.. WILL BE HANDLED BY A MIRROR MANAGER IN THE
         // FUTURE
-        if (JSonWrapper.get("DOWNLOAD").getIntegerProperty(Configuration.PARAM_FILE_EXISTS, 1) == 1) {
+        if (JsonConfig.create(GeneralSettings.class).getIfFileExistsAction() == IfFileExistsAction.SKIP_FILE) {
             ArrayList<DownloadLink> links = DownloadController.getInstance().getAllDownloadLinks();
             for (DownloadLink link : links) {
                 if (downloadLink != link && downloadLink.getFileOutput().equals(link.getFileOutput())) {
@@ -450,38 +454,57 @@ public class SingleDownloadController extends Thread implements BrowserSettings,
         String[] fileExists = new String[] { _JDT._.system_download_triggerfileexists_overwrite(), _JDT._.system_download_triggerfileexists_skip(), _JDT._.system_download_triggerfileexists_rename() };
         String title = _JDT._.jd_controlling_SingleDownloadController_askexists_title();
         String msg = _JDT._.jd_controlling_SingleDownloadController_askexists(downloadLink.getFileOutput());
-        int doit = JSonWrapper.get("DOWNLOAD").getIntegerProperty(Configuration.PARAM_FILE_EXISTS, 1);
-        if (doit == 4) {
+        // int doit =
+        // JSonWrapper.get("DOWNLOAD").getIntegerProperty(Configuration.PARAM_FILE_EXISTS,
+        // 1);
+        IfFileExistsAction action = JsonConfig.create(GeneralSettings.class).getIfFileExistsAction();
+        IfFileExistsAction doAction = action;
+        switch (doAction) {
+        case ASK_FOR_EACH_FILE:
 
-            // ask
-            doit = UserIO.getInstance().requestComboDialog(UserIO.NO_COUNTDOWN, title, msg, fileExists, 0, null, null, null, null);
+            switch (UserIO.getInstance().requestComboDialog(UserIO.NO_COUNTDOWN, title, msg, fileExists, 0, null, null, null, null)) {
+            case 0:
+                doAction = IfFileExistsAction.OVERWRITE_FILE;
+                break;
+            case 1:
+                doAction = IfFileExistsAction.SKIP_FILE;
+                break;
+            default:
+                doAction = IfFileExistsAction.AUTO_RENAME;
 
-        }
-        if (doit == 3) {
-            if (downloadLink.getFilePackage().getIntegerProperty("DO_WHEN_EXISTS", -1) > 0) {
+            }
+            break;
+        case ASK_FOR_EACH_PACKAGE:
 
-                doit = downloadLink.getFilePackage().getIntegerProperty("DO_WHEN_EXISTS", -1);
-
-                try {
-                    UserIO.setCountdownTime(10);
-                    doit = UserIO.getInstance().requestComboDialog(0, title, msg, fileExists, doit, null, null, null, null);
-                    downloadLink.getFilePackage().setProperty("DO_WHEN_EXISTS", doit);
-                } finally {
-                    UserIO.setCountdownTime(-1);
-                }
-            } else {
-                // ask
-                doit = UserIO.getInstance().requestComboDialog(0, title, msg, fileExists, 0, null, null, null, null);
-                downloadLink.getFilePackage().setProperty("DO_WHEN_EXISTS", doit);
+            String saved = downloadLink.getFilePackage().getStringProperty("DO_IF_EXISTS", null);
+            try {
+                doAction = IfFileExistsAction.valueOf(saved);
+                break;
+            } catch (Throwable e) {
             }
 
+            switch (UserIO.getInstance().requestComboDialog(UserIO.NO_COUNTDOWN, title, msg, fileExists, 0, null, null, null, null)) {
+            case 0:
+                doAction = IfFileExistsAction.OVERWRITE_FILE;
+                break;
+            case 1:
+                doAction = IfFileExistsAction.SKIP_FILE;
+                break;
+            default:
+                doAction = IfFileExistsAction.AUTO_RENAME;
+
+            }
+            downloadLink.getFilePackage().setProperty("DO_IF_EXISTS", doAction.toString());
+            break;
+
         }
-        switch (doit) {
-        case 1:
+
+        switch (doAction) {
+        case SKIP_FILE:
             status.setErrorMessage(_JDT._.controller_status_fileexists_skip());
             downloadLink.setEnabled(false);
             break;
-        case 2:
+        case AUTO_RENAME:
             // auto rename
             status.reset();
             File file = new File(downloadLink.getFileOutput());
@@ -534,7 +557,7 @@ public class SingleDownloadController extends Thread implements BrowserSettings,
     private void onErrorNoConnection(DownloadLink downloadLink, PluginForHost plugin) {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         logger.severe("Error occurred: No Server connection");
-        long milliSeconds = JSonWrapper.get("DOWNLOAD").getIntegerProperty(WAIT_TIME_ON_CONNECTION_LOSS, 5 * 60) * 1000;
+        long milliSeconds = JsonConfig.create(GeneralSettings.class).getWaittimeOnConnectionLoss();
         linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
         linkStatus.setWaitTime(milliSeconds);
         if (linkStatus.getErrorMessage() == null) {

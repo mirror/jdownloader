@@ -41,7 +41,6 @@ import javax.swing.SpinnerNumberModel;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
-import jd.config.Configuration;
 import jd.config.Property;
 import jd.controlling.DownloadWatchDog;
 import jd.controlling.JSonWrapper;
@@ -53,7 +52,9 @@ import jd.gui.swing.jdgui.actions.ToolBarAction;
 import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
 
+import org.appwork.storage.config.JsonConfig;
 import org.jdownloader.extensions.jdtrayicon.translate.T;
+import org.jdownloader.settings.GeneralSettings;
 
 public class TrayIconPopup extends JWindow implements MouseListener, ChangeListener {
 
@@ -191,18 +192,18 @@ public class TrayIconPopup extends JWindow implements MouseListener, ChangeListe
 
     private void initBottomPanel() {
         spMaxSpeed = new JDSpinner(T._.plugins_trayicon_popup_bottom_speed(), "width 60!,h 20!,right");
-        spMaxSpeed.getSpinner().setModel(new SpinnerNumberModel(config.getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0), 0, Integer.MAX_VALUE, 50));
+        spMaxSpeed.getSpinner().setModel(new SpinnerNumberModel(JsonConfig.create(GeneralSettings.class).getDownloadSpeedLimit(), 0, Integer.MAX_VALUE, 50));
         spMaxSpeed.setToolTipText(T._.gui_tooltip_statusbar_speedlimiter());
         spMaxSpeed.getSpinner().addChangeListener(this);
         colorizeSpinnerSpeed();
 
         spMaxDls = new JDSpinner(T._.plugins_trayicon_popup_bottom_simdls(), "width 60!,h 20!,right");
-        spMaxDls.getSpinner().setModel(new SpinnerNumberModel(config.getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, 2), 1, 20, 1));
+        spMaxDls.getSpinner().setModel(new SpinnerNumberModel(JsonConfig.create(GeneralSettings.class).getMaxSimultaneDownloads(), 1, 20, 1));
         spMaxDls.setToolTipText(T._.gui_tooltip_statusbar_simultan_downloads());
         spMaxDls.getSpinner().addChangeListener(this);
 
         spMaxChunks = new JDSpinner(T._.plugins_trayicon_popup_bottom_simchunks(), "width 60!,h 20!,right");
-        spMaxChunks.getSpinner().setModel(new SpinnerNumberModel(config.getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2), 1, 20, 1));
+        spMaxChunks.getSpinner().setModel(new SpinnerNumberModel(JsonConfig.create(GeneralSettings.class).getMaxChunksPerFile(), 1, 20, 1));
         spMaxChunks.setToolTipText(T._.gui_tooltip_statusbar_max_chunks());
         spMaxChunks.getSpinner().addChangeListener(this);
 
@@ -273,25 +274,16 @@ public class TrayIconPopup extends JWindow implements MouseListener, ChangeListe
         if (e.getSource() == spMaxSpeed.getSpinner()) {
             int value = spMaxSpeed.getValue();
 
-            if (value != config.getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0)) {
-                config.setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, value);
-                ((JSonWrapper) config).save();
-            }
+            JsonConfig.create(GeneralSettings.class).setDownloadSpeedLimit(value);
             colorizeSpinnerSpeed();
         } else if (e.getSource() == spMaxDls.getSpinner()) {
             int value = spMaxDls.getValue();
 
-            if (value != config.getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, 2)) {
-                config.setProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, value);
-                ((JSonWrapper) config).save();
-            }
+            JsonConfig.create(GeneralSettings.class).setMaxSimultaneDownloads(value);
         } else if (e.getSource() == spMaxChunks.getSpinner()) {
             int value = spMaxChunks.getValue();
 
-            if (value != config.getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2)) {
-                config.setProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, value);
-                ((JSonWrapper) config).save();
-            }
+            JsonConfig.create(GeneralSettings.class).setMaxChunksPerFile(value);
         }
     }
 

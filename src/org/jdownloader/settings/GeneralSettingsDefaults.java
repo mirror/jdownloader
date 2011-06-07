@@ -100,7 +100,7 @@ public class GeneralSettingsDefaults implements GeneralSettings {
     }
 
     public int getMaxSimultaneDownloadsPerHost() {
-        return 0;
+        return 3;
     }
 
     public void setMaxSimultaneDownloadsPerHost(int num) {
@@ -125,6 +125,90 @@ public class GeneralSettingsDefaults implements GeneralSettings {
     }
 
     public void setClickNLoadEnabled(boolean b) {
+    }
+
+    public int getForcedFreeSpaceOnDisk() {
+        return 512;
+    }
+
+    public void setForcedFreeSpaceOnDisk(int mb) {
+    }
+
+    public boolean isInterruptResumeableDownloadsEnable() {
+        return true;
+    }
+
+    public void setInterruptResumeableDownloadsEnable(boolean b) {
+    }
+
+    public int getMaxSimultaneDownloads() {
+        return 3;
+    }
+
+    public void setMaxSimultaneDownloads(int num) {
+    }
+
+    public boolean isDownloadControllerPrefersReconnectEnabled() {
+        return true;
+    }
+
+    public void setDownloadControllerPrefersReconnectEnabled(boolean b) {
+    }
+
+    public int getDownloadSpeedLimit() {
+        return 0;
+    }
+
+    public void setDownloadSpeedLimit(int kb) {
+    }
+
+    public int getPauseSpeed() {
+        return 10;
+    }
+
+    public void setPauseSpeed(int kb) {
+    }
+
+    public int getMaxChunksPerFile() {
+        return 3;
+    }
+
+    public void setMaxChunksPerFile(int num) {
+    }
+
+    public int getMaxBufferSize() {
+        return 1000;
+    }
+
+    public void setMaxBufferSize(int num) {
+    }
+
+    public int getHttpConnectTimeout() {
+        return 100000;
+    }
+
+    public void setHttpConnectTimeout(int seconds) {
+    }
+
+    public int getHttpReadTimeout() {
+        return 100000;
+    }
+
+    public void setHttpReadTimeout(int seconds) {
+    }
+
+    public int getMaxPluginRetries() {
+        return 3;
+    }
+
+    public void setMaxPluginRetries(int nums) {
+    }
+
+    public long getWaittimeOnConnectionLoss() {
+        return 5 * 60 * 1000;
+    }
+
+    public void setWaittimeOnConnectionLoss(int milliseconds) {
     }
 
 }

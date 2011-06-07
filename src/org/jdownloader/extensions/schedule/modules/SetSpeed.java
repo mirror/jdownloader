@@ -16,12 +16,11 @@
 
 package org.jdownloader.extensions.schedule.modules;
 
-import jd.config.Configuration;
-import jd.controlling.JSonWrapper;
-
+import org.appwork.storage.config.JsonConfig;
 import org.jdownloader.extensions.schedule.SchedulerModule;
 import org.jdownloader.extensions.schedule.SchedulerModuleInterface;
 import org.jdownloader.extensions.schedule.translate.T;
+import org.jdownloader.settings.GeneralSettings;
 
 @SchedulerModule
 public class SetSpeed implements SchedulerModuleInterface {
@@ -39,8 +38,10 @@ public class SetSpeed implements SchedulerModuleInterface {
     }
 
     public void execute(String parameter) {
-        JSonWrapper.get("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, Integer.valueOf(parameter));
-        JSonWrapper.get("DOWNLOAD").save();
+        // JSonWrapper.get("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED,
+        // Integer.valueOf(parameter));
+        // JSonWrapper.get("DOWNLOAD").save();
+        JsonConfig.create(GeneralSettings.class).setDownloadSpeedLimit(Integer.valueOf(parameter));
     }
 
     public String getTranslation() {

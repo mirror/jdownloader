@@ -29,7 +29,6 @@ import java.util.Vector;
 import jd.config.Configuration;
 import jd.controlling.DownloadWatchDog;
 import jd.controlling.JDLogger;
-import jd.controlling.JSonWrapper;
 import jd.controlling.LinkGrabberController;
 import jd.controlling.PasswordListController;
 import jd.controlling.proxy.ProxyController;
@@ -43,9 +42,11 @@ import jd.plugins.download.DownloadInterface;
 import jd.plugins.download.DownloadInterface.Chunk;
 import jd.utils.JDUtilities;
 
+import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Regex;
 import org.jdownloader.extensions.webinterface.template.Template;
 import org.jdownloader.extensions.webinterface.translate.T;
+import org.jdownloader.settings.GeneralSettings;
 
 public class JDSimpleWebserverTemplateFileRequestHandler {
 
@@ -394,8 +395,8 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
         }
         t.setParam("config_current_speed", "" + (DownloadWatchDog.getInstance().getConnectionManager().getIncommingBandwidthUsage() / 1024));
 
-        t.setParam("config_max_downloads", JSonWrapper.get("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, 2));
-        t.setParam("config_max_speed", JSonWrapper.get("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0));
+        t.setParam("config_max_downloads", JsonConfig.create(GeneralSettings.class).getMaxSimultaneDownloads());
+        t.setParam("config_max_speed", JsonConfig.create(GeneralSettings.class).getDownloadSpeedLimit());
 
         if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_ALLOW_RECONNECT, true)) {
             t.setParam("config_autoreconnect", "checked");
