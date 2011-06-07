@@ -25,8 +25,6 @@ import java.util.Map.Entry;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
-import jd.config.Configuration;
-import jd.config.SubConfiguration;
 import jd.controlling.DownloadWatchDog;
 import jd.controlling.JDLogger;
 import jd.http.Browser;
@@ -45,7 +43,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.download.RAFDownload;
 import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rapidshare.com" }, urls = { "https?://[\\w\\.]*?rapidshare\\.com/(files/\\d+/[^\"\r\n ]+|\\#\\!download\\|\\d+.*?\\|\\d+\\|.+?($|\\|\\d+))" }, flags = { 2 })
@@ -503,46 +500,14 @@ public class Rapidshare extends PluginForHost {
                 directurl += "&seclinktimeout=" + link.getSecTimout();
             }
             logger.finest("Direct-Download: Server-Selection not available!");
-            Request request = this.br.createGetRequest(directurl);
 
-            try {
-                /* remove next major update */
-                /* workaround for broken timeout in 0.9xx public */
-                request.setConnectTimeout(30000);
-                request.setReadTimeout(60000);
-            } catch (final Throwable e) {
-            }
-
-            /** TODO: Umbauen auf jd.plugins.BrowserAdapter.openDownload(br,...) **/
-            // Download
-            this.dl = new RAFDownload(this, downloadLink, request);
-            URLConnectionAdapter con;
-            try {
-                // connect() throws an exception if there is a location header
-                con = this.dl.connect();
-            } catch (final Exception e) {
-                con = this.dl.getConnection();
-                if (con != null && con.getHeaderField("Location") != null) {
-                    con.disconnect();
-                    request = this.br.createGetRequest(con.getHeaderField("Location"));
-                    try {
-                        /* TODO:remove next major update */
-                        /* workaround for broken timeout in 0.9xx public */
-                        request.setConnectTimeout(30000);
-                        request.setReadTimeout(60000);
-                    } catch (final Throwable ee) {
-                    }
-                    this.dl = new RAFDownload(this, downloadLink, request);
-                    con = this.dl.connect();
-                } else {
-                    throw e;
-                }
-            }
-            if (!con.isContentDisposition() && con.getHeaderField("Cache-Control") != null) {
-                con.disconnect();
+            br.setFollowRedirects(true);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, directurl, false, 1);
+            URLConnectionAdapter urlConnection = dl.getConnection();
+            if (!urlConnection.isContentDisposition() && urlConnection.getHeaderField("Cache-Control") != null) {
+                urlConnection.disconnect();
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l);
             }
-
             this.dl.startDownload();
         } finally {
             if (!downloadLink.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
@@ -627,44 +592,10 @@ public class Rapidshare extends PluginForHost {
             if (link.getSecTimout() != null) {
                 directurl += "&seclinktimeout=" + link.getSecTimout();
             }
-            request = this.br.createGetRequest(directurl);
 
-            try {
-                /* TODO: remove next major update */
-                /* workaround for broken timeout in 0.9xx public */
-                request.setConnectTimeout(30000);
-                request.setReadTimeout(60000);
-            } catch (final Throwable e) {
-            }
-
-            /**
-             * TODO: Umbauen auf jd.plugins.BrowserAdapter.openDownload(br,...)
-             **/
-            // Download
-            this.dl = new RAFDownload(this, downloadLink, request);
-            this.dl.setResume(true);
-            this.dl.setChunkNum(SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2));
-            URLConnectionAdapter urlConnection;
-            try {
-                urlConnection = this.dl.connect(this.br);
-            } catch (final Exception e) {
-                this.br.setRequest(request);
-                request = this.br.createGetRequest(null);
-                try {
-                    /* remove next major update */
-                    /* workaround for broken timeout in 0.9xx public */
-                    request.setConnectTimeout(30000);
-                    request.setReadTimeout(60000);
-                } catch (final Throwable ee) {
-                }
-                logger.info("Load from " + request.getUrl().toString().substring(0, 35));
-                // Download
-                this.dl = new RAFDownload(this, downloadLink, request);
-                this.dl.setResume(true);
-                // do not use more than 10 chunks
-                this.dl.setChunkNum(Math.min(10, SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2)));
-                urlConnection = this.dl.connect(this.br);
-            }
+            br.setFollowRedirects(true);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, directurl, true, 0);
+            URLConnectionAdapter urlConnection = dl.getConnection();
             /*
              * Download starten prüft ob ein content disposition header
              * geschickt wurde. Falls nicht, ist es eintweder eine Bilddatei

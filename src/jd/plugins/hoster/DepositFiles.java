@@ -31,16 +31,17 @@ import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
+import jd.parser.html.Form.MethodType;
 import jd.parser.html.HTMLParser;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -286,7 +287,10 @@ public class DepositFiles extends PluginForHost {
             dl.startDownload();
         } else {
             logger.info("Entering form-handling.");
-            final Form form = br.getFormBySubmitvalue("Kostenloser+download");
+            final Form form = new Form();
+            form.setMethod(MethodType.POST);
+            form.setAction("");
+            form.put("gateway_result", "1");
             if (form == null) {
                 logger.warning("Form by submitvalue Kostenloser+download is null!");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
