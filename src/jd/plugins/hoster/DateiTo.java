@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.net.MalformedURLException;
 
 import jd.PluginWrapper;
@@ -27,18 +28,18 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "datei.to" }, urls = { "http://(www\\.)?(sharebase\\.(de|to)/(files/|1,)|datei\\.to/datei/)[\\w]+\\.html" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "datei.to", "sharebase.to" }, urls = { "http://(www\\.)?(sharebase\\.(de|to)/(files/|1,)|datei\\.to/datei/)[\\w]+\\.html", "blablablaInvalid_regex" }, flags = { 2, 2 })
 public class DateiTo extends PluginForHost {
 
     public DateiTo(PluginWrapper wrapper) {
@@ -58,6 +59,16 @@ public class DateiTo extends PluginForHost {
 
     @Override
     public void correctDownloadLink(DownloadLink link) throws MalformedURLException {
+        if ("sharebase.to".equals(link.getHost())) {
+            /* README: this is how to change hostname in 09581 stable */
+            try {
+                final Field pidField = link.getClass().getDeclaredField("host");
+                pidField.setAccessible(true);
+                pidField.set(link, "datei.to");
+            } catch (Throwable e) {
+                logger.severe("could not rewrite host: " + e.getMessage());
+            }
+        }
         String id = new Regex(link.getDownloadURL(), "(/files/|/1,)([\\w]+\\.html)").getMatch(1);
         if (id != null) link.setUrlDownload("http://datei.to/datei/" + id);
     }
