@@ -161,5 +161,5 @@ public interface GeneralSettings extends ConfigInterface {
     @Description("Penaltytime before a retry if JDownloader lost connection")
     long getWaittimeOnConnectionLoss();
 
-    void setWaittimeOnConnectionLoss(int milliseconds);
+    void setWaittimeOnConnectionLoss(long milliseconds);
 }

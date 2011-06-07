@@ -208,7 +208,7 @@ public class GeneralSettingsDefaults implements GeneralSettings {
         return 5 * 60 * 1000;
     }
 
-    public void setWaittimeOnConnectionLoss(int milliseconds) {
+    public void setWaittimeOnConnectionLoss(long milliseconds) {
     }
 
 }
