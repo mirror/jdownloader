@@ -23,13 +23,13 @@ import org.jdownloader.translate._JDT;
 
 public class RtmpDump extends RTMPDownload {
 
-    private Chunk             chunk;
-    private long              speed = 0l;
+    private Chunk             CHUNK;
+    private long              SPEED = 0l;
     private int               PID   = -1;
     private String            RTMPDUMP;
-    private NativeProcess     np;
-    private Process           p;
-    private InputStreamReader r;
+    private NativeProcess     NP;
+    private Process           P;
+    private InputStreamReader R;
 
     public RtmpDump(final PluginForHost plugin, final DownloadLink downloadLink, final String rtmpURL) throws IOException, PluginException {
         super(plugin, downloadLink, rtmpURL);
@@ -37,9 +37,9 @@ public class RtmpDump extends RTMPDownload {
 
     private void getProcessId() {
         try {
-            final Field pidField = p.getClass().getDeclaredField("pid");
+            final Field pidField = P.getClass().getDeclaredField("pid");
             pidField.setAccessible(true);
-            PID = pidField.getInt(p);
+            PID = pidField.getInt(P);
         } catch (final Exception e) {
             PID = -1;
         }
@@ -76,14 +76,14 @@ public class RtmpDump extends RTMPDownload {
         if (!new File(RTMPDUMP).exists()) { throw new PluginException(LinkStatus.ERROR_FATAL, "Error " + RTMPDUMP + " not found!"); }
         try {
             addChunksDownloading(1);
-            chunk = new Chunk(0, 0, null, null) {
+            CHUNK = new Chunk(0, 0, null, null) {
                 @Override
                 public long getSpeed() {
-                    return speed;
+                    return SPEED;
                 }
             };
-            chunk.setInProgress(true);
-            getChunks().add(chunk);
+            CHUNK.setInProgress(true);
+            getChunks().add(CHUNK);
             downloadLink.getLinkStatus().addStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS);
 
             rtmpConnection.connect();
@@ -116,13 +116,13 @@ public class RtmpDump extends RTMPDownload {
 
             try {
                 if (CrossSystem.isWindows()) {
-                    np = new NativeProcess(RTMPDUMP, cmd);
-                    r = new InputStreamReader(np.getErrorStream());
+                    NP = new NativeProcess(RTMPDUMP, cmd);
+                    R = new InputStreamReader(NP.getErrorStream());
                 } else {
-                    p = Runtime.getRuntime().exec(RTMPDUMP + cmd);
-                    r = new InputStreamReader(p.getErrorStream());
+                    P = Runtime.getRuntime().exec(RTMPDUMP + cmd);
+                    R = new InputStreamReader(P.getErrorStream());
                 }
-                final BufferedReader br = new BufferedReader(r);
+                final BufferedReader br = new BufferedReader(R);
                 int sizeCalulateBuffer = 0;
                 while ((line = br.readLine()) != null) {
                     error = line;
@@ -142,7 +142,7 @@ public class RtmpDump extends RTMPDownload {
                             bytesLoaded = SizeFormatter.getSize(line.substring(0, line.toLowerCase().indexOf("kb") + 2));
                             if (Thread.currentThread().isInterrupted()) {
                                 if (CrossSystem.isWindows()) {
-                                    np.sendCtrlCSignal();
+                                    NP.sendCtrlCSignal();
                                 } else {
                                     sendSIGINT();
                                 }
@@ -156,7 +156,7 @@ public class RtmpDump extends RTMPDownload {
                                 sizeCalulateBuffer++;
                             }
                             if (System.currentTimeMillis() - lastTime > 1000) {
-                                speed = (bytesLoaded - before) / (System.currentTimeMillis() - lastTime) * 1000l;
+                                SPEED = (bytesLoaded - before) / (System.currentTimeMillis() - lastTime) * 1000l;
                                 lastTime = System.currentTimeMillis();
                                 before = bytesLoaded;
                                 downloadLink.requestGuiUpdate();
@@ -182,14 +182,14 @@ public class RtmpDump extends RTMPDownload {
                 }
                 downloadLink.getLinkStatus().addStatus(LinkStatus.FINISHED);
             } else {
-                throw new PluginException(LinkStatus.ERROR_FATAL, " rtmpdump-Output: " + error);
+                throw new PluginException(LinkStatus.ERROR_FATAL, error);
             }
             return true;
         } finally {
             downloadLink.getLinkStatus().removeStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS);
             downloadLink.setDownloadInstance(null);
             downloadLink.getLinkStatus().setStatusText(null);
-            chunk.setInProgress(false);
+            CHUNK.setInProgress(false);
         }
     }
 }

@@ -86,7 +86,7 @@ public class RTLnowDe extends PluginForHost {
 
         final String query = "/data/playlist/videoinfo";
 
-        final String dllink = xPath.evaluate(query + "/filename", doc).replace("rtmpe:", "rtmp:");
+        final String dllink = xPath.evaluate(query + "/filename", doc);
         final String fkcont = xPath.evaluate("/data/fkcontent", doc);
         final String timetp = xPath.evaluate("/data/timetype", doc);
         final String season = xPath.evaluate("/data/season", doc);

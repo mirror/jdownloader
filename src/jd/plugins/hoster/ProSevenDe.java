@@ -62,6 +62,7 @@ public class ProSevenDe extends PluginForHost {
 
             rtmp.setSwfVfy("http://www.kabeleins.de/imperia/moveplayer/HybridPlayer.swf");
             rtmp.setUrl(dllink);
+            rtmp.setPort(1935);
             rtmp.setResume(true);
 
             ((RTMPDownload) dl).startDownload();

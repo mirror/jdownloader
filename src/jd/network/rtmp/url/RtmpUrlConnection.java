@@ -27,6 +27,7 @@ public class RtmpUrlConnection extends URLConnection {
     private final String              KEY_SWF_URL   = "s"; // swfUrl
     private final String              KEY_CONN      = "C"; // conn
     private final String              KEY_RTMP      = "r"; // Url
+    private final String              KEY_PORT      = "c"; // Port
 
     // Session Parameters
     private final String              KEY_PLAYPATH  = "y"; // playpath
@@ -158,6 +159,7 @@ public class RtmpUrlConnection extends URLConnection {
      *         references, or <code>-1</code> if the content length is not
      *         known.
      */
+    @Override
     public int getContentLength() {
         // Use RTMP_GetDuration and recalculate the seconds to byte!?
         return -1;
@@ -192,6 +194,7 @@ public class RtmpUrlConnection extends URLConnection {
         return null;
     }
 
+    @Override
     public Permission getPermission() throws IOException {
         int port = url.getPort();
         port = port < 0 ? DEFAULT_PORT : port;
@@ -280,6 +283,15 @@ public class RtmpUrlConnection extends URLConnection {
      */
     public void setPlayPath(final String value) {
         parameterMap.put(KEY_PLAYPATH, value);
+    }
+
+    /**
+     * Overrides the port in the rtmp url.
+     * 
+     * @param value
+     */
+    public void setPort(final int value) {
+        parameterMap.put(KEY_PORT, String.valueOf(value));
     }
 
     /**
