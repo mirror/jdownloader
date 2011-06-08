@@ -162,7 +162,7 @@ public class TurboBitNet extends PluginForHost {
             logger.info(" Waittime detected, waiting " + ttt + " seconds from now on...");
             tt = Integer.parseInt(ttt);
         }
-        if (tt > 250) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "IP already loading", tt * 1001l); }
+        if (tt > 250) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Limit reached or IP already loading", tt * 1001l); }
         sleep(tt * 1001, downloadLink);
         br.getPage("http://turbobit.net/download/timeout/" + id);
         String downloadUrl = br.getRegex("<a href=\\'(.*?)\\'>").getMatch(0);
