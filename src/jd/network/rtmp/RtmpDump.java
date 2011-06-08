@@ -192,7 +192,6 @@ public class RtmpDump extends RTMPDownload {
                             }
                         }
                     }
-                    System.out.println(line);
                     if (!line.toLowerCase().contains("download complete")) {
                         continue;
                     }

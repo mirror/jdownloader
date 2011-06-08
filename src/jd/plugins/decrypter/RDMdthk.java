@@ -20,6 +20,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -43,7 +44,7 @@ public class RDMdthk extends PluginForDecrypt {
 
         final String title = br.getRegex("<h2>(.*?)</h2>").getMatch(0);
         final FilePackage filePackage = FilePackage.getInstance();
-        filePackage.setName(title);
+        filePackage.setName(Encoding.htmlDecode(title));
         for (final String[] stream : streams) {
             if (new Regex(stream[1], "\\d").matches()) {
                 // get quality id
