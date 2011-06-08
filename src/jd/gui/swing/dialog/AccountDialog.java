@@ -36,7 +36,6 @@ import jd.controlling.AccountChecker;
 import jd.controlling.AccountController;
 import jd.controlling.IOEQ;
 import jd.gui.UserIO;
-import jd.gui.swing.jdgui.views.settings.JDLabelListRenderer;
 import jd.gui.swing.jdgui.views.settings.panels.accountmanager.BuyAction;
 import jd.plugins.Account;
 import jd.plugins.PluginForHost;
@@ -196,8 +195,6 @@ public class AccountDialog extends AbstractDialog<Integer> {
                 }
             }
         }
-
-        this.hoster.setRenderer(new JDLabelListRenderer());
 
         final JButton link = new JButton(NewTheme.I().getIcon("money", 16));
         link.setToolTipText(_GUI._.gui_menu_action_premium_buy_name());
