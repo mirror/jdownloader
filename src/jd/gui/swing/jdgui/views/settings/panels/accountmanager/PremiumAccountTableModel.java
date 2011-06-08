@@ -389,7 +389,7 @@ public class PremiumAccountTableModel extends ExtTableModel<Account> implements 
 
     protected void _refill() {
         if (accountManagerSettings.isShown()) {
-            final ArrayList<Account> newtableData = new ArrayList<Account>(tableData);
+            final ArrayList<Account> newtableData = new ArrayList<Account>(tableData.size());
             for (HostPluginWrapper plugin : HostPluginWrapper.getHostWrapper()) {
                 ArrayList<Account> accs = AccountController.getInstance().getAllAccounts(plugin.getHost());
                 for (Account acc : accs) {
