@@ -56,22 +56,34 @@ public class ARDMediathek extends PluginForHost {
 
         String[] stream = null;
         for (final String[] s : streams) {
-            if (s[3].contains("Web-" + quality)) {
+            if (s[1].equals(quality)) {
                 stream = s;
                 break;
             }
         }
-        // quality not found
         if (stream == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-        dl = new RTMPDownload(this, downloadLink, stream[2] + stream[3]);
-        final RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
+        if (stream[2].startsWith("rtmp")) {
+            dl = new RTMPDownload(this, downloadLink, stream[2] + stream[3]);
+            final RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
 
-        rtmp.setPlayPath(stream[3]);
-        rtmp.setApp("ardfs/");
-        rtmp.setUrl(stream[2]);
-        rtmp.setResume(true);
+            rtmp.setPlayPath(stream[3]);
+            rtmp.setUrl(stream[2]);
+            rtmp.setResume(true);
 
-        ((RTMPDownload) dl).startDownload();
+            ((RTMPDownload) dl).startDownload();
+
+        } else {
+            br.setFollowRedirects(true);
+            final String dllink = stream[3];
+            if (dllink == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+            if (dllink.startsWith("mms")) { throw new PluginException(LinkStatus.ERROR_FATAL, "Protocol (mms://) not supported!"); }
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
+            if (dl.getConnection().getContentType().contains("html")) {
+                br.followConnection();
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            dl.startDownload();
+        }
     }
 
     @Override

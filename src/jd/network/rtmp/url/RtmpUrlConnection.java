@@ -47,6 +47,10 @@ public class RtmpUrlConnection extends URLConnection {
     // Network Parameters
     private final String              KEY_SOCKS     = "S"; // socks
 
+    // Debug Parameters
+    private final String              KEY_DEBUG     = "z"; // debug
+    private final String              KEY_VERBOSE   = "V"; // verbose
+
     protected HashMap<String, String> parameterMap  = null;
 
     /**
@@ -245,6 +249,14 @@ public class RtmpUrlConnection extends URLConnection {
     }
 
     /**
+     * Debug level command output.
+     * 
+     */
+    public void setDebug() {
+        parameterMap.put(KEY_DEBUG, null);
+    }
+
+    /**
      * Version of the Flash plugin used to run the SWF player. The default is
      * "LNX 10,0,32,18".
      * 
@@ -297,7 +309,7 @@ public class RtmpUrlConnection extends URLConnection {
     /**
      * Resume an incomplete RTMP download.
      * 
-     * @param value
+     * @param boolean
      */
     public void setResume(final boolean value) {
         if (value) {
@@ -408,5 +420,13 @@ public class RtmpUrlConnection extends URLConnection {
      */
     public void setUrl(final String value) {
         parameterMap.put(KEY_RTMP, value);
+    }
+
+    /**
+     * Verbose command output.
+     * 
+     */
+    public void setVerbose() {
+        parameterMap.put(KEY_VERBOSE, null);
     }
 }

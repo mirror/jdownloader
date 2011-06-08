@@ -33,7 +33,7 @@ public class RtmpDump extends RTMPDownload {
     private NativeProcess     NP;
     private Process           P;
     private InputStreamReader R;
-    long                      bytesLoaded = 0l;
+    long                      BYTESLOADED = 0l;
 
     public RtmpDump(final PluginForHost plugin, final DownloadLink downloadLink, final String rtmpURL) throws IOException, PluginException {
         super(plugin, downloadLink, rtmpURL);
@@ -78,25 +78,25 @@ public class RtmpDump extends RTMPDownload {
             }
         }
         if (!new File(RTMPDUMP).exists()) { throw new PluginException(LinkStatus.ERROR_FATAL, "Error " + RTMPDUMP + " not found!"); }
-        ThrottledConnection tcon = new ThrottledConnection() {
+        final ThrottledConnection tcon = new ThrottledConnection() {
             private long last = 0l;
 
             public int getCustomLimit() {
                 return 0;
             }
 
-            public void setCustomLimit(int kpsLimit) {
+            public void setCustomLimit(final int kpsLimit) {
             }
 
-            public void setManagedLimit(int kpsLimit) {
+            public void setManagedLimit(final int kpsLimit) {
             }
 
-            public void setManager(ThrottledConnectionManager manager) {
+            public void setManager(final ThrottledConnectionManager manager) {
             }
 
             public long transferedSinceLastCall() {
-                long ret = bytesLoaded - last;
-                last = bytesLoaded;
+                final long ret = BYTESLOADED - last;
+                last = BYTESLOADED;
                 return ret;
             }
 
@@ -151,6 +151,7 @@ public class RtmpDump extends RTMPDownload {
                 }
                 final BufferedReader br = new BufferedReader(R);
                 int sizeCalulateBuffer = 0;
+                float progressFloat = 0;
                 while ((line = br.readLine()) != null) {
                     error = line;
                     if (!new Regex(line, "^[0-9]").matches()) {
@@ -165,8 +166,8 @@ public class RtmpDump extends RTMPDownload {
                         final int pos1 = line.indexOf("(");
                         final int pos2 = line.indexOf(")");
                         if (pos1 != -1 && pos2 != -1 && line.toUpperCase().contains("KB")) {
-                            final float progressFloat = Float.parseFloat(line.substring(pos1 + 1, pos2 - 1));
-                            bytesLoaded = SizeFormatter.getSize(line.substring(0, line.toLowerCase().indexOf("kb") + 2));
+                            progressFloat = Float.parseFloat(line.substring(pos1 + 1, pos2 - 1));
+                            BYTESLOADED = SizeFormatter.getSize(line.substring(0, line.toLowerCase().indexOf("kb") + 2));
                             if (Thread.currentThread().isInterrupted()) {
                                 if (CrossSystem.isWindows()) {
                                     NP.sendCtrlCSignal();
@@ -176,23 +177,29 @@ public class RtmpDump extends RTMPDownload {
                                 throw new InterruptedIOException();
                             }
 
-                            downloadLink.setDownloadCurrent(bytesLoaded);
+                            downloadLink.setDownloadCurrent(BYTESLOADED);
                             if (sizeCalulateBuffer > 6) {
-                                downloadLink.setDownloadSize((long) (bytesLoaded * 100.0F / progressFloat));
+                                downloadLink.setDownloadSize((long) (BYTESLOADED * 100.0F / progressFloat));
                             } else {
                                 sizeCalulateBuffer++;
                             }
                             if (System.currentTimeMillis() - lastTime > 1000) {
-                                SPEED = (bytesLoaded - before) / (System.currentTimeMillis() - lastTime) * 1000l;
+                                SPEED = (BYTESLOADED - before) / (System.currentTimeMillis() - lastTime) * 1000l;
                                 lastTime = System.currentTimeMillis();
-                                before = bytesLoaded;
+                                before = BYTESLOADED;
                                 downloadLink.requestGuiUpdate();
-                                downloadLink.setChunksProgress(new long[] { bytesLoaded });
+                                downloadLink.setChunksProgress(new long[] { BYTESLOADED });
                             }
                         }
                     }
+                    System.out.println(line);
                     if (!line.toLowerCase().contains("download complete")) {
                         continue;
+                    }
+                    // autoresuming when FMS sends NetStatus.Play.Stop and
+                    // progress less than 100%
+                    if (progressFloat < 99.9) {
+                        downloadLink.getLinkStatus().setStatus(LinkStatus.ERROR_DOWNLOAD_INCOMPLETE);
                     }
                     Thread.sleep(500);
                     break;
@@ -200,8 +207,10 @@ public class RtmpDump extends RTMPDownload {
             } finally {
                 rtmpConnection.disconnect();
             }
-            if (line != null && line.toLowerCase().contains("download complete")) {
-                downloadLink.setDownloadSize(bytesLoaded);
+            if (downloadLink.getLinkStatus().getStatus() == LinkStatus.ERROR_DOWNLOAD_INCOMPLETE) {
+                return false;
+            } else if (line != null && line.toLowerCase().contains("download complete")) {
+                downloadLink.setDownloadSize(BYTESLOADED);
                 logger.finest("no errors : rename");
                 if (!tmpFile.renameTo(new File(downloadLink.getFileOutput()))) {
                     logger.severe("Could not rename file " + tmpFile + " to " + downloadLink.getFileOutput());
