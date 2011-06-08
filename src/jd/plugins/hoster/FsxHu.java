@@ -20,11 +20,11 @@ import jd.PluginWrapper;
 import jd.http.RandomUserAgent;
 import jd.plugins.BrowserAdapter;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -33,6 +33,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 public class FsxHu extends PluginForHost {
 
     public FsxHu(final PluginWrapper wrapper) {
+
         super(wrapper);
     }
 
@@ -73,30 +74,44 @@ public class FsxHu extends PluginForHost {
                 this.br.cloneBrowser().openGetConnection(template);
             }
             this.br.getHeaders().put("Referer", null);
+            if (this.br.containsHTML("10 perced van")) {
+
+                url1 = this.br.getRegex("\t\t<a href=\"(.+?)\"><span class=\"gomb jovahagyas\"").getMatch(0);
+                url2 = "";
+                break;
+            }
+
             url1 = this.br.getRegex("font size=\"\\d+\"><a href=\"(http.*?)\"").getMatch(0);
             if (url1 != null) {
                 /* new format */
                 url2 = "";
                 break;
             }
+
             url1 = this.br.getRegex("<a id=\\'dlink\\' href=\"(.+?)\">").getMatch(0);
             url2 = this.br.getRegex("elem\\.href = elem\\.href \\+ \"(.+?)\";").getMatch(0);
             if ((url1 != null) && (url2 != null)) {
                 break;
             }
-            String serverQueueLength = this.br.getRegex("<font color=\"#FF0000\"><strong>(\\d+?)</strong></font> felhaszn.l. van el.tted").getMatch(0);
+
+            String serverQueueLength = this.br.getRegex("<span style=\"color:#dd0000;font-weight:bold;\">(\\d+?)</span> felhaszn..l.. van el..tted").getMatch(0);
             if (serverQueueLength == null) {
                 this.logger.warning("serverQueueLength is null...");
                 serverQueueLength = "notfound";
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+
+            // <div class="gombbefoglalo" style="text-align:center;float:left;">
+            // <a
+            // href="http://s4.fsx.hu/jie2w2mt/82111078/Criminal.Minds.Suspect.Behavior.S01E06.HUN.HDTV.XviD-m4m.r14"><span
+            // class="gomb jovahagyas" style="height:
 
             // next run of handleFree() will report the file as deleted
             // if it is really deleted because fsx.hu sometimes reports
             // timeouted sessions as non-existing/removed downloads
-            if (this.br.containsHTML("A kiv.lasztott f.jl nem tal.lhat. vagy elt.vol.t.sra ker.lt.")) {
+            if (this.br.containsHTML("A kiv..lasztott f..jl nem tal..lhat.. vagy elt..vol..t..sra ker..lt")) {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 1 * 1000l);
-            } else if (this.br.containsHTML("A kiv.lasztott f.jl let.lt.s.t nem kezdted meg")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 60 * 1000l); }
+            } else if (this.br.containsHTML("A kiv..lasztott f..jl let..lt..s..t nem kezdted meg")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 60 * 1000l); }
             // waittime
             int waitTime = 15;
             final String wait = this.br.getRegex("CONTENT=\"(\\d+);").getMatch(0);
@@ -120,15 +135,22 @@ public class FsxHu extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+        System.err.println("requestfileinfo");
         this.br.setFollowRedirects(true);
         this.br.setCookiesExclusive(true);
         this.br.clearCookies("www.fsx.hu");
         this.br.getHeaders().put("User-Agent", RandomUserAgent.generate());
         this.br.getPage(downloadLink.getDownloadURL());
-        if (!this.br.containsHTML("V.lassz az ingyenes let.lt.s .s a regisztr.ci. k.z.l!")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        // if
+        // (!this.br.containsHTML("V.lassz az ingyenes let.lt.s .s a regisztr.ci. k.z.l!"))
+        if (!this.br.containsHTML("V..lassz az ingyenes let..lt..s ..s a regisztr..ci.. k..z..l!")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         this.br.getPage("http://www.fsx.hu/download.php?i=1");
-        final String filename = this.br.getRegex("<font color=\"#FF0000\" size=\"4\">(.+?)</font>").getMatch(0);
-        final String filesize = this.br.getRegex("<strong>M.ret:</strong> (.+?) B.jt").getMatch(0);
+        // final String filename =
+        // this.br.getRegex("<font color=\"#FF0000\" size=\"4\">(.+?)</font>").getMatch(0);
+        // final String filesize =
+        // this.br.getRegex("M.ret: (.+?) B.jt").getMatch(0);
+        final String filename = this.br.getRegex("<h1 style=\"padding-bottom:0;font-size:16px;\">(.+?)</h1>").getMatch(0);
+        final String filesize = this.br.getRegex("M..ret: (.+?) b..jt").getMatch(0);
         if ((filename == null) || (filesize == null)) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         downloadLink.setName(filename.trim());
         downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.trim()));

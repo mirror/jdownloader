@@ -7,6 +7,7 @@ import java.io.InputStreamReader;
 import java.io.InterruptedIOException;
 import java.lang.reflect.Field;
 
+import jd.controlling.DownloadWatchDog;
 import jd.network.rtmp.url.RtmpUrlConnection;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
@@ -17,6 +18,8 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.Regex;
 import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.net.throttledconnection.ThrottledConnection;
+import org.appwork.utils.net.throttledconnection.ThrottledConnectionManager;
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.nativ.NativeProcess;
 import org.jdownloader.translate._JDT;
@@ -24,12 +27,13 @@ import org.jdownloader.translate._JDT;
 public class RtmpDump extends RTMPDownload {
 
     private Chunk             CHUNK;
-    private long              SPEED = 0l;
-    private int               PID   = -1;
+    private long              SPEED       = 0l;
+    private int               PID         = -1;
     private String            RTMPDUMP;
     private NativeProcess     NP;
     private Process           P;
     private InputStreamReader R;
+    long                      bytesLoaded = 0l;
 
     public RtmpDump(final PluginForHost plugin, final DownloadLink downloadLink, final String rtmpURL) throws IOException, PluginException {
         super(plugin, downloadLink, rtmpURL);
@@ -74,7 +78,31 @@ public class RtmpDump extends RTMPDownload {
             }
         }
         if (!new File(RTMPDUMP).exists()) { throw new PluginException(LinkStatus.ERROR_FATAL, "Error " + RTMPDUMP + " not found!"); }
+        ThrottledConnection tcon = new ThrottledConnection() {
+            private long last = 0l;
+
+            public int getCustomLimit() {
+                return 0;
+            }
+
+            public void setCustomLimit(int kpsLimit) {
+            }
+
+            public void setManagedLimit(int kpsLimit) {
+            }
+
+            public void setManager(ThrottledConnectionManager manager) {
+            }
+
+            public long transferedSinceLastCall() {
+                long ret = bytesLoaded - last;
+                last = bytesLoaded;
+                return ret;
+            }
+
+        };
         try {
+            DownloadWatchDog.getInstance().getConnectionManager().addManagedThrottledInputConnection(tcon);
             addChunksDownloading(1);
             CHUNK = new Chunk(0, 0, null, null) {
                 @Override
@@ -96,7 +124,6 @@ public class RtmpDump extends RTMPDownload {
             long iSize = 0;
             long before = 0;
             long lastTime = System.currentTimeMillis();
-            long bytesLoaded = 0l;
 
             String cmd = rtmpConnection.getCommandLineParameter();
             if (CrossSystem.isWindows()) {
@@ -190,6 +217,7 @@ public class RtmpDump extends RTMPDownload {
             downloadLink.setDownloadInstance(null);
             downloadLink.getLinkStatus().setStatusText(null);
             CHUNK.setInProgress(false);
+            DownloadWatchDog.getInstance().getConnectionManager().removeManagedThrottledInputConnection(tcon);
         }
     }
 }
