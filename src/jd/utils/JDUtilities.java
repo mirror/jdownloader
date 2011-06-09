@@ -362,6 +362,7 @@ public class JDUtilities {
         return (REVISION != null) ? REVISION : (REVISION = getRevisionNumber() + "");
     }
 
+    /* DO NOT USE in old 09581 stable */
     public static long getRevisionNumber() {
         if (REVISIONINT != -1) return REVISIONINT;
         int rev = -1;

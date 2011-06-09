@@ -671,8 +671,20 @@ public class DirectHTTP extends PluginForHost {
     public void resetPluginGlobals() {
     }
 
+    private boolean oldStyle() {
+        String prev = JDUtilities.getRevision();
+        if (prev == null || prev.length() < 3) {
+            prev = "0";
+        } else {
+            prev = prev.replaceAll(",|\\.", "");
+        }
+        int rev = Integer.parseInt(prev);
+        if (rev < 10000) return true;
+        return false;
+    }
+
     private void setConfigElements() {
-        if (JDUtilities.getRevisionNumber() < 10000) {
+        if (oldStyle()) {
             this.config.addEntry(new ConfigEntry(ConfigContainer.TYPE_LISTCONTROLLED, HTACCESSController.getInstance(), JDL.L("plugins.http.htaccess", "List of all HTAccess passwords. Each line one password.")));
         } else {
             ConfigEntry ce;
