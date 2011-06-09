@@ -551,6 +551,7 @@ gui.menu.extract to.mnem = -
 gui.menu.extract to.name = Extract to
 gui.menu.extract.accel = -
 gui.menu.extract.mnem = -
+gui.menu.extract.name = Extract
 gui.menu.feedme.accel = -
 gui.menu.feedme.mnem = -
 gui.menu.feedme.name = FeedMe
