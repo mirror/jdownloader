@@ -22,11 +22,11 @@ import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
@@ -63,15 +63,18 @@ public class FilestoreTo extends PluginForHost {
             } catch (Exception e) {
                 continue;
             }
-            if (!br.containsHTML("(>Download\\-Datei wurde nicht gefunden<|Entweder wurde die Datei von unseren Servern entfernt oder der Download-Link war falsch)")) {
-                downloadName = Encoding.htmlDecode(br.getRegex(">Dateiname:</td>[\t\n\r ]+<td colspan=\"2\" style=\"[A-Za-z0-9\\-;:# ]+\">(.*?)</td>").getMatch(0));
-                downloadSize = br.getRegex("<td width=\"220\" style=\"font\\-weight:bold;\">(.*?)</td>").getMatch(0);
-                if (downloadName != null) {
-                    downloadLink.setName(downloadName);
-                    if (downloadSize != null) downloadLink.setDownloadSize(SizeFormatter.getSize(downloadSize.replaceAll(",", "\\.")));
-                    return AvailableStatus.TRUE;
-                }
+            if (br.containsHTML(">Download\\-Datei wurde nicht gefunden<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (br.containsHTML("Entweder wurde die Datei von unseren Servern entfernt oder der Download-Link war")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+
+            downloadName = br.getRegex(">Dateiname:</td>[\t\n\r ]+<td colspan=\"2\" style=\"[A-Za-z0-9\\-;:# ]+\">(.*?)</td>").getMatch(0);
+            if (downloadName == null) downloadName = br.getRegex(">Dateiname:</td>.*?colspan=\"2\".*?>(.*?)</").getMatch(0);
+            downloadSize = br.getRegex("<td width=\"220\" style=\"font\\-weight:bold;\">(.*?)</td>").getMatch(0);
+            if (downloadName != null) {
+                downloadLink.setName(Encoding.htmlDecode(downloadName));
+                if (downloadSize != null) downloadLink.setDownloadSize(SizeFormatter.getSize(downloadSize.replaceAll(",", "\\.")));
+                return AvailableStatus.TRUE;
             }
+
         }
         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
     }
