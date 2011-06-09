@@ -160,7 +160,7 @@ public class Megauploadcom extends PluginForHost {
     @Override
     public boolean checkLinks(final DownloadLink urls[]) {
         /* linkcheck seesm to be broken or blocked */
-        if (urls == null || urls.length == 0 || true) { return false; }
+        if (urls == null || urls.length == 0) { return false; }
         this.checkWWWWorkaround();
         final Browser br = new Browser();
         antiJDBlock(br);
@@ -1030,6 +1030,7 @@ public class Megauploadcom extends PluginForHost {
             String filesize = br.getRegex(">File size:</.*?>(.*?)<").getMatch(0);
             if (br.containsHTML("The file you are trying to download is larger than")) {
                 l.setAvailableStatus(AvailableStatus.TRUE);
+                this.checkLinks(new DownloadLink[] { l });
                 return;
             }
             if (filename == null || filesize == null) {
