@@ -20,6 +20,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -65,7 +66,11 @@ public class ReverBnationCom extends PluginForDecrypt {
         int nameCounter = 0;
         for (int i = 0; i < ids.length; i++) {
             final DownloadLink dlLink = createDownloadlink("reverbnationcomid" + ids[i] + "reverbnationcomartist" + artist);
-            dlLink.setName(title[i].replaceAll("<span title=\"", ""));
+            String name = Encoding.htmlDecode(title[i].replaceAll("<span title=\"", ""));
+            if (name.contains(".mp3"))
+                dlLink.setName(name);
+            else
+                dlLink.setName(name + ".mp3");
             dlLink.setProperty("orgName", dlLink.getName());
             FilePackage fp = FilePackage.getInstance();
             fp.setName(titleContent[nameCounter + 1]);
