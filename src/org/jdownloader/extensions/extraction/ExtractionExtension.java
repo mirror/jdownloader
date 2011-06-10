@@ -23,7 +23,6 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
-import java.util.Timer;
 
 import javax.swing.JViewport;
 import javax.swing.filechooser.FileFilter;
@@ -79,8 +78,6 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
     private static MenuAction            menuAction              = null;
 
     private Jobber                       queue;
-
-    private Timer                        update                  = null;
 
     private final ArrayList<IExtraction> extractors              = new ArrayList<IExtraction>();
 
@@ -159,11 +156,6 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
 
         controller.fireEvent(ExtractionConstants.WRAPPER_STARTED);
         queue.add(controller);
-
-        if (update == null) {
-            update = new Timer("Extraction display update");
-        }
-        controller.setTimer(update);
 
         queue.start();
 

@@ -20,6 +20,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
@@ -71,29 +72,36 @@ public class GeneralMultiuploadDecrypter extends PluginForDecrypt {
         String nicelookinghost = host.replaceAll("(www\\.|http://|/)", "");
         logger.info("Found " + redirectLinks.length + " " + nicelookinghost + " links to decrypt...");
         for (String singlelink : redirectLinks) {
+            Browser brc = br.cloneBrowser();
             String dllink = null;
             // Handling for links that need to be regexed or that need to be get
             // by redirect
             if (singlelink.contains("/redirect/") || singlelink.contains("/rd/")) {
-                br.getPage(host + singlelink);
-                dllink = br.getRedirectLocation();
+                brc.getPage(host + singlelink);
+                dllink = brc.getRedirectLocation();
                 if (dllink == null) {
-                    dllink = br.getRegex("<frame name=\"main\" src=\"(.*?)\">").getMatch(0);
+                    dllink = brc.getRegex("<frame name=\"main\" src=\"(.*?)\">").getMatch(0);
                     // For 1filesharing.com links
                     if (dllink == null) {
-                        dllink = br.getRegex("<iframe id=\"download\" src=\"(.*?)\"").getMatch(0);
+                        dllink = brc.getRegex("<iframe id=\"download\" src=\"(.*?)\"").getMatch(0);
                         // For Spreadmyfiles.com links
-                        if (dllink == null) dllink = br.getRegex("</iframe>[\n\t\r ]+<iframe style=\"border:0px\" src =\"(.*?)\"").getMatch(0);
+                        if (dllink == null) dllink = brc.getRegex("</iframe>[\n\t\r ]+<iframe style=\"border:0px\" src =\"(.*?)\"").getMatch(0);
                     }
                 }
             } else {
                 // Handling for already regexed final-links
                 dllink = singlelink;
             }
-            if (dllink == null) return null;
-            if (dllink.matches("")) logger.info("Found one broken link!");
-            decryptedLinks.add(createDownloadlink(dllink));
             progress.increase(1);
+            if (dllink == null) continue;
+            if ("".matches(dllink)) {
+                logger.info("Found one broken link!");
+                continue;
+            }
+            if (dllink.contains("flameupload")) {
+                logger.info("Recursion? " + param.toString() + "->" + dllink);
+            }
+            decryptedLinks.add(createDownloadlink(dllink));
         }
         return decryptedLinks;
     }

@@ -18,11 +18,13 @@ package org.jdownloader.extensions.extraction;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Timer;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
 import jd.config.SubConfiguration;
 import jd.controlling.DownloadWatchDog;
+import jd.controlling.IOEQ;
 import jd.controlling.JDLogger;
 import jd.controlling.PasswordListController;
 import jd.controlling.ProgressController;
@@ -50,8 +52,8 @@ public class ExtractionController extends Thread implements JDRunnable {
     private ProgressController            progressController;
     private Archive                       archive;
     private IExtraction                   extractor;
-    private Timer                         timer;
     private Logger                        logger;
+    private ScheduledFuture<?>            timer;
 
     ExtractionController(Archive archiv, Logger logger) {
         this.archive = archiv;
@@ -167,13 +169,19 @@ public class ExtractionController extends Thread implements JDRunnable {
 
                 logger.info("Execute unpacking of " + archive.getFirstDownloadLink().getFileOutput());
 
-                UpdateDisplay update = new UpdateDisplay(this);
-                timer.schedule(update, 0, 1000);
-                extractor.extract();
-                update.cancel();
+                timer = IOEQ.TIMINGQUEUE.scheduleWithFixedDelay(new Runnable() {
 
+                    public void run() {
+                        fireEvent(ExtractionConstants.WRAPPER_ON_PROGRESS);
+                    }
+
+                }, 1, 2, TimeUnit.SECONDS);
+                try {
+                    extractor.extract();
+                } finally {
+                    timer.cancel(false);
+                }
                 extractor.close();
-
                 switch (archive.getExitCode()) {
                 case ExtractionControllerConstants.EXIT_CODE_SUCCESS:
                     logger.info("Unpacking successful for " + archive.getFirstDownloadLink().getFileOutput());
@@ -337,12 +345,4 @@ public class ExtractionController extends Thread implements JDRunnable {
         exception = e;
     }
 
-    /**
-     * Sets the timer for updating the display;
-     * 
-     * @param timer
-     */
-    void setTimer(Timer timer) {
-        this.timer = timer;
-    }
 }

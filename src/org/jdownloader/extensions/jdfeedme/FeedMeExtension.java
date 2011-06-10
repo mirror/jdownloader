@@ -354,8 +354,6 @@ public class FeedMeExtension extends AbstractExtension<FeedMeConfig> implements 
             try {
                 // HostPluginWrapper.readLock.lock();
                 for (final HostPluginWrapper pHost : HostPluginWrapper.getHostWrapper()) {
-                    // make sure this hoster is enabled
-                    if (!pHost.isEnabled()) continue;
 
                     // check if we need to ignore certain hosters
                     if (exclude_hosters != null) {
