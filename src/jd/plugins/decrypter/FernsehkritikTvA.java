@@ -42,11 +42,7 @@ public class FernsehkritikTvA extends PluginForDecrypt {
         final String parameter = param.toString();
         setBrowserExclusive();
         br.setFollowRedirects(true);
-        try {
-            br.getPage(parameter);
-        } catch (final Exception e) {
-            logger.warning("Server temporary unavailable!");
-        }
+        br.getPage(parameter);
         final String episode = new Regex(parameter, "folge-(\\d+)").getMatch(0);
         if (episode == null) { return null; }
         if (Integer.valueOf(episode) < 69) {
@@ -60,11 +56,9 @@ public class FernsehkritikTvA extends PluginForDecrypt {
                 if (finallink.startsWith("mms")) {
                     continue;
                 }
-                String ext = finallink.substring(finallink.lastIndexOf("."), finallink.length());
-                ext = ext == null ? ".vlc" : ext;
                 final DownloadLink dlLink = createDownloadlink("directhttp://" + finallink);
                 if (title != null) {
-                    dlLink.setFinalFileName(title + ext);
+                    dlLink.setFinalFileName(title + fileExtension(finallink));
                 }
                 fp.add(dlLink);
                 decryptedLinks.add(dlLink);
@@ -83,8 +77,9 @@ public class FernsehkritikTvA extends PluginForDecrypt {
             if (parts == null || parts.length == 0 || !api) { return null; }
             progress.setRange(parts.length);
             fp = FilePackage.getInstance();
-            fp.setName(fpName.trim());
+            fp.setName(fpName);
             for (final String part : parts) {
+                progress.increase(1);
                 br.getPage("http://fernsehkritik.tv/swf/ncfg.php?ep=" + episode + "-" + part);
                 final String apiR = br.toString().replaceAll("\\s", "");
                 final String host = new Regex(apiR, "baseURL\":\"(.*?)\"").getMatch(0);
@@ -92,8 +87,8 @@ public class FernsehkritikTvA extends PluginForDecrypt {
                 if (host == null || file == null) {
                     continue;
                 }
-                progress.increase(1);
                 final DownloadLink dlLink = createDownloadlink(host + file);
+                dlLink.setName(fpName + "_Teil" + part + fileExtension(file));
                 fp.add(dlLink);
                 decryptedLinks.add(dlLink);
             }
@@ -101,4 +96,11 @@ public class FernsehkritikTvA extends PluginForDecrypt {
         if (decryptedLinks == null || decryptedLinks.size() == 0) { return null; }
         return decryptedLinks;
     }
+
+    private String fileExtension(final String arg) {
+        String ext = arg.substring(arg.lastIndexOf("."));
+        ext = ext == null ? ".flv" : ext;
+        return ext;
+    }
+
 }
