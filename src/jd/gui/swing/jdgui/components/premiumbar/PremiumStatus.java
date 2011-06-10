@@ -121,7 +121,7 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
         String id = JDController.requestDelayExit("updatePremium");
         for (HostPluginWrapper wrapper : HostPluginWrapper.getHostWrapper()) {
             String host = wrapper.getHost();
-            if (wrapper.isLoaded() && wrapper.isEnabled()) {
+            if (wrapper.isLoaded()) {
                 ArrayList<Account> accs = new ArrayList<Account>(AccountController.getInstance().getAllAccounts(host));
                 for (Account a : accs) {
                     if (a.isEnabled()) {
@@ -149,7 +149,7 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
                     boolean enabled = false;
                     for (HostPluginWrapper wrapper : HostPluginWrapper.getHostWrapper()) {
                         String host = wrapper.getHost();
-                        if (wrapper.isLoaded() && wrapper.isEnabled()) {
+                        if (wrapper.isLoaded()) {
                             ArrayList<Account> accs = AccountController.getInstance().getAllAccounts(host);
                             if (accs.size() > 0) {
                                 PluginForHost plugin = wrapper.getPlugin();

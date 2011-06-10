@@ -290,11 +290,9 @@ public class PremiumAccountTableModel extends ExtTableModel<Account> implements 
             }
 
             @Override
-            public void configureRendererComponent(final Account value, final boolean isSelected, final boolean hasFocus, final int row, final int column) {
-                super.configureRendererComponent(value, isSelected, hasFocus, row, column);
-                if (checkRunning) {
-                    this.renderer.setIndeterminate(AccountChecker.getInstance().contains(value));
-                }
+            protected boolean isIndeterminated(final Account value, final boolean isSelected, final boolean hasFocus, final int row, final int column) {
+                if (checkRunning) { return AccountChecker.getInstance().contains(value); }
+                return false;
             }
 
             @Override

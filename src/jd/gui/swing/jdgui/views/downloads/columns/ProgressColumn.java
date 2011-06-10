@@ -91,9 +91,6 @@ public class ProgressColumn extends JDTableColumn {
             if (dLink.getDefaultPlugin() == null) {
                 jlr.setText(strPluginError);
                 return jlr;
-            } else if (!dLink.getDefaultPlugin().getWrapper().isEnabled() && !dLink.getLinkStatus().isPluginActive()) {
-                jlr.setText(strPluginDisabled);
-                return jlr;
             } else if (dLink.getPluginProgress() != null) {
                 progress.setString(dLink.getPluginProgress().getPercent() + " %");
                 progress.setMaximum(dLink.getPluginProgress().getTotal());
