@@ -519,7 +519,7 @@ public abstract class PluginForHost extends Plugin implements FavIconRequestor {
                 }
             }
         }
-        if (link != null && fp != null) {
+        if (links != null && fp != null) {
             fp.addLinks(links);
         }
         return links;
