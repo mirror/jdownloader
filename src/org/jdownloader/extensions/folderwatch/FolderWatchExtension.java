@@ -35,12 +35,14 @@ import jd.config.ConfigGroup;
 import jd.config.SubConfiguration;
 import jd.controlling.JDController;
 import jd.controlling.JSonWrapper;
+import jd.controlling.LinkGrabberController;
 import jd.gui.UserIO;
 import jd.gui.swing.components.JDFileChooser;
 import jd.gui.swing.jdgui.views.linkgrabber.LinkGrabberPanel;
 import jd.nutils.JDFlags;
 import jd.nutils.JDHash;
 import jd.nutils.OSDetector;
+import jd.plugins.DownloadLink;
 import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
 
@@ -73,6 +75,7 @@ public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig> i
     private boolean                                    isOption_import;
     private boolean                                    isOption_importAndDelete;
     private boolean                                    isOption_history;
+    private boolean                                    isOption_downloadToContainerLoc;
 
     private JList                                      guiFolderList;
 
@@ -111,6 +114,7 @@ public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig> i
         isOption_import = subConfig.getBooleanProperty(FolderWatchConstants.PROPERTY_OPTION_IMPORT, false);
         isOption_importAndDelete = subConfig.getBooleanProperty(FolderWatchConstants.PROPERTY_OPTION_IMPORT_DELETE, false);
         isOption_history = subConfig.getBooleanProperty(FolderWatchConstants.PROPERTY_OPTION_HISTORY, false);
+        isOption_downloadToContainerLoc = subConfig.getBooleanProperty(FolderWatchConstants.PROPERTY_OPTION_DOWNLOAD_TO_CONTAINER_LOCATION, false);
     }
 
     @Override
@@ -251,7 +255,17 @@ public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig> i
 
     public void importContainer(File container) {
         if (isContainer(container)) {
-            JDController.loadContainerFile(container, false, false);
+            if (isOption_downloadToContainerLoc) {
+                ArrayList<DownloadLink> downloadLinks = JDController.getInstance().getContainerLinks(container);
+
+                for (DownloadLink link : downloadLinks) {
+                    link.getFilePackage().setDownloadDirectory(container.getParentFile().getAbsolutePath());
+                }
+
+                LinkGrabberController.getInstance().addLinks(downloadLinks, false, false);
+            } else {
+                JDController.loadContainerFile(container);
+            }
         }
     }
 
@@ -489,6 +503,7 @@ public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig> i
 
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, FolderWatchConstants.PROPERTY_OPTION_HISTORY, T._.plugins_optional_folderwatch_JDFolderWatch_gui_option_history()).setDefaultValue(true));
 
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, FolderWatchConstants.PROPERTY_OPTION_DOWNLOAD_TO_CONTAINER_LOCATION, T._.plugins_optional_folderwatch_JDFolderWatch_gui_option_download_to_container_location()).setDefaultValue(true));
     }
 
     @Override
