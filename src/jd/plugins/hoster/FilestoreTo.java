@@ -68,6 +68,7 @@ public class FilestoreTo extends PluginForHost {
 
             downloadName = br.getRegex(">Dateiname:</td>[\t\n\r ]+<td colspan=\"2\" style=\"[A-Za-z0-9\\-;:# ]+\">(.*?)</td>").getMatch(0);
             if (downloadName == null) downloadName = br.getRegex(">Dateiname:</td>.*?colspan=\"2\".*?>(.*?)</").getMatch(0);
+            if (downloadName == null) downloadName = br.getRegex(">Filename:</td>.*?colspan=\"2\".*?>(.*?)</").getMatch(0);
             downloadSize = br.getRegex("<td width=\"220\" style=\"font\\-weight:bold;\">(.*?)</td>").getMatch(0);
             if (downloadName != null) {
                 downloadLink.setName(Encoding.htmlDecode(downloadName));

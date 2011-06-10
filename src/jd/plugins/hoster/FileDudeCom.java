@@ -25,15 +25,15 @@ import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.BrowserAdapter;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filedude.com" }, urls = { "http://(www\\.)?(appscene\\.org|filedude\\.com)/(download/[0-9a-zA-Z]+|download\\.php\\?id=\\d+)" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filedude.com", "appscene.org" }, urls = { "http://(www\\.)?(appscene\\.org|filedude\\.com)/(download/[0-9a-zA-Z]+|download\\.php\\?id=\\d+)", "http://(www\\.)?bnladsgetzt32547uUNUSED_REGEX" }, flags = { 2, 2 })
 public class FileDudeCom extends PluginForHost {
     public FileDudeCom(PluginWrapper wrapper) {
         super(wrapper);
