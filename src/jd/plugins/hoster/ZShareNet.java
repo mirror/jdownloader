@@ -24,11 +24,11 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
@@ -173,7 +173,7 @@ public class ZShareNet extends PluginForHost {
             fnc = fnc.replaceAll("\\'\\,\\'", "");
             dlUrl = fnc;
         } else {
-            dlUrl = br.getRegex("<td bgcolor=\"#CCCCCC\">.*?<img src=\"(http://.*?.zshare.net/download/.*?)\"").getMatch(0);
+            dlUrl = br.getRegex("<td bgcolor=\"#CCCCCC\">.*?<img src=\"(http://.*?\\.zshare\\.net/download/.*?)\"").getMatch(0);
             if (dlUrl == null) {
                 dlUrl = br.getRegex("<td bgcolor=\"#CCCCCC\">.*?<img src=\"(.*?)\"").getMatch(0);
                 if (!dlUrl.startsWith("/")) dlUrl = "/" + dlUrl;
