@@ -100,10 +100,10 @@ public class VeohCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         setBrowserExclusive();
-        br.setFollowRedirects(false);
+        br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("Dieses Video ist nicht mehr verf&uuml;gbar")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-        final String filename = br.getRegex("title\":\"(.*?)\"").getMatch(0);
+        final String filename = br.getRegex("\"title\":\"(.*?)\"").getMatch(0);
         if (filename == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         downloadLink.setName(Encoding.htmlDecode(filename.trim()));
         return AvailableStatus.TRUE;
