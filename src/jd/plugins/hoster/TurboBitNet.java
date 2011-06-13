@@ -70,7 +70,7 @@ public class TurboBitNet extends PluginForHost {
         br.setFollowRedirects(true);
         br.getHeaders().put("User-Agent", UA);
         br.getHeaders().put("Referer", downloadLink.getDownloadURL());
-        br.setCookie("http://turbobit.net/", "user_lang_change", "en");
+        br.setCookie("http://turbobit.net/", "set_user_lang_change", "en");
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("(<div class=\"code\\-404\">404</div>|Файл не найден\\. Возможно он был удален\\.<br|File was not found\\.|It could possibly be deleted\\.)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String fileName = br.getRegex("<title>[ \t\r\n]+(Download|Datei downloaden) (.*?)\\. Free download without registration from TurboBit\\.net").getMatch(1);
@@ -164,7 +164,7 @@ public class TurboBitNet extends PluginForHost {
         }
         if (tt > 250) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Limit reached or IP already loading", tt * 1001l); }
         sleep(tt * 1001, downloadLink);
-        br.getPage("http://turbobit.net/download/timeout/" + id);
+        br.getPage("http://turbobit.net/download/getLinkAfterTimeout/" + id + "/");
         String downloadUrl = br.getRegex("<a href=\\'(.*?)\\'>").getMatch(0);
         if (downloadUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadUrl, true, 1);
@@ -180,7 +180,7 @@ public class TurboBitNet extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getHeaders().put("User-Agent", UA);
-        br.setCookie("http://turbobit.net/", "user_lang_change", "en");
+        br.setCookie("http://turbobit.net/", "set_user_lang_change", "en");
         br.setCustomCharset("UTF-8");
         br.getPage("http://turbobit.net");
         br.postPage("http://www.turbobit.net/user/login", "user%5Blogin%5D=" + Encoding.urlEncode(account.getUser()) + "&user%5Bpass%5D=" + Encoding.urlEncode(account.getPass()) + "&user%5Bmemory%5D=on&user%5Bsubmit%5D=Login");

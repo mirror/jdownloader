@@ -25,7 +25,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
 //movshare by pspzockerscene
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "movshare.net" }, urls = { "http://[\\w\\.]*?movshare\\.net/video/[a-z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "movshare.net" }, urls = { "http://(www\\.)?movshare\\.net/video/[a-z0-9]+" }, flags = { 0 })
 public class MovShareNet extends PluginForHost {
 
     public MovShareNet(PluginWrapper wrapper) {
@@ -37,20 +37,22 @@ public class MovShareNet extends PluginForHost {
         return "http://www.movshare.net/terms.php";
     }
 
+    private static final String HUMANTEXT = "We need you to prove you\\'re human";
+
     // This plugin is 99,99% copy the same as the MovShareNet plugin, if this
     // gets broken please also check the other one!
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
         br.setFollowRedirects(true);
         setBrowserExclusive();
+        br.getHeaders().put("Accept-Encoding", "");
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("We need you to prove you're human")) {
+        if (br.containsHTML(HUMANTEXT)) {
             Form IAmAHuman = br.getForm(0);
             if (IAmAHuman == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             br.submitForm(IAmAHuman);
         }
-        if (br.containsHTML("The file is beeing transfered to our other servers")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-        if (br.containsHTML("This file no longer exists on our servers")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("(The file is beeing transfered to our other servers|This file no longer exists on our servers)")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
         String filename = (br.getRegex("Title: </strong>(.*?)</td> <td>").getMatch(0));
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         if (filename.contains("Untitled")) {
@@ -64,7 +66,7 @@ public class MovShareNet extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        if (br.containsHTML("We need you to prove you're human")) {
+        if (br.containsHTML(HUMANTEXT)) {
             Form IAmAHuman = br.getForm(0);
             if (IAmAHuman == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             br.submitForm(IAmAHuman);
