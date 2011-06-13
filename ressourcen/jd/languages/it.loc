@@ -20,6 +20,7 @@ gui.menu.extract files.name = Estrai file
 gui.menu.extract link.name = Estrai collegamento
 gui.menu.extract package.name = Estrai pacchetto
 gui.menu.extract to.name = Estrai in
+gui.menu.extract.name = Estrai
 gui.menu.langfileditor.accel = -
 gui.menu.langfileditor.mnem = -
 gui.menu.langfileditor.name = Editor file lingua
