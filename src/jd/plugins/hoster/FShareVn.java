@@ -106,7 +106,7 @@ public class FShareVn extends PluginForHost {
     private void login(Account account) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(false);
-        br.postPage("http://www.fshare.vn/login.php", "login_useremail=" + Encoding.urlEncode(account.getUser()) + "&login_password=" + Encoding.urlEncode(account.getPass()) + "&url_refe=http%3A%2F%2Fwww.fshare.vn%2Findex.php&auto_login=1");
+        br.postPage("http://www.fshare.vn/login.php", "login_useremail=" + Encoding.urlEncode(account.getUser()) + "&login_password=" + Encoding.urlEncode(account.getPass()) + "&url_refe=http%3A%2F%2Fwww.fshare.vn%2Flogin.php&auto_login=1");
         if (br.getCookie("http://www.fshare.vn", "fshare_userpass") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
 

@@ -69,7 +69,8 @@ public class UploadStoreNet extends PluginForHost {
         br.setCookie(COOKIE_HOST, "lang", "english");
         br.getPage(link.getDownloadURL());
         doSomething();
-        if (BRBEFORE.contains("No such file") || BRBEFORE.contains("No such user exist") || BRBEFORE.contains("File not found") || BRBEFORE.contains(">File Not Found<") || BRBEFORE.contains(">The file was removed by administrator<") || BRBEFORE.contains("Reason of deletion:") || BRBEFORE.contains("class=\"err\">DMCA File</b>")) {
+        System.out.print(BRBEFORE);
+        if (BRBEFORE.contains("No such file") || BRBEFORE.contains("No such user exist") || BRBEFORE.contains("File not found") || BRBEFORE.contains(">File Not Found<") || BRBEFORE.contains(">The file was removed by administrator<") || BRBEFORE.contains("Reason of deletion:") || BRBEFORE.contains("class=\"err\">DMCA File</b>") || BRBEFORE.contains(">404 Not Found<")) {
             logger.warning("file is 99,99% offline, throwing \"file not found\" now...");
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }

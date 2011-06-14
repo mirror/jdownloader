@@ -24,11 +24,11 @@ import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 import org.appwork.utils.formatter.TimeFormatter;
 
@@ -174,14 +174,15 @@ public class VideoBbCom extends PluginForHost {
         try {
             setBrowserExclusive();
             br.getPage(downloadLink.getDownloadURL());
-            if (br.containsHTML(">Video is not available</font>")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-            final String filename = br.getRegex("content=\"videobb - (.*?)\"  name=\"title\"").getMatch(0);
-            if (filename == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-            downloadLink.setName(filename.trim());
-            return AvailableStatus.TRUE;
         } catch (final Exception e) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        if (br.containsHTML("(>This video was either deleted by the user or in breach of a copyright holder|>Video is not available<)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        final String filename = br.getRegex("content=\"videobb - (.*?)\"  name=\"title\"").getMatch(0);
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        downloadLink.setName(filename.trim());
+        return AvailableStatus.TRUE;
+
     }
 
     @Override

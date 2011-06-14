@@ -336,7 +336,7 @@ public class CraMitIn extends PluginForHost {
         br.submitForm(loginform);
         br.getPage(COOKIE_HOST + "/?op=my_account");
         if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-        if (!br.containsHTML("value=\"Extend Premium Account\"") && !br.containsHTML("alt=\"EXTEND PREMIUM ACCOUNT\">")) {
+        if (!br.containsHTML("(value=\"Extend Premium Account\"|alt=\"EXTEND PREMIUM ACCOUNT\">|>Premium Account expires on)")) {
             logger.info("Entered account is valid and it's a registered account.");
             nopremium = true;
         }
@@ -382,11 +382,13 @@ public class CraMitIn extends PluginForHost {
                 ai.setExpired(true);
                 account.setValid(false);
                 return ai;
+            } else if (expire.contains(">NEVER EXPIRES")) {
+                ai.setStatus("Lifetime Premium User");
             } else {
                 expire = expire.replaceAll("(<b>|</b>)", "");
                 ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", null));
+                ai.setStatus("Premium User");
             }
-            ai.setStatus("Premium User");
         } else {
             ai.setStatus("Registered (free) User");
         }
