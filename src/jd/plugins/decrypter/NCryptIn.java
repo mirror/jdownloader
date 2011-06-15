@@ -83,8 +83,11 @@ public class NCryptIn extends PluginForDecrypt {
                 }
             }
             br.getRequest().setHtmlCode(aBrowser);
+            boolean password = false;
+            boolean captcha = false;
             if (allForm != null) {
                 if (allForm.containsHTML(RECAPTCHA)) {
+                    captcha = true;
                     for (int i = 0; i <= 5; i++) {
                         final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
                         final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
@@ -103,9 +106,10 @@ public class NCryptIn extends PluginForDecrypt {
                         }
                         break;
                     }
-                    if (new Regex(aBrowser, PASSWORDFAILED).matches()) { throw new DecrypterException(DecrypterException.PASSWORD); }
-                    if (new Regex(aBrowser, RECAPTCHA).matches()) { throw new DecrypterException(DecrypterException.CAPTCHA); }
+                    if (password && new Regex(aBrowser, PASSWORDFAILED).matches()) { throw new DecrypterException(DecrypterException.PASSWORD); }
+                    if (captcha && new Regex(aBrowser, RECAPTCHA).matches()) { throw new DecrypterException(DecrypterException.CAPTCHA); }
                 } else if (allForm.containsHTML(OTHERCAPTCHA) && !allForm.containsHTML("recaptcha_challenge")) {
+                    captcha = true;
                     for (int i = 0; i <= 3; i++) {
                         final String captchaLink = new Regex(aBrowser, OTHERCAPTCHA).getMatch(-1);
                         if (captchaLink == null) { return null; }
@@ -132,9 +136,10 @@ public class NCryptIn extends PluginForDecrypt {
                         }
                         break;
                     }
-                    if (new Regex(aBrowser, PASSWORDFAILED).matches()) { throw new DecrypterException(DecrypterException.PASSWORD); }
-                    if (new Regex(aBrowser, OTHERCAPTCHA).matches()) { throw new DecrypterException(DecrypterException.CAPTCHA); }
+                    if (password && new Regex(aBrowser, PASSWORDFAILED).matches()) { throw new DecrypterException(DecrypterException.PASSWORD); }
+                    if (captcha && new Regex(aBrowser, OTHERCAPTCHA).matches()) { throw new DecrypterException(DecrypterException.CAPTCHA); }
                 } else if (allForm.containsHTML(PASSWORDTEXT)) {
+                    password = true;
                     for (int i = 0; i <= 3; i++) {
                         allForm.put(PASSWORDTEXT, getPassword(param));
                         br.submitForm(allForm);
