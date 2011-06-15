@@ -20,11 +20,11 @@ import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ehow.com" }, urls = { "http://[\\w\\.]*?.ehow\\.com/video_\\d+_.*?\\.html" }, flags = { 0 })
@@ -34,8 +34,8 @@ public class EHowCom extends PluginForHost {
         super(wrapper);
     }
 
-    private String dllink = null;
-    private boolean hd = true;
+    private String  dllink = null;
+    private boolean hd     = true;
 
     @Override
     public String getAGBLink() {
@@ -51,16 +51,13 @@ public class EHowCom extends PluginForHost {
             if (br.getRedirectLocation().contains("Error.aspx\\?404=true")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (br.containsHTML("This video does not exist")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<meta name=\"title\" content=\"(.*?)\"").getMatch(0);
+        if (br.containsHTML("(<title>eHow \\| How to Videos, Articles \\&amp; More \\- Trusted Advice for the Curious Life \\| eHow\\.com</title>|>Oh no\\! It looks like the page you\\'re trying to find isn\\'t around anymore\\.<)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("<meta property=\"og:title\" content=\"(.*?)\"").getMatch(0);
         if (filename == null) {
-            filename = br.getRegex("var articleTitle = \"(.*?)\"").getMatch(0);
+            filename = br.getRegex("<h1 id=\"nointelliTXT\" class=\"articleTitle Heading1\">(.*?)</h1>").getMatch(0);
             if (filename == null) {
-                filename = br.getRegex("<h1 class=\"Heading1a\" style=\"clear:both;\">(.*?)</h1>").getMatch(0);
-                if (filename == null) {
-                    filename = br.getRegex("class=\"itemContent playing jsVideoTitle\">(.*?)</a>").getMatch(0);
-                    if (filename == null) filename = br.getRegex("var title = \"(.*?)\"").getMatch(0);
-                }
+                filename = br.getRegex(",\"video_title\":\"(.*?)\"").getMatch(0);
+                if (filename == null) filename = br.getRegex("<title>(.*?) \\| eHow\\.com</title>").getMatch(0);
             }
 
         }
