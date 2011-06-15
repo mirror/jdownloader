@@ -81,7 +81,7 @@ public class GotUploadCom extends PluginForHost {
                     if (filename == null) {
                         filename = new Regex(BRBEFORE, "Filename.*?nowrap.*?>(.*?)</td").getMatch(0);
                         if (filename == null) {
-                            filename = new Regex(BRBEFORE, "File Name.*?nowrap>(.*?)</td").getMatch(0);
+                            filename = new Regex(BRBEFORE, "<h3>Download / Stream : </b>(.*?)</h3>").getMatch(0);
                         }
                     }
                 }
@@ -95,8 +95,8 @@ public class GotUploadCom extends PluginForHost {
             }
         }
         if (filename == null) {
-            logger.warning("The filename equals null, throwing \"file not found\" now...");
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            logger.warning("The filename equals null, throwing \"Plugin defect\" now...");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         filename = filename.replaceAll("(</b>|<b>|\\.html)", "");
         link.setName(filename.trim());

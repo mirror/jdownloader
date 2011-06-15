@@ -57,10 +57,10 @@ public class PrtctdScdvntCm extends PluginForDecrypt {
         if (br.getRedirectLocation() != null) {
             br.getPage(br.getRedirectLocation());
         }
-
-        final String cpPage = br.getRegex("<img src=\"(.*?)\"").getMatch(0);
-        final String sendCaptcha = "lsp.php";
-        br.postPage(MAINPAGE + "allink.php", "LinkName=" + postvar);
+        final String cpPage = br.getRegex("\"(plugin/.*?)\"").getMatch(0);
+        final String sendCaptcha = "kpr.php";
+        final String getList = "links.php";
+        br.postPage(MAINPAGE + getList, "LinkName=" + postvar);
         final String[] linksCount = br.getRegex("(moc\\.tenvdacos\\.detcetorp//:ptth)").getColumn(0);
         if (linksCount == null || linksCount.length == 0) { return null; }
         final int linkCounter = linksCount.length;
@@ -83,7 +83,7 @@ public class PrtctdScdvntCm extends PluginForDecrypt {
         progress.setRange(linkCounter);
         for (int i = 0; i <= linkCounter - 1; i++) {
             br.getHeaders().put("Referer", parameter);
-            final String actualPage = MAINPAGE + "allink.php?out_name=" + postvar + "&&link_id=" + i;
+            final String actualPage = MAINPAGE + getList + "?out_name=" + postvar + "&&link_id=" + i;
             br.getPage(actualPage);
             if (br.containsHTML("This file is either removed due to copyright claim or is deleted by the uploader")) {
                 logger.info("Found one offline link for link " + parameter + " linkid:" + i);
