@@ -19,9 +19,14 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.regex.Pattern;
 
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
+
 import jd.PluginWrapper;
+import jd.controlling.JDLogger;
 import jd.http.RandomUserAgent;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
@@ -62,7 +67,7 @@ public class RemixShareCom extends PluginForHost {
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML(BLOCKED)) return AvailableStatus.UNCHECKABLE;
         br.setFollowRedirects(false);
-        if (br.containsHTML("Error Code: 500.") || br.containsHTML("Please check the downloadlink")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("Error Code: 500\\.") || br.containsHTML("Please check the downloadlink")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = Encoding.htmlDecode(br.getRegex(Pattern.compile("<span title=\\'([0-9]{10}_)?(.*?)\\'>", Pattern.CASE_INSENSITIVE)).getMatch(1));
         if (filename == null) filename = Encoding.htmlDecode(br.getRegex(Pattern.compile("<title>(.*?)Download at remiXshare Filehosting", Pattern.CASE_INSENSITIVE)).getMatch(0));
         String filesize = br.getRegex("(>|\\.\\.\\.)\\&nbsp;\\((.*?)\\)<").getMatch(1);
@@ -97,8 +102,7 @@ public class RemixShareCom extends PluginForHost {
                 downloadLink.setProperty("pass", pass);
             }
         }
-        String lnk = br.getRegex("innerHTML = \\'<a href=\"(http://remixshare\\.com/.*?)\"").getMatch(0);
-        if (lnk == null) lnk = br.getRegex("\"(http://remixshare\\.com/downloadfinal/.*?)\"").getMatch(0);
+        String lnk = execJS();
         if (lnk == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.getPage(lnk);
         String dllink = br.getRedirectLocation();
@@ -111,6 +115,24 @@ public class RemixShareCom extends PluginForHost {
         }
         dl.startDownload();
 
+    }
+
+    private String execJS() throws Exception {
+        String fun = br.getRegex("/>Your Download has been started\\.[\t\n\r ]+</div>[\t\n\r ]+<script type=\"text/javascript\" language=\"Javascript\">(.*?)</script>").getMatch(0);
+        if (fun == null) return null;
+        String ah = new Regex(fun, "(document\\.getElementById\\((.*?)\\)\\.innerHTML)").getMatch(0);
+        if (ah != null) fun = fun.replace(ah, Encoding.Base64Decode("dmFyIEhleVJlbWl4c2hhcmVQbGVhc2VNYWtlQW5BUElGb3JVcyA="));
+        Object result = new Object();
+        final ScriptEngineManager manager = new ScriptEngineManager();
+        final ScriptEngine engine = manager.getEngineByName("javascript");
+        try {
+            result = engine.eval(fun);
+        } catch (final Exception e) {
+            JDLogger.exception(e);
+            return null;
+        }
+        if (result == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        return result.toString();
     }
 
     public int getMaxSimultanFreeDownloadNum() {

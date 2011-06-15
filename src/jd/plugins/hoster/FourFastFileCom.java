@@ -25,16 +25,16 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "4fastfile.com" }, urls = { "http://[\\w\\.]*?4fastfile\\.com(/[a-z]+)?/abv-fs/\\d+-\\d+(/\\d+-\\d+)?/.+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "4fastfile.com" }, urls = { "http://(www\\.)?4fastfile\\.com(/[a-z]+)?/abv-fs/\\d+.+" }, flags = { 2 })
 public class FourFastFileCom extends PluginForHost {
 
     public FourFastFileCom(PluginWrapper wrapper) {
@@ -72,6 +72,7 @@ public class FourFastFileCom extends PluginForHost {
         Form dlform = br.getFormbyProperty("id", "abv-fs-download-form");
         if (dlform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String waitfbid = dlform.getRegex("form_build_id\" id=\"(.*?)\"").getMatch(0);
+        if (waitfbid == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dlform.put("waitfbid", waitfbid);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlform, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
