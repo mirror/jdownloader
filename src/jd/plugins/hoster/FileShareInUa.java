@@ -27,11 +27,11 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -115,9 +115,7 @@ public class FileShareInUa extends PluginForHost {
         br.setCustomCharset("utf-8");
         // Using the link + "?free" we can get to the page with the captcha but
         // atm we do it without captcha
-        // String freepage = link.getDownloadURL() + "?free";
-        String freepage = link.getDownloadURL();
-        br.getPage(freepage);
+        br.getPage(link.getDownloadURL());
         if (br.containsHTML("Такой страницы на нашем сайте нет")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<title>скачать (.*?)</title>").getMatch(0);
         if (filename == null) {
@@ -141,12 +139,14 @@ public class FileShareInUa extends PluginForHost {
         if (br.containsHTML("Именно эта ссылка битая. Однако, это не значит, что вам нечего тут искать")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
         String continueLink = br.getRegex("id=\"popunder_lnk\" href=\"(/.*?)\"").getMatch(0);
         if (continueLink == null) continueLink = br.getRegex("\"(/dl\\d+\\?c=[a-z0-9]+)\"").getMatch(0);
-        if (continueLink == null && !br.containsHTML("\\?free"))
+        if (continueLink == null && !br.containsHTML("\\?free")) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        else if (continueLink == null) {
+        } else if (continueLink == null) {
             // Some countries got captchas
             br.getPage(downloadLink.getDownloadURL() + "?free");
-            String captchapart = br.getRegex("id=\"capture\".*?src=\"(.*?)\"").getMatch(0);
+            if (br.containsHTML("(Файл удален|К сожалению, cсылка на этот файл не больше не действительна и запрашиваемый файл отсутствует на сервер)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            String captchapart = br.getRegex("\"(/capture\\.gif\\?m=\\d+)\"").getMatch(0);
+            if (captchapart == null) captchapart = br.getRegex("<img height=\"18\" align=\"absmiddle\"  src=\"(/.*?)\"").getMatch(0);
             Form captchaForm = null;
             Form[] allForms = br.getForms();
             for (Form singleForm : allForms) {
@@ -159,9 +159,8 @@ public class FileShareInUa extends PluginForHost {
             // captcha
             // with random letters (about 10) but only 4 are needed. With this
             // number and an other default number the plugin knows which part of
-            // the
-            // captcha it needsa
-            String captchacut = br.getRegex("<style>.*?margin-[a-z]+:-(\\d+)px;").getMatch(0);
+            // the captcha it needs
+            String captchacut = br.getRegex("<style>.*?margin\\-[a-z]+:\\-(\\d+)px;").getMatch(0);
             if (captchapart == null || captchaForm == null || captchacut == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             String captchaurl = "http://fileshare.in.ua" + captchapart;
             File file = this.getLocalCaptchaFile();
