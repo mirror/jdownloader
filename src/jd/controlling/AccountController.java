@@ -488,17 +488,26 @@ public class AccountController implements AccountControllerListener {
     }
 
     public void onAccountControllerEvent(final AccountControllerEvent event) {
+        Account acc = null;
         switch (event.getEventID()) {
         case AccountControllerEvent.ACCOUNT_ADDED:
+            acc = event.getAccount();
+            /*
+             * we do an accountcheck as this account just got added to this
+             * controller
+             */
+            if (acc != null) AccountChecker.getInstance().check(acc, true);
             JDUtilities.getConfiguration().setProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true);
             JDUtilities.getConfiguration().save();
-            // <> saveAsync();
             break;
-        case AccountControllerEvent.ACCOUNT_REMOVED:
         case AccountControllerEvent.ACCOUNT_UPDATE:
+            acc = event.getAccount();
+            /* we do a new accountcheck as this account got updated */
+            /* WARNING: DO NOT FORCE check here, it might end up in a loop */
+            if (acc != null) AccountChecker.getInstance().check(acc, false);
+        case AccountControllerEvent.ACCOUNT_REMOVED:
         case AccountControllerEvent.ACCOUNT_EXPIRED:
         case AccountControllerEvent.ACCOUNT_INVALID:
-            // saveAsync();
             break;
         default:
             break;

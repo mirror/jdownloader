@@ -395,6 +395,7 @@ public class ExternInterfaceExtension extends AbstractExtension<ExternInterfaceC
                     }
                     String urls[] = Regex.getLines(Encoding.urlDecode(request.getParameters().get("urls"), false));
                     String desc[] = Regex.getLines(Encoding.urlDecode(request.getParameters().get("descriptions"), false));
+                    String fnames[] = Regex.getLines(Encoding.urlDecode(request.getParameters().get("fnames"), false));
                     String dir = null;
                     FilePackage fp = FilePackage.getInstance();
                     String packname = Encoding.urlDecode(request.getParameters().get("package"), false);
@@ -439,6 +440,7 @@ public class ExternInterfaceExtension extends AbstractExtension<ExternInterfaceC
                                 direct.setProperty("cookies", cookies);
                                 direct.setProperty("post", post);
                                 direct.setProperty("referer", referer);
+                                direct.setProperty("fixName", fnames[i]);
                                 liveplg.correctDownloadLink(direct);
                                 links.add(direct);
                             }

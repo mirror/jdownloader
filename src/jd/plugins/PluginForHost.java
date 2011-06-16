@@ -683,7 +683,6 @@ public abstract class PluginForHost extends Plugin implements FavIconRequestor {
             }
 
             final long traffic = Math.max(0, downloadLink.getDownloadCurrent() - before);
-            boolean throwupdate = false;
             final AccountInfo accountInfo = account.getAccountInfo();
             synchronized (AccountController.ACCOUNT_LOCK) {
                 final AccountInfo ai = accountInfo;
@@ -697,16 +696,12 @@ public abstract class PluginForHost extends Plugin implements FavIconRequestor {
                         logger.severe("Premium Account " + account.getUser() + ": Traffic Limit reached");
                         account.setTempDisabled(true);
                     }
-                    throwupdate = true;
                 }
                 /* check blocked account(eg free user accounts with waittime) */
                 if (blockAccount) {
                     logger.severe("Account: " + account.getUser() + " is blocked, temp. disabling it!");
                     AccountController.getInstance().addAccountBlocked(account);
                 }
-            }
-            if (throwupdate) {
-                AccountController.getInstance().throwUpdateEvent(this, account);
             }
             if (downloadLink.getLinkStatus().hasStatus(LinkStatus.ERROR_PREMIUM)) {
                 if (downloadLink.getLinkStatus().getValue() == PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE) {

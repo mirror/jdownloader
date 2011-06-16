@@ -240,6 +240,7 @@ public class Streammaniacom extends PluginForHost implements JDPremInterface {
                     String msg = "(" + link.getLinkStatus().getRetryCount() + 1 + "/" + getMaxRetries() + ")";
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Retry in few secs" + msg, 10 * 1000l);
                 }
+                /* TODO: add support for chunks */
                 dl = jd.plugins.BrowserAdapter.openDownload(br, link, genlink, true, 1);
                 if (dl.getConnection().getResponseCode() == 404) {
                     /* file offline */

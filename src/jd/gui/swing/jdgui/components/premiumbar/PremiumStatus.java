@@ -16,24 +16,24 @@
 
 package jd.gui.swing.jdgui.components.premiumbar;
 
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.util.ArrayList;
+import java.util.concurrent.TimeUnit;
 
 import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
-import javax.swing.Timer;
 
 import jd.HostPluginWrapper;
 import jd.Main;
 import jd.config.Configuration;
+import jd.controlling.AccountChecker;
 import jd.controlling.AccountController;
 import jd.controlling.AccountControllerEvent;
 import jd.controlling.AccountControllerListener;
-import jd.controlling.JDController;
+import jd.controlling.IOEQ;
+import jd.controlling.JDLogger;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.gui.UserIF;
@@ -46,25 +46,18 @@ import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
 
+import org.appwork.scheduler.DelayedRunnable;
 import org.jdownloader.gui.translate._GUI;
 
-public class PremiumStatus extends JPanel implements AccountControllerListener, ActionListener, MouseListener, ControlListener {
+public class PremiumStatus extends JPanel implements MouseListener, ControlListener {
 
-    private static final long       serialVersionUID     = 7290466989514173719L;
-    private static final int        BARCOUNT             = 15;
-    private static final long       ACCOUNT_UPDATE_DELAY = 30 * 60 * 1000;
+    private static final long       serialVersionUID = 7290466989514173719L;
+    private static final int        BARCOUNT         = 15;
     private final TinyProgressBar[] bars;
-
-    private boolean                 redrawinprogress     = false;
-    private boolean                 updating             = false;
-    private Timer                   updateIntervalTimer;
-    private boolean                 updateinprogress     = false;
-    private boolean                 guiInitComplete      = false;
-
-    private static PremiumStatus    INSTANCE             = null;
+    private DelayedRunnable         redrawTimer;
+    private static PremiumStatus    INSTANCE         = new PremiumStatus();
 
     public static PremiumStatus getInstance() {
-        if (INSTANCE == null) INSTANCE = new PremiumStatus();
         return INSTANCE;
     }
 
@@ -82,31 +75,29 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
         updateGUI(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true));
 
         this.setOpaque(false);
-        updateIntervalTimer = new Timer(5000, this);
-        updateIntervalTimer.setInitialDelay(5000);
-        updateIntervalTimer.setRepeats(false);
-        updateIntervalTimer.stop();
 
         JDUtilities.getController().addControlListener(this);
 
-        Thread updateTimer = new Thread("PremiumStatusUpdateTimer") {
-            @Override
+        IOEQ.TIMINGQUEUE.scheduleWithFixedDelay(new Runnable() {
+
             public void run() {
-                requestUpdate();
-                while (true) {
-                    try {
-                        Thread.sleep(ACCOUNT_UPDATE_DELAY);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                        return;
-                    }
-                    requestUpdate();
+                /* this scheduleritem checks all enabled accounts every 30 mins */
+                try {
+                    refreshAccountStats();
+                } catch (Throwable e) {
+                    JDLogger.exception(e);
                 }
             }
-        };
-        updateTimer.start();
 
-        AccountController.getInstance().addListener(this);
+        }, 5, 30, TimeUnit.SECONDS);
+        redrawTimer = new DelayedRunnable(IOEQ.TIMINGQUEUE, 5000) {
+
+            @Override
+            public void delayedrun() {
+                if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true)) redraw();
+            }
+
+        };
     }
 
     public void updateGUI(boolean enabled) {
@@ -116,28 +107,26 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
         }
     }
 
-    private synchronized void updatePremium() {
-        updating = true;
-        String id = JDController.requestDelayExit("updatePremium");
+    private void refreshAccountStats() {
         for (HostPluginWrapper wrapper : HostPluginWrapper.getHostWrapper()) {
             String host = wrapper.getHost();
             if (wrapper.isLoaded()) {
                 ArrayList<Account> accs = new ArrayList<Account>(AccountController.getInstance().getAllAccounts(host));
-                for (Account a : accs) {
-                    if (a.isEnabled()) {
-                        /* only update enabled accounts */
-                        AccountController.getInstance().updateAccountInfo(host, a, false);
+                for (Account acc : accs) {
+                    if (acc.isEnabled()) {
+                        /*
+                         * we do not force update here, the internal timeout
+                         * will make sure accounts get fresh checked from time
+                         * to time
+                         */
+                        AccountChecker.getInstance().check(acc, false);
                     }
                 }
             }
         }
-        JDController.releaseDelayExit(id);
-        updating = false;
     }
 
-    private synchronized void redraw() {
-        if (redrawinprogress) return;
-        redrawinprogress = true;
+    private void redraw() {
         new GuiRunnable<Object>() {
             @Override
             public Object runSave() {
@@ -220,53 +209,12 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
                         }
                     }
                     invalidate();
-                    return null;
-                } finally {
-                    redrawinprogress = false;
+                } catch (final Throwable e) {
+                    JDLogger.exception(e);
                 }
+                return null;
             }
         }.start();
-    }
-
-    public void onAccountControllerEvent(AccountControllerEvent event) {
-        switch (event.getEventID()) {
-        case AccountControllerEvent.ACCOUNT_ADDED:
-        case AccountControllerEvent.ACCOUNT_REMOVED:
-        case AccountControllerEvent.ACCOUNT_UPDATE:
-        case AccountControllerEvent.ACCOUNT_EXPIRED:
-        case AccountControllerEvent.ACCOUNT_INVALID:
-            requestUpdate();
-            break;
-        default:
-            break;
-        }
-    }
-
-    public void requestUpdate() {
-        updateIntervalTimer.restart();
-    }
-
-    private void doUpdate() {
-        if (updateinprogress || !guiInitComplete) return;
-        new Thread() {
-            @Override
-            public void run() {
-                this.setName("PremiumStatus: update");
-                updateinprogress = true;
-                try {
-                    if (!updating && JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true)) updatePremium();
-                    redraw();
-                } finally {
-                    updateinprogress = false;
-                }
-            }
-        }.start();
-    }
-
-    public void actionPerformed(ActionEvent e) {
-        if (e.getSource() == this.updateIntervalTimer) {
-            doUpdate();
-        }
     }
 
     public void mouseClicked(MouseEvent e) {
@@ -305,9 +253,25 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
 
     public void controlEvent(ControlEvent event) {
         if (event.getEventID() == ControlEvent.CONTROL_INIT_COMPLETE && event.getCaller() instanceof Main) {
-            guiInitComplete = true;
             JDUtilities.getController().removeControlListener(this);
-            requestUpdate();
+            /* once gui init is complete we can add the listener */
+            AccountController.getInstance().addListener(new AccountControllerListener() {
+
+                public void onAccountControllerEvent(AccountControllerEvent event) {
+                    switch (event.getEventID()) {
+                    case AccountControllerEvent.ACCOUNT_ADDED:
+                    case AccountControllerEvent.ACCOUNT_UPDATE:
+                    case AccountControllerEvent.ACCOUNT_REMOVED:
+                    case AccountControllerEvent.ACCOUNT_EXPIRED:
+                    case AccountControllerEvent.ACCOUNT_INVALID:
+                        redrawTimer.run();
+                        break;
+                    default:
+                        break;
+                    }
+                }
+
+            });
         }
     }
 

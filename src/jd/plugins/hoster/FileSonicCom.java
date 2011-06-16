@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
+import jd.gui.UserIO;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -27,12 +28,12 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -198,13 +199,22 @@ public class FileSonicCom extends PluginForHost {
         if (br.containsHTML("This file is available for premium users only\\.")) { throw new PluginException(LinkStatus.ERROR_FATAL, "Premium only file. Buy Premium Account"); }
     }
 
-    private String loginAPI(Browser useBr, Account account) throws IOException, PluginException {
+    private String loginAPI(Browser useBr, Account account, boolean showMessageDialog) throws IOException, PluginException {
         Browser br = useBr;
         if (br == null) br = new Browser();
         br.setFollowRedirects(true);
         String page = br.getPage("http://api.filesonic.com/user?method=getInfo&u=" + Encoding.urlEncode(account.getUser()) + "&p=" + Encoding.urlEncode(account.getPass()) + "&format=xml");
         String premium = br.getRegex("is_premium>(.*?)</is_").getMatch(0);
-        if (!"1".equals(premium)) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        if (!"1".equals(premium)) {
+            if (showMessageDialog) {
+                if (br.containsHTML("Login failed. Please check username or password")) {
+                    UserIO.getInstance().requestMessageDialog(0, "Filesonic Premium Error", "Login failed. Please check username or password!");
+                } else if ("0".equalsIgnoreCase(premium)) {
+                    UserIO.getInstance().requestMessageDialog(0, "Filesonic Premium Error", "This account has no premium status!");
+                }
+            }
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        }
         return page;
     }
 
@@ -229,7 +239,7 @@ public class FileSonicCom extends PluginForHost {
         synchronized (FileSonicCom.LOCK) {
             AccountInfo ai = new AccountInfo();
             try {
-                loginAPI(br, account);
+                loginAPI(br, account, true);
             } catch (final IOException e) {
                 account.setValid(true);
                 account.setTempDisabled(true);

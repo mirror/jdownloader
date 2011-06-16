@@ -203,6 +203,7 @@ public class Uploadedto extends PluginForHost {
                 logger.info(dl.getConnection().toString());
             } catch (final Throwable e) {
             }
+            if ("No htmlCode read".equalsIgnoreCase(br.toString())) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 30 * 60 * 1000l);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (dl.getConnection().getResponseCode() == 404) {
@@ -311,10 +312,15 @@ public class Uploadedto extends PluginForHost {
         } catch (final Throwable ee) {
         }
         if (!dl.getConnection().isContentDisposition()) {
-            br.followConnection();
+            try {
+                br.followConnection();
+            } catch (final Throwable e) {
+                logger.severe(e.getMessage());
+            }
             if (br.containsHTML("File not found!")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             if (br.containsHTML("No connection to database")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 10 * 60 * 1000l);
             if (br.getURL().contains("view=error")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 10 * 60 * 1000l);
+            if ("No htmlCode read".equalsIgnoreCase(br.toString())) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 30 * 60 * 1000l);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (dl.getConnection().getResponseCode() == 404) {

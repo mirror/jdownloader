@@ -3,8 +3,6 @@ package jd.gui.swing.jdgui.views.settings.panels.accountmanager;
 import java.awt.Component;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
 
 import javax.swing.Icon;
 import javax.swing.JTable;
@@ -39,8 +37,6 @@ public class PremiumAccountTableModel extends ExtTableModel<Account> implements 
     private static final long      serialVersionUID       = 3120481189794897020L;
 
     private AccountManagerSettings accountManagerSettings = null;
-
-    private ScheduledFuture<?>     timer;
 
     private DelayedRunnable        delayedFill;
 
@@ -125,7 +121,6 @@ public class PremiumAccountTableModel extends ExtTableModel<Account> implements 
             @Override
             protected void setBooleanValue(boolean value, final Account object) {
                 object.setEnabled(value);
-                if (value) AccountChecker.getInstance().check(object, true);
             }
         });
         this.addColumn(new ActionColumn());
@@ -199,7 +194,6 @@ public class PremiumAccountTableModel extends ExtTableModel<Account> implements 
             @Override
             protected void setStringValue(String value, Account object) {
                 object.setUser(value);
-                AccountChecker.getInstance().check(object, true);
             }
 
             @Override
@@ -238,7 +232,6 @@ public class PremiumAccountTableModel extends ExtTableModel<Account> implements 
             @Override
             protected void setStringValue(String value, Account object) {
                 object.setPass(value);
-                AccountChecker.getInstance().check(object, true);
             }
         });
 
@@ -324,7 +317,6 @@ public class PremiumAccountTableModel extends ExtTableModel<Account> implements 
                     if (ai.isUnlimitedTraffic()) {
                         return 100;
                     } else {
-
                         return ai.getTrafficMax();
                     }
                 }
@@ -338,11 +330,9 @@ public class PremiumAccountTableModel extends ExtTableModel<Account> implements 
                 } else if (ai == null) {
                     return 0;
                 } else {
-
                     if (ai.isUnlimitedTraffic()) {
                         return 100;
                     } else {
-
                         return ai.getTrafficLeft();
                     }
                 }
@@ -353,22 +343,10 @@ public class PremiumAccountTableModel extends ExtTableModel<Account> implements 
 
     public void onCheckStarted() {
         checkRunning = true;
-        synchronized (this) {
-            if (timer != null) timer.cancel(false);
-            timer = IOEQ.TIMINGQUEUE.scheduleWithFixedDelay(new Runnable() {
-                public void run() {
-                    _update();
-                }
-
-            }, 250, 1000, TimeUnit.MILLISECONDS);
-        }
     }
 
     public void onCheckStopped() {
         checkRunning = false;
-        synchronized (this) {
-            timer.cancel(false);
-        }
         _update();
     }
 

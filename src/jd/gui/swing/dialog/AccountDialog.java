@@ -44,9 +44,7 @@ import jd.plugins.hoster.FileSonicCom;
 import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
 
-import org.appwork.storage.JSonStorage;
 import org.appwork.swing.components.searchcombo.SearchComboBox;
-import org.appwork.utils.logging.Log;
 import org.appwork.utils.swing.HelpNotifier;
 import org.appwork.utils.swing.HelpNotifierCallbackListener;
 import org.appwork.utils.swing.dialog.AbstractDialog;
@@ -75,7 +73,6 @@ public class AccountDialog extends AbstractDialog<Integer> {
                     ac.setHoster(dialog.getHoster().getPlugin().getHost());
                     AccountCheckJob job = AccountChecker.getInstance().check(ac, true);
                     job.waitChecked();
-                    Log.L.info(JSonStorage.toString(ac.getAccountInfo()));
                 }
 
                 public String getString() {
