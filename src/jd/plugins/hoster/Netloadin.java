@@ -28,12 +28,12 @@ import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -158,42 +158,52 @@ public class Netloadin extends PluginForHost {
                     account.setAccountInfo(ai);
                 }
             }
-            String res = br.getPage("http://api.netload.in/user_info.php?auth=BVm96BWDSoB4WkfbEhn42HgnjIe1ilMt&user_id=" + Encoding.urlEncode(account.getUser()) + "&user_password=" + Encoding.urlEncode(account.getPass()));
-            if (res == null || res.trim().length() == 0) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-            res = res.trim();
-            account.setValid(true);
-            if ("disallowd_agent".equalsIgnoreCase(res) || "unknown_auth".equalsIgnoreCase(res)) {
-                logger.severe("api reports: " + res);
-                ai.setStatus("api reports: " + res);
+            try {
+                String res = br.getPage("http://api.netload.in/user_info.php?auth=BVm96BWDSoB4WkfbEhn42HgnjIe1ilMt&user_id=" + Encoding.urlEncode(account.getUser()) + "&user_password=" + Encoding.urlEncode(account.getPass()));
+                if (res == null || res.trim().length() == 0) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                res = res.trim();
+                account.setValid(true);
+                if ("disallowd_agent".equalsIgnoreCase(res) || "unknown_auth".equalsIgnoreCase(res)) {
+                    logger.severe("api reports: " + res);
+                    ai.setStatus("api reports: " + res);
 
-                if (showDialog) UserIO.getInstance().requestMessageDialog(0, "Netload.in Premium Error", "Unexpected error occured during login: '" + res + "'\r\nPlease contact JDownloader Support.");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            } else if ("0".equalsIgnoreCase(res)) {
-                /* free user */
-                ai.setStatus("No premium user");
-                if (showDialog) UserIO.getInstance().requestMessageDialog(0, "Netload.in Premium Error", "Account '" + account.getUser() + "' is a free account and this not supported.\r\nPlease buy a Netload.in Premium account!");
+                    if (showDialog) UserIO.getInstance().requestMessageDialog(0, "Netload.in Premium Error", "Unexpected error occured during login: '" + res + "'\r\nPlease contact JDownloader Support.");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                } else if ("0".equalsIgnoreCase(res)) {
+                    /* free user */
+                    ai.setStatus("No premium user");
+                    if (showDialog) UserIO.getInstance().requestMessageDialog(0, "Netload.in Premium Error", "Account '" + account.getUser() + "' is a free account and this not supported.\r\nPlease buy a Netload.in Premium account!");
 
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-            } else if ("unknown_user".equalsIgnoreCase(res)) {
-                ai.setStatus("Unknown user");
-                if (showDialog) UserIO.getInstance().requestMessageDialog(0, "Netload.in Premium Error", "The username '" + account.getUser() + "' is unknown.\r\nPlease check your Username!");
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                } else if ("unknown_user".equalsIgnoreCase(res)) {
+                    ai.setStatus("Unknown user");
+                    if (showDialog) UserIO.getInstance().requestMessageDialog(0, "Netload.in Premium Error", "The username '" + account.getUser() + "' is unknown.\r\nPlease check your Username!");
 
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-            } else if ("unknown_password".equalsIgnoreCase(res) || "wrong_password".equalsIgnoreCase(res)) {
-                ai.setStatus("Wrong password");
-                if (showDialog) UserIO.getInstance().requestMessageDialog(0, "Netload.in Premium Error", "The username '" + account.getUser() + "' is ok, but the given password is wrong.\r\nPlease check your Password!");
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                } else if ("unknown_password".equalsIgnoreCase(res) || "wrong_password".equalsIgnoreCase(res)) {
+                    ai.setStatus("Wrong password");
+                    if (showDialog) UserIO.getInstance().requestMessageDialog(0, "Netload.in Premium Error", "The username '" + account.getUser() + "' is ok, but the given password is wrong.\r\nPlease check your Password!");
 
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-            } else if ("-1".equalsIgnoreCase(res)) {
-                /* lifetime */
-                ai.setStatus("Lifetime premium");
-                ai.setValidUntil(-1);
-                return;
-            } else {
-                /* normal premium */
-                ai.setStatus("Premium");
-                ai.setValidUntil(TimeFormatter.getMilliSeconds(res, "yyyy-MM-dd HH:mm", null));
-                if (ai.isExpired()) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                } else if ("-1".equalsIgnoreCase(res)) {
+                    /* lifetime */
+                    ai.setStatus("Lifetime premium");
+                    ai.setValidUntil(-1);
+                    return;
+                } else {
+                    /* normal premium */
+                    ai.setStatus("Premium");
+                    ai.setValidUntil(TimeFormatter.getMilliSeconds(res, "yyyy-MM-dd HH:mm", null));
+                    if (ai.isExpired()) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+            } catch (PluginException e) {
+                try {
+                    /* verbose debug */
+                    logger.info(br.toString());
+                    logger.info(br.getHttpConnection().toString());
+                } catch (Throwable e2) {
+                }
+                throw e;
             }
         }
     }
