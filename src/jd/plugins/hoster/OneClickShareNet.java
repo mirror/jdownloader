@@ -34,32 +34,38 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "4fastfile.com" }, urls = { "http://(www\\.)?4fastfile\\.com(/[a-z]+)?/abv\\-fs/\\d+.+" }, flags = { 2 })
-public class FourFastFileCom extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "1clickshare.net" }, urls = { "http://(www\\.)?1clickshare\\.net(/[a-z]+)?/abv\\-fs/\\d+.+" }, flags = { 2 })
+public class OneClickShareNet extends PluginForHost {
 
-    public FourFastFileCom(PluginWrapper wrapper) {
+    public OneClickShareNet(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("http://4fastfile.com/premium");
+        this.enablePremium("http://1clickshare.net/premium");
     }
 
     public void correctDownloadLink(DownloadLink link) {
-        String languageText = new Regex(link.getDownloadURL(), "4fastfile\\.com/([a-z-]+/)").getMatch(0);
+        String languageText = new Regex(link.getDownloadURL(), "1clickshare\\.net/([a-z-]+/)").getMatch(0);
         if (languageText != null && !languageText.equals("abv-fs/")) link.setUrlDownload(link.getDownloadURL().replace(languageText, ""));
     }
 
     @Override
     public String getAGBLink() {
-        return "http://4fastfile.com/terms";
+        return "http://1clickshare.net/terms";
     }
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
+        br.setCookie("http://1clickshare.net/", "ip2locale_lc", "en");
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("This file is either removed due to copyright claim or deleted by his owner\\.")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<title>4FastFile\\.com \\- Download (.*?)</title>").getMatch(0);
-        if (filename == null) filename = br.getRegex("<td class=\"file\\-name\">(.*?)</td>").getMatch(0);
-        String filesize = br.getRegex("<td class=\"file-size\">(.*?)</td>").getMatch(0);
+        if (br.containsHTML("(This file is either removed due to copyright claim or deleted by his owner\\.|<title>file not found \\| </title>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("<title>Download (.*?) \\| </title>").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("<h1 class=\"title\">Download (.*?)</h1>").getMatch(0);
+            if (filename == null) {
+                filename = br.getRegex("<td colspan=\"2\"><span class=\"file\\-name\">(.*?)</span></td>").getMatch(0);
+            }
+        }
+        String filesize = br.getRegex("<strong>File size:</strong>(.*?)</span></td>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setName(filename.trim());
         link.setDownloadSize(SizeFormatter.getSize(filesize));
@@ -69,6 +75,8 @@ public class FourFastFileCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        String reconnectWaittime = br.getRegex("id=\"abv\\-fs\\-wait\\-min\">(\\d+)<").getMatch(0);
+        if (reconnectWaittime != null) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, (Integer.parseInt(reconnectWaittime) + 1) * 60 * 1001l); }
         Form dlform = br.getFormbyProperty("id", "abv-fs-download-form");
         if (dlform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String waitfbid = dlform.getRegex("form_build_id\" id=\"(.*?)\"").getMatch(0);
@@ -77,6 +85,8 @@ public class FourFastFileCom extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlform, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
+            // This should never happen
+            if (br.containsHTML("You have another download in progress\\. You are not allowed to have parallel downloads")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Too many simultan downloads", 5 * 60 * 1000l);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
@@ -84,15 +94,15 @@ public class FourFastFileCom extends PluginForHost {
 
     private void login(Account account) throws Exception {
         this.setBrowserExclusive();
-        br.setDebug(true);
+        br.setCookie("http://1clickshare.net/", "ip2locale_lc", "en");
         br.setFollowRedirects(true);
-        br.getPage("http://4fastfile.com/user/login");
+        br.getPage("http://1clickshare.net/user/login");
         Form loginform = br.getFormbyProperty("id", "user-login");
         if (loginform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         loginform.put("name", Encoding.urlEncode(account.getUser()));
         loginform.put("pass", Encoding.urlEncode(account.getPass()));
         br.submitForm(loginform);
-        if (!br.containsHTML("<dd>Your Premium Membership will expire on")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        if (!br.containsHTML("<dt>Premium</dt>")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
 
     @Override
@@ -105,7 +115,7 @@ public class FourFastFileCom extends PluginForHost {
             return ai;
         }
         account.setValid(true);
-        String expire = br.getRegex("<dd>Your Premium Membership will expire on (\\d+/\\d+/\\d+ \\- \\d+:\\d+)</dd>").getMatch(0);
+        String expire = br.getRegex(">This role will expire on (\\d+/\\d+/\\d+ \\- \\d+:\\d+)</dd>").getMatch(0);
         if (expire == null) {
             ai.setExpired(true);
             account.setValid(false);
@@ -144,7 +154,7 @@ public class FourFastFileCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 1;
+        return -1;
     }
 
     @Override
