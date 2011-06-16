@@ -26,11 +26,11 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -56,7 +56,7 @@ public class HitFileNet extends PluginForHost {
     private static final String WAITTIMEREGEX2 = "id=\\'timeout\\'>(\\d+)</span>";
     public static final Object  LOCK           = new Object();
     private static final String MAINPAGE       = "http://hitfile.net/";
-    private static final String ENPAGE         = "http://hitfile.net/en";
+    private static final String ENPAGE         = "http://hitfile.net/lang/en";
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException, InterruptedException {
@@ -160,9 +160,11 @@ public class HitFileNet extends PluginForHost {
     private void login(Account account) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(ENPAGE);
+        br.getPage(MAINPAGE);
+        br.setCookie(MAINPAGE, "user_lang", "en");
         br.postPage("http://hitfile.net/user/login", "user%5Blogin%5D=" + Encoding.urlEncode(account.getUser()) + "&user%5Bpass%5D=" + Encoding.urlEncode(account.getPass()) + "&user%5Bmemory%5D=on&user%5Bsubmit%5D=");
-        if (br.getCookie(MAINPAGE, "kohanasession") == null || br.getCookie(MAINPAGE, "sid") == null || !br.containsHTML("Account: <b>premium</b>")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        if ((br.getCookie(MAINPAGE, "kohanasession") == null && br.getCookie(MAINPAGE, "sid") == null)) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        if (!br.containsHTML("Account: <b>premium</b>")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
 
     @Override

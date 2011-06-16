@@ -33,6 +33,7 @@ import javax.swing.JTextField;
 import jd.HostPluginWrapper;
 import jd.PluginWrapper;
 import jd.controlling.AccountChecker;
+import jd.controlling.AccountChecker.AccountCheckJob;
 import jd.controlling.AccountController;
 import jd.controlling.IOEQ;
 import jd.gui.UserIO;
@@ -72,7 +73,8 @@ public class AccountDialog extends AbstractDialog<Integer> {
 
                 public void run() throws Exception {
                     ac.setHoster(dialog.getHoster().getPlugin().getHost());
-                    AccountChecker.getInstance().check(ac, true);
+                    AccountCheckJob job = AccountChecker.getInstance().check(ac, true);
+                    job.waitChecked();
                     Log.L.info(JSonStorage.toString(ac.getAccountInfo()));
                 }
 

@@ -92,7 +92,6 @@ public class PackageCustomizerExtension extends AbstractExtension<PackageCustomi
             link.setPriority(setting.getDLPriority());
 
             fp.setCustomIcon(getIcon(16), String.format(customIconText, setting.getRegex()));
-            link.setCustomIcon(getIcon(16), String.format(customIconText, setting.getRegex()));
 
             setting.incMatchCount();
         } else {

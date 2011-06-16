@@ -21,6 +21,8 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
+import jd.http.RandomUserAgent;
+import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -28,6 +30,7 @@ import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hoerbuch.in" }, urls = { "http://[\\w\\.]*?hoerbuch\\.in/protection/folder_\\d+\\.html" }, flags = { 0 })
 public class RsHrbchn extends PluginForDecrypt {
+    private final String ua = RandomUserAgent.generate();
 
     public RsHrbchn(PluginWrapper wrapper) {
         super(wrapper);
@@ -37,8 +40,13 @@ public class RsHrbchn extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         ArrayList<String> passwords = new ArrayList<String>();
         passwords.add("www.hoerbuch.in");
+        br.getHeaders().put("User-Agent", ua);
         String parameter = param.toString();
+        br.getPage("http://hoerbuch.in/wp/");
         br.getPage(parameter);
+        Form form = br.getForm(1);
+        if (form == null) return null;
+        br.submitForm(form);
         String links[] = br.getRegex("on.png.*?href=\"(http.*?)\"").getColumn(0);
         for (String link : links) {
             if (link.contains("in/protection")) {

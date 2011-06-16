@@ -149,11 +149,6 @@ public class StatusColumn extends JDTableColumn {
                     break;
                 }
             }
-            ImageIcon ico = dLink.getCustomIcon();
-            if (counter <= StatusLabel.ICONCOUNT && dLink.hasCustomIcon()) {
-                statuspanel.setIcon(counter, ico, null, dLink.getCustomIconText());
-                counter++;
-            }
             statuspanel.setText(dLink.getLinkStatus().getStatusString(), null);
             statuspanel.clearIcons(counter);
         }

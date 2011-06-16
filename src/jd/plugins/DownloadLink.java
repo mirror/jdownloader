@@ -168,17 +168,6 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
 
     private long                               finishedDate             = -1l;
 
-    /**
-     * can be set via {@link #setCustomIcon(ImageIcon, String)} to set a custom
-     * icon to be shown
-     */
-    private ImageIcon                          customIcon               = null;
-    /**
-     * can be set via {@link #setCustomIcon(ImageIcon, String)} to set a custom
-     * tooltip to be shown
-     */
-    private String                             customIconText           = null;
-
     private transient int                      listOrderID              = 0;
 
     /**
@@ -1077,45 +1066,6 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
             }
         }
         return hosters.keySet();
-    }
-
-    /**
-     * @return the customIcon
-     * @see #customIcon
-     * @see #setCustomIcon(ImageIcon, String)
-     */
-    public ImageIcon getCustomIcon() {
-        return customIcon;
-    }
-
-    /**
-     * @return the customIconText
-     * @see #customIconText
-     * @see #setCustomIcon(ImageIcon, String)
-     */
-    public String getCustomIconText() {
-        return customIconText;
-    }
-
-    /**
-     * @param customIcon
-     *            the customIcon to set
-     * @param customIconText
-     *            the customIconText to set
-     * @see #customIcon
-     * @see #getCustomIcon()
-     */
-    public void setCustomIcon(ImageIcon customIcon, String customIconText) {
-        this.customIcon = customIcon;
-        this.customIconText = customIconText;
-    }
-
-    /**
-     * @return is a custom icon set?
-     * @see #setCustomIcon(ImageIcon, String)
-     */
-    public boolean hasCustomIcon() {
-        return this.customIcon != null && this.customIconText != null;
     }
 
 }

@@ -158,7 +158,7 @@ public class OneFichierCom extends PluginForHost {
             ai.setValidUntil(TimeFormatter.getMilliSeconds(premUntil, "dd/MM/yyyy", null) + (24 * 60 * 60 * 1000l));
             ai.setUnlimitedTraffic();
             try {
-                maxPrem.set(-1);
+                maxPrem.set(20);
                 account.setMaxSimultanDownloads(-1);
             } catch (final Throwable e) {
             }

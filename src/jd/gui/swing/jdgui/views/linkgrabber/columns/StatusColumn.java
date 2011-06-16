@@ -164,10 +164,6 @@ public class StatusColumn extends JDTableColumn {
                     break;
                 }
             }
-            if (dLink.hasCustomIcon()) {
-                statuspanel.setIcon(counter, dLink.getCustomIcon(), null, dLink.getCustomIconText());
-                counter++;
-            }
             statuspanel.clearIcons(counter);
         }
         return statuspanel;
