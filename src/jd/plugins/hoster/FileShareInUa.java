@@ -37,7 +37,7 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fileshare.in.ua" }, urls = { "http://[\\w\\.]*?fileshare\\.in\\.ua/[0-9]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fileshare.in.ua" }, urls = { "http://(www\\.)?fileshare\\.in\\.ua/[0-9]+" }, flags = { 2 })
 public class FileShareInUa extends PluginForHost {
 
     public FileShareInUa(PluginWrapper wrapper) {
@@ -160,34 +160,40 @@ public class FileShareInUa extends PluginForHost {
             // with random letters (about 10) but only 4 are needed. With this
             // number and an other default number the plugin knows which part of
             // the captcha it needs
-            String captchacut = br.getRegex("<style>.*?margin\\-[a-z]+:\\-(\\d+)px;").getMatch(0);
+            String captchacut = br.getRegex("position: absolute;[\t\n\r ]+left:\\-(\\d+)px;").getMatch(0);
             if (captchapart == null || captchaForm == null || captchacut == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             String captchaurl = "http://fileshare.in.ua" + captchapart;
             File file = this.getLocalCaptchaFile();
             Browser.download(file, br.cloneBrowser().openGetConnection(captchaurl));
             String code = FsIuA.getCode(-Integer.parseInt(captchacut), 100, file);
             captchaForm.put("capture", code);
+            br.setFollowRedirects(true);
             br.submitForm(captchaForm);
+            br.setFollowRedirects(false);
             if (br.containsHTML("Цифры введены неверно")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-            allForms = br.getForms();
-            if (allForms == null || allForms.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            Form fastFreeform = null;
-            for (Form singleForm : allForms) {
-                if (singleForm.containsHTML("(dl_fast_btn|hitit)")) {
-                    fastFreeform = singleForm;
-                    break;
-                }
+            if (!br.containsHTML("\\?gogogo")) {
+                logger.warning("Error after captcha...");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            if (fastFreeform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            br.submitForm(fastFreeform);
+            br.getPage(downloadLink.getDownloadURL() + "?gogogo");
+            int wait = 60;
+            String waittime = br.getRegex("var sec=(\\d+);").getMatch(0);
+            if (waittime == null) waittime = br.getRegex("id=\"sec\">(\\d+)</span>").getMatch(0);
+            if (waittime != null) wait = Integer.parseInt(waittime);
+            sleep(wait * 1001l, downloadLink);
+            Form lastForm = br.getForm(0);
+            if (lastForm == null) {
+                logger.warning("Couldn't find last form...");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            if (lastForm.getAction() == null) lastForm.setAction(downloadLink.getDownloadURL() + "?gogogo");
+            br.submitForm(lastForm);
         } else {
             continueLink = "http://fileshare.in.ua" + continueLink;
             br.getPage(continueLink);
         }
-        String dlframe = downloadLink.getDownloadURL() + "?fr";
-        br.getPage(dlframe);
         String dllink0 = br.getRegex("href=\"(/get/.*?)\"").getMatch(0);
-        if (dllink0 == null) dllink0 = br.getRegex("<span id=\"time_yes\"><a  href=\"(/.*?)\"").getMatch(0);
+        if (dllink0 == null) dllink0 = br.getRegex("popunder\\(\\'http://goo\\.gl/[A-Za-z0-9]+\\'\\);\" href=\"(/.*?)\"").getMatch(0);
         if (dllink0 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.getPage("http://fileshare.in.ua" + dllink0);
         String dllink = br.getRedirectLocation();

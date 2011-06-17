@@ -43,7 +43,7 @@ public class AvxHmeW extends PluginForDecrypt {
 
         // 1.st try: <a href="LINK" target="_blank" rel="nofollow"> but ignore
         // images/self site refs + imdb refs
-        String[][] links = br.getRegex("<a href=\"(http://(?!(www[.]imdb[.]com|avaxhome[.]ws))[\\S&&[^<]]+?)\" target=\"_blank\" rel=\"nofollow\">(?!<img)").getMatches();
+        String[][] links = br.getRegex("<a href=\"(http(s)?://(?!(www[.]imdb[.]com|avaxhome[.]ws))[\\S&&[^<]]+?)\" target=\"_blank\" rel=\"nofollow\">(?!<img)").getMatches();
         if (null != links && 0 < links.length) {
             for (String[] link : links) {
                 if (null != link && 0 < link.length && null != link[0] && 0 < link[0].length()) {
@@ -54,7 +54,7 @@ public class AvxHmeW extends PluginForDecrypt {
 
         // try also LINK</br>, but ignore self site refs + imdb refs
         links = null;
-        links = br.getRegex("(http://(?!(www[.]imdb[.]com|avaxhome[.]ws))[\\S&&[^<]]+?)<br/>").getMatches();
+        links = br.getRegex("(http(s)?://(?!(www[.]imdb[.]com|avaxhome[.]ws))[\\S&&[^<]]+?)<br/>").getMatches();
         if (null != links && 0 < links.length) {
             for (String[] link : links) {
                 if (null != link && 0 < link.length && null != link[0] && 0 < link[0].length()) {
