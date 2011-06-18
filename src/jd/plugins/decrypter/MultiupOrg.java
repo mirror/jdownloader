@@ -20,6 +20,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
@@ -42,12 +43,41 @@ public class MultiupOrg extends PluginForDecrypt {
         if (br.containsHTML("(Sorry but your file does not exist or no longer exists|The file does not exist any more|It was deleted either further to a complaint or further to a not access for several weeks|<h2>Not Found</h2>)")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
         Thread.sleep(1000l);
         br.postPage(br.getURL(), "_method=POST&data%5BFichier%5D%5Bsecurity_code%5D=");
-        String[] links = br.getRegex("<a target=\"_blank\" href=\"(.*?)\"").getColumn(0);
+        String[] links = br.getRegex("p\\}\\((.*?)\\.split\\('\\|'\\)").getColumn(0);
         if (links == null || links.length == 0) return null;
-        for (String dl : links)
-            if (!dl.contains("multiup.org/")) decryptedLinks.add(createDownloadlink(dl));
-
+        int failCounter = 0;
+        for (String aingleLink : links) {
+            String finallink = decodeLink(aingleLink);
+            if (finallink == null) {
+                failCounter++;
+                continue;
+            }
+            if (!finallink.contains("multiup.org/")) decryptedLinks.add(createDownloadlink(finallink));
+        }
+        if (failCounter == links.length) return null;
         return decryptedLinks;
     }
 
+    private String decodeLink(String s) {
+        String decoded = null;
+
+        try {
+            Regex params = new Regex(s, "\\'(.*?[^\\\\])\\',(\\d+),(\\d+),\\'(.*?)\\'");
+
+            String p = params.getMatch(0).replaceAll("\\\\", "");
+            int a = Integer.parseInt(params.getMatch(1));
+            int c = Integer.parseInt(params.getMatch(2));
+            String[] k = params.getMatch(3).split("\\|");
+
+            while (c != 0) {
+                c--;
+                if (k[c].length() != 0) p = p.replaceAll("\\b" + Integer.toString(c, a) + "\\b", k[c]);
+            }
+
+            decoded = p;
+        } catch (Exception e) {
+            return null;
+        }
+        return new Regex(decoded, "<a target=\"_\\d+\" href=\"(.*?)\"").getMatch(0);
+    }
 }

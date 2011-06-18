@@ -225,7 +225,7 @@ public class LetitBitNet extends PluginForHost {
                 break;
             }
         }
-        if (down == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (down == null || down.getAction() == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String captchaId = down.getVarsMap().get("uid");
         String captchaurl = null;
         URLConnectionAdapter con = null;
@@ -243,22 +243,15 @@ public class LetitBitNet extends PluginForHost {
         }
         down.setMethod(Form.MethodType.POST);
         if (captchaId != null) down.put("uid2", captchaId);
-        down.setAction("http://letitbit.net/download4.php");
         br.submitForm(down);
-        down = br.getFormbyProperty("id", "dvifree");
-        if (down == null) {
-            logger.info("Found did not found dvifree!");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        down.setAction("http://letitbit.net/download3.php");
-        String tmp1 = br.submitForm(down);
         url = br.getRegex("<frame src=\"http://[a-z0-9A-Z\\.]*?letitbit.net/tmpl/tmpl_frame_top.php\\?link=(.*?)\"").getMatch(0);
         if (url == null || url.equals("")) {
-            logger.info("Getting nextpage + ?link=");
+            // Example: http://s8.letitbit.net/ajax/download3.php
+            String damnAction = down.getAction().replace("/download", "/ajax/download");
             // Ticket Time
             int waitThat = 60;
             String time = br.getRegex("seconds = (\\d+);").getMatch(0);
-            if (time == null) time = br.getRegex("Wait for Your turn: <span id=\"seconds\" style=\"font-size:18px\">(\\d+)</span> seconds").getMatch(0);
+            if (time == null) time = br.getRegex("Wait for Your turn: <span id=\"seconds\" style=\"font\\-size:18px\">(\\d+)</span> seconds").getMatch(0);
             if (time != null) {
                 logger.info("Waittime found, waittime is " + time + " seconds.");
                 waitThat = Integer.parseInt(time);
@@ -269,7 +262,7 @@ public class LetitBitNet extends PluginForHost {
              * this causes issues in 09580 stable, no workaround known, please
              * update to latest jd version
              */
-            br.postPage("http://letitbit.net/ajax/download3.php", "");
+            br.postPage(damnAction, "");
             /* letitbit and vipfile share same hosting server ;) */
             /* because there can be another link to a downlodmanager first */
             url = br.toString();
@@ -277,7 +270,6 @@ public class LetitBitNet extends PluginForHost {
         if (url == null || url.equals("") || !url.startsWith("http://") || url.length() > 1000) {
             logger.warning("url couldn't be found!");
             logger.severe(br.toString());
-            logger.severe(tmp1);
             debugSwitch = true;
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
