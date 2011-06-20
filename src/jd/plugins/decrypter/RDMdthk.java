@@ -46,12 +46,13 @@ public class RDMdthk extends PluginForDecrypt {
         final FilePackage filePackage = FilePackage.getInstance();
         filePackage.setName(Encoding.htmlDecode(title));
         for (final String[] stream : streams) {
-            if (new Regex(stream[1], "\\d").matches()) {
                 // get quality id
                 final int q = Integer.valueOf(stream[1]);
+                // get streamtype id
+                final int t = Integer.valueOf(stream[0]);
                 // create link
                 // replace http with hrtmp to differ hoster links from
-                final DownloadLink link = createDownloadlink(param.toString().replace("http://", "hrtmp://") + "&q=" + q);
+                final DownloadLink link = createDownloadlink(param.toString().replace("http://", "hrtmp://") + "&q=" + q + "&t=" + t);
                 filePackage.add(link);
                 // parse file extension
                 String ext = new Regex(stream[stream.length - 1], "(\\.\\w{3})$").getMatch(0);
@@ -65,11 +66,7 @@ public class RDMdthk extends PluginForDecrypt {
                 } else if (q == 3) {
                     link.setFinalFileName(title.trim() + "(hd_quality)" + ext);
                 }
-
                 decryptedLinks.add(link);
-            } else {
-                return null;
-            }
         }
         return decryptedLinks;
     }

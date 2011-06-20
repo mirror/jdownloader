@@ -18,9 +18,10 @@ package jd.plugins.hoster;
 
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
-import jd.network.rtmp.url.RtmpUrlConnection;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -28,10 +29,11 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+import org.appwork.utils.Regex;
 import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.map.ObjectMapper;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "prosieben.de" }, urls = { "http://(www.\\)?prosieben\\.de/tv/[\\w-]+/video/[\\w-]+)" }, flags = { PluginWrapper.DEBUG_ONLY })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "prosieben.de" }, urls = { "http://(www\\.)?prosieben\\.de/tv/[\\w-]+/video(s)?/(clip/[\\w-\\.]+/?|[\\w-]+)" }, flags = { PluginWrapper.DEBUG_ONLY })
 public class ProSevenDe extends PluginForHost {
 
     private HashMap<String, String> fileDesc;
@@ -39,6 +41,16 @@ public class ProSevenDe extends PluginForHost {
 
     public ProSevenDe(final PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    public String decodeUnicode(final String s) {
+        final Pattern p = Pattern.compile("\\\\u([0-9a-fA-F]{4})");
+        String res = s;
+        final Matcher m = p.matcher(res);
+        while (m.find()) {
+            res = res.replaceAll("\\" + m.group(0), Character.toString((char) Integer.parseInt(m.group(1), 16)));
+        }
+        return res;
     }
 
     @Override
@@ -58,11 +70,12 @@ public class ProSevenDe extends PluginForHost {
 
         if (dllink.startsWith("rtmp")) {
             dl = new RTMPDownload(this, downloadLink, dllink);
-            final RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
+            final jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
 
             rtmp.setSwfVfy("http://www.kabeleins.de/imperia/moveplayer/HybridPlayer.swf");
             rtmp.setUrl(dllink);
             rtmp.setPort(1935);
+            rtmp.setProtocol(0);
             rtmp.setResume(true);
 
             ((RTMPDownload) dl).startDownload();
@@ -100,13 +113,13 @@ public class ProSevenDe extends PluginForHost {
         setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        final String jsonString = br.getRegex("json:\\s+\"(.*?)\"\n").getMatch(0).replaceAll("\\\\", "");
+        String jsonString = br.getRegex("json:\\s+\"(.*?)\"\n").getMatch(0);
+        jsonString = decodeUnicode(jsonString).replaceAll("\\\\", "");
         jsonParser(jsonString, "downloadFilename");
         if (fileDesc == null || fileDesc.size() < 4) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         clipUrl = fileDesc.get("downloadFilename");
         if (fileDesc.get("show_artist") == null && fileDesc.get("title") == null || clipUrl == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         final String filename = fileDesc.get("show_artist") + "_" + fileDesc.get("title");
-        downloadLink.setName(filename.trim() + ".flv");
         if (!clipUrl.startsWith("rtmp")) {
             br.getPage("http://www.prosieben.de/static/videoplayer/config/playerConfig.json");
             final String host = br.getRegex(fileDesc.get("geoblocking") + "\" : \"(.*?)\"").getMatch(0);
@@ -116,6 +129,9 @@ public class ProSevenDe extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
         }
+        String ext = new Regex(clipUrl, "(\\.\\w{3})$").getMatch(0);
+        ext = ext == null ? ".flv" : ext;
+        downloadLink.setName(filename.trim() + ext);
         return AvailableStatus.TRUE;
     }
 

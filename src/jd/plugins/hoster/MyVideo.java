@@ -16,73 +16,170 @@
 
 package jd.plugins.hoster;
 
+import java.util.HashMap;
+import java.util.Map.Entry;
+
 import jd.PluginWrapper;
+import jd.crypt.RC4;
+import jd.gui.UserIO;
+import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.decrypter.TbCm;
-import jd.plugins.decrypter.TbCm.DestinationFormat;
-import jd.utils.JDUtilities;
+import jd.utils.JDHexUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "myvideo.de" }, urls = { "http://[\\w\\.]*?myvideo.*?/.*?/\\d+\\.flv" }, flags = { 0 })
+import org.appwork.utils.Hash;
+import org.appwork.utils.Regex;
+
+// Altes Decrypterplugin bis Revision 14394 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "myvideo.de" }, urls = { "http://(www\\.)?myvideo\\.de/watch/\\d+/\\w+" }, flags = { PluginWrapper.DEBUG_ONLY })
 public class MyVideo extends PluginForHost {
-    static private final String AGB = "http://www.myvideo.de/news.php?rubrik=jjghf&p=hm8";
+
+    private String       CLIPURL  = null;
+    private String       CLIPPATH = null;
+    private String       SWFURL   = null;
+    private final String KEY      = "Yzg0MDdhMDhiM2M3MWVhNDE4ZWM5ZGM2NjJmMmE1NmU0MGNiZDZkNWExMTRhYTUwZmIxZTEwNzllMTdmMmI4Mw==";
 
     public MyVideo(final PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    // @Override
-    public String getAGBLink() {
-        return MyVideo.AGB;
-    }
-
-    // @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        /* TODO: Wert nachprüfen */
-        return 1;
-    }
-
-    // @Override
-    /*
-     * public String getVersion() { return getVersion("$Revision$"); }
-     */
-
-    // @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
-        this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, downloadLink.getDownloadURL());
-        if (this.dl.startDownload()) {
-            if (downloadLink.getProperty("convertto") != null) {
-                final DestinationFormat convertto = DestinationFormat.valueOf(downloadLink.getProperty("convertto").toString());
-                final DestinationFormat InType = DestinationFormat.VIDEOFLV;
-                /* to load the TbCm plugin */
-                JDUtilities.getPluginForDecrypt("youtube.com");
-                if (!TbCm.ConvertFile(downloadLink, InType, convertto)) {
-                    logger.severe("Video-Convert failed!");
+    private void ageCheck(final DownloadLink downloadLink) throws Exception {
+        final String age = br.getRegex("Dieser Film ist für Zuschauer unter (\\d+) Jahren nicht geeignet").getMatch(0);
+        if (age != null) {
+            final String ageCheck = br.getRegex("class=\'btnMiddle\'><a href=\'(/iframe.*?)\'").getMatch(0);
+            int ret = -100;
+            if (downloadLink.getStringProperty("FSK", null) == null) {
+                ret = UserIO.getInstance().requestConfirmDialog(0, "Altersfreigabe erforderlich!", "Durch einen Klick auf den Button BESTÄTIGEN erklärst Du, dass du mind. " + age + " Jahre alt bist und den Film sehen möchtest.\r\n", null, "BESTÄTIGEN", "Abbrechen");
+            } else {
+                ret = UserIO.RETURN_OK;
+            }
+            if (ret != -100) {
+                if (UserIO.isOK(ret)) {
+                    br.getPage("http://www.myvideo.de" + Encoding.htmlDecode(ageCheck));
+                    downloadLink.setProperty("FSK", true);
+                } else {
+                    downloadLink.setProperty("FSK", null);
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
+            } else {
+                downloadLink.setProperty("FSK", null);
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
         }
     }
 
-    // @Override
+    private String decrypt(final String cipher, final String id) {
+        final String key = Hash.getMD5(Encoding.Base64Decode(KEY) + Hash.getMD5(id));
+        final byte[] ciphertext = JDHexUtils.getByteArray(cipher);
+        final RC4 rc4 = new RC4();
+        final byte[] plain = rc4.decrypt(key.getBytes(), ciphertext);
+        return Encoding.htmlDecode(new String(plain));
+    }
+
+    @Override
+    public String getAGBLink() {
+        return "http://www.myvideo.de/AGB";
+    }
+
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
+    }
+
+    @Override
+    public void handleFree(final DownloadLink downloadLink) throws Exception {
+        requestFileInformation(downloadLink);
+        if (CLIPURL.startsWith("rtmp")) {
+            dl = new RTMPDownload(this, downloadLink, CLIPURL);
+            final jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
+            final String app = CLIPURL.replaceAll("\\w+://[\\w\\.]+/", "");
+            if (!CLIPURL.contains("token")) {
+                rtmp.setProtocol(0);
+            }
+
+            rtmp.setPlayPath(CLIPPATH);
+            rtmp.setApp(app);
+            rtmp.setUrl(CLIPURL);
+            rtmp.setSwfVfy(SWFURL);
+            rtmp.setPageUrl(downloadLink.getDownloadURL());
+            rtmp.setResume(true);
+
+            ((RTMPDownload) dl).startDownload();
+
+        } else {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+    }
+
+    @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
-        /*
-         * warum sollte ein video das der decrypter sagte es sei online, offline
-         * sein ;)
-         */
+        setBrowserExclusive();
+        br.setFollowRedirects(true);
+        br.getPage(downloadLink.getDownloadURL());
+
+        ageCheck(downloadLink);
+
+        String filename = Encoding.htmlDecode(br.getRegex("name=\'title\' content=\'(.*?)-? (Film|Musik|TV Serie)").getMatch(0));
+        // get encUrl
+        final HashMap<String, String> p = new HashMap<String, String>();
+        final String[][] encUrl = br.getRegex("p\\.addVariable\\('(.*?)',\\s?'(.*?)'\\)").getMatches();
+        for (final String[] tmp : encUrl) {
+            if (tmp.length != 2) {
+                continue;
+            }
+            p.put(tmp[0], tmp[1]);
+        }
+        if (p.isEmpty() || !p.containsKey("_encxml") || !p.containsKey("ID")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        String bla = Encoding.htmlDecode(p.get("_encxml")) + "?";
+        p.remove("_encxml");
+        for (final Entry<String, String> next : p.entrySet()) {
+            if (!bla.endsWith("?")) {
+                bla = bla + "&";
+            }
+            bla = bla + next.getKey() + "=" + next.getValue();
+        }
+        SWFURL = br.getRegex("SWFObject\\(\'(.*?)\',").getMatch(0);
+        SWFURL = SWFURL == null ? "http://is2.myvideo.de/de/player/mingR10i/ming.swf" : SWFURL;
+        br.getPage(bla);
+        final String input = br.getRegex("_encxml=(\\w+)").getMatch(0);
+        if (input == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+
+        final String result = decrypt(input, p.get("ID"));
+
+        CLIPURL = new Regex(result, "connectionurl=\'(.*?)\'").getMatch(0);
+        CLIPPATH = new Regex(result, "source=\'(.*?)\'").getMatch(0);
+        if (CLIPURL == null || CLIPPATH == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        String ext = new Regex(CLIPPATH, "(\\.\\w{3})$").getMatch(0);
+        if (!CLIPPATH.matches("(\\w+):(\\w+)/(\\w+)/(\\d+)") && ext != null) {
+            CLIPPATH = CLIPPATH.replace(ext, "");
+            if (ext.startsWith(".")) {
+                CLIPPATH = ext.replace(".", "") + ":" + CLIPPATH;
+            } else {
+                CLIPPATH = ext + ":" + CLIPPATH;
+            }
+        }
+        ext = ext == null ? ".mp4" : ext;
+        if (filename == null) {
+            filename = new Regex(result, "description=\'(.*?):").getMatch(0);
+        }
+        filename = filename.trim() + ext;
+        downloadLink.setFinalFileName(filename);
         return AvailableStatus.TRUE;
     }
 
-    // @Override
+    @Override
     public void reset() {
     }
 
-    // @Override
+    @Override
     public void resetDownloadlink(final DownloadLink link) {
     }
 
-    // @Override
+    @Override
     public void resetPluginGlobals() {
     }
 

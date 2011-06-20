@@ -28,6 +28,7 @@ public class RtmpUrlConnection extends URLConnection {
     private final String              KEY_CONN      = "C"; // conn
     private final String              KEY_RTMP      = "r"; // Url
     private final String              KEY_PORT      = "c"; // Port
+    private final String              KEY_PROTOCOL  = "l"; // protocol
 
     // Session Parameters
     private final String              KEY_PLAYPATH  = "y"; // playpath
@@ -304,6 +305,18 @@ public class RtmpUrlConnection extends URLConnection {
      */
     public void setPort(final int value) {
         parameterMap.put(KEY_PORT, String.valueOf(value));
+    }
+
+    /**
+     * Overrides the protocol in the rtmp url.
+     * 
+     * @param value
+     *            (0 - RTMP, 3 - RTMPE)
+     */
+    public void setProtocol(final int value) {
+        if (value == 0 || value == 3) {
+            parameterMap.put(KEY_PROTOCOL, String.valueOf(value));
+        }
     }
 
     /**

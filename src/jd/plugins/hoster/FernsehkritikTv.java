@@ -17,7 +17,6 @@
 package jd.plugins.hoster;
 
 import jd.PluginWrapper;
-import jd.network.rtmp.url.RtmpUrlConnection;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -47,7 +46,7 @@ public class FernsehkritikTv extends PluginForHost {
         final String swfurl = "http://fernsehkritik.tv/swf/4.5.swf";
 
         dl = new RTMPDownload(this, downloadLink, dllink);
-        final RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
+        final jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
 
         rtmp.setSwfVfy(swfurl);
         rtmp.setUrl(dllink);

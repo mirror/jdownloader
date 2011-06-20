@@ -27,13 +27,13 @@ import org.jdownloader.translate._JDT;
 public class RtmpDump extends RTMPDownload {
 
     private Chunk             CHUNK;
+    private long              BYTESLOADED = 0l;
     private long              SPEED       = 0l;
     private int               PID         = -1;
     private String            RTMPDUMP;
     private NativeProcess     NP;
     private Process           P;
     private InputStreamReader R;
-    long                      BYTESLOADED = 0l;
 
     public RtmpDump(final PluginForHost plugin, final DownloadLink downloadLink, final String rtmpURL) throws IOException, PluginException {
         super(plugin, downloadLink, rtmpURL);
@@ -198,6 +198,10 @@ public class RtmpDump extends RTMPDownload {
                     // autoresuming when FMS sends NetStatus.Play.Stop and
                     // progress less than 100%
                     if (progressFloat < 99.9) {
+                        System.out.println("Versuch Nr.: " + downloadLink.getLinkStatus().getRetryCount() + " ::: " + plugin.getMaxRetries());
+                        if (downloadLink.getLinkStatus().getRetryCount() >= plugin.getMaxRetries()) {
+                            downloadLink.getLinkStatus().setRetryCount(0);
+                        }
                         downloadLink.getLinkStatus().setStatus(LinkStatus.ERROR_DOWNLOAD_INCOMPLETE);
                     }
                     Thread.sleep(500);

@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
+import jd.nutils.encoding.HTMLEntities;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -25,21 +26,30 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+import org.appwork.utils.Regex;
+
 /**
  * @author typek_pb
  */
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "blip.tv" }, urls = { "http://(\\w+\\.)?blip\\.tv/(file/\\d+(/)?|[\\p{L}\\w-%]+/[\\p{L}\\w-%]+)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "blip.tv" }, urls = { "http://(\\w+\\.)?blip\\.tv/(file/(\\d+(/)?|get/.+)|[\\p{L}\\w-%]+/[\\p{L}\\w-%]+)" }, flags = { 0 })
 public class BlipTv extends PluginForHost {
 
-    private String dlink = null;
+    private String         DLLINK  = null;
+    private final String[] QUALITY = { "Source", "Web", "Blip SD", "Blip HD 720", "Blip HD 1080" };
 
     public BlipTv(final PluginWrapper wrapper) {
         super(wrapper);
     }
 
+    private String fixName(String link) {
+        link = link.replaceAll("(&#\\d+)", "$1;");
+        link = HTMLEntities.unhtmlentities(link);
+        return link;
+    }
+
     @Override
     public String getAGBLink() {
-        return "http://blip.tv/tos/";
+        return "http://blip.tv/terms";
     }
 
     @Override
@@ -50,8 +60,8 @@ public class BlipTv extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
         requestFileInformation(link);
-        if (dlink == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dlink, true, 0);
+        if (DLLINK == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, DLLINK, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             dl.getConnection().disconnect();
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -62,36 +72,79 @@ public class BlipTv extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         setBrowserExclusive();
-        br.getPage(link.getDownloadURL());
-        /* 0.95xx comp */
-        if (br.getRedirectLocation() != null) {
-            // deutsche Umlaute fuehren in der 0.95xx zu einem redirect loop!
-            br.getPage(br.getRedirectLocation().replaceAll("%83%C2", ""));
+        final String dllink = link.getDownloadURL();
+        br.getPage(dllink);
+        if (!new Regex(dllink, "http://(.*?)/file/get/(.*?)\\.\\w{3}$").matches()) {
+            /* 0.95xx comp */
+            if (br.getRedirectLocation() != null) {
+                // deutsche Umlaute fuehren in der 0.95xx zu einem redirect
+                // loop!
+                br.getPage(br.getRedirectLocation().replaceAll("%83%C2", ""));
+            }
+            String id = br.getRegex("data-posts-id=\"(\\d+)").getMatch(0);
+            if (id == null) {
+                id = br.getRegex("\tdata-episode=\"(\\d+)").getMatch(0);
+            }
+            if (id == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+            String filename = br.getRegex("<title>(.*?)\\s\\|").getMatch(0);
+            br.getPage("http://blip.tv/rss/flash/" + id);
+            if (filename == null) {
+                filename = br.getRegex("<item>.*?<title>(.*?)</title>").getMatch(0);
+            }
+
+            // Wähle immer die höchste Qualität
+            String fnQ = "";
+            final String[][] dllinktmp = br.getRegex("<media:content url=\"(.*?)\"\\sblip:role=\"(.*?)\"").getMatches();
+            for (int i = 0; i < QUALITY.length; i++) {
+                for (final String[] e : dllinktmp) {
+                    if (e.length != 2) {
+                        continue;
+                    }
+                    if (!e[1].equalsIgnoreCase(QUALITY[i])) {
+                        continue;
+                    }
+                    switch (i) {
+                    case 0:
+                        DLLINK = e[0];
+                        break;
+                    case 1:
+                        DLLINK = e[0];
+                        fnQ = "(Web_quality)";
+                        break;
+                    case 2:
+                        DLLINK = e[0];
+                        fnQ = "(SD_quality)";
+                        break;
+                    case 3:
+                        DLLINK = e[0];
+                        fnQ = "(HD_720_quality)";
+                        break;
+                    case 4:
+                        DLLINK = e[0];
+                        fnQ = "(HD_1080_quality)";
+                        break;
+                    default:
+                        continue;
+                    }
+                }
+            }
+            if (DLLINK == null) {
+                DLLINK = br.getRegex("<enclosure url=\"(.*?)\"").getMatch(0);
+            }
+            if (DLLINK == null || filename == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+            String ext = DLLINK.substring(DLLINK.lastIndexOf("."), DLLINK.length());
+            ext = ext == null ? ".flv" : ext;
+            if (filename.endsWith(".")) {
+                filename = filename.substring(0, filename.length() - 1);
+            }
+            filename = fixName(filename);
+            link.setFinalFileName(Encoding.htmlDecode(filename.trim()) + fnQ + ext);
+        } else {
+            DLLINK = dllink;
         }
-        String id = br.getRegex("data-posts-id=\"(\\d+)").getMatch(0);
-        if (id == null) {
-            id = br.getRegex("\tdata-episode=\"(\\d+)").getMatch(0);
-        }
-        if (id == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-        String filename = br.getRegex("<title>(.*?)\\s\\|").getMatch(0);
-        br.getPage("http://blip.tv/rss/flash/" + id);
-        if (filename == null) {
-            filename = br.getRegex("<item>.*?<title>(.*?)</title>").getMatch(0);
-        }
-        dlink = br.getRegex("<enclosure url=\"(.*?)\"").getMatch(0);
-        if (dlink == null) {
-            dlink = br.getRegex("<media:content url=\"(.*?)\"").getMatch(0);
-        }
-        if (dlink == null || filename == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-        String ext = dlink.substring(dlink.lastIndexOf("."), dlink.length());
-        ext = ext == null ? ".flv" : ext;
-        if (filename.endsWith(".")) {
-            filename = filename.substring(0, filename.length() - 1);
-        }
-        link.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ext);
         br.setFollowRedirects(true);
         try {
-            if (!br.openGetConnection(dlink).getContentType().contains("html")) {
+            if (!br.openGetConnection(DLLINK).getContentType().contains("html")) {
                 link.setDownloadSize(br.getHttpConnection().getLongContentLength());
                 br.getHttpConnection().disconnect();
                 return AvailableStatus.TRUE;

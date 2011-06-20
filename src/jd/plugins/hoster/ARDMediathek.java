@@ -17,9 +17,9 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.security.GeneralSecurityException;
 
 import jd.PluginWrapper;
-import jd.network.rtmp.url.RtmpUrlConnection;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -28,12 +28,13 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-//q= parameter comes from jd.plugins.decrypter.RDMdthk
-@HostPlugin(revision = "$Revision: 10857 $", interfaceVersion = 2, names = { "ardmediathek.de" }, urls = { "hrtmp://[\\w\\.]*?ardmediathek\\.de/ard/servlet/content/\\d+\\?documentId=\\d+\\&q=\\w" }, flags = { 0 })
+//q=&t= parameter comes from jd.plugins.decrypter.RDMdthk
+@HostPlugin(revision = "$Revision: 10857 $", interfaceVersion = 2, names = { "ardmediathek.de" }, urls = { "hrtmp://[\\w\\.]*?ardmediathek\\.de/ard/servlet/content/\\d+\\?documentId=\\d+\\&q=\\w\\&t=\\w" }, flags = { 0 })
 public class ARDMediathek extends PluginForHost {
 
     private String[] urlValues;
     private String   quality;
+    private String   type;
 
     public ARDMediathek(final PluginWrapper wrapper) {
         super(wrapper);
@@ -56,7 +57,7 @@ public class ARDMediathek extends PluginForHost {
 
         String[] stream = null;
         for (final String[] s : streams) {
-            if (s[1].equals(quality)) {
+            if (s[0].equals(type) && s[1].equals(quality)) {
                 stream = s;
                 break;
             }
@@ -64,11 +65,12 @@ public class ARDMediathek extends PluginForHost {
         if (stream == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         if (stream[2].startsWith("rtmp")) {
             dl = new RTMPDownload(this, downloadLink, stream[2] + stream[3]);
-            final RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
+            final jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
 
             rtmp.setPlayPath(stream[3]);
             rtmp.setUrl(stream[2]);
             rtmp.setResume(true);
+            rtmp.setTimeOut(10);
 
             ((RTMPDownload) dl).startDownload();
 
@@ -87,10 +89,11 @@ public class ARDMediathek extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException, GeneralSecurityException {
         // check if rtmp link is valid here
-        urlValues = new Regex(downloadLink.getDownloadURL(), "hrtmp://[\\w\\.]*?ardmediathek\\.de/ard/servlet/content/(\\d+)\\?documentId=(\\d+)\\&q=(\\w)").getRow(0);
+        urlValues = new Regex(downloadLink.getDownloadURL(), "hrtmp://[\\w\\.]*?ardmediathek\\.de/ard/servlet/content/(\\d+)\\?documentId=(\\d+)\\&q=(\\w)\\&t=(\\w)").getRow(0);
         quality = urlValues[2];
+        type = urlValues[3];
         // call url without q dummy parameter
         br.getPage("http://www.ardmediathek.de/ard/servlet/content/" + urlValues[0] + "?documentId=" + urlValues[1]);
         // invalid content
