@@ -27,7 +27,6 @@ import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathFactory;
 
 import jd.PluginWrapper;
-import jd.network.rtmp.url.RtmpUrlConnection;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -95,7 +94,7 @@ public class RTLnowDe extends PluginForHost {
 
         if (dllink.startsWith("rtmp")) {
             dl = new RTMPDownload(this, downloadLink, dllink);
-            final RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
+            final jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
 
             String playpath = new Regex(dllink, "(rtlnow|voxnow|superrtlnow)/(.*?)$").getMatch(1);
             String host = new Regex(dllink, "(.*?)(rtl.de/|rtl.de:1935/)").getMatch(-1);

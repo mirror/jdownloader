@@ -109,7 +109,7 @@ public class DownloadController implements DownloadControllerListener, DownloadC
     private void initDownloadLinks() {
         try {
             packages = loadDownloadLinks();
-        } catch (final Exception e) {
+        } catch (final Throwable e) {
             JDLogger.getLogger().severe(Exceptions.getStackTrace(e));
             packages = new LinkedList<FilePackage>();
         }
@@ -199,7 +199,7 @@ public class DownloadController implements DownloadControllerListener, DownloadC
                         try {
                             pluginForHost = null;
                             pluginForHost = JDUtilities.getPluginForHost(localLink.getHost());
-                        } catch (final Exception e) {
+                        } catch (final Throwable e) {
                             JDLogger.exception(e);
                         }
                         // Gibt es einen Names für ein Containerformat,

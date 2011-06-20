@@ -19,7 +19,6 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
-import jd.network.rtmp.url.RtmpUrlConnection;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -63,7 +62,7 @@ public class RuTubeRu extends PluginForHost {
         if (linkurl == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         if (linkurl.startsWith("rtmp:")) {
             dl = new RTMPDownload(this, downloadLink, linkurl);
-            final RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
+            final jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
 
             // Parametersetup
             // StreamUrl:

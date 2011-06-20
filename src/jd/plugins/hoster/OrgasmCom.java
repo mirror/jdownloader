@@ -19,14 +19,13 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
-import jd.network.rtmp.url.RtmpUrlConnection;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "orgasm.com" }, urls = { "http://(www\\.)?orgasm\\.com/movies/.+" }, flags = { PluginWrapper.DEBUG_ONLY })
 public class OrgasmCom extends PluginForHost {
@@ -54,7 +53,7 @@ public class OrgasmCom extends PluginForHost {
         playpath = playpath.replace("med", "high");
 
         dl = new RTMPDownload(this, downloadLink, url + playpath);
-        final RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
+        final jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
 
         rtmp.setResume(false); // resume not working
         rtmp.setPlayPath(playpath);

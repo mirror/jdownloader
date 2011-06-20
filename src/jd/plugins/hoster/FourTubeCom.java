@@ -19,7 +19,6 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
-import jd.network.rtmp.url.RtmpUrlConnection;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -60,7 +59,7 @@ public class FourTubeCom extends PluginForHost {
 
         if (!playpath.startsWith("http")) {
             dl = new RTMPDownload(this, downloadLink, url + "/" + playpath);
-            final RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
+            final jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
 
             final String host = url.substring(0, url.lastIndexOf("/") + 1);
             final String app = url.replace(host, "");

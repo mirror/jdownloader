@@ -92,6 +92,7 @@ public class EasyShareCom extends PluginForHost {
         /* there are 2 different versions of account info pages */
         if (ends == null) ends = br.getRegex("End time:(.*?)<").getMatch(0);
         if (isPremium == null) isPremium = br.getRegex("Premium account: <.*?>(active)<").getMatch(0);
+        if (isPremium == null) isPremium = br.getRegex("Premium: <.*?>(active)<").getMatch(0);
         if (ends == null || isPremium == null) {
             account.setValid(false);
             return ai;

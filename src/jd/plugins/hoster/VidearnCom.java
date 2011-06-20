@@ -19,7 +19,6 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
-import jd.network.rtmp.url.RtmpUrlConnection;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -59,7 +58,7 @@ public class VidearnCom extends PluginForHost {
         if (playpath == null || url == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
 
         dl = new RTMPDownload(this, downloadLink, url + playpath);
-        final RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
+        final jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
 
         final String host = url.substring(0, url.lastIndexOf("lb/"));
         final String app = "videarn";

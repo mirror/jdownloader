@@ -17,7 +17,6 @@
 package jd.plugins.hoster;
 
 import jd.PluginWrapper;
-import jd.network.rtmp.url.RtmpUrlConnection;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -59,7 +58,7 @@ public class EltrecetvComAr extends PluginForHost {
 
         if (dllink.startsWith("rtmp")) {
             dl = new RTMPDownload(this, downloadLink, dllink);
-            final RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
+            final jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
 
             rtmp.setPlayPath(playPath);
             rtmp.setPageUrl(downloadLink.getDownloadURL());

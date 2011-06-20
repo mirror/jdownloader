@@ -45,7 +45,7 @@ import java.util.ArrayList;
 /**
  * Editor for jDownloader language files. Gets JDL.L() and JDL.LF() entries from
  * source and compares them to the keypairs in the language file.
- *
+ * 
  * @author Greeny
  * @author coalado
  */
@@ -53,10 +53,10 @@ import java.util.ArrayList;
 public class LangFileEditorExtension extends AbstractExtension<LangFileEditorConfig> implements ActionListener, ControlListener {
 
     private final SingletonPanel lfe;
-    private MenuAction activateAction;
-    private LFEView lfeView;
-    private String user;
-    private String pass;
+    private MenuAction           activateAction;
+    private LFEView              lfeView;
+    private String               user;
+    private String               pass;
     private ExtensionConfigPanel configPanel;
 
     public ExtensionConfigPanel<LangFileEditorExtension> getConfigPanel() {
@@ -124,41 +124,26 @@ public class LangFileEditorExtension extends AbstractExtension<LangFileEditorCon
 
     @Override
     protected void start() throws StartException {
-<<<<<<< .mine
-        activateAction = new MenuAction("langfileditor"){
-            @Override
-            protected String createMnemonic() {
-                return null;  //To change body of implemented methods use File | Settings | File Templates.
-            }
-
-            @Override
-            protected String createAccelerator() {
-                return null;  //To change body of implemented methods use File | Settings | File Templates.
-            }
-
-            @Override
-            protected String createTooltip() {
-                return null;  //To change body of implemented methods use File | Settings | File Templates.
-            }
-        };
-=======
         activateAction = new MenuAction("langfileditor", "langfileditor", 0) {
             @Override
             protected String createMnemonic() {
-                return null;  //To change body of implemented methods use File | Settings | File Templates.
+                return null; // To change body of implemented methods use File |
+                             // Settings | File Templates.
             }
 
             @Override
             protected String createAccelerator() {
-                return null;  //To change body of implemented methods use File | Settings | File Templates.
+                return null; // To change body of implemented methods use File |
+                             // Settings | File Templates.
             }
 
             @Override
             protected String createTooltip() {
-                return null;  //To change body of implemented methods use File | Settings | File Templates.
+                return null; // To change body of implemented methods use File |
+                             // Settings | File Templates.
             }
         };
->>>>>>> .r14365
+
         activateAction.setActionListener(this);
         activateAction.setIcon(this.getIconKey());
         activateAction.setSelected(false);
