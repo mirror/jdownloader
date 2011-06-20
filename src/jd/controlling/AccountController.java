@@ -496,7 +496,15 @@ public class AccountController implements AccountControllerListener {
              * we do an accountcheck as this account just got added to this
              * controller
              */
-            if (acc != null) AccountChecker.getInstance().check(acc, true);
+            if (acc != null) {
+                if (System.currentTimeMillis() - acc.lastUpdateTime() > 10000) {
+                    /*
+                     * only check account again if last check is more than 10
+                     * secs ago, prevents double check on addaccountdialog
+                     */
+                    AccountChecker.getInstance().check(acc, true);
+                }
+            }
             JDUtilities.getConfiguration().setProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true);
             JDUtilities.getConfiguration().save();
             break;

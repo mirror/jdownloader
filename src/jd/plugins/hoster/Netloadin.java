@@ -196,6 +196,7 @@ public class Netloadin extends PluginForHost {
                     ai.setValidUntil(TimeFormatter.getMilliSeconds(res, "yyyy-MM-dd HH:mm", null));
                     if (ai.isExpired()) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
+
             } catch (PluginException e) {
                 try {
                     /* verbose debug */
@@ -237,7 +238,12 @@ public class Netloadin extends PluginForHost {
         String cookie = br.getCookie("http://www.netload.in", "cookie_user");
         if (cookie == null) {
             logger.severe("no cookie!");
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            logger.severe(br.toString());
+            try {
+                logger.info(br.getHttpConnection().toString());
+            } catch (final Throwable e) {
+            }
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 10 * 60 * 1000l);
         }
         String ID = getID(downloadLink.getDownloadURL());
         br.getPage("http://netload.in/json/datei" + ID + ".htm");

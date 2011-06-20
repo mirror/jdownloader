@@ -89,7 +89,7 @@ public class PremiumStatus extends JPanel implements MouseListener, ControlListe
                 }
             }
 
-        }, 5, 30, TimeUnit.SECONDS);
+        }, 1, 30, TimeUnit.MINUTES);
         redrawTimer = new DelayedRunnable(IOEQ.TIMINGQUEUE, 5000) {
 
             @Override
