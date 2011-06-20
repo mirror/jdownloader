@@ -64,8 +64,7 @@ public class UploadingCom extends PluginForHost {
     }
 
     public void correctDownloadLink(DownloadLink link) {
-        if (!link.getDownloadURL().contains("/get")) link.setUrlDownload(link.getDownloadURL().replace("/files", "/files/get"));
-        if (!link.getDownloadURL().contains("www.")) link.setUrlDownload(link.getDownloadURL().replace("http://", "http://www."));
+        if (!link.getDownloadURL().contains("/get")) link.setUrlDownload(link.getDownloadURL().replace("/files", "/files/get").replace("www.", ""));
     }
 
     public boolean isPremium(Account account, boolean force) throws IOException {
@@ -254,7 +253,6 @@ public class UploadingCom extends PluginForHost {
     }
 
     public void handleFree0(DownloadLink link) throws Exception {
-        if (!link.getDownloadURL().contains("/get")) link.setUrlDownload(link.getDownloadURL().replace("/files", "/files/get"));
         checkErrors();
         String fileID = br.getRegex(FILEIDREGEX).getMatch(0);
         String code = new Regex(link.getDownloadURL(), CODEREGEX).getMatch(0);
@@ -270,7 +268,8 @@ public class UploadingCom extends PluginForHost {
         }
         logger.info("Submitting form");
         try {
-            br.postPage(link.getDownloadURL() + "/", "action=second_page&file_id=" + fileID + "&code=" + code);
+            // POSTing to the wrong link causes MAJOR issues...
+            br.postPage(link.getDownloadURL().replace("www.", "") + "/", "action=second_page&file_id=" + fileID + "&code=" + code);
         } catch (Exception e) {
             // This is the "disconnected" error...
             logger.warning("FATAL error happened with link: " + link.getDownloadURL());
@@ -404,7 +403,6 @@ public class UploadingCom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         if (!downloadLink.isAvailable()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         handleFree0(downloadLink);
