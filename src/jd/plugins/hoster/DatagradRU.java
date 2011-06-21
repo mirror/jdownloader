@@ -21,6 +21,7 @@ import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
@@ -54,6 +55,11 @@ public class DatagradRU extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         // requestFileInformation(downloadLink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL(), true, 1);
+        if (dl.getConnection().getContentType().contains("html")) {
+            logger.warning("the dllink doesn't seem to be a file, following the connection...");
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl.startDownload();
     }
 

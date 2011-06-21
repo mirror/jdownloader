@@ -164,6 +164,7 @@ public class TurboBitNet extends PluginForHost {
         }
         if (tt > 250) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Limit reached or IP already loading", tt * 1001l); }
         sleep(tt * 1001, downloadLink);
+        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         br.getPage("http://turbobit.net/download/getLinkAfterTimeout/" + id + "/");
         String downloadUrl = br.getRegex("<a href=\\'(.*?)\\'>").getMatch(0);
         if (downloadUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

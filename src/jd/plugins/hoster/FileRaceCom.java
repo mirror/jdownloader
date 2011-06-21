@@ -28,12 +28,12 @@ import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.parser.html.HTMLParser;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -46,7 +46,7 @@ public class FileRaceCom extends PluginForHost {
         // this.enablePremium(COOKIE_HOST + "/premium.html");
     }
 
-    // XfileSharingProBasic Version 2.3.0.1
+    // XfileSharingProBasic Version 2.3.0.1, added 1 dllink regex
     @Override
     public String getAGBLink() {
         return COOKIE_HOST + "/tos.html";
@@ -69,7 +69,7 @@ public class FileRaceCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = new Regex(BRBEFORE, "You have requested.*?http://(www\\.)?" + COOKIE_HOST.replace("http://", "") + "/[a-z0-9]{12}/(.*?)</font>").getMatch(1);
-        if (filename == null) {
+        if (filename == null || filename.equals("")) {
             filename = new Regex(BRBEFORE, "fname\"( type=\"hidden\")? value=\"(.*?)\"").getMatch(1);
             if (filename == null) {
                 filename = new Regex(BRBEFORE, "<h2>Download File(.*?)</h2>").getMatch(0);
@@ -267,11 +267,14 @@ public class FileRaceCom extends PluginForHost {
                 if (dllink == null) {
                     dllink = new Regex(BRBEFORE, "Download: <a href=\"(.*?)\"").getMatch(0);
                     if (dllink == null) {
-                        String cryptedScripts[] = br.getRegex("p\\}\\((.*?)\\.split\\('\\|'\\)").getColumn(0);
-                        if (cryptedScripts != null && cryptedScripts.length != 0) {
-                            for (String crypted : cryptedScripts) {
-                                dllink = decodeDownloadLink(crypted);
-                                if (dllink != null) break;
+                        dllink = new Regex(BRBEFORE, "\"(http://(www\\.)?filerace\\.com/cgi\\-bin/dl\\.cgi/[a-z0-9]+/.*?)\"").getMatch(0);
+                        if (dllink == null) {
+                            String cryptedScripts[] = br.getRegex("p\\}\\((.*?)\\.split\\('\\|'\\)").getColumn(0);
+                            if (cryptedScripts != null && cryptedScripts.length != 0) {
+                                for (String crypted : cryptedScripts) {
+                                    dllink = decodeDownloadLink(crypted);
+                                    if (dllink != null) break;
+                                }
                             }
                         }
                     }
