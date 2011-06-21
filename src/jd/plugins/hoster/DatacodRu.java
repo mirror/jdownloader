@@ -64,7 +64,7 @@ public class DatacodRu extends PluginForHost {
 
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        String dlLink = br.getRegex(Pattern.compile("<a href=\"(http://files.*?)\" class=\"button\">Скачать файл</a>")).getMatch(0);
+        final String dlLink = br.getRegex(Pattern.compile("<a href=\"(http://files.*?)\" class=\"button\">Скачать файл</a>")).getMatch(0);
         if (dlLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("the dllink doesn't seem to be a file, following the connection...");
