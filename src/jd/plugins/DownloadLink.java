@@ -838,8 +838,11 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      * 
      * @param filePackage
      */
-    public void _setFilePackage(FilePackage filePackage) {
-        if (this.filePackage != null && filePackage != null) { throw new RuntimeException("UPS"); }
+    public synchronized void _setFilePackage(FilePackage filePackage) {
+        if (filePackage == this.filePackage) return;
+        if (this.filePackage != null && filePackage != null) {
+            this.filePackage.remove(this);
+        }
         this.filePackage = filePackage;
     }
 

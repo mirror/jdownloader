@@ -534,7 +534,11 @@ public class FilePackage extends Property implements Serializable, PackageLinkNo
             synchronized (this) {
                 for (DownloadLink link : links) {
                     if ((this.controlledLinks.remove(link))) {
-                        link._setFilePackage(null);
+                        /*
+                         * set FilePackage to null if the link was controlled by
+                         * this FilePackage
+                         */
+                        if (link.getFilePackage() == this) link._setFilePackage(null);
                     }
                 }
             }

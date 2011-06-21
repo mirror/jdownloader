@@ -915,7 +915,11 @@ public class DownloadController implements DownloadControllerListener, DownloadC
                             while (it.hasNext()) {
                                 DownloadLink dl = it.next();
                                 if (list.remove(dl)) {
-                                    dl._setFilePackage(null);
+                                    /*
+                                     * set FilePackage to null if the link was
+                                     * controlled by this FilePackage
+                                     */
+                                    if (dl.getFilePackage() == fp) dl._setFilePackage(null);
                                 } else {
                                     it.remove();
                                 }
