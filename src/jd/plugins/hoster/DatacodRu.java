@@ -44,18 +44,18 @@ public class DatacodRu extends PluginForHost {
         br.setCustomCharset("UTF-8");
         br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows; U; Windows NT 6.0; chrome://global/locale/intl.properties; rv:1.8.1.12) Gecko/2008102920  Firefox/3.0.0 YB/4.2.0");
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("<title>404</title>") || br.containsHTML("���� �� ������") || br.containsHTML("���������� ���� �������� �����\\.")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        if (br.containsHTML("������ �� ������ ������� ������ ��� ������������� ���������")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE);
-        String name = br.getRegex(Pattern.compile("����: <b title=\"(.*?)\">")).getMatch(0);
+        if (br.containsHTML("<title>404</title>") || br.containsHTML("Файл не найден") || br.containsHTML("Закончился срок хранения файла\\.")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("Доступ на сервер разрешён только для пользователей Авангарда")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE);
+        String name = br.getRegex(Pattern.compile("файл: <b title=\"(.*?)\">")).getMatch(0);
         if (name == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String fileSize = br.getRegex(Pattern.compile("������: <b>(.*?)</b></li>")).getMatch(0);
+        String fileSize = br.getRegex(Pattern.compile("размер: <b>(.*?)</b></li>")).getMatch(0);
         if (fileSize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        // 15.58 ��
-        fileSize = fileSize.replaceAll("�", "G");
-        fileSize = fileSize.replaceAll("�", "M");
-        fileSize = fileSize.replaceAll("�", "k");
-        fileSize = fileSize.replaceAll("�", "k");
-        fileSize = fileSize.replaceAll("�", "");
+        // 15.58 МБ
+        fileSize = fileSize.replaceAll("Г", "G");
+        fileSize = fileSize.replaceAll("М", "M");
+        fileSize = fileSize.replaceAll("к", "k");
+        fileSize = fileSize.replaceAll("К", "k");
+        fileSize = fileSize.replaceAll("Б", "");
         fileSize = fileSize + "b";
         downloadLink.setName(name.trim());
         downloadLink.setDownloadSize(SizeFormatter.getSize(fileSize));
@@ -64,7 +64,7 @@ public class DatacodRu extends PluginForHost {
 
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        final String dlLink = br.getRegex(Pattern.compile("<a href=\"(http://files.*?)\" class=\"button\">������� ����</a>")).getMatch(0);
+        String dlLink = br.getRegex(Pattern.compile("<a href=\"(http://files.*?)\" class=\"button\">Скачать файл</a>")).getMatch(0);
         if (dlLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("the dllink doesn't seem to be a file, following the connection...");
