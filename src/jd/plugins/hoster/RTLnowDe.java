@@ -39,7 +39,7 @@ import jd.plugins.PluginForHost;
 
 import org.w3c.dom.Document;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rtl-now.rtl.de", "voxnow.de", "superrtlnow.de" }, urls = { "http://(www\\.)?rtl-now\\.rtl\\.de/\\w+\\.php\\?(container_id=.+|player=.+|film_id=.+)", "http://(www\\.)?voxnow\\.de/\\w+\\.php\\?(container_id=.+|player=.+|film_id=.+)", "http://(www\\.)?superrtlnow\\.de/\\w+\\.php\\?(container_id=.+|player=.+|film_id=.+)" }, flags = { PluginWrapper.DEBUG_ONLY, PluginWrapper.DEBUG_ONLY, PluginWrapper.DEBUG_ONLY })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rtl-now.rtl.de", "voxnow.de", "superrtlnow.de" }, urls = { "http://(www\\.)?rtl-now\\.rtl\\.de/([\\w-]+/)?[\\w-]+\\.php\\?(container_id=.+|player=.+|film_id=.+)", "http://(www\\.)?voxnow\\.de/([\\w-]+/)?[\\w-]+\\.php\\?(container_id=.+|player=.+|film_id=.+)", "http://(www\\.)?superrtlnow\\.de/([\\w-]+/)?[\\w-]+\\.php\\?(container_id=.+|player=.+|film_id=.+)" }, flags = { PluginWrapper.DEBUG_ONLY, PluginWrapper.DEBUG_ONLY, PluginWrapper.DEBUG_ONLY })
 public class RTLnowDe extends PluginForHost {
 
     public RTLnowDe(final PluginWrapper wrapper) {
@@ -146,7 +146,7 @@ public class RTLnowDe extends PluginForHost {
         br.getPage(dllink);
         String filename = br.getRegex("<meta property=\"og:title\" content=\"(.*?)\">").getMatch(0);
         if (filename == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-        final String folge = br.getRegex("Folge: '(.*?)'").getMatch(0);
+        String folge = br.getRegex("Folge: '(.*?)'").getMatch(0);
         if (folge != null && filename.contains(folge)) {
             filename = filename.substring(0, filename.lastIndexOf("-")).trim();
         }
@@ -155,6 +155,10 @@ public class RTLnowDe extends PluginForHost {
             filename += " - Staffel " + season;
         }
         filename = filename.trim();
+        folge = folge.trim();
+        if (folge.endsWith(".")) {
+            folge = folge.substring(0, folge.length() - 1);
+        }
         if (downloadLink.isDefaultFilePackage()) {
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(filename.replaceAll(folge, ""));

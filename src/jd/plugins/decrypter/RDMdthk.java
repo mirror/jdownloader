@@ -21,15 +21,14 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-import org.appwork.utils.Regex;
-
-@DecrypterPlugin(revision = "$Revision: 11183 $", interfaceVersion = 2, names = { "ardmediathek.de" }, urls = { "http://[\\w\\.]*?ardmediathek\\.de/ard/servlet/content/\\d+\\?documentId=\\d+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision: 11183 $", interfaceVersion = 2, names = { "ardmediathek.de" }, urls = { "http://[\\w\\.]*?ardmediathek\\.de/ard/servlet/content/\\d+\\?documentId=\\d+" }, flags = { PluginWrapper.DEBUG_ONLY })
 public class RDMdthk extends PluginForDecrypt {
 
     public RDMdthk(final PluginWrapper wrapper) {
@@ -46,27 +45,27 @@ public class RDMdthk extends PluginForDecrypt {
         final FilePackage filePackage = FilePackage.getInstance();
         filePackage.setName(Encoding.htmlDecode(title));
         for (final String[] stream : streams) {
-                // get quality id
-                final int q = Integer.valueOf(stream[1]);
-                // get streamtype id
-                final int t = Integer.valueOf(stream[0]);
-                // create link
-                // replace http with hrtmp to differ hoster links from
-                final DownloadLink link = createDownloadlink(param.toString().replace("http://", "hrtmp://") + "&q=" + q + "&t=" + t);
-                filePackage.add(link);
-                // parse file extension
-                String ext = new Regex(stream[stream.length - 1], "(\\.\\w{3})$").getMatch(0);
-                ext = ext == null ? ".mp4" : ext;
-                if (q == 0) {
-                    link.setFinalFileName(title.trim() + "(low_quality)" + ext);
-                } else if (q == 1) {
-                    link.setFinalFileName(title.trim() + "(medium_quality)" + ext);
-                } else if (q == 2) {
-                    link.setFinalFileName(title.trim() + "(high_quality)" + ext);
-                } else if (q == 3) {
-                    link.setFinalFileName(title.trim() + "(hd_quality)" + ext);
-                }
-                decryptedLinks.add(link);
+            // get quality id
+            final int q = Integer.valueOf(stream[1]);
+            // get streamtype id
+            final int t = Integer.valueOf(stream[0]);
+            // create link
+            // replace http with hrtmp to differ hoster links from
+            final DownloadLink link = createDownloadlink(param.toString().replace("http://", "hrtmp://") + "&q=" + q + "&t=" + t);
+            filePackage.add(link);
+            // parse file extension
+            String ext = new Regex(stream[stream.length - 1], "(\\.\\w{3})$").getMatch(0);
+            ext = ext == null ? ".mp4" : ext;
+            if (q == 0) {
+                link.setFinalFileName(title.trim() + "(low_quality)" + ext);
+            } else if (q == 1) {
+                link.setFinalFileName(title.trim() + "(medium_quality)" + ext);
+            } else if (q == 2) {
+                link.setFinalFileName(title.trim() + "(high_quality)" + ext);
+            } else if (q == 3) {
+                link.setFinalFileName(title.trim() + "(hd_quality)" + ext);
+            }
+            decryptedLinks.add(link);
         }
         return decryptedLinks;
     }

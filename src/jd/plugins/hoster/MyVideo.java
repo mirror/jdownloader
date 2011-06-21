@@ -20,7 +20,6 @@ import java.util.HashMap;
 import java.util.Map.Entry;
 
 import jd.PluginWrapper;
-import jd.gui.UserIO;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -42,31 +41,6 @@ public class MyVideo extends PluginForHost {
 
     public MyVideo(final PluginWrapper wrapper) {
         super(wrapper);
-    }
-
-    private void ageCheck(final DownloadLink downloadLink) throws Exception {
-        final String age = br.getRegex("Dieser Film ist für Zuschauer unter (\\d+) Jahren nicht geeignet").getMatch(0);
-        if (age != null) {
-            final String ageCheck = br.getRegex("class=\'btnMiddle\'><a href=\'(/iframe.*?)\'").getMatch(0);
-            int ret = -100;
-            if (downloadLink.getStringProperty("FSK", null) == null) {
-                ret = UserIO.getInstance().requestConfirmDialog(0, "Altersfreigabe erforderlich!", "Durch einen Klick auf den Button BESTÄTIGEN erklärst Du, dass du mind. " + age + " Jahre alt bist und den Film sehen möchtest.\r\n", null, "BESTÄTIGEN", "Abbrechen");
-            } else {
-                ret = UserIO.RETURN_OK;
-            }
-            if (ret != -100) {
-                if (UserIO.isOK(ret)) {
-                    br.getPage("http://www.myvideo.de" + Encoding.htmlDecode(ageCheck));
-                    downloadLink.setProperty("FSK", true);
-                } else {
-                    downloadLink.setProperty("FSK", null);
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                }
-            } else {
-                downloadLink.setProperty("FSK", null);
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-        }
     }
 
     private String decrypt(final String cipher, final String id) {
@@ -118,7 +92,14 @@ public class MyVideo extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
 
-        ageCheck(downloadLink);
+        if (br.containsHTML("Dieser Film ist für Zuschauer unter \\d+ Jahren nicht geeignet")) {
+            final String ageCheck = br.getRegex("class=\'btnMiddle\'><a href=\'(/iframe.*?)\'").getMatch(0);
+            if (ageCheck != null) {
+                br.getPage("http://www.myvideo.de" + Encoding.htmlDecode(ageCheck));
+            } else {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+        }
 
         String filename = Encoding.htmlDecode(br.getRegex("name=\'title\' content=\'(.*?)-? (Film|Musik|TV Serie)").getMatch(0));
         // get encUrl

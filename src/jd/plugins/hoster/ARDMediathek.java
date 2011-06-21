@@ -29,7 +29,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
 //q=&t= parameter comes from jd.plugins.decrypter.RDMdthk
-@HostPlugin(revision = "$Revision: 10857 $", interfaceVersion = 2, names = { "ardmediathek.de" }, urls = { "hrtmp://[\\w\\.]*?ardmediathek\\.de/ard/servlet/content/\\d+\\?documentId=\\d+\\&q=\\w\\&t=\\w" }, flags = { 0 })
+@HostPlugin(revision = "$Revision: 10857 $", interfaceVersion = 2, names = { "ardmediathek.de" }, urls = { "hrtmp://[\\w\\.]*?ardmediathek\\.de/ard/servlet/content/\\d+\\?documentId=\\d+\\&q=\\w\\&t=\\w" }, flags = { PluginWrapper.DEBUG_ONLY })
 public class ARDMediathek extends PluginForHost {
 
     private String[] urlValues;
@@ -97,7 +97,6 @@ public class ARDMediathek extends PluginForHost {
         // call url without q dummy parameter
         br.getPage("http://www.ardmediathek.de/ard/servlet/content/" + urlValues[0] + "?documentId=" + urlValues[1]);
         // invalid content
-
         if (br.containsHTML("<h1>Leider konnte die gew&uuml;nschte Seite<br />nicht gefunden werden.</h1>")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         return AvailableStatus.TRUE;
     }
