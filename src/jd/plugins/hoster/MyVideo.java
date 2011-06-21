@@ -20,9 +20,9 @@ import java.util.HashMap;
 import java.util.Map.Entry;
 
 import jd.PluginWrapper;
-import jd.crypt.RC4;
 import jd.gui.UserIO;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -30,9 +30,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDHexUtils;
-
-import org.appwork.utils.Hash;
-import org.appwork.utils.Regex;
 
 // Altes Decrypterplugin bis Revision 14394 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "myvideo.de" }, urls = { "http://(www\\.)?myvideo\\.de/watch/\\d+/\\w+" }, flags = { PluginWrapper.DEBUG_ONLY })
@@ -73,9 +70,9 @@ public class MyVideo extends PluginForHost {
     }
 
     private String decrypt(final String cipher, final String id) {
-        final String key = Hash.getMD5(Encoding.Base64Decode(KEY) + Hash.getMD5(id));
+        final String key = org.appwork.utils.Hash.getMD5(Encoding.Base64Decode(KEY) + org.appwork.utils.Hash.getMD5(id));
         final byte[] ciphertext = JDHexUtils.getByteArray(cipher);
-        final RC4 rc4 = new RC4();
+        final jd.crypt.RC4 rc4 = new jd.crypt.RC4();
         final byte[] plain = rc4.decrypt(key.getBytes(), ciphertext);
         return Encoding.htmlDecode(new String(plain));
     }
@@ -147,9 +144,12 @@ public class MyVideo extends PluginForHost {
         br.getPage(bla);
         final String input = br.getRegex("_encxml=(\\w+)").getMatch(0);
         if (input == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-
-        final String result = decrypt(input, p.get("ID"));
-
+        String result;
+        try {
+            result = decrypt(input, p.get("ID"));
+        } catch (final Throwable e) {
+            return AvailableStatus.UNCHECKABLE;
+        }
         CLIPURL = new Regex(result, "connectionurl=\'(.*?)\'").getMatch(0);
         CLIPPATH = new Regex(result, "source=\'(.*?)\'").getMatch(0);
         if (CLIPURL == null || CLIPPATH == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }

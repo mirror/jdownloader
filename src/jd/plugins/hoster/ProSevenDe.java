@@ -22,16 +22,13 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.Regex;
-import org.codehaus.jackson.JsonNode;
-import org.codehaus.jackson.map.ObjectMapper;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "prosieben.de" }, urls = { "http://(www\\.)?prosieben\\.de/tv/[\\w-]+/video(s)?/(clip/[\\w-\\.]+/?|[\\w-]+)" }, flags = { PluginWrapper.DEBUG_ONLY })
 public class ProSevenDe extends PluginForHost {
@@ -83,14 +80,14 @@ public class ProSevenDe extends PluginForHost {
     }
 
     private void jsonParser(final String json, final String path) throws Exception {
-        final ObjectMapper mapper = new ObjectMapper();
-        final JsonNode rootNode = mapper.readTree(json);
-        final Iterator<JsonNode> catIter = rootNode.get("categoryList").iterator();
+        final org.codehaus.jackson.map.ObjectMapper mapper = new org.codehaus.jackson.map.ObjectMapper();
+        final org.codehaus.jackson.JsonNode rootNode = mapper.readTree(json);
+        final Iterator<org.codehaus.jackson.JsonNode> catIter = rootNode.get("categoryList").iterator();
         while (catIter.hasNext()) {
-            final Iterator<JsonNode> clipIter = catIter.next().path("clipList").iterator();
+            final Iterator<org.codehaus.jackson.JsonNode> clipIter = catIter.next().path("clipList").iterator();
             while (clipIter.hasNext()) {
-                final JsonNode ta = clipIter.next();
-                final JsonNode tb = ta.path("metadata");
+                final org.codehaus.jackson.JsonNode ta = clipIter.next();
+                final org.codehaus.jackson.JsonNode tb = ta.path("metadata");
                 fileDesc = new HashMap<String, String>();
                 if (ta.path("title") != null) {
                     fileDesc.put("title", ta.path("title").getTextValue());
@@ -115,7 +112,11 @@ public class ProSevenDe extends PluginForHost {
         br.getPage(downloadLink.getDownloadURL());
         String jsonString = br.getRegex("json:\\s+\"(.*?)\"\n").getMatch(0);
         jsonString = decodeUnicode(jsonString).replaceAll("\\\\", "");
-        jsonParser(jsonString, "downloadFilename");
+        try {
+            jsonParser(jsonString, "downloadFilename");
+        } catch (final Throwable e) {
+            return AvailableStatus.UNCHECKABLE;
+        }
         if (fileDesc == null || fileDesc.size() < 4) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         clipUrl = fileDesc.get("downloadFilename");
         if (fileDesc.get("show_artist") == null && fileDesc.get("title") == null || clipUrl == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }

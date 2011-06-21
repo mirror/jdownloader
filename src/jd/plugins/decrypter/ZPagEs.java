@@ -51,7 +51,7 @@ public class ZPagEs extends PluginForDecrypt {
         br.setFollowRedirects(true);
         synchronized (LOCK) {
             br.getPage(parameter);
-            String link = br.getRegex(LINKREGEX).getMatch(0);
+            if (br.containsHTML(">zPag.es - Invalid Page<")) return decryptedLinks;
             if (br.containsHTML(CAPTCHATEXT) || br.getURL().contains(CAPTCHATEXT2)) {
                 for (int i = 0; i <= 5; i++) {
                     PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
@@ -67,8 +67,9 @@ public class ZPagEs extends PluginForDecrypt {
                     break;
                 }
                 if (br.containsHTML(CAPTCHATEXT) || br.getURL().contains(CAPTCHATEXT2)) throw new DecrypterException(DecrypterException.CAPTCHA);
-                link = br.getRegex(LINKREGEX).getMatch(0);
+
             }
+            String link = br.getRegex(LINKREGEX).getMatch(0);
             if (link == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
