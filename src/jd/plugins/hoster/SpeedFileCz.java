@@ -28,7 +28,7 @@ import jd.plugins.DownloadLink.AvailableStatus;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "speedfile.cz" }, urls = { "http://(www\\.)?speedfile\\.cz/\\d+/[a-z0-9\\-]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "speedfile.cz" }, urls = { "http://(www\\.)?speedfile\\.cz/((cs|en|de)/)?\\d+/[a-z0-9\\-]+" }, flags = { 0 })
 public class SpeedFileCz extends PluginForHost {
 
     public SpeedFileCz(PluginWrapper wrapper) {
@@ -38,6 +38,10 @@ public class SpeedFileCz extends PluginForHost {
     @Override
     public String getAGBLink() {
         return "http://speedfile.cz/pages/terms/";
+    }
+
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replaceAll("(cs|en|de)/", "").replace("speedfile.cz/", "speedfile.cz/en/"));
     }
 
     @Override
@@ -52,10 +56,10 @@ public class SpeedFileCz extends PluginForHost {
                 filename = br.getRegex("<h1><span id=\"vyraz\">(.*?)</span></h1>").getMatch(0);
             }
         }
-        String filesize = br.getRegex(">Stáhnout</a> <span class=\"small\">\\((.*?)\\)</span>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        String filesize = br.getRegex("><big>(.*?) \\| Downloaded ").getMatch(0);
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setName(filename.trim());
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
     }
 

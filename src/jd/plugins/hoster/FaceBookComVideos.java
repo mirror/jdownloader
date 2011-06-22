@@ -37,7 +37,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "facebook.com" }, urls = { "http://[\\w\\.]*?facebook\\.com/video/video\\.php\\?v=\\d+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "facebook.com" }, urls = { "http(s)?://(www\\.)?facebook\\.com/(video/video\\.php\\?v=|profile\\.php\\?id=\\d+\\&ref=ts#\\!/video/video\\.php\\?v=)\\d+" }, flags = { 2 })
 public class FaceBookComVideos extends PluginForHost {
 
     private String              dllink           = null;
@@ -48,6 +48,13 @@ public class FaceBookComVideos extends PluginForHost {
     public FaceBookComVideos(final PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.facebook.com/r.php");
+    }
+
+    public void correctDownloadLink(DownloadLink link) {
+        String thislink = link.getDownloadURL().replace("https://", "http://");
+        String videoID = new Regex(thislink, "ts#\\!/video/video\\.php\\?v=(\\d+)").getMatch(0);
+        if (videoID != null) thislink = "http://facebook.com/video/video.php?v=" + videoID;
+        link.setUrlDownload(thislink);
     }
 
     public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
