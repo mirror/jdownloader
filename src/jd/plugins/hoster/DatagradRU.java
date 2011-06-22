@@ -20,12 +20,12 @@ import java.io.IOException;
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "datagrad.ru" }, urls = { "http://[a-zA-Z-0-9.]{0,}datagrad.ru/download/[0-9]{1,}" }, flags = { 0 })
 public class DatagradRU extends PluginForHost {
@@ -40,6 +40,7 @@ public class DatagradRU extends PluginForHost {
 
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
+        br.setCustomCharset("UTF-8");
         br.setFollowRedirects(true);
         URLConnectionAdapter con = br.openGetConnection(downloadLink.getDownloadURL());
         if (con.isContentDisposition()) {
