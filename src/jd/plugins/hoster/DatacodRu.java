@@ -20,15 +20,15 @@ import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "data.cod.ru" }, urls = { "http://[a-zA-Z.]{0,}data.cod.ru/[0-9]{1,}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision: $", interfaceVersion = 2, names = { "data.cod.ru" }, urls = { "http://[a-zA-Z.]{0,}data.cod.ru/[0-9]{1,}" }, flags = { 0 })
 public class DatacodRu extends PluginForHost {
 
     public DatacodRu(PluginWrapper wrapper) {
@@ -66,12 +66,12 @@ public class DatacodRu extends PluginForHost {
         requestFileInformation(downloadLink);
         final String dlLink = br.getRegex(Pattern.compile("<a href=\"(http://files.*?)\" class=\"button\">Скачать файл</a>")).getMatch(0);
         if (dlLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlLink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("the dllink doesn't seem to be a file, following the connection...");
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlLink, true, 1);
         dl.startDownload();
     }
 
