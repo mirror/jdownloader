@@ -111,6 +111,7 @@ public class PremiumCompoundExtension extends AbstractExtension<PremiumCompoundC
                 premShareHosts.put("multishare.cz", "MultiShare");
                 premShareHosts.put("linksnappy.com", "LinkSnappycom");
                 premShareHosts.put("rehost.to", "ReHostto");
+                premShareHosts.put("zevera.com", "Zevera");
                 premShareHosts.put("nopremium.pl", "NoPremium");
                 premShareHosts.put("premget.pl", "PremGet");
                 premShareHosts.put("twojlimit.pl", "TwojLimit");
