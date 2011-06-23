@@ -17,9 +17,11 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.logging.Logger;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
+import jd.controlling.JDLogger;
 import jd.gui.UserIO;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
@@ -37,10 +39,10 @@ import jd.plugins.PluginForHost;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision: 1 $", interfaceVersion = 2, names = { "zevera.com" }, urls = { "http://[\\w\\.]*?zevera\\.com/.+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision: 1 $", interfaceVersion = 2, names = { "zevera.com" }, urls = { "http://[\\w\\.]*?zevera\\.com/.+" }, flags = { 2 })
 public class Zevera extends PluginForHost {
     static private final String AGB_LINK   = "http://zevera.com";
-
+    private static final Logger LOGGER     = JDLogger.getLogger();
     static public final Object  LOGINLOCK  = new Object();
     private boolean             showDialog = false;
 
@@ -68,7 +70,12 @@ public class Zevera extends PluginForHost {
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        setBrowserExclusive();
+        workAroundTimeOut(br);
+        requestFileInformation(downloadLink);
+        br.setDebug(true);
+        this.setBrowserExclusive();
+        throw new PluginException(LinkStatus.ERROR_FATAL, "You need a  premium account to use this hoster");
     }
 
     private void loginAPI(Account account, AccountInfo ai) throws IOException, PluginException {
@@ -112,15 +119,13 @@ public class Zevera extends PluginForHost {
                     // Regex(infos[0],"TrafficUsedToday:(.+)").getMatch(0).trim());
                     // Integer Balance = DayTraffic - TrafficUsedToday;
                     // ai.setAccountBalance(Balance * 1024);
-
-                    ai.setUnlimitedTraffic();
+                    String AvailableTodayTraffic = new Regex(infos[3], "AvailableTodayTraffic:(.+)").getMatch(0);
+                    LOGGER.info("Zevera: AvailableTodayTraffic=" + AvailableTodayTraffic);
+                    ai.setTrafficLeft(SizeFormatter.getSize(AvailableTodayTraffic + "mb"));
                     if (ai.isExpired()) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
             } catch (PluginException e) {
                 try {
-                    /* verbose debug */
-                    // logger.info(br.toString());
-                    // logger.info(br.getHttpConnection().toString());
                 } catch (Throwable e2) {
                 }
                 throw e;
@@ -157,7 +162,6 @@ public class Zevera extends PluginForHost {
         String pw = Encoding.urlEncode(account.getPass());
 
         String link = downloadLink.getDownloadURL();
-        // logger.info("Testing link=" + link);
         if (link.contains("getFiles.aspx")) {
             showMessage(downloadLink, "Downloading file");
             user = account.getUser();
@@ -182,7 +186,6 @@ public class Zevera extends PluginForHost {
                     br.followConnection();
                 }
             } finally {
-                // logger.info("used serverurl: " + DownloadURL);
             }
         } else {
             showMessage(downloadLink, "Phase 1/2: Get FileID");
@@ -210,7 +213,6 @@ public class Zevera extends PluginForHost {
                     String DownloadURL = link; // new Regex(infos[5],
                                                // "DownloadURL:(.+)").getMatch(0);
                     showMessage(downloadLink, "Phase 3/3: OK Download starting");
-                    // logger.info("Phase 3/3 DownloadURL=" + DownloadURL);
                     if (DownloadURL == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
                     try {
                         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DownloadURL, true, 1);
@@ -222,7 +224,6 @@ public class Zevera extends PluginForHost {
                             br.followConnection();
                         }
                     } finally {
-                        // logger.info("used serverurl: " + DownloadURL);
                     }
                 } else
                     this.sleep(15 * 1000l, downloadLink, "Waiting for download to finish on Zevera");
@@ -276,10 +277,6 @@ public class Zevera extends PluginForHost {
 
         String filename = new Regex(infos[1], "FileName:(.+)").getMatch(0);
         String filesize = new Regex(infos[4], "FileSizeInBytes:(.+)").getMatch(0);
-        // logger.info("filename=" + filename);
-        // logger.info("filesize=" + filesize);
-        // Integer filesize_kb = Integer.parseInt(filesize);
-        // filesize_kb=(filesize_kb/1024)/1024;
 
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         downloadLink.setName(filename.trim());
