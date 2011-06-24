@@ -98,7 +98,7 @@ public class BitShareCom extends PluginForHost {
         if (br.containsHTML("(You reached your hourly traffic limit|Your Traffic is used up for today)")) {
             String wait = br.getRegex("id=\"blocktimecounter\">(\\d+) Seconds</span>").getMatch(0);
             if (wait != null) {
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(wait) * 60 * 1001l);
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(wait) * 1001l);
             } else {
                 wait = br.getRegex("var blocktime = (\\d+);").getMatch(0);
                 if (wait != null) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(wait) * 1001l); }
