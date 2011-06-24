@@ -1253,6 +1253,7 @@ plugins.hoster.filehosterru.errors.hostertemporaryunavailable = Servidor tempora
 plugins.hoster.fileplanetcomua.only4premium = Solo disponible para usuarios Premium
 plugins.hoster.filernet.errors.nofreeslots = No hay slots gratuitos disponibles
 plugins.hoster.fileservecom.errors.only4premium = Solo disponible para usuarios Premium
+plugins.hoster.filesflashcom.only4premium = Solo disponible para usuarios Premium
 plugins.hoster.filesgwkz.passwordprotectedlink = Enlace con contraseña
 plugins.hoster.fileshareinua.errors.temporaryunavailable = Temporalmente no disponible
 plugins.hoster.filesmailru.inprocess = Archivo todavia subiendose al servidor.
