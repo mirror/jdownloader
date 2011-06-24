@@ -1253,6 +1253,7 @@ plugins.hoster.filehosterru.errors.hostertemporaryunavailable = Temporarily unav
 plugins.hoster.fileplanetcomua.only4premium = Only downloadable for premium users
 plugins.hoster.filernet.errors.nofreeslots = No free slots available, retry later
 plugins.hoster.fileservecom.errors.only4premium = Only downloadable for premium users
+plugins.hoster.filesflashcom.only4premium = Only downloadable for premium users
 plugins.hoster.filesgwkz.passwordprotectedlink = This link is password protected
 plugins.hoster.fileshareinua.errors.temporaryunavailable = Temporarily unavailable
 plugins.hoster.filesmailru.inprocess = File still being uploaded
