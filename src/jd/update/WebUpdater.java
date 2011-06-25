@@ -170,7 +170,7 @@ public class WebUpdater implements Serializable {
 
         for (final Iterator<FileUpdate> it = files.iterator(); it.hasNext();) {
             final FileUpdate file = it.next();
-            if (new File(file.getLocalFile(), ".noupdate").exists()) {
+            if (new File(file.getLocalFile().getPath() + ".noupdate").exists()) {
                 System.out.println("User excluded. " + file.getLocalPath());
                 it.remove();
             } else {
