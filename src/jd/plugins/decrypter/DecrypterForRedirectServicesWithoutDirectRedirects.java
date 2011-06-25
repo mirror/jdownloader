@@ -22,6 +22,9 @@ import java.util.Random;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.URLConnectionAdapter;
+import jd.http.ext.BasicBrowserEnviroment;
+import jd.http.ext.ExtBrowser;
+import jd.http.ext.ExtBrowserException;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.HTMLParser;
@@ -36,7 +39,7 @@ import jd.utils.locale.JDL;
         "hypem.com", "academicearth.org", "skreemr.org", "tm-exchange.com", "adiarimore.com", "mafia.to/download", "bogatube.com", "newgrounds.com", "accuratefiles.com", "slutdrive.com", "view.stern.de", "fileblip.com", "warcraft.ingame.de", "mixconnect.com", "makinamania.com", "twiturm.com", "ebooksdownloadfree.com", "freebooksearcher.info", "ubuntuone.com", "mp3.wp.pl", "gameone.de" }, urls = { "http://(www\\.)?protect\\.myurl\\.in/[A-Za-z0-9]+", "http://(www\\.)?h\\-url\\.in/[A-Za-z0-9]+", "https://(www\\.)?dropbox\\.com/s/[a-z0-9]+/.+", "http://(www\\.)?stardima\\.com(/anime)?/download/\\d+", "http://(www\\.)?1lien\\.com/\\d+", "http://(www\\.)?filespart\\.com/(dl|go)/[0-9a-zA-Z]+\\.html", "http://(www\\.)?protect-ddl\\.com/[a-fA-F0-9]+", "http://(www\\.)?filep\\.info/(\\?url=|/)\\d+", "http://(www\\.)?grou\\.ps/[a-z0-9]+/videos/\\d+",
         "http://(www\\.)?linkexterno\\.com/[A-Za-z0-9]+", "http://(www\\.)?eskimotube\\.com/\\d+\\-.*?\\.html", "http://(www\\.)?m4u\\.in/[a-z0-9]+", "http://(www\\.)?4p5\\.com/[a-z0-9]+", "http://t\\.co/[a-zA-Z0-9]+", "http://[\\w\\.]*?telona\\.biz/protec?tor.*?\\?.*?//:ptth", "http://go\\.madmimi\\.com/redirects/[a-zA-Z0-9]+\\?pa=\\d+", "http://href\\.hu/x/[a-zA-Z0-9\\.]+", "http://hide\\.linkleak\\.org/[a-zA-Z0-9\\.]+", "http://[\\w\\.]*?migre\\.me/[a-z0-9A-Z]+", "http://[\\w\\.]*?degracaemaisgostoso\\.(biz|info)/download/\\?url=.*?:ptth", "http://[\\w\\.]*?altervista\\.org/\\?i=[0-9a-zA-Z]+", "http://[\\w\\.]*?agaleradodownload\\.com/download.*?\\?.*?//:ptth", "http://[\\w\\.]*?(adf\\.ly|9\\.bb)/.+", "http://[\\w\\.]*?musicloud\\.fm/dl/[A-Za-z0-9]+", "http://[\\w\\.]*?wowebook\\.com/(e-|non-e-)book/.*?/.*?\\.html",
         "http://[\\w\\.]*?(link\\.songs\\.pk/(popsong|song1|bhangra)\\.php\\?songid=|songspk\\.info/ghazals/download/ghazals\\.php\\?id=)[0-9]+", "http://[\\w\\.]*?imageto\\.net/(\\?v=|images/)[0-9a-z]+\\..{2,4}", "http://[\\w\\.]*?clubteam\\.eu/dl\\.php\\?id=\\d\\&c=[a-zA-z0-9=]+", "http://[\\w\\.]*?jforum\\.uni\\.cc/protect/\\?r=[a-z0-9]+", "http://[\\w\\.]*?linksole\\.com/[0-9a-z]+", "http://[\\w\\.]*?deurl\\.me/[0-9A-Z]+", "http://(www\\.)?(yourfileplace|megafilegarden)\\.com/d/\\d+/.+", "http://[\\w\\.]*?muzgruz\\.ru/music/download/\\d+", "http://[\\w\\.]*?zero10\\.net/\\d+", "http://[\\w\\.]*?aiotool\\.net/\\d+", "http://[\\w\\.]*?chip\\.de/c1_videos/.*?-Video_\\d+\\.html", "http://(www\\.)?multiprotect\\.info/\\d+", "http://[\\w\\.]*?nbanews\\.us/\\d+", "http://[\\w\\.]*?wwenews\\.us/\\d+", "http://[\\w\\.]*?top2tech\\.com/\\d+",
-        "http://[\\w\\.]*?umquetenha\\.org/protecao/resolve\\.php\\?link=.+", "http://[\\w\\.]*?oneclickmoviez\\.com/dwnl/.*?/\\d+/\\d+", "http://[\\w\\.]*?1tool\\.biz/\\d+", "http://[\\w\\.]*?trailerzone\\.info/(protect|wait(2)?)\\.php\\?(key|u)=[a-zA-Z0-9=/]+", "http://[\\w\\.]*?imagetwist\\.com/[a-z0-9]{12}", "http://[\\w\\.]*?(file4ever\\.us|catchfile\\.net)/\\d+", "http://[\\w\\.]*?(zero10\\.net/|gamz\\.us/\\?id=)\\d+", "http://(www\\.)?official\\.fm/track(s)?/\\d+", "http://(www\\.)?hypem\\.com/(track/\\d+/|item/[a-z0-9]+)", "http://[\\w\\.]*?academicearth\\.org/lectures/.+", "http://[\\w\\.]*?skreemr\\.org/link\\.jsp\\?id=[A-Z0-9]+", "http://[\\w\\.]*?tm-exchange\\.com/(get\\.aspx\\?action=trackgbx|\\?action=trackshow)\\&id=\\d+", "http://[\\w\\.]*?adiarimore\\.com/miralink/[a-z0-9]+", "http://[\\w\\.]*?mafia\\.to/download-[a-z0-9]+\\.cfm",
+        "http://[\\w\\.]*?umquetenha\\.org/protecao/resolve\\.php\\?link=.+", "http://[\\w\\.]*?oneclickmoviez\\.com/dwnl/.*?/\\d+/\\d+", "http://[\\w\\.]*?1tool\\.biz/\\d+", "http://(www\\.)?trailerzone\\.info/(protect|wait(2)?)\\.(php\\?|html)(key=|u=|#:{1,})[a-zA-Z0-9=+/]+", "http://[\\w\\.]*?imagetwist\\.com/[a-z0-9]{12}", "http://[\\w\\.]*?(file4ever\\.us|catchfile\\.net)/\\d+", "http://[\\w\\.]*?(zero10\\.net/|gamz\\.us/\\?id=)\\d+", "http://(www\\.)?official\\.fm/track(s)?/\\d+", "http://(www\\.)?hypem\\.com/(track/\\d+/|item/[a-z0-9]+)", "http://[\\w\\.]*?academicearth\\.org/lectures/.+", "http://[\\w\\.]*?skreemr\\.org/link\\.jsp\\?id=[A-Z0-9]+", "http://[\\w\\.]*?tm-exchange\\.com/(get\\.aspx\\?action=trackgbx|\\?action=trackshow)\\&id=\\d+", "http://[\\w\\.]*?adiarimore\\.com/miralink/[a-z0-9]+", "http://[\\w\\.]*?mafia\\.to/download-[a-z0-9]+\\.cfm",
         "http://[\\w\\.]*?bogatube\\.com/tube/\\d+/\\d+/.*?\\.php", "http://[\\w\\.]*?newgrounds\\.com/(portal/view/|audio/listen/)\\d+", "http://(www\\.)?accuratefiles\\.com/fileinfo/[a-z0-9]+", "http://(www\\.)?slutdrive\\.com/video-\\d+\\.html", "http://(www\\.)?view\\.stern\\.de/de/(picture|original)/.*?-\\d+\\.html", "http://(www\\.)?fileblip\\.com/[a-z0-9]+", "http://(www\\.)?warcraft\\.ingame\\.de/downloads/\\?file=\\d+", "http://(www\\.)?mixconnect\\.com/listen/.*?-mid\\d+", "http://(www\\.)?(makinamania\\.com/descargar-.+|machines\\.makinamania\\.com/descargas/descarga\\.php\\?id=[A-Za-z0-9]+=\\&m=[A-Za-z0-9]+=(=)?\\&c=[a-z0-9]+)", "http://(www\\.)?twiturm\\.com/[a-z0-9]+", "http://(www\\.)?ebooksdownloadfree\\.com/.*?/.*?\\.html", "http://(www\\.)?freebooksearcher\\.info/downloadbook\\.php\\?id=\\d+", "http://(www\\.)?ubuntuone\\.com/p/[A-Za-z0-9]+",
         "http://[\\w\\.]*?mp3\\.wp\\.pl/(?!ftp)(p/strefa/artysta/\\d+,utwor,\\d+\\.html|\\?tg=[A-Za-z0-9=]+)", "http://(www\\.)?gameone\\.de/blog/\\d+/\\d+/.+" }, flags = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 })
 public class DecrypterForRedirectServicesWithoutDirectRedirects extends PluginForDecrypt {
@@ -212,14 +215,21 @@ public class DecrypterForRedirectServicesWithoutDirectRedirects extends PluginFo
                 finallink = sb.toString();
             }
         } else if (parameter.contains("trailerzone.info/")) {
-            br.getPage(parameter);
-            finallink = br.getRegex("var xlink = '(.*?)';").getMatch(0);
-            if (finallink == null) {
-                final String timeStamp = br.getRegex("name=\"timestamp\" value=\"(.*?)\"").getMatch(0);
-                final String link = br.getRegex("name=\"link\" value=\"(.*?)\"").getMatch(0);
-                if (timeStamp == null || link == null) { return null; }
-                br.postPage("http://trailerzone.info/go.php", "timestamp=" + timeStamp + "&link=" + link + "&redir=Weiter+zum+Link");
-                finallink = br.getRegex("<iframe src=\"(.*?)\"").getMatch(0);
+            final String cipher = new Regex(parameter, "#:{1,}(.*?)$").getMatch(-1);
+            if (cipher == null) { return null; }
+            final long timeStamp = System.currentTimeMillis();
+            br.postPage("http://trailerzone.info/go.html" + cipher, "timestamp=" + timeStamp + "&link=&redir=Weiter+zum+Link");
+            try {
+                final ExtBrowser eb = new ExtBrowser();
+                eb.setBrowserEnviroment(new BasicBrowserEnviroment(new String[] { ".*" }, new String[] { ".*trailerzone.info.*" }) {
+                    @Override
+                    public boolean isAutoProcessSubFrames() {
+                        return false;
+                    }
+                });
+                eb.eval(br);
+                finallink = eb.getRegex("><iframe src=\"(.*?)\"").getMatch(0);
+            } catch (final ExtBrowserException e) {
             }
         } else if (parameter.contains("imagetwist.com/")) {
             finallink = br.getRegex("\"(http://img\\d+\\.imagetwist\\.com/i/\\d+/.*?)\"").getMatch(0);
