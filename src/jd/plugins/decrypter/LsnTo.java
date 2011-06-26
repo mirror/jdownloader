@@ -21,6 +21,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
@@ -66,6 +67,10 @@ public class LsnTo extends PluginForDecrypt {
         }
         if (br.containsHTML("Anfrage abgefangen")) { throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore.")); }
         String[] links = br.getRegex("class=\"container\"><a href=\"(http://.*?)\"").getColumn(0);
+        final Form form = br.getForm(1);
+        if (form != null) {
+            br.submitForm(form);
+        }
         if (links == null || links.length == 0) {
             links = br.getRegex("\"(http://(www\\.)?lesen\\.to/protection/.*?)\"").getColumn(0);
         }
