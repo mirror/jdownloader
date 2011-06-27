@@ -126,10 +126,11 @@ public class PremiumCompoundExtension extends AbstractExtension<PremiumCompoundC
                     /* init replacePlugin */
                     try {
                         /*
-                         * we do not need a seperate multishare.cz plugin, as we
-                         * already have a normal plugin for it
+                         * we do not need a seperate multishare.cz,zevera.com
+                         * plugin, as we already have a normal plugin for it
                          */
                         if (key.equalsIgnoreCase("multishare.cz")) continue;
+                        if (key.equalsIgnoreCase("zevera.com")) continue;
                         /* the premshareplugins never can be disabled */
                         new PremShareHost(key, premShareHosts.get(key), "NEVERUSETHISREGEX" + key + replaceIndex++ + ":\\)", 2 + PluginWrapper.ALWAYS_ENABLED);
                     } catch (Throwable e) {

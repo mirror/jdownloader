@@ -35,7 +35,7 @@ public class Zevera extends PluginForHost implements JDPremInterface {
     public Zevera(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://zevera.com");
-        infostring = "rehost.to @ " + wrapper.getHost();
+        infostring = "zevera.com @ " + wrapper.getHost();
     }
 
     @Override
@@ -107,7 +107,7 @@ public class Zevera extends PluginForHost implements JDPremInterface {
             return;
         }
         putLastTimeStarted(System.currentTimeMillis());
-        /* try rehost.to first */
+        /* try zevera first */
         if (account == null) {
             if (handleZevera(downloadLink)) return;
         } else if (!PremiumCompoundExtension.preferLocalAccounts()) {
@@ -191,6 +191,7 @@ public class Zevera extends PluginForHost implements JDPremInterface {
         // String url = Encoding.urlEncode(link.getDownloadURL());
         String url = link.getDownloadURL();
         String FileID = null;
+        String dlUrl = null;
         showMessage(link, "Phase 1/3: Ask to Download");
         br.getPage("http://www.zevera.com/jDownloader.ashx?cmd=generatedownload&login=" + user + "&pass=" + pw + "&olink=" + url);
 
@@ -204,6 +205,22 @@ public class Zevera extends PluginForHost implements JDPremInterface {
             // TotalBytesToReceive:0P
             FileID = new Regex(infos[1], "FileID:(.+)").getMatch(0);
             logger.severe("2: FileID= " + FileID);
+            while (true) {
+                br.getPage("http://www.zevera.com/jDownloader.ashx?cmd=fileinfo&login=" + user + "&pass=" + pw + "&FileID=" + FileID);
+                if (br.containsHTML("Status:Downloaded")) {
+                    // FileID:1198253,FileName:Terraria.v1.0.4.cracked-THETA.rar,
+                    // FileNameOnServer:C14316_2011618105645130_8832.zip,
+                    // StorageServerURL:Http://rapidus.000.gr,FileSizeInBytes:6391068,
+                    // DownloadURL:Http://rapidus.000.gr/downloadFile.ashx?link=C14316_2011618105645130_8832.zip&fid=1198253&cid=0,
+                    // Status:Downloaded,BytesReceived:6391068,TotalBytesToReceive:6391068,ProgressPercentage:100,
+                    // StatusText:Downloaded,
+                    // ProgressText:Finished
+                    dlUrl = br.getRegex("DownloadURL:(.+)").getMatch(0);
+                    showMessage(link, "Phase 2/3: Check Download");
+                    break;
+                }
+                this.sleep(15 * 1000l, link, "Waiting for download to finish on Zevera");
+            }
         } else {
             if (br.containsHTML("Status:Downloaded")) {
                 logger.severe("3: Status:Downloaded");
@@ -215,57 +232,33 @@ public class Zevera extends PluginForHost implements JDPremInterface {
                 // FileSizeInBytes:2273644,
                 // DownloadURL:Http://rapidus.000.gr/downloadFile.ashx?link=C14316_201161813458548_2339.zip&fid=1198815&cid=14316,
                 // Status:Downloaded,TotalBytesToReceive:2273644
-                String DownloadURL = new Regex(infos[5], "DownloadURL:(.+)").getMatch(0);
-                logger.severe("4: DownloadURL=" + DownloadURL);
-                dl = jd.plugins.BrowserAdapter.openDownload(br, link, DownloadURL, true, 1);
-                if (dl.getConnection().isContentDisposition()) {
-                    /* contentdisposition, lets download it */
-                    dl.startDownload();
-                    return true;
-                } else {
-                    /*
-                     * download is not contentdisposition, so remove this host
-                     * from premiumHosts list
-                     */
-                    br.followConnection();
-                }
+                dlUrl = br.getRegex("DownloadURL:(.+)").getMatch(0);
+                showMessage(link, "Phase 2/3: Check Download");
             } else {
                 logger.severe("5:ERROR_FILE_NOT_FOUND");
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Error adding file");
             }
         }
-        showMessage(link, "Phase 2/3: Check Download");
-        while (true) {
-            br.getPage("http://www.zevera.com/jDownloader.ashx?cmd=fileinfo&login=" + user + "&pass=" + pw + "&FileID=" + FileID);
-            if (br.containsHTML("Status:Downloaded")) {
-                // FileID:1198253,FileName:Terraria.v1.0.4.cracked-THETA.rar,
-                // FileNameOnServer:C14316_2011618105645130_8832.zip,
-                // StorageServerURL:Http://rapidus.000.gr,FileSizeInBytes:6391068,
-                // DownloadURL:Http://rapidus.000.gr/downloadFile.ashx?link=C14316_2011618105645130_8832.zip&fid=1198253&cid=0,
-                // Status:Downloaded,BytesReceived:6391068,TotalBytesToReceive:6391068,ProgressPercentage:100,
-                // StatusText:Downloaded,
-                // ProgressText:Finished
-                String DownloadURL = br.getRegex("DownloadURL:(.+)").getMatch(0);
-                showMessage(link, "Phase 3/3: Download:" + DownloadURL);
-                dl = jd.plugins.BrowserAdapter.openDownload(br, link, DownloadURL, true, 1);
-                if (dl.getConnection().isContentDisposition()) {
-                    /* contentdisposition, lets download it */
-                    dl.startDownload();
-                    return true;
-                } else {
-                    /*
-                     * download is not contentdisposition, so remove this host
-                     * from premiumHosts list
-                     */
-                    br.followConnection();
-                }
+        if (dlUrl != null) {
+            showMessage(link, "Phase 3/3: Download:" + dlUrl);
+            br.setFollowRedirects(true);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dlUrl, true, 1);
+            if (dl.getConnection().isContentDisposition()) {
+                long filesize = dl.getConnection().getLongContentLength();
+                if (filesize == 0) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 10 * 60 * 1000l);
+                /* contentdisposition, lets download it */
+                dl.startDownload();
+                return true;
             } else {
-
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Error adding file");
+                /*
+                 * download is not contentdisposition, so remove this host from
+                 * premiumHosts list
+                 */
+                br.followConnection();
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            this.sleep(15 * 1000l, link, "Waiting for download to finish on Zevera");
         }
-
+        return false;
     }
 
     @Override
@@ -299,6 +292,9 @@ public class Zevera extends PluginForHost implements JDPremInterface {
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         if (plugin == null) {
+            /* this plugin do not have fetchAccountInfo */
+            return null;
+        } else if (plugin.getHost().equalsIgnoreCase("zevera.com")) {
             String restartReq = enabled == false ? "(Restart required) " : "";
             AccountInfo ac = new AccountInfo();
             final boolean follow = br.isFollowingRedirects();
@@ -354,8 +350,8 @@ public class Zevera extends PluginForHost implements JDPremInterface {
                 }
             }
             return ac;
-        } else
-            return plugin.fetchAccountInfo(account);
+        }
+        return plugin.fetchAccountInfo(account);
     }
 
     @Override
@@ -393,7 +389,7 @@ public class Zevera extends PluginForHost implements JDPremInterface {
                 /* user prefers usage of local account */
                 return plugin.getMaxSimultanDownload(account);
             } else if (PremiumCompoundExtension.isStaticEnabled() && enabled) {
-                /* Rehost */
+                /* Zevera */
                 synchronized (LOCK) {
                     if (premiumHosts.contains(plugin.getHost()) && AccountController.getInstance().getValidAccount("zevera.com") != null) return Integer.MAX_VALUE;
                 }
@@ -401,28 +397,6 @@ public class Zevera extends PluginForHost implements JDPremInterface {
             return plugin.getMaxSimultanDownload(account);
         }
         return 0;
-    }
-
-    private boolean resumePossible(String hoster) {
-        if (hoster != null) {
-            if (hoster.contains("megaupload.com")) return true;
-            if (hoster.contains("rapidshare.com")) return true;
-            if (hoster.contains("oron.com")) return true;
-            if (hoster.contains("netload.in")) return true;
-            if (hoster.contains("uploaded.to")) return true;
-            if (hoster.contains("x7.to")) return true;
-            if (hoster.contains("freakshare.")) return true;
-            if (hoster.contains("filesonic")) return true;
-            if (hoster.contains("easy-share")) return true;
-            if (hoster.contains("duckload")) return true;
-            if (hoster.contains("megaupload")) return true;
-            if (hoster.contains("megavideo")) return true;
-            if (hoster.contains("fileserve.com")) return true;
-            if (hoster.contains("bitshare.com")) return true;
-            if (hoster.contains("hotfile.com")) return true;
-            if (hoster.contains("depositfiles.com")) return true;
-        }
-        return false;
     }
 
     @Override

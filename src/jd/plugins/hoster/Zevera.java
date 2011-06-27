@@ -17,11 +17,9 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.util.logging.Logger;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
-import jd.controlling.JDLogger;
 import jd.gui.UserIO;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
@@ -32,19 +30,16 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision: 1 $", interfaceVersion = 2, names = { "zevera.com" }, urls = { "http://[\\w\\.]*?zevera\\.com/.+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "zevera.com" }, urls = { "http://[\\w\\.]*?zevera\\.com/.+" }, flags = { 2 })
 public class Zevera extends PluginForHost {
-    static private final String AGB_LINK   = "http://zevera.com";
-    private static final Logger LOGGER     = JDLogger.getLogger();
-    static public final Object  LOGINLOCK  = new Object();
-    private boolean             showDialog = false;
+    static public final Object LOGINLOCK  = new Object();
+    private boolean            showDialog = false;
 
     private static String getID(String link) {
         String id = new Regex(link, ".*fid=(.+)&.*").getMatch(0);
@@ -54,7 +49,7 @@ public class Zevera extends PluginForHost {
     public Zevera(PluginWrapper wrapper) {
         super(wrapper);
         this.setStartIntervall(1000l);
-        this.enablePremium("http://zevera.com");
+        this.enablePremium("http://www.zevera.com/Prices.aspx");
     }
 
     /* TODO: remove me after 0.9xx public */
@@ -70,12 +65,7 @@ public class Zevera extends PluginForHost {
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-        setBrowserExclusive();
-        workAroundTimeOut(br);
-        requestFileInformation(downloadLink);
-        br.setDebug(true);
-        this.setBrowserExclusive();
-        throw new PluginException(LinkStatus.ERROR_FATAL, "You need a  premium account to use this hoster");
+        throw new PluginException(LinkStatus.ERROR_FATAL, "You need a premium account to use this hoster");
     }
 
     private void loginAPI(Account account, AccountInfo ai) throws IOException, PluginException {
@@ -88,47 +78,39 @@ public class Zevera extends PluginForHost {
                     account.setAccountInfo(ai);
                 }
             }
-            try {
-                String res = br.getPage("http://www.zevera.com/jDownloader.ashx?cmd=accountinfo&login=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
-                if (res == null || res.trim().length() == 0) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                res = res.trim();
-                account.setValid(true);
-                if ("Login Error".equalsIgnoreCase(res)) {
-                    ai.setStatus("Unknown user");
-                    if (showDialog) UserIO.getInstance().requestMessageDialog(0, "Zevera Premium Error", "The username '" + account.getUser() + "' is unknown.\r\nPlease check your Username!");
+            String res = br.getPage("http://www.zevera.com/jDownloader.ashx?cmd=accountinfo&login=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
+            if (res == null || res.trim().length() == 0) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            res = res.trim();
+            account.setValid(true);
+            if ("Login Error".equalsIgnoreCase(res)) {
+                ai.setStatus("Unknown user");
+                if (showDialog) UserIO.getInstance().requestMessageDialog(0, "Zevera Premium Error", "The username '" + account.getUser() + "' is unknown.\r\nPlease check your Username!");
 
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                } else {
-                    /* normal premium */
-                    // 0 DayTrafficLimit:5120,
-                    // 1 EndSubscriptionDate:2012/6/29 0:0:0,
-                    // 2 TrafficUsedToday:0,
-                    // 3 AvailableTodayTraffic5120,
-                    // 4 OronDayTrafficLimit:5120
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            } else {
+                /* normal premium */
+                // 0 DayTrafficLimit:5120,
+                // 1 EndSubscriptionDate:2012/6/29 0:0:0,
+                // 2 TrafficUsedToday:0,
+                // 3 AvailableTodayTraffic5120,
+                // 4 OronDayTrafficLimit:5120
+                ai.setStatus("Premium");
+                String infos[] = br.getRegex("(.*?)(,|$)").getColumn(0);
 
-                    ai.setStatus("Premium");
-                    String infos[] = br.getRegex("(.*?)(,|$)").getColumn(0);
+                String EndSubscriptionDate = new Regex(infos[1], "EndSubscriptionDate:(.+)").getMatch(0);
+                ai.setValidUntil(TimeFormatter.getMilliSeconds(EndSubscriptionDate, "yyyy/MM/dd HH:mm:ss", null));
 
-                    String EndSubscriptionDate = new Regex(infos[1], "EndSubscriptionDate:(.+)").getMatch(0);
-                    ai.setValidUntil(TimeFormatter.getMilliSeconds(EndSubscriptionDate, "yyyy/MM/dd HH:mm:ss", null));
-
-                    /* Traffic balance not working in Zevera JD API */
-                    // Integer DayTraffic = Integer.parseInt(new
-                    // Regex(infos[0],"DayTrafficLimit:(.+)").getMatch(0).trim());
-                    // Integer TrafficUsedToday = Integer.parseInt(new
-                    // Regex(infos[0],"TrafficUsedToday:(.+)").getMatch(0).trim());
-                    // Integer Balance = DayTraffic - TrafficUsedToday;
-                    // ai.setAccountBalance(Balance * 1024);
-                    String AvailableTodayTraffic = new Regex(infos[3], "AvailableTodayTraffic:(.+)").getMatch(0);
-                    LOGGER.info("Zevera: AvailableTodayTraffic=" + AvailableTodayTraffic);
-                    ai.setTrafficLeft(SizeFormatter.getSize(AvailableTodayTraffic + "mb"));
-                    if (ai.isExpired()) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                }
-            } catch (PluginException e) {
-                try {
-                } catch (Throwable e2) {
-                }
-                throw e;
+                /* Traffic balance not working in Zevera JD API */
+                // Integer DayTraffic = Integer.parseInt(new
+                // Regex(infos[0],"DayTrafficLimit:(.+)").getMatch(0).trim());
+                // Integer TrafficUsedToday = Integer.parseInt(new
+                // Regex(infos[0],"TrafficUsedToday:(.+)").getMatch(0).trim());
+                // Integer Balance = DayTraffic - TrafficUsedToday;
+                // ai.setAccountBalance(Balance * 1024);
+                String AvailableTodayTraffic = new Regex(infos[3], "AvailableTodayTraffic:(.+)").getMatch(0);
+                logger.info("Zevera: AvailableTodayTraffic=" + AvailableTodayTraffic);
+                ai.setTrafficLeft(SizeFormatter.getSize(AvailableTodayTraffic + "mb"));
+                if (ai.isExpired()) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
         }
     }
@@ -156,11 +138,9 @@ public class Zevera extends PluginForHost {
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         setBrowserExclusive();
         workAroundTimeOut(br);
-        br.setDebug(true);
         showDialog = false;
         String user = Encoding.urlEncode(account.getUser());
         String pw = Encoding.urlEncode(account.getPass());
-
         String link = downloadLink.getDownloadURL();
         if (link.contains("getFiles.aspx")) {
             showMessage(downloadLink, "Downloading file");
@@ -169,24 +149,7 @@ public class Zevera extends PluginForHost {
             String basicauth = "Basic " + Encoding.Base64Encode(user + ":" + pw);
             br.getHeaders().put("Authorization", basicauth);
             br.setFollowRedirects(true);
-            try {
-                dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, link, true, 1);
-                if (dl.getConnection().isContentDisposition()) {
-                    // br.followConnection();
-                    String filename = Plugin.getFileNameFromHeader(dl.getConnection());
-                    long filesize = br.getHttpConnection().getLongContentLength();
-
-                    if (filesize == 0) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 10 * 60 * 1000l);
-
-                    downloadLink.setDownloadSize(filesize);
-                    downloadLink.setName(Encoding.htmlDecode(filename).trim());
-                    dl.startDownload();
-                    return;
-                } else {
-                    br.followConnection();
-                }
-            } finally {
-            }
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, link, true, 1);
         } else {
             showMessage(downloadLink, "Phase 1/2: Get FileID");
             String FileID = Zevera.getID(link);
@@ -210,39 +173,28 @@ public class Zevera extends PluginForHost {
                     // 9 ProgressPercentage:100,
                     // 10 StatusText:Downloaded,
                     // 11 ProgressText:Finished
-                    String DownloadURL = link; // new Regex(infos[5],
-                                               // "DownloadURL:(.+)").getMatch(0);
-                    showMessage(downloadLink, "Phase 3/3: OK Download starting");
+                    String DownloadURL = br.getRegex("DownloadURL:(http.*?),").getMatch(0);
                     if (DownloadURL == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-                    try {
-                        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DownloadURL, true, 1);
-                        if (dl.getConnection().isContentDisposition()) {
-                            /* contentdisposition, lets download it */
-                            dl.startDownload();
-                            return;
-                        } else {
-                            br.followConnection();
-                        }
-                    } finally {
-                    }
+                    showMessage(downloadLink, "Phase 3/3: OK Download starting");
+                    dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DownloadURL, true, 1);
+                    break;
                 } else
                     this.sleep(15 * 1000l, downloadLink, "Waiting for download to finish on Zevera");
             }
         }
-    }
-
-    @Override
-    public void resetDownloadlink(DownloadLink link) {
-        link.setProperty("nochunk", false);
+        if (dl.getConnection().isContentDisposition()) {
+            long filesize = dl.getConnection().getLongContentLength();
+            if (filesize == 0) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 10 * 60 * 1000l);
+            dl.startDownload();
+        } else {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
     }
 
     @Override
     public String getAGBLink() {
-        return AGB_LINK;
-    }
-
-    public AvailableStatus websiteFileCheck(DownloadLink downloadLink) throws PluginException {
-        return AvailableStatus.TRUE;
+        return "http://zevera.com";
     }
 
     @Override
@@ -302,5 +254,9 @@ public class Zevera extends PluginForHost {
     private void showMessage(DownloadLink link, String message) {
         link.getLinkStatus().setStatusText(message);
         link.requestGuiUpdate();
+    }
+
+    @Override
+    public void resetDownloadlink(DownloadLink link) {
     }
 }
