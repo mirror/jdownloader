@@ -33,19 +33,14 @@ import jd.plugins.PluginForHost;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imagefap.com" }, urls = { "http://[\\w\\.]*?imagefap.com/image.php\\?id=.*(&pgid=.*&gid=.*&page=.*)?" }, flags = { 0 })
 public class ImageFap extends PluginForHost {
 
-    public ImageFap(PluginWrapper wrapper) {
+    public ImageFap(final PluginWrapper wrapper) {
         super(wrapper);
         // this.setStartIntervall(500l);
     }
 
-    @Override
-    public void init() {
-        Browser.setRequestIntervalLimitGlobal(getHost(), 200);
-    }
-
-    private String DecryptLink(String code) {
+    private String DecryptLink(final String code) {
         try {
-            String s1 = Encoding.htmlDecode(code.substring(0, code.length() - 1));
+            final String s1 = Encoding.htmlDecode(code.substring(0, code.length() - 1));
 
             String t = "";
             for (int i = 0; i < s1.length(); i++) {
@@ -54,7 +49,7 @@ public class ImageFap extends PluginForHost {
                 // logger.info("decrypt6 " +
                 // (Integer.parseInt(code.substring(code.length()-1,code.length()
                 // ))));
-                int charcode = s1.charAt(i) - Integer.parseInt(code.substring(code.length() - 1, code.length()));
+                final int charcode = s1.charAt(i) - Integer.parseInt(code.substring(code.length() - 1, code.length()));
                 // logger.info("decrypt7 " + charcode);
                 t = t + new Character((char) charcode).toString();
                 // t+=new Character((char)
@@ -69,26 +64,97 @@ public class ImageFap extends PluginForHost {
             // logger.info("return of DecryptLink(): " +
             // JDUtilities.htmlDecode(t));
             return Encoding.htmlDecode(t);
-        } catch (Exception e) {
+        } catch (final Exception e) {
             logger.log(java.util.logging.Level.SEVERE, "Exception occurred", e);
         }
         return null;
     }
 
+    @Override
     public String getAGBLink() {
         return "http://imagefap.com/faq.php";
     }
 
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws PluginException {
+    private String getGalleryName(final DownloadLink dl) {
+        String galleryName = dl.getStringProperty("galleryname");
+        if (galleryName == null) {
+            galleryName = br.getRegex("<title>Porn pics of (.*?) \\(Page 1\\)</title>").getMatch(0);
+            if (galleryName == null) {
+                galleryName = br.getRegex("<font face=\"verdana\" color=\"white\" size=\"4\"><b>(.*?)</b></font>").getMatch(0);
+                if (galleryName == null) {
+                    galleryName = br.getRegex("<td bgcolor=\\'#FCFFE0\\'><a href=\"/gallery\\.php\\?gid=\\d+\">(.*?)</a></td>").getMatch(0);
+                }
+            }
+        }
+        return galleryName;
+    }
+
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
+    }
+
+    @Override
+    public void handleFree(final DownloadLink downloadLink) throws Exception {
+        requestFileInformation(downloadLink);
+        br.setFollowRedirects(true);
+        String pfilename = downloadLink.getName();
+        br.getPage(downloadLink.getDownloadURL());
+        br.setDebug(true);
+        final String gallery_name = getGalleryName(downloadLink);
+        String imagelink = br.getRegex("\"(http://fap\\.to/images/(full/)?\\d+/\\d+/.*?)\"").getMatch(0);
+        if (imagelink == null) {
+            final String returnID = new Regex(br, Pattern.compile("return lD\\(\\'(\\S+?)\\'\\);", Pattern.CASE_INSENSITIVE)).getMatch(0);
+            if (returnID != null) {
+                imagelink = DecryptLink(returnID);
+            }
+            if (imagelink == null) {
+                imagelink = br.getRegex("onclick=\"OnPhotoClick\\(\\);\" src=\"(http://.*?)\"").getMatch(0);
+                if (imagelink == null) {
+                    imagelink = br.getRegex("href=\"#\" onclick=\"javascript:window\\.open\\(\\'(http://.*?)\\'\\)").getMatch(0);
+                }
+            }
+        }
+        if (imagelink == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        // Only set subdirectory if it wasn't set before or we'll get subfolders
+        // in subfolders which is bad
+        if (gallery_name != null && downloadLink.getSubdirectory() == null) {
+            downloadLink.addSubdirectory(gallery_name);
+        }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, imagelink);
+        if (dl.getConnection().getResponseCode() == 404) {
+            dl.getConnection().disconnect();
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        if (!pfilename.endsWith(new Regex(imagelink, "(\\.[A-Za-z0-9]+)$").getMatch(0))) {
+            pfilename += new Regex(imagelink, "(\\.[A-Za-z0-9]+)$").getMatch(0);
+        }
+        downloadLink.setFinalFileName(pfilename);
+        dl.startDownload();
+    }
+
+    @Override
+    public void init() {
+        Browser.setRequestIntervalLimitGlobal(getHost(), 200);
+    }
+
+    @Override
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws PluginException {
         try {
             br.getPage(downloadLink.getDownloadURL());
             if (br.getRedirectLocation() != null) {
-                if (!br.getRedirectLocation().contains("/photo/")) br.getPage(br.getRedirectLocation());
+                if (!br.getRedirectLocation().contains("/photo/")) {
+                    br.getPage(br.getRedirectLocation());
+                }
                 logger.info("Setting new downloadUrl: " + br.getRedirectLocation());
                 downloadLink.setUrlDownload(br.getRedirectLocation());
                 br.getPage(downloadLink.getDownloadURL());
             }
-            if (br.containsHTML("(>The image you are trying to access does not exist|<title> \\(Picture 1\\) uploaded by  on ImageFap\\.com</title>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (br.containsHTML("(>The image you are trying to access does not exist|<title> \\(Picture 1\\) uploaded by  on ImageFap\\.com</title>)")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
             String picture_name = br.getRegex("<title>(.*?) in gallery").getMatch(0);
             if (picture_name == null) {
                 picture_name = "";
@@ -106,8 +172,8 @@ public class ImageFap extends PluginForHost {
                     }
                 }
             }
-            String orderid = downloadLink.getStringProperty("orderid");
-            if (authorsName == null || galleryName == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            final String orderid = downloadLink.getStringProperty("orderid");
+            if (authorsName == null || galleryName == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
             galleryName = galleryName.trim();
             authorsName = authorsName.trim();
             if (orderid != null) {
@@ -118,87 +184,40 @@ public class ImageFap extends PluginForHost {
             /* only set filepackage if not set yet */
             try {
                 if (downloadLink.isDefaultFilePackage()) {
-                    FilePackage fp = FilePackage.getInstance();
+                    final FilePackage fp = FilePackage.getInstance();
                     fp.setName(authorsName + " - " + galleryName);
                     fp.add(downloadLink);
                 }
-            } catch (Throwable e) {
+            } catch (final Throwable e) {
                 /*
                  * does not work in stable 0.9580, can be removed with next
                  * major update
                  */
                 try {
                     if (downloadLink.getFilePackage() == FilePackage.getDefaultFilePackage()) {
-                        FilePackage fp = FilePackage.getInstance();
+                        final FilePackage fp = FilePackage.getInstance();
                         fp.setName(authorsName + " - " + galleryName);
                         fp.add(downloadLink);
                     }
-                } catch (Throwable e2) {
+                } catch (final Throwable e2) {
                 }
             }
             return AvailableStatus.TRUE;
-        } catch (Exception e) {
+        } catch (final Exception e) {
             logger.log(java.util.logging.Level.SEVERE, "Exception occurred", e);
         }
         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
     }
 
-    public void handleFree(DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        br.setFollowRedirects(true);
-        String pfilename = downloadLink.getName();
-        br.getPage(downloadLink.getDownloadURL());
-        br.setDebug(true);
-        String gallery_name = getGalleryName(downloadLink);
-        String imagelink = br.getRegex("\"(http://fap\\.to/images/full/\\d+/\\d+/.*?)\"").getMatch(0);
-        if (imagelink == null) {
-            String returnID = new Regex(br, Pattern.compile("return lD\\(\\'(\\S+?)\\'\\);", Pattern.CASE_INSENSITIVE)).getMatch(0);
-            if (returnID != null) imagelink = DecryptLink(returnID);
-            if (imagelink == null) {
-                imagelink = br.getRegex("onclick=\"OnPhotoClick\\(\\);\" src=\"(http://.*?)\"").getMatch(0);
-                if (imagelink == null) imagelink = br.getRegex("href=\"#\" onclick=\"javascript:window\\.open\\(\\'(http://.*?)\\'\\)").getMatch(0);
-            }
-        }
-        if (imagelink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        // Only set subdirectory if it wasn't set before or we'll get subfolders
-        // in subfolders which is bad
-        if (gallery_name != null && downloadLink.getSubdirectory() == null) downloadLink.addSubdirectory(gallery_name);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, imagelink);
-        if (dl.getConnection().getResponseCode() == 404) {
-            dl.getConnection().disconnect();
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        if (!pfilename.endsWith(new Regex(imagelink, "(\\.[A-Za-z0-9]+)$").getMatch(0))) pfilename += new Regex(imagelink, "(\\.[A-Za-z0-9]+)$").getMatch(0);
-        downloadLink.setFinalFileName(pfilename);
-        dl.startDownload();
-    }
-
-    private String getGalleryName(DownloadLink dl) {
-        String galleryName = dl.getStringProperty("galleryname");
-        if (galleryName == null) {
-            galleryName = br.getRegex("<title>Porn pics of (.*?) \\(Page 1\\)</title>").getMatch(0);
-            if (galleryName == null) {
-                galleryName = br.getRegex("<font face=\"verdana\" color=\"white\" size=\"4\"><b>(.*?)</b></font>").getMatch(0);
-                if (galleryName == null) galleryName = br.getRegex("<td bgcolor=\\'#FCFFE0\\'><a href=\"/gallery\\.php\\?gid=\\d+\">(.*?)</a></td>").getMatch(0);
-            }
-        }
-        return galleryName;
-    }
-
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
-    }
-
+    @Override
     public void reset() {
     }
 
-    public void resetPluginGlobals() {
+    @Override
+    public void resetDownloadlink(final DownloadLink link) {
     }
 
-    public void resetDownloadlink(DownloadLink link) {
+    @Override
+    public void resetPluginGlobals() {
     }
 }
