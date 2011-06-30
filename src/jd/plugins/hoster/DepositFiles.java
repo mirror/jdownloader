@@ -201,13 +201,13 @@ public class DepositFiles extends PluginForHost {
         }
         ai.setStatus(JDL.L("plugins.hoster.depositfilescom.accountok", "Account is OK."));
         Date date;
+        account.setValid(true);
         try {
             date = dateFormat.parse(expire);
             ai.setValidUntil(date.getTime());
         } catch (final ParseException e) {
             logger.log(java.util.logging.Level.SEVERE, "Exception occurred", e);
         }
-
         return ai;
     }
 
