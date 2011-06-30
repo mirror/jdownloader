@@ -20,6 +20,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
+import jd.event.ControlEvent;
+import jd.event.ControlListener;
 import jd.gui.UserIO;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
@@ -40,15 +42,22 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filesonic.com" }, urls = { "http://[\\w\\.]*?(sharingmatrix|filesonic)\\..*?/.*?file/([0-9]+(/.+)?|[a-z0-9]+/[0-9]+(/.+)?)" }, flags = { 2 })
-public class FileSonicCom extends PluginForHost {
+public class FileSonicCom extends PluginForHost implements ControlListener {
 
     private static final Object LOCK               = new Object();
     private static long         LAST_FREE_DOWNLOAD = 0l;
+    private static boolean      initDone           = false;
     private static String       geoDomain          = null;
 
     public FileSonicCom(final PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.filesonic.com/premium");
+        synchronized (LOCK) {
+            if (!initDone) {
+                JDUtilities.getController().addControlListener(this);
+                initDone = true;
+            }
+        }
     }
 
     @Override
@@ -451,6 +460,13 @@ public class FileSonicCom extends PluginForHost {
 
     @Override
     public void resetPluginGlobals() {
+    }
+
+    public void controlEvent(ControlEvent event) {
+        if (event.getID() == 3) {
+            /* workaround for old stable to get notified about a reconnect */
+            LAST_FREE_DOWNLOAD = 0;
+        }
     }
 
 }
