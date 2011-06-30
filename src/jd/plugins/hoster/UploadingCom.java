@@ -29,11 +29,11 @@ import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -50,12 +50,12 @@ public class UploadingCom extends PluginForHost {
     private static final String FILEIDREGEX     = "name=\"file_id\" value=\"(.*?)\"";
     private static final String CODEREGEX       = "uploading\\.com/files/get/(\\w+)";
     private static final Object LOCK            = new Object();
-    private static final String MAINPAGE        = "http://www.uploading.com/";
+    private static final String MAINPAGE        = "http://uploading.com/";
 
     public UploadingCom(PluginWrapper wrapper) {
         super(wrapper);
         this.setStartIntervall(1000l);
-        this.enablePremium("http://www.uploading.com/premium/");
+        this.enablePremium("http://uploading.com/premium/");
     }
 
     @Override
@@ -65,6 +65,11 @@ public class UploadingCom extends PluginForHost {
 
     public void correctDownloadLink(DownloadLink link) {
         if (!link.getDownloadURL().contains("/get")) link.setUrlDownload(link.getDownloadURL().replace("/files", "/files/get").replace("www.", ""));
+        fixLink(link);
+    }
+
+    private void fixLink(DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replaceFirst("http://www\\.", "http://"));
     }
 
     public boolean isPremium(Account account, boolean force) throws IOException {
@@ -75,7 +80,7 @@ public class UploadingCom extends PluginForHost {
                 if (ret == null || !(ret instanceof Boolean)) {
                     boolean follow = br.isFollowingRedirects();
                     br.setFollowRedirects(true);
-                    br.getPage("http://www.uploading.com/");
+                    br.getPage("http://uploading.com/");
                     br.setFollowRedirects(follow);
                     if (br.containsHTML("UPGRADE TO PREMIUM")) {
                         isPremium = false;
@@ -109,7 +114,7 @@ public class UploadingCom extends PluginForHost {
                     if (cookies != null) {
                         if (cookies.containsKey("remembered_user") && account.isValid()) {
                             for (final String key : cookies.keySet()) {
-                                this.br.setCookie("http://www.uploading.com/", key, cookies.get(key));
+                                this.br.setCookie("http://uploading.com/", key, cookies.get(key));
                             }
                             valid = true;
                             return;
@@ -286,6 +291,7 @@ public class UploadingCom extends PluginForHost {
     }
 
     public AvailableStatus fileCheck(DownloadLink downloadLink) throws PluginException, IOException {
+        fixLink(downloadLink);
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("but due to abuse or through deletion by")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML("file was removed")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -325,10 +331,6 @@ public class UploadingCom extends PluginForHost {
     }
 
     public boolean checkLinks(DownloadLink[] urls) {
-        if (true) {
-            /* linkcheck api broken at the moment */
-            return false;
-        }
         if (urls == null || urls.length == 0) { return false; }
         try {
             ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
@@ -351,14 +353,15 @@ public class UploadingCom extends PluginForHost {
                      * anything else
                      */
                     if (c > 0) sb.append("%0D%0A");
+                    fixLink(dl);
                     sb.append(Encoding.urlEncode(dl.getDownloadURL()));
                     c++;
                 }
                 /* parser works on english language */
-                br.setCookie("http://www.uploading.com/", "lang", "1");
-                br.setCookie("http://www.uploading.com/", "language", "1");
-                br.setCookie("http://www.uploading.com/", "setlang", "en");
-                br.setCookie("http://www.uploading.com/", "_lang", "en");
+                br.setCookie("http://uploading.com/", "lang", "1");
+                br.setCookie("http://uploading.com/", "language", "1");
+                br.setCookie("http://uploading.com/", "setlang", "en");
+                br.setCookie("http://uploading.com/", "_lang", "en");
                 br.setDebug(true);
                 br.postPage("http://uploading.com/files/checker/?JsHttpRequest=" + System.currentTimeMillis() + "-xml", sb.toString());
                 String correctedHTML = br.toString().replace("\\", "");
@@ -413,6 +416,7 @@ public class UploadingCom extends PluginForHost {
         // if (timead == null) timead =
         // br.getRegex("start_timer\\((\\d+)\\)").getMatch(0);
         // sleep(Integer.parseInt(timead) * 1000l, downloadLink);
+        br.setDebug(true);
         String varLink = br.getRegex("var file_link = \\'(http://.*?)\\'").getMatch(0);
         /* captcha may occur here */
         String captcha = "";
