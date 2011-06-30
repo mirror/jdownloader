@@ -221,8 +221,9 @@ public abstract class PluginForHost extends Plugin implements FavIconRequestor {
 
     /** default fetchAccountInfo, set account valid to true */
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
+        AccountInfo ai = new AccountInfo();
         account.setValid(true);
-        return null;
+        return ai;
     }
 
     public boolean getAccountwithoutUsername() {

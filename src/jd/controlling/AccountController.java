@@ -190,7 +190,6 @@ public class AccountController implements AccountControllerListener {
             }
         }
         try {
-            account.setUpdateTime(System.currentTimeMillis());
             /* not every plugin sets this info correct */
             account.setValid(true);
             /* get previous account info and resets info for new update */
@@ -200,7 +199,11 @@ public class AccountController implements AccountControllerListener {
                 ai.setExpired(false);
                 ai.setValidUntil(-1);
             }
-            ai = plugin.fetchAccountInfo(account);
+            try {
+                ai = plugin.fetchAccountInfo(account);
+            } finally {
+                account.setUpdateTime(System.currentTimeMillis());
+            }
             if (ai == null) {
                 // System.out.println("plugin no update " + hostname);
                 /* not every plugin has fetchAccountInfo */
