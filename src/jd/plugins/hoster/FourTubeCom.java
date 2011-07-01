@@ -47,15 +47,15 @@ public class FourTubeCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        final String configUrl = br.getRegex("'flashvars','config=(.*?)'\\)").getMatch(0);
+        String configUrl = br.getRegex("'flashvars','config=(.*?)'\\)").getMatch(0);
+        if (configUrl == null) configUrl = br.getRegex("addVariable\\('config',.*?'(.*?)'").getMatch(0);
         if (configUrl == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         br.getPage("http://" + br.getHost() + configUrl);
 
         final String playpath = br.getRegex("<file>(.*?)</file>").getMatch(0);
-        final String type = br.getRegex("<type>(.*?)</type>").getMatch(0);
         final String token = br.getRegex("<token>(.*?)</token>").getMatch(0);
         final String url = br.getRegex("<streamer>(.*?)</streamer>").getMatch(0);
-        if (playpath == null || type == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        if (playpath == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
 
         if (!playpath.startsWith("http")) {
             dl = new RTMPDownload(this, downloadLink, url + "/" + playpath);
@@ -92,11 +92,12 @@ public class FourTubeCom extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         setBrowserExclusive();
         final String dllink = downloadLink.getDownloadURL();
+        br.setFollowRedirects(true);
         br.getPage(dllink);
         if (br.containsHTML("Page not found")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-        String filename = br.getRegex("<meta name=\"description\".*?\\) (.*?)\\. ").getMatch(0);
+        String filename = br.getRegex("<meta property=\"og:title\" content=\"(.*?)\"").getMatch(0);
         if (filename == null) {
-            filename = dllink.substring(dllink.lastIndexOf("/"));
+            filename = dllink.substring(dllink.lastIndexOf("/") + 1);
         }
         if (filename == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         downloadLink.setName(filename.trim() + ".flv");

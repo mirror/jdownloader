@@ -387,18 +387,27 @@ public class Megauploadcom extends PluginForHost {
         final String type = this.br.getRegex(Pattern.compile("Account type:.*?<b>([^</ ]+)", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
         if (type != null && !type.contains("Lifetime")) {
             ai.setStatus("Premium Membership");
-            final String days = this.br.getRegex("<b>Premium</b>.*?\\((\\d+) days remaining - <a").getMatch(0);
+            final String days = this.br.getRegex("<b>Premium</b>.*?\\((\\d+) days remaining").getMatch(0);
             if (days != null && !days.equalsIgnoreCase("Unlimited")) {
+                /* x days left */
                 ai.setValidUntil(System.currentTimeMillis() + Long.parseLong(days) * 24 * 60 * 60 * 1000);
             } else if (days == null || days.equals("0")) {
-                final String hours = this.br.getRegex("<b>Premium</b>.*?\\((\\d+) hours remaining - <a").getMatch(0);
-                if (hours != null) {
-                    ai.setValidUntil(System.currentTimeMillis() + Long.parseLong(hours) * 60 * 60 * 1000);
+                final String hours = this.br.getRegex("<b>Premium</b>.*?\\((\\d+) hours remaining").getMatch(0);
+                if (hours == null || "0".equals(hours)) {
+                    final String minutes = this.br.getRegex("<b>Premium</b>.*?\\((\\d+) minutes remaining ").getMatch(0);
+                    if (minutes != null) {
+                        /* x minutes left */
+                        ai.setValidUntil(System.currentTimeMillis() + Long.parseLong(minutes) * 60 * 1000);
+                    } else {
+                        ai.setExpired(true);
+                        account.setValid(false);
+                        return ai;
+                    }
                 } else {
-                    ai.setExpired(true);
-                    account.setValid(false);
-                    return ai;
+                    /* x hourse left */
+                    ai.setValidUntil(System.currentTimeMillis() + Long.parseLong(hours) * 60 * 60 * 1000);
                 }
+
             }
         } else if (type != null && type.contains("Lifetime")) {
             ai.setStatus("Lifetime Membership");
