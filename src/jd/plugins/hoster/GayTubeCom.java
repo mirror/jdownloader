@@ -1,5 +1,5 @@
 //jDownloader - Downloadmanager
-//Copyright (C) 2010  JD-Team support@jdownloader.org
+//Copyright (C) 2009  JD-Team support@jdownloader.org
 //
 //This program is free software: you can redistribute it and/or modify
 //it under the terms of the GNU General Public License as published by
@@ -30,10 +30,10 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xtube.com" }, urls = { "http://(www\\.)?xtube\\.com/(watch|play_re)\\.php\\?v=[A-Za-z0-9_\\-]+" }, flags = { 0 })
-public class XTubeCom extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gaytube.com" }, urls = { "http://(www\\.)?gaytube\\.com/media/\\d+" }, flags = { 0 })
+public class GayTubeCom extends PluginForHost {
 
-    public XTubeCom(PluginWrapper wrapper) {
+    public GayTubeCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -41,38 +41,26 @@ public class XTubeCom extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://wiki2.xtube.com/index.php?title=Terms_of_Use&action=purge";
-    }
-
-    private static final String MAINPAGE = "http://www.xtube.com";
-
-    public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("play_re", "watch"));
+        return "http://www.gaytube.com/index.php?view=info_terms";
     }
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
-        br.setCookie(MAINPAGE, "cookie_warning", "deleted");
-        br.setCookie(MAINPAGE, "cookie_warning", "S");
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("(sorry the video \"UNKNOWN\" is unavailable<|\">There was an unknown error with the video you have selected)") || br.getURL().contains("xtube.com/index.php") || br.getURL().equals("http://www.xtube.com/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<div class=\"p_5px font_b_12px f_left\">(.*?)</div>").getMatch(0);
-        if (filename == null) filename = br.getRegex("<div class=\"font_b_12px\">(.*?)</div><div").getMatch(0);
-        String fileID = new Regex(downloadLink.getDownloadURL(), "xtube\\.com/watch\\.php\\?v=(.+)").getMatch(0);
-        String ownerName = br.getRegex("\\.addVariable\\(\"user_id\", \"(.*?)\"\\);").getMatch(0);
-        if (fileID == null || ownerName == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        br.postPage("http://www.xtube.com/find_video.php", "user%5Fid=" + Encoding.urlEncode(ownerName) + "&clip%5Fid=&video%5Fid=" + Encoding.urlEncode(fileID));
-        DLLINK = br.getRegex("\\&filename=(http.*?hash.+)($|\r|\n| )").getMatch(0);
-        if (DLLINK == null) DLLINK = br.getRegex("\\&filename=(%2Fvideos.*?hash.+)").getMatch(0);
-        if (filename == null || DLLINK == null || DLLINK.length() > 500) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        DLLINK = Encoding.htmlDecode(DLLINK.trim());
-        if (DLLINK.contains("/notfound")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("(<title>GayTube Presents </title>|>This Video does not exist\\!<|>The following errors have occurred:<)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("<title>GayTube Presents (.*?)</title>").getMatch(0);
+        if (filename == null) filename = br.getRegex("\\&title=(.*?)\"").getMatch(0);
+        br.getPage("http://www.gaytube.com/flv_player/data/playerConfig/" + new Regex(downloadLink.getDownloadURL(), "gaytube\\.com/media/(\\d+)").getMatch(0) + ".xml");
+        DLLINK = br.getRegex("<file>(http://.*?)</file>").getMatch(0);
+        if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        DLLINK = Encoding.htmlDecode(DLLINK);
         filename = filename.trim();
-        downloadLink.setFinalFileName(filename + ".flv");
-        br.setDebug(true);
+        downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ".flv");
         Browser br2 = br.cloneBrowser();
+        // In case the link redirects to the finallink
+        br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
             con = br2.openGetConnection(DLLINK);

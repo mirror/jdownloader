@@ -104,6 +104,7 @@ public class RemixShareCom extends PluginForHost {
         }
         String lnk = execJS();
         if (lnk == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (!lnk.startsWith("http://")) lnk = new Regex(lnk, "<a href=\"(http://.*?)\"").getMatch(0);
         br.getPage(lnk);
         String dllink = br.getRedirectLocation();
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -120,8 +121,9 @@ public class RemixShareCom extends PluginForHost {
     private String execJS() throws Exception {
         String fun = br.getRegex("/>Your Download has been started\\.[\t\n\r ]+</div>[\t\n\r ]+<script type=\"text/javascript\" language=\"Javascript\">(.*?)</script>").getMatch(0);
         if (fun == null) return null;
+        fun = "var game = \"\";" + fun;
         String ah = new Regex(fun, "(document\\.getElementById\\((.*?)\\)\\.innerHTML)").getMatch(0);
-        if (ah != null) fun = fun.replace(ah, Encoding.Base64Decode("dmFyIEhleVJlbWl4c2hhcmVQbGVhc2VNYWtlQW5BUElGb3JVcyA="));
+        if (ah != null) fun = fun.replace(ah, "game");
         Object result = new Object();
         final ScriptEngineManager manager = new ScriptEngineManager();
         final ScriptEngine engine = manager.getEngineByName("javascript");

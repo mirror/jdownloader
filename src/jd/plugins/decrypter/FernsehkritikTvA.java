@@ -28,7 +28,7 @@ import jd.plugins.PluginForDecrypt;
 
 import org.appwork.utils.Regex;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fernsehkritik.tv" }, urls = { "http://(www\\.)?fernsehkritik\\.tv/folge-\\d+(/Start/)?" }, flags = { PluginWrapper.DEBUG_ONLY })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fernsehkritik.tv" }, urls = { "http://(www\\.)?fernsehkritik\\.tv/folge\\-\\d+" }, flags = { 0 })
 public class FernsehkritikTvA extends PluginForDecrypt {
 
     public FernsehkritikTvA(final PluginWrapper wrapper) {
@@ -65,32 +65,36 @@ public class FernsehkritikTvA extends PluginForDecrypt {
             }
 
         } else {
-            final String fpName = br.getRegex("var flattr_tle = '(.*?)'").getMatch(0);
-            final String fpStart = br.getRegex("<a onclick=\"jump\\('(.*?)'\\);\" href=\"#\" id=\"start_flash_player_link\">Flash-Player starten</a>").getMatch(0);
+            final String fpName = br.getRegex("var flattr_tle = \\'(.*?)\\'").getMatch(0);
+            final String fpStart = br.getRegex("<a onclick=\"jump\\(\\'(.*?)\\'\\);\" href=\"#\" id=\"start_flash_player_link\">Flash-Player starten</a>").getMatch(0);
             if (fpStart != null && !parameter.equals(fpStart)) {
                 br.getPage(parameter + "/" + fpStart);
             } else {
                 return null;
             }
-            final String[] parts = br.getRegex("part: '(\\d+)'").getColumn(0);
-            final boolean api = br.getRegex("config=/swf/ncfg\\.php\\?ep=").matches();
-            if (parts == null || parts.length == 0 || !api) { return null; }
-            progress.setRange(parts.length);
+            final String[] jumps = br.getRegex("onclick=\"partJump\\((\\d), \\d+\\)\"").getColumn(0);
+            if (jumps == null || jumps.length == 0) {
+                logger.warning("FATAL error, no parts found for link: " + parameter);
+                return null;
+            }
+            ArrayList<String> parts = new ArrayList<String>();
+            for (String jump : jumps)
+                if (!parts.contains(jump)) parts.add(jump);
+            progress.setRange(parts.size());
             fp = FilePackage.getInstance();
             fp.setName(fpName);
             for (final String part : parts) {
-                progress.increase(1);
-                br.getPage("http://fernsehkritik.tv/swf/ncfg.php?ep=" + episode + "-" + part);
-                final String apiR = br.toString().replaceAll("\\s", "");
-                final String host = new Regex(apiR, "baseURL\":\"(.*?)\"").getMatch(0);
-                final String file = new Regex(apiR, "file\":\"(.*?)\"").getMatch(0);
-                if (host == null || file == null) {
-                    continue;
-                }
-                final DownloadLink dlLink = createDownloadlink(host + file);
-                dlLink.setName(fpName + "_Teil" + part + fileExtension(file));
+                String partname = null;
+                if (part.equals("1"))
+                    partname = episode + ".flv";
+                else
+                    partname = episode + "-" + part + ".flv";
+                final DownloadLink dlLink = createDownloadlink("http://fernsehkritik.tv/jdownloaderfolge" + partname);
+                dlLink.setFinalFileName(fpName + "_Teil" + part + ".flv");
                 fp.add(dlLink);
+                dlLink.setAvailable(true);
                 decryptedLinks.add(dlLink);
+                progress.increase(1);
             }
         }
         if (decryptedLinks == null || decryptedLinks.size() == 0) { return null; }

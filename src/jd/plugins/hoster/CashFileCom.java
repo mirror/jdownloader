@@ -147,7 +147,7 @@ public class CashFileCom extends PluginForHost {
         if (DLForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         // Ticket Time
         String ttt = new Regex(BRBEFORE, "countdown\">.*?(\\d+).*?</span>").getMatch(0);
-        if (ttt == null) ttt = new Regex(BRBEFORE, "id=\"countdown_str\".*?<span id=\".*?\">.*?(\\d+).*?</span").getMatch(0);
+        if (ttt == null) ttt = new Regex(BRBEFORE, "id=\"countdown_str\">.*?<span id=\".*?\">(\\d+)</span>").getMatch(0);
         if (ttt != null) {
             logger.info("Waittime detected, waiting " + ttt + " seconds from now on...");
             int tt = Integer.parseInt(ttt);
@@ -342,6 +342,7 @@ public class CashFileCom extends PluginForHost {
         br.setFollowRedirects(false);
         br.getPage(link.getDownloadURL());
         if (NOPREMIUM) {
+            doSomething();
             doFree(link, true, 1);
         } else {
             String dllink = br.getRedirectLocation();

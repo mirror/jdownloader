@@ -17,12 +17,15 @@
 package jd.plugins.hoster;
 
 import jd.PluginWrapper;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fernsehkritik.tv" }, urls = { "rtmp://.+/alsterfilm/.+" }, flags = { PluginWrapper.DEBUG_ONLY })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fernsehkritik.tv" }, urls = { "http://fernsehkritik\\.tv/jdownloaderfolge\\d+(\\-\\d)?\\.flv" }, flags = { 0 })
 public class FernsehkritikTv extends PluginForHost {
 
     public FernsehkritikTv(final PluginWrapper wrapper) {
@@ -42,18 +45,18 @@ public class FernsehkritikTv extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        final String dllink = downloadLink.getDownloadURL();
-        final String swfurl = "http://fernsehkritik.tv/swf/4.5.swf";
-
-        dl = new RTMPDownload(this, downloadLink, dllink);
-        final jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
-
-        rtmp.setSwfVfy(swfurl);
-        rtmp.setUrl(dllink);
-        rtmp.setResume(true);
-
-        ((RTMPDownload) dl).startDownload();
-
+        br.setFollowRedirects(false);
+        br.getPage("http://fernsehkritik.tv/js/directme.php?file=" + new Regex(downloadLink.getDownloadURL(), "fernsehkritik\\.tv/jdownloaderfolge(.+)").getMatch(0));
+        String finallink = br.getRedirectLocation();
+        if (finallink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        // More chunks work but download will stop at random point then
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finallink, true, 1);
+        if (dl.getConnection().getContentType().contains("html")) {
+            logger.warning("The final dllink seems not to be a file!");
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
     }
 
     @Override
