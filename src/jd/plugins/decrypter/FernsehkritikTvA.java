@@ -35,6 +35,8 @@ public class FernsehkritikTvA extends PluginForDecrypt {
         super(wrapper);
     }
 
+    // Refactored on the 02.07.2011, Rev. 14521,
+    // http://svn.jdownloader.org/projects/jd/repository/revisions/14521
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();

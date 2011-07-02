@@ -28,6 +28,8 @@ import jd.plugins.DownloadLink.AvailableStatus;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fernsehkritik.tv" }, urls = { "http://fernsehkritik\\.tv/jdownloaderfolge\\d+(\\-\\d)?\\.flv" }, flags = { 0 })
 public class FernsehkritikTv extends PluginForHost {
 
+    // Refactored on the 02.07.2011, Rev. 14521,
+    // http://svn.jdownloader.org/projects/jd/repository/revisions/14521
     public FernsehkritikTv(final PluginWrapper wrapper) {
         super(wrapper);
     }

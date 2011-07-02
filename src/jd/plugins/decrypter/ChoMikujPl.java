@@ -45,15 +45,19 @@ public class ChoMikujPl extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows; U; Windows NT 6.1; de; rv:1.9.2.17) Gecko/20110420 Firefox/3.6.17");
         // The message used on errors in this plugin
         String error = "Error while decrypting link: " + parameter;
+        // If a link is password protected we have to save and use those data in
+        // the hosterplugin
+        String savePost = null;
+        String saveLink = null;
+        String password = null;
         br.getPage(parameter);
-        String fpName = br.getRegex("<title>(.*?) - .*? - Chomikuj\\.pl.*?</title>").getMatch(0);
+        String fpName = br.getRegex("<title>(.*?) \\- .*? \\- Chomikuj\\.pl.*?</title>").getMatch(0);
         if (fpName == null) {
             fpName = br.getRegex("class=\"T_selected\">(.*?)</span>").getMatch(0);
             if (fpName == null) {
-                fpName = br.getRegex("<span id=\"ctl00_CT_FW_SelectedFolderLabel\" style=\"font-weight:bold;\">(.*?)</span>").getMatch(0);
+                fpName = br.getRegex("<span id=\"ctl00_CT_FW_SelectedFolderLabel\" style=\"font\\-weight:bold;\">(.*?)</span>").getMatch(0);
             }
         }
         String viewState = br.getRegex("id=\"__VIEWSTATE\" value=\"(.*?)\"").getMatch(0);
@@ -67,27 +71,25 @@ public class ChoMikujPl extends PluginForDecrypt {
         }
         fpName = fpName.trim();
         subFolderID = subFolderID.trim();
-        // Important post data
-        String postdata = "ctl00%24SM=ctl00%24CT%24FW%24FoldersUp%7Cctl00%24CT%24FW%24RefreshButton&__EVENTTARGET=ctl00%24CT%24FW%24RefreshButton&__EVENTARGUMENT=&__VIEWSTATE=" + Encoding.urlEncode(viewState) + "&PageCmd=&PageArg=undefined&ctl00%24LoginTop%24LoginChomikName=&ctl00%24LoginTop%24LoginChomikPassword=&ctl00%24SearchInputBox=nazwa%20lub%20e-mail&ctl00%24SearchFileBox=nazwa%20pliku&ctl00%24SearchType=all&SType=0&ctl00%24CT%24ChomikID=" + chomikId + "&ctl00%24CT%24PermW%24LoginCtrl%24PF=&ctl00%24CT%24TW%24TreeExpandLog=&ChomikSubfolderId=" + subFolderID + "&ctl00%24CT%24FW%24SubfolderID=" + subFolderID + "&FVSortType=1&FVSortDir=1&FVSortChange=&ctl00%24CT%24FW%24inpFolderAddress=" + Encoding.urlEncode(parameter) + "&treeExpandLog=" + Encoding.urlEncode(treeExpandLog) + "&FrGroupId=0&__ASYNCPOST=true&FVPage=0&ctl00%24CT%24FrW%24FrPage=";
-        // not working yet
-        // if (br.containsHTML(PASSWORDTEXT)) {
-        // prepareBrowser(parameter, br);
-        // for (int i = 0; i <= 3; i++) {
-        // String passCode = getUserInput(null, param);
-        // br.postPage(parameter, postdata + "&ctl00%24CT%24FW%24FolderPass=" +
-        // passCode);
-        // if (br.containsHTML(PASSWORDWRONG) || br.containsHTML(PASSWORDTEXT))
-        // continue;
-        //
-        // break;
-        // }
-        // if (br.containsHTML(PASSWORDWRONG) || br.containsHTML(PASSWORDTEXT))
-        // {
-        // logger.warning("Wrong password!");
-        // throw new DecrypterException(DecrypterException.PASSWORD);
-        // }
-        // }
-        logger.info("Looking how many pages we got here for folder " + subFolderID + " ...");
+        // Alle Haupt-POSTdaten
+        String postdata = "ctl00%24SM=ctl00%24CT%24FW%24FoldersUp%7Cctl00%24CT%24FW%24RefreshButton&__EVENTTARGET=ctl00%24CT%24FW%24RefreshButton&__EVENTARGUMENT=&__VIEWSTATE=" + Encoding.urlEncode(viewState) + "&PageCmd=&PageArg=undefined&ctl00%24LoginTop%24LoginChomikName=&ctl00%24LoginTop%24LoginChomikPassword=&ctl00%24SearchInputBox=nazwa%20lub%20e-mail&ctl00%24SearchFileBox=nazwa%20pliku&ctl00%24SearchType=all&SType=0&ctl00%24CT%24ChomikID=" + chomikId + "&ctl00%24CT%24PermW%24LoginCtrl%24PF=&treeExpandLog=&" + Encoding.urlEncode(treeExpandLog) + "&ChomikSubfolderId=" + subFolderID + "&tl00%24CT%24TW%24TreeExpandLog=" + "&ctl00%24CT%24FW%24SubfolderID=" + subFolderID + "&FVSortType=1&FVSortDir=1&FVSortChange=&FVPage=%jdownloaderpage%&ctl00%24CT%24FW%24inpFolderAddress=" + Encoding.urlEncode(parameter) + "&ctl00%24CT%24FrW%24FrPage=0&FrGroupId=0&__ASYNCPOST=true&";
+        // Passwort Handling
+        if (br.containsHTML(PASSWORDTEXT)) {
+            prepareBrowser(parameter, br);
+            for (int i = 0; i <= 3; i++) {
+                password = getUserInput(null, param);
+                savePost = postdata + "&ctl00%24SM=ctl00%24CT%24FW%24FilesUpdatePanel%7Cctl00%24CT%24FW%24FolderLoginButton&ctl00%24CT%24FW%24FolderLoginButton=Wejd%C5%BA&ctl00%24CT%24FW%24FolderPass=" + Encoding.urlEncode(password);
+                br.postPage(parameter, savePost);
+                if (br.containsHTML(PASSWORDWRONG)) continue;
+                break;
+            }
+            if (br.containsHTML(PASSWORDWRONG)) {
+                logger.warning("Wrong password!");
+                throw new DecrypterException(DecrypterException.PASSWORD);
+            }
+            saveLink = parameter;
+        }
+        logger.info("Looking how many pages we got here for link " + parameter + " ...");
         // Herausfinden wie viele Seiten der Link hat
         int pageCount = getPageCount(postdata, parameter);
         if (pageCount == -1) {
@@ -98,14 +100,11 @@ public class ChoMikujPl extends PluginForDecrypt {
         progress.setRange(pageCount);
         // Alle Seiten decrypten
         for (int i = 0; i < pageCount; ++i) {
-            logger.info("Decrypting page " + i + " of folder " + subFolderID + " now...");
-            String postThatData = postdata + i;
+            logger.info("Decrypting page " + i + " of link: " + parameter);
+            String postThatData = postdata.replace("%jdownloaderpage%", Integer.toString(i));
             prepareBrowser(parameter, br);
             br.postPage(parameter, postThatData);
             // Every full page has 30 links (pictures)
-            // This regex finds all links to PICTUREs, the site also got .rar
-            // files but the regex doesn't find them because you need to be
-            // logged in to download them anyways
             String[] fileIds = br.getRegex("class=\"fileItemProp getFile\" onclick=\"return ch\\.Download\\.dnFile\\((\\d+)\\);\"").getColumn(0);
             if (fileIds == null || fileIds.length == 0) fileIds = br.getRegex("class=\"FileName\" onclick=\"return ch\\.Download\\.dnFile\\((.*?)\\);\"").getColumn(0);
             if (fileIds == null || fileIds.length == 0) {
@@ -124,6 +123,12 @@ public class ChoMikujPl extends PluginForDecrypt {
                 String finalLink = String.format("&id=%s&gallerylink=%s&", id, param.toString().replace("chomikuj.pl", "60423fhrzisweguikipo9re"));
                 DownloadLink dl = createDownloadlink(finalLink);
                 dl.setName(String.valueOf(new Random().nextInt(1000000)));
+                if (saveLink != null && savePost != null && password != null) {
+                    dl.setProperty("savedlink", saveLink);
+                    dl.setProperty("savedpost", savePost);
+                    // Not needed yet but might me useful for the future
+                    dl.setProperty("password", password);
+                }
                 decryptedLinks.add(dl);
             }
             String[][] allFolders = br.getRegex("class=\"folders\" cellspacing=\"6\" cellpadding=\"0\" border=\"0\">[\t\n\r ]+<tr>[\t\n\r ]+<td><a href=\"(.*?)\" onclick=\"return Ts\\(\\'\\d+\\'\\)\">(.*?)</span>").getMatches();
@@ -179,6 +184,7 @@ public class ChoMikujPl extends PluginForDecrypt {
     }
 
     private void prepareBrowser(String parameter, Browser bro) {
+        // Not needed but has been implemented so lets use it
         bro.getHeaders().put("Referer", parameter);
         bro.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
         bro.getHeaders().put("Accept-Language", "de-de,de;q=0.8,en-us;q=0.5,en;q=0.3");

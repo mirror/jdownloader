@@ -105,6 +105,10 @@ public class ChoMikujPl extends PluginForHost {
     }
 
     public void getDllink(DownloadLink theLink) throws NumberFormatException, PluginException, IOException {
+        // Set by the decrypter if the link is password protected
+        String savedLink = theLink.getStringProperty("savedlink");
+        String savedPost = theLink.getStringProperty("savedpost");
+        if (savedLink != null && savedPost != null) br.postPage(savedLink, savedPost);
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         br.postPage("http://chomikuj.pl/Chomik/License/Download", "fileId=" + new Regex(theLink.getDownloadURL(), FILEIDREGEX).getMatch(0));
         DLLINK = br.getRegex("redirectUrl\":\"(http://.*?)\"").getMatch(0);
