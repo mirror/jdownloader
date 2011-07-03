@@ -17,6 +17,7 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -32,15 +33,20 @@ import jd.plugins.PluginForDecrypt;
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gametrailers.com" }, urls = { "http://[\\w\\.]*?gametrailers\\.com/(video|user\\-movie)/.*?/[0-9]+" }, flags = { 0 })
 public class GameTrailersCom extends PluginForDecrypt {
 
-    public GameTrailersCom(PluginWrapper wrapper) {
+    public GameTrailersCom(final PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
-        ArrayList<String> damnedIDs = new ArrayList<String>();
+    @Override
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final String parameter = param.toString();
+        final ArrayList<String> damnedIDs = new ArrayList<String>();
         br.getPage(parameter);
+        br.setFollowRedirects(true);
+        // you must logged in for mov/wmv download
+        final String[] httpLinks = br.getRegex("<a href=\"(http://www.gametrailers\\.com/download/\\d+/[\\w-\\.]+mp4)\"").getColumn(0);
+        final ArrayList<String> finallinks = new ArrayList<String>(Arrays.asList(httpLinks));
         String videoTitle = br.getRegex("<title>(.*?)Video Game, Review Pod").getMatch(0);
         if (videoTitle == null) {
             videoTitle = br.getRegex("name=\"title\" content=\"(.*?)\"").getMatch(0);
@@ -48,67 +54,74 @@ public class GameTrailersCom extends PluginForDecrypt {
                 videoTitle = br.getRegex("var gamename = \"(.*?)\"").getMatch(0);
             }
         }
-        String title = new Regex(videoTitle, "(.+?) - ").getMatch(0);
-        String subject = new Regex(videoTitle, ".*? - (.+)").getMatch(0);
+        final String title = new Regex(videoTitle, "(.+?) - ").getMatch(0);
+        final String subject = new Regex(videoTitle, ".*? - (.+)").getMatch(0);
         if (title != null && subject != null) {
             /* reformat the filename */
             videoTitle = subject + " - " + title;
         }
-        String hdid = br.getRegex("class=\"hdButton\"><a href=\"/video/.*?/(\\d+)\\?type").getMatch(0);
-        if (hdid != null) damnedIDs.add(hdid);
-        String neoplayermovieid = br.getRegex("NeoPlayer\\.movieId=(\\d+)").getMatch(0);
-        if (neoplayermovieid != null) damnedIDs.add(neoplayermovieid);
-        if (damnedIDs == null || damnedIDs.size() == 0) return null;
-        for (String damnedID : damnedIDs) {
-            Browser br2 = br.cloneBrowser();
-            if (parameter.contains("user-movie"))
+        final String hdid = br.getRegex("class=\"hdButton\"><a href=\"/video/.*?/(\\d+)\\?type").getMatch(0);
+        if (hdid != null) {
+            damnedIDs.add(hdid);
+        }
+        final String neoplayermovieid = br.getRegex("NeoPlayer\\.movieId=(\\d+)").getMatch(0);
+        if (neoplayermovieid != null) {
+            damnedIDs.add(neoplayermovieid);
+        }
+        if (damnedIDs == null || damnedIDs.size() == 0) { return null; }
+        for (final String damnedID : damnedIDs) {
+            final Browser br2 = br.cloneBrowser();
+            if (parameter.contains("user-movie")) {
                 br2.getPage("http://www.gametrailers.com/neo/?page=xml.mediaplayer.Mediagen&movieId=" + damnedID + "&hd=1&um=1");
-            else
+            } else {
                 br2.getPage("http://www.gametrailers.com/neo/?page=xml.mediaplayer.Mediagen&movieId=" + damnedID);
+            }
             String finallink = br2.getRegex("<src>(.*?)</src>").getMatch(0);
             if (finallink != null) {
                 // If we got the wrong link it's a long way to get the real
                 // link!
                 if (finallink.matches(".*?\\.gametrailers\\.com/gt_vault/\\.flv")) {
-                    String configPage = br.getRegex("var config_url = \"(.*?)\"").getMatch(0);
-                    if (configPage == null) return null;
+                    final String configPage = br.getRegex("var config_url = \"(.*?)\"").getMatch(0);
+                    if (configPage == null) { return null; }
                     br.getPage("http://www.gametrailers.com" + Encoding.htmlDecode(configPage));
                     String infoPage = br.getRegex("<player>.*?<feed>(.*?)</feed>").getMatch(0);
-                    if (infoPage == null) return null;
+                    if (infoPage == null) { return null; }
                     infoPage = infoPage.trim().replace("amp;", "");
                     br.getPage(infoPage);
                     String lastPage = br.getRegex("medium=\"video\".*?url=\"(http.*?)\"").getMatch(0);
-                    if (lastPage == null) return null;
+                    if (lastPage == null) { return null; }
                     lastPage = lastPage.replace("amp;", "");
                     br.getPage(lastPage);
                     finallink = br.getRegex("<src>(.*?)</src>").getMatch(0);
-                    if (finallink == null) return null;
+                    if (finallink == null) { return null; }
                 }
-                String[] extensions = { "flv", "mov", "wmv", "mp4" };
-                for (String ext : extensions) {
-                    if (parameter.contains("user-movie") && !"flv".equals(ext)) {
-                        /* user movies only have flv files */
-                        continue;
-                    }
-                    if (ext.equals("mp4") && finallink.contains("_hd")) continue;
-
-                    DownloadLink dl = createDownloadlink("directhttp://" + finallink.replace(".flv", "." + ext));
-                    if (videoTitle != null) {
-                        // correct title without "HD" or "SD"
-                        videoTitle = videoTitle.trim().replaceAll(" [SH]D ?", "");
-                        if (finallink.contains("_hd")) {
-                            dl.setFinalFileName(videoTitle.trim() + " [HD-" + ext.toUpperCase() + "]." + ext);
-                        } else {
-                            dl.setFinalFileName(videoTitle.trim() + " [SD-" + ext.toUpperCase() + "]." + ext);
-                        }
-                    }
-                    decryptedLinks.add(dl);
-                }
-            } else
+                finallinks.add(finallink);
+            } else {
                 logger.warning("Decrypter failed to get finallink from id " + damnedID + " from link: " + parameter);
+            }
+        }
+        for (final String finallink : finallinks) {
+            String ext = finallink.substring(finallink.lastIndexOf(".") + 1);
+            ext = ext == null ? "flv" : ext;
+            if (parameter.contains("user-movie") && !"flv".equals(ext)) {
+                /* user movies only have flv files */
+                continue;
+            }
+
+            final DownloadLink dl = createDownloadlink("directhttp://" + finallink);
+            if (videoTitle != null) {
+                // correct title without "HD" or "SD"
+                videoTitle = videoTitle.trim().replaceAll(" [SH]D ?", "");
+                if (finallink.contains("_hd")) {
+                    dl.setFinalFileName(videoTitle.trim() + " [HD-" + ext.toUpperCase() + "]." + ext);
+                } else {
+                    dl.setFinalFileName(videoTitle.trim() + " [SD-" + ext.toUpperCase() + "]." + ext);
+                }
+            }
+            decryptedLinks.add(dl);
         }
         if (videoTitle != null) {
-            FilePackage fp = FilePackage.getInstance();
+            final FilePackage fp = FilePackage.getInstance();
             fp.setName(videoTitle.trim());
             fp.addLinks(decryptedLinks);
         }
