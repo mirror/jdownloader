@@ -29,7 +29,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "motherless.com" }, urls = { "http://([\\w\\.]*?|members\\.)motherless\\.com/((?!movies|thumbs|uploads|gi/)\\w).+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "motherless.com" }, urls = { "http://(www\\.)?(members\\.)?motherless\\.com/((?!movies|thumbs|uploads|gi/)\\w).+" }, flags = { 0 })
 public class MotherLessCom extends PluginForDecrypt {
 
     public MotherLessCom(PluginWrapper wrapper) {
@@ -58,18 +58,10 @@ public class MotherLessCom extends PluginForDecrypt {
         }
         if (br.containsHTML("player\\.swf")) {
             String parm = parameter.toString();
-            String filelink = br.getRegex("s1\\.addParam\\(\\'flashvars\\',\\'file=(http://.*?\\.flv/[a-z0-9]+/[A-Z0-9]+\\.flv)").getMatch(0);
-            if (filelink != null) {
-                filelink = filelink.replace("motherless", "motherlessvideos");
-            }
-            if (filelink == null) {
-                filelink = br.getRegex("(http://s\\d+\\.motherlessmedia\\.com/dev[0-9/]+\\.flv/[a-z0-9]+/[A-Z0-9]+\\.flv)").getMatch(0);
-            }
-            if (filelink == null) return null;
-            DownloadLink dlink = createDownloadlink(filelink);
+            DownloadLink dlink = createDownloadlink(parm.replace("motherless.com/", "motherlessvideos.com/"));
+            dlink.setProperty("dltype", "video");
             dlink.setBrowserUrl(parm);
-            String finalName = new Regex(filelink, "/([A-Za-z0-9]+\\.flv)").getMatch(0);
-            if (finalName != null) dlink.setFinalFileName(finalName);
+            dlink.setName(new Regex(parm, "motherless\\.com/(.+)").getMatch(0));
             decryptedLinks.add(dlink);
         } else if (!br.containsHTML("<strong>Uploaded</strong>")) {
             ArrayList<String> pages = new ArrayList<String>();

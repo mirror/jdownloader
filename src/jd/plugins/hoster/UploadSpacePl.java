@@ -24,16 +24,16 @@ import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.parser.html.Form.MethodType;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploadspace.pl" }, urls = { "http://[\\w\\.]*?uploadspace\\.pl/plik[a-zA-Z0-9]+(/.+)?\\.htm" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploadspace.pl" }, urls = { "http://(www\\.)?uploadspace\\.pl/plik[a-zA-Z0-9]+(/.+)?\\.htm" }, flags = { 0 })
 public class UploadSpacePl extends PluginForHost {
 
     public UploadSpacePl(PluginWrapper wrapper) {
@@ -70,6 +70,8 @@ public class UploadSpacePl extends PluginForHost {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
+        handleErrors();
+        br.getPage("http://uploadspace.pl/" + new Regex(downloadLink.getDownloadURL(), "uploadspace\\.pl/([A-Za-z0-9]+)/").getMatch(0) + ".htm");
         handleErrors();
         br.setFollowRedirects(false);
         Form dlform = br.getFormbyProperty("name", "plik");

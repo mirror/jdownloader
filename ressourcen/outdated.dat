@@ -573,3 +573,5 @@ jd/plugins/hoster/DivxUpFileCom.class
 jd/plugins/hoster/MyStreamTo.class
 jd/plugins/hoster/ComboZipCom.class
 jd/plugins/decrypter/MvdD.java
+jd/plugins/hoster/ShareCx.class
+jd/plugins/decrypter/ShareCxFolder.java

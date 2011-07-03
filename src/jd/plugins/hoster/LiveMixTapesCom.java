@@ -24,16 +24,16 @@ import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "livemixtapes.com" }, urls = { "http://(www\\.)?(indy\\.)?livemixtapes\\.com/(download|mixtapes)/\\d+/.*?\\.html" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "livemixtapes.com" }, urls = { "http://(www\\.)?(indy\\.)?livemixtapes\\.com/(download(/mp3)?|mixtapes)/\\d+/.*?\\.html" }, flags = { 2 })
 public class LiveMixTapesCom extends PluginForHost {
 
     public LiveMixTapesCom(PluginWrapper wrapper) {
@@ -59,6 +59,7 @@ public class LiveMixTapesCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
+        br.getHeaders().put("Accept-Encoding", "gzip,deflate");
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("(>Not Found</|The page you requested could not be found\\.<|>This mixtape is no longer available for download.<)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -84,21 +85,26 @@ public class LiveMixTapesCom extends PluginForHost {
 
     private void doFree(DownloadLink downloadLink) throws Exception, PluginException {
         if (!br.containsHTML(CAPTCHATEXT)) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        String captchaUrl = "http://www.livemixtapes.com/captcha/captcha.gif?" + new Regex(downloadLink.getDownloadURL(), "livemixtapes\\.com/download/(\\d+)/").getMatch(0);
+        String captchaUrl = br.getRegex("\"(/captcha/captcha\\.gif\\?\\d+)\"").getMatch(0);
+        if (captchaUrl == null) captchaUrl = br.getRegex("<td width=\"200\">[\t\n\r ]+<img src=\"(/.*?)\"").getMatch(0);
+        if (captchaUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        captchaUrl = "http://www.livemixtapes.com" + captchaUrl;
         String code = getCaptchaCode(captchaUrl, downloadLink);
         // Usually we have a waittime here but it can be skipped
         // int waittime = 40;
         // String wait =
-        // br.getRegex("id=\"counter\">(\\d+)</span> seconds remaining").getMatch(0);
-        // if (wait == null) wait =
-        // br.getRegex("setTimeout \\(\"showCaptcha\\(\\)\", (\\d+)\\)").getMatch(0);
+        // br.getRegex("<span id=\"counter\">(\\d+)</span>").getMatch(0);
+        // if (wait == null) wait = br.getRegex("wait: (\\d+)").getMatch(0);
         // if (wait != null) {
         // waittime = Integer.parseInt(wait);
         // if (waittime > 1000) waittime = waittime / 1000;
         // sleep(waittime * 1001, downloadLink);
         // }
         br.setFollowRedirects(false);
-        br.postPage(br.getURL(), "code=" + code);
+        try {
+            br.postPage(br.getURL(), "code=" + code);
+        } catch (Exception e) {
+        }
         if (br.containsHTML(CAPTCHATEXT)) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         String dllink = br.getRedirectLocation();
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

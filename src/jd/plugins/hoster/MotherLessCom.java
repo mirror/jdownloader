@@ -26,14 +26,13 @@ import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "motherless.com" }, urls = { "http://([\\w\\.]*?|members\\.)(motherless\\.com/(movies|thumbs).*|(premium)?motherlesspictures(media)?\\.com/[a-zA-Z0-9/.]+|(premium)?motherlessvideos\\.com/[a-zA-Z0-9/.]+)" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "motherless.com" }, urls = { "http://(www\\.)?(members\\.)?(motherless\\.com/(movies|thumbs).*|(premium)?motherlesspictures(media)?\\.com/[a-zA-Z0-9/\\.]+|motherlessvideos\\.com/[a-zA-Z0-9]+)" }, flags = { 2 })
 public class MotherLessCom extends PluginForHost {
 
     public MotherLessCom(PluginWrapper wrapper) {
@@ -48,10 +47,11 @@ public class MotherLessCom extends PluginForHost {
 
     private static final String SUBSCRIBEFAILED     = "Failed to subscribe";
     private static final String ONLY4REGISTEREDTEXT = "This link is only downloadable for registered users.";
+    private String              DLLINK              = null;
 
     public void correctDownloadLink(DownloadLink link) {
         String theLink = link.getDownloadURL();
-        theLink = theLink.replace("premium", "").replace("motherlesspictures", "motherless").replace("motherlessvideos", "motherless");
+        theLink = theLink.replace("premium", "").replaceAll("(motherlesspictures|motherlessvideos)", "motherless");
         link.setUrlDownload(theLink);
     }
 
@@ -63,12 +63,17 @@ public class MotherLessCom extends PluginForHost {
         }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
+        if (parameter.getStringProperty("dltype") != null && "video".equals(parameter.getStringProperty("dltype"))) {
+            getVideoLink(parameter);
+        }
+        if (DLLINK == null) DLLINK = parameter.getDownloadURL();
         URLConnectionAdapter con = null;
         try {
-            con = br.openGetConnection(parameter.getDownloadURL());
+            con = br.openGetConnection(DLLINK);
             if (con.getContentType().contains("html")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            String name = Plugin.getFileNameFromHeader(con);
+            String name = getFileNameFromHeader(con);
             String name2 = new Regex(name, "/([^/].*?\\.flv)").getMatch(0);
+            if (name2 == null) name2 = name;
             parameter.setName(name2);
             parameter.setDownloadSize(con.getLongContentLength());
             return AvailableStatus.TRUE;
@@ -97,10 +102,12 @@ public class MotherLessCom extends PluginForHost {
             }
         }
 
-        if (link.getDownloadURL().endsWith(".flv"))
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getDownloadURL(), true, 0);
-        else
+        if (DLLINK.contains(".flv")) {
+            getVideoLink(link);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, DLLINK, true, 0);
+        } else {
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getDownloadURL());
+        }
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -199,6 +206,16 @@ public class MotherLessCom extends PluginForHost {
             output += c;
         }
         return output;
+    }
+
+    private void getVideoLink(DownloadLink parameter) throws IOException, PluginException {
+        br.getPage(parameter.getDownloadURL());
+        DLLINK = br.getRegex("addVariable\\(\\'file\\', \\'(http://.*?\\.flv)\\'\\)").getMatch(0);
+        if (DLLINK == null) {
+            DLLINK = br.getRegex("(http://s\\d+\\.motherlessmedia\\.com/dev[0-9/]+\\.flv/[a-z0-9]+/[A-Z0-9]+\\.flv)").getMatch(0);
+        }
+        if (DLLINK != null && !DLLINK.contains("?start=0")) DLLINK += "?start=0";
+        if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
     }
 
     @Override

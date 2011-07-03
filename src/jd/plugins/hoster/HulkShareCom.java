@@ -34,11 +34,11 @@ import jd.parser.html.HTMLParser;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -66,6 +66,11 @@ public class HulkShareCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setCookie(COOKIE_HOST, "lang", "english");
         br.getPage(link.getDownloadURL());
+        String newlink = br.getRegex("<p>The document has moved <a href=\"(http://.*?)\">here</a>").getMatch(0);
+        if (newlink != null) {
+            link.setUrlDownload(newlink);
+            br.getPage(newlink);
+        }
         if (br.containsHTML("You have reached the download-limit")) {
             logger.warning("Waittime detected, please reconnect to make the linkchecker work!");
             return AvailableStatus.UNCHECKABLE;
@@ -105,6 +110,7 @@ public class HulkShareCom extends PluginForHost {
         }
         if (filename == null) {
             logger.warning("The filename equals null, throwing \"file not found\" now...");
+            System.out.print(br.toString());
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         filename = filename.replaceAll("(</b>|<b>|\\.html)", "");
