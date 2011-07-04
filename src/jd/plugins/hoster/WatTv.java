@@ -23,14 +23,14 @@ import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wat.tv" }, urls = { "http://[\\w\\.]*?wat\\.tv/video/.*?\\.html" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wat.tv" }, urls = { "http://(www\\.)?wat\\.tv/video/.*?\\.html" }, flags = { 0 })
 public class WatTv extends PluginForHost {
 
     public WatTv(PluginWrapper wrapper) {
@@ -73,7 +73,7 @@ public class WatTv extends PluginForHost {
         if (videoid == null) {
             videoid = br.getRegex("videoId : \"(.*?)\"").getMatch(0);
             if (videoid == null) {
-                videoid = br.getRegex("mediaId=(.*?)'").getMatch(0);
+                videoid = br.getRegex("mediaId=(.*?)\\'").getMatch(0);
                 if (videoid == null) {
                     videoid = br.getRegex("abuse/video/(.*?)'").getMatch(0);
                 }

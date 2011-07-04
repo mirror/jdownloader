@@ -110,7 +110,6 @@ public class HulkShareCom extends PluginForHost {
         }
         if (filename == null) {
             logger.warning("The filename equals null, throwing \"file not found\" now...");
-            System.out.print(br.toString());
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         filename = filename.replaceAll("(</b>|<b>|\\.html)", "");
