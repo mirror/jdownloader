@@ -31,7 +31,6 @@ public class JDChatView extends AddonPanel<ChatExtension> {
     public JDChatView(ChatExtension chatExtension) {
         super(chatExtension);
 
-        init();
     }
 
     @Override

@@ -38,6 +38,7 @@ public abstract class AddonPanel<T extends AbstractExtension<? extends Extension
             }
 
         });
+        init();
 
     }
 

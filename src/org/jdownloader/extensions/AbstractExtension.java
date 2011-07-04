@@ -163,10 +163,13 @@ public abstract class AbstractExtension<T extends ExtensionConfigInterface> {
         return logger;
     }
 
-    /*
+    /**
      * converts old dynamic getConfigName entries to static getID entries, WE
      * MUST USE STATIC getID to access db
+     * 
+     * @deprecated Use {@link #getSettings()}
      */
+
     @Deprecated
     public synchronized JSonWrapper getPluginConfig() {
         if (classicConfig != null) return classicConfig;
@@ -266,6 +269,10 @@ public abstract class AbstractExtension<T extends ExtensionConfigInterface> {
         return LogController.getInstance().createLogger(class1);
     }
 
+    /**
+     * @deprecated Use {@link #getSettings()}
+     */
+    @Deprecated
     public abstract String getConfigID();
 
     public abstract String getAuthor();
