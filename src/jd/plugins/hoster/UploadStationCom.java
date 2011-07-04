@@ -315,11 +315,12 @@ public class UploadStationCom extends PluginForHost {
             logger.warning("The connection is not okay...");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        String reconTime = br.toString();
-        int tt = 10;
-        if (reconTime.length() < 500 || br.containsHTML("\"waitTime\":\\d+,")) {
-            reconTime = new Regex(reconTime, ".*?(\\d+).*?").getMatch(0);
-            reconTime = reconTime == null ? new Regex(reconTime, "\"waitTime\":(\\d+),").getMatch(0) : reconTime;
+        String reconTime = br.getRegex("waitTime\":(\\d+)").getMatch(0);
+        int tt = 20;
+        if (reconTime == null) {
+            reconTime = br.getRegex(".*?(\\d+)").getMatch(0);
+        }
+        if (reconTime != null) {
             logger.info("Waittime detected, waiting " + reconTime + " seconds from now on...");
             tt = Integer.parseInt(reconTime.trim());
         } else {

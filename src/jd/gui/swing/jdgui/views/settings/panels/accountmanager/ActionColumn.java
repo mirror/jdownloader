@@ -33,7 +33,7 @@ public class ActionColumn extends ExtComponentColumn<Account> {
         delete = new DeleteAction();
         premzone = new PremiumzoneAction();
         // add(premzone);
-        add(info);
+        // add(info);
         add(renew);
         // add(delete);
     }
@@ -107,7 +107,6 @@ public class ActionColumn extends ExtComponentColumn<Account> {
 
     @Override
     protected JComponent getInternalRendererComponent(Account value, boolean isSelected, boolean hasFocus, int row, int column) {
-
         return renderer;
     }
 

@@ -4,11 +4,18 @@ import java.awt.event.ActionEvent;
 
 import javax.swing.AbstractAction;
 
+import jd.controlling.AccountController;
+import jd.plugins.Account;
+import jd.plugins.PluginForHost;
+import jd.utils.JDUtilities;
+
+import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 
 public class RenewAction extends TableBarAction {
     private static final long serialVersionUID = 8346982706972553448L;
+    private PluginForHost     plugin           = null;
 
     public RenewAction() {
 
@@ -17,16 +24,19 @@ public class RenewAction extends TableBarAction {
     }
 
     public void actionPerformed(ActionEvent e) {
+        if (plugin == null) return;
+        CrossSystem.openURLOrShowMessage(plugin.getBuyPremiumUrl());
     }
 
     @Override
-    public boolean isEnabled() {
-        // if (account == null) return false;
-        // AccountInfo ai = account.getAccountInfo();
-        // if (ai == null) return true;
-        // if (ai.isExpired()) return true;
-        // return false;
-        return true;
+    public void setAccount(Account account) {
+        super.setAccount(account);
+        String hosterName = AccountController.getInstance().getHosterName(getAccount());
+        if (hosterName == null) {
+            plugin = null;
+            return;
+        }
+        plugin = JDUtilities.getPluginForHost(hosterName);
     }
 
 }

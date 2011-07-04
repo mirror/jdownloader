@@ -500,9 +500,9 @@ public class AccountController implements AccountControllerListener {
              * controller
              */
             if (acc != null) {
-                if (System.currentTimeMillis() - acc.lastUpdateTime() > 10000) {
+                if (System.currentTimeMillis() - acc.lastUpdateTime() > 20000) {
                     /*
-                     * only check account again if last check is more than 10
+                     * only check account again if last check is more than 20
                      * secs ago, prevents double check on addaccountdialog
                      */
                     AccountChecker.getInstance().check(acc, true);
@@ -515,7 +515,7 @@ public class AccountController implements AccountControllerListener {
             acc = event.getAccount();
             /* we do a new accountcheck as this account got updated */
             /* WARNING: DO NOT FORCE check here, it might end up in a loop */
-            if (acc != null) AccountChecker.getInstance().check(acc, false);
+            if (acc != null && acc.isEnabled()) AccountChecker.getInstance().check(acc, false);
         case AccountControllerEvent.ACCOUNT_REMOVED:
         case AccountControllerEvent.ACCOUNT_EXPIRED:
         case AccountControllerEvent.ACCOUNT_INVALID:

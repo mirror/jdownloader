@@ -264,6 +264,7 @@ public class PremiumAccountTableModel extends ExtTableModel<Account> implements 
                 if (ai == null) {
                     return null;
                 } else {
+                    if (ai.getValidUntil() <= 0) return null;
                     return new Date(ai.getValidUntil());
                 }
             }
@@ -356,6 +357,7 @@ public class PremiumAccountTableModel extends ExtTableModel<Account> implements 
                 @Override
                 protected void runInEDT() {
                     final ArrayList<Account> selected = PremiumAccountTableModel.this.getSelectedObjects();
+                    PremiumAccountTableModel.this.refreshSort();
                     PremiumAccountTableModel.this.fireTableDataChanged();
                     PremiumAccountTableModel.this.setSelectedObjects(selected);
                 }
@@ -378,6 +380,7 @@ public class PremiumAccountTableModel extends ExtTableModel<Account> implements 
                 protected void runInEDT() {
                     final ArrayList<Account> selected = PremiumAccountTableModel.this.getSelectedObjects();
                     tableData = newtableData;
+                    PremiumAccountTableModel.this.refreshSort();
                     PremiumAccountTableModel.this.fireTableStructureChanged();
                     PremiumAccountTableModel.this.setSelectedObjects(selected);
                 }

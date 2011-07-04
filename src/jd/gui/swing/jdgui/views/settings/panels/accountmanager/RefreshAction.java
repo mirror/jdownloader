@@ -23,7 +23,7 @@ public class RefreshAction extends AbstractAction {
     public RefreshAction(ArrayList<Account> selectedObjects) {
         selection = selectedObjects;
         this.putValue(NAME, _GUI._.settings_accountmanager_refresh());
-        this.putValue(AbstractAction.SMALL_ICON, NewTheme.I().getIcon("refresh", 20));
+        this.putValue(AbstractAction.SMALL_ICON, NewTheme.I().getIcon("refresh", ActionColumn.SIZE));
     }
 
     public void actionPerformed(ActionEvent e) {

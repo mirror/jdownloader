@@ -40,7 +40,7 @@ public class BuyAction extends AbstractAction {
         this.preSelection = hoster;
         this.table = table;
         this.putValue(NAME, _GUI._.settings_accountmanager_buy());
-        this.putValue(AbstractAction.SMALL_ICON, NewTheme.I().getIcon("buy", 20));
+        this.putValue(AbstractAction.SMALL_ICON, NewTheme.I().getIcon("buy", ActionColumn.SIZE));
     }
 
     public void actionPerformed(ActionEvent e) {

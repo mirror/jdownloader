@@ -45,6 +45,7 @@ import org.appwork.utils.formatter.TimeFormatter;
 public class FileSonicCom extends PluginForHost implements ControlListener {
 
     private static final Object LOCK               = new Object();
+    private static final Object LOCK2              = new Object();
     private static long         LAST_FREE_DOWNLOAD = 0l;
     private static boolean      initDone           = false;
     private static String       geoDomain          = null;
@@ -52,7 +53,7 @@ public class FileSonicCom extends PluginForHost implements ControlListener {
     public FileSonicCom(final PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.filesonic.com/premium");
-        synchronized (LOCK) {
+        synchronized (LOCK2) {
             if (!initDone) {
                 JDUtilities.getController().addControlListener(this);
                 initDone = true;

@@ -9,6 +9,7 @@ import jd.gui.swing.jdgui.views.settings.components.StateUpdateListener;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.app.gui.MigPanel;
+import org.appwork.utils.swing.table.utils.MinimumSelectionObserver;
 
 public class AccountManager extends JPanel implements SettingsComponent {
     private static final long   serialVersionUID = 1473756660999062848L;
@@ -30,7 +31,10 @@ public class AccountManager extends JPanel implements SettingsComponent {
         table = new PremiumAccountTable(accountManagerSettings);
 
         tb.add(new JButton(new NewAction(table)), "sg 1");
-        tb.add(new JButton(new RemoveAction(table)), "sg 1");
+        RemoveAction ra;
+        tb.add(new JButton(ra = new RemoveAction(table)), "sg 1");
+        table.getSelectionModel().addListSelectionListener(new MinimumSelectionObserver(table, ra, 1));
+
         tb.add(new JButton(new BuyAction(null, table)), "sg 1");
         tb.add(new JButton(new RefreshAction(null)), "sg 1");
 

@@ -25,7 +25,9 @@ public class InfoAction extends TableBarAction {
     }
 
     public void actionPerformed(ActionEvent e) {
-        PluginInfoGenerator pig = ((PluginInfoGenerator) plugin.getInfoGenerator(account));
+        if (plugin == null || account == null) return;
+        PluginForHost plugin2 = JDUtilities.getNewPluginForHostInstance(plugin.getHost());
+        PluginInfoGenerator pig = ((PluginInfoGenerator) plugin2.getInfoGenerator(account));
         if (pig != null) {
             pig.show();
         } else {
@@ -38,15 +40,11 @@ public class InfoAction extends TableBarAction {
     public void setAccount(Account account) {
         super.setAccount(account);
         String hosterName = AccountController.getInstance().getHosterName(getAccount());
-        if (hosterName == null) return;
-
-        plugin = JDUtilities.getNewPluginForHostInstance(hosterName);
-        // plugin != null && plugin.getInfoGenerator(account) != null;
-    }
-
-    @Override
-    public boolean isEnabled() {
-        return true;
+        if (hosterName == null) {
+            plugin = null;
+            return;
+        }
+        plugin = JDUtilities.getPluginForHost(hosterName);
     }
 
 }
