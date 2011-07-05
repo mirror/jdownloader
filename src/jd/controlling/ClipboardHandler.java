@@ -189,7 +189,11 @@ public class ClipboardHandler extends Thread implements ControlListener {
                                             JDController.loadContainerFile(f);
                                         }
                                     } else if (what == uriListFlavor) {
-                                        sb.append(fi.getPath());
+                                        if (fi.getScheme() != null && (fi.getScheme().contains("http") || fi.getScheme().contains("ftp"))) {
+                                            sb.append(fi.toString());
+                                        } else {
+                                            sb.append(fi.getPath());
+                                        }
                                         sb.append("\r\n");
                                     }
                                 }

@@ -115,6 +115,7 @@ public class DepositFiles extends PluginForHost {
             br.setCookiesExclusive(true);
             br.setCookie(MAINPAGE, "lang_current", "de");
             br.getPage("http://bonus.depositfiles.com/de/links_checker.php");
+            if (br.containsHTML("Temporary unavailable")) return false;
             final StringBuilder sb = new StringBuilder();
             final ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
             int index = 0;
@@ -291,10 +292,6 @@ public class DepositFiles extends PluginForHost {
             form.setMethod(MethodType.POST);
             form.setAction("");
             form.put("gateway_result", "1");
-            if (form == null) {
-                logger.warning("Form by submitvalue Kostenloser+download is null!");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
             // Important: Setup Cookie
             final String keks = br.getRegex("(adv_.*?);").getMatch(0);
             if (keks != null) {
@@ -481,9 +478,11 @@ public class DepositFiles extends PluginForHost {
             downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.depositfilescom.errors.limitreached", "Download limit reached"));
             return AvailableStatus.TRUE;
         }
-        final String fileName = br.getRegex(FILE_INFO_NAME).getMatch(0);
+        String fileName = br.getRegex(FILE_INFO_NAME).getMatch(0);
         final String fileSizeString = br.getRegex(FILE_INFO_SIZE).getMatch(0);
         if (fileName == null || fileSizeString == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        String fixedName = new Regex(fileName, "(.+)\\?").getMatch(0);
+        if (fixedName != null) fileName = fixedName;
         downloadLink.setName(fileName);
         downloadLink.setDownloadSize(SizeFormatter.getSize(fileSizeString));
         return AvailableStatus.TRUE;

@@ -361,11 +361,13 @@ public class PremiumAccountTableModel extends ExtTableModel<Account> implements 
 
     protected void _update() {
         if (accountManagerSettings.isShown()) {
+            final ArrayList<Account> newElements = PremiumAccountTableModel.this.getElements();
+            PremiumAccountTableModel.this.refreshSort(newElements);
             new EDTRunner() {
                 @Override
                 protected void runInEDT() {
                     final ArrayList<Account> selected = PremiumAccountTableModel.this.getSelectedObjects();
-                    PremiumAccountTableModel.this.refreshSort();
+                    tableData = newElements;
                     PremiumAccountTableModel.this.fireTableDataChanged();
                     PremiumAccountTableModel.this.setSelectedObjects(selected);
                 }
@@ -383,12 +385,12 @@ public class PremiumAccountTableModel extends ExtTableModel<Account> implements 
                     acc.setHoster(plugin.getHost());
                 }
             }
+            PremiumAccountTableModel.this.refreshSort(newtableData);
             new EDTRunner() {
                 @Override
                 protected void runInEDT() {
                     final ArrayList<Account> selected = PremiumAccountTableModel.this.getSelectedObjects();
                     tableData = newtableData;
-                    PremiumAccountTableModel.this.refreshSort();
                     PremiumAccountTableModel.this.fireTableStructureChanged();
                     PremiumAccountTableModel.this.setSelectedObjects(selected);
                 }
