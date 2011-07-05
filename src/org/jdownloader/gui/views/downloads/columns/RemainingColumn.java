@@ -1,10 +1,9 @@
 package org.jdownloader.gui.views.downloads.columns;
 
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
 import jd.plugins.PackageLinkNode;
 
 import org.appwork.utils.swing.table.columns.ExtFileSizeColumn;
+import org.jdownloader.gui.translate._GUI;
 
 public class RemainingColumn extends ExtFileSizeColumn<PackageLinkNode> {
 
@@ -14,16 +13,14 @@ public class RemainingColumn extends ExtFileSizeColumn<PackageLinkNode> {
     private static final long serialVersionUID = 1L;
 
     public RemainingColumn() {
-        super("RemainingColumn", null);
+        super(_GUI._.RemainingColumn_RemainingColumn());
     }
 
     @Override
     protected long getBytes(PackageLinkNode o2) {
-        if (o2 instanceof DownloadLink) {
-            return ((DownloadLink) o2).getRemainingKB();
-        } else {
-            return ((FilePackage) o2).getRemainingKB();
-        }
+
+        return o2.getRemainingKB();
+
     }
 
     @Override

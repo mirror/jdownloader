@@ -89,7 +89,7 @@ public class TranslateTableModel extends ExtTableModel<TranslateEntry> {
             }
 
             @Override
-            protected String getToolTip(TranslateEntry value) {
+            protected String getTooltipText(TranslateEntry value) {
                 return value.getFullKey();
             }
 
@@ -124,7 +124,7 @@ public class TranslateTableModel extends ExtTableModel<TranslateEntry> {
             }
 
             @Override
-            protected String getToolTip(TranslateEntry obj) {
+            protected String getTooltipText(TranslateEntry obj) {
                 StringBuilder sb = new StringBuilder();
                 sb.append("<html>");
                 for (TranslationError e : obj.getErrors()) {

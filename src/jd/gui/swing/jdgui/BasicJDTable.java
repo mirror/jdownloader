@@ -1,4 +1,4 @@
-package jd.gui.swing.jdgui.views.settings.panels.components;
+package jd.gui.swing.jdgui;
 
 import java.awt.Color;
 import java.awt.Dimension;
@@ -15,11 +15,11 @@ import org.appwork.utils.swing.table.ExtComponentRowHighlighter;
 import org.appwork.utils.swing.table.ExtTable;
 import org.appwork.utils.swing.table.ExtTableModel;
 
-public class SettingsTable<T> extends ExtTable<T> {
+public class BasicJDTable<T> extends ExtTable<T> {
 
     private static final long serialVersionUID = -9181860215412270250L;
 
-    public SettingsTable(ExtTableModel<T> tableModel) {
+    public BasicJDTable(ExtTableModel<T> tableModel) {
         super(tableModel);
         this.setShowVerticalLines(true);
         this.setShowGrid(true);

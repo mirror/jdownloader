@@ -106,7 +106,7 @@ public class ProxyTableModel extends ExtTableModel<ProxyInfo> {
             }
 
             @Override
-            protected String getToolTip(ProxyInfo obj) {
+            protected String getTooltipText(ProxyInfo obj) {
                 switch (obj.getProxy().getType()) {
 
                 case NONE:

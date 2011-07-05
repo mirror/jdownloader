@@ -3,10 +3,10 @@ package jd.gui.swing.jdgui.views.settings.panels.accountmanager;
 import java.awt.event.KeyEvent;
 import java.util.ArrayList;
 
-import jd.gui.swing.jdgui.views.settings.panels.components.SettingsTable;
+import jd.gui.swing.jdgui.BasicJDTable;
 import jd.plugins.Account;
 
-public class PremiumAccountTable extends SettingsTable<Account> {
+public class PremiumAccountTable extends BasicJDTable<Account> {
 
     private static final long serialVersionUID = -2166408567306279016L;
 

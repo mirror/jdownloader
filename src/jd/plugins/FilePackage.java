@@ -23,7 +23,6 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.Set;
 
 import jd.config.Property;
@@ -67,8 +66,8 @@ public class FilePackage extends Property implements Serializable, PackageLinkNo
             }
 
             @Override
-            public LinkedList<DownloadLink> getControlledDownloadLinks() {
-                return new LinkedList<DownloadLink>();
+            public ArrayList<DownloadLink> getControlledDownloadLinks() {
+                return new ArrayList<DownloadLink>();
             }
 
             @Override
@@ -128,7 +127,7 @@ public class FilePackage extends Property implements Serializable, PackageLinkNo
 
     private transient DownloadControllerInterface controlledby         = null;
 
-    private transient LinkedList<DownloadLink>    controlledLinks      = null;
+    private transient ArrayList<DownloadLink>     controlledLinks      = null;
 
     /**
      * @return the controlledby
@@ -175,7 +174,7 @@ public class FilePackage extends Property implements Serializable, PackageLinkNo
      */
     private FilePackage() {
         downloadDirectory = org.appwork.storage.config.JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder();
-        controlledLinks = new LinkedList<DownloadLink>();
+        controlledLinks = new ArrayList<DownloadLink>();
         created = System.currentTimeMillis();
         /* till refactoring is complete */
         this.downloadLinkList = new ArrayList<DownloadLink>();
@@ -194,11 +193,11 @@ public class FilePackage extends Property implements Serializable, PackageLinkNo
         /* deserialize object and then fill other stuff(transient..) */
         stream.defaultReadObject();
         isExpanded = getBooleanProperty(DownloadTable.PROPERTY_EXPANDED, false);
-        /* convert ArrayList to LinkedList */
+        /* convert ArrayList to ArrayList */
         if (downloadLinkList != null) {
-            controlledLinks = new LinkedList<DownloadLink>(downloadLinkList);
+            controlledLinks = new ArrayList<DownloadLink>(downloadLinkList);
         } else {
-            controlledLinks = new LinkedList<DownloadLink>();
+            controlledLinks = new ArrayList<DownloadLink>();
         }
         /* free ArrayList */
         downloadLinkList = new ArrayList<DownloadLink>();
@@ -211,7 +210,7 @@ public class FilePackage extends Property implements Serializable, PackageLinkNo
      * @throws IOException
      */
     private void writeObject(ObjectOutputStream out) throws IOException {
-        /* convert LinkedList to ArrayList */
+        /* convert ArrayList to ArrayList */
         downloadLinkList = new ArrayList<DownloadLink>(controlledLinks);
         out.defaultWriteObject();
         /* free ArrayList */
@@ -338,7 +337,7 @@ public class FilePackage extends Property implements Serializable, PackageLinkNo
      * 
      * @return
      */
-    public LinkedList<DownloadLink> getControlledDownloadLinks() {
+    public ArrayList<DownloadLink> getControlledDownloadLinks() {
         return controlledLinks;
     }
 

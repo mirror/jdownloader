@@ -12,11 +12,11 @@ import javax.swing.ListSelectionModel;
 import javax.swing.table.JTableHeader;
 
 import jd.gui.UserIO;
+import jd.gui.swing.jdgui.BasicJDTable;
 import jd.gui.swing.jdgui.menu.AddonsMenu;
 import jd.gui.swing.jdgui.menu.WindowMenu;
 import jd.gui.swing.jdgui.views.settings.components.SettingsComponent;
 import jd.gui.swing.jdgui.views.settings.components.StateUpdateListener;
-import jd.gui.swing.jdgui.views.settings.panels.components.SettingsTable;
 
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.table.ExtTableHeaderRenderer;
@@ -33,7 +33,7 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.translate._JDT;
 
-public class ExtensionsTable extends SettingsTable<AbstractExtensionWrapper> implements SettingsComponent {
+public class ExtensionsTable extends BasicJDTable<AbstractExtensionWrapper> implements SettingsComponent {
     private static final long serialVersionUID = 1L;
 
     public ExtensionsTable() {

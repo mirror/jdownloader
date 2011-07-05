@@ -1,9 +1,9 @@
 package jd.gui.swing.jdgui.views.settings.panels.downloadandnetwork;
 
 import jd.controlling.proxy.ProxyInfo;
-import jd.gui.swing.jdgui.views.settings.panels.components.SettingsTable;
+import jd.gui.swing.jdgui.BasicJDTable;
 
-public class ProxyTable extends SettingsTable<ProxyInfo> {
+public class ProxyTable extends BasicJDTable<ProxyInfo> {
 
     public ProxyTable() {
         super(new ProxyTableModel());

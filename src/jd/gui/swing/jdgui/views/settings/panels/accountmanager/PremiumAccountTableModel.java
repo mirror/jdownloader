@@ -149,7 +149,7 @@ public class PremiumAccountTableModel extends ExtTableModel<Account> implements 
             }
 
             @Override
-            protected String getToolTip(Account obj) {
+            protected String getTooltipText(Account obj) {
                 return obj.getHoster();
             }
 
@@ -259,7 +259,7 @@ public class PremiumAccountTableModel extends ExtTableModel<Account> implements 
             }
 
             @Override
-            protected Date getDate(Account o2) {
+            protected Date getDate(Account o2, Date date) {
                 AccountInfo ai = o2.getAccountInfo();
                 if (ai == null) {
                     return null;

@@ -27,7 +27,7 @@ public class PriorityColumn extends ExtIconColumn<PackageLinkNode> {
     private String            strPriority3;
 
     public PriorityColumn() {
-        super("PriorityColumn");
+        super(_GUI._.PriorityColumn_PriorityColumn());
         imgPriorityS = NewTheme.I().getIcon("prio_-1", 16);
         imgPriority1 = NewTheme.I().getIcon("prio_1", 16);
         imgPriority2 = NewTheme.I().getIcon("prio_2", 16);
@@ -92,7 +92,7 @@ public class PriorityColumn extends ExtIconColumn<PackageLinkNode> {
         }
     }
 
-    protected String getToolTip(PackageLinkNode value) {
+    protected String getTooltipText(PackageLinkNode value) {
         switch (getPriority(value)) {
         case 0:
         default:

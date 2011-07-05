@@ -100,8 +100,8 @@ public class CustomizerTableModel extends ExtTableModel<CustomizeSetting> {
             }
 
             @Override
-            protected String getToolTip(CustomizeSetting obj) {
-                if (obj.isRegexValid()) return super.getToolTip(obj);
+            protected String getTooltipText(CustomizeSetting obj) {
+                if (obj.isRegexValid()) return super.getTooltipText(obj);
                 return T._.jd_plugins_optional_customizer_CustomizerTableModel_regex_malformed();
             }
         });
@@ -145,7 +145,7 @@ public class CustomizerTableModel extends ExtTableModel<CustomizeSetting> {
             }
 
             @Override
-            protected String getToolTip(CustomizeSetting obj) {
+            protected String getTooltipText(CustomizeSetting obj) {
                 return T._.jd_plugins_optional_customizer_columns_PackageNameColumn_toolTip();
             }
 

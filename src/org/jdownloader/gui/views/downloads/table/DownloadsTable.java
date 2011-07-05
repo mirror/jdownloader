@@ -1,6 +1,5 @@
 package org.jdownloader.gui.views.downloads.table;
 
-import java.awt.Color;
 import java.awt.Point;
 import java.awt.event.MouseEvent;
 import java.io.File;
@@ -12,6 +11,7 @@ import javax.swing.JPopupMenu;
 import javax.swing.ListSelectionModel;
 
 import jd.event.ControlEvent;
+import jd.gui.swing.jdgui.BasicJDTable;
 import jd.gui.swing.jdgui.actions.ActionController;
 import jd.gui.swing.jdgui.actions.ToolBarAction;
 import jd.gui.swing.jdgui.menu.MenuAction;
@@ -42,15 +42,12 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.Application;
 import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.swing.table.AlternateHighlighter;
-import org.appwork.utils.swing.table.ExtTable;
-import org.appwork.utils.swing.table.SelectionHighlighter;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.downloads.context.RatedMenuController;
 import org.jdownloader.gui.views.downloads.context.RatedMenuItem;
 import org.jdownloader.images.NewTheme;
 
-public class DownloadsTable extends ExtTable<PackageLinkNode> {
+public class DownloadsTable extends BasicJDTable<PackageLinkNode> {
 
     private static final long   serialVersionUID = 8843600834248098174L;
     private DownloadsTableModel tableModel       = null;
@@ -62,8 +59,7 @@ public class DownloadsTable extends ExtTable<PackageLinkNode> {
         this.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
         this.setDragEnabled(true);
         this.setDropMode(DropMode.INSERT_ROWS);
-        this.addRowHighlighter(new SelectionHighlighter(null, new Color(0x30, 0x30, 0x30, 50)));
-        this.addRowHighlighter(new AlternateHighlighter(null, new Color(0x30, 0x30, 0x30, 5)));
+
     }
 
     @Override

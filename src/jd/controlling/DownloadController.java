@@ -53,14 +53,7 @@ public class DownloadController implements DownloadControllerListener, DownloadC
     private final AtomicLong structureChanged = new AtomicLong(0);
 
     public static enum MOVE {
-        BEFORE,
-        AFTER,
-        BEGIN,
-        END,
-        TOP,
-        BOTTOM,
-        UP,
-        DOWN
+        BEFORE, AFTER, BEGIN, END, TOP, BOTTOM, UP, DOWN
     }
 
     private LinkedList<FilePackage>                 packages       = new LinkedList<FilePackage>();
@@ -864,7 +857,7 @@ public class DownloadController implements DownloadControllerListener, DownloadC
                     }
                     synchronized (ACCESSLOCK) {
                         synchronized (fp) {
-                            LinkedList<DownloadLink> list = fp.getControlledDownloadLinks();
+                            ArrayList<DownloadLink> list = fp.getControlledDownloadLinks();
                             Iterator<DownloadLink> it = links.iterator();
                             /*
                              * remove DownloadLinks that are already in this
@@ -910,7 +903,7 @@ public class DownloadController implements DownloadControllerListener, DownloadC
                     }
                     synchronized (ACCESSLOCK) {
                         synchronized (fp) {
-                            LinkedList<DownloadLink> list = fp.getControlledDownloadLinks();
+                            ArrayList<DownloadLink> list = fp.getControlledDownloadLinks();
                             Iterator<DownloadLink> it = links.iterator();
                             while (it.hasNext()) {
                                 DownloadLink dl = it.next();

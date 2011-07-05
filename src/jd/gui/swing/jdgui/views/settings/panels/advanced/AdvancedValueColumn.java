@@ -62,7 +62,7 @@ public class AdvancedValueColumn extends ExtCompoundColumn<AdvancedConfigEntry> 
             }
 
             @Override
-            protected String getToolTip(AdvancedConfigEntry obj) {
+            protected String getTooltipText(AdvancedConfigEntry obj) {
                 return obj.getDescription();
             }
 
@@ -80,7 +80,7 @@ public class AdvancedValueColumn extends ExtCompoundColumn<AdvancedConfigEntry> 
             }
 
             @Override
-            protected String getToolTip(AdvancedConfigEntry obj) {
+            protected String getTooltipText(AdvancedConfigEntry obj) {
                 return obj.getDescription();
             }
 

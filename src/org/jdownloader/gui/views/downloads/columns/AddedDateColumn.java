@@ -1,10 +1,15 @@
 package org.jdownloader.gui.views.downloads.columns;
 
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
+import java.util.Date;
+
+import javax.swing.SwingConstants;
+
 import jd.plugins.PackageLinkNode;
 
-public class AddedDateColumn extends DateColumn {
+import org.appwork.utils.swing.table.columns.ExtDateColumn;
+import org.jdownloader.gui.translate._GUI;
+
+public class AddedDateColumn extends ExtDateColumn<PackageLinkNode> {
 
     /**
      * 
@@ -12,15 +17,28 @@ public class AddedDateColumn extends DateColumn {
     private static final long serialVersionUID = -8841119846403017974L;
 
     public AddedDateColumn() {
-        super("AddedDate");
+        super(_GUI._.added_date_column_title());
+        renderer.setHorizontalAlignment(SwingConstants.CENTER);
+
     }
 
     @Override
-    public long getDate(PackageLinkNode node) {
-        if (node instanceof DownloadLink) {
-            return Math.max(0, ((DownloadLink) node).getCreated());
-        } else {
-            return Math.max(0, ((FilePackage) node).getCreated());
-        }
+    protected String getBadDateText(PackageLinkNode value) {
+        return _GUI._.added_date_column_invalid();
+    }
+
+    protected String getDateFormatString() {
+
+        return _GUI._.added_date_column_dateformat();
+    }
+
+    @Override
+    protected Date getDate(PackageLinkNode node, Date date) {
+
+        if (node.getCreated() <= 0) return null;
+
+        date.setTime(node.getCreated());
+
+        return date;
     }
 }

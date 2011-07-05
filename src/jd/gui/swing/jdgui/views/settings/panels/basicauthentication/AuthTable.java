@@ -5,9 +5,9 @@ import java.util.ArrayList;
 import javax.swing.JPopupMenu;
 
 import jd.controlling.authentication.AuthenticationInfo;
-import jd.gui.swing.jdgui.views.settings.panels.components.SettingsTable;
+import jd.gui.swing.jdgui.BasicJDTable;
 
-public class AuthTable extends SettingsTable<AuthenticationInfo> {
+public class AuthTable extends BasicJDTable<AuthenticationInfo> {
     private static final long serialVersionUID = 1L;
 
     public AuthTable() {

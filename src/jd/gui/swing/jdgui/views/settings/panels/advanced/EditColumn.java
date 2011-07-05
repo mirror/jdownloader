@@ -158,7 +158,7 @@ public class EditColumn extends ExtComponentColumn<AdvancedConfigEntry> {
     }
 
     @Override
-    protected String getToolTip(AdvancedConfigEntry obj) {
+    protected String getTooltipText(AdvancedConfigEntry obj) {
         return "Reset to " + obj.getDefault();
     }
 

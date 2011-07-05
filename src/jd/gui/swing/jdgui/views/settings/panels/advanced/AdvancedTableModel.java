@@ -38,7 +38,7 @@ public class AdvancedTableModel extends ExtTableModel<AdvancedConfigEntry> imple
             private static final long serialVersionUID = 1L;
 
             @Override
-            protected String getToolTip(AdvancedConfigEntry obj) {
+            protected String getTooltipText(AdvancedConfigEntry obj) {
                 return obj.getDescription();
             }
 

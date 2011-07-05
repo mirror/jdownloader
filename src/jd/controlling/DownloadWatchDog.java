@@ -880,7 +880,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                 public void run() {
                     this.setName("DownloadWatchDog");
                     try {
-                        LinkedList<DownloadLink> links;
+                        ArrayList<DownloadLink> links;
                         final ArrayList<FilePackage> fps = new ArrayList<FilePackage>();
                         DownloadLink link;
                         LinkStatus linkStatus;

@@ -109,7 +109,7 @@ public class PremServUserTableModel extends ExtTableModel<PremServUser> {
             private static final long serialVersionUID = 9056465387709191600L;
 
             @Override
-            public String getToolTip(PremServUser value) {
+            public String getTooltipText(PremServUser value) {
                 StringBuilder sb = new StringBuilder();
                 sb.append("<html>");
                 sb.append("<h1>Limit hosters</h1>");
@@ -139,7 +139,7 @@ public class PremServUserTableModel extends ExtTableModel<PremServUser> {
             private static final long serialVersionUID = 779114113156820814L;
 
             @Override
-            public String getToolTip(PremServUser value) {
+            public String getTooltipText(PremServUser value) {
                 StringBuilder sb = new StringBuilder();
                 sb.append("<html>");
                 sb.append("<h1>Total");

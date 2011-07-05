@@ -1,7 +1,10 @@
 package org.jdownloader.gui.translate;
 
+import java.net.URL;
+
 import org.appwork.txtresource.Default;
 import org.appwork.txtresource.Defaults;
+import org.appwork.txtresource.Description;
 import org.appwork.txtresource.TranslateInterface;
 
 @Defaults(lngs = { "en" })
@@ -1683,7 +1686,7 @@ public interface GuiTranslation extends TranslateInterface {
     String linkgrabber_onlinestatus_unchecked();
 
     @Default(lngs = { "en" }, values = { "dd.MM.yy HH:mm" })
-    String org_jdownloader_gui_views_downloads_columns_DateColumn_dateFormat();
+    String added_date_column_dateformat();
 
     @Default(lngs = { "en" }, values = { "Chart is loading or not available" })
     String plugins_config_premium_chartapi_caption_error2();
@@ -1975,4 +1978,50 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "This value is not allowed for %s1.%s2!\r\n%s3" })
     String AdvancedConfigmanager_error_validator(String configname, String key, String error);
+
+    @Default(lngs = { "en" }, values = { "n.a." })
+    String added_date_column_invalid();
+
+    @Default(lngs = { "en" }, values = { "Added Date" })
+    String added_date_column_title();
+
+    @Default(lngs = { "en" }, values = { "Name" })
+    String filecolumn_title();
+
+    @Default(lngs = { "en" }, values = { "Finished Date" })
+    String FinishedDateColumn_FinishedDateColumn();
+
+    @Default(lngs = { "en" }, values = { "Size" })
+    String SizeColumn_SizeColumn();
+
+    @Default(lngs = { "en" }, values = { "Bytes Left" })
+    String RemainingColumn_RemainingColumn();
+
+    @Default(lngs = { "en" }, values = { "Priority" })
+    String PriorityColumn_PriorityColumn();
+
+    @Default(lngs = { "en" }, values = { "Bytes Loaded" })
+    String LoadedColumn_LoadedColumn();
+
+    @Default(lngs = { "en" }, values = { "Download Order" })
+    String ListOrderIDColumn_ListOrderIDColumn();
+
+    @Default(lngs = { "en" }, values = { "Hoster" })
+    String HosterColumn_HosterColumn();
+
+    @Description("HTML can be used here")
+    @Default(lngs = { "en" }, values = { "<u>Package: %s1</u><br><br>" })
+    String HosterColumn_getToolTip_packagetitle(String name);
+
+    @Description("HTML can be used here")
+    @Default(lngs = { "en" }, values = { "<u>Link: %s1</u><br><br>" })
+    String HosterColumn_getToolTip_linktitle(String name);
+
+    @Description("HTML can be used here")
+    @Default(lngs = { "en" }, values = { "<b>%s1</b><br>" })
+    String HosterColumn_getToolTip_hoster(String hoster);
+
+    @Description("HTML can be used here")
+    @Default(lngs = { "en" }, values = { "<img src=\"%s1\"></img>&nbsp;&nbsp;&nbsp;&nbsp;<b>%s2</b><br>" })
+    String HosterColumn_getToolTip_hoster_img(URL url, String hoster);
 }

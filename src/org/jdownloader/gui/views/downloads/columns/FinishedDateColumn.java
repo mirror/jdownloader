@@ -1,10 +1,15 @@
 package org.jdownloader.gui.views.downloads.columns;
 
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
+import java.util.Date;
+
+import javax.swing.SwingConstants;
+
 import jd.plugins.PackageLinkNode;
 
-public class FinishedDateColumn extends DateColumn {
+import org.appwork.utils.swing.table.columns.ExtDateColumn;
+import org.jdownloader.gui.translate._GUI;
+
+public class FinishedDateColumn extends ExtDateColumn<PackageLinkNode> {
 
     /**
      * 
@@ -12,15 +17,22 @@ public class FinishedDateColumn extends DateColumn {
     private static final long serialVersionUID = -8841119846403017974L;
 
     public FinishedDateColumn() {
-        super("FinishedDate");
+        super(_GUI._.FinishedDateColumn_FinishedDateColumn());
+        renderer.setHorizontalAlignment(SwingConstants.CENTER);
     }
 
     @Override
-    public long getDate(PackageLinkNode node) {
-        if (node instanceof DownloadLink) {
-            return Math.max(0, ((DownloadLink) node).getFinishedDate());
-        } else {
-            return Math.max(0, ((FilePackage) node).getFinishedDate());
-        }
+    protected String getBadDateText(PackageLinkNode value) {
+        return "";
     }
+
+    @Override
+    protected Date getDate(PackageLinkNode node, Date date) {
+
+        if (node.getFinishedDate() <= 0) return null;
+        date.setTime(node.getFinishedDate());
+
+        return date;
+    }
+
 }

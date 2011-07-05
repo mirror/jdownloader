@@ -5,6 +5,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PackageLinkNode;
 
 import org.appwork.utils.swing.table.columns.ExtFileSizeColumn;
+import org.jdownloader.gui.translate._GUI;
 
 public class LoadedColumn extends ExtFileSizeColumn<PackageLinkNode> {
 
@@ -14,7 +15,7 @@ public class LoadedColumn extends ExtFileSizeColumn<PackageLinkNode> {
     private static final long serialVersionUID = 1L;
 
     public LoadedColumn() {
-        super("LoadedColumn", null);
+        super(_GUI._.LoadedColumn_LoadedColumn(), null);
     }
 
     @Override

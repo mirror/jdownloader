@@ -11,4 +11,10 @@ public interface PackageLinkNode {
     public int getListOrderID();
 
     public boolean isEnabled();
+
+    public long getFinishedDate();
+
+    public long getCreated();
+
+    public long getRemainingKB();
 }

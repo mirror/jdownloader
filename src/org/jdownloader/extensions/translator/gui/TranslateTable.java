@@ -5,11 +5,11 @@ import java.util.ArrayList;
 
 import javax.swing.JPopupMenu;
 
-import jd.gui.swing.jdgui.views.settings.panels.components.SettingsTable;
+import jd.gui.swing.jdgui.BasicJDTable;
 
 import org.jdownloader.extensions.translator.TranslateEntry;
 
-public class TranslateTable extends SettingsTable<TranslateEntry> {
+public class TranslateTable extends BasicJDTable<TranslateEntry> {
 
     public TranslateTable(TranslateTableModel tableModel) {
         super(tableModel);
