@@ -1,15 +1,18 @@
 package org.jdownloader.gui.views.downloads.table;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.concurrent.atomic.AtomicLong;
 
 import jd.controlling.DownloadController;
 import jd.controlling.IOEQ;
-import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PackageLinkNode;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.utils.logging.Log;
 import org.appwork.utils.swing.EDTRunner;
+import org.appwork.utils.swing.table.ExtColumn;
 import org.appwork.utils.swing.table.ExtTableModel;
 import org.jdownloader.gui.views.downloads.columns.AddedDateColumn;
 import org.jdownloader.gui.views.downloads.columns.FileColumn;
@@ -61,24 +64,7 @@ public class DownloadsTableModel extends ExtTableModel<PackageLinkNode> {
                     System.out.println("skip tableMod_recreate");
                     return;
                 }
-                /*
-                 * we use size of old table to minimize need to increase table
-                 * size while adding nodes to it
-                 */
-                final ArrayList<PackageLinkNode> newtableData = new ArrayList<PackageLinkNode>(tableData.size());
-                synchronized (DownloadController.ACCESSLOCK) {
-                    for (FilePackage fp : DownloadController.getInstance().getPackages()) {
-                        newtableData.add(fp);
-                        if (fp.isExpanded()) {
-                            synchronized (fp) {
-                                for (DownloadLink dl : fp.getControlledDownloadLinks()) {
-                                    newtableData.add(dl);
-                                }
-                            }
-                        }
-                    }
-                }
-
+                final ArrayList<PackageLinkNode> newtableData = DownloadsTableModel.this.refreshSort(tableData);
                 new EDTRunner() {
                     @Override
                     protected void runInEDT() {
@@ -137,11 +123,8 @@ public class DownloadsTableModel extends ExtTableModel<PackageLinkNode> {
                  * we use size of old table to minimize need to increase table
                  * size while adding nodes to it
                  */
-
-                final ArrayList<PackageLinkNode> newtableData = new ArrayList<PackageLinkNode>(tableData.size());
                 synchronized (DownloadController.ACCESSLOCK) {
                     for (FilePackage fp : DownloadController.getInstance().getPackages()) {
-                        newtableData.add(fp);
                         if (mode != TOGGLEMODE.CURRENT) {
                             if (doToggle) {
                                 fp.setExpanded(cur);
@@ -153,19 +136,13 @@ public class DownloadsTableModel extends ExtTableModel<PackageLinkNode> {
                                 }
                             }
                         }
-                        if (fp.isExpanded()) {
-                            synchronized (fp) {
-                                for (DownloadLink dl : fp.getControlledDownloadLinks()) {
-                                    newtableData.add(dl);
-                                }
-                            }
-                        }
                     }
                 }
                 if (tableChangesDone.incrementAndGet() != tableChangesReq.get()) {
                     System.out.println("skip tableMod_toggle");
                     return;
                 }
+                final ArrayList<PackageLinkNode> newtableData = DownloadsTableModel.this.refreshSort(tableData);
                 new EDTRunner() {
                     @Override
                     protected void runInEDT() {
@@ -178,5 +155,37 @@ public class DownloadsTableModel extends ExtTableModel<PackageLinkNode> {
 
             }
         });
+    }
+
+    @Override
+    public ArrayList<PackageLinkNode> sort(final ArrayList<PackageLinkNode> data, final ExtColumn<PackageLinkNode> column, final boolean sortOrderToggle) {
+        this.sortColumn = column;
+        this.sortOrderToggle = sortOrderToggle;
+
+        try {
+            JSonStorage.getStorage("ExtTableModel_" + this.getModelID()).put("SORTORDER", sortOrderToggle);
+            JSonStorage.getStorage("ExtTableModel_" + this.getModelID()).put("SORTCOLUMN", column.getID());
+        } catch (final Exception e) {
+            Log.exception(e);
+        }
+        synchronized (DownloadController.ACCESSLOCK) {
+            /* get all packages from controller */
+            ArrayList<PackageLinkNode> packages = new ArrayList<PackageLinkNode>(DownloadController.getInstance().size());
+            packages.addAll(DownloadController.getInstance().getPackages());
+            /* sort packages */
+            Collections.sort(packages, column.getRowSorter(sortOrderToggle));
+            ArrayList<PackageLinkNode> newData = new ArrayList<PackageLinkNode>(Math.max(data.size(), packages.size()));
+            for (PackageLinkNode node : packages) {
+                newData.add(node);
+                if (!((FilePackage) node).isExpanded()) continue;
+                ArrayList<PackageLinkNode> files = null;
+                synchronized (node) {
+                    files = new ArrayList<PackageLinkNode>(((FilePackage) node).getControlledDownloadLinks());
+                    Collections.sort(files, column.getRowSorter(sortOrderToggle));
+                }
+                newData.addAll(files);
+            }
+            return newData;
+        }
     }
 }
