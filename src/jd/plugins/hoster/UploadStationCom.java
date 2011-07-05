@@ -30,11 +30,11 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -213,6 +213,7 @@ public class UploadStationCom extends PluginForHost {
     private void handleErrors(final Browser br2, final DownloadLink link) throws PluginException, IOException {
         logger.info("Handling errors...");
         boolean limitReached = false;
+        if (br2.containsHTML("\"fail\":\"parallelDownload\"")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Too many simultan downloads", 3 * 60 * 1000l);
         if (br2.containsHTML("\"fail\":\"timeLimit\"")) {
             br2.postPage(link.getDownloadURL(), "checkDownload=showError&errorType=timeLimit");
             limitReached = true;
@@ -261,7 +262,6 @@ public class UploadStationCom extends PluginForHost {
         // br2.getPage(captchaJSPage);
         br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         br2.postPage(downloadLink.getDownloadURL(), "checkDownload=check");
-
         if (br2.containsHTML("\"fail\":\"timeLimit\"")) {
             handleErrors(br2, downloadLink);
             br2.postPage(downloadLink.getDownloadURL(), "checkDownload=check");
@@ -298,7 +298,7 @@ public class UploadStationCom extends PluginForHost {
             rc.getForm().put("recaptcha_response_field", c);
             rc.getForm().put("recaptcha_challenge_field", rc.getChallenge());
             br2.submitForm(rc.getForm());
-            if (br2.containsHTML("incorrect-captcha-sol")) {
+            if (br2.containsHTML("incorrect\\-captcha\\-sol")) {
                 handleCaptchaErrors(br2, downloadLink);
                 br.getPage(downloadLink.getDownloadURL());
                 continue;

@@ -23,13 +23,13 @@ import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision: 10931 $", interfaceVersion = 2, names = { "keezmovies.com" }, urls = { "http://[\\w\\.]*?keezmovies\\.com/video/[\\w-]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision: 10931 $", interfaceVersion = 2, names = { "keezmovies.com" }, urls = { "http://(www\\.)?keezmovies\\.com/video/[\\w\\-]+" }, flags = { 2 })
 public class KeezMoviesCom extends PluginForHost {
 
     public KeezMoviesCom(PluginWrapper wrapper) {

@@ -22,7 +22,6 @@ import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
@@ -30,10 +29,10 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "videobam.com" }, urls = { "http://(www\\.)?videobam\\.com/(?!user|faq|login|dmca|signup|terms)(videos/download/)?[A-Za-z0-9]+" }, flags = { 0 })
-public class VideoBamCom extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "realgfporn.com" }, urls = { "http://(www\\.)?realgfporndecrypted\\.com/\\d+/.*?\\.html" }, flags = { 0 })
+public class RealGfPornCom extends PluginForHost {
 
-    public VideoBamCom(PluginWrapper wrapper) {
+    public RealGfPornCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -41,36 +40,39 @@ public class VideoBamCom extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://videobam.com/terms";
+        return "http://www.realgfporn.com/DMCA.html";
     }
 
     public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("videos/download/", ""));
+        // Links are added through a decrypter
+        link.setUrlDownload(link.getDownloadURL().replace("realgfporndecrypted.com/", "realgfporn.com/"));
     }
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
-        br.setCustomCharset("utf-8");
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("(>404 Page Not Found|>The page you requested was not found)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("property=\"og:title\" content=\"(.*?)\" />").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("<section id=\"video\\-title\">[\t\n\r ]+<h1>(.*?)</h1>").getMatch(0);
-            if (filename == null) {
-                filename = br.getRegex("title: \\'(.*?)\\',").getMatch(0);
-                if (filename == null) {
-                    filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
+        if (br.getURL().equals("http://www.realgfporn.com/") || br.containsHTML("<title>Free Amateur and Homemade Porn Videos  \\– Real Girlfriend Porn</title>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("<h3 class=\"video_title\">(.*?)</h3>").getMatch(0);
+        if (filename == null) filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
+        DLLINK = br.getRegex("addVariable\\(\\'file\\',\\'(http://.*?)\\'\\)").getMatch(0);
+        if (DLLINK == null) {
+            DLLINK = br.getRegex("\\'(http://media\\d+\\.realgfporn\\.com/videos/.*?)\\'").getMatch(0);
+            if (DLLINK == null) {
+                DLLINK = br.getRegex("\\&file=(http://(www\\.)realgfporn\\.com/videos/.*?)\\&height=").getMatch(0);
+                if (DLLINK == null) {
+                    DLLINK = br.getRegex("<param name=\"filename\" value=\"(http://.*?)\"").getMatch(0);
+                    if (DLLINK == null) {
+                        DLLINK = br.getRegex("\"(http://(www\\.)?realgfporn\\.com/videos/.*?)\"").getMatch(0);
+                    }
                 }
             }
         }
-        DLLINK = br.getRegex("\",\"url\":\"(http:.*?)\"").getMatch(0);
         if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        DLLINK = Encoding.htmlDecode(DLLINK).replace("\\", "");
+        DLLINK = Encoding.htmlDecode(DLLINK);
         filename = filename.trim();
-        if (filename.equals("")) filename = new Regex(downloadLink.getDownloadURL(), "videobam\\.com/(.+)").getMatch(0);
-        downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ".mp4");
+        downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + DLLINK.substring(DLLINK.length() - 4, DLLINK.length()));
         Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);

@@ -22,7 +22,6 @@ import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
@@ -30,10 +29,10 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "videobam.com" }, urls = { "http://(www\\.)?videobam\\.com/(?!user|faq|login|dmca|signup|terms)(videos/download/)?[A-Za-z0-9]+" }, flags = { 0 })
-public class VideoBamCom extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mygirlfriendvids.net" }, urls = { "http://(www\\.)?mygirlfriendvidsdecrypted\\.net/\\d+/.*?\\.html" }, flags = { 0 })
+public class MyGirlfriendsVidsNet extends PluginForHost {
 
-    public VideoBamCom(PluginWrapper wrapper) {
+    public MyGirlfriendsVidsNet(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -41,36 +40,28 @@ public class VideoBamCom extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://videobam.com/terms";
+        return "http://www.mygirlfriendvids.net/DMCA.html";
     }
 
     public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("videos/download/", ""));
+        // Links come from a decrypter
+        link.setUrlDownload(link.getDownloadURL().replace("mygirlfriendvidsdecrypted.net/", "mygirlfriendvids.net/"));
     }
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
-        br.setCustomCharset("utf-8");
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("(>404 Page Not Found|>The page you requested was not found)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("property=\"og:title\" content=\"(.*?)\" />").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("<section id=\"video\\-title\">[\t\n\r ]+<h1>(.*?)</h1>").getMatch(0);
-            if (filename == null) {
-                filename = br.getRegex("title: \\'(.*?)\\',").getMatch(0);
-                if (filename == null) {
-                    filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
-                }
-            }
-        }
-        DLLINK = br.getRegex("\",\"url\":\"(http:.*?)\"").getMatch(0);
+        if (br.containsHTML("<b>Warning</b>:  Invalid argument supplied for foreach")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("<meta name=\"title\" content=\"(.*?)\">").getMatch(0);
+        if (filename == null) filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
+        DLLINK = br.getRegex("addVariable\\(\\'file\\',\\'(http://.*?)\\'\\)").getMatch(0);
+        if (DLLINK == null) DLLINK = br.getRegex("\\'(http://media\\d+\\.mygirlfriendvids\\.net/videos/.*?)\\'").getMatch(0);
         if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        DLLINK = Encoding.htmlDecode(DLLINK).replace("\\", "");
+        DLLINK = Encoding.htmlDecode(DLLINK);
         filename = filename.trim();
-        if (filename.equals("")) filename = new Regex(downloadLink.getDownloadURL(), "videobam\\.com/(.+)").getMatch(0);
-        downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ".mp4");
+        downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ".flv");
         Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);

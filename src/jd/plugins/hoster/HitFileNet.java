@@ -26,18 +26,18 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hitfile.net" }, urls = { "http://[\\w\\.]*?hitfile\\.net/[A-Za-z0-9]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hitfile.net" }, urls = { "http://(www\\.)?hitfile\\.net/[A-Za-z0-9]+" }, flags = { 2 })
 public class HitFileNet extends PluginForHost {
 
     public HitFileNet(PluginWrapper wrapper) {
@@ -122,7 +122,7 @@ public class HitFileNet extends PluginForHost {
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         boolean waittimeFail = true;
         for (int i = 0; i <= 4; i++) {
-            br.getPage("http://hitfile.net/download/timeout/" + fileID);
+            br.getPage("http://hitfile.net/download/getLinkAfterTimeout/" + fileID);
             String additionalWaittime = br.getRegex("Timeout\\.limit = (\\d+);").getMatch(0);
             if (additionalWaittime != null) {
                 sleep(Integer.parseInt(additionalWaittime) * 1001l, downloadLink);

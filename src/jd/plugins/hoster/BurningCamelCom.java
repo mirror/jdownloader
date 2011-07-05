@@ -30,10 +30,10 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "videobam.com" }, urls = { "http://(www\\.)?videobam\\.com/(?!user|faq|login|dmca|signup|terms)(videos/download/)?[A-Za-z0-9]+" }, flags = { 0 })
-public class VideoBamCom extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "burningcamel.com" }, urls = { "http://(www\\.)?burningcamel\\.com/video/[a-z0-9\\-]+" }, flags = { 0 })
+public class BurningCamelCom extends PluginForHost {
 
-    public VideoBamCom(PluginWrapper wrapper) {
+    public BurningCamelCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -41,36 +41,24 @@ public class VideoBamCom extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://videobam.com/terms";
-    }
-
-    public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("videos/download/", ""));
+        return "http://www.burningcamel.com/dmca";
     }
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
-        br.setCustomCharset("utf-8");
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("(>404 Page Not Found|>The page you requested was not found)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("property=\"og:title\" content=\"(.*?)\" />").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("<section id=\"video\\-title\">[\t\n\r ]+<h1>(.*?)</h1>").getMatch(0);
-            if (filename == null) {
-                filename = br.getRegex("title: \\'(.*?)\\',").getMatch(0);
-                if (filename == null) {
-                    filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
-                }
-            }
-        }
-        DLLINK = br.getRegex("\",\"url\":\"(http:.*?)\"").getMatch(0);
-        if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        DLLINK = Encoding.htmlDecode(DLLINK).replace("\\", "");
+        if (br.getURL().equals("http://www.burningcamel.com/") || br.containsHTML("<title>Amateur Porn and Free Amateur Sex Videos \\| Burning Camel</title>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("<title>(.*?) \\| Burning Camel</title>").getMatch(0);
+        Regex basicRegex = br.getRegex("createPlayer\\(\"(http://.*?)\",\"http://.*?\",\"(.*?)\"");
+        DLLINK = basicRegex.getMatch(0);
+        String token = basicRegex.getMatch(1);
+        if (filename == null || DLLINK == null || token == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        DLLINK = Encoding.htmlDecode(DLLINK);
         filename = filename.trim();
-        if (filename.equals("")) filename = new Regex(downloadLink.getDownloadURL(), "videobam\\.com/(.+)").getMatch(0);
-        downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ".mp4");
+        downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + DLLINK.subSequence(DLLINK.length() - 4, DLLINK.length()));
+        DLLINK += "?start=0&id=videoplayer&client=FLASH%20WIN%2010,3,181,26&version=4.2.95&width=662&token=" + token;
         Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);

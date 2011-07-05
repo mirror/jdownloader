@@ -17,16 +17,17 @@
 package jd.plugins.hoster;
 
 import jd.PluginWrapper;
+import jd.http.URLConnectionAdapter;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "good.net" }, urls = { "http://[\\w\\.]*?gjerzu4zr4jk555hd/.+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "good.net" }, urls = { "http://(www\\.)?gjerzu4zr4jk555hd/.+" }, flags = { 0 })
 public class GoodNet extends PluginForHost {
 
     public GoodNet(PluginWrapper wrapper) {
@@ -37,23 +38,33 @@ public class GoodNet extends PluginForHost {
     public String getAGBLink() {
         return "http://forums.good.net/phpBB/viewtopic.php?f=7&t=14&sid=";
     }
+
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replace("gjerzu4zr4jk555hd", "good.net"));
     }
+
     @Override
     public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         String link = parameter.getDownloadURL();
-        br.getPage(link);
-        String filename = br.getRegex("<title>(.*?): </title>").getMatch(0);
-        if (filename == null) filename = br.getRegex("basefilename\">(.*?)</span>").getMatch(0);
-        String filesize = br.getRegex("id=\"humansize\">(.*?)</span").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        parameter.setName(filename.trim());
-        if (filesize != null) {
-            filesize = filesize.replace("i", "");
-            parameter.setDownloadSize(SizeFormatter.getSize(filesize.trim()));
+        URLConnectionAdapter con = br.openGetConnection(parameter.getDownloadURL());
+        if (!con.getContentType().contains("html")) {
+            parameter.setName(getFileNameFromHeader(con));
+            parameter.setDownloadSize(con.getCompleteContentLength());
+            con.disconnect();
+        } else {
+            br.followConnection();
+            br.getPage(link);
+            String filename = br.getRegex("<title>(.*?): </title>").getMatch(0);
+            if (filename == null) filename = br.getRegex("basefilename\">(.*?)</span>").getMatch(0);
+            String filesize = br.getRegex("id=\"humansize\">(.*?)</span").getMatch(0);
+            if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            parameter.setName(filename.trim());
+            if (filesize != null) {
+                filesize = filesize.replace("i", "");
+                parameter.setDownloadSize(SizeFormatter.getSize(filesize.trim()));
+            }
         }
         return AvailableStatus.TRUE;
     }
@@ -62,9 +73,17 @@ public class GoodNet extends PluginForHost {
     public void handleFree(DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         requestFileInformation(link);
-        String dllink = br.getRegex("\"(/dl/.*?/wait)\"").getMatch(0);
+        URLConnectionAdapter con = br.openGetConnection(link.getDownloadURL());
+        String dllink = null;
+        if (!con.getContentType().contains("html")) {
+            dllink = link.getDownloadURL();
+            con.disconnect();
+        } else {
+            br.followConnection();
+            dllink = br.getRegex("\"(/dl/.*?/wait)\"").getMatch(0);
+        }
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dllink = "http://good.net" + dllink;
+        if (!dllink.contains("good.net/")) dllink = "http://good.net" + dllink;
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, 1);
         if ((dl.getConnection().getContentType().contains("html"))) {
             br.followConnection();
