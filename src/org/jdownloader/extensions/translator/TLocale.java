@@ -20,24 +20,25 @@ public class TLocale {
 
     public String toString() {
         boolean hasVariant = locale.getVariant().length() > 0;
+        boolean hasCountry = locale.getCountry().length() > 0;
 
         final StringBuilder sb = new StringBuilder();
         sb.append(locale.getDisplayLanguage(Locale.ENGLISH));
-        if (hasVariant) {
+        if (hasVariant || hasCountry) {
             sb.append(" (");
         }
 
-        if (hasVariant) {
-
-            String v = locale.getDisplayVariant(Locale.ENGLISH);
-            if (v.equals(locale.getVariant())) {
-                v = new Locale(locale.getLanguage(), v, v).getDisplayCountry(Locale.ENGLISH);
-            }
-            sb.append(v);
-
+        if (hasCountry) {
+            sb.append(locale.getDisplayCountry(Locale.ENGLISH));
         }
 
         if (hasVariant) {
+            if (hasCountry) sb.append(", ");
+            sb.append(locale.getDisplayVariant(Locale.ENGLISH));
+
+        }
+
+        if (hasVariant || hasCountry) {
             sb.append(")");
         }
         return sb.toString();

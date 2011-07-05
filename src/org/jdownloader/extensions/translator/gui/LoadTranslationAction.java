@@ -24,6 +24,7 @@ public class LoadTranslationAction extends AbstractAction {
 
     public void actionPerformed(ActionEvent e) {
         master.load(locale);
+        master.refresh();
     }
 
 }

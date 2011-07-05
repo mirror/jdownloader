@@ -1,5 +1,6 @@
 package org.jdownloader.extensions.translator;
 
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -20,8 +21,10 @@ import org.jdownloader.translate.JdownloaderTranslation;
 
 public class TranslatorExtension extends AbstractExtension<TranslatorConfig> {
 
-    private TranslatorGui      gui;
-    private ArrayList<TLocale> translations;
+    private TranslatorGui             gui;
+    private ArrayList<TLocale>        translations;
+    private ArrayList<TranslateEntry> translationEntries;
+    private TLocale                   loaded;
 
     public TranslatorExtension() {
         super("Translator");
@@ -94,16 +97,26 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig> {
     }
 
     public void load(TLocale locale) {
-
+        loaded = locale;
+        ArrayList<TranslateEntry> tmp = new ArrayList<TranslateEntry>();
         for (TranslateInterface ti : TranslationFactory.getCachedInterfaces()) {
-            TranslateInterface t = TranslationFactory.create(ti.getClass(), locale.getId());
+            Class<TranslateInterface> i = (Class<TranslateInterface>) ti.getClass().getInterfaces()[0];
+            TranslateInterface t = TranslationFactory.create(i, locale.getId());
+            for (Method m : t._getHandler().getMethods()) {
+                tmp.add(new TranslateEntry(t, m));
+            }
 
         }
 
+        this.translationEntries = tmp;
+    }
+
+    public ArrayList<TranslateEntry> getTranslationEntries() {
+        return translationEntries;
     }
 
     public TLocale getLoadedLocale() {
-        return null;
+        return loaded;
     }
 
 }

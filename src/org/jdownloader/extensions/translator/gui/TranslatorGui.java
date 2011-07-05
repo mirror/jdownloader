@@ -12,6 +12,8 @@ import javax.swing.JMenuItem;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
 import javax.swing.KeyStroke;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.plugins.AddonPanel;
@@ -20,7 +22,7 @@ import net.miginfocom.swing.MigLayout;
 import org.jdownloader.extensions.translator.TLocale;
 import org.jdownloader.extensions.translator.TranslatorExtension;
 
-public class TranslatorGui extends AddonPanel<TranslatorExtension> {
+public class TranslatorGui extends AddonPanel<TranslatorExtension> implements ListSelectionListener {
 
     private static final String ID = "TRANSLATORGUI";
     private TranslateTableModel tableModel;
@@ -29,10 +31,11 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> {
     private JMenu               mnuFile;
     private JMenuItem           mnuSave;
     private SwitchPanel         panel;
+    private EntryInfoPanel      ip;
 
     public TranslatorGui(TranslatorExtension plg) {
         super(plg);
-        this.panel = new SwitchPanel(new MigLayout("ins 0", "[grow,fill]", "[grow,fill]")) {
+        this.panel = new SwitchPanel(new MigLayout("ins 0,wrap 1", "[grow,fill][]", "[grow,fill]")) {
 
             @Override
             protected void onShow() {
@@ -51,11 +54,14 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> {
     private void layoutPanel() {
 
         panel.add(new JScrollPane(table));
+        panel.add(ip);
     }
 
     private void initComponents() {
         tableModel = new TranslateTableModel();
         table = new TranslateTable(tableModel);
+        table.getSelectionModel().addListSelectionListener(this);
+        ip = new EntryInfoPanel();
     }
 
     protected void initMenu(JMenuBar menubar) {
@@ -130,6 +136,14 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> {
     public void load(TLocale locale) {
 
         getExtension().load(locale);
+    }
+
+    public void refresh() {
+        tableModel.refresh(getExtension());
+    }
+
+    public void valueChanged(ListSelectionEvent e) {
+        ip.setEntries(tableModel.getSelectedObjects());
     }
 
 }
