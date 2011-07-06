@@ -68,7 +68,7 @@ public class DownloadsTable extends BasicJDTable<PackageLinkNode> {
         if (obj instanceof FilePackage) {
             final int column = this.getExtColumnIndexByPoint(e.getPoint());
             /* column 0 is filepackage/name column */
-            if (this.getExtTableModel().getColumnClass(column) == FileColumn.class) {
+            if (FileColumn.class == this.getExtTableModel().getExtColumn(column).getClass()) {
                 tableModel.toggleFilePackageExpand((FilePackage) obj, DownloadsTableModel.TOGGLEMODE.CURRENT);
             }
         }
@@ -79,7 +79,7 @@ public class DownloadsTable extends BasicJDTable<PackageLinkNode> {
         if (obj instanceof FilePackage) {
             final int column = this.getExtColumnIndexByPoint(e.getPoint());
             /* column 0 is filepackage/name column */
-            if (this.getExtTableModel().getColumnClass(column) == FileColumn.class) {
+            if (FileColumn.class == this.getExtTableModel().getExtColumn(column).getClass()) {
                 final Point p = this.getPointinCell(e.getPoint());
                 if (p != null && p.getX() < 30) {
                     if (e.isControlDown() && !e.isShiftDown()) {
