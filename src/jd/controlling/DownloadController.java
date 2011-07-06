@@ -53,7 +53,14 @@ public class DownloadController implements DownloadControllerListener, DownloadC
     private final AtomicLong structureChanged = new AtomicLong(0);
 
     public static enum MOVE {
-        BEFORE, AFTER, BEGIN, END, TOP, BOTTOM, UP, DOWN
+        BEFORE,
+        AFTER,
+        BEGIN,
+        END,
+        TOP,
+        BOTTOM,
+        UP,
+        DOWN
     }
 
     private LinkedList<FilePackage>                 packages       = new LinkedList<FilePackage>();

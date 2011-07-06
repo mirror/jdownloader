@@ -43,6 +43,7 @@ import jd.utils.JDUtilities;
 import org.appwork.utils.Application;
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.gui.views.downloads.columns.FileColumn;
 import org.jdownloader.gui.views.downloads.context.RatedMenuController;
 import org.jdownloader.gui.views.downloads.context.RatedMenuItem;
 import org.jdownloader.images.NewTheme;
@@ -67,7 +68,7 @@ public class DownloadsTable extends BasicJDTable<PackageLinkNode> {
         if (obj instanceof FilePackage) {
             final int column = this.getExtColumnIndexByPoint(e.getPoint());
             /* column 0 is filepackage/name column */
-            if (column == 0) {
+            if (this.getExtTableModel().getColumnClass(column) == FileColumn.class) {
                 tableModel.toggleFilePackageExpand((FilePackage) obj, DownloadsTableModel.TOGGLEMODE.CURRENT);
             }
         }
@@ -78,7 +79,7 @@ public class DownloadsTable extends BasicJDTable<PackageLinkNode> {
         if (obj instanceof FilePackage) {
             final int column = this.getExtColumnIndexByPoint(e.getPoint());
             /* column 0 is filepackage/name column */
-            if (column == 0) {
+            if (this.getExtTableModel().getColumnClass(column) == FileColumn.class) {
                 final Point p = this.getPointinCell(e.getPoint());
                 if (p != null && p.getX() < 30) {
                     if (e.isControlDown() && !e.isShiftDown()) {
