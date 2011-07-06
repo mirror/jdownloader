@@ -1,6 +1,6 @@
 package org.jdownloader.gui.views.downloads.columns;
 
-import javax.swing.JTextArea;
+import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.JToolTip;
 import javax.swing.plaf.ComponentUI;
@@ -10,7 +10,7 @@ import net.miginfocom.swing.MigLayout;
 
 public class HosterToolTip extends JToolTip {
     private PackageLinkNode obj;
-    private JTextArea       txt;
+    private JPanel          panel;
 
     public PackageLinkNode getObj() {
         return obj;
@@ -18,20 +18,16 @@ public class HosterToolTip extends JToolTip {
 
     public void setObj(PackageLinkNode obj) {
         this.obj = obj;
-        txt.setText(obj.getListOrderID() + " fdskf hksdf hdksgfkjhsdgafkjsdlh fksdh gkfsdgkdsgkfgdfsgsdf gdfgf dg\r\n fksdh gkfsdgkdsgkfgdfsgsdf gdfgf dg\r\n fksdh gkfsdgkdsgkfgdfsgsdf gdfgf dg\r\n");
     }
 
     public HosterToolTip() {
         super();
 
         this.setLayout(new MigLayout("ins 5,wrap 1", "[grow,fill]", "[grow,fill]"));
-        txt = new JTextArea();
 
-        // txt.setOpaque(false);
-        // txt.putClientProperty("Synthetica.opaque", Boolean.FALSE);
-        txt.setText("BLABLABLA");
-        txt.setBorder(new JTextField().getBorder());
-        add(txt);
+        panel = new JPanel(new MigLayout("ins 5", "[]", "[]"));
+        panel.setBorder(new JTextField().getBorder());
+        add(panel);
         setOpaque(false);
 
     }

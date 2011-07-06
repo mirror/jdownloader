@@ -74,8 +74,15 @@ public class HosterColumn extends ExtColumn<PackageLinkNode> {
     }
 
     public JToolTip createToolTip(final PackageLinkNode obj) {
-        tooltip.setObj(obj);
-        return tooltip;
+        if (obj instanceof DownloadLink) {
+            tip.setExtText(((DownloadLink) obj).getHost());
+            return tip;
+        } else if (obj instanceof FilePackage) {
+            tooltip.setObj(obj);
+            return tooltip;
+        }
+        return null;
+
     }
 
     public void configureRendererComponent(PackageLinkNode value, boolean isSelected, boolean hasFocus, int row, int column) {

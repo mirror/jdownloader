@@ -56,6 +56,24 @@ public class PriorityColumn extends ExtIconColumn<PackageLinkNode> {
         });
     }
 
+    /**
+     * Sets max width to 30. overwrite to set other maxsizes
+     */
+    @Override
+    protected int getMaxWidth() {
+        return 100;
+    }
+
+    @Override
+    public int getMinWidth() {
+        return 20;
+    }
+
+    @Override
+    public int getDefaultWidth() {
+        return 60;
+    }
+
     protected int getPriority(PackageLinkNode value) {
         if (value instanceof DownloadLink) {
             switch (((DownloadLink) value).getPriority()) {

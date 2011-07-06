@@ -2024,4 +2024,19 @@ public interface GuiTranslation extends TranslateInterface {
     @Description("HTML can be used here")
     @Default(lngs = { "en" }, values = { "<img src=\"%s1\"></img>&nbsp;&nbsp;&nbsp;&nbsp;<b>%s2</b><br>" })
     String HosterColumn_getToolTip_hoster_img(URL url, String hoster);
+
+    @Default(lngs = { "en" }, values = { "Active Task" })
+    String StatusColumn_StatusColumn();
+
+    @Default(lngs = { "en" }, values = { "Download Control" })
+    String StopSignColumn_StopSignColumn();
+
+    @Default(lngs = { "en" }, values = { "Progress" })
+    String ProgressColumn_ProgressColumn();
+
+    @Default(lngs = { "en" }, values = { "ETA" })
+    String ETAColumn_ETAColumn();
+
+    @Default(lngs = { "en" }, values = { "Speed" })
+    String SpeedColumn_SpeedColumn();
 }

@@ -15,6 +15,7 @@ import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.table.ExtColumn;
 import org.appwork.utils.swing.table.ExtTableModel;
 import org.jdownloader.gui.views.downloads.columns.AddedDateColumn;
+import org.jdownloader.gui.views.downloads.columns.ETAColumn;
 import org.jdownloader.gui.views.downloads.columns.FileColumn;
 import org.jdownloader.gui.views.downloads.columns.FinishedDateColumn;
 import org.jdownloader.gui.views.downloads.columns.HosterColumn;
@@ -23,6 +24,9 @@ import org.jdownloader.gui.views.downloads.columns.LoadedColumn;
 import org.jdownloader.gui.views.downloads.columns.PriorityColumn;
 import org.jdownloader.gui.views.downloads.columns.RemainingColumn;
 import org.jdownloader.gui.views.downloads.columns.SizeColumn;
+import org.jdownloader.gui.views.downloads.columns.SpeedColumn;
+import org.jdownloader.gui.views.downloads.columns.StopSignColumn;
+import org.jdownloader.gui.views.downloads.columns.TaskColumn;
 
 public class DownloadsTableModel extends ExtTableModel<PackageLinkNode> {
 
@@ -42,6 +46,7 @@ public class DownloadsTableModel extends ExtTableModel<PackageLinkNode> {
 
     @Override
     protected void initColumns() {
+        this.addColumn(new ListOrderIDColumn());
         this.addColumn(new FileColumn());
         this.addColumn(new SizeColumn());
         this.addColumn(new RemainingColumn());
@@ -49,8 +54,13 @@ public class DownloadsTableModel extends ExtTableModel<PackageLinkNode> {
         this.addColumn(new HosterColumn());
         this.addColumn(new AddedDateColumn());
         this.addColumn(new FinishedDateColumn());
+        addColumn(new SpeedColumn());
+        addColumn(new ETAColumn());
+        this.addColumn(new ProgressColumn());
+        this.addColumn(new TaskColumn());
         this.addColumn(new PriorityColumn());
-        this.addColumn(new ListOrderIDColumn());
+        addColumn(new StopSignColumn());
+
     }
 
     protected void recreateModel() {

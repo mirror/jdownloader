@@ -62,7 +62,7 @@ public class StatusColumn extends JDTableColumn {
         imgFinished = NewTheme.I().getIcon("true", 16);
         imgFailed = NewTheme.I().getIcon("false", 16);
         imgExtract = NewTheme.I().getIcon("update", 16);
-        imgStopMark = NewTheme.I().getIcon("stopmark", 16);
+        imgStopMark = NewTheme.I().getIcon("stopsign", 16);
         imgPriorityS = NewTheme.I().getIcon("prio_-1", 16);
         imgPriority1 = NewTheme.I().getIcon("prio_1", 16);
         imgPriority2 = NewTheme.I().getIcon("prio_2", 16);

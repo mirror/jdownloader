@@ -51,14 +51,14 @@ import org.jdownloader.extensions.shutdown.translate.T;
 
 public class ShutdownExtension extends AbstractExtension<ShutdownConfig> implements ControlListener {
 
-    private static final int                        count                 = 60;
+    private final int                               count                 = 60;
     private static final String                     CONFIG_ENABLEDONSTART = "ENABLEDONSTART";
     private static final String                     CONFIG_MODE           = "CONFIG_MODE";
     private static final String                     CONFIG_FORCESHUTDOWN  = "FORCE";
-    private static Thread                           shutdown              = null;
-    private static boolean                          shutdownEnabled;
-    private static MenuAction                       menuAction            = null;
-    private static String[]                         MODES_AVAIL           = null;
+    private Thread                                  shutdown              = null;
+    private boolean                                 shutdownEnabled;
+    private MenuAction                              menuAction            = null;
+    private String[]                                MODES_AVAIL           = null;
     private ExtensionConfigPanel<ShutdownExtension> configPanel;
 
     public ExtensionConfigPanel<ShutdownExtension> getConfigPanel() {
@@ -76,6 +76,7 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig> impleme
     }
 
     public void controlEvent(ControlEvent event) {
+
         if (shutdownEnabled) {
             if (event.getEventID() == ControlEvent.CONTROL_DOWNLOAD_STOP && DownloadWatchDog.getInstance().getDownloadssincelastStart() > 0) {
                 if (shutdown != null) {

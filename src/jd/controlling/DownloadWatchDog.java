@@ -688,7 +688,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
             final ProgressController progress = new ProgressController(_JDT._.jd_controlling_DownloadWatchDog_stopping(waitStop), waitStop, null);
             try {
                 while (true) {
-                    boolean alive = true;
+                    boolean alive = false;
                     for (SingleDownloadController con : list) {
                         if (con.isAlive()) {
                             alive = true;
