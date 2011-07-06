@@ -1,9 +1,6 @@
 package org.jdownloader.extensions.translator.gui;
 
 import java.awt.event.MouseEvent;
-import java.util.ArrayList;
-
-import javax.swing.JPopupMenu;
 
 import jd.gui.swing.jdgui.BasicJDTable;
 
@@ -15,11 +12,6 @@ public class TranslateTable extends BasicJDTable<TranslateEntry> {
         super(tableModel);
         this.setSearchEnabled(true);
 
-    }
-
-    @Override
-    protected JPopupMenu onContextMenu(JPopupMenu popup, TranslateEntry contextObject, ArrayList<TranslateEntry> selection) {
-        return super.onContextMenu(popup, contextObject, selection);
     }
 
     @Override

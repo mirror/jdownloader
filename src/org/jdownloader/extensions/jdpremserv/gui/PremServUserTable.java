@@ -7,8 +7,8 @@ import java.util.ArrayList;
 import javax.swing.JPopupMenu;
 import javax.swing.ListSelectionModel;
 
-
 import org.appwork.utils.swing.table.AlternateHighlighter;
+import org.appwork.utils.swing.table.ExtColumn;
 import org.appwork.utils.swing.table.ExtTable;
 import org.appwork.utils.swing.table.SelectionHighlighter;
 import org.jdownloader.extensions.jdpremserv.gui.actions.AddUserAction;
@@ -23,8 +23,8 @@ public class PremServUserTable extends ExtTable<PremServUser> {
     /**
      * 
      */
-    private static final long serialVersionUID = -8085452897702054596L;
-    private static final PremServUserTable INSTANCE = new PremServUserTable();
+    private static final long              serialVersionUID = -8085452897702054596L;
+    private static final PremServUserTable INSTANCE         = new PremServUserTable();
 
     public static PremServUserTable getInstance() {
         return INSTANCE;
@@ -52,7 +52,7 @@ public class PremServUserTable extends ExtTable<PremServUser> {
     }
 
     @Override
-    protected JPopupMenu onContextMenu(JPopupMenu popup, PremServUser contextObject, ArrayList<PremServUser> selection) {
+    protected JPopupMenu onContextMenu(JPopupMenu popup, PremServUser contextObject, ArrayList<PremServUser> selection, ExtColumn<PremServUser> col) {
 
         popup.add(new AddUserAction());
         if (contextObject != null) {

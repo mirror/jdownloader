@@ -42,6 +42,7 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.Application;
 import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.swing.table.ExtColumn;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.downloads.columns.FileColumn;
 import org.jdownloader.gui.views.downloads.context.RatedMenuController;
@@ -111,7 +112,7 @@ public class DownloadsTable extends BasicJDTable<PackageLinkNode> {
     }
 
     @Override
-    protected JPopupMenu onContextMenu(final JPopupMenu popup, final PackageLinkNode contextObject, final ArrayList<PackageLinkNode> selection) {
+    protected JPopupMenu onContextMenu(final JPopupMenu popup, final PackageLinkNode contextObject, final ArrayList<PackageLinkNode> selection, ExtColumn<PackageLinkNode> column) {
         /* split selection into downloadlinks and filepackages */
         final ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
         final ArrayList<FilePackage> fps = new ArrayList<FilePackage>();
