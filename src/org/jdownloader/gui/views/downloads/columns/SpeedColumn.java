@@ -1,6 +1,7 @@
 package org.jdownloader.gui.views.downloads.columns;
 
 import javax.swing.Icon;
+import javax.swing.SwingConstants;
 
 import jd.nutils.Formatter;
 import jd.plugins.DownloadLink;
@@ -21,6 +22,7 @@ public class SpeedColumn extends ExtTextColumn<jd.plugins.PackageLinkNode> {
 
     public SpeedColumn() {
         super(_GUI._.SpeedColumn_SpeedColumn());
+        renderer.setHorizontalAlignment(SwingConstants.RIGHT);
     }
 
     @Override

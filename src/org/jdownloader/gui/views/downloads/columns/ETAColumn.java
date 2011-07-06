@@ -1,6 +1,7 @@
 package org.jdownloader.gui.views.downloads.columns;
 
 import javax.swing.Icon;
+import javax.swing.SwingConstants;
 
 import jd.nutils.Formatter;
 import jd.plugins.DownloadLink;
@@ -21,6 +22,7 @@ public class ETAColumn extends ExtTextColumn<jd.plugins.PackageLinkNode> {
 
     public ETAColumn() {
         super(_GUI._.ETAColumn_ETAColumn());
+        renderer.setHorizontalAlignment(SwingConstants.RIGHT);
     }
 
     @Override
