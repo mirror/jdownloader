@@ -236,7 +236,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                 }
             }
         }
-        DownloadController.getInstance().fireGlobalUpdate();
+        DownloadController.getInstance().fireDataUpdate();
     }
 
     /**

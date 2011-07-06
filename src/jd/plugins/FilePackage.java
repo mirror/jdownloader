@@ -18,7 +18,6 @@ package jd.plugins;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -49,8 +48,6 @@ public class FilePackage extends Property implements Serializable, PackageLinkNo
 
     private String                       downloadDirectory;
 
-    /* keep for comp. with old stable */
-    @Deprecated
     private ArrayList<DownloadLink>      downloadLinkList;
     private transient static FilePackage FP               = null;
 
@@ -127,8 +124,6 @@ public class FilePackage extends Property implements Serializable, PackageLinkNo
 
     private transient DownloadControllerInterface controlledby         = null;
 
-    private transient ArrayList<DownloadLink>     controlledLinks      = null;
-
     /**
      * @return the controlledby
      */
@@ -174,7 +169,6 @@ public class FilePackage extends Property implements Serializable, PackageLinkNo
      */
     private FilePackage() {
         downloadDirectory = org.appwork.storage.config.JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder();
-        controlledLinks = new ArrayList<DownloadLink>();
         created = System.currentTimeMillis();
         /* till refactoring is complete */
         this.downloadLinkList = new ArrayList<DownloadLink>();
@@ -194,27 +188,6 @@ public class FilePackage extends Property implements Serializable, PackageLinkNo
         stream.defaultReadObject();
         isExpanded = getBooleanProperty(DownloadTable.PROPERTY_EXPANDED, false);
         /* convert ArrayList to ArrayList */
-        if (downloadLinkList != null) {
-            controlledLinks = new ArrayList<DownloadLink>(downloadLinkList);
-        } else {
-            controlledLinks = new ArrayList<DownloadLink>();
-        }
-        /* free ArrayList */
-        downloadLinkList = new ArrayList<DownloadLink>();
-    }
-
-    /**
-     * write this FilePackage to an ObjectOutputStream
-     * 
-     * @param out
-     * @throws IOException
-     */
-    private void writeObject(ObjectOutputStream out) throws IOException {
-        /* convert ArrayList to ArrayList */
-        downloadLinkList = new ArrayList<DownloadLink>(controlledLinks);
-        out.defaultWriteObject();
-        /* free ArrayList */
-        downloadLinkList.clear();
     }
 
     /**
@@ -285,9 +258,9 @@ public class FilePackage extends Property implements Serializable, PackageLinkNo
         if (this.controlledby == null) {
             synchronized (this) {
                 for (DownloadLink link : links) {
-                    if (!this.controlledLinks.contains(link)) {
+                    if (!this.downloadLinkList.contains(link)) {
                         link._setFilePackage(this);
-                        this.controlledLinks.add(link);
+                        this.downloadLinkList.add(link);
                     }
                 }
             }
@@ -338,7 +311,7 @@ public class FilePackage extends Property implements Serializable, PackageLinkNo
      * @return
      */
     public ArrayList<DownloadLink> getControlledDownloadLinks() {
-        return controlledLinks;
+        return downloadLinkList;
     }
 
     /**
@@ -532,7 +505,7 @@ public class FilePackage extends Property implements Serializable, PackageLinkNo
         if (this.controlledby == null) {
             synchronized (this) {
                 for (DownloadLink link : links) {
-                    if ((this.controlledLinks.remove(link))) {
+                    if ((this.downloadLinkList.remove(link))) {
                         /*
                          * set FilePackage to null if the link was controlled by
                          * this FilePackage
@@ -596,7 +569,7 @@ public class FilePackage extends Property implements Serializable, PackageLinkNo
      * @return
      */
     public int size() {
-        return controlledLinks.size();
+        return downloadLinkList.size();
     }
 
     @Override

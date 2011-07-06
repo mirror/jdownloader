@@ -391,7 +391,7 @@ public class Rapidshare extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        return 1;
     }
 
     /* get filename of link */

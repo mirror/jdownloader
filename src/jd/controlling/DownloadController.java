@@ -765,12 +765,11 @@ public class DownloadController implements DownloadControllerListener, DownloadC
     }
 
     public void fireStructureUpdate() {
-        /* speichern der downloadliste + aktuallisierung der gui */
         broadcaster.fireEvent(new DownloadControllerEvent(this, DownloadControllerEvent.REFRESH_STRUCTURE));
     }
 
-    public void fireGlobalUpdate() {
-        broadcaster.fireEvent(new DownloadControllerEvent(this, DownloadControllerEvent.REFRESH_ALL));
+    public void fireDataUpdate() {
+        broadcaster.fireEvent(new DownloadControllerEvent(this, DownloadControllerEvent.REFRESH_DATA));
     }
 
     public void fireDownloadLinkUpdate(final Object param) {

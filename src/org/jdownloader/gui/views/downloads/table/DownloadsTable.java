@@ -95,10 +95,16 @@ public class DownloadsTable extends BasicJDTable<PackageLinkNode> {
         tableModel.getSelectedObjects();
     }
 
+    /**
+     * create new table model data
+     */
     public void recreateModel() {
         tableModel.recreateModel();
     }
 
+    /**
+     * refresh only the table model data
+     */
     public void refreshModel() {
         tableModel.refreshModel();
     }

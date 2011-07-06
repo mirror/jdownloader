@@ -72,7 +72,14 @@ public class ShareOnlineBiz extends PluginForHost {
         synchronized (LOCK) {
             HashMap<String, String> infos = ACCOUNTINFOS.get(account);
             if (infos == null || forceLogin) {
-                String page = br.getPage("http://api.share-online.biz/account.php?username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&act=userDetails");
+                boolean follow = br.isFollowingRedirects();
+                br.setFollowRedirects(true);
+                String page = null;
+                try {
+                    page = br.getPage("http://api.share-online.biz/account.php?username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&act=userDetails");
+                } finally {
+                    br.setFollowRedirects(follow);
+                }
                 infos = getInfos(page, "=");
                 ACCOUNTINFOS.put(account, infos);
             }
@@ -142,6 +149,7 @@ public class ShareOnlineBiz extends PluginForHost {
         br.setAcceptLanguage("en, en-gb;q=0.8");
         String id = getID(downloadLink);
         br.setDebug(true);
+        br.setFollowRedirects(true);
         if (br.postPage("http://api.share-online.biz/linkcheck.php?md5=1&snr=1", "links=" + id).matches("\\s*")) {
             String startURL = downloadLink.getDownloadURL();
             // workaround to bypass new layout and use old site
@@ -166,6 +174,7 @@ public class ShareOnlineBiz extends PluginForHost {
         try {
             Browser br = new Browser();
             br.setCookiesExclusive(true);
+            br.setFollowRedirects(true);
             StringBuilder sb = new StringBuilder();
             ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
             int index = 0;
@@ -224,6 +233,7 @@ public class ShareOnlineBiz extends PluginForHost {
         final HashMap<String, String> infos = loginAPI(account, false);
         final String linkID = getID(parameter);
         br.setCookie("http://www.share-online.biz", "dl", infos.get("dl"));
+        br.setFollowRedirects(true);
         final String response = br.getPage("http://api.share-online.biz/account.php?username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&act=download&lid=" + linkID);
         if (response.contains("EXCEPTION request download link not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         final HashMap<String, String> dlInfos = getInfos(response, ": ");

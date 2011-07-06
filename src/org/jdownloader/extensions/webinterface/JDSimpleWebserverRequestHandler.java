@@ -238,7 +238,7 @@ public class JDSimpleWebserverRequestHandler {
                                 link = it.next();
                                 link.setEnabled(true);
                             }
-                            DownloadController.getInstance().fireGlobalUpdate();
+                            DownloadController.getInstance().fireDataUpdate();
                         }
                         if (dowhat.compareToIgnoreCase("deactivate") == 0) {
                             /* deaktivieren */
@@ -246,7 +246,7 @@ public class JDSimpleWebserverRequestHandler {
                                 link = it.next();
                                 link.setEnabled(false);
                             }
-                            DownloadController.getInstance().fireGlobalUpdate();
+                            DownloadController.getInstance().fireDataUpdate();
                         }
                         if (dowhat.compareToIgnoreCase("reset") == 0) {
                             /*
@@ -258,7 +258,7 @@ public class JDSimpleWebserverRequestHandler {
                                 link.getLinkStatus().setStatusText("");
                                 link.reset();
                             }
-                            DownloadController.getInstance().fireGlobalUpdate();
+                            DownloadController.getInstance().fireDataUpdate();
                         }
                         if (dowhat.compareToIgnoreCase("remove") == 0) {
 
@@ -274,7 +274,7 @@ public class JDSimpleWebserverRequestHandler {
                                 link = it.next();
                                 link.setAborted(true);
                             }
-                            DownloadController.getInstance().fireGlobalUpdate();
+                            DownloadController.getInstance().fireDataUpdate();
                         }
                     }
                 }

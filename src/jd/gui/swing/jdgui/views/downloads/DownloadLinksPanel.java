@@ -301,9 +301,6 @@ public class DownloadLinksPanel extends SwitchPanel implements ActionListener, D
         case DownloadControllerEvent.REFRESH_SPECIFIC:
             updateTableTask(REFRESH_SPECIFIED_LINKS, event.getParameter());
             break;
-        case DownloadControllerEvent.REFRESH_ALL:
-            updateTableTask(REFRESH_ALL_DATA_CHANGED, null);
-            break;
         }
     }
 

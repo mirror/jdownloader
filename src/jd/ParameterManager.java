@@ -122,6 +122,7 @@ public class ParameterManager {
                 ParameterManager.LOG.info(currentArg + " parameter");
 
             } else if (currentArg.equals("--focus") || currentArg.equals("-f")) {
+
                 // final OptionalPluginWrapper addon =
                 // JDUtilities.getOptionalPlugin("trayicon");
                 // if (addon != null && addon.isEnabled()) {

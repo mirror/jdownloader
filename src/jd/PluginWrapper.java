@@ -249,7 +249,7 @@ public abstract class PluginWrapper implements Comparable<PluginWrapper> {
             getPluginConfig().setProperty("USE_PLUGIN", bool);
             getPluginConfig().save();
             if (JDUtilities.getController() != null) {
-                DownloadController.getInstance().fireGlobalUpdate();
+                DownloadController.getInstance().fireDataUpdate();
             }
         }
     }

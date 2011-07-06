@@ -455,7 +455,7 @@ public class DatabaseConnector implements Serializable {
                     rs = statement.executeQuery("SELECT * FROM links");
                     rs.next();
                     return rs.getObject(2);
-                } catch (final Exception e) {
+                } catch (final Throwable e) {
                     JDLogger.exception(Level.FINEST, e);
                     JDLogger.getLogger().warning("Database not available. Create new one: links");
                 } finally {

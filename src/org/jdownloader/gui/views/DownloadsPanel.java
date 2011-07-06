@@ -5,6 +5,9 @@ import java.util.concurrent.TimeUnit;
 
 import javax.swing.JScrollPane;
 
+import jd.controlling.DownloadController;
+import jd.controlling.DownloadControllerEvent;
+import jd.controlling.DownloadControllerListener;
 import jd.controlling.IOEQ;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import net.miginfocom.swing.MigLayout;
@@ -12,7 +15,7 @@ import net.miginfocom.swing.MigLayout;
 import org.jdownloader.gui.views.downloads.table.DownloadsTable;
 import org.jdownloader.gui.views.downloads.table.DownloadsTableModel;
 
-public class DownloadsPanel extends SwitchPanel implements Runnable {
+public class DownloadsPanel extends SwitchPanel implements Runnable, DownloadControllerListener {
 
     /**
      * 
@@ -39,6 +42,7 @@ public class DownloadsPanel extends SwitchPanel implements Runnable {
             if (timer != null) timer.cancel(false);
             timer = IOEQ.TIMINGQUEUE.scheduleWithFixedDelay(this, 250, 1000, TimeUnit.MILLISECONDS);
         }
+        DownloadController.getInstance().addListener(this);
     }
 
     @Override
@@ -49,10 +53,25 @@ public class DownloadsPanel extends SwitchPanel implements Runnable {
                 timer = null;
             }
         }
+        DownloadController.getInstance().removeListener(this);
     }
 
     public void run() {
         table.refreshModel();
+    }
+
+    public void onDownloadControllerEvent(DownloadControllerEvent event) {
+        switch (event.getEventID()) {
+        case DownloadControllerEvent.ADD_DOWNLOADLINK:
+        case DownloadControllerEvent.REMOVE_DOWNLOADLINK:
+        case DownloadControllerEvent.ADD_FILEPACKAGE:
+        case DownloadControllerEvent.REMOVE_FILPACKAGE:
+            table.recreateModel();
+            break;
+        case DownloadControllerEvent.REFRESH_DATA:
+            table.refreshModel();
+            break;
+        }
     }
 
 }
