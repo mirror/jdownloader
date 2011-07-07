@@ -138,7 +138,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
     protected void registerSingleDownloadController(final SingleDownloadController con) {
         DownloadLink link = con.getDownloadLink();
         synchronized (this.DownloadControllers) {
-            if (this.DownloadControllers.contains(link)) {
+            if (this.DownloadControllers.contains(con)) {
                 throw new IllegalStateException("SingleDownloadController already registered");
             } else {
                 this.DownloadControllers.add(con);
