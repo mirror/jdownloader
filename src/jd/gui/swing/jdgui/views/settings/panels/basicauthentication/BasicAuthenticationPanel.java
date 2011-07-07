@@ -5,6 +5,7 @@ import javax.swing.JButton;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 
+import jd.controlling.authentication.AuthenticationController;
 import jd.gui.swing.jdgui.views.settings.components.SettingsComponent;
 import jd.gui.swing.jdgui.views.settings.components.StateUpdateListener;
 import net.miginfocom.swing.MigLayout;
@@ -63,6 +64,6 @@ public class BasicAuthenticationPanel extends JPanel implements SettingsComponen
     }
 
     public void update() {
-        ((AuthTableModel) table.getExtTableModel()).update();
+        table.getExtTableModel()._fireTableStructureChanged(AuthenticationController.getInstance().list(), false);
     }
 }

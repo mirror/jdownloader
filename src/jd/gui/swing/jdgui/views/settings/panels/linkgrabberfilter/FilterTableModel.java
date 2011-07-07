@@ -15,7 +15,6 @@ import org.appwork.utils.swing.table.columns.ExtCheckColumn;
 import org.appwork.utils.swing.table.columns.ExtComboColumn;
 import org.jdownloader.controlling.LinkFilter;
 import org.jdownloader.controlling.LinkFilter.Types;
-import org.jdownloader.controlling.LinkFilterController;
 import org.jdownloader.controlling.LinkFilterOperator;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
@@ -26,12 +25,6 @@ public class FilterTableModel extends ExtTableModel<LinkFilter> {
 
     public FilterTableModel(String id) {
         super(id);
-        fill();
-    }
-
-    /* WE ARE LAZY :) no eventsystem for this, so we update table ourselves */
-    public void fill() {
-        this._fireTableStructureChanged(LinkFilterController.getInstance().list(), false);
     }
 
     @Override

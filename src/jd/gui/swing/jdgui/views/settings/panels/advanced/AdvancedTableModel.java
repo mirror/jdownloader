@@ -3,33 +3,42 @@ package jd.gui.swing.jdgui.views.settings.panels.advanced;
 import java.util.ArrayList;
 import java.util.Iterator;
 
-import org.appwork.utils.swing.EDTRunner;
+import jd.controlling.IOEQ;
+
+import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.utils.swing.table.ExtTableModel;
 import org.appwork.utils.swing.table.columns.ExtTextColumn;
 import org.jdownloader.settings.advanced.AdvancedConfigEntry;
-import org.jdownloader.settings.advanced.AdvancedConfigEventListener;
 import org.jdownloader.settings.advanced.AdvancedConfigManager;
 
-public class AdvancedTableModel extends ExtTableModel<AdvancedConfigEntry> implements AdvancedConfigEventListener {
+public class AdvancedTableModel extends ExtTableModel<AdvancedConfigEntry> {
     private static final long serialVersionUID = 1L;
+    private DelayedRunnable   delayedFilter;
+    private String            text             = null;
 
     public AdvancedTableModel(String id) {
         super(id);
-        fill();
-        AdvancedConfigManager.getInstance().getEventSender().addListener(this);
-    }
 
-    private void fill() {
-        new EDTRunner() {
+        delayedFilter = new DelayedRunnable(IOEQ.TIMINGQUEUE, 250l) {
 
             @Override
-            protected void runInEDT() {
-                ArrayList<AdvancedConfigEntry> tmp = (ArrayList<AdvancedConfigEntry>) AdvancedConfigManager.getInstance().list().clone();
-                tableData = tmp;
-                fireTableStructureChanged();
+            public void delayedrun() {
+                final ArrayList<AdvancedConfigEntry> tmp = AdvancedConfigManager.getInstance().list();
+                if (text != null) {
+                    AdvancedConfigEntry next;
+                    for (Iterator<AdvancedConfigEntry> it = tmp.iterator(); it.hasNext();) {
+                        next = it.next();
+                        if (!next.getKey().toLowerCase().contains(text.toLowerCase())) {
+                            if (next.getDescription() == null || !next.getDescription().toLowerCase().contains(text.toLowerCase())) {
+                                it.remove();
+                            }
+                        }
+                    }
+                }
+                _fireTableStructureChanged(tmp, true);
             }
-        };
 
+        };
     }
 
     @Override
@@ -46,6 +55,11 @@ public class AdvancedTableModel extends ExtTableModel<AdvancedConfigEntry> imple
             public String getStringValue(AdvancedConfigEntry value) {
                 return value.getKey();
             }
+
+            @Override
+            public boolean isHidable() {
+                return false;
+            }
         });
         addColumn(new AdvancedValueColumn());
         addColumn(new ExtTextColumn<AdvancedConfigEntry>("Type") {
@@ -60,34 +74,13 @@ public class AdvancedTableModel extends ExtTableModel<AdvancedConfigEntry> imple
             public String getStringValue(AdvancedConfigEntry value) {
                 return value.getTypeString();
             }
+
         });
         addColumn(new EditColumn());
     }
 
-    public void onAdvancedConfigUpdate() {
-        fill();
-    }
-
     public void filter(final String text) {
-        new EDTRunner() {
-
-            @Override
-            protected void runInEDT() {
-                ArrayList<AdvancedConfigEntry> tmp = (ArrayList<AdvancedConfigEntry>) AdvancedConfigManager.getInstance().list().clone();
-                if (text != null) {
-                    AdvancedConfigEntry next;
-                    for (Iterator<AdvancedConfigEntry> it = tmp.iterator(); it.hasNext();) {
-                        next = it.next();
-                        if (!next.getKey().toLowerCase().contains(text.toLowerCase())) {
-                            if (next.getDescription() == null || !next.getDescription().toLowerCase().contains(text.toLowerCase())) {
-                                it.remove();
-                            }
-                        }
-                    }
-                }
-                tableData = tmp;
-                fireTableStructureChanged();
-            }
-        };
+        this.text = text;
+        delayedFilter.run();
     }
 }

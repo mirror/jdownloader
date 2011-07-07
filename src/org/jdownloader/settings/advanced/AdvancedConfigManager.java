@@ -55,7 +55,9 @@ public class AdvancedConfigManager implements ConfigEventListener {
                 } else if (m.getGetter() == null) {
                     throw new RuntimeException("Getter for " + m.getSetter().getMethod() + " missing");
                 } else {
-                    configInterfaces.add(new AdvancedConfigInterfaceEntry(cf, m));
+                    synchronized (configInterfaces) {
+                        configInterfaces.add(new AdvancedConfigInterfaceEntry(cf, m));
+                    }
                     map.put(m, true);
                 }
             }
@@ -66,8 +68,9 @@ public class AdvancedConfigManager implements ConfigEventListener {
     }
 
     public ArrayList<AdvancedConfigEntry> list() {
-
-        return configInterfaces;
+        synchronized (configInterfaces) {
+            return new ArrayList<AdvancedConfigEntry>(configInterfaces);
+        }
     }
 
     public void onConfigValueModified(ConfigInterface config, String key, Object newValue) {

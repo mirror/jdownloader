@@ -48,6 +48,11 @@ public class AdvancedValueColumn extends ExtCompoundColumn<AdvancedConfigEntry> 
         return true;
     }
 
+    @Override
+    public boolean isHidable() {
+        return false;
+    }
+
     private void initColumns() {
         stringColumn = new ExtTextColumn<AdvancedConfigEntry>(getName()) {
             private static final long serialVersionUID = 1L;

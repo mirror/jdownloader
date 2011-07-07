@@ -12,33 +12,34 @@ import org.jdownloader.images.NewTheme;
 
 public class RemoveAction extends AbstractAction {
     private static final long     serialVersionUID = -477419276505058907L;
-    private LinkgrabberFilter     filter;
     private ArrayList<LinkFilter> selected;
+    private FilterTable           table;
 
-    public RemoveAction(LinkgrabberFilter filter) {
-        this.filter = filter;
+    public RemoveAction(FilterTable table) {
+        this.table = table;
         this.putValue(NAME, _GUI._.settings_linkgrabber_filter_action_remove());
         this.putValue(AbstractAction.SMALL_ICON, NewTheme.I().getIcon("remove", 20));
 
     }
 
-    public RemoveAction(ArrayList<LinkFilter> selected) {
+    public RemoveAction(FilterTable table, ArrayList<LinkFilter> selected, boolean force) {
+        this.table = table;
         this.selected = selected;
         this.putValue(NAME, _GUI._.settings_linkgrabber_filter_action_remove());
-        this.putValue(AbstractAction.SMALL_ICON, NewTheme.I().getIcon("remove", 20));
-        setEnabled(selected.size() > 0);
+        this.putValue(AbstractAction.SMALL_ICON, NewTheme.I().getIcon("remove", 16));
     }
 
     public void actionPerformed(ActionEvent e) {
         ArrayList<LinkFilter> remove = selected;
         if (remove == null) {
-            remove = filter.getTable().getExtTableModel().getSelectedObjects();
+            remove = table.getExtTableModel().getSelectedObjects();
         }
-        for (LinkFilter lf : remove) {
-            LinkFilterController.getInstance().remove(lf);
+        if (remove != null) {
+            for (LinkFilter lf : remove) {
+                LinkFilterController.getInstance().remove(lf);
+            }
+            table.getExtTableModel()._fireTableStructureChanged(LinkFilterController.getInstance().list(), false);
         }
-
-        ((FilterTableModel) filter.getTable().getExtTableModel()).fill();
     }
 
     @Override

@@ -19,18 +19,19 @@ public class NewAction extends AbstractAction {
 
     public NewAction(LinkgrabberFilter linkgrabberFilter) {
         this(linkgrabberFilter.getTable());
+        this.putValue(AbstractAction.SMALL_ICON, NewTheme.I().getIcon("add", 20));
 
     }
 
     public NewAction(FilterTable table) {
         this.table = table;
         this.putValue(NAME, _GUI._.settings_linkgrabber_filter_action_add());
-        this.putValue(AbstractAction.SMALL_ICON, NewTheme.I().getIcon("add", 20));
+        this.putValue(AbstractAction.SMALL_ICON, NewTheme.I().getIcon("add", 16));
     }
 
     public void actionPerformed(ActionEvent e) {
         LinkFilterController.getInstance().add(new LinkFilter(true, LinkFilter.Types.FILENAME, ""));
-        ((FilterTableModel) table.getExtTableModel()).fill();
+        table.getExtTableModel()._fireTableStructureChanged(LinkFilterController.getInstance().list(), false);
     }
 
 }

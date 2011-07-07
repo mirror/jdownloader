@@ -28,14 +28,13 @@ public class LinkgrabberFilter extends JPanel implements SettingsComponent {
         tb = new JToolBar();
         tb.setFloatable(false);
         table = new FilterTable();
-        table.addMouseListener(new ContextMenuListener(this));
         tb.add(new JButton(new NewAction(this)));
         RemoveAction ra;
-        tb.add(new JButton(ra = new RemoveAction(this)));
+        tb.add(new JButton(ra = new RemoveAction(table)));
         table.getSelectionModel().addListSelectionListener(new MinimumSelectionObserver(table, ra, 1));
 
         txt = new JTextField();
-        test = new JButton(new TestAction(this));
+        test = new JButton(new TestAction());
 
         HelpNotifier.register(txt, new HelpNotifierCallbackListener() {
 

@@ -1,8 +1,16 @@
 package jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter;
 
-import org.jdownloader.controlling.LinkFilter;
+import java.awt.event.KeyEvent;
+import java.util.ArrayList;
+
+import javax.swing.JMenuItem;
+import javax.swing.JPopupMenu;
+import javax.swing.JSeparator;
 
 import jd.gui.swing.jdgui.BasicJDTable;
+
+import org.appwork.utils.swing.table.ExtColumn;
+import org.jdownloader.controlling.LinkFilter;
 
 public class FilterTable extends BasicJDTable<LinkFilter> {
 
@@ -11,5 +19,35 @@ public class FilterTable extends BasicJDTable<LinkFilter> {
     public FilterTable() {
         super(new FilterTableModel("FilterTable2"));
 
+    }
+
+    /*
+     * (non-Javadoc)
+     * 
+     * @see
+     * org.appwork.utils.swing.table.ExtTable#onContextMenu(javax.swing.JPopupMenu
+     * , java.lang.Object, java.util.ArrayList,
+     * org.appwork.utils.swing.table.ExtColumn)
+     */
+    @Override
+    protected JPopupMenu onContextMenu(JPopupMenu popup, LinkFilter contextObject, ArrayList<LinkFilter> selection, ExtColumn<LinkFilter> column) {
+        popup.add(new JMenuItem(new NewAction(this)));
+        popup.add(new JMenuItem(new RemoveAction(this, selection, false)));
+        popup.add(new JSeparator());
+        popup.add(new JMenuItem(new TestAction()));
+        return popup;
+    }
+
+    /*
+     * (non-Javadoc)
+     * 
+     * @see
+     * org.appwork.utils.swing.table.ExtTable#onShortcutDelete(java.util.ArrayList
+     * , java.awt.event.KeyEvent, boolean)
+     */
+    @Override
+    protected boolean onShortcutDelete(ArrayList<LinkFilter> selectedObjects, KeyEvent evt, boolean direct) {
+        new RemoveAction(this, selectedObjects, direct).actionPerformed(null);
+        return true;
     }
 }

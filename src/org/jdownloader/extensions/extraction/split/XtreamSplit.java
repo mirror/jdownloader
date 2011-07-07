@@ -227,7 +227,7 @@ public class XtreamSplit extends IExtraction {
             String filename = new String(buffer);
 
             // Set filename. If no filename was set, take the archivename
-            if (filename != null && !filename.trim().equals(""))
+            if (filename != null && filename.trim().length() != 0)
                 file = new File(file.getAbsolutePath().replace(file.getName(), filename));
             else {
                 logger.warning("Could not read from XtremSplit file " + file.getAbsolutePath());

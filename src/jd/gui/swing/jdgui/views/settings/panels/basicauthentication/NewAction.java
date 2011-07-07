@@ -25,7 +25,7 @@ public class NewAction extends AbstractAction {
 
     public void actionPerformed(ActionEvent e) {
         AuthenticationController.getInstance().add(new AuthenticationInfo());
-        ((AuthTableModel) table.getExtTableModel()).update();
+        table.getExtTableModel()._fireTableStructureChanged(AuthenticationController.getInstance().list(), false);
     }
 
 }

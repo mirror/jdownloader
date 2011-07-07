@@ -7,7 +7,6 @@ import javax.swing.DefaultComboBoxModel;
 import javax.swing.JTable;
 import javax.swing.table.JTableHeader;
 
-import jd.controlling.authentication.AuthenticationController;
 import jd.controlling.authentication.AuthenticationInfo;
 
 import org.appwork.utils.swing.table.ExtTableHeaderRenderer;
@@ -24,12 +23,6 @@ public class AuthTableModel extends ExtTableModel<AuthenticationInfo> {
 
     public AuthTableModel() {
         super("AuthTableModel");
-        update();
-    }
-
-    /* WE ARE LAZY :) no eventsystem for this, so we update table ourselves */
-    public void update() {
-        this._fireTableStructureChanged(AuthenticationController.getInstance().list(), false);
     }
 
     @Override

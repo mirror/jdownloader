@@ -107,5 +107,6 @@ public class Linkgrabber extends AbstractConfigPanel {
         checkLinks.setSelected(st.isLinkcheckEnabled());
         rename.setSelected(st.isCleanUpFilenames());
         blackOrWhite.setSelectedIndex(LinkFilterController.getInstance().isBlacklist() ? 0 : 1);
+        filter.getTable().getExtTableModel()._fireTableStructureChanged(LinkFilterController.getInstance().list(), false);
     }
 }

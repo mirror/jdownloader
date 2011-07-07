@@ -15,13 +15,37 @@ import javax.swing.event.DocumentListener;
 
 import org.appwork.utils.swing.HelpNotifier;
 import org.appwork.utils.swing.HelpNotifierCallbackListener;
-import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.gui.settings.AbstractConfigPanel;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.settings.advanced.AdvancedConfigEventListener;
+import org.jdownloader.settings.advanced.AdvancedConfigManager;
 import org.jdownloader.translate._JDT;
 
-public class AdvancedSettings extends AbstractConfigPanel implements DocumentListener {
+public class AdvancedSettings extends AbstractConfigPanel implements DocumentListener, AdvancedConfigEventListener {
+
+    /*
+     * (non-Javadoc)
+     * 
+     * @see org.jdownloader.gui.settings.AbstractConfigPanel#onShow()
+     */
+    @Override
+    protected void onShow() {
+        super.onShow();
+        AdvancedConfigManager.getInstance().getEventSender().addListener(this);
+
+    }
+
+    /*
+     * (non-Javadoc)
+     * 
+     * @see org.jdownloader.gui.settings.AbstractConfigPanel#onHide()
+     */
+    @Override
+    protected void onHide() {
+        super.onHide();
+        AdvancedConfigManager.getInstance().getEventSender().removeListener(this);
+    }
 
     private static final long serialVersionUID = 1L;
     private JTextField        filterText;
@@ -85,7 +109,7 @@ public class AdvancedSettings extends AbstractConfigPanel implements DocumentLis
 
     @Override
     public void updateContents() {
-        Dialog.getInstance().showMessageDialog(_JDT._.gui_settings_advanced_description());
+        table.getExtTableModel()._fireTableStructureChanged(AdvancedConfigManager.getInstance().list(), true);
     }
 
     public void insertUpdate(DocumentEvent e) {
@@ -106,5 +130,9 @@ public class AdvancedSettings extends AbstractConfigPanel implements DocumentLis
 
     public void changedUpdate(DocumentEvent e) {
         filter();
+    }
+
+    public void onAdvancedConfigUpdate() {
+        table.getExtTableModel()._fireTableStructureChanged(AdvancedConfigManager.getInstance().list(), true);
     }
 }

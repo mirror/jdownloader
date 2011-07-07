@@ -38,8 +38,7 @@ public class RemoveAction extends AbstractAction {
             selection = ((AuthTableModel) table.getExtTableModel()).getSelectedObjects();
         }
         AuthenticationController.getInstance().remove(selection);
-        /* WE ARE LAZY :) no eventsystem for this, so we update table ourselves */
-        ((AuthTableModel) table.getExtTableModel()).update();
+        table.getExtTableModel()._fireTableStructureChanged(AuthenticationController.getInstance().list(), false);
     }
 
     @Override

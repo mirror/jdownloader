@@ -235,7 +235,6 @@ public class DownloadsTable extends BasicJDTable<PackageLinkNode> {
                 }
             }
         }
-        tableModel.getSelectedObjects();
     }
 
     /**
