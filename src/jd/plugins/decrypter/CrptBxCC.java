@@ -36,12 +36,12 @@ import jd.utils.JDUtilities;
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cryptbox.cc" }, urls = { "http://[\\w\\.]*?.cryptbox\\.cc/ordner/[0-9a-zA-z]+" }, flags = { 0 })
 public class CrptBxCC extends PluginForDecrypt {
 
-    private static final String CAPTCHA_PATTERN = "api\\.recaptcha\\.net";
-    private static final String CAPTCHA_WRONG_PATTERN = "Sie haben einen falschen Sicherheitscode eingegeben\\.";
-    private static final String DOWNLINK_PATTERN = "<br><a href=\"(.*?)\"";
-    private static final String DOWNLINK_PATTERN2 = "id=\"ff\" action=\"(.*?)\"";
-    private static final String FIRSTALLURLS_PATTERN = "<table class=\"download\">[\r\n\t ]+<tr>[\r\n\t ]+<td>[\r\n\t ]+<a href='(http://.*?)'";
-    private static final String SECONDALLURLS_PATTERN = "'(http://www\\.cryptbox\\.cc/go/.*?)'";
+    private static final String CAPTCHA_PATTERN          = "api\\.recaptcha\\.net";
+    private static final String CAPTCHA_WRONG_PATTERN    = "Sie haben einen falschen Sicherheitscode eingegeben\\.";
+    private static final String DOWNLINK_PATTERN         = "<br><a href=\"(.*?)\"";
+    private static final String DOWNLINK_PATTERN2        = "id=\"ff\" action=\"(.*?)\"";
+    private static final String FIRSTALLURLS_PATTERN     = "<table class=\"download\">[\r\n\t ]+<tr>[\r\n\t ]+<td>[\r\n\t ]+<a href='(http://.*?)'";
+    private static final String SECONDALLURLS_PATTERN    = "'(http://www\\.cryptbox\\.cc/go/.*?)'";
     private static final String FOLDER_NOT_FOUND_PATTERN = "<h3>Fehler!</h3>Dieser Ordner ex[ei]stiert nicht.";
 
     public CrptBxCC(PluginWrapper wrapper) {
@@ -99,7 +99,7 @@ public class CrptBxCC extends PluginForDecrypt {
     private void decryptTheStuff(int pages, ProgressController progress, String folderId) throws Exception {
         logger.info("Found " + pages + " pages.");
         int defectLinksCounter = 1;
-        for (int i = 0; pages <= pages; i++) {
+        for (int i = 0; i <= pages; i++) {
             logger.info("Working on page " + (i + 1) + " of " + pages);
             if (i != 0) br.getPage("http://www.cryptbox.cc/ordner/" + folderId + "&seite=" + (i + 1));
             String[] links = br.getRegex(FIRSTALLURLS_PATTERN).getColumn(0);
