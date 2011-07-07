@@ -31,7 +31,9 @@ import org.jdownloader.gui.views.downloads.columns.TaskColumn;
 public class DownloadsTableModel extends ExtTableModel<PackageLinkNode> {
 
     public static enum TOGGLEMODE {
-        CURRENT, TOP, BOTTOM
+        CURRENT,
+        TOP,
+        BOTTOM
     }
 
     private static final long serialVersionUID = -198189279671615981L;
@@ -54,12 +56,12 @@ public class DownloadsTableModel extends ExtTableModel<PackageLinkNode> {
         this.addColumn(new HosterColumn());
         this.addColumn(new AddedDateColumn());
         this.addColumn(new FinishedDateColumn());
-        addColumn(new SpeedColumn());
-        addColumn(new ETAColumn());
+        this.addColumn(new SpeedColumn());
+        this.addColumn(new ETAColumn());
         this.addColumn(new ProgressColumn());
         this.addColumn(new TaskColumn());
         this.addColumn(new PriorityColumn());
-        addColumn(new StopSignColumn());
+        this.addColumn(new StopSignColumn());
 
     }
 
@@ -73,15 +75,7 @@ public class DownloadsTableModel extends ExtTableModel<PackageLinkNode> {
                     return;
                 }
                 final ArrayList<PackageLinkNode> newtableData = DownloadsTableModel.this.refreshSort(tableData);
-                new EDTRunner() {
-                    @Override
-                    protected void runInEDT() {
-                        final ArrayList<PackageLinkNode> selected = DownloadsTableModel.this.getSelectedObjects();
-                        tableData = newtableData;
-                        DownloadsTableModel.this.fireTableStructureChanged();
-                        DownloadsTableModel.this.setSelectedObjects(selected);
-                    }
-                };
+                _fireTableStructureChanged(newtableData, false);
             }
 
         }, true);
@@ -99,9 +93,8 @@ public class DownloadsTableModel extends ExtTableModel<PackageLinkNode> {
                 new EDTRunner() {
                     @Override
                     protected void runInEDT() {
-                        final ArrayList<PackageLinkNode> selected = DownloadsTableModel.this.getSelectedObjects();
-                        DownloadsTableModel.this.fireTableDataChanged();
-                        DownloadsTableModel.this.setSelectedObjects(selected);
+                        /* we just want to repaint */
+                        DownloadsTableModel.this.getTable().repaint();
                     }
                 };
             }
@@ -151,20 +144,16 @@ public class DownloadsTableModel extends ExtTableModel<PackageLinkNode> {
                     return;
                 }
                 final ArrayList<PackageLinkNode> newtableData = DownloadsTableModel.this.refreshSort(tableData);
-                new EDTRunner() {
-                    @Override
-                    protected void runInEDT() {
-                        final ArrayList<PackageLinkNode> selected = DownloadsTableModel.this.getSelectedObjects();
-                        tableData = newtableData;
-                        DownloadsTableModel.this.fireTableStructureChanged();
-                        DownloadsTableModel.this.setSelectedObjects(selected);
-                    }
-                };
-
+                _fireTableStructureChanged(newtableData, false);
             }
         });
     }
 
+    /*
+     * we override sort to have a better sorting of packages/files, to keep
+     * their structure alive,data is only used to specify the size of the new
+     * ArrayList
+     */
     @Override
     public ArrayList<PackageLinkNode> sort(final ArrayList<PackageLinkNode> data, final ExtColumn<PackageLinkNode> column, final boolean sortOrderToggle) {
         this.sortColumn = column;

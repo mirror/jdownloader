@@ -32,7 +32,7 @@ public class AccountManager extends JPanel implements SettingsComponent {
 
         tb.add(new JButton(new NewAction(table)), "sg 1");
         RemoveAction ra;
-        tb.add(new JButton(ra = new RemoveAction(table)), "sg 1");
+        tb.add(new JButton(ra = new RemoveAction(table, false)), "sg 1");
         table.getSelectionModel().addListSelectionListener(new MinimumSelectionObserver(table, ra, 1));
 
         tb.add(new JButton(new BuyAction(null, table)), "sg 1");

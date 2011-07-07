@@ -24,7 +24,7 @@ public class PremiumAccountTable extends BasicJDTable<Account> {
      */
     @Override
     protected boolean onShortcutDelete(ArrayList<Account> selectedObjects, KeyEvent evt, boolean direct) {
-        new RemoveAction(this).actionPerformed(null);
+        new RemoveAction(this, direct).actionPerformed(null);
         return true;
     }
 

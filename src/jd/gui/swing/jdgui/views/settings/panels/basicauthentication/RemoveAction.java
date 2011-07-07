@@ -8,7 +8,6 @@ import javax.swing.AbstractAction;
 import jd.controlling.authentication.AuthenticationController;
 import jd.controlling.authentication.AuthenticationInfo;
 
-import org.appwork.utils.swing.table.utils.MinimumSelectionObserver;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 
@@ -16,30 +15,36 @@ public class RemoveAction extends AbstractAction {
     /**
      * 
      */
-    private static final long serialVersionUID = 1L;
-    private AuthTable         table;
+    private static final long             serialVersionUID = 1L;
+    private AuthTable                     table;
+    private ArrayList<AuthenticationInfo> selection        = null;
 
     public RemoveAction(AuthTable table) {
         this.table = table;
         this.putValue(NAME, _GUI._.settings_auth_delete());
         this.putValue(AbstractAction.SMALL_ICON, NewTheme.I().getIcon("remove", 20));
-        table.getSelectionModel().addListSelectionListener(new MinimumSelectionObserver(table, this, 1));
 
     }
 
-    public RemoveAction(AuthTable authTable, ArrayList<AuthenticationInfo> selection) {
+    public RemoveAction(AuthTable authTable, ArrayList<AuthenticationInfo> selection, boolean force) {
         this.table = authTable;
+        this.selection = selection;
         this.putValue(NAME, _GUI._.settings_auth_delete());
-        this.putValue(AbstractAction.SMALL_ICON, NewTheme.I().getIcon("remove", 20));
-        this.setEnabled(selection != null && selection.size() > 0);
-
+        this.putValue(AbstractAction.SMALL_ICON, NewTheme.I().getIcon("remove", 16));
     }
 
     public void actionPerformed(ActionEvent e) {
-
-        AuthenticationController.getInstance().remove(((AuthTableModel) table.getExtTableModel()).getSelectedObjects());
+        if (selection == null) {
+            selection = ((AuthTableModel) table.getExtTableModel()).getSelectedObjects();
+        }
+        AuthenticationController.getInstance().remove(selection);
+        /* WE ARE LAZY :) no eventsystem for this, so we update table ourselves */
         ((AuthTableModel) table.getExtTableModel()).update();
+    }
 
+    @Override
+    public boolean isEnabled() {
+        return selection != null && selection.size() > 0;
     }
 
 }

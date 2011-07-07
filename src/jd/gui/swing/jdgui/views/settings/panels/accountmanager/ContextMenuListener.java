@@ -15,7 +15,7 @@ public class ContextMenuListener extends ExtTableContextMenuController<PremiumAc
     protected JPopupMenu getPopup() {
         JPopupMenu pu = new JPopupMenu();
         pu.add(new NewAction(table));
-        pu.add(new RemoveAction(table));
+        pu.add(new RemoveAction(table, false));
         pu.add(new RefreshAction(table.getExtTableModel().getSelectedObjects()));
         return pu;
     }
@@ -24,7 +24,7 @@ public class ContextMenuListener extends ExtTableContextMenuController<PremiumAc
     protected JPopupMenu getEmptyPopup() {
         JPopupMenu pu = new JPopupMenu();
         pu.add(new NewAction(table));
-        pu.add(new RemoveAction(table));
+        pu.add(new RemoveAction(table, false));
         pu.add(new BuyAction(null, table));
         pu.add(new RefreshAction(null));
         return pu;

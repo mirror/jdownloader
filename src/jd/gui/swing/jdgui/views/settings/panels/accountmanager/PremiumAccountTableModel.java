@@ -42,6 +42,8 @@ public class PremiumAccountTableModel extends ExtTableModel<Account> implements 
 
     private volatile boolean       checkRunning           = false;
 
+    private DelayedRunnable        delayedUpdate;
+
     public PremiumAccountTableModel(final AccountManagerSettings accountManagerSettings) {
         super("PremiumAccountTableModel2");
         this.accountManagerSettings = accountManagerSettings;
@@ -53,11 +55,31 @@ public class PremiumAccountTableModel extends ExtTableModel<Account> implements 
             }
 
         };
+        delayedUpdate = new DelayedRunnable(IOEQ.TIMINGQUEUE, 250l) {
+
+            @Override
+            public void delayedrun() {
+                _update();
+            }
+
+        };
         AccountController.getInstance().addListener(new AccountControllerListener() {
 
             public void onAccountControllerEvent(AccountControllerEvent event) {
                 if (accountManagerSettings.isShown()) {
-                    fill();
+                    switch (event.getEventID()) {
+                    case AccountControllerEvent.ACCOUNT_UPDATE:
+                    case AccountControllerEvent.ACCOUNT_EXPIRED:
+                    case AccountControllerEvent.ACCOUNT_INVALID:
+                        /* just repaint */
+                        delayedUpdate.run();
+                        break;
+                    default:
+                        /* structure changed */
+                        delayedFill.run();
+                        break;
+
+                    }
                 }
             }
         });
@@ -361,15 +383,10 @@ public class PremiumAccountTableModel extends ExtTableModel<Account> implements 
 
     protected void _update() {
         if (accountManagerSettings.isShown()) {
-            final ArrayList<Account> newElements = PremiumAccountTableModel.this.getElements();
-            PremiumAccountTableModel.this.refreshSort(newElements);
             new EDTRunner() {
                 @Override
                 protected void runInEDT() {
-                    final ArrayList<Account> selected = PremiumAccountTableModel.this.getSelectedObjects();
-                    tableData = newElements;
-                    PremiumAccountTableModel.this.fireTableDataChanged();
-                    PremiumAccountTableModel.this.setSelectedObjects(selected);
+                    PremiumAccountTableModel.this.getTable().repaint();
                 }
             };
         }
@@ -386,15 +403,23 @@ public class PremiumAccountTableModel extends ExtTableModel<Account> implements 
                 }
             }
             PremiumAccountTableModel.this.refreshSort(newtableData);
-            new EDTRunner() {
-                @Override
-                protected void runInEDT() {
-                    final ArrayList<Account> selected = PremiumAccountTableModel.this.getSelectedObjects();
-                    tableData = newtableData;
-                    PremiumAccountTableModel.this.fireTableStructureChanged();
-                    PremiumAccountTableModel.this.setSelectedObjects(selected);
-                }
-            };
+            _fireTableStructureChanged(newtableData);
         }
+    }
+
+    private void _fireTableStructureChanged(final ArrayList<Account> newtableData) {
+        new EDTRunner() {
+            @Override
+            protected void runInEDT() {
+                final ArrayList<Account> selected = PremiumAccountTableModel.this.getSelectedObjects();
+                int anchor = PremiumAccountTableModel.this.getTable().getSelectionModel().getAnchorSelectionIndex();
+                int lead = PremiumAccountTableModel.this.getTable().getSelectionModel().getLeadSelectionIndex();
+                tableData = newtableData;
+                PremiumAccountTableModel.this.fireTableStructureChanged();
+                PremiumAccountTableModel.this.setSelectedObjects(selected);
+                PremiumAccountTableModel.this.getTable().getSelectionModel().setAnchorSelectionIndex(anchor);
+                PremiumAccountTableModel.this.getTable().getSelectionModel().setLeadSelectionIndex(lead);
+            }
+        };
     }
 }

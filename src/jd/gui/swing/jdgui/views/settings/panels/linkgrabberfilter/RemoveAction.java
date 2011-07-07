@@ -5,7 +5,6 @@ import java.util.ArrayList;
 
 import javax.swing.AbstractAction;
 
-import org.appwork.utils.swing.table.utils.MinimumSelectionObserver;
 import org.jdownloader.controlling.LinkFilter;
 import org.jdownloader.controlling.LinkFilterController;
 import org.jdownloader.gui.translate._GUI;
@@ -20,7 +19,6 @@ public class RemoveAction extends AbstractAction {
         this.filter = filter;
         this.putValue(NAME, _GUI._.settings_linkgrabber_filter_action_remove());
         this.putValue(AbstractAction.SMALL_ICON, NewTheme.I().getIcon("remove", 20));
-        filter.getTable().getSelectionModel().addListSelectionListener(new MinimumSelectionObserver(filter.getTable(), this, 1));
 
     }
 
@@ -28,7 +26,6 @@ public class RemoveAction extends AbstractAction {
         this.selected = selected;
         this.putValue(NAME, _GUI._.settings_linkgrabber_filter_action_remove());
         this.putValue(AbstractAction.SMALL_ICON, NewTheme.I().getIcon("remove", 20));
-
         setEnabled(selected.size() > 0);
     }
 
@@ -42,6 +39,11 @@ public class RemoveAction extends AbstractAction {
         }
 
         ((FilterTableModel) filter.getTable().getExtTableModel()).fill();
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return selected != null && selected.size() > 0;
     }
 
 }

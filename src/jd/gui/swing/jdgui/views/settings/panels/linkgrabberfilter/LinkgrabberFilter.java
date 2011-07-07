@@ -13,6 +13,7 @@ import net.miginfocom.swing.MigLayout;
 
 import org.appwork.utils.swing.HelpNotifier;
 import org.appwork.utils.swing.HelpNotifierCallbackListener;
+import org.appwork.utils.swing.table.utils.MinimumSelectionObserver;
 import org.jdownloader.gui.translate._GUI;
 
 public class LinkgrabberFilter extends JPanel implements SettingsComponent {
@@ -29,7 +30,9 @@ public class LinkgrabberFilter extends JPanel implements SettingsComponent {
         table = new FilterTable();
         table.addMouseListener(new ContextMenuListener(this));
         tb.add(new JButton(new NewAction(this)));
-        tb.add(new JButton(new RemoveAction(this)));
+        RemoveAction ra;
+        tb.add(new JButton(ra = new RemoveAction(this)));
+        table.getSelectionModel().addListSelectionListener(new MinimumSelectionObserver(table, ra, 1));
 
         txt = new JTextField();
         test = new JButton(new TestAction(this));

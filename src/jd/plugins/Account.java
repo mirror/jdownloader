@@ -33,6 +33,7 @@ public class Account extends Property {
     private transient boolean tempDisabled          = false;
     private transient long    tmpDisabledTime       = 0;
 
+    /* keep for comp. reasons */
     private String            hoster                = null;
     private AccountInfo       accinfo               = null;
     /**

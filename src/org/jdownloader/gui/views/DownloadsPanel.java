@@ -15,7 +15,7 @@ import net.miginfocom.swing.MigLayout;
 import org.jdownloader.gui.views.downloads.table.DownloadsTable;
 import org.jdownloader.gui.views.downloads.table.DownloadsTableModel;
 
-public class DownloadsPanel extends SwitchPanel implements Runnable, DownloadControllerListener {
+public class DownloadsPanel extends SwitchPanel implements DownloadControllerListener {
 
     /**
      * 
@@ -40,12 +40,18 @@ public class DownloadsPanel extends SwitchPanel implements Runnable, DownloadCon
 
     @Override
     protected void onShow() {
+        DownloadController.getInstance().addListener(this);
         table.recreateModel();
         synchronized (this) {
             if (timer != null) timer.cancel(false);
-            timer = IOEQ.TIMINGQUEUE.scheduleWithFixedDelay(this, 250, 1000, TimeUnit.MILLISECONDS);
+            timer = IOEQ.TIMINGQUEUE.scheduleWithFixedDelay(new Runnable() {
+
+                public void run() {
+                    table.refreshModel();
+                }
+
+            }, 250, 1000, TimeUnit.MILLISECONDS);
         }
-        DownloadController.getInstance().addListener(this);
     }
 
     @Override
@@ -57,10 +63,6 @@ public class DownloadsPanel extends SwitchPanel implements Runnable, DownloadCon
             }
         }
         DownloadController.getInstance().removeListener(this);
-    }
-
-    public void run() {
-        table.refreshModel();
     }
 
     public void onDownloadControllerEvent(DownloadControllerEvent event) {

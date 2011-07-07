@@ -20,11 +20,13 @@ public class RemoveAction extends AbstractAction {
      */
     private static final long   serialVersionUID = 1L;
     private PremiumAccountTable table;
+    private boolean             force            = false;
 
-    public RemoveAction(PremiumAccountTable table) {
+    public RemoveAction(PremiumAccountTable table, boolean force) {
         this.table = table;
         this.putValue(NAME, _GUI._.settings_accountmanager_delete());
         this.putValue(AbstractAction.SMALL_ICON, NewTheme.I().getIcon("remove", ActionColumn.SIZE));
+        this.force = force;
     }
 
     public void actionPerformed(ActionEvent e) {
@@ -38,9 +40,7 @@ public class RemoveAction extends AbstractAction {
                         sb.append(account.getHoster() + "-Account (" + account.getUser() + ")");
                     }
                     try {
-                        Dialog.getInstance().showConfirmDialog(Dialog.STYLE_LARGE, _GUI._.account_remove_action_title(selection.size()),
-
-                        _GUI._.account_remove_action_msg(selection.size() <= 1 ? sb.toString() : "\r\n" + sb.toString()));
+                        if (!force) Dialog.getInstance().showConfirmDialog(Dialog.STYLE_LARGE, _GUI._.account_remove_action_title(selection.size()), _GUI._.account_remove_action_msg(selection.size() <= 1 ? sb.toString() : "\r\n" + sb.toString()));
                         for (Account account : selection) {
                             AccountController.getInstance().removeAccount((String) null, account);
                         }

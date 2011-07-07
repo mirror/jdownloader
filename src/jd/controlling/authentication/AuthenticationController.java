@@ -33,30 +33,44 @@ public class AuthenticationController {
         ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
             @Override
             public void run() {
-                config.setList(list);
+                synchronized (AuthenticationController.this) {
+                    config.setList(list);
+                }
+            }
+
+            @Override
+            public String toString() {
+                return "save auths...";
             }
         });
     }
 
-    public AuthenticationInfo[] list() {
-        return list.toArray(new AuthenticationInfo[] {});
+    public synchronized ArrayList<AuthenticationInfo> list() {
+        return new ArrayList<AuthenticationInfo>(list);
     }
 
     public void add(AuthenticationInfo a) {
-        list.add(a);
-        config.setList(list);
+        if (a == null) return;
+        synchronized (this) {
+            list.add(a);
+            config.setList(list);
+        }
     }
 
     public void remove(AuthenticationInfo a) {
-        list.remove(a);
-        config.setList(list);
+        if (a == null) return;
+        synchronized (this) {
+            list.remove(a);
+            config.setList(list);
+        }
     }
 
     public void remove(ArrayList<AuthenticationInfo> selectedObjects) {
-        for (AuthenticationInfo a : selectedObjects) {
-            list.remove(a);
+        if (selectedObjects == null) return;
+        synchronized (this) {
+            list.removeAll(selectedObjects);
+            config.setList(list);
         }
-        config.setList(list);
     }
 
 }

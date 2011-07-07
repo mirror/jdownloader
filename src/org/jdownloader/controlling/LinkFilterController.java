@@ -2,7 +2,6 @@ package org.jdownloader.controlling;
 
 import java.util.ArrayList;
 
-
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
 import org.appwork.storage.config.JsonConfig;
@@ -30,11 +29,19 @@ public class LinkFilterController {
     private LinkFilterController() {
         config = JsonConfig.create(LinkFilterSettings.class);
         filter = config.getFilterList();
+        if (filter == null) filter = new ArrayList<LinkFilter>();
         ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
 
             @Override
             public void run() {
-                config.setFilterList(filter);
+                synchronized (LinkFilterController.this) {
+                    config.setFilterList(filter);
+                }
+            }
+
+            @Override
+            public String toString() {
+                return "save filters...";
             }
         });
     }
@@ -48,21 +55,25 @@ public class LinkFilterController {
     }
 
     public ArrayList<LinkFilter> list() {
-        return new ArrayList<LinkFilter>(filter);
+        synchronized (this) {
+            return new ArrayList<LinkFilter>(filter);
+        }
     }
 
     public void add(LinkFilter linkFilter) {
-        filter.add(linkFilter);
-        save();
-    }
-
-    private void save() {
-        JsonConfig.create(LinkFilterSettings.class).setFilterList(filter);
+        if (linkFilter == null) return;
+        synchronized (this) {
+            filter.add(linkFilter);
+            config.setFilterList(filter);
+        }
     }
 
     public void remove(LinkFilter lf) {
-        filter.remove(lf);
-        save();
+        if (lf == null) return;
+        synchronized (this) {
+            filter.remove(lf);
+            config.setFilterList(filter);
+        }
     }
 
     public String test(String filter2) {

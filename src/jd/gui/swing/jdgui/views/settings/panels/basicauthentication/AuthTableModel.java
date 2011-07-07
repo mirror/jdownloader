@@ -10,7 +10,6 @@ import javax.swing.table.JTableHeader;
 import jd.controlling.authentication.AuthenticationController;
 import jd.controlling.authentication.AuthenticationInfo;
 
-import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.table.ExtTableHeaderRenderer;
 import org.appwork.utils.swing.table.ExtTableModel;
 import org.appwork.utils.swing.table.columns.ExtCheckColumn;
@@ -28,17 +27,9 @@ public class AuthTableModel extends ExtTableModel<AuthenticationInfo> {
         update();
     }
 
+    /* WE ARE LAZY :) no eventsystem for this, so we update table ourselves */
     public void update() {
-        new EDTRunner() {
-
-            @Override
-            protected void runInEDT() {
-                clear();
-                addAllElements(AuthenticationController.getInstance().list());
-                fireTableStructureChanged();
-            }
-        };
-
+        this._fireTableStructureChanged(AuthenticationController.getInstance().list(), false);
     }
 
     @Override
