@@ -44,6 +44,7 @@ public class BurningCamelCom extends PluginForHost {
         return "http://www.burningcamel.com/dmca";
     }
 
+    // Site looks like camelstyle.net
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();

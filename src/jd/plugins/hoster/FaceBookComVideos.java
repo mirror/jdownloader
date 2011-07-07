@@ -37,6 +37,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
+import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "facebook.com" }, urls = { "http(s)?://(www\\.)?facebook\\.com/(video/video\\.php\\?v=|profile\\.php\\?id=\\d+\\&ref=ts#\\!/video/video\\.php\\?v=)\\d+" }, flags = { 2 })
 public class FaceBookComVideos extends PluginForHost {
@@ -61,7 +62,10 @@ public class FaceBookComVideos extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
         br.setCookie("http://www.facebook.com", "locale", "en_GB");
         final Account aa = AccountController.getInstance().getValidAccount(this);
-        if (aa == null || !aa.isValid()) throw new PluginException(LinkStatus.ERROR_FATAL, "Kann Links ohne gültigen Account nicht überprüfen");
+        if (aa == null || !aa.isValid()) {
+            link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.facebookvideos.only4registered", "Links can only be checked if a valid account is entered"));
+            return AvailableStatus.UNCHECKABLE;
+        }
         br.setFollowRedirects(true);
         login(aa, false, br);
         br.getPage(link.getDownloadURL());

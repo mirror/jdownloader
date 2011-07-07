@@ -51,6 +51,7 @@ public class LnkPrtctrCm extends PluginForDecrypt {
                 Form pwForm = br.getForm(0);
                 pwForm.put("u_password", passCode);
                 br.submitForm(pwForm);
+                System.out.print(br.toString());
             } else {
                 do_continue = true;
                 break;
@@ -59,7 +60,10 @@ public class LnkPrtctrCm extends PluginForDecrypt {
         String link = null;
         if (do_continue == true) {
             link = br.getRegex("onClick=\"window.location='(.*?)'\" style=").getMatch(0);
-            if (link == null) link = br.getRegex("<form action=\"(.*?)\"").getMatch(0);
+            if (link == null) {
+                link = br.getRegex("<form action=\"(.*?)\"").getMatch(0);
+                if (link == null) link = br.getRegex("window\\.location = \"(.*?)\"").getMatch(0);
+            }
             if (link == null || link.length() < 10) {
                 Form form = br.getForm(0);
                 if (form != null) {
