@@ -502,7 +502,7 @@ public class Rapidshare extends PluginForHost {
             logger.finest("Direct-Download: Server-Selection not available!");
 
             br.setFollowRedirects(true);
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, directurl, true, -4);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, directurl, true, 1);
             URLConnectionAdapter urlConnection = dl.getConnection();
             if (!urlConnection.isContentDisposition() && urlConnection.getHeaderField("Cache-Control") != null) {
                 urlConnection.disconnect();
