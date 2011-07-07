@@ -157,7 +157,7 @@ public class ShareHosterDe extends PluginForHost {
             account.setValid(false);
             return ai;
         } else {
-            ai.setValidUntil(System.currentTimeMillis() + Integer.parseInt(expire) * 24 * 60 * 60 * 1001);
+            ai.setValidUntil(System.currentTimeMillis() + Long.parseLong(expire) * 24 * 60 * 60 * 1001);
         }
         ai.setStatus("Premium User");
         return ai;
