@@ -56,7 +56,9 @@ import org.appwork.storage.config.JsonConfig;
 import org.jdownloader.extensions.jdtrayicon.translate.T;
 import org.jdownloader.settings.GeneralSettings;
 
-public class TrayIconPopup extends JWindow implements MouseListener, ChangeListener {
+//final, because the constructor calls Thread.start(),
+//see http://findbugs.sourceforge.net/bugDescriptions.html#SC_START_IN_CTOR
+public final class TrayIconPopup extends JWindow implements MouseListener, ChangeListener {
 
     private static final long        serialVersionUID  = 2623190748929934409L;
 

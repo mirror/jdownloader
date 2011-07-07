@@ -18,7 +18,9 @@ import jd.event.ControlListener;
 import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
 
-public class ModuleStatus extends JPanel implements ControlListener, MouseListener {
+//final, because the constructor calls Thread.start(),
+//see http://findbugs.sourceforge.net/bugDescriptions.html#SC_START_IN_CTOR
+public final class ModuleStatus extends JPanel implements ControlListener, MouseListener {
 
     private static final long                   serialVersionUID    = 1745881766942067472L;
     private static final int                    BARCOUNT            = 15;

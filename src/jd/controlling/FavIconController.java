@@ -20,13 +20,15 @@ import jd.nutils.JDImage;
 import jd.utils.JDUtilities;
 import net.sf.image4j.codec.ico.ICODecoder;
 
-public class FavIconController extends SubConfiguration implements Runnable {
+//final, because the constructor calls Thread.start(),
+//see http://findbugs.sourceforge.net/bugDescriptions.html#SC_START_IN_CTOR
+public final class FavIconController extends SubConfiguration implements Runnable {
 
-    private static final long serialVersionUID = -1455068138306163872L;
-    private static final Object LOCK = new Object();
-    private static final Object WAITLOCK = new Object();
-    private final static LinkedHashMap<String, ArrayList<FavIconRequestor>> queue = new LinkedHashMap<String, ArrayList<FavIconRequestor>>();
-    private ArrayList<String> failed = new ArrayList<String>();
+    private static final long                                               serialVersionUID = -1455068138306163872L;
+    private static final Object                                             LOCK             = new Object();
+    private static final Object                                             WAITLOCK         = new Object();
+    private final static LinkedHashMap<String, ArrayList<FavIconRequestor>> queue            = new LinkedHashMap<String, ArrayList<FavIconRequestor>>();
+    private ArrayList<String>                                               failed           = new ArrayList<String>();
 
     public static ImageIcon getFavIcon(String favIconhost, FavIconRequestor requestor, boolean useOriginalHost) {
         String host = useOriginalHost == false ? Browser.getHost(favIconhost) : favIconhost;
@@ -81,9 +83,9 @@ public class FavIconController extends SubConfiguration implements Runnable {
         thread.start();
     }
 
-    private String host;
+    private String  host;
     private boolean waitFlag;
-    private Thread thread;
+    private Thread  thread;
     private boolean started = false;
 
     public void run() {

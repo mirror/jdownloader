@@ -41,7 +41,9 @@ import org.appwork.utils.Regex;
  * 
  * @author astaldo/JD-Team
  */
-public class ClipboardHandler extends Thread implements ControlListener {
+// final, because the constructor calls Thread.start(),
+// see http://findbugs.sourceforge.net/bugDescriptions.html#SC_START_IN_CTOR
+public final class ClipboardHandler extends Thread implements ControlListener {
     private static ClipboardHandler INSTANCE = null;
 
     public synchronized static ClipboardHandler getClipboard() {

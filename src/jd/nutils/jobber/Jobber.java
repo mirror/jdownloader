@@ -238,7 +238,9 @@ public class Jobber {
      * 
      * @author coalado
      */
-    public class Worker extends Thread {
+    // final, because the constructor calls Thread.start(),
+    // see http://findbugs.sourceforge.net/bugDescriptions.html#SC_START_IN_CTOR
+    public final class Worker extends Thread {
 
         private int     id;
         private boolean waitFlag = false;

@@ -2,18 +2,20 @@ package jd.controlling;
 
 import jd.nutils.Formatter;
 
-public class GarbageController implements Runnable {
+//final, because the constructor calls Thread.start(),
+//see http://findbugs.sourceforge.net/bugDescriptions.html#SC_START_IN_CTOR
+public final class GarbageController implements Runnable {
 
-    private static final GarbageController INSTANCE = new GarbageController();
+    private static final GarbageController INSTANCE    = new GarbageController();
 
-    private static long GCTimeout = 10 * 60 * 1000;
-    private static long GCFactor = 30 * 1000;
+    private static long                    GCTimeout   = 10 * 60 * 1000;
+    private static long                    GCFactor    = 30 * 1000;
 
-    private static long gcRequested = 0;
+    private static long                    gcRequested = 0;
 
-    private Thread thread = null;
+    private Thread                         thread      = null;
 
-    private boolean running = false;
+    private boolean                        running     = false;
 
     public static GarbageController getInstance() {
         return INSTANCE;

@@ -24,7 +24,9 @@ import jd.nutils.Formatter;
 
 import org.jdownloader.gui.translate._GUI;
 
-public class DownloadInfoPanel extends InfoPanel {
+//final, because the constructor calls Thread.start(),
+//see http://findbugs.sourceforge.net/bugDescriptions.html#SC_START_IN_CTOR
+public final class DownloadInfoPanel extends InfoPanel {
 
     private static final long    serialVersionUID = 6127915881119236559L;
     private DownloadInformations ds;

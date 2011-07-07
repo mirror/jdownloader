@@ -46,7 +46,9 @@ import jd.utils.JDUtilities;
 import org.appwork.utils.Regex;
 import org.jdownloader.extensions.interfaces.HttpServer;
 
-public class JDSimpleWebserver extends Thread {
+//final, because the constructor calls Thread.start(),
+//see http://findbugs.sourceforge.net/bugDescriptions.html#SC_START_IN_CTOR
+public final class JDSimpleWebserver extends Thread {
 
     private class JDRequestHandler implements Runnable {
 
@@ -264,14 +266,14 @@ public class JDSimpleWebserver extends Thread {
         }
     }
 
-    private static String AuthUser = "";
+    private static String  AuthUser       = "";
 
-    private static boolean NeedAuth = false;
+    private static boolean NeedAuth       = false;
 
-    private Logger logger = jd.controlling.JDLogger.getLogger();
-    private boolean Server_Running = true;
+    private Logger         logger         = jd.controlling.JDLogger.getLogger();
+    private boolean        Server_Running = true;
 
-    private ServerSocket Server_Socket;
+    private ServerSocket   Server_Socket;
 
     public SSLServerSocketFactory setupSSL() throws Exception {
         char[] password = "jdwebinterface".toCharArray();

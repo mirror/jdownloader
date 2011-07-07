@@ -32,7 +32,9 @@ import org.appwork.storage.config.JsonConfig;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.settings.GeneralSettings;
 
-public class LinkGrabberInfoPanel extends InfoPanel {
+//final, because the constructor calls Thread.start(),
+//see http://findbugs.sourceforge.net/bugDescriptions.html#SC_START_IN_CTOR
+public final class LinkGrabberInfoPanel extends InfoPanel {
 
     private static final long                   serialVersionUID = 2276105693934789404L;
 
