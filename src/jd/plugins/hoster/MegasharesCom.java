@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -30,12 +31,12 @@ import jd.parser.html.HTMLParser;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -67,8 +68,10 @@ public class MegasharesCom extends PluginForHost {
                 logger.info("Use cookie login");
                 /* use saved cookies */
                 HashMap<String, String> cookies = (HashMap<String, String>) ret;
-                for (String key : cookies.keySet()) {
-                    br.setCookie("http://megashares.com/", key, cookies.get(key));
+                for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
+                    final String key = cookieEntry.getKey();
+                    final String value = cookieEntry.getValue();
+                    br.setCookie("http://megashares.com/", key, value);
                 }
             } else {
                 logger.info("Use website login");

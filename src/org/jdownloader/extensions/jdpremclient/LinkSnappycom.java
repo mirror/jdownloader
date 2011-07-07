@@ -4,6 +4,7 @@ import java.awt.event.ActionEvent;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Map;
 
 import javax.swing.ImageIcon;
 
@@ -19,11 +20,11 @@ import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.TransferStatus;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.download.DownloadInterface;
 
 import org.appwork.utils.Regex;
@@ -307,8 +308,10 @@ public class LinkSnappycom extends PluginForHost implements JDPremInterface {
             if (ret != null && ret instanceof HashMap<?, ?> && !force) {
                 final HashMap<String, String> cookies = (HashMap<String, String>) ret;
                 if (cookies.containsKey("lseSavePass") && account.isValid()) {
-                    for (final String key : cookies.keySet()) {
-                        this.br.setCookie("www.linksnappy.com", key, cookies.get(key));
+                    for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
+                        final String key = cookieEntry.getKey();
+                        final String value = cookieEntry.getValue();
+                        this.br.setCookie("www.linksnappy.com", key, value);
                     }
                     return;
                 }

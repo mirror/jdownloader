@@ -23,6 +23,7 @@ import java.awt.event.KeyListener;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Map;
 
 import javax.swing.JCheckBox;
 import javax.swing.JLabel;
@@ -437,12 +438,13 @@ public class JDFeedMeGui extends SwitchPanel implements KeyListener, ActionListe
     public boolean wasPostAddedInOtherFeed(JDFeedMePost post, JDFeedMeFeed feed) {
         // go over all other feeds
         HashMap<String, ArrayList<JDFeedMePost>> posts = table.getModel().getPosts();
-        for (final String post_uniqueid : posts.keySet()) {
+        for (final Map.Entry<String, ArrayList<JDFeedMePost>> postsEntry : posts.entrySet()) {
+            final String post_uniqueid = postsEntry.getKey();
             // ignore our own feed
             if (post_uniqueid.equalsIgnoreCase(feed.getUniqueid())) continue;
 
             // go over all posts in the other feed
-            ArrayList<JDFeedMePost> other_posts = posts.get(post_uniqueid);
+            ArrayList<JDFeedMePost> other_posts = postsEntry.getValue();
             for (JDFeedMePost other_post : other_posts) {
                 // ignore other posts with different links
                 if (!post.getLink().equalsIgnoreCase(other_post.getLink())) continue;
@@ -462,12 +464,13 @@ public class JDFeedMeGui extends SwitchPanel implements KeyListener, ActionListe
 
         // go over all other feeds
         HashMap<String, ArrayList<JDFeedMePost>> posts = table.getModel().getPosts();
-        for (final String post_uniqueid : posts.keySet()) {
+        for (final Map.Entry<String, ArrayList<JDFeedMePost>> postEntry : posts.entrySet()) {
+            String post_uniqueid = postEntry.getKey();
             // ignore our own feed
             if (post_uniqueid.equalsIgnoreCase(feed.getUniqueid())) continue;
+            ArrayList<JDFeedMePost> other_posts = postEntry.getValue();
 
             // go over all posts in the other feed
-            ArrayList<JDFeedMePost> other_posts = posts.get(post_uniqueid);
             for (JDFeedMePost other_post : other_posts) {
                 // ignore other posts with different links
                 if (!post.getLink().equalsIgnoreCase(other_post.getLink())) continue;

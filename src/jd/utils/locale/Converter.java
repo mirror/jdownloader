@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.regex.Pattern;
 
 import jd.event.MessageEvent;
@@ -137,8 +138,9 @@ public class Converter implements MessageListener {
                 }
                 count--;
                 sb.append("@Default(lngs = { \"en\" }, values = { \"" + value.replace("\"", "\\\"") + "\" })");
-                for (String s : lngfiles.keySet()) {
-                    HashMap<String, String> lsb = lngfiles.get(s);
+                for (Map.Entry<String, HashMap<String, String>> lngfilesEntry : lngfiles.entrySet()) {
+                    final String s = lngfilesEntry.getKey();
+                    final HashMap<String, String> lsb = lngfilesEntry.getValue();
                     String r = convert(readValue(s, c.getKey()));
                     if (r != null) lsb.put(key, r);
                 }
@@ -220,8 +222,9 @@ public class Converter implements MessageListener {
             ti.getShortFile().delete();
             IO.writeStringToFile(ti.getShortFile(), sb2.toString());
             System.out.println("Write " + ti.getShortFile());
-            for (String s : lngfiles.keySet()) {
-                HashMap<String, String> lsb = lngfiles.get(s);
+            for (Map.Entry<String, HashMap<String, String>> lngfilesEntry : lngfiles.entrySet()) {
+                String s = lngfilesEntry.getKey();
+                HashMap<String, String> lsb = lngfilesEntry.getValue();
 
                 File lngF = new File("translations/" + ti.getPath().toString().substring(4) + "/" + ti.getClassName() + "Translation." + s + ".lng");
                 lngF.delete();

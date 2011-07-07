@@ -18,6 +18,7 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.Random;
 
 import jd.PluginWrapper;
@@ -154,8 +155,8 @@ public class DeGroopsYahooCom extends PluginForDecrypt {
                 if (acmatch && ret != null && ret instanceof HashMap<?, ?>) {
                     final HashMap<String, String> cookies = (HashMap<String, String>) ret;
                     if (cookies.containsKey("SSL")) {
-                        for (final String key : cookies.keySet()) {
-                            this.br.setCookie(MAINPAGE, key, cookies.get(key));
+                        for (Map.Entry<String, String> entry : cookies.entrySet()) {
+                            this.br.setCookie(MAINPAGE, entry.getKey(), entry.getValue());
                         }
                         return true;
                     }

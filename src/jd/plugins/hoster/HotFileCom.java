@@ -22,6 +22,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -87,9 +88,7 @@ public class HotFileCom extends PluginForHost {
             // Encoding.urlEncode(account.getPass().trim()));
         }
         if (addParams != null) {
-            for (final String param : addParams.keySet()) {
-                post.put(param, addParams.get(param));
-            }
+            post.putAll(addParams);
         }
         tbr.postPage("http://api.hotfile.com", post);
         final HashMap<String, String> ret = new HashMap<String, String>();
@@ -478,8 +477,10 @@ public class HotFileCom extends PluginForHost {
                 logger.info("Use cookie login");
                 /* use saved cookies */
                 final HashMap<String, String> cookies = (HashMap<String, String>) ret;
-                for (final String key : cookies.keySet()) {
-                    br.setCookie("http://hotfile.com/", key, cookies.get(key));
+                for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
+                    final String key = cookieEntry.getKey();
+                    final String value = cookieEntry.getValue();
+                    br.setCookie("http://hotfile.com/", key, value);
                 }
                 br.setFollowRedirects(true);
                 br.getPage("http://hotfile.com/");

@@ -19,6 +19,7 @@ package jd.plugins.hoster;
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.http.Cookie;
@@ -146,8 +147,10 @@ public class FileOverNet extends PluginForHost {
             if (acmatch && ret != null && ret instanceof HashMap<?, ?>) {
                 final HashMap<String, String> cookies = (HashMap<String, String>) ret;
                 if (cookies.containsKey("SSL") && account.isValid() && !force) {
-                    for (final String key : cookies.keySet()) {
-                        this.br.setCookie(MAINPAGE, key, cookies.get(key));
+                    for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
+                        final String key = cookieEntry.getKey();
+                        final String value = cookieEntry.getValue();
+                        this.br.setCookie(MAINPAGE, key, value);
                     }
                     return;
                 }
