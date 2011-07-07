@@ -23,8 +23,9 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.Map.Entry;
+import java.util.List;
 import java.util.TreeMap;
+import java.util.Map.Entry;
 import java.util.logging.Logger;
 
 import jd.config.Configuration;
@@ -349,7 +350,9 @@ public class AccountController implements AccountControllerListener {
 
     public boolean isAccountBlocked(final Account account) {
         synchronized (blockedAccounts) {
-            return blockedAccounts.containsValue(account);
+            final String host = this.getHosterName(account);
+            List<Account> blockedAccountsOfTheSameHoster = blockedAccounts.get(host);
+            return blockedAccountsOfTheSameHoster != null && blockedAccountsOfTheSameHoster.contains(account);
         }
     }
 
