@@ -25,6 +25,7 @@ public class DownloadsPanel extends SwitchPanel implements Runnable, DownloadCon
     private JScrollPane         tableScrollPane;
     private DownloadsTableModel tableModel;
     private ScheduledFuture<?>  timer            = null;
+    private BottomBar           bottomBar;
 
     public DownloadsPanel() {
         super(new MigLayout("ins 0, wrap 1", "[grow, fill]", "[grow, fill]"));
@@ -33,6 +34,8 @@ public class DownloadsPanel extends SwitchPanel implements Runnable, DownloadCon
         tableScrollPane = new JScrollPane(table);
         tableScrollPane.setBorder(null);
         this.add(tableScrollPane, "cell 0 0");
+        this.bottomBar = new BottomBar(table);
+        add(bottomBar, "dock south,hidemode 3");
     }
 
     @Override

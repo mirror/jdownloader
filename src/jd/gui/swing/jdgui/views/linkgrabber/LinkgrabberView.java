@@ -83,10 +83,6 @@ public class LinkgrabberView extends View {
     }
 
     private void setActionStatus(boolean enabled) {
-        ActionController.getToolBarAction("action.downloadview.movetotop").setEnabled(enabled);
-        ActionController.getToolBarAction("action.downloadview.moveup").setEnabled(enabled);
-        ActionController.getToolBarAction("action.downloadview.movedown").setEnabled(enabled);
-        ActionController.getToolBarAction("action.downloadview.movetobottom").setEnabled(enabled);
 
         ActionController.getToolBarAction("action.remove_dupes").setEnabled(enabled);
         ActionController.getToolBarAction("action.remove_disabled").setEnabled(enabled);

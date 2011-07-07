@@ -2,7 +2,7 @@ package org.jdownloader.extensions.translator;
 
 import jd.plugins.ExtensionConfigInterface;
 
-import org.jdownloader.settings.AboutConfig;
+import org.jdownloader.settings.annotations.AboutConfig;
 
 public interface TranslatorConfig extends ExtensionConfigInterface {
 

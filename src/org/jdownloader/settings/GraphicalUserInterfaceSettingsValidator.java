@@ -88,4 +88,39 @@ public class GraphicalUserInterfaceSettingsValidator implements GraphicalUserInt
 
     }
 
+    public boolean isShowMoveToTopButton() {
+        return false;
+    }
+
+    public void setShowMoveToTopButton(boolean b) {
+    }
+
+    public boolean isShowMoveToBottomButton() {
+        return false;
+    }
+
+    public void setShowMoveToBottomButton(boolean b) {
+    }
+
+    public boolean isShowMoveUpButton() {
+        return false;
+    }
+
+    public void setShowMoveUpButton(boolean b) {
+    }
+
+    public boolean isShowMoveDownButton() {
+        return false;
+    }
+
+    public void setShowMoveDownButton(boolean b) {
+    }
+
+    public boolean isDownloadViewBottombarEnabled() {
+        return false;
+    }
+
+    public void setDownloadViewBottombarEnabled(boolean b) {
+    }
+
 }

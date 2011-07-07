@@ -54,11 +54,7 @@ public class ToolBar extends JToolBar {
         ToolBar.DEFAULT_LIST.add("toolbar.control.start");
         ToolBar.DEFAULT_LIST.add("toolbar.control.pause");
         ToolBar.DEFAULT_LIST.add("toolbar.control.stop");
-        ToolBar.DEFAULT_LIST.add("toolbar.separator");
-        ToolBar.DEFAULT_LIST.add("action.downloadview.movetotop");
-        ToolBar.DEFAULT_LIST.add("action.downloadview.moveup");
-        ToolBar.DEFAULT_LIST.add("action.downloadview.movedown");
-        ToolBar.DEFAULT_LIST.add("action.downloadview.movetobottom");
+
         ToolBar.DEFAULT_LIST.add("toolbar.separator");
         ToolBar.DEFAULT_LIST.add("action.settings");
         ToolBar.DEFAULT_LIST.add("toolbar.separator");

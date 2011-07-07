@@ -5,8 +5,8 @@ import jd.plugins.ExtensionConfigInterface;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
 import org.appwork.storage.config.annotations.DefaultIntValue;
 import org.appwork.storage.config.annotations.DefaultStringValue;
-import org.jdownloader.settings.AboutConfig;
-import org.jdownloader.settings.RangeValidatorMarker;
+import org.jdownloader.settings.annotations.AboutConfig;
+import org.jdownloader.settings.annotations.RangeValidatorMarker;
 
 public interface ChatConfig extends ExtensionConfigInterface {
     @DefaultStringValue("#jDownloader")

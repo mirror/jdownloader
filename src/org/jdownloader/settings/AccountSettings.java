@@ -7,6 +7,7 @@ import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.annotations.AllowStorage;
 import org.appwork.storage.config.annotations.CryptedStorage;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.jdownloader.settings.annotations.AboutConfig;
 
 public interface AccountSettings extends ConfigInterface {
     // @AboutConfig

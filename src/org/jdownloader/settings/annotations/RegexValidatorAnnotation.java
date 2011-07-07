@@ -1,4 +1,4 @@
-package org.jdownloader.settings;
+package org.jdownloader.settings.annotations;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -7,8 +7,6 @@ import java.lang.annotation.Target;
 
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ ElementType.METHOD })
-public @interface RangeValidatorMarker {
-
-    long[] range();
-
+public @interface RegexValidatorAnnotation {
+    String value();
 }

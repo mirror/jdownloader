@@ -32,9 +32,6 @@ import javax.swing.KeyStroke;
 import org.jdownloader.gui.translate._GUI;
 
 public class ShortCuts {
-    /**
-     * DO NOT MOVE THIS PREFIX. required by SrcParser in this java file
-     */
 
     public static String getAcceleratorString(KeyStroke ks) {
         if (ks == null) return null;

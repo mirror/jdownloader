@@ -5,6 +5,8 @@ import java.util.ArrayList;
 import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.annotations.DefaultFactory;
 import org.appwork.storage.config.annotations.Description;
+import org.jdownloader.settings.annotations.AboutConfig;
+import org.jdownloader.settings.annotations.RangeValidatorMarker;
 
 @DefaultFactory(GeneralSettingsDefaults.class)
 public interface GeneralSettings extends ConfigInterface {

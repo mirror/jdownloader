@@ -37,7 +37,9 @@ import org.jdownloader.images.NewTheme;
  * This abstract class is the parent class for all actions in JDownloader
  * 
  * @author Coalado
+ * @deprecated Use #AppAction instead
  */
+@Deprecated
 public abstract class JDAction extends AbstractAction {
 
     private static final long  serialVersionUID = -2332356042161170120L;

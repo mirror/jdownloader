@@ -1,4 +1,4 @@
-package org.jdownloader.settings;
+package org.jdownloader.settings.annotations;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

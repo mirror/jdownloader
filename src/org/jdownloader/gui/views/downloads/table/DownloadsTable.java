@@ -1,6 +1,7 @@
 package org.jdownloader.gui.views.downloads.table;
 
 import java.awt.Point;
+import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.io.File;
@@ -9,6 +10,7 @@ import java.util.ArrayList;
 import javax.swing.DropMode;
 import javax.swing.JMenu;
 import javax.swing.JPopupMenu;
+import javax.swing.KeyStroke;
 import javax.swing.ListSelectionModel;
 
 import jd.event.ControlEvent;
@@ -44,7 +46,9 @@ import jd.utils.JDUtilities;
 import org.appwork.utils.Application;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.table.ExtColumn;
+import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.gui.views.DownloadTableAction;
 import org.jdownloader.gui.views.downloads.columns.FileColumn;
 import org.jdownloader.gui.views.downloads.context.RatedMenuController;
 import org.jdownloader.gui.views.downloads.context.RatedMenuItem;
@@ -54,6 +58,10 @@ public class DownloadsTable extends BasicJDTable<PackageLinkNode> {
 
     private static final long   serialVersionUID = 8843600834248098174L;
     private DownloadsTableModel tableModel       = null;
+    private DownloadTableAction moveTopAction;
+    private DownloadTableAction moveUpAction;
+    private DownloadTableAction moveDownAction;
+    private DownloadTableAction moveToBottomAction;
 
     public DownloadsTable(final DownloadsTableModel tableModel) {
         super(tableModel);
@@ -62,6 +70,121 @@ public class DownloadsTable extends BasicJDTable<PackageLinkNode> {
         this.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
         this.setDragEnabled(true);
         this.setDropMode(DropMode.INSERT_ROWS);
+        initActions();
+        onSelectionChanged(null);
+
+    }
+
+    @Override
+    protected boolean processKeyBinding(KeyStroke stroke, KeyEvent evt, int condition, boolean pressed) {
+        if (!pressed) { return super.processKeyBinding(stroke, evt, condition, pressed); }
+
+        switch (evt.getKeyCode()) {
+
+        case KeyEvent.VK_UP:
+            if (evt.isAltDown()) {
+                this.moveUpAction.actionPerformed(null);
+                return true;
+            }
+            break;
+        case KeyEvent.VK_DOWN:
+            if (evt.isAltDown()) {
+                this.moveDownAction.actionPerformed(null);
+                return true;
+            }
+            break;
+
+        case KeyEvent.VK_HOME:
+            if (evt.isAltDown()) {
+                moveTopAction.actionPerformed(null);
+                return true;
+
+            }
+            break;
+        case KeyEvent.VK_END:
+            if (evt.isAltDown()) {
+                moveToBottomAction.actionPerformed(null);
+                return true;
+            }
+            break;
+        }
+
+        return super.processKeyBinding(stroke, evt, condition, pressed);
+    }
+
+    private void initActions() {
+        moveTopAction = new DownloadTableAction() {
+            {
+                setName(_GUI._.BottomBar_BottomBar_totop());
+                setToolTipText(_GUI._.BottomBar_BottomBar_totop_tooltip());
+                setSmallIcon(NewTheme.I().getIcon("go-top", 18));
+
+            }
+
+            @Override
+            public boolean isEnabled() {
+                return super.isEnabled();
+            }
+
+            public void actionPerformed(ActionEvent e) {
+                System.out.println("go-top");
+            }
+
+        };
+        moveUpAction = new DownloadTableAction() {
+            {
+                setName(_GUI._.BottomBar_BottomBar_moveup());
+                setToolTipText(_GUI._.BottomBar_BottomBar_moveup_tooltip());
+                setSmallIcon(NewTheme.I().getIcon("go-up", 18));
+
+            }
+
+            @Override
+            public boolean isEnabled() {
+                return super.isEnabled();
+            }
+
+            public void actionPerformed(ActionEvent e) {
+                System.out.println("go-up");
+            }
+
+        };
+        moveDownAction = new DownloadTableAction() {
+            {
+                setName(_GUI._.BottomBar_BottomBar_movedown());
+                setToolTipText(_GUI._.BottomBar_BottomBar_movedown_tooltip());
+                setSmallIcon(NewTheme.I().getIcon("go-down", 18));
+
+            }
+
+            @Override
+            public boolean isEnabled() {
+                return super.isEnabled();
+            }
+
+            public void actionPerformed(ActionEvent e) {
+                System.out.println("go-down");
+            }
+
+        };
+        moveToBottomAction = new DownloadTableAction() {
+            {
+                setName(_GUI._.BottomBar_BottomBar_tobottom());
+                setToolTipText(_GUI._.BottomBar_BottomBar_tobottom_tooltip());
+                setSmallIcon(NewTheme.I().getIcon("go-bottom", 18));
+
+            }
+
+            @Override
+            public boolean isEnabled() {
+                return super.isEnabled();
+            }
+
+            public void actionPerformed(ActionEvent e) {
+                System.out.println("go-bottom");
+            }
+
+        };
 
     }
 
@@ -73,6 +196,23 @@ public class DownloadsTable extends BasicJDTable<PackageLinkNode> {
             if (FileColumn.class == this.getExtTableModel().getExtColumn(column).getClass()) {
                 tableModel.toggleFilePackageExpand((FilePackage) obj, DownloadsTableModel.TOGGLEMODE.CURRENT);
             }
+        }
+    }
+
+    @Override
+    protected void onSelectionChanged(ArrayList<PackageLinkNode> selected) {
+        if (selected == null || selected.size() == 0) {
+            // disable move buttons
+            moveDownAction.setEnabled(false);
+            moveToBottomAction.setEnabled(false);
+            moveTopAction.setEnabled(false);
+            moveUpAction.setEnabled(false);
+        } else {
+            // TODO
+            moveDownAction.setEnabled(true);
+            moveToBottomAction.setEnabled(true);
+            moveTopAction.setEnabled(true);
+            moveUpAction.setEnabled(true);
         }
     }
 
@@ -247,6 +387,22 @@ public class DownloadsTable extends BasicJDTable<PackageLinkNode> {
         ret.add(RatedMenuItem.createSeparator());
         ret.add(new RatedMenuItem("PRIORITY", PriorityAction.createPrioMenu(alllinks), 0));
         return ret;
+    }
+
+    public AppAction getMoveTopAction() {
+        return moveTopAction;
+    }
+
+    public AppAction getMoveToBottomAction() {
+        return moveToBottomAction;
+    }
+
+    public AppAction getMoveUpAction() {
+        return moveUpAction;
+    }
+
+    public AppAction getMoveDownAction() {
+        return moveDownAction;
     }
 
 }

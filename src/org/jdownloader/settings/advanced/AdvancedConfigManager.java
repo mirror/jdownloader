@@ -10,11 +10,11 @@ import org.appwork.storage.config.KeyHandler;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.controlling.LinkFilterSettings;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.settings.AboutConfig;
 import org.jdownloader.settings.AccountSettings;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 import org.jdownloader.settings.InternetConnectionSettings;
+import org.jdownloader.settings.annotations.AboutConfig;
 
 public class AdvancedConfigManager implements ConfigEventListener {
     private static final AdvancedConfigManager INSTANCE = new AdvancedConfigManager();
@@ -34,6 +34,7 @@ public class AdvancedConfigManager implements ConfigEventListener {
         register(JsonConfig.create(InternetConnectionSettings.class));
         register(JsonConfig.create(AccountSettings.class));
         register(JsonConfig.create(GraphicalUserInterfaceSettings.class));
+
     }
 
     public AdvancedConfigEventSender getEventSender() {

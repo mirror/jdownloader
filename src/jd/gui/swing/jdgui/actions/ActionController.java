@@ -24,7 +24,6 @@ import jd.config.ConfigPropertyListener;
 import jd.config.Configuration;
 import jd.config.Property;
 import jd.controlling.ClipboardHandler;
-import jd.controlling.DownloadController;
 import jd.controlling.DownloadWatchDog;
 import jd.controlling.IOEQ;
 import jd.controlling.JDController;
@@ -39,7 +38,6 @@ import jd.gui.UserIO;
 import jd.gui.swing.SwingGui;
 import jd.gui.swing.dialog.AccountDialog;
 import jd.gui.swing.jdgui.components.premiumbar.PremiumStatus;
-import jd.gui.swing.jdgui.views.downloads.DownloadLinksPanel;
 import jd.gui.swing.jdgui.views.linkgrabber.LinkGrabberPanel;
 import jd.gui.swing.jdgui.views.settings.panels.addons.ExtensionManager;
 import jd.gui.swing.jdgui.views.settings.panels.passwords.PasswordList;
@@ -622,158 +620,6 @@ public class ActionController {
                 return _GUI._.action_stopsign_tooltip();
             }
 
-        };
-
-        new ToolBarAction(_GUI._.action_move_to_bottom(), "action.downloadview.movetobottom", "go-bottom") {
-            private static final long serialVersionUID = 6181260839200699153L;
-
-            @Override
-            public void initDefaults() {
-            }
-
-            @Override
-            public void onAction(final ActionEvent e) {
-                IOEQ.add(new Runnable() {
-
-                    public void run() {
-                        if (!LinkGrabberPanel.getLinkGrabber().isNotVisible()) {
-                            LinkGrabberPanel.getLinkGrabber().move(LinkGrabberController.MOVE_BOTTOM);
-                            LinkGrabberController.getInstance().throwRefresh();
-                        } else if (!DownloadLinksPanel.getDownloadLinksPanel().isNotVisible()) {
-                            DownloadLinksPanel.getDownloadLinksPanel().move(DownloadController.MOVE.BOTTOM);
-                        }
-                    }
-
-                });
-
-            }
-
-            @Override
-            protected String createMnemonic() {
-                return _GUI._.action_move_to_bottom_mnemonics();
-            }
-
-            @Override
-            protected String createAccelerator() {
-                return _GUI._.action_move_to_bottom_accelerator();
-            }
-
-            @Override
-            protected String createTooltip() {
-                return _GUI._.action_move_to_bottom_tooltip();
-            }
-        };
-        new ToolBarAction(_GUI._.action_move_to_top(), "action.downloadview.movetotop", "go-top") {
-            private static final long serialVersionUID = 6181260839200699153L;
-
-            @Override
-            public void initDefaults() {
-            }
-
-            @Override
-            public void onAction(final ActionEvent e) {
-                IOEQ.add(new Runnable() {
-                    public void run() {
-                        if (!LinkGrabberPanel.getLinkGrabber().isNotVisible()) {
-                            LinkGrabberPanel.getLinkGrabber().move(LinkGrabberController.MOVE_TOP);
-                            LinkGrabberController.getInstance().throwRefresh();
-                        } else if (!DownloadLinksPanel.getDownloadLinksPanel().isNotVisible()) {
-                            DownloadLinksPanel.getDownloadLinksPanel().move(DownloadController.MOVE.TOP);
-                        }
-                    }
-                });
-            }
-
-            @Override
-            protected String createMnemonic() {
-                return _GUI._.action_move_to_top_mnemonic();
-            }
-
-            @Override
-            protected String createAccelerator() {
-                return _GUI._.action_move_to_top_accelerator();
-            }
-
-            @Override
-            protected String createTooltip() {
-                return _GUI._.action_move_to_top_tooltip();
-            }
-        };
-
-        new ToolBarAction(_GUI._.action_move_up(), "action.downloadview.moveup", "go-up") {
-            private static final long serialVersionUID = 6181260839200699153L;
-
-            @Override
-            public void initDefaults() {
-            }
-
-            @Override
-            public void onAction(final ActionEvent e) {
-                IOEQ.add(new Runnable() {
-                    public void run() {
-                        if (!LinkGrabberPanel.getLinkGrabber().isNotVisible()) {
-                            LinkGrabberPanel.getLinkGrabber().move(LinkGrabberController.MOVE_UP);
-                            LinkGrabberController.getInstance().throwRefresh();
-                        } else if (!DownloadLinksPanel.getDownloadLinksPanel().isNotVisible()) {
-                            DownloadLinksPanel.getDownloadLinksPanel().move(DownloadController.MOVE.UP);
-                        }
-                    }
-                });
-
-            }
-
-            @Override
-            protected String createMnemonic() {
-                return _GUI._.action_move_up_mnemonic();
-            }
-
-            @Override
-            protected String createAccelerator() {
-                return _GUI._.action_move_up_accelerator();
-            }
-
-            @Override
-            protected String createTooltip() {
-                return _GUI._.action_move_up_tooltip();
-            }
-        };
-        new ToolBarAction(_GUI._.action_move_down(), "action.downloadview.movedown", "go-down") {
-            private static final long serialVersionUID = 6181260839200699153L;
-
-            @Override
-            public void initDefaults() {
-            }
-
-            @Override
-            public void onAction(final ActionEvent e) {
-                IOEQ.add(new Runnable() {
-
-                    public void run() {
-                        if (!LinkGrabberPanel.getLinkGrabber().isNotVisible()) {
-                            LinkGrabberPanel.getLinkGrabber().move(LinkGrabberController.MOVE_DOWN);
-                            LinkGrabberController.getInstance().throwRefresh();
-                        } else if (!DownloadLinksPanel.getDownloadLinksPanel().isNotVisible()) {
-                            DownloadLinksPanel.getDownloadLinksPanel().move(DownloadController.MOVE.DOWN);
-                        }
-                    }
-                });
-
-            }
-
-            @Override
-            protected String createMnemonic() {
-                return _GUI._.action_move_down_mnemonic();
-            }
-
-            @Override
-            protected String createAccelerator() {
-                return _GUI._.action_move_down_accelerator();
-            }
-
-            @Override
-            protected String createTooltip() {
-                return _GUI._.action_move_down_tooltip();
-            }
         };
 
         new ToolBarAction(_GUI._.action_add_premium_account(), "action.premiumview.addacc", "add") {

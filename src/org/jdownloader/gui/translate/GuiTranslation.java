@@ -2039,4 +2039,28 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Speed" })
     String SpeedColumn_SpeedColumn();
+
+    @Default(lngs = { "en" }, values = { "Top" })
+    String BottomBar_BottomBar_totop();
+
+    @Default(lngs = { "en" }, values = { "Move selected Links & Packages to top" })
+    String BottomBar_BottomBar_totop_tooltip();
+
+    @Default(lngs = { "en" }, values = { "Up" })
+    String BottomBar_BottomBar_moveup();
+
+    @Default(lngs = { "en" }, values = { "Move selected Links & Packages up" })
+    String BottomBar_BottomBar_moveup_tooltip();
+
+    @Default(lngs = { "en" }, values = { "Down" })
+    String BottomBar_BottomBar_movedown();
+
+    @Default(lngs = { "en" }, values = { "Move selected Links & Packages down" })
+    String BottomBar_BottomBar_movedown_tooltip();
+
+    @Default(lngs = { "en" }, values = { "Bottom" })
+    String BottomBar_BottomBar_tobottom();
+
+    @Default(lngs = { "en" }, values = { "Move selected Links & Packages to bottom" })
+    String BottomBar_BottomBar_tobottom_tooltip();
 }

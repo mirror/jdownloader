@@ -6,6 +6,8 @@ import org.appwork.storage.config.annotations.DefaultIntValue;
 import org.appwork.storage.config.annotations.DefaultStringValue;
 import org.appwork.storage.config.annotations.Description;
 import org.appwork.storage.config.annotations.ValueValidator;
+import org.jdownloader.settings.annotations.AboutConfig;
+import org.jdownloader.settings.annotations.RequiresRestart;
 
 @ValueValidator(GraphicalUserInterfaceSettingsValidator.class)
 public interface GraphicalUserInterfaceSettings extends ConfigInterface {
@@ -52,4 +54,44 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     int getDialogDefaultTimeout();
 
     void setDialogDefaultTimeout(int value);
+
+    @Description("True if move button should be visible in downloadview")
+    @RequiresRestart
+    @AboutConfig
+    @DefaultBooleanValue(true)
+    boolean isShowMoveToTopButton();
+
+    void setShowMoveToTopButton(boolean b);
+
+    @Description("True if move button should be visible in downloadview")
+    @AboutConfig
+    @RequiresRestart
+    @DefaultBooleanValue(true)
+    boolean isShowMoveToBottomButton();
+
+    void setShowMoveToBottomButton(boolean b);
+
+    @Description("True if move button should be visible in downloadview")
+    @AboutConfig
+    @RequiresRestart
+    @DefaultBooleanValue(true)
+    boolean isShowMoveUpButton();
+
+    void setShowMoveUpButton(boolean b);
+
+    @AboutConfig
+    @Description("True if move button should be visible in downloadview")
+    @DefaultBooleanValue(true)
+    @RequiresRestart
+    boolean isShowMoveDownButton();
+
+    void setShowMoveDownButton(boolean b);
+
+    @AboutConfig
+    @Description("Set this to false to hide the Bottombar in the Downloadview")
+    @DefaultBooleanValue(true)
+    @RequiresRestart
+    boolean isDownloadViewBottombarEnabled();
+
+    void setDownloadViewBottombarEnabled(boolean b);
 }

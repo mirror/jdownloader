@@ -71,10 +71,6 @@ public class DownloadView extends View {
     }
 
     private void setActionStatus(boolean enabled) {
-        ActionController.getToolBarAction("action.downloadview.movetotop").setEnabled(enabled);
-        ActionController.getToolBarAction("action.downloadview.moveup").setEnabled(enabled);
-        ActionController.getToolBarAction("action.downloadview.movedown").setEnabled(enabled);
-        ActionController.getToolBarAction("action.downloadview.movetobottom").setEnabled(enabled);
 
         ActionController.getToolBarAction("action.remove.links").setEnabled(enabled);
         ActionController.getToolBarAction("action.remove.packages").setEnabled(enabled);

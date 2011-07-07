@@ -21,7 +21,6 @@ import java.awt.event.ActionListener;
 import java.util.ArrayList;
 import java.util.logging.Logger;
 
-import javax.swing.JComponent;
 import javax.swing.JScrollPane;
 import javax.swing.Timer;
 
@@ -31,8 +30,6 @@ import jd.controlling.DownloadControllerEvent;
 import jd.controlling.DownloadControllerListener;
 import jd.controlling.JDLogger;
 import jd.gui.swing.GuiRunnable;
-import jd.gui.swing.jdgui.MainTabbedPane;
-import jd.gui.swing.jdgui.actions.ActionController;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
@@ -86,23 +83,24 @@ public class DownloadLinksPanel extends SwitchPanel implements ActionListener, D
         asyncUpdate.setRepeats(false);
         asyncUpdate.restart();
 
-        internalTable.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).remove(ActionController.getToolBarAction("action.downloadview.movetotop").getKeyStroke());
-        internalTable.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).remove(ActionController.getToolBarAction("action.downloadview.moveup").getKeyStroke());
-        internalTable.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).remove(ActionController.getToolBarAction("action.downloadview.movedown").getKeyStroke());
-        internalTable.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).remove(ActionController.getToolBarAction("action.downloadview.movetobottom").getKeyStroke());
-        internalTable.getInputMap(JComponent.WHEN_FOCUSED).remove(ActionController.getToolBarAction("action.downloadview.movetotop").getKeyStroke());
-        internalTable.getInputMap(JComponent.WHEN_FOCUSED).remove(ActionController.getToolBarAction("action.downloadview.moveup").getKeyStroke());
-        internalTable.getInputMap(JComponent.WHEN_FOCUSED).remove(ActionController.getToolBarAction("action.downloadview.movedown").getKeyStroke());
-        internalTable.getInputMap(JComponent.WHEN_FOCUSED).remove(ActionController.getToolBarAction("action.downloadview.movetobottom").getKeyStroke());
-        internalTable.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).remove(ActionController.getToolBarAction("action.downloadview.movetotop").getKeyStroke());
-        internalTable.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).remove(ActionController.getToolBarAction("action.downloadview.moveup").getKeyStroke());
-        internalTable.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).remove(ActionController.getToolBarAction("action.downloadview.movedown").getKeyStroke());
-        internalTable.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).remove(ActionController.getToolBarAction("action.downloadview.movetobottom").getKeyStroke());
-
-        MainTabbedPane.getInstance().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).remove(ActionController.getToolBarAction("action.downloadview.movetotop").getKeyStroke());
-        MainTabbedPane.getInstance().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).remove(ActionController.getToolBarAction("action.downloadview.moveup").getKeyStroke());
-        MainTabbedPane.getInstance().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).remove(ActionController.getToolBarAction("action.downloadview.movedown").getKeyStroke());
-        MainTabbedPane.getInstance().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).remove(ActionController.getToolBarAction("action.downloadview.movetobottom").getKeyStroke());
+        // internalTable.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).remove(ActionController.getToolBarAction("action.downloadview.movetotop").getKeyStroke());
+        // internalTable.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).remove(ActionController.getToolBarAction("action.downloadview.moveup").getKeyStroke());
+        // internalTable.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).remove(ActionController.getToolBarAction("action.downloadview.movedown").getKeyStroke());
+        // internalTable.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).remove(ActionController.getToolBarAction("action.downloadview.movetobottom").getKeyStroke());
+        // internalTable.getInputMap(JComponent.WHEN_FOCUSED).remove(ActionController.getToolBarAction("action.downloadview.movetotop").getKeyStroke());
+        // internalTable.getInputMap(JComponent.WHEN_FOCUSED).remove(ActionController.getToolBarAction("action.downloadview.moveup").getKeyStroke());
+        // internalTable.getInputMap(JComponent.WHEN_FOCUSED).remove(ActionController.getToolBarAction("action.downloadview.movedown").getKeyStroke());
+        // internalTable.getInputMap(JComponent.WHEN_FOCUSED).remove(ActionController.getToolBarAction("action.downloadview.movetobottom").getKeyStroke());
+        // internalTable.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).remove(ActionController.getToolBarAction("action.downloadview.movetotop").getKeyStroke());
+        // internalTable.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).remove(ActionController.getToolBarAction("action.downloadview.moveup").getKeyStroke());
+        // internalTable.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).remove(ActionController.getToolBarAction("action.downloadview.movedown").getKeyStroke());
+        // internalTable.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).remove(ActionController.getToolBarAction("action.downloadview.movetobottom").getKeyStroke());
+        //
+        // MainTabbedPane.getInstance().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).remove(ActionController.getToolBarAction("action.downloadview.movetotop").getKeyStroke());
+        // MainTabbedPane.getInstance().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).remove(ActionController.getToolBarAction("action.downloadview.moveup").getKeyStroke());
+        // MainTabbedPane.getInstance().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).remove(ActionController.getToolBarAction("action.downloadview.movedown").getKeyStroke());
+        // MainTabbedPane.getInstance().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).remove(ActionController.getToolBarAction("action.downloadview.movetobottom").getKeyStroke());
+        //
     }
 
     /**

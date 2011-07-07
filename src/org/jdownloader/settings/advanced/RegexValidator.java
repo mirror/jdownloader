@@ -1,5 +1,6 @@
 package org.jdownloader.settings.advanced;
 
+
 public class RegexValidator extends Validator {
 
     private String pattern;

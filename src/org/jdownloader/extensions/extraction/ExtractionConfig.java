@@ -8,8 +8,8 @@ import org.appwork.storage.config.annotations.DefaultIntValue;
 import org.appwork.storage.config.annotations.DefaultStringArrayValue;
 import org.appwork.storage.config.annotations.DefaultStringValue;
 import org.appwork.storage.config.annotations.Description;
-import org.jdownloader.settings.AboutConfig;
-import org.jdownloader.settings.RangeValidatorMarker;
+import org.jdownloader.settings.annotations.AboutConfig;
+import org.jdownloader.settings.annotations.RangeValidatorMarker;
 
 public interface ExtractionConfig extends ExtensionConfigInterface {
     @DefaultStringArrayValue(value = {})

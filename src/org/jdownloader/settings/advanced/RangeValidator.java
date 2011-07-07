@@ -1,5 +1,6 @@
 package org.jdownloader.settings.advanced;
 
+
 public class RangeValidator extends Validator {
 
     private long min;

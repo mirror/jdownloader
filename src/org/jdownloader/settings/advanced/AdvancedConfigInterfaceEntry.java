@@ -6,8 +6,8 @@ import java.lang.reflect.Type;
 import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.KeyHandler;
 import org.appwork.storage.config.annotations.Description;
-import org.jdownloader.settings.RangeValidatorMarker;
-import org.jdownloader.settings.RegexValidatorAnnotation;
+import org.jdownloader.settings.annotations.RangeValidatorMarker;
+import org.jdownloader.settings.annotations.RegexValidatorAnnotation;
 
 public class AdvancedConfigInterfaceEntry implements AdvancedConfigEntry {
 

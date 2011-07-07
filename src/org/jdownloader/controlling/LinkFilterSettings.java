@@ -6,7 +6,7 @@ import java.util.ArrayList;
 import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
 import org.appwork.storage.config.annotations.DefaultObjectValue;
-import org.jdownloader.settings.AboutConfig;
+import org.jdownloader.settings.annotations.AboutConfig;
 
 public interface LinkFilterSettings extends ConfigInterface {
     @DefaultObjectValue("[]")
