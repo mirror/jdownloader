@@ -26,6 +26,7 @@ import javax.swing.filechooser.FileFilter;
 
 import jd.gui.swing.dialog.CaptchaDialog;
 import jd.gui.swing.dialog.ClickPositionDialog;
+import jd.gui.swing.dialog.MultiSelectionDialog;
 import jd.nutils.JDFlags;
 
 import org.appwork.storage.config.JsonConfig;
@@ -412,6 +413,22 @@ public class UserIO {
     public String requestTextAreaDialog(final String title, final String message, final String def) {
         try {
             return Dialog.getInstance().showTextAreaDialog(title, message, def);
+        } catch (DialogClosedException e) {
+            e.printStackTrace();
+        } catch (DialogCanceledException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    /**
+     * Shows a multi-selection dialog.
+     * 
+     * @return indices of selected options or null if user canceled
+     */
+    public int[] requestMultiSelectionDialog(final int flag, final String title, final String question, final Object[] options, final ImageIcon icon, final String okText, final String cancelText, final ListCellRenderer renderer) {
+        try {
+            return Dialog.getInstance().showDialog(new MultiSelectionDialog(flag, title, question, options, icon, okText, cancelText, renderer));
         } catch (DialogClosedException e) {
             e.printStackTrace();
         } catch (DialogCanceledException e) {

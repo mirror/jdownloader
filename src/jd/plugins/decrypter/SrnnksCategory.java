@@ -55,8 +55,7 @@ public class SrnnksCategory extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, final ProgressController progress) throws Exception {
         Browser.setRequestIntervalLimitGlobal("serienjunkies.org", 400);
         Browser.setRequestIntervalLimitGlobal("download.serienjunkies.org", 400);
-        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        if (!UserIO.isOK(UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN, "Kategorie Decrypter!\r\nWillst du wirklich eine ganze Kategorie hinzufügen?"))) return ret;
+        if (!UserIO.isOK(UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN, "Kategorie Decrypter!\r\nWillst du wirklich eine ganze Kategorie hinzufügen?"))) { return new ArrayList<DownloadLink>(); }
         br.setFollowRedirects(true);
         br.getPage(parameter.getCryptedUrl());
         if (br.containsHTML("<FRAME SRC")) {
@@ -65,43 +64,31 @@ public class SrnnksCategory extends PluginForDecrypt {
         }
         if (br.containsHTML("Error 503")) {
             UserIO.getInstance().requestMessageDialog("Serienjunkies ist überlastet. Bitte versuch es später nocheinmal!");
-            return ret;
-        }
-        IdNamePair[] categories = parseCategories();
-        if (categories.length == 0) return ret;
-        int res = UserIO.getInstance().requestComboDialog(0, "Bitte Kategorie auswählen", "Bitte die gewünschte Staffel auswählen", categories, 0, null, null, null, null);
-        if (res < 0) return ret;
-
-        String page = br.getPage("http://serienjunkies.org/" + categories[res].getId() + "/");
-
-        Format selectedFormat = null;
-        Format[] formats = parseFormats(page);
-        if (formats.length > 1) {
-            res = UserIO.getInstance().requestComboDialog(0, "Bitte Format auswählen", "Bitte das gewünsche Format auswählen.", formats, 0, null, null, null, null);
-            if (res < 0) {
-                return ret;
-            } else {
-                selectedFormat = formats[res];
-            }
-        } else if (formats.length == 1) {
-            selectedFormat = formats[0];
+            return new ArrayList<DownloadLink>();
         }
 
-        if (selectedFormat == null) return ret;
+        IdNamePair selectedCategory = letTheUserSelectCategory();
+        if (selectedCategory == null) return new ArrayList<DownloadLink>();
 
-        String[] mirrors = selectedFormat.getMirrors();
-        res = UserIO.getInstance().requestComboDialog(0, "Bitte Mirror auswählen", "Bitte den gewünschten Anbieter auswählen.", mirrors, 0, null, null, null, null);
-        if (res < 0) return ret;
+        String page = br.getPage("http://serienjunkies.org/" + selectedCategory.getId() + "/");
 
-        String[] links = selectedFormat.getLinks(mirrors[res]);
-        StringBuilder sb = new StringBuilder();
-        for (String url : links) {
-            sb.append(url);
-            sb.append("\r\n");
-        }
+        Format selectedFormat = letTheUserSelectFormat(page);
+        if (selectedFormat == null) return new ArrayList<DownloadLink>();
 
-        String linklist = UserIO.getInstance().requestInputDialog(UserIO.STYLE_LARGE | UserIO.NO_COUNTDOWN, "Entferne ungewollte Links", sb.toString());
-        if (linklist == null) return ret;
+        List<String> links = letTheUserSelectMirrors(selectedFormat);
+        if (links == null) return new ArrayList<DownloadLink>();
+
+        return confirmSelectedLinks(links);
+
+    }
+
+    private ArrayList<DownloadLink> confirmSelectedLinks(List<String> links) {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+
+        String linksAsSingleString = convertListOfLinksToString(links);
+        String linklist = UserIO.getInstance().requestInputDialog(UserIO.STYLE_LARGE | UserIO.NO_COUNTDOWN, "Entferne ungewollte Links", linksAsSingleString);
+        if (linklist == null) return new ArrayList<DownloadLink>();
+
         String[] urls = HTMLParser.getHttpLinks(linklist, null);
         for (String url : urls) {
             ret.add(this.createDownloadlink(url));
@@ -111,7 +98,53 @@ public class SrnnksCategory extends PluginForDecrypt {
         } else {
             return new ArrayList<DownloadLink>();
         }
+    }
 
+    private List<String> letTheUserSelectMirrors(Format selectedFormat) {
+        String[] mirrors = selectedFormat.getMirrors();
+        int[] selectedMirrorsIndices = UserIO.getInstance().requestMultiSelectionDialog(0, "Bitte Mirrors auswählen", "Bitte die gewünschten Anbieter auswählen.", mirrors, null, null, null, null);
+        if (selectedMirrorsIndices == null) return null;
+
+        List<String> links = selectedFormat.getLinks(selectedMirrorsIndices);
+        return links;
+    }
+
+    private Format letTheUserSelectFormat(String page) {
+        Format selectedFormat = null;
+        Format[] formats = parseFormats(page);
+        int res;
+        if (formats.length > 1) {
+            res = UserIO.getInstance().requestComboDialog(0, "Bitte Format auswählen", "Bitte das gewünsche Format auswählen.", formats, 0, null, null, null, null);
+            if (res < 0) {
+                return null;
+            } else {
+                selectedFormat = formats[res];
+            }
+        } else if (formats.length == 1) {
+            selectedFormat = formats[0];
+        }
+
+        if (selectedFormat == null) return null;
+        return selectedFormat;
+    }
+
+    private IdNamePair letTheUserSelectCategory() {
+        IdNamePair[] categories = parseCategories();
+        if (categories.length == 0) return null;
+        int res = UserIO.getInstance().requestComboDialog(0, "Bitte Kategorie auswählen", "Bitte die gewünschte Staffel auswählen", categories, 0, null, null, null, null);
+        if (res < 0) return null;
+
+        IdNamePair selectedCategory = categories[res];
+        return selectedCategory;
+    }
+
+    private String convertListOfLinksToString(List<String> links) {
+        StringBuilder sb = new StringBuilder();
+        for (String url : links) {
+            sb.append(url);
+            sb.append("\r\n");
+        }
+        return sb.toString();
     }
 
     private IdNamePair[] parseCategories() {
@@ -284,24 +317,36 @@ public class SrnnksCategory extends PluginForDecrypt {
         }
 
         /**
-         * Gets all the links for the given mirror
-         * 
-         * @param mirror
-         * @return
+         * Gets all the links for all of given mirrors
          */
-        public String[] getLinks(String mirror) {
+        public List<String> getLinks(Set<String> mirrors) {
             List<String> result = new ArrayList<String>();
 
             for (Link link : links) {
-                if (mirror.equals(link.getMirror())) {
+                if (mirrors.contains(link.getMirror())) {
                     result.add(link.getUrl());
                 }
             }
-            return (String[]) result.toArray(new String[result.size()]);
+            return result;
+        }
+
+        private List<String> getLinks(int[] selectedMirrorsIndices) {
+            Set<String> selectedMirrors = this.fetchMirrorsByTheirIndices(selectedMirrorsIndices);
+            List<String> links = this.getLinks(selectedMirrors);
+            return links;
         }
 
         public String[] getMirrors() {
             return mirrors.toArray(new String[mirrors.size()]);
+        }
+
+        protected Set<String> fetchMirrorsByTheirIndices(int[] mirrorIndices) {
+            Set<String> ret = new HashSet<String>(mirrorIndices.length);
+            String[] mirrorsAsArray = this.getMirrors();
+            for (int index : mirrorIndices) {
+                ret.add(mirrorsAsArray[index]);
+            }
+            return ret;
         }
 
         private Set<String> findCommonSuffix(Set<String> values) {
