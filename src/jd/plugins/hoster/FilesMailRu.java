@@ -61,7 +61,7 @@ public class FilesMailRu extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
         if (!keepCookies) this.setBrowserExclusive();
-        br.setDebug(true);
+
         br.getHeaders().put("User-Agent", UA);
         br.setFollowRedirects(true);
         if (downloadLink.getName() == null && downloadLink.getStringProperty("folderID", null) == null) {
@@ -197,6 +197,7 @@ public class FilesMailRu extends PluginForHost {
 
     @Override
     public void handlePremium(DownloadLink link, Account account) throws Exception {
+        br.getHeaders().put("User-Agent", UA);
         login(account);
         br.setFollowRedirects(false);
         doFree(link, true);
