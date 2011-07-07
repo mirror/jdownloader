@@ -44,6 +44,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
@@ -248,7 +249,15 @@ public class FileServeCom extends PluginForHost {
             logger.warning("Unexpected error at the last step...");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl.setFilenameFix(true);
+        if (downloadLink.getFinalFileName() == null) {
+            /* workaround for buggy server response, see #3545 */
+            String name = Plugin.getFileNameFromHeader(dl.getConnection());
+            if (name != null) {
+                name = name.replaceAll("\\%\\%", "%25%");
+                name = Encoding.htmlDecode(name);
+                downloadLink.setFinalFileName(name);
+            }
+        }
         this.dl.startDownload();
     }
 
@@ -374,7 +383,15 @@ public class FileServeCom extends PluginForHost {
             this.handleErrors(br);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl.setFilenameFix(true);
+        if (link.getFinalFileName() == null) {
+            /* workaround for buggy server response, see #3545 */
+            String name = Plugin.getFileNameFromHeader(dl.getConnection());
+            if (name != null) {
+                name = name.replaceAll("\\%\\%", "%25%");
+                name = Encoding.htmlDecode(name);
+                link.setFinalFileName(name);
+            }
+        }
         this.dl.startDownload();
     }
 

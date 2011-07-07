@@ -1,6 +1,7 @@
 package org.jdownloader.gui.views.downloads.table;
 
 import java.awt.Point;
+import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.io.File;
 import java.util.ArrayList;
@@ -142,6 +143,30 @@ public class DownloadsTable extends BasicJDTable<PackageLinkNode> {
             items.getSub().remove(0).addToPopup(pop);
         }
         return popup;
+    }
+
+    private ArrayList<DownloadLink> getAllDownloadLinks(ArrayList<PackageLinkNode> selectedObjects) {
+        final ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
+        for (final PackageLinkNode node : selectedObjects) {
+            if (node instanceof DownloadLink) {
+                if (!links.contains(node)) links.add((DownloadLink) node);
+            } else {
+                synchronized (node) {
+                    for (final DownloadLink dl : ((FilePackage) node).getControlledDownloadLinks()) {
+                        if (!links.contains(dl)) {
+                            links.add(dl);
+                        }
+                    }
+                }
+            }
+        }
+        return links;
+    }
+
+    @Override
+    protected boolean onShortcutDelete(final ArrayList<PackageLinkNode> selectedObjects, final KeyEvent evt, final boolean direct) {
+        new DeleteAction(getAllDownloadLinks(selectedObjects), direct).actionPerformed(null);
+        return true;
     }
 
     /**
