@@ -17,16 +17,17 @@
 package jd.plugins.hoster;
 
 import jd.PluginWrapper;
+import jd.http.RandomUserAgent;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -34,8 +35,8 @@ import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "files.mail.ru" }, urls = { "http://[\\w\\.]*?wge4zu4rjfsdehehztiuxw/[A-Z0-9]{6}(/[a-z0-9]+)?" }, flags = { 2 })
 public class FilesMailRu extends PluginForHost {
-
-    private boolean keepCookies = false;
+    private static final String UA          = RandomUserAgent.generate();
+    private boolean             keepCookies = false;
 
     public FilesMailRu(PluginWrapper wrapper) {
         super(wrapper);
@@ -60,6 +61,8 @@ public class FilesMailRu extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
         if (!keepCookies) this.setBrowserExclusive();
+        br.setDebug(true);
+        br.getHeaders().put("User-Agent", UA);
         br.setFollowRedirects(true);
         if (downloadLink.getName() == null && downloadLink.getStringProperty("folderID", null) == null) {
             logger.warning("final filename and folderID are bot null for unknown reasons!");
