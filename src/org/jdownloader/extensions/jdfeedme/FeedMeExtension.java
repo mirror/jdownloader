@@ -133,7 +133,7 @@ public class FeedMeExtension extends AbstractExtension<FeedMeConfig> implements 
                 String new_timestamp = parseFeed(feed, timestamp, response);
 
                 // set the new timestamp if needed
-                if ((new_timestamp != null) && (new_timestamp != timestamp)) {
+                if ((new_timestamp != null) && (!new_timestamp.equals(timestamp))) {
                     gui.setFeedTimestamp(feed, new_timestamp);
                 }
 

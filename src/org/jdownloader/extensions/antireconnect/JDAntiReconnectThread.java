@@ -50,7 +50,7 @@ public class JDAntiReconnectThread extends Thread implements Runnable {
 
     public void parselist(String ipString) {
         if (ipString == null) return;
-        if (ipString != lastIpsString) {
+        if (!ipString.equals(lastIpsString)) {
             lastIpsString = ipString;
             iplist.clear();
 

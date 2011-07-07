@@ -30,12 +30,12 @@ import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.FilePackage;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 import org.w3c.dom.Document;
 
@@ -48,7 +48,7 @@ public class RTLnowDe extends PluginForHost {
 
     private long crc32Hash(final String wahl) throws UnsupportedEncodingException {
         String a = Long.toString(System.currentTimeMillis()) + Double.toString(Math.random());
-        if (wahl == "session") {
+        if (wahl.equals("session")) {
             a = Long.toString(System.currentTimeMillis()) + Double.toString(Math.random()) + Long.toString(Runtime.getRuntime().totalMemory());
         }
         final CRC32 c = new CRC32();
