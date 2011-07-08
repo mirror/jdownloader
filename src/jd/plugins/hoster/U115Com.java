@@ -111,9 +111,9 @@ public class U115Com extends PluginForHost {
         if (br.containsHTML(NOFREESLOTS)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "No free slots available at the moment");
         // I don't know what this text means (google couldn't help) so i handle
         // it like that
-        if (br.containsHTML("为加强知识产权的保护力度，营造健康有益的网络环境，115网盘暂时停止影视资源外链服务。")) {
-            logger.warning("Unknown error for link: " + link.getDownloadURL());
-            throw new PluginException(LinkStatus.ERROR_FATAL, "Download not possible, unknown error!");
+        if (br.containsHTML("(为加强知识产权的保护力度，营造健康有益的网络环境，115网盘暂时停止影视资源外链服务。|is_no_check=\"1\")")) {
+            logger.warning("Only downloadable via u115 downloadmanager: " + link.getDownloadURL());
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Download only possible with the u115 downloadmanager!");
         }
         String dllink = findLink();
         if (dllink == null) {
@@ -133,7 +133,7 @@ public class U115Com extends PluginForHost {
     public String findLink() throws Exception {
         String linkToDownload = br.getRegex("\"(http://\\d+\\.(cnc|tel|bak)\\.115cdn\\.com/pickdown/.*?)\"").getMatch(0);
         if (linkToDownload == null) linkToDownload = br.getRegex("</a>\\&nbsp;[\t\r\n ]+<a href=\"(http://.*?)\"").getMatch(0);
-        if (linkToDownload == null) linkToDownload = br.getRegex("download-link\">.*?<a href=\"(http://.*?)\"").getMatch(0);
+        if (linkToDownload == null) linkToDownload = br.getRegex("download\\-link\">.*?<a href=\"(http://.*?)\"").getMatch(0);
         return linkToDownload;
     }
 

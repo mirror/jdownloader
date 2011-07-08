@@ -51,7 +51,7 @@ public class MotherLessCom extends PluginForDecrypt {
             decryptedLinks.add(dl);
             return decryptedLinks;
         } else if (br.containsHTML("The member uploaded this video for subscribers only")) {
-            DownloadLink dl = createDownloadlink(parameter.toString().replace("motherless", "premiummotherlessvideos"));
+            DownloadLink dl = createDownloadlink(parameter.toString().replace("motherless.com/", "motherlessvideos.com/"));
             dl.setProperty("kind", "video");
             decryptedLinks.add(dl);
             return decryptedLinks;
