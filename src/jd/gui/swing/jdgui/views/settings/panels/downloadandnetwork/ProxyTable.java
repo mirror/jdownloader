@@ -25,10 +25,6 @@ public class ProxyTable extends BasicJDTable<ProxyInfo> {
         setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
     }
 
-    public void update() {
-        ((ProxyTableModel) getExtTableModel()).fill();
-    }
-
     /*
      * (non-Javadoc)
      * 

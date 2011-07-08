@@ -169,7 +169,7 @@ public class XtreamSplit extends IExtraction {
                 if (md5) {
                     final String calculatedHash = HexFormatter.byteArrayToHex(md.digest()).toUpperCase();
                     final String hashStoredWithinFiles = hashes.get(source.getAbsolutePath());
-                    if (!hashStoredWithinFiles.equals(calculatedHash)) {
+                    if (hashStoredWithinFiles != null && !hashStoredWithinFiles.equals(calculatedHash)) {
                         for (DownloadLink link : archive.getDownloadLinks()) {
                             if (link.getFileOutput().equals(source.getAbsolutePath())) {
                                 archive.addCrcError(link);

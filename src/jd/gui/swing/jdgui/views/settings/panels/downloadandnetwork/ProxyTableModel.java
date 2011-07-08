@@ -1,7 +1,6 @@
 package jd.gui.swing.jdgui.views.settings.panels.downloadandnetwork;
 
 import java.awt.Component;
-import java.util.ArrayList;
 
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.JTable;
@@ -9,12 +8,9 @@ import javax.swing.table.JTableHeader;
 
 import jd.controlling.IOEQ;
 import jd.controlling.proxy.ProxyController;
-import jd.controlling.proxy.ProxyEvent;
 import jd.controlling.proxy.ProxyInfo;
 
-import org.appwork.utils.event.DefaultEventListener;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
-import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.table.ExtTableHeaderRenderer;
 import org.appwork.utils.swing.table.ExtTableModel;
@@ -31,34 +27,8 @@ public class ProxyTableModel extends ExtTableModel<ProxyInfo> {
 
     private static final long serialVersionUID = -5584463272737285033L;
 
-    // private Icon icon;
-
     public ProxyTableModel() {
         super("proxyTable2");
-        // icon = NewTheme.I().getIcon("proxy", 20);
-
-        fill();
-        ProxyController.getInstance().getEventSender().addListener(new DefaultEventListener<ProxyEvent<ProxyInfo>>() {
-
-            public void onEvent(ProxyEvent<ProxyInfo> event) {
-                fill();
-            }
-        });
-    }
-
-    void fill() {
-
-        new EDTRunner() {
-
-            @Override
-            protected void runInEDT() {
-                System.out.println("Refill");
-                ArrayList<ProxyInfo> selection = getSelectedObjects();
-                tableData = new ArrayList<ProxyInfo>(ProxyController.getInstance().getList());
-                fireTableStructureChanged();
-                setSelectedObjects(selection);
-            }
-        };
     }
 
     @Override

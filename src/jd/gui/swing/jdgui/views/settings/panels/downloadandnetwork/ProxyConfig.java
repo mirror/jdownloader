@@ -7,16 +7,21 @@ import javax.swing.JButton;
 import javax.swing.JScrollPane;
 import javax.swing.event.ListSelectionEvent;
 
+import jd.controlling.IOEQ;
+import jd.controlling.proxy.ProxyController;
+import jd.controlling.proxy.ProxyEvent;
 import jd.controlling.proxy.ProxyInfo;
 import jd.gui.swing.jdgui.views.settings.ConfigPanel;
 
 import org.appwork.app.gui.MigPanel;
+import org.appwork.utils.event.DefaultEventListener;
+import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.table.utils.MinimumSelectionObserver;
 import org.jdownloader.gui.settings.AbstractConfigPanel;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.translate._JDT;
 
-public class ProxyConfig extends AbstractConfigPanel {
+public class ProxyConfig extends AbstractConfigPanel implements DefaultEventListener<ProxyEvent<ProxyInfo>> {
 
     public String getTitle() {
         return _JDT._.gui_settings_proxy_title();
@@ -80,7 +85,51 @@ public class ProxyConfig extends AbstractConfigPanel {
 
     @Override
     public void updateContents() {
-        table.update();
+        IOEQ.add(new Runnable() {
+
+            public void run() {
+                table.getExtTableModel()._fireTableStructureChanged(ProxyController.getInstance().getList(), false);
+            }
+
+        }, true);
+    }
+
+    /*
+     * (non-Javadoc)
+     * 
+     * @see org.jdownloader.gui.settings.AbstractConfigPanel#onShow()
+     */
+    @Override
+    protected void onShow() {
+        super.onShow();
+        ProxyController.getInstance().getEventSender().addListener(this);
+    }
+
+    /*
+     * (non-Javadoc)
+     * 
+     * @see org.jdownloader.gui.settings.AbstractConfigPanel#onHide()
+     */
+    @Override
+    protected void onHide() {
+        super.onHide();
+        ProxyController.getInstance().getEventSender().removeListener(this);
+    }
+
+    public void onEvent(ProxyEvent<ProxyInfo> event) {
+        switch (event.getType()) {
+        case REFRESH:
+            new EDTRunner() {
+                @Override
+                protected void runInEDT() {
+                    table.repaint();
+                };
+            };
+            break;
+        default:
+            updateContents();
+            break;
+        }
     }
 
 }
