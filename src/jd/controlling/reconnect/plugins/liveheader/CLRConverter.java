@@ -76,7 +76,7 @@ public class CLRConverter {
                             String key = param.getAttributes().getNamedItem("name").getNodeValue();
                             String value = param.getAttributes().getNamedItem("value").getNodeValue();
                             p.put(key, value);
-                            if (post.equals("")) {
+                            if (post.length() == 0) {
                                 post.append(key).append("=").append(value);
                             } else {
                                 post.append("&").append(key).append("=").append(value);
