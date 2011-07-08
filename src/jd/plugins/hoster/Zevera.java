@@ -36,7 +36,7 @@ import jd.plugins.PluginForHost;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "zevera.com" }, urls = { "http://[\\w\\.]*?zevera\\.com/.+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "zevera.com" }, urls = { "http://[\\w\\.]*?zevera\\.com/.+" }, flags = { 0 })
 public class Zevera extends PluginForHost {
     static public final Object LOGINLOCK  = new Object();
     private boolean            showDialog = false;
@@ -69,6 +69,7 @@ public class Zevera extends PluginForHost {
     }
 
     private void loginAPI(Account account, AccountInfo ai) throws IOException, PluginException {
+        br.setDebug(true);
         synchronized (LOGINLOCK) {
             workAroundTimeOut(br);
             if (ai == null) {
@@ -173,10 +174,10 @@ public class Zevera extends PluginForHost {
                     // 9 ProgressPercentage:100,
                     // 10 StatusText:Downloaded,
                     // 11 ProgressText:Finished
-                    String DownloadURL = br.getRegex("DownloadURL:(http.*?),").getMatch(0);
+                    String DownloadURL = br.getRegex("DownloadURL:(Http.*?),").getMatch(0);
                     if (DownloadURL == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
                     showMessage(downloadLink, "Phase 3/3: OK Download starting");
-                    dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DownloadURL, true, 1);
+                    dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DownloadURL, true, 0);
                     break;
                 } else
                     this.sleep(15 * 1000l, downloadLink, "Waiting for download to finish on Zevera");
