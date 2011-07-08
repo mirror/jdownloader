@@ -19,6 +19,7 @@ package jd.nutils.jobber;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.Vector;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.controlling.JDLogger;
 
@@ -30,29 +31,25 @@ public class Jobber {
     private ArrayList<WorkerListener> listener;
     private boolean                   killWorkerAfterQueueFinished = true;
     private boolean                   running                      = false;
-    private Integer                   jobsAdded                    = new Integer(0);
+    private final AtomicInteger       jobsAdded                    = new AtomicInteger(0);
+    private final AtomicInteger       jobsFinished                 = new AtomicInteger(0);
+    private final AtomicInteger       jobsStarted                  = new AtomicInteger(0);
     private boolean                   debug                        = false;
 
     public int getJobsAdded() {
-        return jobsAdded;
+        return jobsAdded.get();
     }
 
     public void setDebug(boolean debug) {
         this.debug = debug;
     }
 
-    private Integer jobsFinished = new Integer(0);
-
     public int getJobsFinished() {
-        synchronized (jobsFinished) {
-            return jobsFinished;
-        }
+        return jobsFinished.get();
     }
 
-    private Integer jobsStarted = new Integer(0);
-
     public int getJobsStarted() {
-        return jobsStarted;
+        return jobsStarted.get();
     }
 
     /**
@@ -198,9 +195,7 @@ public class Jobber {
         }
         synchronized (jobList) {
             jobList.add(runnable);
-            synchronized (this.jobsAdded) {
-                this.jobsAdded++;
-            }
+            this.jobsAdded.incrementAndGet();
             if (debug) System.out.println(this + " RINGRING!!!!");
             // if a worker sleeps.... this should wake him up
 
@@ -254,7 +249,7 @@ public class Jobber {
             super("JDWorkerThread" + id);
             this.jobber = jobber;
             this.id = id;
-            this.start();
+            super.start();
         }
 
         @Override
@@ -287,9 +282,7 @@ public class Jobber {
                     if (debug) System.out.println(this + ": I'm up");
                     continue;
                 }
-                synchronized (jobsStarted) {
-                    jobsStarted++;
-                }
+                jobsStarted.incrementAndGet();
                 fireJobStarted(ra);
                 try {
                     ra.go();
@@ -297,9 +290,7 @@ public class Jobber {
                     JDLogger.exception(e);
                     fireJobException(ra, e);
                 }
-                synchronized (jobsFinished) {
-                    jobsFinished++;
-                }
+                jobsFinished.incrementAndGet();
                 fireJobFinished(ra);
             }
         }
