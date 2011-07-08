@@ -49,12 +49,13 @@ import org.jdownloader.extensions.extraction.IExtraction;
  */
 public class XtreamSplit extends IExtraction {
 
-    private final static int        BUFFER = 2048;
+    private final static int        HEADER_SIZE = 104;
+    private final static int        BUFFER_SIZE = 2048;
 
     private boolean                 md5;
     private File                    file;
-    private HashMap<String, String> hashes = new HashMap<String, String>();
-    private List<String>            files  = new ArrayList<String>();
+    private HashMap<String, String> hashes      = new HashMap<String, String>();
+    private List<String>            files       = new ArrayList<String>();
 
     public Archive buildArchive(DownloadLink link) {
         String pattern = "^" + Regex.escape(link.getFileOutput().replaceAll("(?i)\\.[\\d]+\\.xtm$", "")) + "\\.[\\d]+\\.xtm$";
@@ -77,7 +78,7 @@ public class XtreamSplit extends IExtraction {
 
     @Override
     public void extract() {
-        byte[] buffer = new byte[BUFFER];
+        byte[] buffer = new byte[BUFFER_SIZE];
         Archive archive = controller.getArchiv();
 
         BufferedOutputStream out = null;
@@ -112,25 +113,40 @@ public class XtreamSplit extends IExtraction {
 
                 if (md5) md = MessageDigest.getInstance("md5");
 
-                // Skip header
+                // Skip header in case of the first file
+                // can't call in.skip(), because the header counts
+                // the towards md5 hash.
                 long length = source.length();
                 if (i == 0) {
-                    in.skip(104);
-                    length = length - 104;
+                    int alreadySkipped = 0;
+                    final int toBeSkipped = HEADER_SIZE;
+
+                    while (alreadySkipped < toBeSkipped) {
+                        // Read data
+                        int l = in.read(buffer, 0, toBeSkipped - alreadySkipped);
+
+                        alreadySkipped += l;
+
+                        // Update MD5
+                        if (md5) md.update(buffer, 0, l);
+                    }
+
+                    length = length - toBeSkipped;
                 }
 
                 long read = 0;
 
-                // Skip md5 hashes
-                if (md5 && i == (files.size() - 1)) {
+                // Skip md5 hashes at the end if it's the last file
+                boolean isItTheLastFile = i == (files.size() - 1);
+                if (md5 && isItTheLastFile) {
                     length = length - 32 * files.size();
                 }
 
                 // Merge
                 while (length > read) {
-                    // Calaulate the read buffer for the remaining byte. Max
+                    // Calculate the read buffer for the remaining byte. Max
                     // BUFFER
-                    int buf = ((length - read) < BUFFER) ? (int) (length - read) : BUFFER;
+                    int buf = ((length - read) < BUFFER_SIZE) ? (int) (length - read) : BUFFER_SIZE;
 
                     // Read data
                     int l = in.read(buffer, 0, buf);
@@ -151,9 +167,11 @@ public class XtreamSplit extends IExtraction {
 
                 // Check MD5 hashes
                 if (md5) {
-                    if (hashes.get(source.getAbsolutePath()).equals(HexFormatter.byteArrayToHex(md.digest()).toUpperCase())) {
+                    final String calculatedHash = HexFormatter.byteArrayToHex(md.digest()).toUpperCase();
+                    final String hashStoredWithinFiles = hashes.get(source.getAbsolutePath());
+                    if (!hashStoredWithinFiles.equals(calculatedHash)) {
                         for (DownloadLink link : archive.getDownloadLinks()) {
-                            if (link.getFileOutput().equals(source)) {
+                            if (link.getFileOutput().equals(source.getAbsolutePath())) {
                                 archive.addCrcError(link);
                                 break;
                             }
