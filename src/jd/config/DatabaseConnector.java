@@ -276,13 +276,17 @@ public class DatabaseConnector implements Serializable {
                     rs = statement.executeQuery("DELETE FROM config WHERE name = '" + name + "'");
                 } catch (final Exception e) {
                 } finally {
-                    try {
-                        rs.close();
-                    } catch (final Throwable e) {
+                    if (rs != null) {
+                        try {
+                            rs.close();
+                        } catch (final Throwable e) {
+                        }
                     }
-                    try {
-                        statement.close();
-                    } catch (final Throwable e) {
+                    if (statement != null) {
+                        try {
+                            statement.close();
+                        } catch (final Throwable e) {
+                        }
                     }
                 }
             }
