@@ -4,6 +4,7 @@ import java.awt.event.ActionEvent;
 
 import javax.swing.AbstractAction;
 
+import jd.controlling.IOEQ;
 import jd.controlling.authentication.AuthenticationController;
 import jd.controlling.authentication.AuthenticationInfo;
 
@@ -24,8 +25,13 @@ public class NewAction extends AbstractAction {
     }
 
     public void actionPerformed(ActionEvent e) {
-        AuthenticationController.getInstance().add(new AuthenticationInfo());
-        table.getExtTableModel()._fireTableStructureChanged(AuthenticationController.getInstance().list(), false);
+        IOEQ.add(new Runnable() {
+            public void run() {
+                AuthenticationController.getInstance().add(new AuthenticationInfo());
+                table.getExtTableModel()._fireTableStructureChanged(AuthenticationController.getInstance().list(), false);
+            }
+        });
+
     }
 
 }

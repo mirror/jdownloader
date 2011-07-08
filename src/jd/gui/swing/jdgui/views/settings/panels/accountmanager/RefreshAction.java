@@ -8,6 +8,7 @@ import javax.swing.AbstractAction;
 import jd.HostPluginWrapper;
 import jd.controlling.AccountChecker;
 import jd.controlling.AccountController;
+import jd.controlling.IOEQ;
 import jd.plugins.Account;
 
 import org.jdownloader.gui.translate._GUI;
@@ -19,39 +20,47 @@ public class RefreshAction extends AbstractAction {
      */
     private static final long  serialVersionUID = 1L;
     private ArrayList<Account> selection;
+    private boolean            ignoreSelection  = false;
+
+    public RefreshAction() {
+        this(null);
+        this.putValue(AbstractAction.SMALL_ICON, NewTheme.I().getIcon("refresh", 20));
+        ignoreSelection = true;
+    }
 
     public RefreshAction(ArrayList<Account> selectedObjects) {
         selection = selectedObjects;
         this.putValue(NAME, _GUI._.settings_accountmanager_refresh());
-        this.putValue(AbstractAction.SMALL_ICON, NewTheme.I().getIcon("refresh", ActionColumn.SIZE));
+        this.putValue(AbstractAction.SMALL_ICON, NewTheme.I().getIcon("refresh", 16));
     }
 
     public void actionPerformed(ActionEvent e) {
-        ArrayList<Account> list;
-        if (selection != null) {
-            list = selection;
-        } else {
-            list = new ArrayList<Account>();
-            final ArrayList<HostPluginWrapper> plugins = HostPluginWrapper.getHostWrapper();
-            for (HostPluginWrapper plugin : plugins) {
-                ArrayList<Account> accs = AccountController.getInstance().getAllAccounts(plugin.getHost());
-                if (accs != null) {
-                    for (Account acc : accs) {
-                        list.add(acc);
-                        acc.setHoster(plugin.getHost());
+        IOEQ.add(new Runnable() {
+            public void run() {
+                if (selection == null) {
+                    selection = new ArrayList<Account>();
+                    final ArrayList<HostPluginWrapper> plugins = HostPluginWrapper.getHostWrapper();
+                    for (HostPluginWrapper plugin : plugins) {
+                        ArrayList<Account> accs = AccountController.getInstance().getAllAccounts(plugin.getHost());
+                        if (accs != null) {
+                            for (Account acc : accs) {
+                                selection.add(acc);
+                                acc.setHoster(plugin.getHost());
+                            }
+                        }
                     }
                 }
+                for (Account acc : selection) {
+                    AccountChecker.getInstance().check(acc, true);
+                }
             }
-        }
-        for (Account acc : list) {
-            AccountChecker.getInstance().check(acc, true);
-        }
-
+        });
     }
 
     @Override
     public boolean isEnabled() {
-        return selection == null || selection.size() > 0;
+        if (ignoreSelection) return true;
+        return selection != null && selection.size() > 0;
     }
 
 }

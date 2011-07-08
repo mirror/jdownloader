@@ -13,13 +13,11 @@ public class NewAction extends AbstractAction {
     /**
      * 
      */
-    private static final long   serialVersionUID = 1L;
-    private PremiumAccountTable table;
+    private static final long serialVersionUID = 1L;
 
-    public NewAction(PremiumAccountTable table) {
-        this.table = table;
+    public NewAction() {
         this.putValue(NAME, _GUI._.settings_accountmanager_add());
-        this.putValue(AbstractAction.SMALL_ICON, NewTheme.I().getIcon("add", 20));
+        this.putValue(AbstractAction.SMALL_ICON, NewTheme.I().getIcon("add", 16));
     }
 
     public void actionPerformed(ActionEvent e) {

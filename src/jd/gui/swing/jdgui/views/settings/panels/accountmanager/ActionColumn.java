@@ -21,7 +21,6 @@ public class ActionColumn extends ExtComponentColumn<Account> {
     private JPanel            editor;
     private RenewAction       renew;
     private InfoAction        info;
-    private DeleteAction      delete;
     private PremiumzoneAction premzone;
 
     public ActionColumn() {
@@ -30,7 +29,6 @@ public class ActionColumn extends ExtComponentColumn<Account> {
         editor = new JPanel(new MigLayout("ins 2", "[]", "[]"));
         renew = new RenewAction();
         info = new InfoAction();
-        delete = new DeleteAction();
         premzone = new PremiumzoneAction();
         // add(premzone);
         // add(info);
@@ -99,10 +97,6 @@ public class ActionColumn extends ExtComponentColumn<Account> {
 
     private void setAccount(Account value) {
         renew.setAccount(value);
-        info.setAccount(value);
-        delete.setAccount(value);
-        premzone.setAccount(value);
-
     }
 
     @Override

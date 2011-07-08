@@ -4,6 +4,8 @@ import java.awt.event.ActionEvent;
 
 import javax.swing.AbstractAction;
 
+import jd.controlling.IOEQ;
+
 import org.jdownloader.controlling.LinkFilter;
 import org.jdownloader.controlling.LinkFilterController;
 import org.jdownloader.gui.translate._GUI;
@@ -30,8 +32,15 @@ public class NewAction extends AbstractAction {
     }
 
     public void actionPerformed(ActionEvent e) {
-        LinkFilterController.getInstance().add(new LinkFilter(true, LinkFilter.Types.FILENAME, ""));
-        table.getExtTableModel()._fireTableStructureChanged(LinkFilterController.getInstance().list(), false);
+        IOEQ.add(new Runnable() {
+
+            public void run() {
+                LinkFilterController.getInstance().add(new LinkFilter(true, LinkFilter.Types.FILENAME, ""));
+                table.getExtTableModel()._fireTableStructureChanged(LinkFilterController.getInstance().list(), false);
+            }
+
+        }, true);
+
     }
 
 }

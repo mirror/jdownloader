@@ -19,6 +19,7 @@ package jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter;
 import javax.swing.ImageIcon;
 import javax.swing.JTextArea;
 
+import jd.controlling.IOEQ;
 import jd.gui.swing.jdgui.views.settings.components.Checkbox;
 import jd.gui.swing.jdgui.views.settings.components.ComboBox;
 import jd.gui.swing.jdgui.views.settings.components.StateUpdateListener;
@@ -107,6 +108,13 @@ public class Linkgrabber extends AbstractConfigPanel {
         checkLinks.setSelected(st.isLinkcheckEnabled());
         rename.setSelected(st.isCleanUpFilenames());
         blackOrWhite.setSelectedIndex(LinkFilterController.getInstance().isBlacklist() ? 0 : 1);
-        filter.getTable().getExtTableModel()._fireTableStructureChanged(LinkFilterController.getInstance().list(), false);
+        IOEQ.add(new Runnable() {
+
+            public void run() {
+                filter.getTable().getExtTableModel()._fireTableStructureChanged(LinkFilterController.getInstance().list(), false);
+            }
+
+        }, true);
+
     }
 }

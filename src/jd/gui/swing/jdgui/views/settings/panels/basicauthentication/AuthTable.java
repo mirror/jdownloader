@@ -15,6 +15,7 @@ public class AuthTable extends BasicJDTable<AuthenticationInfo> {
 
     public AuthTable() {
         super(new AuthTableModel());
+        this.setSearchEnabled(true);
     }
 
     @Override

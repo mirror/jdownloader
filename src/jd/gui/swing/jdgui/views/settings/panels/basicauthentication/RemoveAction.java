@@ -5,6 +5,7 @@ import java.util.ArrayList;
 
 import javax.swing.AbstractAction;
 
+import jd.controlling.IOEQ;
 import jd.controlling.authentication.AuthenticationController;
 import jd.controlling.authentication.AuthenticationInfo;
 
@@ -18,11 +19,13 @@ public class RemoveAction extends AbstractAction {
     private static final long             serialVersionUID = 1L;
     private AuthTable                     table;
     private ArrayList<AuthenticationInfo> selection        = null;
+    private boolean                       ignoreSelection  = false;
 
     public RemoveAction(AuthTable table) {
         this.table = table;
         this.putValue(NAME, _GUI._.settings_auth_delete());
         this.putValue(AbstractAction.SMALL_ICON, NewTheme.I().getIcon("remove", 20));
+        this.ignoreSelection = true;
 
     }
 
@@ -37,12 +40,18 @@ public class RemoveAction extends AbstractAction {
         if (selection == null) {
             selection = ((AuthTableModel) table.getExtTableModel()).getSelectedObjects();
         }
-        AuthenticationController.getInstance().remove(selection);
-        table.getExtTableModel()._fireTableStructureChanged(AuthenticationController.getInstance().list(), false);
+        IOEQ.add(new Runnable() {
+            public void run() {
+                AuthenticationController.getInstance().remove(selection);
+                table.getExtTableModel()._fireTableStructureChanged(AuthenticationController.getInstance().list(), false);
+            }
+        });
+
     }
 
     @Override
     public boolean isEnabled() {
+        if (ignoreSelection) return super.isEnabled();
         return selection != null && selection.size() > 0;
     }
 

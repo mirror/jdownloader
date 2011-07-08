@@ -5,6 +5,7 @@ import javax.swing.JButton;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 
+import jd.controlling.IOEQ;
 import jd.controlling.authentication.AuthenticationController;
 import jd.gui.swing.jdgui.views.settings.components.SettingsComponent;
 import jd.gui.swing.jdgui.views.settings.components.StateUpdateListener;
@@ -64,6 +65,12 @@ public class BasicAuthenticationPanel extends JPanel implements SettingsComponen
     }
 
     public void update() {
-        table.getExtTableModel()._fireTableStructureChanged(AuthenticationController.getInstance().list(), false);
+        IOEQ.add(new Runnable() {
+
+            public void run() {
+                table.getExtTableModel()._fireTableStructureChanged(AuthenticationController.getInstance().list(), false);
+            }
+
+        }, true);
     }
 }

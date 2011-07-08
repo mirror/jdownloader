@@ -156,6 +156,11 @@ public class PremiumAccountTableModel extends ExtTableModel<Account> implements 
             }
 
             @Override
+            public boolean isHidable() {
+                return false;
+            }
+
+            @Override
             protected Icon getIcon(Account value) {
                 return JDUtilities.getPluginForHost(value.getHoster()).getHosterIconScaled();
             }

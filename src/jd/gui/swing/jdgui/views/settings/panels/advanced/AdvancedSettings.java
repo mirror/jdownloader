@@ -13,6 +13,8 @@ import javax.swing.JTextField;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 
+import jd.controlling.IOEQ;
+
 import org.appwork.utils.swing.HelpNotifier;
 import org.appwork.utils.swing.HelpNotifierCallbackListener;
 import org.jdownloader.gui.settings.AbstractConfigPanel;
@@ -109,7 +111,13 @@ public class AdvancedSettings extends AbstractConfigPanel implements DocumentLis
 
     @Override
     public void updateContents() {
-        table.getExtTableModel()._fireTableStructureChanged(AdvancedConfigManager.getInstance().list(), true);
+        IOEQ.add(new Runnable() {
+
+            public void run() {
+                table.getExtTableModel()._fireTableStructureChanged(AdvancedConfigManager.getInstance().list(), true);
+            }
+
+        }, true);
     }
 
     public void insertUpdate(DocumentEvent e) {
@@ -133,6 +141,12 @@ public class AdvancedSettings extends AbstractConfigPanel implements DocumentLis
     }
 
     public void onAdvancedConfigUpdate() {
-        table.getExtTableModel()._fireTableStructureChanged(AdvancedConfigManager.getInstance().list(), true);
+        IOEQ.add(new Runnable() {
+
+            public void run() {
+                table.getExtTableModel()._fireTableStructureChanged(AdvancedConfigManager.getInstance().list(), true);
+            }
+
+        }, true);
     }
 }

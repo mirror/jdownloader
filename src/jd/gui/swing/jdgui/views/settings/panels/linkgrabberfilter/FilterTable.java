@@ -18,6 +18,7 @@ public class FilterTable extends BasicJDTable<LinkFilter> {
 
     public FilterTable() {
         super(new FilterTableModel("FilterTable2"));
+        this.setSearchEnabled(true);
 
     }
 

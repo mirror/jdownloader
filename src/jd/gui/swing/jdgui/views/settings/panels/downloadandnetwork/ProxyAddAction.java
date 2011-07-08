@@ -13,11 +13,21 @@ import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
+import org.jdownloader.images.NewTheme;
+import org.jdownloader.translate._JDT;
 
 public class ProxyAddAction extends AbstractAction {
 
+    public ProxyAddAction(ProxyTable table) {
+        super("Add new Proxy");
+        this.putValue(NAME, _JDT._.basics_add());
+        this.putValue(AbstractAction.SMALL_ICON, NewTheme.I().getIcon("add", 20));
+    }
+
     public ProxyAddAction() {
         super("Add new Proxy");
+        this.putValue(NAME, _JDT._.basics_add());
+        this.putValue(AbstractAction.SMALL_ICON, NewTheme.I().getIcon("add", 16));
     }
 
     /**

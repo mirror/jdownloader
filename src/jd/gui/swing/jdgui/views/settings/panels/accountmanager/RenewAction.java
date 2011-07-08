@@ -30,6 +30,7 @@ public class RenewAction extends TableBarAction {
 
     @Override
     public void setAccount(Account account) {
+        /* TODO: optimize this as this is called often in cellrenderer */
         super.setAccount(account);
         String hosterName = AccountController.getInstance().getHosterName(getAccount());
         if (hosterName == null) {

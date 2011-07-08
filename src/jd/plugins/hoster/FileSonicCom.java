@@ -55,8 +55,14 @@ public class FileSonicCom extends PluginForHost implements ControlListener {
         this.enablePremium("http://www.filesonic.com/premium");
         synchronized (LOCK2) {
             if (!initDone) {
-                JDUtilities.getController().addControlListener(this);
                 initDone = true;
+                new Thread(new Runnable() {
+
+                    public void run() {
+                        JDUtilities.getController().addControlListener(FileSonicCom.this);
+                    }
+
+                }).start();
             }
         }
     }

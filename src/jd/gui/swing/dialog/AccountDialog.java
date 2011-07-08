@@ -199,7 +199,7 @@ public class AccountDialog extends AbstractDialog<Integer> {
         link.setToolTipText(_GUI._.gui_menu_action_premium_buy_name());
         link.addActionListener(new ActionListener() {
             public void actionPerformed(final ActionEvent e) {
-                new BuyAction(getHoster(), null).actionPerformed(null);
+                new BuyAction(getHoster()).actionPerformed(null);
             }
         });
         link.setFocusable(false);
