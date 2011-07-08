@@ -27,6 +27,22 @@ public class FinishedDateColumn extends ExtDateColumn<PackageLinkNode> {
     }
 
     @Override
+    public boolean isDefaultVisible() {
+        return false;
+    }
+
+    @Override
+    public int getMaxWidth() {
+
+        return 110;
+    }
+
+    @Override
+    public boolean isEnabled(PackageLinkNode obj) {
+        return obj.isEnabled();
+    }
+
+    @Override
     protected Date getDate(PackageLinkNode node, Date date) {
 
         if (node.getFinishedDate() <= 0) return null;

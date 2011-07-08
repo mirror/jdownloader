@@ -26,6 +26,22 @@ public class SpeedColumn extends ExtTextColumn<jd.plugins.PackageLinkNode> {
     }
 
     @Override
+    public boolean isEnabled(PackageLinkNode obj) {
+        return obj.isEnabled();
+    }
+
+    @Override
+    public int getDefaultWidth() {
+        return 65;
+    }
+
+    @Override
+    public int getMaxWidth() {
+
+        return 80;
+    }
+
+    @Override
     protected Icon getIcon(PackageLinkNode value) {
 
         return null;

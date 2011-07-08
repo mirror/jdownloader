@@ -6,6 +6,7 @@ import org.appwork.txtresource.Default;
 import org.appwork.txtresource.Defaults;
 import org.appwork.txtresource.Description;
 import org.appwork.txtresource.TranslateInterface;
+import org.appwork.utils.net.httpconnection.HTTPProxy;
 
 @Defaults(lngs = { "en" })
 public interface GuiTranslation extends TranslateInterface {
@@ -2063,4 +2064,16 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Move selected Links & Packages to bottom" })
     String BottomBar_BottomBar_tobottom_tooltip();
+
+    @Default(lngs = { "en" }, values = { "Connection" })
+    String ConnectionColumn_ConnectionColumn();
+
+    @Default(lngs = { "en" }, values = { "%s1" })
+    String ConnectionColumn_getStringValue_pluginonly(HTTPProxy currentProxy);
+
+    @Default(lngs = { "en" }, values = { "%s2/%s3 Chunks %s1" })
+    String ConnectionColumn_getStringValue_withchunks(HTTPProxy currentProxy, int currentChunks, int maxChunks);
+
+    @Default(lngs = { "en" }, values = { "%s1 download(s) running (%s2 connections)" })
+    String BottomBar_actionPerformed_running_downloads(int activeDownloads, int incommingConnections);
 }

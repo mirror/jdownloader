@@ -15,6 +15,7 @@ import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.table.ExtColumn;
 import org.appwork.utils.swing.table.ExtTableModel;
 import org.jdownloader.gui.views.downloads.columns.AddedDateColumn;
+import org.jdownloader.gui.views.downloads.columns.ConnectionColumn;
 import org.jdownloader.gui.views.downloads.columns.ETAColumn;
 import org.jdownloader.gui.views.downloads.columns.FileColumn;
 import org.jdownloader.gui.views.downloads.columns.FinishedDateColumn;
@@ -22,6 +23,7 @@ import org.jdownloader.gui.views.downloads.columns.HosterColumn;
 import org.jdownloader.gui.views.downloads.columns.ListOrderIDColumn;
 import org.jdownloader.gui.views.downloads.columns.LoadedColumn;
 import org.jdownloader.gui.views.downloads.columns.PriorityColumn;
+import org.jdownloader.gui.views.downloads.columns.ProgressColumn;
 import org.jdownloader.gui.views.downloads.columns.RemainingColumn;
 import org.jdownloader.gui.views.downloads.columns.SizeColumn;
 import org.jdownloader.gui.views.downloads.columns.SpeedColumn;
@@ -31,9 +33,7 @@ import org.jdownloader.gui.views.downloads.columns.TaskColumn;
 public class DownloadsTableModel extends ExtTableModel<PackageLinkNode> {
 
     public static enum TOGGLEMODE {
-        CURRENT,
-        TOP,
-        BOTTOM
+        CURRENT, TOP, BOTTOM
     }
 
     private static final long serialVersionUID = -198189279671615981L;
@@ -48,20 +48,27 @@ public class DownloadsTableModel extends ExtTableModel<PackageLinkNode> {
 
     @Override
     protected void initColumns() {
-        this.addColumn(new ListOrderIDColumn());
+
         this.addColumn(new FileColumn());
         this.addColumn(new SizeColumn());
-        this.addColumn(new RemainingColumn());
-        this.addColumn(new LoadedColumn());
         this.addColumn(new HosterColumn());
+        addColumn(new ConnectionColumn());
+        this.addColumn(new TaskColumn());
+        this.addColumn(new RemainingColumn());
+
         this.addColumn(new AddedDateColumn());
         this.addColumn(new FinishedDateColumn());
-        this.addColumn(new SpeedColumn());
-        this.addColumn(new ETAColumn());
+
+        addColumn(new SpeedColumn());
+        addColumn(new ETAColumn());
+
+        this.addColumn(new LoadedColumn());
         this.addColumn(new ProgressColumn());
-        this.addColumn(new TaskColumn());
+
         this.addColumn(new PriorityColumn());
         this.addColumn(new StopSignColumn());
+
+        this.addColumn(new ListOrderIDColumn());
 
     }
 

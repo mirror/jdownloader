@@ -36,6 +36,12 @@ public class FileColumn extends ExtTextColumn<PackageLinkNode> {
         return false;
     }
 
+    //
+    @Override
+    public int getDefaultWidth() {
+        return 250;
+    }
+
     public void configureRendererComponent(PackageLinkNode value, boolean isSelected, boolean hasFocus, int row, int column) {
         if (value instanceof FilePackage) {
             FilePackage fp = (FilePackage) value;

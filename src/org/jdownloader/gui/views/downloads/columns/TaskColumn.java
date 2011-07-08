@@ -19,6 +19,22 @@ public class TaskColumn extends ExtTextColumn<jd.plugins.PackageLinkNode> {
      */
     private static final long serialVersionUID = 1L;
 
+    @Override
+    public int getDefaultWidth() {
+        return 80;
+    }
+
+    @Override
+    public int getMaxWidth() {
+
+        return 150;
+    }
+
+    @Override
+    public boolean isEnabled(PackageLinkNode obj) {
+        return obj.isEnabled();
+    }
+
     public TaskColumn() {
         super(_GUI._.StatusColumn_StatusColumn());
     }

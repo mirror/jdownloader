@@ -17,10 +17,21 @@ public class RemainingColumn extends ExtFileSizeColumn<PackageLinkNode> {
     }
 
     @Override
+    public int getMaxWidth() {
+
+        return 85;
+    }
+
+    @Override
     protected long getBytes(PackageLinkNode o2) {
 
         return o2.getRemainingKB();
 
+    }
+
+    @Override
+    public boolean isDefaultVisible() {
+        return false;
     }
 
     @Override

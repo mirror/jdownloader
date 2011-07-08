@@ -73,6 +73,17 @@ public class DownloadsTable extends BasicJDTable<PackageLinkNode> {
         initActions();
         onSelectionChanged(null);
 
+        // this.getExtTableModel().addExtComponentRowHighlighter(new
+        // ExtComponentRowHighlighter<PackageLinkNode>(f2, b2, null) {
+        //
+        // @Override
+        // public boolean accept(ExtColumn<PackageLinkNode> column,
+        // PackageLinkNode value, boolean selected, boolean focus, int row) {
+        // return selected;
+        // }
+        //
+        // });
+
     }
 
     @Override
@@ -115,7 +126,7 @@ public class DownloadsTable extends BasicJDTable<PackageLinkNode> {
     private void initActions() {
         moveTopAction = new DownloadTableAction() {
             {
-                setName(_GUI._.BottomBar_BottomBar_totop());
+                // setName(_GUI._.BottomBar_BottomBar_totop());
                 setToolTipText(_GUI._.BottomBar_BottomBar_totop_tooltip());
                 setSmallIcon(NewTheme.I().getIcon("go-top", 18));
 
@@ -133,7 +144,7 @@ public class DownloadsTable extends BasicJDTable<PackageLinkNode> {
         };
         moveUpAction = new DownloadTableAction() {
             {
-                setName(_GUI._.BottomBar_BottomBar_moveup());
+                // setName(_GUI._.BottomBar_BottomBar_moveup());
                 setToolTipText(_GUI._.BottomBar_BottomBar_moveup_tooltip());
                 setSmallIcon(NewTheme.I().getIcon("go-up", 18));
 
@@ -151,7 +162,7 @@ public class DownloadsTable extends BasicJDTable<PackageLinkNode> {
         };
         moveDownAction = new DownloadTableAction() {
             {
-                setName(_GUI._.BottomBar_BottomBar_movedown());
+                // setName(_GUI._.BottomBar_BottomBar_movedown());
                 setToolTipText(_GUI._.BottomBar_BottomBar_movedown_tooltip());
                 setSmallIcon(NewTheme.I().getIcon("go-down", 18));
 
@@ -169,7 +180,7 @@ public class DownloadsTable extends BasicJDTable<PackageLinkNode> {
         };
         moveToBottomAction = new DownloadTableAction() {
             {
-                setName(_GUI._.BottomBar_BottomBar_tobottom());
+                // setName(_GUI._.BottomBar_BottomBar_tobottom());
                 setToolTipText(_GUI._.BottomBar_BottomBar_tobottom_tooltip());
                 setSmallIcon(NewTheme.I().getIcon("go-bottom", 18));
 

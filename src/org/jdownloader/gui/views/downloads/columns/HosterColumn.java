@@ -73,6 +73,17 @@ public class HosterColumn extends ExtColumn<PackageLinkNode> {
 
     }
 
+    @Override
+    public int getDefaultWidth() {
+        return 55;
+    }
+
+    @Override
+    public int getMaxWidth() {
+
+        return 150;
+    }
+
     public JToolTip createToolTip(final PackageLinkNode obj) {
         if (obj instanceof DownloadLink) {
             tip.setExtText(((DownloadLink) obj).getHost());

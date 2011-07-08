@@ -1,12 +1,17 @@
 package org.jdownloader.gui.views.downloads.columns;
 
+import java.awt.Component;
+
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
+import javax.swing.JTable;
+import javax.swing.table.JTableHeader;
 
 import jd.plugins.DownloadLink;
 import jd.plugins.PackageLinkNode;
 
 import org.appwork.utils.swing.table.ExtDefaultRowSorter;
+import org.appwork.utils.swing.table.ExtTableHeaderRenderer;
 import org.appwork.utils.swing.table.columns.ExtIconColumn;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
@@ -25,6 +30,26 @@ public class PriorityColumn extends ExtIconColumn<PackageLinkNode> {
     private String            strPriority1;
     private String            strPriority2;
     private String            strPriority3;
+
+    public ExtTableHeaderRenderer getHeaderRenderer(final JTableHeader jTableHeader) {
+
+        final ExtTableHeaderRenderer ret = new ExtTableHeaderRenderer(this, jTableHeader) {
+
+            private static final long serialVersionUID = 2051980596953422289L;
+
+            @Override
+            public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+                super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+                setIcon(NewTheme.I().getIcon("prio_3", 14));
+                setHorizontalAlignment(CENTER);
+                setText(null);
+                return this;
+            }
+
+        };
+
+        return ret;
+    }
 
     public PriorityColumn() {
         super(_GUI._.PriorityColumn_PriorityColumn());
@@ -56,12 +81,17 @@ public class PriorityColumn extends ExtIconColumn<PackageLinkNode> {
         });
     }
 
+    @Override
+    public boolean isDefaultVisible() {
+        return false;
+    }
+
     /**
      * Sets max width to 30. overwrite to set other maxsizes
      */
     @Override
     protected int getMaxWidth() {
-        return 100;
+        return 30;
     }
 
     @Override

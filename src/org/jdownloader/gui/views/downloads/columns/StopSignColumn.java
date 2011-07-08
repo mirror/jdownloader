@@ -1,15 +1,40 @@
 package org.jdownloader.gui.views.downloads.columns;
 
+import java.awt.Component;
+
 import javax.swing.Icon;
+import javax.swing.JTable;
+import javax.swing.table.JTableHeader;
 
 import jd.controlling.DownloadWatchDog;
 import jd.plugins.PackageLinkNode;
 
+import org.appwork.utils.swing.table.ExtTableHeaderRenderer;
 import org.appwork.utils.swing.table.columns.ExtTextColumn;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 
 public class StopSignColumn extends ExtTextColumn<jd.plugins.PackageLinkNode> {
+
+    public ExtTableHeaderRenderer getHeaderRenderer(final JTableHeader jTableHeader) {
+
+        final ExtTableHeaderRenderer ret = new ExtTableHeaderRenderer(this, jTableHeader) {
+
+            private static final long serialVersionUID = 2051980596953422289L;
+
+            @Override
+            public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+                super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+                setIcon(NewTheme.I().getIcon("stopsign", 14));
+                setHorizontalAlignment(CENTER);
+                setText(null);
+                return this;
+            }
+
+        };
+
+        return ret;
+    }
 
     /**
      * 
@@ -41,6 +66,11 @@ public class StopSignColumn extends ExtTextColumn<jd.plugins.PackageLinkNode> {
     @Override
     protected int getMaxWidth() {
         return getDefaultWidth();
+    }
+
+    @Override
+    public boolean isEnabled(PackageLinkNode obj) {
+        return obj.isEnabled();
     }
 
     @Override

@@ -1,4 +1,4 @@
-package org.jdownloader.gui.views.downloads.table;
+package org.jdownloader.gui.views.downloads.columns;
 
 import jd.controlling.proxy.ProxyController;
 import jd.plugins.DownloadLink;
@@ -18,6 +18,22 @@ public class ProgressColumn extends ExtProgressColumn<jd.plugins.PackageLinkNode
 
     public ProgressColumn() {
         super(_GUI._.ProgressColumn_ProgressColumn());
+    }
+
+    @Override
+    public boolean isEnabled(PackageLinkNode obj) {
+        return obj.isEnabled();
+    }
+
+    @Override
+    public int getMaxWidth() {
+
+        return 150;
+    }
+
+    @Override
+    public int getDefaultWidth() {
+        return 100;
     }
 
     @Override

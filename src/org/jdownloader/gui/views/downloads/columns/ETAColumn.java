@@ -20,6 +20,22 @@ public class ETAColumn extends ExtTextColumn<jd.plugins.PackageLinkNode> {
      */
     private static final long serialVersionUID = 1L;
 
+    @Override
+    public int getDefaultWidth() {
+        return 80;
+    }
+
+    @Override
+    public boolean isEnabled(PackageLinkNode obj) {
+        return obj.isEnabled();
+    }
+
+    @Override
+    public int getMaxWidth() {
+
+        return 85;
+    }
+
     public ETAColumn() {
         super(_GUI._.ETAColumn_ETAColumn());
         renderer.setHorizontalAlignment(SwingConstants.RIGHT);

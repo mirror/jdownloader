@@ -20,6 +20,17 @@ public class SizeColumn extends ExtFileSizeColumn<PackageLinkNode> {
     }
 
     @Override
+    public int getDefaultWidth() {
+        return 65;
+    }
+
+    @Override
+    public int getMaxWidth() {
+
+        return 83;
+    }
+
+    @Override
     protected long getBytes(PackageLinkNode o2) {
         if (o2 instanceof DownloadLink) {
             return ((DownloadLink) o2).getDownloadSize();

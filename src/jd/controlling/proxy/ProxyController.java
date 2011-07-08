@@ -20,7 +20,6 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
-import org.appwork.storage.JSonStorage;
 import org.appwork.storage.config.ConfigEventListener;
 import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.JsonConfig;
@@ -258,8 +257,10 @@ public class ProxyController implements ConfigEventListener {
 
         setDefaultProxy(none);
         ArrayList<ProxyData> ret = config.getCustomProxyList();
-        ArrayList<ProxyData> autoProxies = autoConfig();
-        System.out.println("Found  defaultProxies" + JSonStorage.toString(autoProxies));
+        // autoproxy disabled
+        // ArrayList<ProxyData> autoProxies = autoConfig();
+        // System.out.println("Found  defaultProxies" +
+        // JSonStorage.toString(autoProxies));
         boolean rotCheck = false;
         synchronized (proxies) {
 
@@ -287,20 +288,22 @@ public class ProxyController implements ConfigEventListener {
                     }
                 }
             }
-
-            for (ProxyData proxyData : autoProxies) {
-                ProxyInfo dupe = dupeMap.get(proxyData.getHost() + ":" + proxyData.getPort() + "_" + proxyData.getType());
-                if (dupe == null) {
-                    proxies.add(proxy = new ProxyInfo(proxyData));
-                    dupeMap.put(proxyData.getHost() + ":" + proxyData.getPort() + "_" + proxyData.getType(), proxy);
-                }
-                if (!config.isNoneDefault() && defaultproxy == none) {
-                    setDefaultProxy(proxy);
-                    if (rotCheck) {
-                        proxy.setProxyRotationEnabled(true);
-                    }
-                }
-            }
+            // autoproxy disabled
+            // for (ProxyData proxyData : autoProxies) {
+            // ProxyInfo dupe = dupeMap.get(proxyData.getHost() + ":" +
+            // proxyData.getPort() + "_" + proxyData.getType());
+            // if (dupe == null) {
+            // proxies.add(proxy = new ProxyInfo(proxyData));
+            // dupeMap.put(proxyData.getHost() + ":" + proxyData.getPort() + "_"
+            // + proxyData.getType(), proxy);
+            // }
+            // if (!config.isNoneDefault() && defaultproxy == none) {
+            // setDefaultProxy(proxy);
+            // if (rotCheck) {
+            // proxy.setProxyRotationEnabled(true);
+            // }
+            // }
+            // }
 
         }
         synchronized (directs) {

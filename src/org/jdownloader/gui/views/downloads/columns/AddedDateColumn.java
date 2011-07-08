@@ -23,6 +23,22 @@ public class AddedDateColumn extends ExtDateColumn<PackageLinkNode> {
     }
 
     @Override
+    public boolean isEnabled(PackageLinkNode obj) {
+        return obj.isEnabled();
+    }
+
+    @Override
+    public boolean isDefaultVisible() {
+        return false;
+    }
+
+    @Override
+    public int getMaxWidth() {
+
+        return 110;
+    }
+
+    @Override
     protected String getBadDateText(PackageLinkNode value) {
         return _GUI._.added_date_column_invalid();
     }
