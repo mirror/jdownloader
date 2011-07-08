@@ -107,7 +107,11 @@ public class SrnnksCategory extends PluginForDecrypt {
             selectedMirrorsIndices = UserIO.getInstance().requestMultiSelectionDialog(0, "Bitte Mirrors auswählen", "Bitte die gewünschten Anbieter auswählen.", mirrors, null, null, null, null);
         } catch (Throwable e) {
             /* this function DOES NOT exist in 09581 stable */
-            return null;
+            // TODO Get rid of this catch section once MultiSelectionDialog
+            // makes its way into stable
+            int selectedMirror = UserIO.getInstance().requestComboDialog(0, "Bitte Mirror auswählen", "Bitte den gewünschten Anbieter auswählen.", mirrors, 0, null, null, null, null);
+            if (selectedMirror < 0) return null;
+            selectedMirrorsIndices = new int[] { selectedMirror };
         }
         if (selectedMirrorsIndices == null) return null;
 
