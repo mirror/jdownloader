@@ -26,11 +26,11 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -39,7 +39,7 @@ import org.appwork.utils.formatter.TimeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "czshare.com" }, urls = { "http://[\\w\\.]*?czshare\\.com/(files/\\d+/[\\w_]+|\\d+/[\\w_]+/[^\\s]+|download_file\\.php\\?id=\\d+&file=[^\\s]+)" }, flags = { 2 })
 public class CZShareCom extends PluginForHost {
 
-    private int simultanpremium = 20;
+    private final static int SIMULTANEOUS_PREMIUM = 20;
 
     public CZShareCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -50,13 +50,14 @@ public class CZShareCom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         if (br.containsHTML("Z Vaší IP adresy momentálně probíhá jiné stahování\\. Využijte PROFI")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, JDL.L("plugins.hoster.czsharecom.ipalreadydownloading", "IP already downloading"), 15 * 60 * 1000);
-        if (!br.containsHTML("Stáhnout FREE</span></a><a href=\"/download\\.php\\?id=")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.CZShareCom.nofreeslots", "No free slots available"), 60 * 1000);
+        if (!br.containsHTML("Stáhnout FREE(</span>)?</a><a href=\"/download\\.php\\?id=")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.CZShareCom.nofreeslots", "No free slots available"), 60 * 1000);
         br.setFollowRedirects(false);
         String freeLink = br.getRegex("allowTransparency=\"true\"></iframe><a href=\"(/.*?)\"").getMatch(0);
         if (freeLink == null) freeLink = br.getRegex("\"(/download\\.php\\?id=\\d+\\&code=.*?)\"").getMatch(0);
         if (freeLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.getPage("http://czshare.com" + freeLink);
-        Form down = br.getForm(0);
+        Form down = br.getForm(1); // the 0-th is the login (usr/pwd) form,
+                                   // the 1-st one is the free one
         String captchaUrl = br.getRegex("action=\"free\\.php\" method=\"post\">[\t\n\r ]+<img src=\"(.*?)\"").getMatch(0);
         if (captchaUrl == null) captchaUrl = br.getRegex("\"(captcha\\.php\\?ticket=.*?\\&id=\\d+)\"").getMatch(0);
         if (down == null || captchaUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -122,7 +123,7 @@ public class CZShareCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return simultanpremium;
+        return SIMULTANEOUS_PREMIUM;
     }
 
     public void checkPremiumIP() throws Exception {
