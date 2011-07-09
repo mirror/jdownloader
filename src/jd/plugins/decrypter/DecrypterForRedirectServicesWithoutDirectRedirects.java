@@ -470,7 +470,7 @@ public class DecrypterForRedirectServicesWithoutDirectRedirects extends PluginFo
                 name2 = br.getRegex("<TITLE>EskimoTube\\.com - Streaming Videos of .*? \\- (.*?) \\- Pornstars And Centerfolds\\.</title>").getMatch(0);
             }
             if (finalfilename == null) {
-                finalfilename = br.getRegex("<TITLE>EskimoTube\\.com - Streaming Videos of (.*?) - ").getMatch(0);
+                finalfilename = br.getRegex("<TITLE>EskimoTube\\.com - Streaming Videos of (.*?) \\- ").getMatch(0);
             }
             if (finalfilename != null && finallink != null && name2 != null) {
                 finalfilename += " - " + name2 + finallink.substring(finallink.length() - 4, finallink.length());

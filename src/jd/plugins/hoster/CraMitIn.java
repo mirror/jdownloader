@@ -475,6 +475,12 @@ public class CraMitIn extends PluginForHost {
                     dllink = br.getRegex("doesn\\'t, please <span class=green><b><a href=\"(http://.*?)\"").getMatch(0);
                     if (dllink == null) {
                         dllink = br.getRegex("<meta http-equiv=REFRESH CONTENT=\"\\d+; url=(http://.*?)\"").getMatch(0);
+                        if (dllink == null) {
+                            dllink = br.getRegex("Please <span class=green><b><a href=\"(http://.*?)\"").getMatch(0);
+                            if (dllink == null) {
+                                dllink = br.getRegex("\"(http://iofa\\d+\\.cramit\\.in/free_p/cgi-bin/.*?)\"").getMatch(0);
+                            }
+                        }
                     }
                 }
             }

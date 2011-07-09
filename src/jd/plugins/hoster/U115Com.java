@@ -63,9 +63,11 @@ public class U115Com extends PluginForHost {
         }
     }
 
-    private static final String UNDERMAINTENANCEURL  = "http://u.115.com/weihu.html";
-    private static final String UNDERMAINTENANCETEXT = "The servers are under maintenance";
-    private static final String NOFREESLOTS          = "网络繁忙时段，非登陆用户其它下载地址暂时关闭。推荐您使用优蛋下载";
+    private static final String UNDERMAINTENANCEURL   = "http://u.115.com/weihu.html";
+    private static final String UNDERMAINTENANCETEXT  = "The servers are under maintenance";
+    private static final String NOFREESLOTS           = "网络繁忙时段，非登陆用户其它下载地址暂时关闭。推荐您使用优蛋下载";
+    private static final String ACCOUNTNEEDED         = "(为加强知识产权的保护力度，营造健康有益的网络环境，115网盘暂时停止影视资源外链服务。|is_no_check=\"1\")";
+    private static final String ACCOUNTNEEDEDUSERTEXT = "Account is needed to download this link";
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
@@ -100,6 +102,7 @@ public class U115Com extends PluginForHost {
         String sh1 = br.getRegex("<li>SHA1：(.*?) <a href=\"").getMatch(0);
         if (sh1 == null) sh1 = br.getRegex("sha1: \"(.*?)\",").getMatch(0);
         if (sh1 != null) link.setSha1Hash(sh1.trim());
+        if (br.containsHTML(ACCOUNTNEEDED)) link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.u115com.only4registered", ACCOUNTNEEDEDUSERTEXT));
         return AvailableStatus.TRUE;
     }
 
@@ -111,9 +114,9 @@ public class U115Com extends PluginForHost {
         if (br.containsHTML(NOFREESLOTS)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "No free slots available at the moment");
         // I don't know what this text means (google couldn't help) so i handle
         // it like that
-        if (br.containsHTML("(为加强知识产权的保护力度，营造健康有益的网络环境，115网盘暂时停止影视资源外链服务。|is_no_check=\"1\")")) {
-            logger.warning("Only downloadable via u115 downloadmanager: " + link.getDownloadURL());
-            throw new PluginException(LinkStatus.ERROR_FATAL, "Download only possible with the u115 downloadmanager!");
+        if (br.containsHTML(ACCOUNTNEEDED)) {
+            logger.warning("Only downloadable via account: " + link.getDownloadURL());
+            throw new PluginException(LinkStatus.ERROR_FATAL, ACCOUNTNEEDEDUSERTEXT);
         }
         String dllink = findLink();
         if (dllink == null) {
