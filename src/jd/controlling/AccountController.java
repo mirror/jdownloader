@@ -24,8 +24,8 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.TreeMap;
 import java.util.Map.Entry;
+import java.util.TreeMap;
 import java.util.logging.Logger;
 
 import jd.config.Configuration;
@@ -519,6 +519,7 @@ public class AccountController implements AccountControllerListener {
             /* we do a new accountcheck as this account got updated */
             /* WARNING: DO NOT FORCE check here, it might end up in a loop */
             if (acc != null && acc.isEnabled()) AccountChecker.getInstance().check(acc, false);
+            break;
         case AccountControllerEvent.ACCOUNT_REMOVED:
         case AccountControllerEvent.ACCOUNT_EXPIRED:
         case AccountControllerEvent.ACCOUNT_INVALID:
