@@ -311,7 +311,7 @@ public class Premium4me extends PluginForHost implements JDPremInterface {
             synchronized (LOCK) {
                 premiumHosts.clear();
                 String hoster[] = new Regex(hosts.trim(), "(.+?)(;|$)").getColumn(0);
-                if (hosts != null) {
+                if (hoster != null) {
                     for (String host : hoster) {
                         if (hosts == null || host.length() == 0) continue;
                         premiumHosts.add(host.trim());
