@@ -82,7 +82,7 @@ public class MultiProgressBar extends JPanel {
             if (e.getValue() < 0) {
                 ((Graphics2D) g).setPaint(Color.RED);
             } else {
-                ((Graphics2D) g).setPaint(new GradientPaint(width / 2, 0, col, width / 2, height, col2.darker()));
+                ((Graphics2D) g).setPaint(new GradientPaint(width / 2f, 0, col, width / 2f, height, col2.darker()));
             }
             g2.fill(rec);
             ((Graphics2D) g).setPaint(Color.black);
@@ -96,7 +96,7 @@ public class MultiProgressBar extends JPanel {
         g2.setStroke(new BasicStroke(2));
         g2.drawLine(0, height, width, height);
         Rectangle rec = new Rectangle(0, height + 2, scale(value, faktor), getHeight() - height);
-        ((Graphics2D) g).setPaint(new GradientPaint(width / 2, 0, col1, width / 2, height, col2.darker()));
+        ((Graphics2D) g).setPaint(new GradientPaint(width / 2f, 0, col1, width / 2f, height, col2.darker()));
         g2.fill(rec);
         g2.dispose();
 
