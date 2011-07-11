@@ -143,18 +143,18 @@ public class RtmpUrlConnection extends URLConnection {
      * Create command line parameters.
      */
     public String getCommandLineParameter() {
-        String cmdargs = "";
+        final StringBuilder cmdargs = new StringBuilder("");
         if (parameterMap != null) {
             final Iterator<String> keyIter = parameterMap.keySet().iterator();
             while (keyIter.hasNext()) {
                 final String key = keyIter.next();
-                cmdargs += " -" + key;
+                cmdargs.append(" -").append(key);
                 if (parameterMap.get(key) != null) {
-                    cmdargs += " \"" + parameterMap.get(key) + "\"";
+                    cmdargs.append(" \"").append(parameterMap.get(key)).append("\"");
                 }
             }
         }
-        return cmdargs;
+        return cmdargs.toString();
     }
 
     /**
