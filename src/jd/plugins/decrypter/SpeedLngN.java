@@ -50,8 +50,8 @@ public class SpeedLngN extends PluginForDecrypt {
         String fpname = br.getRegex("<title>(.*?)</title>").getMatch(0);
         if (br.containsHTML("Entry NOT found")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
         String[] links = br.getRegex("name=\"go\" value=\"Go\\.swf\\?ID=(.*?)\\&amp;").getColumn(0);
-        if (links.length == 0 || links == null) links = br.getRegex("<embed src=\"Go\\.swf\\?ID=(.*?)\\&amp;").getColumn(0);
-        if (links.length == 0 || links == null) return null;
+        if (links == null || links.length == 0) links = br.getRegex("<embed src=\"Go\\.swf\\?ID=(.*?)\\&amp;").getColumn(0);
+        if (links == null || links.length == 0) return null;
         for (String cryptedlink : links) {
             if (cryptedlink.contains("=")) {
                 String finallink = "http://linksave.in/" + Encoding.Base64Decode(cryptedlink);
