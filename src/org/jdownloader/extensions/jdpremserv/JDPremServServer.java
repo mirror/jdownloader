@@ -75,7 +75,7 @@ public class JDPremServServer implements Handler, ControlListener {
             if (username == null || username.length() == 0 || password == null || password.length() == 0 || !UserController.getInstance().isUserAllowed(username, password)) {
                 /* ERROR: -10 = invalid user */
                 response.setReturnStatus(Response.ERROR);
-                response.addContent(new String("ERROR: -10"));
+                response.addContent("ERROR: -10");
                 return;
             }
         }
@@ -83,10 +83,10 @@ public class JDPremServServer implements Handler, ControlListener {
             /* reset downloadlink if possible */
             if (JDPremServController.getInstance().resetDownloadLink(resetUrl)) {
                 response.setReturnStatus(Response.OK);
-                response.addContent(new String("OK: RESET"));
+                response.addContent("OK: RESET");
             } else {
                 response.setReturnStatus(Response.ERROR);
-                response.addContent(new String("ERROR: RESET"));
+                response.addContent("ERROR: RESET");
             }
         } else if (request.getParameter("info") != null) {
             /* build user info for fetchaccountinfo */
@@ -109,13 +109,13 @@ public class JDPremServServer implements Handler, ControlListener {
             if (ret == null) {
                 /* ERROR: 0 = no downloadlink available */
                 response.setReturnStatus(Response.ERROR);
-                response.addContent(new String("ERROR: 0"));
+                response.addContent("ERROR: 0");
                 return;
             }
             if (!UserController.getInstance().isUserAllowed(username, password, ret.getHost())) {
                 /* ERROR: -20 = not allowed */
                 response.setReturnStatus(Response.ERROR);
-                response.addContent(new String("ERROR: -20"));
+                response.addContent("ERROR: -20");
                 return;
             }
             if (ret.getLinkStatus().isFinished() && !ret.getLinkStatus().isPluginActive()) {
@@ -140,20 +140,20 @@ public class JDPremServServer implements Handler, ControlListener {
                         /* request status info */
                         /* OK: 1 = finished and still available on disk */
                         response.setReturnStatus(Response.OK);
-                        response.addContent(new String("OK: 100 || " + ret.getDownloadSize()));
+                        response.addContent("OK: 100 || " + ret.getDownloadSize());
                     }
                 } else {
                     /*
                      * ERROR: -100 = finished but no longer available on disk
                      */
                     response.setReturnStatus(Response.ERROR);
-                    response.addContent(new String("ERROR: -100"));
+                    response.addContent("ERROR: -100");
                 }
             } else if (ret.getLinkStatus().isFailed()) {
                 /* download failed */
                 /* ERROR: -50 = failed */
                 response.setReturnStatus(Response.ERROR);
-                response.addContent(new String("ERROR: -50 || " + ret.getLinkStatus().getStatusString()));
+                response.addContent("ERROR: -50 || " + ret.getLinkStatus().getStatusString());
             } else {
                 /* not finished? */
                 if (ret.getLinkStatus().isPluginActive()) {
@@ -199,7 +199,7 @@ public class JDPremServServer implements Handler, ControlListener {
         } else {
             /* ERROR: -1000 = unknown request */
             response.setReturnStatus(Response.ERROR);
-            response.addContent(new String("ERROR: -1000"));
+            response.addContent("ERROR: -1000");
         }
     }
 
