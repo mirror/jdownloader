@@ -135,7 +135,7 @@ public class MvWrldNt extends PluginForDecrypt {
             c.add(String.valueOf((char) i));
         }
         final List<String> d = new ArrayList<String>();
-        String element = new String();
+        String element = "";
         String word = "";
         for (int i = 0; i <= b.size() - 1; i++) {
             if (b.get(i) >= c.size()) {
