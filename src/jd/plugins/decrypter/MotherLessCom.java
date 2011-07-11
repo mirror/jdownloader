@@ -81,8 +81,8 @@ public class MotherLessCom extends PluginForDecrypt {
                     if (fpName == null) fpName = br.getRegex("<title>MOTHERLESS\\.COM - Go Ahead She Isn\\'t Looking\\! : Galleries : (.*?)</title>").getMatch(0);
                 }
                 String[] links = br.getRegex("id=\"wrapper_[A-Z0-9]+\">[\t\n\r ]+<a href=\"(/[A-Z0-9]+/[A-Z0-9]+)\"").getColumn(0);
-                progress.setRange(links.length);
                 if (links == null || links.length == 0) return null;
+                progress.setRange(links.length);
                 logger.info("Decrypting page " + getthepage + " which contains " + links.length + " links.");
                 for (String singlelink : links) {
                     br.getPage("http://motherless.com" + singlelink);
