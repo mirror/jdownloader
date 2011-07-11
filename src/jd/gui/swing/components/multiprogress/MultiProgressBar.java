@@ -25,16 +25,17 @@ import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.awt.RenderingHints;
 import java.util.ArrayList;
+import java.util.List;
 
 import javax.swing.JPanel;
 import javax.swing.border.LineBorder;
 
 public class MultiProgressBar extends JPanel {
 
-    private static final long serialVersionUID = -7489358722203326526L;
-    private ArrayList<ProgressEntry> entries;
-    private long maximum;
-    private long value;
+    private static final long         serialVersionUID = -7489358722203326526L;
+    private final List<ProgressEntry> entries;
+    private long                      maximum;
+    private long                      value;
 
     public MultiProgressBar() {
         entries = new ArrayList<ProgressEntry>();
@@ -116,7 +117,7 @@ public class MultiProgressBar extends JPanel {
 
     public void setMaximums(long... max) {
         if (max == null) {
-            entries = new ArrayList<ProgressEntry>();
+            entries.clear();
             return;
         }
         synchronized (entries) {
