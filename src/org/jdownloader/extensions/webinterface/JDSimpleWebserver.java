@@ -50,7 +50,7 @@ import org.jdownloader.extensions.interfaces.HttpServer;
 //see http://findbugs.sourceforge.net/bugDescriptions.html#SC_START_IN_CTOR
 public final class JDSimpleWebserver extends Thread {
 
-    private class JDRequestHandler implements Runnable {
+    private static class JDRequestHandler implements Runnable {
 
         private Socket Current_Socket;
 

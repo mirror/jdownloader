@@ -49,7 +49,7 @@ public class FileMonitoring extends Thread {
 
     private HashMap<WatchKey, String>         keypathMap      = new HashMap<WatchKey, String>();
 
-    public class FileEntry {
+    public static class FileEntry {
         public String filename;
         public long   ms;
     }

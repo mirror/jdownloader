@@ -341,7 +341,7 @@ public class ToolbarController extends ConfigPanel {
         }
     }
 
-    private class TableRenderer extends DefaultTableRenderer {
+    private static class TableRenderer extends DefaultTableRenderer {
 
         private static final long serialVersionUID = 1L;
 

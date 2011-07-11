@@ -57,7 +57,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
      * inner class to provide everything thats needed in order to start a
      * download
      */
-    public class DownloadControlInfo {
+    public static class DownloadControlInfo {
         public DownloadLink link;
         public ProxyInfo    proxy;
         public Account      account;

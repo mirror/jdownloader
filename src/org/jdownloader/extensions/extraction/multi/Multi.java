@@ -668,7 +668,7 @@ public class Multi extends IExtraction {
      * @author botzi
      * 
      */
-    private class BooleanHelper {
+    private static class BooleanHelper {
         private boolean bool;
 
         BooleanHelper() {

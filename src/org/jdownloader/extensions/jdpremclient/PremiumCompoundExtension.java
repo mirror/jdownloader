@@ -244,7 +244,7 @@ public class PremiumCompoundExtension extends AbstractExtension<PremiumCompoundC
         return null;
     }
 
-    class PremShareHost extends HostPluginWrapper {
+    static class PremShareHost extends HostPluginWrapper {
 
         private HostPluginWrapper replacedone = null;
 

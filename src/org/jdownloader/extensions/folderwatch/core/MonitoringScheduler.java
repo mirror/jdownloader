@@ -24,7 +24,7 @@ import jd.controlling.JDLogger;
 
 public class MonitoringScheduler extends Thread {
 
-    private class ScheduleEntry {
+    private static class ScheduleEntry {
 
         private String  absPath;
 

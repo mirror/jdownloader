@@ -213,7 +213,7 @@ public class MainTabbedPane extends JTabbedPane implements MouseListener {
      * accepts an icon which is extra to the 'X' icon, so you can have tabs like
      * in JBuilder. This value is null if no extra icon is required.
      */
-    private class CloseTabIcon implements Icon {
+    private static class CloseTabIcon implements Icon {
         private int  x_pos;
         private int  y_pos;
         private int  width;

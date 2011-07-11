@@ -21,7 +21,7 @@ import org.jdownloader.settings.advanced.AdvancedConfigEntry;
 public class EditColumn extends ExtComponentColumn<AdvancedConfigEntry> {
     private static final long serialVersionUID = 1L;
 
-    class InfoAction extends AbstractAction {
+    static class InfoAction extends AbstractAction {
         private static final long   serialVersionUID = 1L;
         private AdvancedConfigEntry value;
 

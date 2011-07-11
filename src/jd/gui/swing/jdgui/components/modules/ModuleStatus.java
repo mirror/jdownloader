@@ -195,7 +195,7 @@ public final class ModuleStatus extends JPanel implements ControlListener, Mouse
     public void mouseReleased(MouseEvent e) {
     }
 
-    private class TooltipTimer extends Timer implements ActionListener {
+    private static class TooltipTimer extends Timer implements ActionListener {
 
         private static final long serialVersionUID = 2620518234470214757L;
 
