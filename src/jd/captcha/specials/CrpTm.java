@@ -32,6 +32,8 @@ public class CrpTm {
         if (c == 0x000000 || c2 == 0x000000) return c == c2;
         int[] hsvC = Colors.rgb2hsv(c);
         int[] hsvC2 = Colors.rgb2hsv(c2);
+        // TODO The "hsvC[1] / hsvC2[2] == 1" is repeated twice
+        // Is it a typo? Was a different comparison meant in the second place?
         return (hsvC[0] == hsvC2[0] && (hsvC[1] == hsvC2[1] || hsvC[2] == hsvC2[2] || hsvC[1] / hsvC2[2] == 1 || hsvC[1] / hsvC2[2] == 1)) && Colors.getRGBColorDifference2(c, c2) < 80;
     }
 
