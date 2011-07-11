@@ -25,11 +25,11 @@ import jd.controlling.JDLogger;
 import jd.parser.Regex;
 import jd.plugins.BrowserAdapter;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 
 @HostPlugin(revision = "$Revision: 12299 $", interfaceVersion = 2, names = { "ustream.tv" }, urls = { "http://(www\\.)?ustream.tv/recorded/\\d+(/highlight/\\d+)?" }, flags = { 0 })
 public class UstreamTv extends PluginForHost {
@@ -79,7 +79,7 @@ public class UstreamTv extends PluginForHost {
             }
             amfConnection.close();
             int chunk = 0;
-            String dllink = new String();
+            String dllink = "";
             // mp4,flv Selection
             if (result.containsKey("liveHttpUrl")) {
                 dllink = result.get("liveHttpUrl").toString();
