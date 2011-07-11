@@ -36,7 +36,7 @@ import jd.plugins.PluginForHost;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "zevera.com" }, urls = { "http://[\\w\\.]*?zevera\\.com/.+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "zevera.com" }, urls = { "http://[\\w\\.]*?zevera\\.com/.+" }, flags = { 2 })
 public class Zevera extends PluginForHost {
     static public final Object LOGINLOCK  = new Object();
     private boolean            showDialog = false;
@@ -69,7 +69,6 @@ public class Zevera extends PluginForHost {
     }
 
     private void loginAPI(Account account, AccountInfo ai) throws IOException, PluginException {
-        br.setDebug(true);
         synchronized (LOGINLOCK) {
             workAroundTimeOut(br);
             if (ai == null) {
