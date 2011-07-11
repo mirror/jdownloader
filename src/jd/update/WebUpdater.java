@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Vector;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.swing.JProgressBar;
 
@@ -113,7 +114,7 @@ public class WebUpdater implements Serializable {
 
     private transient Eventsender<MessageListener, MessageEvent> broadcaster;
 
-    private Integer                                              errors        = 0;
+    private final AtomicInteger                                  errorCount;
 
     private boolean                                              ignorePlugins = true;
 
@@ -143,7 +144,7 @@ public class WebUpdater implements Serializable {
         this.br = new Browser();
         this.br.setReadTimeout(20 * 1000);
         this.br.setConnectTimeout(10 * 1000);
-        this.errors = 0;
+        this.errorCount = new AtomicInteger(0);
         this.initBroadcaster();
     }
 
@@ -314,9 +315,7 @@ public class WebUpdater implements Serializable {
     }
 
     public int getErrors() {
-        synchronized (this.errors) {
-            return this.errors;
-        }
+        return this.errorCount.get();
     }
 
     /**
@@ -501,9 +500,7 @@ public class WebUpdater implements Serializable {
     }
 
     public void resetErrors() {
-        synchronized (this.errors) {
-            this.errors = 0;
-        }
+        this.errorCount.set(0);
     }
 
     /**
@@ -697,14 +694,14 @@ public class WebUpdater implements Serializable {
                     e.printStackTrace();
                     file.getLocalTmpFile().delete();
                     file.getLocalTmpFile().deleteOnExit();
-                    this.errors++;
+                    this.errorCount.incrementAndGet();
                     return false;
                 }
             }
 
             return true;
         }
-        this.errors++;
+        this.errorCount.incrementAndGet();
         return false;
     }
 
