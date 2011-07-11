@@ -321,7 +321,7 @@ public class FileSonicCom extends PluginForHost implements ControlListener {
         // this is an ajax call
         Browser ajax = this.br.cloneBrowser();
         ajax.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        ajax.postPage(freeDownloadLink, "");
+        ajax.getPage(freeDownloadLink);
 
         this.errorHandling(downloadLink, ajax);
         this.br.setFollowRedirects(true);

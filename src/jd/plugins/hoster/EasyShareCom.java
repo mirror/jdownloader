@@ -116,7 +116,11 @@ public class EasyShareCom extends PluginForHost {
         br.getHeaders().put("User-Agent", RandomUserAgent.generate());
         br.setCookie(MAINPAGE, "language", "en");
         String fileID = new Regex(downloadLink.getDownloadURL(), "easy-share\\.com/(\\d+)").getMatch(0);
-        br.getPage("http://api.easy-share.com/files/" + fileID);
+        try {
+            br.getPage("http://api.easy-share.com/files/" + fileID);
+        } catch (final Throwable e) {
+            return AvailableStatus.UNCHECKABLE;
+        }
         if (!br.containsHTML("ed:status>O<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML("(>errorFileNotFound<|>File Not Found<)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex(Pattern.compile("<title>(?!File info)(.*?)</title>", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
@@ -196,11 +200,12 @@ public class EasyShareCom extends PluginForHost {
             Form form = null;
             Form[] allForms = br.getForms();
             if (allForms == null || allForms.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            for (Form singleForm : allForms)
+            for (Form singleForm : allForms) {
                 if (singleForm.containsHTML("\"id\"") && !singleForm.containsHTML("lang_select")) {
                     form = singleForm;
                     break;
                 }
+            }
             if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             /*
              * another as default cause current stable has easy-captcha method

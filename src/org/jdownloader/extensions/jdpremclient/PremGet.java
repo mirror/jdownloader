@@ -28,15 +28,15 @@ import org.appwork.utils.formatter.TimeFormatter;
 
 public class PremGet extends PluginForHost implements JDPremInterface {
 
-    private boolean proxyused = false;
-    private String infostring = null;
-    private PluginForHost plugin = null;
-    private static boolean enabled = false;
+    private boolean                  proxyused    = false;
+    private String                   infostring   = null;
+    private PluginForHost            plugin       = null;
+    private static boolean           enabled      = false;
     private static ArrayList<String> premiumHosts = new ArrayList<String>();
-    private static final Object LOCK = new Object();
-    private String Info = null;
-    private String validUntil = null;
-    private boolean expired = false;
+    private static final Object      LOCK         = new Object();
+    private String                   Info         = null;
+    private String                   validUntil   = null;
+    private boolean                  expired      = false;
 
     /* function returns transfer left */
     private long GetTransferLeft(String wynik) {
@@ -366,7 +366,7 @@ public class PremGet extends PluginForHost implements JDPremInterface {
                 return ac;
             }
 
-            ac.setTrafficLeft(GetTransferLeft(Info));
+            if (Info != null) ac.setTrafficLeft(GetTransferLeft(Info));
 
             synchronized (LOCK) {
                 premiumHosts.clear();

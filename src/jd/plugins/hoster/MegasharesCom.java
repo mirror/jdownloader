@@ -31,12 +31,12 @@ import jd.parser.html.HTMLParser;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -49,8 +49,8 @@ import org.appwork.utils.formatter.TimeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "megashares.com" }, urls = { "http://[\\w\\.]*?(d[0-9]{2}\\.)?megashares\\.com/(.*\\?d[0-9]{2}=[0-9a-zA-Z]{7}|dl/[0-9a-zA-Z]{7}/)" }, flags = { 2 })
 public class MegasharesCom extends PluginForHost {
 
-    private final String UserAgent = "JD_" + "$Revision$";
-    private static final Object LOCK = new Object();
+    private final String        UserAgent = "JD_" + "$Revision$";
+    private static final Object LOCK      = new Object();
 
     public MegasharesCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -207,6 +207,10 @@ public class MegasharesCom extends PluginForHost {
         String[] dat = br.getRegex("Your download passport will renew.*?in.*?(\\d+).*?:.*?(\\d+).*?:.*?(\\d+)</strong>").getRow(0);
         if (br.containsHTML("You have reached.*?maximum download limit")) {
             long wait = Long.parseLong(dat[1]) * 60000l + Long.parseLong(dat[2]) * 1000l;
+            if (wait > 65 * 60 * 1000l) {
+                /* user report that this is enough waittime to get new ticket */
+                wait = 65 * 60 * 1000l;
+            }
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, wait);
         }
         if (br.containsHTML("All download slots for this link are currently filled")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.megasharescom.errors.allslotsfilled", "Cannot check, because all slots filled"), 10 * 60 * 1000l);

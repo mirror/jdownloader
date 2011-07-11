@@ -229,6 +229,7 @@ public class FileServeCom extends PluginForHost {
         }
         this.sleep(tt * 1001, downloadLink);
         br2.postPage(downloadLink.getDownloadURL(), "downloadLink=show");
+        br.setDebug(true);
         this.br.postPage(downloadLink.getDownloadURL(), "download=normal");
         final String dllink = this.br.getRedirectLocation();
         if (dllink == null) {
@@ -236,6 +237,7 @@ public class FileServeCom extends PluginForHost {
             logger.warning("dllink is null...");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        logger.info("dllink=" + dllink);
         this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, dllink, false, 1);
         if (this.dl.getConnection().getResponseCode() == 404) {
             logger.info("got a 404 error...");
@@ -320,7 +322,7 @@ public class FileServeCom extends PluginForHost {
         if (br2.containsHTML("Captcha error") || this.br.containsHTML("incorrect-captcha")) { throw new PluginException(LinkStatus.ERROR_CAPTCHA); }
         final String wait = br2.getRegex("You (have to|need to) wait (\\d+) seconds to start another download").getMatch(1);
         if (wait != null) {
-            logger.info("WaitRegex: " + wait + " " + br2.toString());
+            logger.info("WaitRegex: " + wait);
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(wait) * 1001l);
         }
         if (br2.containsHTML("landing-error\\.php\\?error_code=404")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

@@ -60,11 +60,11 @@ import org.w3c.dom.html2.HTMLCollection;
 public class MediafireCom extends PluginForHost {
     public static abstract class PasswordSolver {
 
-        protected Browser br;
+        protected Browser       br;
         protected PluginForHost plg;
-        protected DownloadLink dlink;
-        private final int maxTries;
-        private int currentTry;
+        protected DownloadLink  dlink;
+        private final int       maxTries;
+        private int             currentTry;
 
         public PasswordSolver(final PluginForHost plg, final Browser br, final DownloadLink downloadLink) {
             this.plg = plg;
@@ -109,17 +109,17 @@ public class MediafireCom extends PluginForHost {
         }
     }
 
-    private static final String UA = RandomUserAgent.generate();
+    private static final String                   UA                 = RandomUserAgent.generate();
 
-    static private final String offlinelink = "tos_aup_violation";
+    static private final String                   offlinelink        = "tos_aup_violation";
 
     /** The name of the error page used by MediaFire */
-    private static final String ERROR_PAGE = "error.php";
+    private static final String                   ERROR_PAGE         = "error.php";
     /**
      * The number of retries to be performed in order to determine if a file is
      * available
      */
-    private static final int NUMBER_OF_RETRIES = 3;
+    private static final int                      NUMBER_OF_RETRIES  = 3;
 
     /**
      * Map to cache the configuration keys
@@ -403,7 +403,10 @@ public class MediafireCom extends PluginForHost {
             url = this.br.getRegex("<url>(http.*?)</url>").getMatch(0);
 
         }
-
+        if ("-105".equals(this.br.getRegex("<flags>(.*?)</").getMatch(0))) {
+            logger.info("Insufficient bandwidth");
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+        }
         if (url == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         this.br.setFollowRedirects(true);
         this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, url, true, 0);
