@@ -20,37 +20,37 @@ public class RtmpUrlConnection extends URLConnection {
     private final static int          DEFAULT_PORT  = 1935;
 
     // Connection Parameters
-    private final String              KEY_APP       = "a"; // app
-    private final String              KEY_TC_URL    = "t"; // tcUrl
-    private final String              KEY_PAGE_URL  = "p"; // pageUrl
-    private final String              KEY_FLASH_VER = "f"; // flashVer
-    private final String              KEY_SWF_URL   = "s"; // swfUrl
-    private final String              KEY_CONN      = "C"; // conn
-    private final String              KEY_RTMP      = "r"; // Url
-    private final String              KEY_PORT      = "c"; // Port
-    private final String              KEY_PROTOCOL  = "l"; // protocol
+    private static final String       KEY_APP       = "a"; // app
+    private static final String       KEY_TC_URL    = "t"; // tcUrl
+    private static final String       KEY_PAGE_URL  = "p"; // pageUrl
+    private static final String       KEY_FLASH_VER = "f"; // flashVer
+    private static final String       KEY_SWF_URL   = "s"; // swfUrl
+    private static final String       KEY_CONN      = "C"; // conn
+    private static final String       KEY_RTMP      = "r"; // Url
+    private static final String       KEY_PORT      = "c"; // Port
+    private static final String       KEY_PROTOCOL  = "l"; // protocol
 
     // Session Parameters
-    private final String              KEY_PLAYPATH  = "y"; // playpath
-    private final String              KEY_LIVE      = "v"; // live
-    private final String              KEY_SUBSCRIBE = "d"; // subscribe
-    private final String              KEY_START     = "A"; // start
-    private final String              KEY_STOP      = "B"; // stop
-    private final String              KEY_BUFFER    = "b"; // buffer
-    private final String              KEY_TIMEOUT   = "m"; // timeout
-    private final String              KEY_RESUME    = "e"; // resume
+    private static final String       KEY_PLAYPATH  = "y"; // playpath
+    private static final String       KEY_LIVE      = "v"; // live
+    private static final String       KEY_SUBSCRIBE = "d"; // subscribe
+    private static final String       KEY_START     = "A"; // start
+    private static final String       KEY_STOP      = "B"; // stop
+    private static final String       KEY_BUFFER    = "b"; // buffer
+    private static final String       KEY_TIMEOUT   = "m"; // timeout
+    private static final String       KEY_RESUME    = "e"; // resume
 
     // Security Parameters
-    private final String              KEY_SWF_VFY   = "W"; // swfVfy
-    private final String              KEY_SWF_AGE   = "X"; // swfAge"
-    private final String              KEY_TOKEN     = "T"; // token
+    private static final String       KEY_SWF_VFY   = "W"; // swfVfy
+    private static final String       KEY_SWF_AGE   = "X"; // swfAge"
+    private static final String       KEY_TOKEN     = "T"; // token
 
     // Network Parameters
-    private final String              KEY_SOCKS     = "S"; // socks
+    private static final String       KEY_SOCKS     = "S"; // socks
 
     // Debug Parameters
-    private final String              KEY_DEBUG     = "z"; // debug
-    private final String              KEY_VERBOSE   = "V"; // verbose
+    private static final String       KEY_DEBUG     = "z"; // debug
+    private static final String       KEY_VERBOSE   = "V"; // verbose
 
     protected HashMap<String, String> parameterMap  = null;
 
