@@ -334,7 +334,7 @@ public class Zevera extends PluginForHost implements JDPremInterface {
                     premiumHosts.clear();
                     if (!"0".equals(hosts.trim())) {
                         String hoster[] = new Regex(hosts, "(.*?)(,|$)").getColumn(0);
-                        if (hosts != null) {
+                        if (hoster != null) {
                             for (String host : hoster) {
                                 if (host == null || host.length() == 0) continue;
                                 premiumHosts.add(host.trim());
