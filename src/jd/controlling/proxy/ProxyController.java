@@ -519,7 +519,7 @@ public class ProxyController implements ConfigEventListener {
                 if (info.isProxyRotationEnabled()) {
                     /* only use enabled proxies */
 
-                    long ret2 = ret = Math.max(0, info.getRemainingIPBlockWaittime(host));
+                    long ret2 = Math.max(0, info.getRemainingIPBlockWaittime(host));
                     if (ret2 < ret) ret = ret2;
                 }
             }
@@ -530,7 +530,7 @@ public class ProxyController implements ConfigEventListener {
                 if (info.isProxyRotationEnabled()) {
                     /* only use enabled proxies */
 
-                    long ret2 = ret = Math.max(0, info.getRemainingIPBlockWaittime(host));
+                    long ret2 = Math.max(0, info.getRemainingIPBlockWaittime(host));
                     if (ret2 < ret) ret = ret2;
                 }
             }
@@ -549,7 +549,7 @@ public class ProxyController implements ConfigEventListener {
                 if (info.isProxyRotationEnabled()) {
                     /* only use enabled proxies */
 
-                    long ret2 = ret = Math.max(0, info.getRemainingTempUnavailWaittime(host));
+                    long ret2 = Math.max(0, info.getRemainingTempUnavailWaittime(host));
                     if (ret2 < ret) ret = ret2;
                 }
             }
@@ -560,7 +560,7 @@ public class ProxyController implements ConfigEventListener {
                 if (info.isProxyRotationEnabled()) {
                     /* only use enabled proxies */
 
-                    long ret2 = ret = Math.max(0, info.getRemainingTempUnavailWaittime(host));
+                    long ret2 = Math.max(0, info.getRemainingTempUnavailWaittime(host));
                     if (ret2 < ret) ret = ret2;
                 }
             }
