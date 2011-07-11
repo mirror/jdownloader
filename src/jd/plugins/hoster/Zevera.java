@@ -149,7 +149,7 @@ public class Zevera extends PluginForHost {
             String basicauth = "Basic " + Encoding.Base64Encode(user + ":" + pw);
             br.getHeaders().put("Authorization", basicauth);
             br.setFollowRedirects(true);
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, link, true, 1);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, link, true, 0);
         } else {
             showMessage(downloadLink, "Phase 1/2: Get FileID");
             String FileID = Zevera.getID(link);
