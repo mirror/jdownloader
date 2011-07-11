@@ -54,6 +54,11 @@ public class LngEntry implements Serializable {
     }
 
     @Override
+    public int hashCode() {
+        return this.getKey().toUpperCase().hashCode();
+    }
+
+    @Override
     public String toString() {
         return key + " = " + value;
     }
