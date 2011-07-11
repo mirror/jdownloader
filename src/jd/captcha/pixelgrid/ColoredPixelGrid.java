@@ -59,6 +59,9 @@ public class ColoredPixelGrid extends PixelGrid {
                 int[] rgbA = Colors.hexToRgb(key);
 
                 if (isElement(key, avg) || Colors.rgb2hsb(rgbA[0], rgbA[1], rgbA[2])[0] * 100 > 0) {
+                    // TODO map.get(key) is wrong; map is defined as
+                    // <Integer[],...> not <Integer,...>
+                    // so practically map.get(key) will always be null
                     if (map.get(key) == null) {
                         if (d++ < getHeight() * 2) {
                             d = 0;
@@ -110,6 +113,9 @@ public class ColoredPixelGrid extends PixelGrid {
                         }
 
                     } else {
+                        // TODO map.get(key) is wrong; map is defined as
+                        // <Integer[],...> not <Integer,...>
+                        // so practically map.get(key) will always be null
                         map.get(key).add(x, y, key);
                     }
                 } else {
