@@ -31,12 +31,12 @@ import jd.http.Browser;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -141,7 +141,7 @@ public class TwoSharedCom extends PluginForHost {
         if (finallink == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         finallink = finallink.trim();
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finallink, true, 1);
-        if (dl.getConnection().getContentType().contains("html") & dl.getConnection().getURL().getQuery() == null) {
+        if (dl.getConnection().getContentType().contains("html") && dl.getConnection().getURL().getQuery() == null) {
             dl.getConnection().disconnect();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         } else {
