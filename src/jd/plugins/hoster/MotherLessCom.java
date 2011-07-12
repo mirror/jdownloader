@@ -65,6 +65,8 @@ public class MotherLessCom extends PluginForHost {
         br.setFollowRedirects(true);
         if (parameter.getStringProperty("dltype") != null && "video".equals(parameter.getStringProperty("dltype"))) {
             getVideoLink(parameter);
+        } else if (parameter.getStringProperty("dltype") != null && "image".equals(parameter.getStringProperty("dltype"))) {
+            getPictureLink(parameter);
         }
         if (DLLINK == null) DLLINK = parameter.getDownloadURL();
         URLConnectionAdapter con = null;
@@ -101,12 +103,15 @@ public class MotherLessCom extends PluginForHost {
                 br.getPage(link.getBrowserUrl());
             }
         }
-
-        if (DLLINK.contains(".flv")) {
+        if (link.getStringProperty("dltype") != null && "video".equals(link.getStringProperty("dltype"))) {
             getVideoLink(link);
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, DLLINK, true, 0);
+        } else if (link.getStringProperty("dltype") != null && "image".equals(link.getStringProperty("dltype"))) {
+            getPictureLink(link);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, DLLINK, false, 1);
         } else {
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getDownloadURL());
+            logger.warning("Unnknown case for link: " + link.getDownloadURL());
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
@@ -215,6 +220,24 @@ public class MotherLessCom extends PluginForHost {
             DLLINK = br.getRegex("(http://s\\d+\\.motherlessmedia\\.com/dev[0-9/]+\\.flv/[a-z0-9]+/[A-Z0-9]+\\.flv)").getMatch(0);
         }
         if (DLLINK != null && !DLLINK.contains("?start=0")) DLLINK += "?start=0";
+        if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+    }
+
+    private void getPictureLink(DownloadLink parameter) throws IOException, PluginException {
+        br.getPage(parameter.getDownloadURL());
+        DLLINK = br.getRegex("\"(http://members\\.motherless\\.com/img/.*?)\"").getMatch(0);
+        if (DLLINK == null) {
+            DLLINK = br.getRegex("full_sized\\.jpg\" (.*?)\"(http://s\\d+\\.motherless\\.com/dev\\d+/\\d+/\\d+/\\d+/\\d+.*?)\"").getMatch(1);
+            if (DLLINK == null) {
+                DLLINK = br.getRegex("<div style=\"clear: left;\"></div>[\t\r\n ]+<img src=\"(http://.*?)\"").getMatch(0);
+                if (DLLINK == null) {
+                    DLLINK = br.getRegex("\\?full\">[\n\t\r ]+<img src=\"(?!http://motherless\\.com/images/full_sized\\.jpg)(http://.*?)\"").getMatch(0);
+                    if (DLLINK == null) {
+                        DLLINK = br.getRegex("\"(http://s\\d+\\.motherlessmedia\\.com/dev[0-9/]+\\..{3,4})\"").getMatch(0);
+                    }
+                }
+            }
+        }
         if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
     }
 
