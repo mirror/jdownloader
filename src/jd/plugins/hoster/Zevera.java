@@ -139,6 +139,7 @@ public class Zevera extends PluginForHost {
         setBrowserExclusive();
         workAroundTimeOut(br);
         showDialog = false;
+        br.setDebug(true);
         String user = Encoding.urlEncode(account.getUser());
         String pw = Encoding.urlEncode(account.getPass());
         String link = downloadLink.getDownloadURL();
@@ -174,7 +175,7 @@ public class Zevera extends PluginForHost {
                     // 10 StatusText:Downloaded,
                     // 11 ProgressText:Finished
                     String DownloadURL = br.getRegex("DownloadURL:(Http.*?),").getMatch(0);
-                    if (DownloadURL == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+                    if (DownloadURL == null) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE); }
                     showMessage(downloadLink, "Phase 3/3: OK Download starting");
                     dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DownloadURL, true, 0);
                     break;
@@ -188,7 +189,7 @@ public class Zevera extends PluginForHost {
             dl.startDownload();
         } else {
             br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
         }
     }
 
@@ -200,6 +201,7 @@ public class Zevera extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
+        br.setDebug(true);
         // We need to log in to get the file status^M
         Account aa = AccountController.getInstance().getValidAccount(this);
         if (aa == null) throw new PluginException(LinkStatus.ERROR_FATAL, "Links are only checkable if a registered account is entered!");
@@ -209,7 +211,7 @@ public class Zevera extends PluginForHost {
 
         if (link.contains("getFiles.aspx")) {
             String ourl = new Regex(link, ".*ourl=(.+)").getMatch(0);
-            if (ourl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (ourl == null) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
             String res = br.getPage("http://www.zevera.com/jDownloader.ashx?cmd=checklink&login=" + user + "&pass=" + pw + "&olink=" + ourl);
             String filename = new Regex(link, ".*/(.+)").getMatch(0);
             downloadLink.setName(filename.trim());
@@ -230,7 +232,7 @@ public class Zevera extends PluginForHost {
         String filename = new Regex(infos[1], "FileName:(.+)").getMatch(0);
         String filesize = new Regex(infos[4], "FileSizeInBytes:(.+)").getMatch(0);
 
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
         downloadLink.setName(filename.trim());
         downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
 
