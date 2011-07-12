@@ -9,9 +9,19 @@ import javax.swing.JTextArea;
 import org.appwork.app.gui.MigPanel;
 import org.jdownloader.extensions.translator.TranslateEntry;
 
+/**
+ * Infopanel at the gui bottom
+ * 
+ * @author thomas
+ * 
+ */
 public class EntryInfoPanel extends MigPanel {
 
-    private JTextArea txt;
+    /**
+     * 
+     */
+    private static final long serialVersionUID = 1L;
+    private JTextArea         txt;
 
     public EntryInfoPanel() {
         super("ins 0", "[grow,fill]", "[grow,fill]");
@@ -19,6 +29,11 @@ public class EntryInfoPanel extends MigPanel {
         add(new JScrollPane(txt), "height 120!");
     }
 
+    /**
+     * Is called when selection in the table changes
+     * 
+     * @param selectedObjects
+     */
     public void setEntries(ArrayList<TranslateEntry> selectedObjects) {
         if (selectedObjects == null || selectedObjects.size() == 0) {
             txt.setText("");

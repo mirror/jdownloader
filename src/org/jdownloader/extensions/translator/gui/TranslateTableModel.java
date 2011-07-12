@@ -7,17 +7,26 @@ import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.table.ExtTableModel;
 import org.appwork.utils.swing.table.columns.ExtTextColumn;
 import org.jdownloader.extensions.translator.TranslateEntry;
-import org.jdownloader.extensions.translator.TranslationError;
+import org.jdownloader.extensions.translator.TranslationProblem;
 import org.jdownloader.extensions.translator.TranslatorExtension;
 
+/**
+ * The Tablemodel defines all columns and renderers
+ * 
+ * @author thomas
+ * 
+ */
 public class TranslateTableModel extends ExtTableModel<TranslateEntry> {
 
     public TranslateTableModel() {
+        // this is is used to store table states(sort,column positions,
+        // properties)
         super("TranslateTableModel");
     }
 
     @Override
     protected void initColumns() {
+        // we init and add all columns here.
         addColumn(new ExtTextColumn<TranslateEntry>("#") {
 
             @Override
@@ -127,7 +136,7 @@ public class TranslateTableModel extends ExtTableModel<TranslateEntry> {
             protected String getTooltipText(TranslateEntry obj) {
                 StringBuilder sb = new StringBuilder();
                 sb.append("<html>");
-                for (TranslationError e : obj.getErrors()) {
+                for (TranslationProblem e : obj.getErrors()) {
                     sb.append(e.toString());
                     sb.append("<br>");
                 }
@@ -140,7 +149,7 @@ public class TranslateTableModel extends ExtTableModel<TranslateEntry> {
                 super.configureRendererComponent(value, isSelected, hasFocus, row, column);
                 boolean hasError = false;
                 boolean hasWarnings = false;
-                for (TranslationError e : value.getErrors()) {
+                for (TranslationProblem e : value.getErrors()) {
                     switch (e.getType()) {
                     case ERROR:
                         hasError = true;
@@ -167,6 +176,11 @@ public class TranslateTableModel extends ExtTableModel<TranslateEntry> {
 
     }
 
+    /**
+     * refresh the tablemodel. for example if we load a new language
+     * 
+     * @param extension
+     */
     public void refresh(final TranslatorExtension extension) {
         new EDTRunner() {
 

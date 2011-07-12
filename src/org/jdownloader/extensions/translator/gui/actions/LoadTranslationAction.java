@@ -1,10 +1,11 @@
-package org.jdownloader.extensions.translator.gui;
+package org.jdownloader.extensions.translator.gui.actions;
 
 import java.awt.event.ActionEvent;
 
 import javax.swing.AbstractAction;
 
 import org.jdownloader.extensions.translator.TLocale;
+import org.jdownloader.extensions.translator.gui.TranslatorGui;
 
 public class LoadTranslationAction extends AbstractAction {
 

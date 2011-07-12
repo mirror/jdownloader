@@ -4,6 +4,12 @@ import java.util.Locale;
 
 import org.appwork.txtresource.TranslationFactory;
 
+/**
+ * Wrapper for a {@link #locale} instance.
+ * 
+ * @author thomas
+ * 
+ */
 public class TLocale {
 
     private Locale locale;

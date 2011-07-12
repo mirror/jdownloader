@@ -19,9 +19,18 @@ import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.plugins.AddonPanel;
 import net.miginfocom.swing.MigLayout;
 
+import org.appwork.utils.logging.Log;
 import org.jdownloader.extensions.translator.TLocale;
 import org.jdownloader.extensions.translator.TranslatorExtension;
+import org.jdownloader.extensions.translator.gui.actions.LoadTranslationAction;
+import org.jdownloader.extensions.translator.gui.actions.NewTranslationAction;
 
+/**
+ * Extension gui
+ * 
+ * @author thomas
+ * 
+ */
 public class TranslatorGui extends AddonPanel<TranslatorExtension> implements ListSelectionListener {
 
     private static final String ID = "TRANSLATORGUI";
@@ -45,6 +54,7 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
             protected void onHide() {
             }
         };
+        // layout all contents in panel
         this.setContent(panel);
         initComponents();
 
@@ -92,13 +102,20 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
     protected void save() {
     }
 
+    /**
+     * is called if, and only if! the view has been closed
+     */
     @Override
     protected void onDeactivated() {
+        Log.L.finer("onDeactivated " + getClass().getSimpleName());
     }
 
+    /**
+     * is called, if the gui has been opened.
+     */
     @Override
     protected void onActivated() {
-
+        Log.L.finer("onActivated " + getClass().getSimpleName());
     }
 
     @Override
@@ -121,12 +138,23 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
         return "Translator - Edit JDownloader Translation";
     }
 
+    /**
+     * Is called if gui is visible now, and has not been visible before. For
+     * example, user starte the extension, opened the view, or switched form a
+     * different tab to this one
+     */
     @Override
     protected void onShow() {
+        Log.L.finer("Shown " + getClass().getSimpleName());
     }
 
+    /**
+     * gets called of the extensiongui is not visible any more. for example
+     * because it has been closed or user switched to a different tab/view
+     */
     @Override
     protected void onHide() {
+        Log.L.finer("hidden " + getClass().getSimpleName());
     }
 
     public TLocale getLoaded() {

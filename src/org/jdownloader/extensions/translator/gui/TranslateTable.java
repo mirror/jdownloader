@@ -1,11 +1,15 @@
 package org.jdownloader.extensions.translator.gui;
 
-import java.awt.event.MouseEvent;
-
 import jd.gui.swing.jdgui.BasicJDTable;
 
 import org.jdownloader.extensions.translator.TranslateEntry;
 
+/**
+ * Table for all entries
+ * 
+ * @author thomas
+ * 
+ */
 public class TranslateTable extends BasicJDTable<TranslateEntry> {
 
     public TranslateTable(TranslateTableModel tableModel) {
@@ -14,9 +18,9 @@ public class TranslateTable extends BasicJDTable<TranslateEntry> {
 
     }
 
-    @Override
-    protected void onDoubleClick(MouseEvent e, TranslateEntry obj) {
-        super.onDoubleClick(e, obj);
-    }
+    // @Override
+    // protected void onDoubleClick(MouseEvent e, TranslateEntry obj) {
+    // super.onDoubleClick(e, obj);
+    // }
 
 }
