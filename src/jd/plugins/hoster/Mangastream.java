@@ -94,9 +94,9 @@ public class Mangastream extends PluginForHost {
             downloadLink.getLinkStatus().setStatus(success ? LinkStatus.FINISHED : LinkStatus.ERROR_LOCAL_IO);
             return;
         } else {
-            /* old method */
-            String picUrl = br.getRegex("<img src=\"(http://.*?mangastream.com/manga/\\d+/\\d+/.*?\\.(jpg|png))\"").getMatch(0);
-            String ext = br.getRegex("<img src=\"(http://.*?mangastream.com/manga/\\d+/\\d+/.*?(\\.jpg|\\.png))\"").getMatch(1);
+            /* old method - or most recent one! (present in Naturo chap. 547) */
+            String picUrl = br.getRegex("<img src=\"(http://.*?mangastream.com/m(?:anga)?/\\d+/\\d+/.*?\\.(jpg|png))\"").getMatch(0);
+            String ext = br.getRegex("<img src=\"(http://.*?mangastream.com/m(?:anga)?/\\d+/\\d+/.*?(\\.jpg|\\.png))\"").getMatch(1);
             if (picUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, picUrl, true, 1);
             try {
