@@ -290,10 +290,22 @@ public class DistributeData extends Thread {
         }
         // data = HTMLEntities.unhtmlentities(data);
         data = data.replaceAll("jd://", "http://");
+        /* first try without any modification on the data */
         ret = findLinksIntern();
+        if (!filterNormalHTTP) {
+            /* second try by looking for directhttp content */
+            data = data.replaceAll("--CUT--", "\n");
+            data = data.replaceAll("http://", "httpviajd://");
+            data = data.replaceAll("https://", "httpsviajd://");
+            ret.addAll(findLinksIntern());
+            data = data.replaceAll("httpviajd://", "http://");
+            data = data.replaceAll("httpsviajd://", "https://");
+        }
+        /* third try to urlDecode the rest of data */
         data = Encoding.urlDecode(data, true);
         ret.addAll(findLinksIntern());
         if (!filterNormalHTTP) {
+            /* fourth try by looking for directhttp content */
             data = data.replaceAll("--CUT--", "\n");
             data = data.replaceAll("http://", "httpviajd://");
             data = data.replaceAll("https://", "httpsviajd://");

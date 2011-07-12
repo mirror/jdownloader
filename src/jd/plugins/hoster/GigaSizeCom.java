@@ -122,6 +122,7 @@ public class GigaSizeCom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         br.getPage(downloadLink.getDownloadURL());
+        if (br.getRedirectLocation() != null && br.getRedirectLocation().contains("limit-download-free")) { throw new PluginException(LinkStatus.ERROR_FATAL, "Only premium users are entitled to dowload files larger than 1GB from Gigasize"); }
         String adsCaptcha = br.getRegex("iframe src='(http://api.adsca.*?)'").getMatch(0);
         if (adsCaptcha == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         Browser brc = br.cloneBrowser();
@@ -163,8 +164,11 @@ public class GigaSizeCom extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         setBrowserExclusive();
         br.getHeaders().put("User-Agent", agent);
+        br.getPage("http://www.gigasize.com");
         br.getPage(downloadLink.getDownloadURL());
+        if (br.getRedirectLocation() != null && br.getRedirectLocation().contains("limit-download-free")) { return AvailableStatus.UNCHECKABLE; }
         if (br.containsHTML("error\">Download error<\"")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+
         String[] dat = br.getRegex("<strong title=\"(.*?)\".*?File size:.*?>(.*?)<").getRow(0);
         if (dat.length != 2) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(dat[0]);
