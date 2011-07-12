@@ -19,6 +19,9 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.nutils.encoding.Encoding;
+import jd.plugins.Account;
+import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
@@ -29,11 +32,13 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dataport.cz" }, urls = { "http://[\\w\\.]*?dataport\\.cz/file/\\d+/.+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dataport.cz" }, urls = { "http://[\\w\\.]*?dataport\\.cz/file/\\d+/.+" }, flags = { 2 })
 public class DataPortCz extends PluginForHost {
 
     public DataPortCz(PluginWrapper wrapper) {
         super(wrapper);
+        // Didn't find a premiumlink
+        this.enablePremium();
     }
 
     @Override
@@ -41,14 +46,15 @@ public class DataPortCz extends PluginForHost {
         return "http://dataport.cz/pravidla-pouziti/";
     }
 
+    private static final String MAINPAGE = "http://dataport.cz/";
+
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setCustomCharset("utf-8");
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("(<h2>Litujeme, soubor nebyl nalezen\\.</h2>|Prosím zkontrolujte překlepy v adrese\\.)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<title>(.*?) :: DataPort\\.cz - Neomezený download server</title>").getMatch(0);
-        if (filename == null) filename = br.getRegex("<td>Název souboru:</td>[\n\r\t ]+<td><strong>(.*?)</strong></td>").getMatch(0);
+        if (br.containsHTML("(Buďto byl soubor vymazán nebo jste se dopustil překlepu v adrese|>Soubor nebyl nalezen<)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("<h2 style=\"color: red;\">(.*?)</h2>").getMatch(0);
         String filesize = br.getRegex("<td>Velikost souboru:</td>[\n\r\t ]+<td>(.*?)</td>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         // Set final filename here because server sends us bad filenames
@@ -73,6 +79,61 @@ public class DataPortCz extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    private void login(Account account) throws Exception {
+        this.setBrowserExclusive();
+        br.setCustomCharset("utf-8");
+        br.setFollowRedirects(false);
+        // br.getPage("");
+        br.postPage("http://dataport.cz/prihlas/", "name=" + Encoding.urlEncode(account.getUser()) + "&x=0&y=0&pass=" + Encoding.urlEncode(account.getPass()));
+        if (br.getCookie(MAINPAGE, "user") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+    }
+
+    @Override
+    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+        AccountInfo ai = new AccountInfo();
+        try {
+            login(account);
+        } catch (PluginException e) {
+            account.setValid(false);
+            return ai;
+        }
+        br.getPage(MAINPAGE);
+        String availabletraffic = br.getRegex("class=\"name\" style=\"font\\-size: 1.0em;color:white;\">\\((.*?)\\)</span>").getMatch(0);
+        if (availabletraffic != null) {
+            account.setValid(true);
+            ai.setTrafficLeft(SizeFormatter.getSize(availabletraffic.replace(" ", "")));
+        } else {
+            account.setValid(false);
+        }
+        ai.setStatus("Premium User");
+        return ai;
+    }
+
+    public void handlePremium(DownloadLink link, Account account) throws Exception {
+        requestFileInformation(link);
+        login(account);
+        br.setFollowRedirects(false);
+        br.getPage(link.getDownloadURL());
+        String dllink = br.getRegex("><strong>Stažení ZDARMA</strong></a> <a href=\"(http://.*?)\"").getMatch(0);
+        if (dllink == null) dllink = br.getRegex("\"(http://dataport\\.cz/stahuj\\-soubor/.*?)\"").getMatch(0);
+        if (dllink == null) {
+            logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+        if (dl.getConnection().getContentType().contains("html")) {
+            logger.warning("The final dllink seems not to be a file!");
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
+    }
+
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        return -1;
     }
 
     @Override

@@ -68,36 +68,48 @@ public class MotherLessCom extends PluginForDecrypt {
             pages.add("currentPage");
             String pagenumbers[] = br.getRegex("page=(\\d+)\"").getColumn(0);
             if (!(pagenumbers == null) && !(pagenumbers.length == 0)) {
-                for (String aPageNumer : pagenumbers) {
-                    if (!pages.contains(aPageNumer)) pages.add(aPageNumer);
+                for (String aPageNumber : pagenumbers) {
+                    if (!pages.contains(aPageNumber) && !aPageNumber.equals("1")) pages.add(aPageNumber);
                 }
             }
             logger.info("Found " + pages.size() + " pages, decrypting now...");
+            progress.setRange(pages.size());
             for (String getthepage : pages) {
                 if (!getthepage.equals("currentPage")) br.getPage(parameter.toString() + "?page=" + getthepage);
-                fpName = br.getRegex("<title>MOTHERLESS\\.COM - Moral Free Hosting : Galleries :(.*?)</title>").getMatch(0);
+                fpName = br.getRegex("<title>MOTHERLESS\\.COM \\- Go Ahead She Isn\\'t Looking\\! :  (.*?)</title>").getMatch(0);
                 if (fpName == null) {
-                    fpName = br.getRegex("<h1 style=\"font-size: 1.4em; font-weight: bold;\">(.*?)</h1>").getMatch(0);
-                    if (fpName == null) fpName = br.getRegex("<title>MOTHERLESS\\.COM - Go Ahead She Isn\\'t Looking\\! : Galleries : (.*?)</title>").getMatch(0);
+                    fpName = br.getRegex("<div class=\"member\\-bio\\-username\">.*?\\'s Gallery \\&bull; (.*?)</div>").getMatch(0);
                 }
-                String[] links = br.getRegex("id=\"wrapper_[A-Z0-9]+\">[\t\n\r ]+<a href=\"(/[A-Z0-9]+/[A-Z0-9]+)\"").getColumn(0);
-                if (links == null || links.length == 0) return null;
-                progress.setRange(links.length);
-                logger.info("Decrypting page " + getthepage + " which contains " + links.length + " links.");
-                for (String singlelink : links) {
-                    br.getPage("http://motherless.com" + singlelink);
-                    String finallink = getSingleLink();
-                    if (finallink == null) return null;
-                    DownloadLink dl = createDownloadlink(finallink.replace("motherless", "motherlesspictures"));
-                    if (fpName != null) dl.setProperty("package", fpName);
-                    decryptedLinks.add(dl);
-                    progress.increase(1);
+                String[] picturelinks = br.getRegex("class=\"thumbnail mediatype_image\" rel=\"[A-Z0-9]+\">[\t\n\r ]+<div class=\"thumbnail\\-img-wrap\" id=\"wrapper_[A-Z0-9]+\">[\t\n\r ]+<a href=\"(http://motherless\\.com/[A-Z0-9]+)\"").getColumn(0);
+                if (picturelinks != null && picturelinks.length != 0) {
+                    logger.info("Decrypting page " + getthepage + " which contains " + picturelinks.length + " links.");
+                    for (String singlelink : picturelinks) {
+                        DownloadLink dl = createDownloadlink(singlelink.replace("motherless.com/", "motherlesspictures.com/"));
+                        if (fpName != null) dl.setProperty("package", fpName);
+                        decryptedLinks.add(dl);
+                        dl.setProperty("dltype", "image");
+                    }
                 }
+                String[] videolinks = br.getRegex("class=\"thumbnail mediatype_video\" rel=\"[A-Z0-9]+\">[\t\n\r ]+<div class=\"thumbnail\\-img-wrap\" id=\"wrapper_[A-Z0-9]+\">[\t\n\r ]+<a href=\"(http://motherless\\.com/.*?)\"").getColumn(0);
+                if (videolinks != null && videolinks.length != 0) {
+                    for (String singlelink : videolinks) {
+                        String linkID = new Regex(singlelink, "/g/.*?/([A-Z0-9]+$)").getMatch(0);
+                        if (linkID != null) singlelink = "http://motherless.com/" + linkID;
+                        DownloadLink dl = createDownloadlink(singlelink.replace("motherless.com/", "motherlessvideos.com/"));
+                        dl.setProperty("dltype", "video");
+                        if (fpName != null) dl.setProperty("package", fpName);
+                        decryptedLinks.add(dl);
+                    }
+                }
+                if ((picturelinks == null || picturelinks.length == 0) && (videolinks == null || videolinks.length == 0)) {
+                    logger.warning("Decrypter failed for link: " + parameter);
+                    return null;
+                }
+                progress.increase(1);
             }
         } else {
-            String finallink = getSingleLink();
-            if (finallink == null) return null;
-            DownloadLink fina = createDownloadlink(finallink.replace("motherless", "motherlesspictures"));
+            DownloadLink fina = createDownloadlink(parameter.toString().replace("motherless.com/", "motherlesspictures.com/"));
+            fina.setProperty("dltype", "image");
             decryptedLinks.add(fina);
         }
         if (fpName != null) {
@@ -106,22 +118,5 @@ public class MotherLessCom extends PluginForDecrypt {
             fp.addLinks(decryptedLinks);
         }
         return decryptedLinks;
-    }
-
-    private String getSingleLink() {
-        String finallink = br.getRegex("\"(http://members\\.motherless\\.com/img/.*?)\"").getMatch(0);
-        if (finallink == null) {
-            finallink = br.getRegex("full_sized\\.jpg\" (.*?)\"(http://s\\d+\\.motherless\\.com/dev\\d+/\\d+/\\d+/\\d+/\\d+.*?)\"").getMatch(1);
-            if (finallink == null) {
-                finallink = br.getRegex("<div style=\"clear: left;\"></div>[\t\r\n ]+<img src=\"(http://.*?)\"").getMatch(0);
-                if (finallink == null) {
-                    finallink = br.getRegex("\\?full\">[\n\t\r ]+<img src=\"(?!http://motherless\\.com/images/full_sized\\.jpg)(http://.*?)\"").getMatch(0);
-                    if (finallink == null) {
-                        finallink = br.getRegex("\"(http://s\\d+\\.motherlessmedia\\.com/dev[0-9/]+\\..{3,4})\"").getMatch(0);
-                    }
-                }
-            }
-        }
-        return finallink;
     }
 }
