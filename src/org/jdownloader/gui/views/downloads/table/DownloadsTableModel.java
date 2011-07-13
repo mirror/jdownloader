@@ -77,6 +77,13 @@ public class DownloadsTableModel extends ExtTableModel<PackageLinkNode> {
 
     }
 
+    /**
+     * @return
+     */
+    protected ExtColumn<PackageLinkNode> getDefaultSortColumn() {
+        return downloadOrder;
+    }
+
     protected void recreateModel() {
         tableChangesReq.incrementAndGet();
         IOEQ.add(new Runnable() {
@@ -215,5 +222,9 @@ public class DownloadsTableModel extends ExtTableModel<PackageLinkNode> {
             }
             return newData;
         }
+    }
+
+    public boolean isDownloadOrder() {
+        return getSortColumn() == downloadOrder;
     }
 }

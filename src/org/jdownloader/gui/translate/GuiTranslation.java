@@ -2076,4 +2076,10 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "%s1 download(s) running (%s2 connections)" })
     String BottomBar_actionPerformed_running_downloads(int activeDownloads, int incommingConnections);
+
+    @Default(lngs = { "en" }, values = { "Sorted View!" })
+    String sorted();
+
+    @Default(lngs = { "en" }, values = { "Click Column Title to undo." })
+    String sorted_tiny();
 }

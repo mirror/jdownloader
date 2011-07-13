@@ -33,7 +33,7 @@ public class FileColumn extends ExtTextColumn<PackageLinkNode> {
 
     @Override
     public boolean isSortable(PackageLinkNode obj) {
-        return false;
+        return true;
     }
 
     //
@@ -64,7 +64,13 @@ public class FileColumn extends ExtTextColumn<PackageLinkNode> {
 
     @Override
     public final String getStringValue(PackageLinkNode value) {
-        return null;
+        if (value instanceof FilePackage) {
+            FilePackage fp = (FilePackage) value;
+            return fp.getName();
+        } else {
+            DownloadLink dLink = (DownloadLink) value;
+            return dLink.getName();
+        }
     }
 
 }

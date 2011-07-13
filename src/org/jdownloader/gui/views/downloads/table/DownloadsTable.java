@@ -3,6 +3,8 @@ package org.jdownloader.gui.views.downloads.table;
 import java.awt.AlphaComposite;
 import java.awt.Color;
 import java.awt.Composite;
+import java.awt.Font;
+import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Point;
@@ -49,6 +51,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PackageLinkNode;
 import jd.utils.JDUtilities;
 
+import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Application;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.table.ExtColumn;
@@ -59,6 +62,7 @@ import org.jdownloader.gui.views.downloads.columns.FileColumn;
 import org.jdownloader.gui.views.downloads.context.RatedMenuController;
 import org.jdownloader.gui.views.downloads.context.RatedMenuItem;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 
 public class DownloadsTable extends BasicJDTable<PackageLinkNode> {
 
@@ -70,6 +74,10 @@ public class DownloadsTable extends BasicJDTable<PackageLinkNode> {
     private DownloadTableAction moveToBottomAction;
     private Color               sortNotifyColor;
     private Color               sortNotifyColorTransparent;
+    private String              sortingText;
+    private Font                sortedFont;
+    private String              sortingTextTiny;
+    private Font                sortedFontTiny;
 
     public DownloadsTable(final DownloadsTableModel tableModel) {
         super(tableModel);
@@ -80,9 +88,17 @@ public class DownloadsTable extends BasicJDTable<PackageLinkNode> {
         this.setDropMode(DropMode.INSERT_ROWS);
         initActions();
         onSelectionChanged(null);
-        sortNotifyColor = Color.ORANGE;
-        sortNotifyColorTransparent = new Color(sortNotifyColor.getRed(), sortNotifyColor.getGreen(), sortNotifyColor.getBlue(), 0);
+        if (JsonConfig.create(GraphicalUserInterfaceSettings.class).isSortColumnHighlightEnabled()) {
+            sortNotifyColor = Color.ORANGE;
+            sortNotifyColorTransparent = new Color(sortNotifyColor.getRed(), sortNotifyColor.getGreen(), sortNotifyColor.getBlue(), 0);
 
+        }
+        if (JsonConfig.create(GraphicalUserInterfaceSettings.class).isSortWarningTextEnabled()) {
+            this.sortingText = _GUI._.sorted();
+            this.sortingTextTiny = _GUI._.sorted_tiny();
+            this.sortedFont = new Font(this.getFont().getName(), Font.BOLD, 40);
+            this.sortedFontTiny = new Font(this.getFont().getName(), Font.BOLD, 20);
+        }
         // this.getExtTableModel().addExtComponentRowHighlighter(new
         // ExtComponentRowHighlighter<PackageLinkNode>(f2, b2, null) {
         //
@@ -430,17 +446,37 @@ public class DownloadsTable extends BasicJDTable<PackageLinkNode> {
         super.paintComponent(g);
 
         Graphics2D g2 = (Graphics2D) g;
+        Composite comp = g2.getComposite();
         final Rectangle visibleRect = this.getVisibleRect();
         Rectangle first;
 
         int index = getExtTableModel().getSortColumn().getIndex();
-        if (index < 0) return;
-        first = this.getCellRect(0, index, true);
 
-        g2.setColor(Color.ORANGE);
-        Composite comp = g2.getComposite();
-        g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.2f));
-        g2.fillRect(visibleRect.x + first.x, visibleRect.y, visibleRect.x + getExtTableModel().getSortColumn().getWidth(), visibleRect.y + visibleRect.height);
+        if (index < 0) return;
+
+        if (sortNotifyColor != null) {
+
+            first = this.getCellRect(0, index, true);
+
+            g2.setColor(Color.ORANGE);
+
+            g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.1f));
+            g2.fillRect(visibleRect.x + first.x, visibleRect.y, visibleRect.x + getExtTableModel().getSortColumn().getWidth(), visibleRect.y + visibleRect.height);
+        }
+        if (tableModel.isDownloadOrder()) return;
+        if (sortingText != null) {
+            g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.1f));
+            g2.setFont(this.sortedFont);
+            g2.setColor(this.getForeground());
+            FontMetrics fm = g2.getFontMetrics();
+            int width = fm.stringWidth(this.sortingText);
+            g.drawString(this.sortingText, (this.getWidth() - width) / 2, 60);
+
+            g2.setFont(this.sortedFontTiny);
+            fm = g2.getFontMetrics();
+            width = fm.stringWidth(this.sortingTextTiny);
+            g.drawString(this.sortingTextTiny, (this.getWidth() - width) / 2, 85);
+        }
         g2.setComposite(comp);
 
     }

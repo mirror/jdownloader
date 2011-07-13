@@ -123,4 +123,18 @@ public class GraphicalUserInterfaceSettingsValidator implements GraphicalUserInt
     public void setDownloadViewBottombarEnabled(boolean b) {
     }
 
+    public boolean isSortColumnHighlightEnabled() {
+        return false;
+    }
+
+    public void setSortColumnHighlightEnabled(boolean b) {
+    }
+
+    public boolean isSortWarningTextEnabled() {
+        return false;
+    }
+
+    public void setSortWarningTextEnabled(boolean b) {
+    }
+
 }

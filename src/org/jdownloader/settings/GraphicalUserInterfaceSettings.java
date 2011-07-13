@@ -94,4 +94,20 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     boolean isDownloadViewBottombarEnabled();
 
     void setDownloadViewBottombarEnabled(boolean b);
+
+    @AboutConfig
+    @Description("Highlight Column in Downloadview if table is not in downloadsortorder")
+    @DefaultBooleanValue(true)
+    @RequiresRestart
+    boolean isSortColumnHighlightEnabled();
+
+    void setSortColumnHighlightEnabled(boolean b);
+
+    @AboutConfig
+    @Description("Highlight Column in Downloadview if table is not in downloadsortorder")
+    @DefaultBooleanValue(true)
+    @RequiresRestart
+    boolean isSortWarningTextEnabled();
+
+    void setSortWarningTextEnabled(boolean b);
 }
