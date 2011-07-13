@@ -17,6 +17,7 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.Random;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -25,49 +26,35 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "amateurgalore.net" }, urls = { "http://(www\\.)?amateurgalore\\.net/index/video/[a-z0-9_\\-]+" }, flags = { 0 })
-public class AmateurGaloreNet extends PluginForDecrypt {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "muchacarne.com" }, urls = { "http://(www\\.)?muchacarne\\.com/hosted\\-id\\d+\\-.*?\\.html" }, flags = { 0 })
+public class MuchaCarneCom extends PluginForDecrypt {
 
-    public AmateurGaloreNet(PluginWrapper wrapper) {
+    public MuchaCarneCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        br.setFollowRedirects(false);
         String parameter = param.toString();
         br.getPage(parameter);
-        String tempID = br.getRegex("\"http://videobam\\.com/widget/(.*?)/custom").getMatch(0);
+        String tempID = br.getRedirectLocation();
         if (tempID != null) {
-            DownloadLink dl = createDownloadlink("http://videobam.com/videos/download/" + tempID);
+            DownloadLink dl = createDownloadlink(tempID);
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
-        tempID = br.getRegex("name=\"FlashVars\" value=\"options=(http://(www\\.)keezmovies\\.com/.*?)\"").getMatch(0);
+        tempID = br.getRegex("\\&id=(\\d+)\\&").getMatch(0);
+        if (tempID == null) tempID = br.getRegex("\\&url=/videos/(\\d+)/").getMatch(0);
         if (tempID != null) {
-            br.getPage(tempID);
-            String finallink = br.getRegex("<share>(http://.*?)</share>").getMatch(0);
-            if (finallink == null) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
-            }
-            DownloadLink dl = createDownloadlink(finallink);
+            DownloadLink dl = createDownloadlink("http://www.isharemybitch.com/videos/" + tempID + "/oh-lol" + new Random().nextInt(10000) + ".html");
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
-        tempID = br.getRegex("movie_id=(\\d+)").getMatch(0);
-        if (tempID != null) {
-            DownloadLink dl = createDownloadlink("http://www.pornrabbit.com/" + tempID + "/bla.html");
-            decryptedLinks.add(dl);
-            return decryptedLinks;
-        }
-        tempID = br.getRegex("id_video=(\\d+)\"").getMatch(0);
+        tempID = br.getRegex("xvideos\\.com/(embedframe|embedcode)/(\\d+)").getMatch(1);
+        if (tempID == null) tempID = br.getRegex("id_video=(\\d+)\"").getMatch(0);
         if (tempID != null) {
             decryptedLinks.add(createDownloadlink("http://www.xvideos.com/video" + tempID));
-            return decryptedLinks;
-        }
-        tempID = br.getRegex("megaporn\\.com/e/([A-Z0-9]{8})").getMatch(0);
-        if (tempID != null) {
-            decryptedLinks.add(createDownloadlink("http://www.megaporn.com/video/?v=" + tempID));
             return decryptedLinks;
         }
         if (tempID == null) {

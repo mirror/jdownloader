@@ -25,10 +25,10 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "amateurgalore.net" }, urls = { "http://(www\\.)?amateurgalore\\.net/index/video/[a-z0-9_\\-]+" }, flags = { 0 })
-public class AmateurGaloreNet extends PluginForDecrypt {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "4sex4.com" }, urls = { "http://(www\\.)?4sex4\\.com/\\d+/.*?\\.html" }, flags = { 0 })
+public class FourSexFourCom extends PluginForDecrypt {
 
-    public AmateurGaloreNet(PluginWrapper wrapper) {
+    public FourSexFourCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -36,13 +36,7 @@ public class AmateurGaloreNet extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.getPage(parameter);
-        String tempID = br.getRegex("\"http://videobam\\.com/widget/(.*?)/custom").getMatch(0);
-        if (tempID != null) {
-            DownloadLink dl = createDownloadlink("http://videobam.com/videos/download/" + tempID);
-            decryptedLinks.add(dl);
-            return decryptedLinks;
-        }
-        tempID = br.getRegex("name=\"FlashVars\" value=\"options=(http://(www\\.)keezmovies\\.com/.*?)\"").getMatch(0);
+        String tempID = br.getRegex("name=\"FlashVars\" value=\"options=(http://(www\\.)keezmovies\\.com/.*?)\"").getMatch(0);
         if (tempID != null) {
             br.getPage(tempID);
             String finallink = br.getRegex("<share>(http://.*?)</share>").getMatch(0);
@@ -54,20 +48,37 @@ public class AmateurGaloreNet extends PluginForDecrypt {
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
-        tempID = br.getRegex("movie_id=(\\d+)").getMatch(0);
+        tempID = br.getRegex("name=\"FlashVars\" value=\"options=(http://(www\\.)?extremetube\\.com/embed_player\\.php\\?id=\\d+)\"").getMatch(0);
         if (tempID != null) {
-            DownloadLink dl = createDownloadlink("http://www.pornrabbit.com/" + tempID + "/bla.html");
+            br.getPage(tempID);
+            String finallink = br.getRegex("<click_tag>(http://.*?)</click_tag>").getMatch(0);
+            if (finallink == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            DownloadLink dl = createDownloadlink(finallink);
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
-        tempID = br.getRegex("id_video=(\\d+)\"").getMatch(0);
+        String filename = br.getRegex("<title>(.*?) \\- 4sex4\\.com</title>").getMatch(0);
+        if (filename == null) filename = br.getRegex("<h1>(.*?)</h1>").getMatch(0);
+        if (filename == null) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
+        }
+        filename = filename.trim();
+        tempID = br.getRegex("flashvars=\"videoCode=(.*?)\\&WID=\">").getMatch(0);
         if (tempID != null) {
-            decryptedLinks.add(createDownloadlink("http://www.xvideos.com/video" + tempID));
+            br.getPage("http://www.shufuni.com/handlers/FLVStreamingv2.ashx?videoCode=" + tempID);
+            String finallink = br.getRegex("CDNUrl=(http://.*?)\\&SeekType").getMatch(0);
+            DownloadLink dl = createDownloadlink("directhttp://" + finallink);
+            dl.setFinalFileName(filename + finallink.substring(finallink.length() - 4, finallink.length()));
+            decryptedLinks.add(dl);
             return decryptedLinks;
         }
-        tempID = br.getRegex("megaporn\\.com/e/([A-Z0-9]{8})").getMatch(0);
+        tempID = br.getRegex("xvideos\\.com/embedframe/(\\d+)").getMatch(0);
         if (tempID != null) {
-            decryptedLinks.add(createDownloadlink("http://www.megaporn.com/video/?v=" + tempID));
+            decryptedLinks.add(createDownloadlink("http://www.xvideos.com/video" + tempID));
             return decryptedLinks;
         }
         if (tempID == null) {

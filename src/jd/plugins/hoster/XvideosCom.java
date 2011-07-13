@@ -19,11 +19,11 @@ package jd.plugins.hoster;
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 //xvideos.com by pspzockerscene
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xvideos.com" }, urls = { "http://[\\w\\.]*?xvideos\\.com/video[0-9]+" }, flags = { 0 })
@@ -49,11 +49,11 @@ public class XvideosCom extends PluginForHost {
         }
         if (br.containsHTML("This video has been deleted")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML("Page not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<title>(.*?)- XVIDEOS.COM</title>").getMatch(0);
+        String filename = br.getRegex("<title>(.*?)\\- XVIDEOS\\.COM</title>").getMatch(0);
         if (filename == null) {
-            filename = br.getRegex("description content=\"XVIDEOS  -(.*?)\"").getMatch(0);
+            filename = br.getRegex("description content=\"XVIDEOS  \\-(.*?)\"").getMatch(0);
             if (filename == null) {
-                filename = br.getRegex("font-size: [0-9]+px;\">.*?<strong>(.*?)</strong>").getMatch(0);
+                filename = br.getRegex("font\\-size: [0-9]+px;\">.*?<strong>(.*?)</strong>").getMatch(0);
             }
         }
         if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

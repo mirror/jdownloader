@@ -20,54 +20,68 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "amateurgalore.net" }, urls = { "http://(www\\.)?amateurgalore\\.net/index/video/[a-z0-9_\\-]+" }, flags = { 0 })
-public class AmateurGaloreNet extends PluginForDecrypt {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filthdump.com" }, urls = { "http://(www\\.)?filthdump\\.com/\\d+/.*?\\.html" }, flags = { 0 })
+public class FilthDumpCom extends PluginForDecrypt {
 
-    public AmateurGaloreNet(PluginWrapper wrapper) {
+    public FilthDumpCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        br.setFollowRedirects(false);
         String parameter = param.toString();
         br.getPage(parameter);
-        String tempID = br.getRegex("\"http://videobam\\.com/widget/(.*?)/custom").getMatch(0);
-        if (tempID != null) {
-            DownloadLink dl = createDownloadlink("http://videobam.com/videos/download/" + tempID);
-            decryptedLinks.add(dl);
-            return decryptedLinks;
+        String filename = br.getRegex("<title>(.*?) :: Amateur Porn </title>").getMatch(0);
+        if (filename == null) filename = br.getRegex("<h1>(.*?)</h1>").getMatch(0);
+        if (filename == null) {
+            logger.warning("Couldn't decrypt link: " + parameter);
+            return null;
         }
-        tempID = br.getRegex("name=\"FlashVars\" value=\"options=(http://(www\\.)keezmovies\\.com/.*?)\"").getMatch(0);
+        filename = filename.trim();
+        String tempID = br.getRegex("\\?settings=(http://(www\\.)?(tube\\.)?watchgfporn\\.com/playerConfig\\.php\\?.*?)\"").getMatch(0);
         if (tempID != null) {
+            br.setFollowRedirects(true);
             br.getPage(tempID);
-            String finallink = br.getRegex("<share>(http://.*?)</share>").getMatch(0);
+            String finallink = br.getRegex("defaultVideo:(http://.*?);").getMatch(0);
             if (finallink == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
-            DownloadLink dl = createDownloadlink(finallink);
+            DownloadLink dl = createDownloadlink("directhttp://" + finallink);
+            dl.setFinalFileName(filename + ".flv");
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
-        tempID = br.getRegex("movie_id=(\\d+)").getMatch(0);
+        tempID = br.getRegex("dump1\\.com/flv_player/data/playerConfig(Embed)?/(\\d+)").getMatch(1);
         if (tempID != null) {
-            DownloadLink dl = createDownloadlink("http://www.pornrabbit.com/" + tempID + "/bla.html");
+            DownloadLink dl = createDownloadlink("http://www.dump1.com/media/" + tempID + "/");
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
-        tempID = br.getRegex("id_video=(\\d+)\"").getMatch(0);
+        tempID = br.getRegex("addParam\\(\\'flashvars\\',\\'\\&file=(http://video\\.teensexmovs\\.com/.*?)\\&").getMatch(0);
         if (tempID != null) {
-            decryptedLinks.add(createDownloadlink("http://www.xvideos.com/video" + tempID));
+            DownloadLink dl = createDownloadlink("directhttp://" + tempID);
+            dl.setFinalFileName(filename + ".flv");
+            decryptedLinks.add(dl);
             return decryptedLinks;
         }
-        tempID = br.getRegex("megaporn\\.com/e/([A-Z0-9]{8})").getMatch(0);
+        tempID = br.getRegex("flvURL=(.*?)\\&destinationURL").getMatch(0);
         if (tempID != null) {
-            decryptedLinks.add(createDownloadlink("http://www.megaporn.com/video/?v=" + tempID));
+            tempID = Encoding.Base64Decode(tempID);
+            if (tempID == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            DownloadLink dl = createDownloadlink("directhttp://" + tempID);
+            dl.setFinalFileName(filename + ".flv");
+            decryptedLinks.add(dl);
             return decryptedLinks;
         }
         if (tempID == null) {

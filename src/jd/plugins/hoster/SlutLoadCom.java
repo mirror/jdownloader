@@ -20,15 +20,15 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "slutload.com" }, urls = { "http://[\\w\\.]*?slutload\\.com/watch/[a-zA-Z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "slutload.com" }, urls = { "http://(www\\.)?slutload\\.com/watch/[A-Za-z0-9]+" }, flags = { 0 })
 public class SlutLoadCom extends PluginForHost {
 
     public SlutLoadCom(PluginWrapper wrapper) {
@@ -37,7 +37,7 @@ public class SlutLoadCom extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://www.empflix.com/terms.php";
+        return "http://www.slutload.com/terms/";
     }
 
     @Override

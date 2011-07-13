@@ -75,8 +75,8 @@ public class YahooCom extends PluginForHost {
             // Load cookies
             br.setCookiesExclusive(false);
             final Object ret = account.getProperty("cookies", null);
-            boolean acmatch = account.getUser().matches(account.getStringProperty("name", account.getUser()));
-            if (acmatch) acmatch = account.getPass().matches(account.getStringProperty("pass", account.getPass()));
+            boolean acmatch = Encoding.urlEncode(account.getUser()).matches(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
+            if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).matches(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
             if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
                 final HashMap<String, String> cookies = (HashMap<String, String>) ret;
                 if (cookies.containsKey("SSL") && account.isValid()) {
@@ -104,8 +104,8 @@ public class YahooCom extends PluginForHost {
             for (final Cookie c : add.getCookies()) {
                 cookies.put(c.getKey(), c.getValue());
             }
-            account.setProperty("name", account.getUser());
-            account.setProperty("pass", account.getPass());
+            account.setProperty("name", Encoding.urlEncode(account.getUser()));
+            account.setProperty("pass", Encoding.urlEncode(account.getPass()));
             account.setProperty("cookies", cookies);
         }
     }

@@ -58,6 +58,7 @@ public class HitFileNet extends PluginForHost {
     private static final String MAINPAGE       = "http://hitfile.net/";
     private static final String ENPAGE         = "http://hitfile.net/lang/en";
 
+    // Also check TurboBitNet plugin if this one is broken
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException, InterruptedException {
         synchronized (LOCK) {
@@ -118,11 +119,12 @@ public class HitFileNet extends PluginForHost {
         int waittime = 60;
         String regexedWaittime = br.getRegex(WAITTIMEREGEX1).getMatch(0);
         if (regexedWaittime != null) waittime = Integer.parseInt(regexedWaittime);
+        if (waittime > 250) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Limit reached or IP already loading", waittime * 1001l);
         sleep(waittime * 1001l, downloadLink);
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         boolean waittimeFail = true;
         for (int i = 0; i <= 4; i++) {
-            br.getPage("http://hitfile.net/download/getLinkAfterTimeout/" + fileID);
+            br.getPage("http://hitfile.net/download/getLinkAfterTimeout/" + fileID + "/0/");
             String additionalWaittime = br.getRegex("Timeout\\.limit = (\\d+);").getMatch(0);
             if (additionalWaittime != null) {
                 sleep(Integer.parseInt(additionalWaittime) * 1001l, downloadLink);

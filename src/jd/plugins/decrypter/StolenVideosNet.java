@@ -21,57 +21,50 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
+import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "amateurgalore.net" }, urls = { "http://(www\\.)?amateurgalore\\.net/index/video/[a-z0-9_\\-]+" }, flags = { 0 })
-public class AmateurGaloreNet extends PluginForDecrypt {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "stolenvideos.net" }, urls = { "http://(www\\.)?stolenvideos\\.net/\\d+/.*?\\.html" }, flags = { 0 })
+public class StolenVideosNet extends PluginForDecrypt {
 
-    public AmateurGaloreNet(PluginWrapper wrapper) {
+    public StolenVideosNet(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        br.setFollowRedirects(false);
         String parameter = param.toString();
         br.getPage(parameter);
-        String tempID = br.getRegex("\"http://videobam\\.com/widget/(.*?)/custom").getMatch(0);
+        String tempID = br.getRedirectLocation();
+        if (tempID != null && tempID.length() < 40) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
         if (tempID != null) {
-            DownloadLink dl = createDownloadlink("http://videobam.com/videos/download/" + tempID);
+            DownloadLink dl = createDownloadlink(tempID);
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
-        tempID = br.getRegex("name=\"FlashVars\" value=\"options=(http://(www\\.)keezmovies\\.com/.*?)\"").getMatch(0);
+        String filename = br.getRegex("<title>Welcome to Stolen XXX Videos \\- Viewing Media \\-(.*?)\\- Daily Free XXX Porn Videos</title>").getMatch(0);
+        if (filename == null) {
+            logger.warning("Couldn't decrypt link: " + parameter);
+            return null;
+        }
+        tempID = br.getRegex("\"file=(http://hosted\\.yourvoyeurvideos\\.com/videos/\\d+\\.flv)\\&").getMatch(0);
         if (tempID != null) {
-            br.getPage(tempID);
-            String finallink = br.getRegex("<share>(http://.*?)</share>").getMatch(0);
-            if (finallink == null) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
-            }
-            DownloadLink dl = createDownloadlink(finallink);
+            DownloadLink dl = createDownloadlink("directhttp://" + tempID);
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
-        tempID = br.getRegex("movie_id=(\\d+)").getMatch(0);
+        tempID = br.getRegex("\"(http://(www\\.)pornyeah\\.com/videos/.*?)\"").getMatch(0);
         if (tempID != null) {
-            DownloadLink dl = createDownloadlink("http://www.pornrabbit.com/" + tempID + "/bla.html");
+            DownloadLink dl = createDownloadlink(tempID);
             decryptedLinks.add(dl);
-            return decryptedLinks;
-        }
-        tempID = br.getRegex("id_video=(\\d+)\"").getMatch(0);
-        if (tempID != null) {
-            decryptedLinks.add(createDownloadlink("http://www.xvideos.com/video" + tempID));
-            return decryptedLinks;
-        }
-        tempID = br.getRegex("megaporn\\.com/e/([A-Z0-9]{8})").getMatch(0);
-        if (tempID != null) {
-            decryptedLinks.add(createDownloadlink("http://www.megaporn.com/video/?v=" + tempID));
             return decryptedLinks;
         }
         if (tempID == null) {
-            logger.warning("Decrypter broken for link: " + parameter);
+            logger.warning("Couldn't decrypt link: " + parameter);
             return null;
         }
         return decryptedLinks;

@@ -64,6 +64,7 @@ public class TurboBitNet extends PluginForHost {
         }
     }
 
+    // Also check HitFileNet plugin if this one is broken
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
@@ -162,10 +163,13 @@ public class TurboBitNet extends PluginForHost {
             logger.info(" Waittime detected, waiting " + ttt + " seconds from now on...");
             tt = Integer.parseInt(ttt);
         }
-        if (tt > 250) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Limit reached or IP already loading", tt * 1001l); }
+        if (tt > 250) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Limit reached or IP already loading", tt * 1001l);
+        String finalPage = br.getRegex("\\$\\(\"#timeoutBox\"\\)\\.load\\(\"(/.*?)\"\\)").getMatch(0);
+        if (finalPage == null) finalPage = br.getRegex("\"(/download/getLinkAfterTimeout/[a-z0-9]+/\\d+/)\"").getMatch(0);
+        if (finalPage == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         sleep(tt * 1001, downloadLink);
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        br.getPage("http://turbobit.net/download/getLinkAfterTimeout/" + id + "/");
+        br.getPage("http://turbobit.net" + finalPage);
         String downloadUrl = br.getRegex("<a href=\\'(.*?)\\'>").getMatch(0);
         if (downloadUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadUrl, true, 1);
