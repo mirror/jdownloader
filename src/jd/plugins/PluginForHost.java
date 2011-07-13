@@ -511,6 +511,10 @@ public abstract class PluginForHost extends Plugin implements FavIconRequestor {
                 }
 
                 try {
+                    /*
+                     * use this REGEX to cut of following http links,
+                     * (?=https?:|$|\r|\n|)
+                     */
                     final DownloadLink link = new DownloadLink((PluginForHost) wrapper.getPlugin(), file.substring(file.lastIndexOf("/") + 1, file.length()), getHost(), file, true);
                     links.add(link);
                 } catch (IllegalArgumentException e) {
