@@ -16,7 +16,7 @@ import java.net.URL;
 import org.appwork.net.protocol.http.HTTPConstants.ResponseCode;
 import org.appwork.txtresource.TranslationFactory;
 import org.appwork.utils.IO;
-import org.appwork.utils.net.httpserver.HttpRequestHandler;
+import org.appwork.utils.net.httpserver.handler.HttpRequestHandler;
 import org.appwork.utils.net.httpserver.requests.GetRequest;
 import org.appwork.utils.net.httpserver.requests.PostRequest;
 import org.appwork.utils.net.httpserver.responses.HttpResponse;
