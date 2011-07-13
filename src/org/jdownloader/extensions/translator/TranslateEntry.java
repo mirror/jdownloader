@@ -15,10 +15,13 @@ import org.appwork.txtresource.TranslateInterface;
  */
 public class TranslateEntry {
 
-    private TranslateInterface          tinterface;
-    private Method                      method;
-    private String                      translation;
+    private TranslateInterface            tinterface;
+    private Method                        method;
+    private String                        translation;
     private ArrayList<TranslationProblem> errors;
+    private Integer                       cntErrors;
+    private Integer                       cntWarnings;
+    private Boolean                       isMissing;
 
     /**
      * 
@@ -43,6 +46,8 @@ public class TranslateEntry {
      */
     private void validate() {
         errors.clear();
+        cntErrors = 0;
+        cntWarnings = 0;
         // parameter check.
         validateParameterCount();
         // length check
@@ -59,10 +64,17 @@ public class TranslateEntry {
         String def = this.getDefault();
         if (getTranslation().length() == 0) {
             errors.add(new TranslationProblem(TranslationProblem.Type.WARNING, "Translation is missing."));
+            isMissing = true;
+            cntWarnings++;
 
-        } else if (def != null && def.length() > 0) {
-            if ((100 * Math.abs(def.length() - getTranslation().length())) / Math.min(def.length(), getTranslation().length()) > 80) {
-                errors.add(new TranslationProblem(TranslationProblem.Type.WARNING, "Translation length differs a lot from default. Translation should have roughly the same length!"));
+        } else {
+            isMissing = false;
+            if (def != null && def.length() > 0) {
+                if ((100 * Math.abs(def.length() - getTranslation().length())) / Math.min(def.length(), getTranslation().length()) > 80) {
+                    errors.add(new TranslationProblem(TranslationProblem.Type.WARNING, "Translation length differs a lot from default. Translation should have roughly the same length!"));
+                    cntWarnings++;
+                }
+
             }
         }
     }
@@ -76,6 +88,7 @@ public class TranslateEntry {
         for (int i = 0; i < getParameters().length; i++) {
             if (!getTranslation().contains("%s" + (i + 1))) {
                 errors.add(new TranslationProblem(TranslationProblem.Type.ERROR, "Parameter %s" + (i + 1) + " is missing"));
+                cntErrors++;
                 return;
             }
         }
@@ -171,4 +184,24 @@ public class TranslateEntry {
         validate();
     }
 
+    public boolean hasErrors() {
+        return (cntErrors > 0) ? true : false;
+
+    }
+
+    public boolean hasWarnings() {
+        return (cntWarnings > 0) ? true : false;
+    }
+
+    public boolean isMissing() {
+        return isMissing;
+    }
+
+    public boolean isDefault() {
+        return translation.equals(getDefault());
+        // return (translation.equals(getDefault()) &&
+        // !this.getKey().endsWith("_accelerator") &&
+        // !this.getKey().endsWith("_mnemonic") &&
+        // !this.getKey().endsWith("_mnemonics"));
+    }
 }

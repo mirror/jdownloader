@@ -38,7 +38,7 @@ public class TranslationProblem {
     }
 
     public String toString() {
-        return "[" + type + "]" + message;
+        return "[" + type + "] " + message;
     }
 
 }
