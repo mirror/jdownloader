@@ -1,6 +1,12 @@
 package org.jdownloader.gui.views.downloads.table;
 
+import java.awt.AlphaComposite;
+import java.awt.Color;
+import java.awt.Composite;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.Point;
+import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
@@ -62,6 +68,8 @@ public class DownloadsTable extends BasicJDTable<PackageLinkNode> {
     private DownloadTableAction moveUpAction;
     private DownloadTableAction moveDownAction;
     private DownloadTableAction moveToBottomAction;
+    private Color               sortNotifyColor;
+    private Color               sortNotifyColorTransparent;
 
     public DownloadsTable(final DownloadsTableModel tableModel) {
         super(tableModel);
@@ -72,6 +80,8 @@ public class DownloadsTable extends BasicJDTable<PackageLinkNode> {
         this.setDropMode(DropMode.INSERT_ROWS);
         initActions();
         onSelectionChanged(null);
+        sortNotifyColor = Color.ORANGE;
+        sortNotifyColorTransparent = new Color(sortNotifyColor.getRed(), sortNotifyColor.getGreen(), sortNotifyColor.getBlue(), 0);
 
         // this.getExtTableModel().addExtComponentRowHighlighter(new
         // ExtComponentRowHighlighter<PackageLinkNode>(f2, b2, null) {
@@ -415,4 +425,23 @@ public class DownloadsTable extends BasicJDTable<PackageLinkNode> {
         return moveDownAction;
     }
 
+    @Override
+    public void paintComponent(Graphics g) {
+        super.paintComponent(g);
+
+        Graphics2D g2 = (Graphics2D) g;
+        final Rectangle visibleRect = this.getVisibleRect();
+        Rectangle first;
+
+        int index = getExtTableModel().getSortColumn().getIndex();
+        if (index < 0) return;
+        first = this.getCellRect(0, index, true);
+
+        g2.setColor(Color.ORANGE);
+        Composite comp = g2.getComposite();
+        g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.2f));
+        g2.fillRect(visibleRect.x + first.x, visibleRect.y, visibleRect.x + getExtTableModel().getSortColumn().getWidth(), visibleRect.y + visibleRect.height);
+        g2.setComposite(comp);
+
+    }
 }

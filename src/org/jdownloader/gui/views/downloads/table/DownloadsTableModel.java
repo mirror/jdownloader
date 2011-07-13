@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.concurrent.atomic.AtomicLong;
 
+import javax.swing.Icon;
+
 import jd.controlling.DownloadController;
 import jd.controlling.IOEQ;
 import jd.plugins.FilePackage;
@@ -35,10 +37,14 @@ public class DownloadsTableModel extends ExtTableModel<PackageLinkNode> {
         CURRENT, TOP, BOTTOM
     }
 
-    private static final long serialVersionUID = -198189279671615981L;
+    private static final long   serialVersionUID   = -198189279671615981L;
 
-    private AtomicLong        tableChangesDone = new AtomicLong(0);
-    private AtomicLong        tableChangesReq  = new AtomicLong(0);
+    private static final String SORT_DOWNLOADORDER = "DOWNLOAD";
+
+    private AtomicLong          tableChangesDone   = new AtomicLong(0);
+    private AtomicLong          tableChangesReq    = new AtomicLong(0);
+
+    private ListOrderIDColumn   downloadOrder;
 
     public DownloadsTableModel() {
         super("downloadstable");
@@ -67,7 +73,7 @@ public class DownloadsTableModel extends ExtTableModel<PackageLinkNode> {
         this.addColumn(new PriorityColumn());
         this.addColumn(new StopSignColumn());
 
-        this.addColumn(new ListOrderIDColumn());
+        this.addColumn(downloadOrder = new ListOrderIDColumn());
 
     }
 
@@ -106,6 +112,22 @@ public class DownloadsTableModel extends ExtTableModel<PackageLinkNode> {
             }
 
         }, true);
+    }
+
+    @Override
+    public String getNextSortIdentifier(String sortOrderIdentifier) {
+        if (sortOrderIdentifier == null || sortOrderIdentifier.equals(ExtColumn.SORT_ASC)) {
+            return ExtColumn.SORT_DESC;
+        } else if (sortOrderIdentifier.equals(ExtColumn.SORT_DESC)) {
+            return SORT_DOWNLOADORDER;
+        } else {
+            return ExtColumn.SORT_ASC;
+        }
+    }
+
+    public Icon getSortIcon(String sortOrderIdentifier) {
+        if (sortOrderIdentifier == SORT_DOWNLOADORDER) { return null; }
+        return super.getSortIcon(sortOrderIdentifier);
     }
 
     protected void toggleFilePackageExpand(final FilePackage fp2, final TOGGLEMODE mode) {
@@ -161,7 +183,11 @@ public class DownloadsTableModel extends ExtTableModel<PackageLinkNode> {
      * ArrayList
      */
     @Override
-    public ArrayList<PackageLinkNode> sort(final ArrayList<PackageLinkNode> data, final ExtColumn<PackageLinkNode> column) {
+    public ArrayList<PackageLinkNode> sort(final ArrayList<PackageLinkNode> data, ExtColumn<PackageLinkNode> column) {
+        if (column.getSortOrderIdentifier() == SORT_DOWNLOADORDER) {
+            column = downloadOrder;
+            downloadOrder.setSortOrderIdentifier(ExtColumn.SORT_DESC);
+        }
         this.sortColumn = column;
         String id = column.getSortOrderIdentifier();
         try {

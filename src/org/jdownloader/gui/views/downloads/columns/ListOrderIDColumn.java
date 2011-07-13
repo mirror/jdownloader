@@ -65,7 +65,7 @@ public class ListOrderIDColumn extends ExtLongColumn<PackageLinkNode> {
     }
 
     public boolean isSortable(PackageLinkNode obj) {
-        return true;
+        return false;
     }
 
     @Override
