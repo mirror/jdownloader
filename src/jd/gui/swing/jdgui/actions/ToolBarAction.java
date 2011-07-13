@@ -156,6 +156,11 @@ public abstract class ToolBarAction extends JDAction {
     }
 
     @Override
+    public int hashCode() {
+        return this.getID() == null ? 0 : this.getID().hashCode();
+    }
+
+    @Override
     public boolean equals(Object o) {
         if (o == null || !(o instanceof ToolBarAction)) return false;
         if (getID() == null) return false;
