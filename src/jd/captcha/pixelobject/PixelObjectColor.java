@@ -30,7 +30,7 @@ public class PixelObjectColor implements Comparable<PixelObjectColor> {
     }
 
     public int compareTo(PixelObjectColor o) {
-        return new Integer(o.count).compareTo(count);
+        return Integer.valueOf(o.count).compareTo(count);
     }
 
     @Override

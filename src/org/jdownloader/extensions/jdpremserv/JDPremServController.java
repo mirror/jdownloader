@@ -42,7 +42,7 @@ public class JDPremServController {
         if (link == null) { return -1; }
         Integer ret = this.requestedDownloads.get(link);
         if (ret == null) {
-            ret = new Integer(1);
+            ret = 1;
         } else {
             ret++;
         }

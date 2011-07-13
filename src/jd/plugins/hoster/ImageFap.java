@@ -51,7 +51,7 @@ public class ImageFap extends PluginForHost {
                 // ))));
                 final int charcode = s1.charAt(i) - Integer.parseInt(code.substring(code.length() - 1, code.length()));
                 // logger.info("decrypt7 " + charcode);
-                t = t + new Character((char) charcode).toString();
+                t = t + Character.valueOf((char) charcode).toString();
                 // t+=new Character((char)
                 // (s1.charAt(i)-code.charAt(code.length()-1)));
 

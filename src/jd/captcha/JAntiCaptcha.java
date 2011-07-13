@@ -659,7 +659,7 @@ public class JAntiCaptcha {
             final JCheckBox bt = new JCheckBox("DELETE");
             final int ii = i;
             bt.addActionListener(new ActionListener() {
-                public Integer id = new Integer(ii);
+                public Integer id = ii;
 
                 public void actionPerformed(ActionEvent arg) {
                     JCheckBox src = ((JCheckBox) arg.getSource());

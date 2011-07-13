@@ -56,7 +56,6 @@ import org.jdownloader.extensions.webinterface.template.tmpls.element.If;
 import org.jdownloader.extensions.webinterface.template.tmpls.element.Var;
 import org.jdownloader.extensions.webinterface.template.tmpls.parsers.Parser;
 
-
 /**
  * Use HTML Templates with java.
  * <p>
@@ -145,30 +144,30 @@ public class Template {
         }
     }
 
-    private If __template__ = new If("__template__");
-    private String[] arrayref = null;
-    private boolean case_sensitive = false;
-    private boolean debug = false;
-    private boolean die_on_bad_params = false;
-    private Stack<Element> elements = new Stack<Element>();
-    private Reader filehandle = null;
-    private String filename = null;
-    private Filter[] filters = null;
-    private boolean global_vars = false;
-    private boolean loop_context_vars = false;
-    private int max_includes = 11;
-    private boolean no_includes = false;
+    private If                        __template__           = new If("__template__");
+    private String[]                  arrayref               = null;
+    private boolean                   case_sensitive         = false;
+    private boolean                   debug                  = false;
+    private boolean                   die_on_bad_params      = false;
+    private Stack<Element>            elements               = new Stack<Element>();
+    private Reader                    filehandle             = null;
+    private String                    filename               = null;
+    private Filter[]                  filters                = null;
+    private boolean                   global_vars            = false;
+    private boolean                   loop_context_vars      = false;
+    private int                       max_includes           = 11;
+    private boolean                   no_includes            = false;
 
-    private Hashtable<String, Object> params = new Hashtable<String, Object>();
-    private Parser parser;
+    private Hashtable<String, Object> params                 = new Hashtable<String, Object>();
+    private Parser                    parser;
 
-    private String[] path = null;
+    private String[]                  path                   = null;
 
-    private String scalarref = null;
+    private String                    scalarref              = null;
 
-    private boolean search_path_on_include = false;
+    private boolean                   search_path_on_include = false;
 
-    private boolean strict = true;
+    private boolean                   strict                 = true;
 
     /**
      * Initialises a new Template object, using the values in the Hashtable args
@@ -248,7 +247,7 @@ public class Template {
      * 
      * <pre>
      * String[] template_init = { &quot;filename&quot;, &quot;my_template.tmpl&quot;, &quot;case_sensitive&quot;, &quot;true&quot;, &quot;max_includes&quot;, &quot;5&quot; };
-     * Template t = new Template(template_init);
+     *                                                                                                             Template t = new Template(template_init);
      * </pre>
      * 
      * <p>
@@ -819,7 +818,7 @@ public class Template {
      * @see #setParams(Hashtable)
      */
     public int setParam(String name, int value) throws IllegalArgumentException, NullPointerException {
-        return setParam(name, new Integer(value)).intValue();
+        return setParam(name, Integer.valueOf(value)).intValue();
     }
 
     /**

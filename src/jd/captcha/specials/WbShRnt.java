@@ -85,7 +85,7 @@ public class WbShRnt {
             }
 
             public int compareTo(colorD o) {
-                return new Integer(o.anzahl).compareTo(anzahl);
+                return Integer.valueOf(o.anzahl).compareTo(anzahl);
             }
 
         }

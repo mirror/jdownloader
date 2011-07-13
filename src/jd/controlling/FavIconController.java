@@ -75,7 +75,7 @@ public final class FavIconController extends SubConfiguration implements Runnabl
         thread.setDaemon(true);
         thread.setName("FavIconLoader");
         failed = getGenericProperty("failedList", new ArrayList<String>());
-        Long lastRefresh = getGenericProperty("lastRefresh", new Long(0));
+        Long lastRefresh = getGenericProperty("lastRefresh", Long.valueOf(0));
         if ((System.currentTimeMillis() - lastRefresh) > (1000l * 60 * 60 * 24 * 7)) {
             JDLogger.getLogger().info("FavIcon Refresh Timeout");
             failed.clear();
@@ -263,7 +263,7 @@ public final class FavIconController extends SubConfiguration implements Runnabl
     public void saveSyncnonThread() {
         final String id = JDController.requestDelayExit("faviconcontroller");
         synchronized (LOCK) {
-            setProperty("lastRefresh", new Long(System.currentTimeMillis()));
+            setProperty("lastRefresh", Long.valueOf(System.currentTimeMillis()));
             save();
         }
         JDController.releaseDelayExit(id);
@@ -272,7 +272,7 @@ public final class FavIconController extends SubConfiguration implements Runnabl
     public void resetFailedList() {
         synchronized (LOCK) {
             failed.clear();
-            setProperty("lastRefresh", new Long(0));
+            setProperty("lastRefresh", Long.valueOf(0));
             save();
         }
     }
