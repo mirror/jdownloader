@@ -179,7 +179,7 @@ public class DownUploadCom extends PluginForHost {
                     logger.warning("Standard captcha captchahandling broken!");
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                String code = getCaptchaCode(captchaurl, downloadLink);
+                String code = getCaptchaCode("xfilesharingprobasic", captchaurl, downloadLink);
                 dlForm.put("code", code);
                 logger.info("Put captchacode " + code + " obtained by captcha metod \"Standard captcha\" in the form.");
             } else if (new Regex(BRBEFORE, "(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)").matches()) {

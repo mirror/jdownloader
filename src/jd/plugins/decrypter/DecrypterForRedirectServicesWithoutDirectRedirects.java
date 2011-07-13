@@ -250,9 +250,12 @@ public class DecrypterForRedirectServicesWithoutDirectRedirects extends PluginFo
             br.postPage("http://zero10.net/link.php?id=" + damnID, "s=1");
             finallink = br.getRegex("onClick=.*?\\('(http:.*?)'").getMatch(0);
         } else if (parameter.contains("official.fm/")) {
+            finalfilename = br.getRegex("<meta property=\"og:title\" content=\"(.*?)\"/>").getMatch(0);
+            if (finalfilename == null) finalfilename = br.getRegex("<title>(.*?) on Official\\.fm</title>").getMatch(0);
+            if (finalfilename != null) finalfilename = Encoding.htmlDecode(finalfilename.trim()) + ".mp3";
             br.setFollowRedirects(true);
             br.getPage(parameter + ".xspf?ll_header=yes");
-            finallink = br.getRegex("\"(http://cdn\\.official\\.fm/mp3s/\\d+/\\d+\\.mp3)\"").getMatch(0);
+            finallink = br.getRegex("\"(http://cdn\\.official\\.fm/mp3s/\\d+/\\d+\\.mp3)").getMatch(0);
             dh = true;
         } else if (parameter.contains("hypem.com/")) {
             // Check if a redirect was there before

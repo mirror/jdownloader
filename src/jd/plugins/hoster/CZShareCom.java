@@ -17,47 +17,61 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
 
 import jd.PluginWrapper;
+import jd.http.Cookie;
+import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "czshare.com" }, urls = { "http://[\\w\\.]*?czshare\\.com/(files/\\d+/[\\w_]+|\\d+/[\\w_]+/[^\\s]+|download_file\\.php\\?id=\\d+&file=[^\\s]+)" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "czshare.com" }, urls = { "http://(www\\.)?czshare\\.com/(files/\\d+/[A-Za-z0-9_]+/.{1}|download_file\\.php\\?id=\\d+\\&code=[A-Za-z0-9_]+)" }, flags = { 2 })
 public class CZShareCom extends PluginForHost {
 
-    private final static int SIMULTANEOUS_PREMIUM = 20;
+    private final static int SIMULTANEOUS_PREMIUM = -1;
 
     public CZShareCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://czshare.com/create_user.php");
     }
 
+    private static final Object LOCK     = new Object();
+    private static final String MAINPAGE = "http://czshare.com/";
+
+    public void correctDownloadLink(DownloadLink link) {
+        Regex linkInfo = new Regex(link.getDownloadURL(), "czshare\\.com/download_file\\.php\\?id=(\\d+)\\&code=([A-Za-z0-9_]+)");
+        if (linkInfo.getMatch(0) != null && linkInfo.getMatch(1) != null) link.setUrlDownload("http://czshare.com/" + linkInfo.getMatch(0) + "/" + linkInfo.getMatch(1) + "/x");
+    }
+
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        if (br.containsHTML("Z Vaší IP adresy momentálně probíhá jiné stahování\\. Využijte PROFI")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, JDL.L("plugins.hoster.czsharecom.ipalreadydownloading", "IP already downloading"), 15 * 60 * 1000);
+        handleErrors();
         if (!br.containsHTML("Stáhnout FREE(</span>)?</a><a href=\"/download\\.php\\?id=")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.CZShareCom.nofreeslots", "No free slots available"), 60 * 1000);
         br.setFollowRedirects(false);
         String freeLink = br.getRegex("allowTransparency=\"true\"></iframe><a href=\"(/.*?)\"").getMatch(0);
         if (freeLink == null) freeLink = br.getRegex("\"(/download\\.php\\?id=\\d+\\&code=.*?)\"").getMatch(0);
         if (freeLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.getPage("http://czshare.com" + freeLink);
+        handleErrors();
         Form down = br.getForm(1); // the 0-th is the login (usr/pwd) form,
-                                   // the 1-st one is the free one
+        // the 1-st one is the free one
         String captchaUrl = br.getRegex("action=\"free\\.php\" method=\"post\">[\t\n\r ]+<img src=\"(.*?)\"").getMatch(0);
         if (captchaUrl == null) captchaUrl = br.getRegex("\"(captcha\\.php\\?ticket=.*?\\&id=\\d+)\"").getMatch(0);
         if (down == null || captchaUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -79,44 +93,63 @@ public class CZShareCom extends PluginForHost {
         dl.startDownload();
     }
 
+    private void handleErrors() throws PluginException {
+        if (br.containsHTML("Z Vaší IP adresy momentálně probíhá jiné stahování\\. Využijte PROFI")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, JDL.L("plugins.hoster.czsharecom.ipalreadydownloading", "IP already downloading"), 15 * 60 * 1000);
+    }
+
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return -1;
     }
 
-    private void login(Account account) throws Exception {
-        // this.setBrowserExclusive();
-        br.setCustomCharset("utf-8");
-        br.setFollowRedirects(true);
-        // br.clearCookies("czshare.com");
-        br.getPage("http://czshare.com/prihlasit.php");
-        Form login = br.getForm(0);
-        login.put("jmeno2", Encoding.urlEncode(account.getUser()));
-        login.put("heslo", Encoding.urlEncode(account.getPass()));
-        login.put("trvale", "0");
-        br.submitForm(login);
-        if (!br.containsHTML("odhl.sit")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+    @SuppressWarnings("unchecked")
+    private void login(Account account, final boolean force) throws Exception {
+        synchronized (LOCK) {
+            br.setCookiesExclusive(false);
+            final Object ret = account.getProperty("cookies", null);
+            boolean acmatch = Encoding.urlEncode(account.getUser()).matches(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
+            if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).matches(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+            if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
+                final HashMap<String, String> cookies = (HashMap<String, String>) ret;
+                if (cookies.containsKey("SSL") && account.isValid()) {
+                    for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
+                        final String key = cookieEntry.getKey();
+                        final String value = cookieEntry.getValue();
+                        this.br.setCookie(MAINPAGE, key, value);
+                    }
+                    return;
+                }
+            }
+            br.setCustomCharset("utf-8");
+            br.setFollowRedirects(true);
+            br.postPage("http://czshare.com/index.php", "login-name=" + Encoding.urlEncode(account.getUser()) + "&login-password=" + Encoding.urlEncode(account.getPass()) + "&trvale=on&Prihlasit=P%C5%99ihl%C3%A1sit");
+            if (br.getCookie(MAINPAGE, "trvale") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            // Save cookies
+            final HashMap<String, String> cookies = new HashMap<String, String>();
+            final Cookies add = this.br.getCookies(MAINPAGE);
+            for (final Cookie c : add.getCookies()) {
+                cookies.put(c.getKey(), c.getValue());
+            }
+            account.setProperty("name", Encoding.urlEncode(account.getUser()));
+            account.setProperty("pass", Encoding.urlEncode(account.getPass()));
+            account.setProperty("cookies", cookies);
+        }
     }
 
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         try {
-            login(account);
+            login(account, true);
         } catch (PluginException e) {
             account.setValid(false);
             return ai;
         }
-        br.getPage("http://czshare.com/profi/platnost.php");
-        if (br.containsHTML("Nemáte žádný platný kredit")) {
-            account.setValid(false);
-            ai.setStatus(JDL.L("plugins.hoster.CZShareCom.nocreditleft", "No traffic credit left"));
-            return ai;
-        }
-        String trafficleft = br.getRegex("Velikost kreditu.*?Platnost do</td>.*?<td>(.*?)</td>").getMatch(0);
+        String trafficleft = br.getRegex("kredit: <strong>(.*?)</").getMatch(0);
+        // Regex probably broken
         String expires = br.getRegex("Velikost kreditu.*?Platnost do</td>.*?<td>.*?<td>(.*?)</td>").getMatch(0);
-        if (expires != null && !expires.equals("neomezená")) ai.setValidUntil(TimeFormatter.getMilliSeconds(expires, "dd.MM.yy HH:mm", Locale.GERMANY));
-        if (trafficleft != null) ai.setTrafficLeft(trafficleft);
+        if (expires != null && !"neomezená".equals(expires)) ai.setValidUntil(TimeFormatter.getMilliSeconds(expires, "dd.MM.yy HH:mm", Locale.GERMANY));
+        if (trafficleft != null) ai.setTrafficLeft(trafficleft.replace(",", "."));
         account.setValid(true);
         return ai;
     }
@@ -126,31 +159,19 @@ public class CZShareCom extends PluginForHost {
         return SIMULTANEOUS_PREMIUM;
     }
 
-    public void checkPremiumIP() throws Exception {
-        /* we have to add ip to list, else we only get slow speed */
-        br.getPage("http://czshare.com/profi/filtr.php");
-        Form form = br.getForm(1);
-        /* check if ip is already added */
-        String ip = form.getVarsMap().get("ip");
-        if (br.containsHTML("smaz=" + ip)) return;
-        /* add current ip to list */
-        br.submitForm(form);
-    }
-
     @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
-        br.setFollowRedirects(true);
         requestFileInformation(downloadLink);
-        login(account);
-        checkPremiumIP();
+        login(account, false);
+        br.setFollowRedirects(false);
         br.getPage(downloadLink.getDownloadURL());
-        String dllink = br.getRegex("id=\"profi_prava\">[\t\n\r ]+<a href=\"(http://.*?)\"").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("\"(http://www\\d+\\.czshare\\.com/\\d+/.*?)\"").getMatch(0);
+        Regex linkIDs = new Regex(downloadLink.getDownloadURL(), "czshare\\.com/(\\d+)/([A-Za-z0-9_]+)/");
+        br.postPage("http://czshare.com/profi_down.php", "id=" + linkIDs.getMatch(0) + "&code=" + linkIDs.getMatch(1));
+        String dllink = br.getRedirectLocation();
         if (dllink == null) {
             logger.warning("dllink is null...");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        // More chunks are possible but often cause servererrors...
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         URLConnectionAdapter con = dl.getConnection();
         if (!con.isOK()) {
@@ -175,9 +196,9 @@ public class CZShareCom extends PluginForHost {
         String filename = Encoding.htmlDecode(br.getRegex("<div class=\"left\\-col\">[\t\n\r ]+<h1>(.*?)<span>\\&nbsp;</span></h1>").getMatch(0));
         if (filename == null) filename = Encoding.htmlDecode(br.getRegex("<title>(.*?) CZshare\\.com download</title>").getMatch(0));
         String filesize = br.getRegex("Velikost: (.*?)<br").getMatch(0);
-        if (filename == null || filesize == null || filesize.equals("0 B")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (filename == null || filesize == null || "0 B".equals(filesize)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(filename.trim());
-        downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.replace(",", ".")));
+        downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.replace(",", ".").replace(" ", "")));
         return AvailableStatus.TRUE;
     }
 
