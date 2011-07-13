@@ -23,6 +23,8 @@ import org.appwork.utils.swing.table.ExtTableModel;
 public class BasicJDTable<T> extends ExtTable<T> {
 
     private static final long serialVersionUID = -9181860215412270250L;
+    private Color             sortNotifyColor;
+    private Color             sortNotifyColorTransparent;
 
     public BasicJDTable(ExtTableModel<T> tableModel) {
         super(tableModel);
@@ -64,6 +66,9 @@ public class BasicJDTable<T> extends ExtTable<T> {
         // });
         this.addRowHighlighter(new AlternateHighlighter(null, ColorUtils.getAlphaInstance(new JLabel().getForeground(), 6)));
         this.setIntercellSpacing(new Dimension(0, 0));
+
+        sortNotifyColor = Color.ORANGE;
+        sortNotifyColorTransparent = new Color(sortNotifyColor.getRed(), sortNotifyColor.getGreen(), sortNotifyColor.getBlue(), 0);
     }
 
     @Override
@@ -86,11 +91,16 @@ public class BasicJDTable<T> extends ExtTable<T> {
         // getExtTableModel().getSortColumn().getWidth(), visibleRect.height));
         // g2.fill(new Rectangle2D.Float(first.x, 0,
         // getExtTableModel().getSortColumn().getWidth(), visibleRect.height));
-        Color a = Color.ORANGE;
 
-        GradientPaint gp = new GradientPaint(0, visibleRect.y, a, 0, visibleRect.y + visibleRect.height, new Color(a.getRed(), a.getGreen(), a.getBlue(), 0));
+        if (getExtTableModel().getSortColumn().getSortOrderIdentifier() == ExtColumn.SORT_ASC) {
+            GradientPaint gp = new GradientPaint(0, visibleRect.y, sortNotifyColor, 0, visibleRect.y + visibleRect.height, sortNotifyColorTransparent);
 
-        g2.setPaint(gp);
+            g2.setPaint(gp);
+        } else {
+            GradientPaint gp = new GradientPaint(0, visibleRect.y, sortNotifyColorTransparent, 0, visibleRect.y + visibleRect.height, sortNotifyColor);
+
+            g2.setPaint(gp);
+        }
         g2.fillRect(visibleRect.x + first.x, visibleRect.y, visibleRect.x + getExtTableModel().getSortColumn().getWidth(), visibleRect.y + visibleRect.height);
         // g2.fill(new Polygon(new int[] { first.x, first.x +
         // getExtTableModel().getSortColumn().getWidth(), first.x }, new int[] {
