@@ -10,6 +10,7 @@ import javax.swing.table.JTableHeader;
 import jd.plugins.DownloadLink;
 import jd.plugins.PackageLinkNode;
 
+import org.appwork.utils.swing.table.ExtColumn;
 import org.appwork.utils.swing.table.ExtDefaultRowSorter;
 import org.appwork.utils.swing.table.ExtTableHeaderRenderer;
 import org.appwork.utils.swing.table.columns.ExtIconColumn;
@@ -71,7 +72,7 @@ public class PriorityColumn extends ExtIconColumn<PackageLinkNode> {
                 int p1 = getPriority(o1);
                 int p2 = getPriority(o2);
                 if (p1 == p2) { return 0; }
-                if (this.isSortOrderToggle()) {
+                if (this.getSortOrderIdentifier() == ExtColumn.SORT_ASC) {
                     return p1 > p2 ? -1 : 1;
                 } else {
                     return p1 < p2 ? -1 : 1;

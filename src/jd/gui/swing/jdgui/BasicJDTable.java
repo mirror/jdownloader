@@ -1,7 +1,12 @@
 package jd.gui.swing.jdgui;
 
+import java.awt.AlphaComposite;
 import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.GradientPaint;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.Rectangle;
 
 import javax.swing.JLabel;
 import javax.swing.ListSelectionModel;
@@ -47,9 +52,48 @@ public class BasicJDTable<T> extends ExtTable<T> {
             }
 
         });
-
+        // this.getExtTableModel().addExtComponentRowHighlighter(new
+        // ExtComponentRowHighlighter<T>(f2, b2.darker(), null) {
+        //
+        // @Override
+        // public boolean accept(ExtColumn<T> column, T value, boolean selected,
+        // boolean focus, int row) {
+        // return getExtTableModel().getSortColumn() == column;
+        // }
+        //
+        // });
         this.addRowHighlighter(new AlternateHighlighter(null, ColorUtils.getAlphaInstance(new JLabel().getForeground(), 6)));
         this.setIntercellSpacing(new Dimension(0, 0));
     }
 
+    @Override
+    public void paintComponent(Graphics g) {
+        super.paintComponent(g);
+        Graphics2D g2 = (Graphics2D) g;
+        final Rectangle visibleRect = this.getVisibleRect();
+        Rectangle first, last;
+        // get current width;
+
+        int index = getExtTableModel().getSortColumn().getIndex();
+        first = this.getCellRect(0, index, true);
+        System.out.println(index);
+        // getExtColumnIndexByPoint(point)
+        // w= getExtTableModel().getSortColumn().getWidth();
+        // // getExtTableModel().getC getExtTableModel().getSortColumn()
+        g2.setColor(Color.ORANGE);
+        g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.2f));
+        // g2.fill(new Rectangle2D.Float(first.x, 0,
+        // getExtTableModel().getSortColumn().getWidth(), visibleRect.height));
+        // g2.fill(new Rectangle2D.Float(first.x, 0,
+        // getExtTableModel().getSortColumn().getWidth(), visibleRect.height));
+        Color a = Color.ORANGE;
+
+        GradientPaint gp = new GradientPaint(0, visibleRect.y, a, 0, visibleRect.y + visibleRect.height, new Color(a.getRed(), a.getGreen(), a.getBlue(), 0));
+
+        g2.setPaint(gp);
+        g2.fillRect(visibleRect.x + first.x, visibleRect.y, visibleRect.x + getExtTableModel().getSortColumn().getWidth(), visibleRect.y + visibleRect.height);
+        // g2.fill(new Polygon(new int[] { first.x, first.x +
+        // getExtTableModel().getSortColumn().getWidth(), first.x }, new int[] {
+        // 0, visibleRect.height, visibleRect.height }, 3));
+    }
 }

@@ -9,7 +9,6 @@ import jd.controlling.IOEQ;
 import jd.plugins.FilePackage;
 import jd.plugins.PackageLinkNode;
 
-import org.appwork.storage.JSonStorage;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.table.ExtColumn;
@@ -162,13 +161,12 @@ public class DownloadsTableModel extends ExtTableModel<PackageLinkNode> {
      * ArrayList
      */
     @Override
-    public ArrayList<PackageLinkNode> sort(final ArrayList<PackageLinkNode> data, final ExtColumn<PackageLinkNode> column, final boolean sortOrderToggle) {
+    public ArrayList<PackageLinkNode> sort(final ArrayList<PackageLinkNode> data, final ExtColumn<PackageLinkNode> column) {
         this.sortColumn = column;
-        this.sortOrderToggle = sortOrderToggle;
-
+        String id = column.getSortOrderIdentifier();
         try {
-            JSonStorage.getStorage("ExtTableModel_" + this.getModelID()).put("SORTORDER", sortOrderToggle);
-            JSonStorage.getStorage("ExtTableModel_" + this.getModelID()).put("SORTCOLUMN", column.getID());
+            getStorage().put(ExtTableModel.SORT_ORDER_ID_KEY, id);
+            getStorage().put(ExtTableModel.SORTCOLUMN_KEY, column.getID());
         } catch (final Exception e) {
             Log.exception(e);
         }
@@ -177,7 +175,7 @@ public class DownloadsTableModel extends ExtTableModel<PackageLinkNode> {
             ArrayList<PackageLinkNode> packages = new ArrayList<PackageLinkNode>(DownloadController.getInstance().size());
             packages.addAll(DownloadController.getInstance().getPackages());
             /* sort packages */
-            Collections.sort(packages, column.getRowSorter(sortOrderToggle));
+            Collections.sort(packages, column.getRowSorter());
             ArrayList<PackageLinkNode> newData = new ArrayList<PackageLinkNode>(Math.max(data.size(), packages.size()));
             for (PackageLinkNode node : packages) {
                 newData.add(node);
@@ -185,7 +183,7 @@ public class DownloadsTableModel extends ExtTableModel<PackageLinkNode> {
                 ArrayList<PackageLinkNode> files = null;
                 synchronized (node) {
                     files = new ArrayList<PackageLinkNode>(((FilePackage) node).getControlledDownloadLinks());
-                    Collections.sort(files, column.getRowSorter(sortOrderToggle));
+                    Collections.sort(files, column.getRowSorter());
                 }
                 newData.addAll(files);
             }

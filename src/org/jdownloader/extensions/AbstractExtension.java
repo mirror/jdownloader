@@ -243,6 +243,12 @@ public abstract class AbstractExtension<T extends ExtensionConfigInterface> {
         return JsonConfig.create(Application.getResource("cfg/" + class1.getName()), interfaceClass);
     }
 
+    /**
+     * Gets called once per session as soon as the extension gets loaded the
+     * first time
+     * 
+     * @throws StartException
+     */
     protected abstract void initExtension() throws StartException;
 
     /**
