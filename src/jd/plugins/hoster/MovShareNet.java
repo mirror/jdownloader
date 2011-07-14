@@ -18,11 +18,11 @@ package jd.plugins.hoster;
 import jd.PluginWrapper;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 
 //movshare by pspzockerscene
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "movshare.net" }, urls = { "http://(www\\.)?movshare\\.net/video/[a-z0-9]+" }, flags = { 0 })
@@ -50,6 +50,11 @@ public class MovShareNet extends PluginForHost {
         if (br.containsHTML(HUMANTEXT)) {
             Form IAmAHuman = br.getForm(0);
             if (IAmAHuman == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            /*
+             * needed for stable 09581 working, post without data did not set
+             * content length to 0
+             */
+            IAmAHuman.put("submit", "");
             br.submitForm(IAmAHuman);
         }
         if (br.containsHTML("(The file is beeing transfered to our other servers|This file no longer exists on our servers)")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
@@ -69,6 +74,10 @@ public class MovShareNet extends PluginForHost {
         if (br.containsHTML(HUMANTEXT)) {
             Form IAmAHuman = br.getForm(0);
             if (IAmAHuman == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            /*
+             * needed for stable 09581 working, post without data did not set
+             * content length to 0
+             */
             br.submitForm(IAmAHuman);
         }
         if (br.containsHTML("The file is beeing transfered to our other servers")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);

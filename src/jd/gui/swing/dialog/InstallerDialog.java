@@ -1,9 +1,5 @@
 package jd.gui.swing.dialog;
 
-
- import org.jdownloader.gui.translate.*;
-import org.jdownloader.settings.GeneralSettings;
-
 import java.awt.Color;
 import java.awt.Font;
 import java.io.File;
@@ -38,6 +34,8 @@ import org.appwork.utils.swing.dialog.AbstractDialog;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.settings.GeneralSettings;
 
 public class InstallerDialog extends AbstractDialog<Object> {
 
@@ -146,11 +144,11 @@ public class InstallerDialog extends AbstractDialog<Object> {
             final String dir = JDUtilities.getResourceFile("downloads").getParent().substring(3).toLowerCase();
 
             if (!JDUtilities.getResourceFile("uninstall.exe").exists() && (dir.startsWith("programme\\") || dir.startsWith("program files\\"))) {
-                lbl.setText(_GUI._.installer_vistaDir_warning( JDUtilities.getResourceFile("downloads").getParent()));
+                lbl.setText(_GUI._.installer_vistaDir_warning(JDUtilities.getResourceFile("downloads").getParent()));
                 lbl.setForeground(Color.RED);
             }
-            if (!JDUtilities.getResourceFile("Updater.jar").canWrite()) {
-                lbl.setText(_GUI._.installer_nowriteDir_warning( JDUtilities.getResourceFile("downloads").getParent()));
+            if (!JDUtilities.getResourceFile("JD.port").canWrite()) {
+                lbl.setText(_GUI._.installer_nowriteDir_warning(JDUtilities.getResourceFile("downloads").getParent()));
                 lbl.setForeground(Color.RED);
             }
         }
