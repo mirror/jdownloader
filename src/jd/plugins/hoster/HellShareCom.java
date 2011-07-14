@@ -25,11 +25,11 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -107,7 +107,12 @@ public class HellShareCom extends PluginForHost {
         if (dllink == null) {
             dllink = br.getRegex("\"(http://data.*?\\.helldata\\.com.*?)(&|\"|')").getMatch(0);
         }
+
         if (dllink == null) {
+            if (br.containsHTML("button-download-full-nocredit")) {
+                logger.info("not enough credits to download");
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+            }
             logger.warning("dllink (premium) is null...");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

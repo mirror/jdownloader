@@ -251,6 +251,8 @@ public class ShareOnlineBiz extends PluginForHost {
         br.setFollowRedirects(true);
         /* Datei herunterladen */
         /* api does allow resume, but only 1 chunk */
+        logger.info("used url: " + dlURL);
+        br.setDebug(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, parameter, dlURL, true, 1);
         if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
