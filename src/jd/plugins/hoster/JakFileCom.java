@@ -47,10 +47,11 @@ public class JakFileCom extends PluginForHost {
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("(>LINK NOT AVAILABLE<|Invalid link<br>|File deleted by owner<br>|The file has been deleted because it was violating our <a)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex(">File: </font><font style=\"font\\-size:16px\" color=\"#FFFFFF\" face=\"Arial\"><b>(.*?)</b>").getMatch(0);
+        if (filename == null) filename = br.getRegex("<strong>Download Video:</strong>[\t\n\r ]+<a href=\"http://www\\d+\\.jakfile\\.com/get/[a-z0-9]+/[a-z0-9]+/(.*?)\"").getMatch(0);
         String filesize = br.getRegex(">Size: </font><font style=\"font\\-size:14px\" color=\"#FFFFFF\" face=\"Arial\">(.*?)</font>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setName(filename.trim());
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
     }
 
@@ -60,8 +61,7 @@ public class JakFileCom extends PluginForHost {
         br.setFollowRedirects(false);
         String nextPage = br.getRegex("\\' onclick=\"document\\.location=\\'(http://.*?)\\'").getMatch(0);
         if (nextPage == null) nextPage = br.getRegex("\\'(http://(www\\.)jakfile\\.com/get/[a-z0-9]+/[a-z0-9]+/.*?)\\'").getMatch(0);
-        if (nextPage == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        br.getPage(nextPage);
+        if (nextPage != null) br.getPage(nextPage);
         String dllink = br.getRegex("style=\"text\\-align: left;\">Download</h1>[\t\n\r ]+<form[\t\n\r ]+action=\"(.*?)\"").getMatch(0);
         if (dllink == null) dllink = br.getRegex("\"(http://www\\d+\\.jakfile\\.com/get/[a-z0-9]+/[a-z0-9]+/.*?)\"").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
