@@ -19,9 +19,10 @@ public class TranslateEntry {
     private Method                        method;
     private String                        translation;
     private ArrayList<TranslationProblem> errors;
-    private Integer                       cntErrors;
-    private Integer                       cntWarnings;
-    private Boolean                       isMissing;
+    private int                           cntErrors     = 0;
+    private Boolean                       isMissing     = false;
+    private Boolean                       isDefault     = false;
+    private Boolean                       isWrongLength = false;
 
     /**
      * 
@@ -33,8 +34,7 @@ public class TranslateEntry {
     public TranslateEntry(TranslateInterface t, Method m) {
         tinterface = t;
         method = m;
-        // Get Translation String without replacing the %s*wildcards
-
+        // Get Translation String without replacing the %s*wildcard
         translation = tinterface._getHandler().getTranslation(method);
         errors = new ArrayList<TranslationProblem>();
         // validates the entry
@@ -46,12 +46,24 @@ public class TranslateEntry {
      */
     private void validate() {
         errors.clear();
-        cntErrors = 0;
-        cntWarnings = 0;
+        // missing check
+        validateExists();
+        if (!isMissing) {
+            // length check
+            validateStringLength();
+            // default check
+            isDefault = translation.equals(getDefault());
+        }
         // parameter check.
         validateParameterCount();
-        // length check
-        validateStringLength();
+    }
+
+    private void validateExists() {
+        if (getTranslation().length() == 0) {
+            errors.add(new TranslationProblem(TranslationProblem.Type.MISSING, "Translation is missing."));
+            isMissing = true;
+        } else
+            isMissing = false;
     }
 
     /**
@@ -62,20 +74,13 @@ public class TranslateEntry {
      */
     private void validateStringLength() {
         String def = this.getDefault();
-        if (getTranslation().length() == 0) {
-            errors.add(new TranslationProblem(TranslationProblem.Type.WARNING, "Translation is missing."));
-            isMissing = true;
-            cntWarnings++;
 
-        } else {
-            isMissing = false;
-            if (def != null && def.length() > 0) {
-                if ((100 * Math.abs(def.length() - getTranslation().length())) / Math.min(def.length(), getTranslation().length()) > 80) {
-                    errors.add(new TranslationProblem(TranslationProblem.Type.WARNING, "Translation length differs a lot from default. Translation should have roughly the same length!"));
-                    cntWarnings++;
-                }
-
-            }
+        if (def != null && def.length() > 0) {
+            if ((100 * Math.abs(def.length() - getTranslation().length())) / Math.min(def.length(), getTranslation().length()) > 80) {
+                errors.add(new TranslationProblem(TranslationProblem.Type.LENGTH, "Translation length differs a lot from default. Translation should have roughly the same length!"));
+                isWrongLength = true;
+            } else
+                isWrongLength = false;
         }
     }
 
@@ -85,9 +90,10 @@ public class TranslateEntry {
      */
     private void validateParameterCount() {
 
+        cntErrors = 0;
         for (int i = 0; i < getParameters().length; i++) {
             if (!getTranslation().contains("%s" + (i + 1))) {
-                errors.add(new TranslationProblem(TranslationProblem.Type.ERROR, "Parameter %s" + (i + 1) + " is missing"));
+                errors.add(new TranslationProblem(TranslationProblem.Type.ERROR, "Parameter %s" + (i + 1) + " is missing."));
                 cntErrors++;
                 return;
             }
@@ -186,22 +192,25 @@ public class TranslateEntry {
 
     public boolean hasErrors() {
         return (cntErrors > 0) ? true : false;
-
-    }
-
-    public boolean hasWarnings() {
-        return (cntWarnings > 0) ? true : false;
     }
 
     public boolean isMissing() {
         return isMissing;
     }
 
+    public boolean isWrongLength() {
+        return isWrongLength;
+    }
+
     public boolean isDefault() {
-        return translation.equals(getDefault());
+        return isDefault;
         // return (translation.equals(getDefault()) &&
         // !this.getKey().endsWith("_accelerator") &&
         // !this.getKey().endsWith("_mnemonic") &&
         // !this.getKey().endsWith("_mnemonics"));
+    }
+
+    public boolean isOK(boolean checkDefault) {
+        return (!isMissing && cntErrors <= 0 && !isWrongLength && !(isDefault && checkDefault));
     }
 }

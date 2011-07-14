@@ -9,7 +9,7 @@ package org.jdownloader.extensions.translator;
  */
 public class TranslationProblem {
     public static enum Type {
-        ERROR, WARNING
+        ERROR, WARNING, LENGTH, MISSING, DEFAULT
     }
 
     private String message;

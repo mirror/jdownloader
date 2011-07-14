@@ -6,9 +6,12 @@ import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 
 import javax.swing.Icon;
+import javax.swing.JCheckBoxMenuItem;
+import javax.swing.JLabel;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
+import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
 import javax.swing.KeyStroke;
@@ -23,7 +26,10 @@ import org.appwork.utils.logging.Log;
 import org.jdownloader.extensions.translator.TLocale;
 import org.jdownloader.extensions.translator.TranslatorExtension;
 import org.jdownloader.extensions.translator.gui.actions.LoadTranslationAction;
+import org.jdownloader.extensions.translator.gui.actions.MarkDefaultAction;
+import org.jdownloader.extensions.translator.gui.actions.MarkOkAction;
 import org.jdownloader.extensions.translator.gui.actions.NewTranslationAction;
+import org.jdownloader.images.NewTheme;
 
 /**
  * Extension gui
@@ -36,15 +42,23 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
     private static final String ID = "TRANSLATORGUI";
     private TranslateTableModel tableModel;
     private TranslateTable      table;
-    private JMenu               mnuLoad;
-    private JMenu               mnuFile;
-    private JMenuItem           mnuSave;
     private SwitchPanel         panel;
-    private EntryInfoPanel      ip;
+    private JMenu               mnuFileLoad;
+    private JMenu               mnuFile;
+    private JMenuItem           mnuFileSave;
+    private JMenu               mnuView;
+    private JCheckBoxMenuItem   mnuViewMarkOK;
+    private JCheckBoxMenuItem   mnuViewMarkDef;
+    private JPanel              pnlIcon;
+    private JLabel              lblIconOK;
+    private JLabel              lblIconError;
+    private JLabel              lblIconWarning;
+    private JLabel              lblIconMissing;
+    private JLabel              lblIconDefault;
 
     public TranslatorGui(TranslatorExtension plg) {
         super(plg);
-        this.panel = new SwitchPanel(new MigLayout("ins 0,wrap 1", "[grow,fill][]", "[grow,fill]")) {
+        this.panel = new SwitchPanel(new MigLayout("ins 0,wrap 1", "[grow,fill]", "[grow,fill][]")) {
 
             @Override
             protected void onShow() {
@@ -62,41 +76,77 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
     }
 
     private void layoutPanel() {
+        panel.add(new JScrollPane(table), "spanx 2");
+        panel.add(pnlIcon);
 
-        panel.add(new JScrollPane(table));
-        panel.add(ip);
     }
 
     private void initComponents() {
         tableModel = new TranslateTableModel();
         table = new TranslateTable(tableModel);
         table.getSelectionModel().addListSelectionListener(this);
-        ip = new EntryInfoPanel();
+
+        pnlIcon = new JPanel(new MigLayout("ins 2 10 2 10", "", ""));
+
+        lblIconOK = new JLabel("OK", NewTheme.I().getIcon("ok", 16), JLabel.LEFT);
+        lblIconOK.setToolTipText("<html>Marked keys are OK.</html>");
+        pnlIcon.add(lblIconOK);
+
+        lblIconError = new JLabel("Error", NewTheme.I().getIcon("error", 16), JLabel.LEFT);
+        lblIconError.setToolTipText("<html>Marked keys contain errors. Did you...<ul><li>use the right number of parameters (%s1, %s2, ...)?</li></ul></html>");
+        pnlIcon.add(lblIconError);
+
+        lblIconWarning = new JLabel("Warning", NewTheme.I().getIcon("warning", 16), JLabel.LEFT);
+        lblIconWarning.setToolTipText("<html>Marked keys contain warnings. Did you...<ul><il>use about the same length as the default text for your translation?</li></ul></html>");
+        pnlIcon.add(lblIconWarning);
+
+        lblIconMissing = new JLabel("Missing", NewTheme.I().getIcon("prio_0", 16), JLabel.LEFT);
+        lblIconMissing.setToolTipText("<html>Marked keys are untranslated.</html>");
+        pnlIcon.add(lblIconMissing);
+
+        lblIconDefault = new JLabel("Default", NewTheme.I().getIcon("flags/en", 16), JLabel.LEFT);
+        lblIconDefault.setToolTipText("<html>Marked keys are still set to the default texts. The key might...<ul><il>be untranslated?</li><il>does not need translation?</li></ul></html>");
+        pnlIcon.add(lblIconDefault);
+
     }
 
     protected void initMenu(JMenuBar menubar) {
         // Load Menu
-        this.mnuLoad = new JMenu("Load");
-        for (TLocale t : getExtension().getTranslations()) {
-            mnuLoad.add(new LoadTranslationAction(this, t));
-        }
-        if (getExtension().getTranslations().size() > 0) mnuLoad.add(new JSeparator());
-        mnuLoad.add(new NewTranslationAction(this));
         mnuFile = new JMenu("File");
-        this.mnuFile.add(this.mnuLoad);
-        this.mnuFile.addSeparator();
-        this.mnuFile.add(this.mnuSave = new JMenuItem("Save"));
-        mnuSave.addActionListener(new ActionListener() {
+
+        this.mnuFileLoad = new JMenu("Load");
+        for (TLocale t : getExtension().getTranslations()) {
+            mnuFileLoad.add(new LoadTranslationAction(this, t));
+        }
+        if (getExtension().getTranslations().size() > 0) mnuFileLoad.add(new JSeparator());
+        mnuFileLoad.add(new NewTranslationAction(this));
+
+        this.mnuFileSave = new JMenuItem("Save");
+        mnuFileSave.addActionListener(new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {
                 save();
             }
         });
-        this.mnuSave.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S, InputEvent.CTRL_DOWN_MASK));
+        this.mnuFileSave.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S, InputEvent.CTRL_DOWN_MASK));
+
+        this.mnuFile.add(this.mnuFileLoad);
+        this.mnuFile.addSeparator();
+        this.mnuFile.add(this.mnuFileSave);
+
+        mnuView = new JMenu("View");
+
+        mnuView.add(this.mnuViewMarkOK = new JCheckBoxMenuItem(new MarkOkAction(this)));
+        mnuView.add(this.mnuViewMarkDef = new JCheckBoxMenuItem(new MarkDefaultAction(this)));
+        mnuViewMarkOK.setState(true);
+        mnuViewMarkOK.setVisible(false);
 
         // Menu-Bar zusammensetzen
         menubar.add(this.mnuFile);
+        menubar.add(this.mnuView);
 
+        // tableModel.setMarkDefaults(mnuViewMarkDef.getState());
+        // tableModel.setMarkOK(mnuViewMarkOK.getState());
     }
 
     protected void save() {
@@ -171,7 +221,18 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
     }
 
     public void valueChanged(ListSelectionEvent e) {
-        ip.setEntries(tableModel.getSelectedObjects());
+        // ip.setEntries(tableModel.getSelectedObjects());
     }
 
+    public void setMarkOK(boolean state) {
+        lblIconOK.setEnabled(state);
+        tableModel.setMarkOK(state);
+        table.repaint();
+    }
+
+    public void setMarkDefault(boolean state) {
+        lblIconDefault.setEnabled(state);
+        tableModel.setMarkDefaults(state);
+        table.repaint();
+    }
 }
