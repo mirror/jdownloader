@@ -4,7 +4,6 @@ import java.awt.AlphaComposite;
 import java.awt.Color;
 import java.awt.Composite;
 import java.awt.Font;
-import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Point;
@@ -464,19 +463,21 @@ public class DownloadsTable extends BasicJDTable<PackageLinkNode> {
             g2.fillRect(visibleRect.x + first.x, visibleRect.y, visibleRect.x + getExtTableModel().getSortColumn().getWidth(), visibleRect.y + visibleRect.height);
         }
         if (tableModel.isDownloadOrder()) return;
-        if (sortingText != null) {
-            g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.1f));
-            g2.setFont(this.sortedFont);
-            g2.setColor(this.getForeground());
-            FontMetrics fm = g2.getFontMetrics();
-            int width = fm.stringWidth(this.sortingText);
-            g.drawString(this.sortingText, (this.getWidth() - width) / 2, 60);
-
-            g2.setFont(this.sortedFontTiny);
-            fm = g2.getFontMetrics();
-            width = fm.stringWidth(this.sortingTextTiny);
-            g.drawString(this.sortingTextTiny, (this.getWidth() - width) / 2, 85);
-        }
+        // if (sortingText != null) {
+        // g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER,
+        // 0.1f));
+        // g2.setFont(this.sortedFont);
+        // g2.setColor(this.getForeground());
+        // FontMetrics fm = g2.getFontMetrics();
+        // int width = fm.stringWidth(this.sortingText);
+        // g.drawString(this.sortingText, (this.getWidth() - width) / 2, 60);
+        //
+        // g2.setFont(this.sortedFontTiny);
+        // fm = g2.getFontMetrics();
+        // width = fm.stringWidth(this.sortingTextTiny);
+        // g.drawString(this.sortingTextTiny, (this.getWidth() - width) / 2,
+        // 85);
+        // }
         g2.setComposite(comp);
 
     }
