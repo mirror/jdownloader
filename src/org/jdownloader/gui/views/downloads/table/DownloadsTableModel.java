@@ -133,7 +133,7 @@ public class DownloadsTableModel extends ExtTableModel<PackageLinkNode> {
     }
 
     public Icon getSortIcon(String sortOrderIdentifier) {
-        if (sortOrderIdentifier == SORT_DOWNLOADORDER) { return null; }
+        if (SORT_DOWNLOADORDER.equals(sortOrderIdentifier)) { return null; }
         return super.getSortIcon(sortOrderIdentifier);
     }
 
