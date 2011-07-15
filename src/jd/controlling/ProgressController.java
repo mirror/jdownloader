@@ -269,6 +269,11 @@ public class ProgressController implements MessageListener, Comparable<ProgressC
         return this.getID() == ((ProgressController) o).getID();
     }
 
+    @Override
+    public int hashCode() {
+        return this.getID();
+    }
+
     public void fireCancelAction() {
         if (abort) return;
         abort = true;

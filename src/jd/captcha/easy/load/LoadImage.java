@@ -42,27 +42,27 @@ public class LoadImage {
     /**
      * Adresse die als erstes geladen wird
      */
-    public String baseUrl;
+    public String            baseUrl;
     /**
      * followUrl unterurl die verwendet werden soll
      */
-    protected int followUrl = -1;
+    protected int            followUrl    = -1;
     /**
      * Bildadresse
      */
-    public transient String imageUrl;
+    public transient String  imageUrl;
     /**
      * Formposition -1 == keiner Form folgen
      */
-    protected int form = -1;
+    protected int            form         = -1;
     /**
      * zwischenspeicher für den DateiType
      */
-    protected String fileType = null;
+    protected String         fileType     = null;
     /**
      * Bildposition
      */
-    protected int location = 0;
+    protected int            location     = 0;
     /**
      * Browser mit dem das Bild runtergeladen wurde
      */
@@ -70,7 +70,7 @@ public class LoadImage {
     /**
      * datei in dem das Bild nach dem laden gespeichert wurde
      */
-    public transient File file;
+    public transient File    file;
     public transient boolean clearCookies = true;
 
     public LoadImage(String baseUrl) {
@@ -135,6 +135,11 @@ public class LoadImage {
             return url.equals(imageUrl);
         }
         return false;
+    }
+
+    @Override
+    public int hashCode() {
+        return imageUrl == null ? 0 : imageUrl.hashCode();
     }
 
     public boolean renameCaptcha(File file, String destination) {

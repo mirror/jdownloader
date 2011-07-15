@@ -29,6 +29,11 @@ public class PixelObjectColor implements Comparable<PixelObjectColor> {
         return obj != null && obj instanceof PixelObjectColor && ((PixelObjectColor) obj).color == color;
     }
 
+    @Override
+    public int hashCode() {
+        return color;
+    }
+
     public int compareTo(PixelObjectColor o) {
         return Integer.valueOf(o.count).compareTo(count);
     }

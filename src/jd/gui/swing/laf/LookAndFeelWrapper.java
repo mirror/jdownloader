@@ -55,6 +55,11 @@ public class LookAndFeelWrapper implements Storable {
         return (obj instanceof LookAndFeelWrapper) && ((LookAndFeelWrapper) obj).getClassName() != null && ((LookAndFeelWrapper) obj).getClassName().equals(className);
     }
 
+    @Override
+    public int hashCode() {
+        return this.className == null ? 0 : this.className.hashCode();
+    }
+
     public String getClassName() {
         return className;
     }

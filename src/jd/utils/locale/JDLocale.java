@@ -89,6 +89,11 @@ public class JDLocale implements Serializable, Storable {
         return this.getLngGeoCode().equals(((JDLocale) l).getLngGeoCode());
     }
 
+    @Override
+    public int hashCode() {
+        return lngGeoCode == null ? 0 : lngGeoCode.hashCode();
+    }
+
     /**
      * @return the {@link JDLocale#lngGeoCode}
      * @see JDLocale#lngGeoCode

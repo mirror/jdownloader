@@ -60,11 +60,11 @@ public class DiffMatchPatch {
     /**
      * Number of seconds to map a diff before giving up. (0 for infinity)
      */
-    public float diffTimeout = 1.0f;
+    public float diffTimeout       = 1.0f;
     /**
      * Cost of an empty edit operation in terms of edit characters.
      */
-    public short diffEditCost = 4;
+    public short diffEditCost      = 4;
     /**
      * The size beyond which the double-ended diff activates. Double-ending is
      * twice as fast, but less accurate.
@@ -74,26 +74,26 @@ public class DiffMatchPatch {
     /**
      * Tweak the relative importance (0.0 = accuracy, 1.0 = proximity)
      */
-    public float matchBalance = 0.5f;
+    public float matchBalance      = 0.5f;
     /**
      * At what point is no match declared (0.0 = perfection, 1.0 = very loose)
      */
-    public float matchThreshold = 0.5f;
+    public float matchThreshold    = 0.5f;
     /**
      * The min and max cutoffs used when computing text lengths.
      */
-    public int matchMinLength = 100;
-    public int matchMaxLength = 1000;
+    public int   matchMinLength    = 100;
+    public int   matchMaxLength    = 1000;
     /**
      * Chunk size for context length.
      * 
      */
-    public short patchMargin = 4;
+    public short patchMargin       = 4;
 
     /**
      * The number of bits in an int.
      */
-    private int matchMaxBits = 32;
+    private int  matchMaxBits      = 32;
 
     // DIFF FUNCTIONS
 
@@ -963,7 +963,7 @@ public class DiffMatchPatch {
         return score;
     }
 
-    private Pattern BLANKLINEEND = Pattern.compile("\\n\\r?\\n\\Z", Pattern.DOTALL);
+    private Pattern BLANKLINEEND   = Pattern.compile("\\n\\r?\\n\\Z", Pattern.DOTALL);
     private Pattern BLANKLINESTART = Pattern.compile("\\A\\r?\\n\\r?\\n", Pattern.DOTALL);
 
     /**
@@ -2179,7 +2179,7 @@ public class DiffMatchPatch {
     public static class Diff {
         public Operation operation;
         // One of: INSERT, DELETE or EQUAL.
-        public String text;
+        public String    text;
 
         // The text associated with this diff operation.
 
@@ -2215,13 +2215,23 @@ public class DiffMatchPatch {
          * @return true or false.
          */
         public boolean equals(Object d) {
-            if (d==null) return false;
+            if (d == null) return false;
             try {
                 return (((Diff) d).operation == this.operation) && (((Diff) d).text.equals(this.text));
             } catch (ClassCastException e) {
                 return false;
             }
         }
+
+        @Override
+        public int hashCode() {
+            final int prime = 31;
+            int result = 1;
+            result = prime * result + ((operation == null) ? 0 : operation.hashCode());
+            result = prime * result + ((text == null) ? 0 : text.hashCode());
+            return result;
+        }
+
     }
 
     /**
@@ -2229,10 +2239,10 @@ public class DiffMatchPatch {
      */
     public static class Patch {
         public LinkedList<Diff> diffs;
-        public int start1;
-        public int start2;
-        public int length1;
-        public int length2;
+        public int              start1;
+        public int              start2;
+        public int              length1;
+        public int              length2;
 
         /**
          * Constructor. Initializes with an empty list of diffs.

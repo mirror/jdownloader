@@ -150,6 +150,12 @@ public class HostPluginWrapper extends PluginWrapper implements JDLabelContainer
         return this.getID().equalsIgnoreCase(((HostPluginWrapper) obj).getID());
     }
 
+    @Override
+    public int hashCode() {
+        final String id = this.getID();
+        return id == null ? 0 : id.hashCode();
+    }
+
     /**
      * Creates a dummyHosterIcon
      */

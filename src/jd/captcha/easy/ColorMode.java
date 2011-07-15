@@ -20,15 +20,15 @@ public class ColorMode {
     /**
      * Array mit allen Farbmodellen aus CPoint
      */
-    public static final ColorMode[] cModes = new ColorMode[] { new ColorMode(CPoint.LAB_DIFFERENCE, "RGB3 Difference"),new ColorMode(CPoint.LAB_DIFFERENCE, "LAB Difference"), new ColorMode(CPoint.RGB_DIFFERENCE1, "RGB1 Difference"), new ColorMode(CPoint.RGB_DIFFERENCE2, "RGB2 Difference"), new ColorMode(CPoint.CMYK_DIFFERENCE, "CMYK Difference"), new ColorMode(CPoint.HUE_DIFFERENCE, "Hue Difference"), new ColorMode(CPoint.SATURATION_DIFFERENCE, "Saturation Difference"), new ColorMode(CPoint.BRIGHTNESS_DIFFERENCE, "Brightness Difference"), new ColorMode(CPoint.RED_DIFFERENCE, "Red Difference"), new ColorMode(CPoint.GREEN_DIFFERENCE, "Green Difference"), new ColorMode(CPoint.BLUE_DIFFERENCE, "Blue Difference") };
+    public static final ColorMode[] cModes = new ColorMode[] { new ColorMode(CPoint.LAB_DIFFERENCE, "RGB3 Difference"), new ColorMode(CPoint.LAB_DIFFERENCE, "LAB Difference"), new ColorMode(CPoint.RGB_DIFFERENCE1, "RGB1 Difference"), new ColorMode(CPoint.RGB_DIFFERENCE2, "RGB2 Difference"), new ColorMode(CPoint.CMYK_DIFFERENCE, "CMYK Difference"), new ColorMode(CPoint.HUE_DIFFERENCE, "Hue Difference"), new ColorMode(CPoint.SATURATION_DIFFERENCE, "Saturation Difference"), new ColorMode(CPoint.BRIGHTNESS_DIFFERENCE, "Brightness Difference"), new ColorMode(CPoint.RED_DIFFERENCE, "Red Difference"), new ColorMode(CPoint.GREEN_DIFFERENCE, "Green Difference"), new ColorMode(CPoint.BLUE_DIFFERENCE, "Blue Difference") };
     /**
      * Farbmodus CPoint.LAB_DIFFERENCE
      */
-    protected byte mode;
+    protected byte                  mode;
     /**
      * Name des Farbmodells (Für die ComboBox)
      */
-    private String modeString;
+    private String                  modeString;
 
     public ColorMode(byte mode) {
         this.mode = mode;
@@ -49,6 +49,11 @@ public class ColorMode {
     public boolean equals(Object arg0) {
         if ((arg0 == null) || !(arg0 instanceof ColorMode)) return false;
         return mode == ((ColorMode) arg0).mode;
+    }
+
+    @Override
+    public int hashCode() {
+        return mode;
     }
 
     public String toString() {
