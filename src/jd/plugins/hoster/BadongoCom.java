@@ -170,7 +170,7 @@ public class BadongoCom extends PluginForHost {
             }
             /* Next Request. Response part of final link */
             final String pathData = "?rs=" + fileOrVid + "&rst=&rsrnd=" + System.currentTimeMillis() + "&rsargs[]=0&rsargs[]=yellow&rsargs[]=" + plainJS[1] + "&rsargs[]=" + plainJS[2] + "&rsargs[]=" + plainJS[3] + "&rsargs[]=" + plainJS[5] + "&rsargs[]=" + plainJS[4] + "&rsargs[]=" + filepart;
-            br.getPage(action + pathData).trim();
+            br.getPage(action + pathData);
             plainJS = unpackJS(packedJS.get(1));
             String link = null;
             final String[] tmpVar = br.getRegex("javascript:\\w+\\(\\\\'(.*?)\\\\'\\)").getColumn(0);
