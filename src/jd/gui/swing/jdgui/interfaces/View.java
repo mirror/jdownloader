@@ -65,6 +65,12 @@ public abstract class View extends SwitchPanel {
         return false;
     }
 
+    @Override
+    public int hashCode() {
+        final String id = this.getID();
+        return id == null ? 0 : id.hashCode();
+    }
+
     public SwitchPanel getContent() {
         return this.content;
     }
