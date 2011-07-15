@@ -28,7 +28,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision: $", interfaceVersion = 2, names = { "data.cod.ru" }, urls = { "http://[a-zA-Z.]{0,}data.cod.ru/[0-9]{1,}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "data.cod.ru" }, urls = { "http://[a-zA-Z.]{0,}data.cod.ru/[0-9]{1,}" }, flags = { 0 })
 public class DatacodRu extends PluginForHost {
 
     public DatacodRu(PluginWrapper wrapper) {
