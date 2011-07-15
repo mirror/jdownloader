@@ -41,186 +41,15 @@ import org.appwork.utils.formatter.TimeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wupload.com" }, urls = { "http://[\\w\\.]*?wupload\\..*?/.*?file/([0-9]+(/.+)?|[a-z0-9]+/[0-9]+(/.+)?)" }, flags = { 2 })
 public class WUploadCom extends PluginForHost {
 
+    private static final Object LOCK               = new Object();
+
+    private static long         LAST_FREE_DOWNLOAD = 0l;
+
+    private static String       geoDomain          = null;
+
     public WUploadCom(final PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.wupload.com/premium");
-    }
-
-    @Override
-    public String getAGBLink() {
-        return "http://www.wupload.com/terms-and-conditions";
-    }
-
-    private static final Object LOCK               = new Object();
-    private static long         LAST_FREE_DOWNLOAD = 0l;
-    private static String       geoDomain          = null;
-
-    /* converts id and filename */
-    @Override
-    public void correctDownloadLink(final DownloadLink link) {
-        link.setUrlDownload(getDomain() + "/file/" + getID(link));
-    }
-
-    @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
-        String downloadUrl = null;
-        String passCode = null;
-        passCode = null;
-        this.br.setCookiesExclusive(false);
-
-        this.br.forceDebug(true);
-        // we have to enter captcha before we get ip_blocked_state
-        // we do this timeing check to avoid this
-        final long waited = System.currentTimeMillis() - LAST_FREE_DOWNLOAD;
-        if (LAST_FREE_DOWNLOAD > 0 && waited < 300000) {
-            LAST_FREE_DOWNLOAD = 0;
-            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 600000 - waited);
-        }
-        this.requestFileInformation(downloadLink);
-        br.setCookie(getDomain(), "lang", "en");
-        this.br.getPage(downloadLink.getDownloadURL());
-        if (this.br.getRedirectLocation() != null) {
-            this.br.getPage(this.br.getRedirectLocation());
-        }
-        passCode = null;
-
-        final String freeDownloadLink = this.br.getRegex(".*href=\"(.*?start=1.*?)\"").getMatch(0);
-        // this is an ajax call
-        Browser ajax = this.br.cloneBrowser();
-        ajax.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        ajax.getPage(freeDownloadLink);
-
-        this.errorHandling(downloadLink, ajax);
-        this.br.setFollowRedirects(true);
-        // download is ready already
-        final String re = "<p><a href=\"(http://[^<]*?\\.wupload\\..*?[^<]*?)\"><span>Download";
-
-        downloadUrl = ajax.getRegex(re).getMatch(0);
-        if (downloadUrl == null) {
-
-            // downloadUrl =
-            // this.br.getRegex("downloadUrl = \"(http://.*?)\"").getMatch(0);
-            // if (downloadUrl == null) { throw new
-            // PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-            if (ajax.containsHTML("This file is available for premium users only.")) {
-
-            throw new PluginException(LinkStatus.ERROR_FATAL, "Premium only file. Buy Premium Account"); }
-            final String countDownDelay = ajax.getRegex("countDownDelay = (\\d+)").getMatch(0);
-            if (countDownDelay != null) {
-                /*
-                 * we have to wait a little longer than needed cause its not
-                 * exactly the same time
-                 */
-                if (Long.parseLong(countDownDelay) > 300) {
-
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Long.parseLong(countDownDelay) * 1001l); }
-                this.sleep(Long.parseLong(countDownDelay) * 1000, downloadLink);
-                final String tm = ajax.getRegex("name='tm' value='(.*?)' />").getMatch(0);
-                final String tm_hash = ajax.getRegex("name='tm_hash' value='(.*?)' />").getMatch(0);
-                final Form form = new Form();
-                form.setMethod(Form.MethodType.POST);
-                form.setAction(downloadLink.getDownloadURL() + "?start=1");
-                form.put("tm", tm);
-                form.put("tm_hash", tm_hash);
-                ajax = this.br.cloneBrowser();
-                ajax.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                ajax.submitForm(form);
-                this.errorHandling(downloadLink, ajax);
-            }
-            int tries = 0;
-            while (ajax.containsHTML("Please Enter Password")) {
-                /* password handling */
-                if (downloadLink.getStringProperty("pass", null) == null) {
-                    passCode = Plugin.getUserInput(null, downloadLink);
-                } else {
-                    /* gespeicherten PassCode holen */
-                    passCode = downloadLink.getStringProperty("pass", null);
-                }
-                final Form form = ajax.getForm(0);
-                form.put("passwd", Encoding.urlEncode(passCode));
-                ajax = this.br.cloneBrowser();
-                ajax.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                ajax.submitForm(form);
-                if (tries++ >= 5) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Password Missing"); }
-
-            }
-            if (ajax.containsHTML("Recaptcha\\.create")) {
-                final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(ajax);
-                rc.handleAuto(this, downloadLink);
-                if (ajax.containsHTML("Recaptcha\\.create")) { throw new PluginException(LinkStatus.ERROR_CAPTCHA); }
-            }
-
-            downloadUrl = ajax.getRegex(re).getMatch(0);
-        }
-        if (downloadUrl == null) {
-            logger.info(ajax.toString());
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        /*
-         * limited to 1 chunk at the moment cause don't know if its a server
-         * error that more are possible and resume should also not work ;)
-         */
-        this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, downloadUrl, true, 1);
-        if (this.dl.getConnection() != null && this.dl.getConnection().getContentType() != null && (this.dl.getConnection().getContentType().contains("html") || this.dl.getConnection().getContentType().contains("unknown"))) {
-            this.br.followConnection();
-            this.errorHandling(downloadLink, this.br);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        if (passCode != null) {
-            downloadLink.setProperty("pass", passCode);
-        }
-        this.dl.setFilenameFix(true);
-        this.dl.startDownload();
-        LAST_FREE_DOWNLOAD = System.currentTimeMillis();
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return 1;
-    }
-
-    private synchronized String getDomain() {
-        if (geoDomain != null) return geoDomain;
-        String defaultDomain = "http://www.wupload.com";
-        try {
-            geoDomain = getDomainAPI();
-            if (geoDomain == null) {
-                Browser br = new Browser();
-                br.setCookie(defaultDomain, "lang", "en");
-                br.setFollowRedirects(false);
-                br.getPage(defaultDomain);
-                geoDomain = br.getRedirectLocation();
-                if (geoDomain == null) {
-                    geoDomain = defaultDomain;
-                } else {
-                    String domain = new Regex(br.getRedirectLocation(), "https?://.*?(wupload\\..*?)(/|$)").getMatch(0);
-                    if (domain == null) {
-                        logger.severe("getDomain: failed(2) " + br.getRedirectLocation() + " " + br.toString());
-                        geoDomain = defaultDomain;
-                    } else {
-                        geoDomain = "http://www." + domain;
-                    }
-                }
-            }
-        } catch (final Throwable e) {
-            logger.info("getDomain: failed(1)" + e.toString());
-            geoDomain = defaultDomain;
-        }
-        return geoDomain;
-    }
-
-    private synchronized String getDomainAPI() {
-        try {
-            Browser br = new Browser();
-            br.setFollowRedirects(true);
-            br.getPage("http://api.wupload.com/utility?method=getWuploadDomainForCurrentIp");
-            String domain = br.getRegex("response>.*?wupload(\\..*?)</resp").getMatch(0);
-            if (domain != null) { return "http://www.wupload" + domain; }
-        } catch (final Throwable e) {
-            logger.severe(e.getMessage());
-        }
-        return null;
     }
 
     @Override
@@ -255,7 +84,7 @@ public class WUploadCom extends PluginForHost {
                 }
                 br.postPage("http://api.wupload.com/link?method=getInfo", sb.toString());
                 for (final DownloadLink dllink : links) {
-                    final String id = this.getPureID(dllink);
+                    final String id = getPureID(dllink);
                     final String hit = br.getRegex("link><id>" + id + "(.*?)</link>").getMatch(0);
                     if (hit == null || hit.contains("status>NOT_AVAILABLE")) {
                         dllink.setAvailable(false);
@@ -264,10 +93,12 @@ public class WUploadCom extends PluginForHost {
                         if (name.startsWith("<![CDATA")) {
                             name = new Regex(name, "CDATA\\[(.*?)\\]\\]>").getMatch(0);
                         }
-                        String size = new Regex(hit, "size>(\\d+)</size").getMatch(0);
+                        final String size = new Regex(hit, "size>(\\d+)</size").getMatch(0);
                         dllink.setAvailable(true);
                         dllink.setFinalFileName(name);
-                        if (size != null) dllink.setDownloadSize(Long.parseLong(size));
+                        if (size != null) {
+                            dllink.setDownloadSize(Long.parseLong(size));
+                        }
                     }
                 }
                 if (index == urls.length) {
@@ -280,20 +111,28 @@ public class WUploadCom extends PluginForHost {
         return true;
     }
 
-    public String getID(final DownloadLink link) {
-        String id = new Regex(link.getDownloadURL(), "/file/([0-9]+(/.+)?)").getMatch(0);
-        if (id == null) {
-            id = new Regex(link.getDownloadURL(), "/file/[a-z0-9]+/([0-9]+(/.+)?)").getMatch(0);
-        }
-        return id;
+    /* converts id and filename */
+    @Override
+    public void correctDownloadLink(final DownloadLink link) {
+        link.setUrlDownload(getDomain() + "/file/" + getID(link));
     }
 
-    public String getPureID(final DownloadLink link) {
-        String id = new Regex(link.getDownloadURL(), "/file/([0-9]+)").getMatch(0);
-        if (id == null) {
-            id = new Regex(link.getDownloadURL(), "/file/[a-z0-9]+/([0-9]+)").getMatch(0);
+    private String downloadAPI(final Browser useBr, final Account account, final DownloadLink link) throws IOException, PluginException {
+        Browser br = useBr;
+        if (br == null) {
+            br = new Browser();
         }
-        return id;
+        br.setFollowRedirects(true);
+        String pw = "";
+        final String pwUsw = link.getStringProperty("pass", null);
+        if (pwUsw != null) {
+            pw = "&passwords[" + getPureID(link) + "]=" + Encoding.urlEncode(pwUsw);
+        }
+        final String page = br.getPage("http://api.wupload.com/link?method=getDownloadLink&u=" + Encoding.urlEncode(account.getUser()) + "&p=" + Encoding.urlEncode(account.getPass()) + "&format=xml&ids=" + getPureID(link) + pw);
+        if (page.contains("FSApi_Auth_Exception")) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE); }
+        final String status = br.getRegex("status>(.*?)</status").getMatch(0);
+        if ("NOT_AVAILABLE".equals(status)) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        return page;
     }
 
     private void errorHandling(final DownloadLink downloadLink, final Browser br) throws PluginException {
@@ -320,36 +159,10 @@ public class WUploadCom extends PluginForHost {
         }
     }
 
-    private String loginAPI(Browser useBr, Account account) throws IOException, PluginException {
-        Browser br = useBr;
-        if (br == null) br = new Browser();
-        br.setFollowRedirects(true);
-        String page = br.getPage("http://api.wupload.com/user?method=getInfo&u=" + Encoding.urlEncode(account.getUser()) + "&p=" + Encoding.urlEncode(account.getPass()) + "&format=xml");
-        String premium = br.getRegex("is_premium>(.*?)</is_").getMatch(0);
-        if (!"1".equals(premium)) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-        return page;
-    }
-
-    private String downloadAPI(Browser useBr, Account account, DownloadLink link) throws IOException, PluginException {
-        Browser br = useBr;
-        if (br == null) br = new Browser();
-        br.setFollowRedirects(true);
-        String pw = "";
-        String pwUsw = link.getStringProperty("pass", null);
-        if (pwUsw != null) {
-            pw = "&passwords[" + this.getPureID(link) + "]=" + Encoding.urlEncode(pwUsw);
-        }
-        String page = br.getPage("http://api.wupload.com/link?method=getDownloadLink&u=" + Encoding.urlEncode(account.getUser()) + "&p=" + Encoding.urlEncode(account.getPass()) + "&format=xml&ids=" + this.getPureID(link) + pw);
-        if (page.contains("FSApi_Auth_Exception")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-        String status = br.getRegex("status>(.*?)</status").getMatch(0);
-        if ("NOT_AVAILABLE".equals(status)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        return page;
-    }
-
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         synchronized (LOCK) {
-            AccountInfo ai = new AccountInfo();
+            final AccountInfo ai = new AccountInfo();
             try {
                 loginAPI(br, account);
             } catch (final IOException e) {
@@ -376,8 +189,77 @@ public class WUploadCom extends PluginForHost {
     }
 
     @Override
+    public String getAGBLink() {
+        return "http://www.wupload.com/terms-and-conditions";
+    }
+
+    private synchronized String getDomain() {
+        if (geoDomain != null) { return geoDomain; }
+        final String defaultDomain = "http://www.wupload.com";
+        try {
+            geoDomain = getDomainAPI();
+            if (geoDomain == null) {
+                final Browser br = new Browser();
+                br.setCookie(defaultDomain, "lang", "en");
+                br.setFollowRedirects(false);
+                br.getPage(defaultDomain);
+                geoDomain = br.getRedirectLocation();
+                if (geoDomain == null) {
+                    geoDomain = defaultDomain;
+                } else {
+                    final String domain = new Regex(br.getRedirectLocation(), "https?://.*?(wupload\\..*?)(/|$)").getMatch(0);
+                    if (domain == null) {
+                        logger.severe("getDomain: failed(2) " + br.getRedirectLocation() + " " + br.toString());
+                        geoDomain = defaultDomain;
+                    } else {
+                        geoDomain = "http://www." + domain;
+                    }
+                }
+            }
+        } catch (final Throwable e) {
+            logger.info("getDomain: failed(1)" + e.toString());
+            geoDomain = defaultDomain;
+        }
+        return geoDomain;
+    }
+
+    private synchronized String getDomainAPI() {
+        try {
+            final Browser br = new Browser();
+            br.setFollowRedirects(true);
+            br.getPage("http://api.wupload.com/utility?method=getWuploadDomainForCurrentIp");
+            final String domain = br.getRegex("response>.*?wupload(\\..*?)</resp").getMatch(0);
+            if (domain != null) { return "http://www.wupload" + domain; }
+        } catch (final Throwable e) {
+            logger.severe(e.getMessage());
+        }
+        return null;
+    }
+
+    public String getID(final DownloadLink link) {
+        String id = new Regex(link.getDownloadURL(), "/file/([0-9]+(/.+)?)").getMatch(0);
+        if (id == null) {
+            id = new Regex(link.getDownloadURL(), "/file/[a-z0-9]+/([0-9]+(/.+)?)").getMatch(0);
+        }
+        return id;
+    }
+
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return 1;
+    }
+
+    @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return -1;
+    }
+
+    public String getPureID(final DownloadLink link) {
+        String id = new Regex(link.getDownloadURL(), "/file/([0-9]+)").getMatch(0);
+        if (id == null) {
+            id = new Regex(link.getDownloadURL(), "/file/[a-z0-9]+/([0-9]+)").getMatch(0);
+        }
+        return id;
     }
 
     @Override
@@ -386,24 +268,141 @@ public class WUploadCom extends PluginForHost {
     }
 
     @Override
+    public void handleFree(final DownloadLink downloadLink) throws Exception {
+        String downloadUrl = null;
+        String passCode = null;
+        passCode = null;
+        br.setCookiesExclusive(false);
+
+        br.forceDebug(true);
+        // we have to enter captcha before we get ip_blocked_state
+        // we do this timeing check to avoid this
+        final long waited = System.currentTimeMillis() - LAST_FREE_DOWNLOAD;
+        if (LAST_FREE_DOWNLOAD > 0 && waited < 300000) {
+            LAST_FREE_DOWNLOAD = 0;
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 600000 - waited);
+        }
+        requestFileInformation(downloadLink);
+        br.setCookie(getDomain(), "lang", "en");
+        br.getPage(downloadLink.getDownloadURL());
+        if (br.getRedirectLocation() != null) {
+            br.getPage(br.getRedirectLocation());
+        }
+        passCode = null;
+
+        String freeDownloadLink = br.getRegex(".*href=\"(.*?start=1.*?)\"").getMatch(0);
+        if (!freeDownloadLink.startsWith("http://")) {
+            freeDownloadLink = downloadLink.getDownloadURL().replace(downloadLink.getName(), "") + freeDownloadLink;
+        }
+        // this is an ajax call
+        Browser ajax = br.cloneBrowser();
+        ajax.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        ajax.getPage(freeDownloadLink);
+
+        errorHandling(downloadLink, ajax);
+        br.setFollowRedirects(true);
+        // download is ready already
+        final String re = "<p><a href=\"(http://[^<]*?\\.wupload\\..*?[^<]*?)\"><span>";
+
+        downloadUrl = ajax.getRegex(re).getMatch(0);
+        if (downloadUrl == null) {
+
+            // downloadUrl =
+            // this.br.getRegex("downloadUrl = \"(http://.*?)\"").getMatch(0);
+            // if (downloadUrl == null) { throw new
+            // PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+            if (ajax.containsHTML("This file is available for premium users only.")) {
+
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Premium only file. Buy Premium Account"); }
+            final String countDownDelay = ajax.getRegex("countDownDelay = (\\d+)").getMatch(0);
+            if (countDownDelay != null) {
+                /*
+                 * we have to wait a little longer than needed cause its not
+                 * exactly the same time
+                 */
+                if (Long.parseLong(countDownDelay) > 300) {
+
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Long.parseLong(countDownDelay) * 1001l); }
+                this.sleep(Long.parseLong(countDownDelay) * 1000, downloadLink);
+                final String tm = ajax.getRegex("name='tm' value='(.*?)' />").getMatch(0);
+                final String tm_hash = ajax.getRegex("name='tm_hash' value='(.*?)' />").getMatch(0);
+                final Form form = new Form();
+                form.setMethod(Form.MethodType.POST);
+                form.setAction(downloadLink.getDownloadURL() + "?start=1");
+                form.put("tm", tm);
+                form.put("tm_hash", tm_hash);
+                ajax = br.cloneBrowser();
+                ajax.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                ajax.submitForm(form);
+                errorHandling(downloadLink, ajax);
+            }
+            int tries = 0;
+            while (ajax.containsHTML("Please Enter Password")) {
+                /* password handling */
+                if (downloadLink.getStringProperty("pass", null) == null) {
+                    passCode = Plugin.getUserInput(null, downloadLink);
+                } else {
+                    /* gespeicherten PassCode holen */
+                    passCode = downloadLink.getStringProperty("pass", null);
+                }
+                final Form form = ajax.getForm(0);
+                form.put("passwd", Encoding.urlEncode(passCode));
+                ajax = br.cloneBrowser();
+                ajax.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                ajax.submitForm(form);
+                if (tries++ >= 5) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Password Missing"); }
+
+            }
+            if (ajax.containsHTML("Recaptcha\\.create")) {
+                final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+                final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(ajax);
+                rc.handleAuto(this, downloadLink);
+                if (ajax.containsHTML("Recaptcha\\.create")) { throw new PluginException(LinkStatus.ERROR_CAPTCHA); }
+            }
+
+            downloadUrl = ajax.getRegex(re).getMatch(0);
+        }
+        if (downloadUrl == null) {
+            logger.info(ajax.toString());
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        /*
+         * limited to 1 chunk at the moment cause don't know if its a server
+         * error that more are possible and resume should also not work ;)
+         */
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadUrl, true, 1);
+        if (dl.getConnection() != null && dl.getConnection().getContentType() != null && (dl.getConnection().getContentType().contains("html") || dl.getConnection().getContentType().contains("unknown"))) {
+            br.followConnection();
+            errorHandling(downloadLink, br);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        if (passCode != null) {
+            downloadLink.setProperty("pass", passCode);
+        }
+        dl.setFilenameFix(true);
+        dl.startDownload();
+        LAST_FREE_DOWNLOAD = System.currentTimeMillis();
+    }
+
+    @Override
     public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
-        this.setBrowserExclusive();
-        this.requestFileInformation(downloadLink);
+        setBrowserExclusive();
+        requestFileInformation(downloadLink);
         String resp = downloadAPI(br, account, downloadLink);
         String url = new Regex(resp, "CDATA\\[(http://.*?)\\]\\]").getMatch(0);
         if (url == null) {
             /* check for needed pw */
-            String status = new Regex(resp, "status>(.*?)</status").getMatch(0);
+            final String status = new Regex(resp, "status>(.*?)</status").getMatch(0);
             if ("PASSWORD_REQUIRED".equals(status) || "WRONG_PASSWORD".equals(status)) {
                 /* wrong pw */
-                String passCode = Plugin.getUserInput(null, downloadLink);
+                final String passCode = Plugin.getUserInput(null, downloadLink);
                 downloadLink.setProperty("pass", passCode);
             }
             resp = downloadAPI(br, account, downloadLink);
             url = new Regex(resp, "CDATA\\[(http://.*?)\\]\\]").getMatch(0);
         }
         if (url == null) {
-            String status = new Regex(resp, "status>(.*?)</status").getMatch(0);
+            final String status = new Regex(resp, "status>(.*?)</status").getMatch(0);
             if ("PASSWORD_REQUIRED".equals(status) || "WRONG_PASSWORD".equals(status)) {
                 /* wrong pw */
                 downloadLink.setProperty("pass", null);
@@ -411,20 +410,32 @@ public class WUploadCom extends PluginForHost {
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, url, true, 0);
-        if (this.dl.getConnection() != null && this.dl.getConnection().getContentType() != null && (this.dl.getConnection().getContentType().contains("html") || this.dl.getConnection().getContentType().contains("unknown"))) {
-            this.br.followConnection();
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, true, 0);
+        if (dl.getConnection() != null && dl.getConnection().getContentType() != null && (dl.getConnection().getContentType().contains("html") || dl.getConnection().getContentType().contains("unknown"))) {
+            br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        this.dl.startDownload();
+        dl.startDownload();
+    }
+
+    private String loginAPI(final Browser useBr, final Account account) throws IOException, PluginException {
+        Browser br = useBr;
+        if (br == null) {
+            br = new Browser();
+        }
+        br.setFollowRedirects(true);
+        final String page = br.getPage("http://api.wupload.com/user?method=getInfo&u=" + Encoding.urlEncode(account.getUser()) + "&p=" + Encoding.urlEncode(account.getPass()) + "&format=xml");
+        final String premium = br.getRegex("is_premium>(.*?)</is_").getMatch(0);
+        if (!"1".equals(premium)) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE); }
+        return page;
     }
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
-        this.correctDownloadLink(downloadLink);
-        this.checkLinks(new DownloadLink[] { downloadLink });
-        if (!downloadLink.isAvailabilityStatusChecked()) return AvailableStatus.UNCHECKED;
-        if (downloadLink.isAvailabilityStatusChecked() && !downloadLink.isAvailable()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        correctDownloadLink(downloadLink);
+        checkLinks(new DownloadLink[] { downloadLink });
+        if (!downloadLink.isAvailabilityStatusChecked()) { return AvailableStatus.UNCHECKED; }
+        if (downloadLink.isAvailabilityStatusChecked() && !downloadLink.isAvailable()) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         return AvailableStatus.TRUE;
     }
 
@@ -434,7 +445,7 @@ public class WUploadCom extends PluginForHost {
 
     @Override
     public void resetDownloadlink(final DownloadLink link) {
-        this.correctDownloadLink(link);
+        correctDownloadLink(link);
     }
 
     @Override
