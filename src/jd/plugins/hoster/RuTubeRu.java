@@ -61,33 +61,31 @@ public class RuTubeRu extends PluginForHost {
         linkurl = br.getRegex("\\[CDATA\\[(.*?)\\]").getMatch(0);
         if (linkurl == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         if (linkurl.startsWith("rtmp:")) {
-            dl = new RTMPDownload(this, downloadLink, linkurl);
-            final jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
+            try {
+                dl = new RTMPDownload(this, downloadLink, linkurl);
+                final jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
 
-            // Parametersetup
-            // StreamUrl:
-            // rtmp://video-1-2.rutube.ru:1935/rutube_vod_1/_definst_/mp4:vol32/movies/de/15/de157c2b8ffadecac37da56602f1c04e.mp4
-            // <----------Host----------------><---------App---------><---------------------PlayPath---------------------------->
-            // <---------------------TcUrl--------------------------->
+                final String playpath = linkurl.substring(linkurl.lastIndexOf("mp4:"));
+                String host = new Regex(linkurl, "(.*?)(rutube.ru/|rutube.ru:1935/)").getMatch(-1);
+                final String app = linkurl.replace(playpath, "").replace(host, "");
+                if (playpath == null || host == null || app == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+                if (host.endsWith("ru/")) {
+                    host = host.replace("ru/", "ru:1935/");
+                }
+                if (app.equals("vod/")) {
+                    rtmp.setLive(true);
+                } else {
+                    rtmp.setResume(true);
+                }
+                rtmp.setPlayPath(playpath);
+                rtmp.setApp(app);
+                rtmp.setUrl(host + app);
+                rtmp.setSwfUrl("http://rutube.ru/player.swf");
 
-            final String playpath = linkurl.substring(linkurl.lastIndexOf("mp4:"));
-            String host = new Regex(linkurl, "(.*?)(rutube.ru/|rutube.ru:1935/)").getMatch(-1);
-            final String app = linkurl.replace(playpath, "").replace(host, "");
-            if (playpath == null || host == null || app == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-            if (host.endsWith("ru/")) {
-                host = host.replace("ru/", "ru:1935/");
+                ((RTMPDownload) dl).startDownload();
+            } catch (final Throwable e) {
+                throw new PluginException(LinkStatus.ERROR_FATAL, "Developer Version of JD needed!");
             }
-            if (app.equals("vod/")) {
-                rtmp.setLive(true);
-            } else {
-                rtmp.setResume(true);
-            }
-            rtmp.setPlayPath(playpath);
-            rtmp.setApp(app);
-            rtmp.setUrl(host + app);
-            rtmp.setSwfUrl("http://rutube.ru/player.swf");
-
-            ((RTMPDownload) dl).startDownload();
         } else {
             br.setFollowRedirects(true);
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, linkurl, true, 0);
@@ -116,6 +114,8 @@ public class RuTubeRu extends PluginForHost {
         }
         final String filesize = br.getRegex("<span class=\"icn-size\"[^>]*>(.*?)</span>").getMatch(0);
         if (filename == null || filesize == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        filename = filename.replaceFirst("::", "-");
+        filename = filename.replace("::", "");
         downloadLink.setName(filename.trim() + ".flv");
         downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.replace(",", ".")));
         return AvailableStatus.TRUE;
