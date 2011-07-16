@@ -6,13 +6,14 @@ import javax.swing.AbstractAction;
 import javax.swing.JCheckBoxMenuItem;
 
 import org.jdownloader.extensions.translator.gui.TranslatorGui;
+import org.jdownloader.images.NewTheme;
 
 public class MarkDefaultAction extends AbstractAction {
 
     private TranslatorGui master;
 
     public MarkDefaultAction(TranslatorGui master) {
-        super("Mark Default");
+        super("Mark Default", NewTheme.I().getIcon("flags/en", 16));
         this.master = master;
     }
 

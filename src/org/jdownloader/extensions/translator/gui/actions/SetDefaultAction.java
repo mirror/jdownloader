@@ -39,7 +39,6 @@ public class SetDefaultAction extends ContextMenuAction {
 
     @Override
     protected String getIcon() {
-        // return "flags/en";
         return null;
     }
 

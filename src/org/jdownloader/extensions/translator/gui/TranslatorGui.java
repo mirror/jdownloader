@@ -14,6 +14,7 @@ import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
+import javax.swing.JTextField;
 import javax.swing.KeyStroke;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
@@ -29,6 +30,7 @@ import org.jdownloader.extensions.translator.gui.actions.LoadTranslationAction;
 import org.jdownloader.extensions.translator.gui.actions.MarkDefaultAction;
 import org.jdownloader.extensions.translator.gui.actions.MarkOkAction;
 import org.jdownloader.extensions.translator.gui.actions.NewTranslationAction;
+import org.jdownloader.extensions.translator.gui.actions.TestSvnAction;
 import org.jdownloader.images.NewTheme;
 
 /**
@@ -43,12 +45,16 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
     private TranslateTableModel tableModel;
     private TranslateTable      table;
     private SwitchPanel         panel;
-    private JMenu               mnuFileLoad;
     private JMenu               mnuFile;
+    private JMenu               mnuFileLoad;
     private JMenuItem           mnuFileSave;
     private JMenu               mnuView;
     private JCheckBoxMenuItem   mnuViewMarkOK;
     private JCheckBoxMenuItem   mnuViewMarkDef;
+    private JMenu               mnuSvn;
+    private JTextField          pnlSvnUser;
+    private JTextField          pnlSvnPass;
+
     private JPanel              pnlIcon;
     private JLabel              lblIconOK;
     private JLabel              lblIconError;
@@ -141,9 +147,24 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
         mnuViewMarkOK.setState(true);
         mnuViewMarkOK.setVisible(false);
 
+        JPanel pnlSvnLogin = new JPanel(new MigLayout("wrap 2", "", "[30%][]"));
+        this.pnlSvnUser = new JTextField(12);
+        this.pnlSvnPass = new JTextField(12);
+        pnlSvnLogin.add(new JLabel("<html><i>Username"));
+        pnlSvnLogin.add(this.pnlSvnUser);
+        pnlSvnLogin.add(new JLabel("<html><i>Password"));
+        pnlSvnLogin.add(this.pnlSvnPass);
+
+        JMenuItem mnuSvnTest = new JMenuItem(new TestSvnAction(this.pnlSvnUser, this.pnlSvnPass));
+
+        mnuSvn = new JMenu("SVN");
+        mnuSvn.add(pnlSvnLogin);
+        mnuSvn.add(mnuSvnTest);
+
         // Menu-Bar zusammensetzen
         menubar.add(this.mnuFile);
         menubar.add(this.mnuView);
+        menubar.add(this.mnuSvn);
 
         // tableModel.setMarkDefaults(mnuViewMarkDef.getState());
         // tableModel.setMarkOK(mnuViewMarkOK.getState());
