@@ -27,12 +27,12 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -292,7 +292,8 @@ public class WUploadCom extends PluginForHost {
 
         String freeDownloadLink = br.getRegex(".*href=\"(.*?start=1.*?)\"").getMatch(0);
         if (!freeDownloadLink.startsWith("http://")) {
-            freeDownloadLink = downloadLink.getDownloadURL().replace(downloadLink.getName(), "") + freeDownloadLink;
+            String domain = new Regex(br.getURL(), "(http.*?\\..*?/)").getMatch(0);
+            freeDownloadLink = domain + "file/" + freeDownloadLink;
         }
         // this is an ajax call
         Browser ajax = br.cloneBrowser();
