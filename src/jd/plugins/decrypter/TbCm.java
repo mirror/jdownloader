@@ -52,7 +52,7 @@ import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 import de.savemytube.flv.FLV;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "youtube.com" }, urls = { "https?://[\\w\\.]*?youtube\\.com/(watch.*?v=|view_play_list\\?p=|playlist\\?p=|.*?g/c/|.*?grid/user/|v/)[a-z-_A-Z0-9]+(.*?page=\\d+)?" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "youtube.com" }, urls = { "https?://[\\w\\.]*?youtube\\.com/(watch.*?v=|view_play_list\\?p=|playlist\\?p=|.*?g/c/|.*?grid/user/|v/)[a-z\\-_A-Z0-9]+(.*?page=\\d+)?" }, flags = { 0 })
 public class TbCm extends PluginForDecrypt {
 
     public static enum DestinationFormat {
@@ -189,13 +189,13 @@ public class TbCm extends PluginForDecrypt {
             parameter = parameter.replace("watch#", "watch?");
         }
         if (parameter.contains("v/")) {
-            String id = new Regex(parameter, "v/([a-z_A-Z0-9]+)").getMatch(0);
+            String id = new Regex(parameter, "v/([a-z\\-_A-Z0-9]+)").getMatch(0);
             if (id != null) parameter = "http://www.youtube.com/watch?v=" + id;
         }
         if (parameter.contains("view_play_list") || parameter.contains("playlist") || parameter.contains("g/c/") || parameter.contains("grid/user/")) {
             if (parameter.contains("g/c/") || parameter.contains("grid/user/")) {
-                String id = new Regex(parameter, "g/c/([a-z_A-Z0-9]+)").getMatch(0);
-                if (id == null) id = new Regex(parameter, "grid/user/([a-z_A-Z0-9]+)").getMatch(0);
+                String id = new Regex(parameter, "g/c/([a-z\\-_A-Z0-9]+)").getMatch(0);
+                if (id == null) id = new Regex(parameter, "grid/user/([a-z\\-_A-Z0-9]+)").getMatch(0);
                 if (id != null) parameter = "http://www.youtube.com/view_play_list?p=" + id;
             }
             parameter = parameter.replaceFirst("playlist\\?", "view_play_list?");
@@ -257,7 +257,7 @@ public class TbCm extends PluginForDecrypt {
                 /* prefer videoID als filename? */
                 SubConfiguration cfg = SubConfiguration.getConfig("youtube.com");
                 if (cfg.getBooleanProperty("ISASFILENAME", false)) {
-                    String id = new Regex(parameter, "v=([a-z-_A-Z0-9]+)").getMatch(0);
+                    String id = new Regex(parameter, "v=([a-z\\-_A-Z0-9]+)").getMatch(0);
                     if (id != null) YT_FILENAME = id.toUpperCase(Locale.ENGLISH);
                 }
                 final boolean mp3 = cfg.getBooleanProperty("ALLOW_MP3", true);
@@ -395,7 +395,7 @@ public class TbCm extends PluginForDecrypt {
         br.setCookie("youtube.com", "PREF", "f2=40100000");
         br.getHeaders().put("User-Agent", "Wget/1.12");
         br.getPage(video);
-        final String VIDEOID = new Regex(video, "watch\\?v=([\\w_-]+)").getMatch(0);
+        final String VIDEOID = new Regex(video, "watch\\?v=([\\w_\\-]+)").getMatch(0);
         String YT_FILENAME = br.containsHTML("&title=") ? Encoding.htmlDecode(br.getRegex("&title=([^&$]+)").getMatch(0).replaceAll("\\+", " ").trim()) : VIDEOID;
         final String url = br.getURL();
         boolean ythack = false;
