@@ -1,27 +1,27 @@
-package org.jdownloader.extensions.omnibox.awesome.proposal;
+package org.jdownloader.extensions.omnibox.omni.plugins;
 
 import java.util.Arrays;
 import java.util.List;
 
 import javax.swing.JLabel;
 
-import org.jdownloader.extensions.omnibox.awesome.AwesomeAction;
-import org.jdownloader.extensions.omnibox.awesome.AwesomeProposal;
-import org.jdownloader.extensions.omnibox.awesome.AwesomeProposalRequest;
-import org.jdownloader.extensions.omnibox.awesome.AwesomeProposalRequestListener;
-import org.jdownloader.extensions.omnibox.awesome.AwesomeUtils;
+import org.jdownloader.extensions.omnibox.omni.Action;
+import org.jdownloader.extensions.omnibox.omni.Proposal;
+import org.jdownloader.extensions.omnibox.omni.ProposalRequest;
+import org.jdownloader.extensions.omnibox.omni.ProposalRequestListener;
+import org.jdownloader.extensions.omnibox.omni.Utils;
 
 import jd.config.Configuration;
 import jd.controlling.ClipboardHandler;
 import jd.controlling.DistributeData;
 import jd.utils.JDUtilities;
 
-public class AwesomeClipboardListener implements AwesomeProposalRequestListener {
+public class AwesomeClipboardListener implements ProposalRequestListener {
     private enum actionid {
         TURNOFF, TURNON, ADDLINKS
     }
 
-    public void performAction(AwesomeAction action) {
+    public void performAction(Action action) {
         switch ((actionid) action.getProposal().getActionID()) {
         case TURNOFF:
             final Configuration configuration = JDUtilities.getConfiguration();
@@ -49,16 +49,16 @@ public class AwesomeClipboardListener implements AwesomeProposalRequestListener 
         }
     }
 
-    public void requestProposal(AwesomeProposalRequest request) {
+    public void requestProposal(ProposalRequest request) {
         if (request.isParamsEmpty() || (!request.getParams().startsWith("o"))) {
-            new AwesomeProposal(this, request, new JLabel("Add all links from the clipboard."), actionid.ADDLINKS, AwesomeUtils.createProposalListElement(this, request.withParams("now")), 0.6f);
+            new Proposal(this, request, new JLabel("Add all links from the clipboard."), actionid.ADDLINKS, Utils.createProposalListElement(this, request.withParams("now")), 0.6f);
 
         }
         if (request.isParamsEmpty() || request.getParams().startsWith("o")) {
             if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_CLIPBOARD_ALWAYS_ACTIVE, true)) {
-                new AwesomeProposal(this, request, new JLabel("Turn automatic clipboard detection off"), actionid.TURNOFF, AwesomeUtils.createProposalListElement(this, request.withParams("off")), 1.0f);
+                new Proposal(this, request, new JLabel("Turn automatic clipboard detection off"), actionid.TURNOFF, Utils.createProposalListElement(this, request.withParams("off")), 1.0f);
             } else {
-                new AwesomeProposal(this, request, new JLabel("Turn automatic clipboard detection on"), actionid.TURNON, AwesomeUtils.createProposalListElement(this, request.withParams("on")), 1.0f);
+                new Proposal(this, request, new JLabel("Turn automatic clipboard detection on"), actionid.TURNON, Utils.createProposalListElement(this, request.withParams("on")), 1.0f);
             }
         }
     }

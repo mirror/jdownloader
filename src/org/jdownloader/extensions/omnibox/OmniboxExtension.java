@@ -16,23 +16,23 @@ import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
-import org.jdownloader.extensions.omnibox.awesome.Awesome;
-import org.jdownloader.extensions.omnibox.awesome.gui.AwesomeCustomToolbarAction;
-import org.jdownloader.extensions.omnibox.awesome.gui.AwesomeProposalPanel;
-import org.jdownloader.extensions.omnibox.awesome.gui.AwesomeToolbarPanel;
+import org.jdownloader.extensions.omnibox.omni.Omni;
+import org.jdownloader.extensions.omnibox.omni.gui.AwesomeCustomToolbarAction;
+import org.jdownloader.extensions.omnibox.omni.gui.AwesomeProposalPanel;
+import org.jdownloader.extensions.omnibox.omni.gui.AwesomeToolbarPanel;
 
-public class AwesomebarExtension extends AbstractExtension<AwesomebarConfig> implements ControlListener {
+public class OmniboxExtension extends AbstractExtension<OmniboxConfig> implements ControlListener {
 
     private CustomToolbarAction  toolbarAction;
     private AwesomeToolbarPanel  toolbarPanel;
     private AwesomeProposalPanel proposalPanel = null;
-    private Awesome              awesome       = new Awesome();
+    private Omni              omni       = new Omni();
 
-    public Awesome getAwesome() {
-        return awesome;
+    public Omni getAwesome() {
+        return omni;
     }
 
-    public ExtensionConfigPanel<AwesomebarExtension> getConfigPanel() {
+    public ExtensionConfigPanel<OmniboxExtension> getConfigPanel() {
         return null;
     }
 
@@ -40,7 +40,7 @@ public class AwesomebarExtension extends AbstractExtension<AwesomebarConfig> imp
         return false;
     }
 
-    public AwesomebarExtension() throws StartException {
+    public OmniboxExtension() throws StartException {
         super(JDL.L("jd.plugins.optional.awesomebar.awesomebar", null));
         this.toolbarAction = new AwesomeCustomToolbarAction(this);
     }

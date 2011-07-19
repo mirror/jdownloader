@@ -1,11 +1,12 @@
-package org.jdownloader.extensions.omnibox.awesome;
+package org.jdownloader.extensions.omnibox.omni;
 
 import java.awt.Component;
 
-public class AwesomeProposal implements Comparable<AwesomeProposal> {
+
+public class Proposal implements Comparable<Proposal> {
     private final float relevance;
-    private final AwesomeProposalRequestListener source;
-    private final AwesomeProposalRequest request;
+    private final ProposalRequestListener source;
+    private final ProposalRequest request;
     private final Component proposal;
     private final Component proposalListElement;
     private final Object actionid;
@@ -13,7 +14,7 @@ public class AwesomeProposal implements Comparable<AwesomeProposal> {
     /**
      * @return the original proposal request
      */
-    public final AwesomeProposalRequest getRequest() {
+    public final ProposalRequest getRequest() {
         return request;
     }
 
@@ -41,7 +42,7 @@ public class AwesomeProposal implements Comparable<AwesomeProposal> {
     /**
      * @return return the source of the proposal
      */
-    public final AwesomeProposalRequestListener getSource() {
+    public final ProposalRequestListener getSource() {
         return source;
     }
 
@@ -52,7 +53,7 @@ public class AwesomeProposal implements Comparable<AwesomeProposal> {
         return actionid;
     }
 
-    public int compareTo(AwesomeProposal o) {
+    public int compareTo(Proposal o) {
         int ratingThis = 0;
         int ratingCompare = 0;
         final String command;
@@ -82,17 +83,17 @@ public class AwesomeProposal implements Comparable<AwesomeProposal> {
         }
     }
 
-    public AwesomeProposal(AwesomeProposalRequestListener source, AwesomeProposalRequest request, Component proposal, Object actionid, float match) {
+    public Proposal(ProposalRequestListener source, ProposalRequest request, Component proposal, Object actionid, float match) {
         this.source = source;
         this.request = request;
         this.proposal = proposal;
         this.actionid = actionid;
-        this.proposalListElement = AwesomeUtils.createProposalListElement(this.source, this.request);
+        this.proposalListElement = Utils.createProposalListElement(this.source, this.request);
         this.relevance = match;
         this.request.getSource().addProposal(this);
     }
 
-    public AwesomeProposal(AwesomeProposalRequestListener source, AwesomeProposalRequest request, Component proposal, Object actionid, Component proposalListElement, float match) {
+    public Proposal(ProposalRequestListener source, ProposalRequest request, Component proposal, Object actionid, Component proposalListElement, float match) {
         this.source = source;
         this.request = request;
         this.proposal = proposal;

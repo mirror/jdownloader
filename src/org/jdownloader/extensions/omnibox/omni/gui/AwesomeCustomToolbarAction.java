@@ -1,18 +1,18 @@
-package org.jdownloader.extensions.omnibox.awesome.gui;
+package org.jdownloader.extensions.omnibox.omni.gui;
 
 import javax.swing.JPanel;
 
 import jd.gui.swing.jdgui.actions.CustomToolbarAction;
 import jd.gui.swing.jdgui.components.toolbar.ToolBar;
 
-import org.jdownloader.extensions.omnibox.AwesomebarExtension;
+import org.jdownloader.extensions.omnibox.OmniboxExtension;
 
 public class AwesomeCustomToolbarAction extends CustomToolbarAction {
 
-    private final AwesomebarExtension awesomebar;
+    private final OmniboxExtension awesomebar;
     private final JPanel              awesomePanel;
 
-    public AwesomeCustomToolbarAction(AwesomebarExtension awesomebar) {
+    public AwesomeCustomToolbarAction(OmniboxExtension awesomebar) {
         super("addons.awesomebar");
         this.awesomebar = awesomebar;
 

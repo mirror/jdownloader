@@ -1,21 +1,21 @@
-package org.jdownloader.extensions.omnibox.awesome.proposal;
+package org.jdownloader.extensions.omnibox.omni.plugins;
 
 import java.util.Arrays;
 import java.util.List;
 
 import javax.swing.JLabel;
 
-import org.jdownloader.extensions.omnibox.awesome.AwesomeAction;
-import org.jdownloader.extensions.omnibox.awesome.AwesomeProposal;
-import org.jdownloader.extensions.omnibox.awesome.AwesomeProposalRequest;
-import org.jdownloader.extensions.omnibox.awesome.AwesomeProposalRequestListener;
+import org.jdownloader.extensions.omnibox.omni.Action;
+import org.jdownloader.extensions.omnibox.omni.Proposal;
+import org.jdownloader.extensions.omnibox.omni.ProposalRequest;
+import org.jdownloader.extensions.omnibox.omni.ProposalRequestListener;
 
 
 
-public class AwesomeAlertListener implements AwesomeProposalRequestListener {
+public class AwesomeAlertListener implements ProposalRequestListener {
 
 	
-	public void performAction(AwesomeAction action) {
+	public void performAction(Action action) {
 		try {
 			Thread.sleep(2000);
 		} catch (InterruptedException e) {
@@ -27,7 +27,7 @@ public class AwesomeAlertListener implements AwesomeProposalRequestListener {
 	}
 
 
-	public void requestProposal(AwesomeProposalRequest request) {
+	public void requestProposal(ProposalRequest request) {
 		
 		try {
 			Thread.sleep(200); //Simulate time expense
@@ -38,10 +38,10 @@ public class AwesomeAlertListener implements AwesomeProposalRequestListener {
 		
 		String command = (request.getCommand().startsWith("a")) ? "alert" : "print";
 		if (request.getParams().equals("")) {
-			new AwesomeProposal(
+			new Proposal(
 					this, request,new JLabel("I'd like to "+command+" something after 2 seconds."),command, 0.55f);
 		} else {
-			new AwesomeProposal(
+			new Proposal(
 					this, request, new JLabel("I'd like to "+command+" "
 							+ request.getParams()+" after 2 seconds."),command, 1.1f);
 		}

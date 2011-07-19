@@ -1,4 +1,4 @@
-package org.jdownloader.extensions.omnibox.awesome.gui.jlist;
+package org.jdownloader.extensions.omnibox.omni.gui.jlist;
 
 import javax.swing.DefaultListSelectionModel;
 

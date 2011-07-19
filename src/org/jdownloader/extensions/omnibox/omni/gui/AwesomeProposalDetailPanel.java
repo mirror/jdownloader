@@ -1,4 +1,4 @@
-package org.jdownloader.extensions.omnibox.awesome.gui;
+package org.jdownloader.extensions.omnibox.omni.gui;
 
 import java.awt.Color;
 
@@ -8,7 +8,7 @@ import javax.swing.event.ListDataListener;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
-import org.jdownloader.extensions.omnibox.awesome.gui.jlist.AwesomeProposalJList;
+import org.jdownloader.extensions.omnibox.omni.gui.jlist.AwesomeProposalJList;
 
 import net.miginfocom.swing.MigLayout;
 

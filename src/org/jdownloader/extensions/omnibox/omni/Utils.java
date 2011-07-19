@@ -1,4 +1,4 @@
-package org.jdownloader.extensions.omnibox.awesome;
+package org.jdownloader.extensions.omnibox.omni;
 
 import java.awt.Component;
 import java.io.File;
@@ -7,16 +7,17 @@ import javax.swing.ImageIcon;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 
+
 import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
 
-public class AwesomeUtils {
+public class Utils {
 
     private static final MigLayout ProposalListElementMigLayout = new MigLayout("insets 0, fill", "[left]");
 
     public static final ImageIcon defaultIcon = new ImageIcon(JDUtilities.getResourceFile("jd/img/awesomebar/default.png").getAbsolutePath());
 
-    public static Component createProposalListElement(AwesomeProposalRequestListener source, AwesomeProposalRequest request) {
+    public static Component createProposalListElement(ProposalRequestListener source, ProposalRequest request) {
         String matchingKeyword = null;
         for (String keyword : source.getKeywords()) {
             if (keyword.startsWith(request.getCommand())) {
@@ -30,7 +31,7 @@ public class AwesomeUtils {
         return createProposalListElement(request, matchingKeyword);
     }
 
-    public static Component createProposalListElement(AwesomeProposalRequest request, String keyword) {
+    public static Component createProposalListElement(ProposalRequest request, String keyword) {
         JPanel panel = new JPanel(ProposalListElementMigLayout);
         panel.setOpaque(false);
 

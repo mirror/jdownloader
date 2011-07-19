@@ -1,4 +1,4 @@
-package org.jdownloader.extensions.omnibox.awesome;
+package org.jdownloader.extensions.omnibox.omni;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -12,17 +12,17 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import javax.swing.event.EventListenerList;
 
-import org.jdownloader.extensions.omnibox.awesome.proposal.AwesomeAlertListener;
-import org.jdownloader.extensions.omnibox.awesome.proposal.AwesomeClipboardListener;
-import org.jdownloader.extensions.omnibox.awesome.proposal.AwesomeReconnectListener;
-import org.jdownloader.extensions.omnibox.awesome.proposal.AwesomeShoutListener;
-import org.jdownloader.extensions.omnibox.awesome.proposal.AwesomeStartStopListener;
+import org.jdownloader.extensions.omnibox.omni.plugins.AwesomeAlertListener;
+import org.jdownloader.extensions.omnibox.omni.plugins.AwesomeClipboardListener;
+import org.jdownloader.extensions.omnibox.omni.plugins.AwesomeReconnectListener;
+import org.jdownloader.extensions.omnibox.omni.plugins.AwesomeShoutListener;
+import org.jdownloader.extensions.omnibox.omni.plugins.AwesomeStartStopListener;
 
 
-public class Awesome extends Observable {
+public class Omni extends Observable {
     private Map<String, EventListenerList> keywords = new HashMap<String, EventListenerList>();
     private ThreadGroup proposalRequestThreads = new ThreadGroup("proposalRequestThreads");
-    private LinkedList<AwesomeProposal> returnedProposals = new LinkedList<AwesomeProposal>();
+    private LinkedList<Proposal> returnedProposals = new LinkedList<Proposal>();
 
     private String command = "";
     private String params = "";
@@ -39,7 +39,7 @@ public class Awesome extends Observable {
     /**
      * Initialize new Awesome object
      */
-    public Awesome() {
+    public Omni() {
         /* TODO: Implement Plugin system */
         this.registerListener(new AwesomeAlertListener());
         this.registerListener(new AwesomeShoutListener());
@@ -118,8 +118,8 @@ public class Awesome extends Observable {
     /**
      * This function sets command and params for a given input string
      * 
-     * @see Awesome#getParams()
-     * @see Awesome#getCommand()
+     * @see Omni#getParams()
+     * @see Omni#getCommand()
      * @param in
      *            input string
      */
@@ -140,15 +140,15 @@ public class Awesome extends Observable {
      *            the listener which should listen to incoming
      *            AwesomeProposalRequests
      */
-    public void registerListener(AwesomeProposalRequestListener listener) {
+    public void registerListener(ProposalRequestListener listener) {
         for (String keyword : listener.getKeywords()) {
             for (int i = 1; i <= keyword.length(); i++) {
                 String key = keyword.substring(0, i);
                 if (keywords.containsKey(key)) {
-                    keywords.get(keyword.substring(0, i)).add(AwesomeProposalRequestListener.class, listener);
+                    keywords.get(keyword.substring(0, i)).add(ProposalRequestListener.class, listener);
                 } else {
                     keywords.put(key, new EventListenerList());
-                    keywords.get(keyword.substring(0, i)).add(AwesomeProposalRequestListener.class, listener);
+                    keywords.get(keyword.substring(0, i)).add(ProposalRequestListener.class, listener);
                 }
 
             }
@@ -168,7 +168,7 @@ public class Awesome extends Observable {
     public synchronized void requestProposal(String in) {
         this.setInput(in);
 
-        LinkedList<AwesomeProposalRequestListener> necessaryNewRequests = new LinkedList<AwesomeProposalRequestListener>();
+        LinkedList<ProposalRequestListener> necessaryNewRequests = new LinkedList<ProposalRequestListener>();
 
         if (!(this.isCommandChanged() || this.isParamsChanged())) {
             // Nothing changed, nothing to update
@@ -215,7 +215,7 @@ public class Awesome extends Observable {
                 key = this.getCommand().substring(0, i);
                 if (keywords.containsKey(key)) {
 
-                    for (AwesomeProposalRequestListener listener : keywords.get(key).getListeners(AwesomeProposalRequestListener.class)) {
+                    for (ProposalRequestListener listener : keywords.get(key).getListeners(ProposalRequestListener.class)) {
                         if (!necessaryNewRequests.contains(listener)) {
                             necessaryNewRequests.add(listener);
                         }
@@ -246,7 +246,7 @@ public class Awesome extends Observable {
             /* Remove returnedProposals */
             try {
                 returnedProposalsLock.readLock().lock();
-                for (AwesomeProposal returnedProposal : returnedProposals) {
+                for (Proposal returnedProposal : returnedProposals) {
                     necessaryNewRequests.remove(returnedProposal.getSource());
                 }
             } finally {
@@ -255,9 +255,9 @@ public class Awesome extends Observable {
 
             /* Remove activeThreads */
             if (this.proposalRequestThreads.activeCount() > 0) {
-                AwesomeProposalRequestThread[] activeProposalRequestThreadList = new AwesomeProposalRequestThread[this.proposalRequestThreads.activeCount()];
+                ProposalRequestThread[] activeProposalRequestThreadList = new ProposalRequestThread[this.proposalRequestThreads.activeCount()];
                 this.proposalRequestThreads.enumerate(activeProposalRequestThreadList, false);
-                for (AwesomeProposalRequestThread activeProposalRequestThread : activeProposalRequestThreadList) {
+                for (ProposalRequestThread activeProposalRequestThread : activeProposalRequestThreadList) {
                     necessaryNewRequests.remove(activeProposalRequestThread.getListener());
                 }
             }
@@ -276,7 +276,7 @@ public class Awesome extends Observable {
                 Thread[] threadsToKill = new Thread[this.proposalRequestThreads.activeCount()];
                 proposalRequestThreads.enumerate(threadsToKill);
 
-                new AwesomeProposalRequestKiller(threadsToKill).start();
+                new ProposalRequestKiller(threadsToKill).start();
             }
             try {
                 returnedProposalsLock.writeLock().lock();
@@ -293,10 +293,10 @@ public class Awesome extends Observable {
          * All unnecessary Threads have been removed out of the
          * necessaryNewThreads now. Let's start them now.
          */
-        AwesomeProposalRequest event = new AwesomeProposalRequest(this, this.getCommand(), this.getParams());
+        ProposalRequest event = new ProposalRequest(this, this.getCommand(), this.getParams());
 
-        for (AwesomeProposalRequestListener newRequest : necessaryNewRequests) {
-            new AwesomeProposalRequestThread(proposalRequestThreads, newRequest, event);
+        for (ProposalRequestListener newRequest : necessaryNewRequests) {
+            new ProposalRequestThread(proposalRequestThreads, newRequest, event);
         }
 
     }
@@ -310,7 +310,7 @@ public class Awesome extends Observable {
      * @see {@link #getProposals()}<br>
      *      Please take care of locking with {@link #returnedProposalsLock}
      */
-    public void addProposal(AwesomeProposal proposal) {
+    public void addProposal(Proposal proposal) {
         /*
          * Don't let interrupted threads enter data, they're already outdated!
          */
@@ -323,7 +323,7 @@ public class Awesome extends Observable {
         try {
             returnedProposalsLock.writeLock().lock();
 
-            ListIterator<AwesomeProposal> iterator = this.returnedProposals.listIterator(this.returnedProposals.size());
+            ListIterator<Proposal> iterator = this.returnedProposals.listIterator(this.returnedProposals.size());
             try {
                 commandLock.readLock().lock();
                 while (iterator.hasPrevious()) {
@@ -345,7 +345,7 @@ public class Awesome extends Observable {
      * 
      * @return list of returned proposal
      */
-    public List<AwesomeProposal> getProposals() {
+    public List<Proposal> getProposals() {
         return returnedProposals;
     }
 }

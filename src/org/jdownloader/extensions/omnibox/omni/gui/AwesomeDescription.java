@@ -1,4 +1,4 @@
-package org.jdownloader.extensions.omnibox.awesome.gui;
+package org.jdownloader.extensions.omnibox.omni.gui;
 
 import java.awt.Color;
 import java.awt.Font;

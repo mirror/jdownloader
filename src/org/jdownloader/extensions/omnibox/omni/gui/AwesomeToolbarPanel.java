@@ -1,8 +1,8 @@
-package org.jdownloader.extensions.omnibox.awesome.gui;
+package org.jdownloader.extensions.omnibox.omni.gui;
 
 import javax.swing.JPanel;
 
-import org.jdownloader.extensions.omnibox.AwesomebarExtension;
+import org.jdownloader.extensions.omnibox.OmniboxExtension;
 
 import net.miginfocom.swing.MigLayout;
 
@@ -25,12 +25,12 @@ public class AwesomeToolbarPanel extends JPanel {
     }
 
     private final AwesomeDescription awesomeDescription;
-    private final AwesomebarExtension awesomebar;
-    public AwesomebarExtension getAwesomebar() {
+    private final OmniboxExtension awesomebar;
+    public OmniboxExtension getAwesomebar() {
         return awesomebar;
     }
     
-    public AwesomeToolbarPanel(AwesomebarExtension awesomebar) {
+    public AwesomeToolbarPanel(OmniboxExtension awesomebar) {
         super(new MigLayout("ins 1"));
 
         this.setOpaque(false);

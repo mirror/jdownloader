@@ -1,9 +1,9 @@
-package org.jdownloader.extensions.omnibox.awesome.gui.jlist;
+package org.jdownloader.extensions.omnibox.omni.gui.jlist;
 
 import javax.swing.JList;
 import javax.swing.ListSelectionModel;
 
-import org.jdownloader.extensions.omnibox.awesome.AwesomeProposal;
+import org.jdownloader.extensions.omnibox.omni.Proposal;
 
 
 
@@ -42,7 +42,7 @@ public class AwesomeProposalJList extends JList {
 		return (AwesomeProposalListModel) super.getModel();
 	}
 	
-	public AwesomeProposal getSelectedProposal(){
+	public Proposal getSelectedProposal(){
 		return this.getModel().getSelectedProposal();
 	}
 }

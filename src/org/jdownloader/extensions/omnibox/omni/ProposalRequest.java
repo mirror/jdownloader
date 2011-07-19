@@ -1,8 +1,9 @@
-package org.jdownloader.extensions.omnibox.awesome;
+package org.jdownloader.extensions.omnibox.omni;
 
 import java.util.EventObject;
 
-public class AwesomeProposalRequest extends EventObject {
+
+public class ProposalRequest extends EventObject {
     /**
 	 * 
 	 */
@@ -11,7 +12,7 @@ public class AwesomeProposalRequest extends EventObject {
     private final String command;
     private final String params;
 
-    public AwesomeProposalRequest(Awesome source, String command, String params) {
+    public ProposalRequest(Omni source, String command, String params) {
         super(source);
         this.command = command;
         this.params = params;
@@ -35,15 +36,15 @@ public class AwesomeProposalRequest extends EventObject {
         return params.length() == 0;
     }
 
-    public Awesome getSource() {
-        return (Awesome) super.getSource();
+    public Omni getSource() {
+        return (Omni) super.getSource();
     }
 
     /**
      * @return a cloned AwesomeProposalRequest object, but with changed params.
      */
-    public AwesomeProposalRequest withParams(String params2) {
-        return new AwesomeProposalRequest(this.getSource(), this.getCommand(), params2);
+    public ProposalRequest withParams(String params2) {
+        return new ProposalRequest(this.getSource(), this.getCommand(), params2);
     }
 
 }

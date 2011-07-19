@@ -1,4 +1,4 @@
-package org.jdownloader.extensions.omnibox.awesome.gui.jlist;
+package org.jdownloader.extensions.omnibox.omni.gui.jlist;
 import java.awt.Component;
 import java.util.Observable;
 import java.util.Observer;
@@ -7,15 +7,15 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import javax.swing.AbstractListModel;
 import javax.swing.ListSelectionModel;
 
-import org.jdownloader.extensions.omnibox.awesome.Awesome;
-import org.jdownloader.extensions.omnibox.awesome.AwesomeProposal;
+import org.jdownloader.extensions.omnibox.omni.Omni;
+import org.jdownloader.extensions.omnibox.omni.Proposal;
 
 
 
 public class AwesomeProposalListModel extends AbstractListModel implements Observer {
 	private static final long serialVersionUID = 245192547176430473L;
 
-	private final Awesome awesome;
+	private final Omni omni;
 	private final ListSelectionModel selectionmodel;
 	private int count;
 
@@ -24,29 +24,29 @@ public class AwesomeProposalListModel extends AbstractListModel implements Obser
 	/**
 	 * @return the awesome object
 	 */
-	public Awesome getAwesome() {
-		return awesome;
+	public Omni getAwesome() {
+		return omni;
 	}
 
-	public AwesomeProposalListModel(Awesome awesome, ListSelectionModel selectionmodel) {
-		this.awesome = awesome;
-		this.awesome.addObserver(this);
+	public AwesomeProposalListModel(Omni omni, ListSelectionModel selectionmodel) {
+		this.omni = omni;
+		this.omni.addObserver(this);
 		this.selectionmodel = selectionmodel;
 		try {
-			this.awesome.returnedProposalsLock.readLock().lock();
-			count = this.awesome.getProposals().size();
+			this.omni.returnedProposalsLock.readLock().lock();
+			count = this.omni.getProposals().size();
 		} finally {
-			this.awesome.returnedProposalsLock.readLock().unlock();
+			this.omni.returnedProposalsLock.readLock().unlock();
 		}
 	}
 
 	
 	public Component getElementAt(int index) {
 		try {
-			this.awesome.returnedProposalsLock.readLock().lock();
-			return this.awesome.getProposals().get(index).getProposalListElement();
+			this.omni.returnedProposalsLock.readLock().lock();
+			return this.omni.getProposals().get(index).getProposalListElement();
 		} finally {
-			this.awesome.returnedProposalsLock.readLock().unlock();
+			this.omni.returnedProposalsLock.readLock().unlock();
 		}
 	}
 
@@ -62,7 +62,7 @@ public class AwesomeProposalListModel extends AbstractListModel implements Obser
 
 	
 	public void update(Observable arg0, Object e) {
-		Awesome.EVENTTYPE event = (Awesome.EVENTTYPE) e;
+		Omni.EVENTTYPE event = (Omni.EVENTTYPE) e;
 
 		switch (event) {
 			case PROPOSALSCLEARED :
@@ -101,21 +101,21 @@ public class AwesomeProposalListModel extends AbstractListModel implements Obser
 		}
 	}
 
-	public AwesomeProposal getSelectedProposal() {
+	public Proposal getSelectedProposal() {
 		try {
-			this.awesome.returnedProposalsLock.readLock().lock();
-			return awesome.getProposals().get(selectionmodel.getLeadSelectionIndex());
+			this.omni.returnedProposalsLock.readLock().lock();
+			return omni.getProposals().get(selectionmodel.getLeadSelectionIndex());
 		} finally {
-			this.awesome.returnedProposalsLock.readLock().unlock();
+			this.omni.returnedProposalsLock.readLock().unlock();
 		}
 	}
 	
-	public AwesomeProposal getSelectedProposal(int selectedIndex) {
+	public Proposal getSelectedProposal(int selectedIndex) {
 		try {
-			this.awesome.returnedProposalsLock.readLock().lock();
-			return awesome.getProposals().get(selectedIndex);
+			this.omni.returnedProposalsLock.readLock().lock();
+			return omni.getProposals().get(selectedIndex);
 		} finally {
-			this.awesome.returnedProposalsLock.readLock().unlock();
+			this.omni.returnedProposalsLock.readLock().unlock();
 		}
 	}
 }

@@ -8,28 +8,28 @@ import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.ListSelectionModel;
 
-import org.jdownloader.extensions.omnibox.awesome.Awesome;
-import org.jdownloader.extensions.omnibox.awesome.AwesomeAction;
-import org.jdownloader.extensions.omnibox.awesome.gui.AwesomeProposalDetailPanel;
-import org.jdownloader.extensions.omnibox.awesome.gui.jlist.AwesomeProposalJList;
-import org.jdownloader.extensions.omnibox.awesome.gui.jlist.AwesomeProposalListModel;
-import org.jdownloader.extensions.omnibox.awesome.gui.jlist.AwesomeProposalListSelectionModel;
+import org.jdownloader.extensions.omnibox.omni.Omni;
+import org.jdownloader.extensions.omnibox.omni.Action;
+import org.jdownloader.extensions.omnibox.omni.gui.AwesomeProposalDetailPanel;
+import org.jdownloader.extensions.omnibox.omni.gui.jlist.AwesomeProposalJList;
+import org.jdownloader.extensions.omnibox.omni.gui.jlist.AwesomeProposalListModel;
+import org.jdownloader.extensions.omnibox.omni.gui.jlist.AwesomeProposalListSelectionModel;
 
 import net.miginfocom.swing.MigLayout;
 
-public class Awesomebar_testcase extends JFrame {
+public class Omnibox_testcase extends JFrame {
 
     private static final long serialVersionUID = 1L;
     private JPanel jContentPane = null;
     private JTextField jTextField = null;
-    private Awesome awesome = new Awesome(); // @jve:decl-index=0:
+    private Omni omni = new Omni(); // @jve:decl-index=0:
     private AwesomeProposalJList proposalList = null;
     private AwesomeProposalDetailPanel detailPanel = null;
 
     /**
      * This is the default constructor
      */
-    public Awesomebar_testcase() {
+    public Omnibox_testcase() {
         super();
         initialize();
     }
@@ -78,12 +78,12 @@ public class Awesomebar_testcase extends JFrame {
                     if (e.getKeyChar() != KeyEvent.CHAR_UNDEFINED) {
                         if (e.getKeyCode() == KeyEvent.VK_ENTER) {
                             // Perform Action
-                            new AwesomeAction(awesome, getAwesomeProposalList().getSelectedProposal());
+                            new Action(omni, getAwesomeProposalList().getSelectedProposal());
                         } else if (e.getKeyCode() != KeyEvent.VK_BACK_SPACE) {
-                            awesome.requestProposal(getJTextField().getText().substring(0, getJTextField().getCaretPosition()) + e.getKeyChar() + getJTextField().getText().substring(getJTextField().getCaretPosition()));
+                            omni.requestProposal(getJTextField().getText().substring(0, getJTextField().getCaretPosition()) + e.getKeyChar() + getJTextField().getText().substring(getJTextField().getCaretPosition()));
                         } else {
                             if (getJTextField().getCaretPosition() > 0) {
-                                awesome.requestProposal(getJTextField().getText().substring(0, getJTextField().getCaretPosition() - 1) + getJTextField().getText().substring(getJTextField().getCaretPosition()));
+                                omni.requestProposal(getJTextField().getText().substring(0, getJTextField().getCaretPosition() - 1) + getJTextField().getText().substring(getJTextField().getCaretPosition()));
                             }
                         }
                     } else {
@@ -123,7 +123,7 @@ public class Awesomebar_testcase extends JFrame {
     private AwesomeProposalJList getAwesomeProposalList() {
         if (proposalList == null) {
             ListSelectionModel selectionModel = new AwesomeProposalListSelectionModel();
-            AwesomeProposalListModel listModel = new AwesomeProposalListModel(awesome, selectionModel);
+            AwesomeProposalListModel listModel = new AwesomeProposalListModel(omni, selectionModel);
             proposalList = new AwesomeProposalJList(listModel, selectionModel);
         }
         return proposalList;

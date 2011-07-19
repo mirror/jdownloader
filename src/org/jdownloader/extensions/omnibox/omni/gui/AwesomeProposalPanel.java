@@ -1,4 +1,4 @@
-package org.jdownloader.extensions.omnibox.awesome.gui;
+package org.jdownloader.extensions.omnibox.omni.gui;
 
 import java.awt.Color;
 import java.awt.Dimension;
@@ -8,10 +8,10 @@ import javax.swing.JPanel;
 import javax.swing.ListSelectionModel;
 import javax.swing.SwingUtilities;
 
-import org.jdownloader.extensions.omnibox.AwesomebarExtension;
-import org.jdownloader.extensions.omnibox.awesome.gui.jlist.AwesomeProposalJList;
-import org.jdownloader.extensions.omnibox.awesome.gui.jlist.AwesomeProposalListModel;
-import org.jdownloader.extensions.omnibox.awesome.gui.jlist.AwesomeProposalListSelectionModel;
+import org.jdownloader.extensions.omnibox.OmniboxExtension;
+import org.jdownloader.extensions.omnibox.omni.gui.jlist.AwesomeProposalJList;
+import org.jdownloader.extensions.omnibox.omni.gui.jlist.AwesomeProposalListModel;
+import org.jdownloader.extensions.omnibox.omni.gui.jlist.AwesomeProposalListSelectionModel;
 
 import jd.gui.swing.jdgui.JDGui;
 import net.miginfocom.layout.CC;
@@ -21,14 +21,14 @@ import net.miginfocom.swing.MigLayout;
 public class AwesomeProposalPanel extends JPanel{
     private static final long serialVersionUID = 7051440058679012728L;
     
-    private final AwesomebarExtension awesomebar;
+    private final OmniboxExtension awesomebar;
     private final AwesomeProposalJList proposalList;
     private final AwesomeProposalDetailPanel detailPanel;
     private final String detailPanelHeight = "100";
     private final String width = "400";
     private final Dimension panelDimension = new Dimension(Integer.valueOf(width),300);
 
-    public AwesomebarExtension getAwesomebar() {
+    public OmniboxExtension getAwesomebar() {
         return awesomebar;
     }
     
@@ -40,7 +40,7 @@ public class AwesomeProposalPanel extends JPanel{
         return detailPanel;
     }
     
-    public AwesomeProposalPanel(AwesomebarExtension awesomebar){        
+    public AwesomeProposalPanel(OmniboxExtension awesomebar){        
     super(new MigLayout(new LC().insets("0").fill()));
     
     this.awesomebar = awesomebar;

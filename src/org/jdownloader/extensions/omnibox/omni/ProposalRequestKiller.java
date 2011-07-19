@@ -1,10 +1,10 @@
-package org.jdownloader.extensions.omnibox.awesome;
+package org.jdownloader.extensions.omnibox.omni;
 
-public class AwesomeProposalRequestKiller extends Thread {
+public class ProposalRequestKiller extends Thread {
 
 	private final Thread[] threadstokill;
 
-	AwesomeProposalRequestKiller(Thread[] threadstokill) {
+	ProposalRequestKiller(Thread[] threadstokill) {
 		this.threadstokill = threadstokill;
 		this.setDaemon(true);
 	}
