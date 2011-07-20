@@ -815,7 +815,9 @@ public abstract class PluginForHost extends Plugin implements FavIconRequestor {
                 i -= 1000;
                 downloadLink.getLinkStatus().setStatusText(message + _JDT._.gui_download_waittime_status2(Formatter.formatSeconds(i / 1000)));
                 downloadLink.requestGuiUpdate();
-                Thread.sleep(1000);
+                synchronized (this) {
+                    this.wait(1000);
+                }
             }
         } catch (InterruptedException e) {
             throw new PluginException(LinkStatus.TODO);

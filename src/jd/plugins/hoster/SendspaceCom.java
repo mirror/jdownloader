@@ -17,14 +17,11 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
-import jd.http.Browser;
 import jd.http.RandomUserAgent;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
@@ -38,9 +35,6 @@ import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
-import org.mozilla.javascript.Context;
-import org.mozilla.javascript.ContextFactory;
-import org.mozilla.javascript.Scriptable;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sendspace.com" }, urls = { "http://[\\w\\.]*?sendspace\\.com/(file|pro/dl)/[0-9a-zA-Z]+" }, flags = { 2 })
 public class SendspaceCom extends PluginForHost {
@@ -131,13 +125,16 @@ public class SendspaceCom extends PluginForHost {
             br.getPage(url);
             if (br.containsHTML("User Verification") && br.containsHTML("Please type all the characters") || br.containsHTML("No htmlCode read")) { return AvailableStatus.UNCHECKABLE; }
             if (!br.containsHTML("the file you requested is not available")) {
-                String[] infos = br.getRegex("<b>Name:</b>(.*?)<br><b>Size:</b>(.*?)<br>").getRow(0);
+                String[] infos = br.getRegex("<b>Name:</b>(.*?)<br><b>Size:</b>(.*?)<br>").getRow(0);/* old */
+                if (infos == null) infos = br.getRegex("Download: <strong>(.*?)<.*?strong> \\((.*?)\\)<").getRow(0);/* new1 */
+                if (infos == null) infos = br.getRegex("Download <b>(.*?)<.*?File Size: (.*?)<").getRow(0);/* new2 */
                 if (infos != null) {
+                    /* old format */
                     downloadLink.setName(Encoding.htmlDecode(infos[0]).trim());
                     downloadLink.setDownloadSize(SizeFormatter.getSize(infos[1].trim().replaceAll(",", "\\.")));
                     return AvailableStatus.TRUE;
-                } else
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else {
@@ -170,7 +167,7 @@ public class SendspaceCom extends PluginForHost {
             // Do we have to submit a form to enter the "free download area" for
             // the
             // file ?
-            br.postPage(downloadLink.getDownloadURL(), "download=%C2%A0REGULAR+DOWNLOAD%C2%A0");
+            br.getPage(downloadLink.getDownloadURL());
             if (br.containsHTML("You have reached your daily download limit")) {
                 int minutes = 0, hours = 0;
                 String tmphrs = br.getRegex("again in.*?(\\d+)h:.*?m or").getMatch(0);
@@ -207,38 +204,9 @@ public class SendspaceCom extends PluginForHost {
             if (br.containsHTML("User Verification") && br.containsHTML("Please type all the characters") || br.containsHTML("No htmlCode read")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 1 * 60 * 1000l);
             handleErrors(false);
             /* Link holen */
-            String script = br.getRegex(Pattern.compile("<script type=\"text/javascript\">(function .*?)</script>", Pattern.CASE_INSENSITIVE)).getMatch(0);
-            if (script == null) {
-                logger.info("script equals null");
-                br.postPage(downloadLink.getDownloadURL(), "download=%C2%A0REGULAR+DOWNLOAD%C2%A0");
-                script = br.getRegex(Pattern.compile("<script type=\"text/javascript\">(function .*?)</script>", Pattern.CASE_INSENSITIVE)).getMatch(0);
-                if (script == null) {
-                    logger.warning("script still equals null, stopping...");
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-            }
-            String dec = br.getRegex(Pattern.compile("base64ToText\\('(.*?)'\\)", Pattern.CASE_INSENSITIVE)).getMatch(0);
-            script += new Browser().getPage("http://www.sendspace.com/jsc/download.js");
-            String fun = "function f(){ " + script + " return  utf8_decode(enc(base64ToText('" + dec + "')));} f()";
-            Context cx = null;
-            String linkurl = null;
-            try {
-                cx = ContextFactory.getGlobal().enterContext();
-                Scriptable scope = cx.initStandardObjects();
-                // Now evaluate the string we've colected.
-                Object result = cx.evaluateString(scope, fun, "<cmd>", 1, null);
-                // Convert the result to a string and print it.
-                linkurl = Context.toString(result);
-            } finally {
-                if (cx != null) Context.exit();
-            }
+            String linkurl = br.getRegex("download free\".*?href=\"(.*?)\"").getMatch(0);
             if (linkurl == null) {
                 logger.warning("linkurl equals null");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            linkurl = new Regex(linkurl, "href=\"(.*?)\"").getMatch(0);
-            if (linkurl == null) {
-                logger.warning("linkurl2 equals null");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             if (passCode != null) {
@@ -251,6 +219,7 @@ public class SendspaceCom extends PluginForHost {
             if (con.getURL().toExternalForm().contains("?e=") || con.getContentType().contains("html")) {
                 br.followConnection();
                 handleErrors(true);
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             if (con.getResponseCode() == 416) {
                 // HTTP/1.1 416 Requested Range Not Satisfiable
@@ -267,6 +236,7 @@ public class SendspaceCom extends PluginForHost {
             if (con.getContentType().contains("html")) {
                 br.followConnection();
                 handleErrors(true);
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
         dl.startDownload();
