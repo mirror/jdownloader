@@ -4,11 +4,10 @@ import java.awt.event.ActionEvent;
 
 import javax.swing.AbstractAction;
 
-import jd.nutils.svn.Subversion;
+import jd.controlling.IOEQ;
 
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.extensions.translator.gui.TranslatorGui;
-import org.tmatesoft.svn.core.SVNException;
 
 public class TestSvnAction extends AbstractAction {
     private TranslatorGui gui;
@@ -19,22 +18,28 @@ public class TestSvnAction extends AbstractAction {
     }
 
     public void actionPerformed(ActionEvent arg0) {
-        String url = "svn://svn.jdownloader.org/jdownloader";
+        IOEQ.add(new Runnable() {
 
-        if (!this.gui.isSvnLoginOK()) {
-            this.gui.validateSvnLogin();
-            return;
-        }
+            public void run() {
+                String url = "svn://svn.jdownloader.org/jdownloader";
+                boolean isOkay = false;
+                if (!gui.isSvnLoginOK()) {
+                    if (gui.validateSvnLogin(gui.getSvnUser(), gui.getSvnPass())) {
+                        gui.setSvnLoginOK(true);
+                        isOkay = true;
+                    }
+                } else {
+                    isOkay = true;
+                }
 
-        String user = this.gui.getSvnUser();
-        String pass = this.gui.getSvnPass();
+                if (isOkay) {
+                    Dialog.getInstance().showMessageDialog("SVN Test OK", "Login successful. Username and password are OK.\r\n\r\nServer: " + url);
+                } else {
+                    Dialog.getInstance().showMessageDialog("SVN Test Error", "Login failed. Username and/or password are not correct!\r\n\r\nServer: " + url);
+                }
+            }
 
-        try {
-            Subversion s = new Subversion(url, user, pass);
-            Dialog.getInstance().showMessageDialog("SVN Test OK", "Login successful. Username and password are OK.\r\n\r\nServer: " + url);
-        } catch (SVNException e) {
-            Dialog.getInstance().showMessageDialog("SVN Test Error", "Login failed. Username and/or password are not correct!\r\n\r\nServer: " + url);
-        }
+        }, true);
+
     }
-
 }

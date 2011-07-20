@@ -18,6 +18,7 @@ import javax.swing.KeyStroke;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
+import jd.controlling.IOEQ;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.nutils.svn.Subversion;
 import jd.plugins.AddonPanel;
@@ -90,7 +91,14 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
 
             @Override
             protected void onShow() {
-                if (!svnLoginOK) requestSvnLogin();
+                IOEQ.add(new Runnable() {
+
+                    public void run() {
+                        if (!svnLoginOK) requestSvnLogin();
+                    }
+
+                });
+
             }
 
             @Override
@@ -338,52 +346,60 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
         return svnLoginOK;
     }
 
-    public void validateSvnLogin() {
-        this.setSvnBusy(true);
-        this.svnLoginOK = false;
+    public void setSvnLoginOK(boolean svnLoginOK) {
+        this.svnLoginOK = svnLoginOK;
+    }
 
-        if (this.svnUser.length() > 3 && this.svnPass.length() > 3) {
+    public boolean validateSvnLogin(String svnUser, String svnPass) {
+        if (svnUser.length() > 3 && svnPass.length() > 3) {
             String url = "svn://svn.jdownloader.org/jdownloader";
 
+            Subversion s = null;
             try {
-                Subversion s = new Subversion(url, this.svnUser, this.svnPass);
-                // Dialog.getInstance().showMessageDialog("SVN Test OK",
-                // "Login successful. Username and password are OK.\r\n\r\nServer: "
-                // + url);
-                this.svnLoginOK = true;
-                this.setSvnBusy(false);
+                s = new Subversion(url, svnUser, svnPass);
+
+                return true;
             } catch (SVNException e) {
                 Dialog.getInstance().showMessageDialog("SVN Test Error", "Login failed. Username and/or password are not correct!\r\n\r\nServer: " + url);
-                this.svnLoginOK = false;
-                requestSvnLogin();
+            } finally {
+                try {
+                    s.dispose();
+                } catch (final Throwable e) {
+                }
             }
-
         } else {
-            Dialog.getInstance().showMessageDialog("SVN Test Error", "Username and/or password seem to be malformed.");
-            requestSvnLogin();
-
+            Dialog.getInstance().showMessageDialog("SVN Test Error", "Username and/or password seem malformed. Test failed.");
         }
+        return false;
 
     }
 
     public void requestSvnLogin() {
-        final LoginDialog d = new LoginDialog(0, "SVN Login", "<html>A JDownloader SVN login is required to use the Translator Extension.<br>Please insert a valid SVN username and password.", null);
-        d.setUsernameDefault(svnUser);
-        d.setPasswordDefault(svnPass);
+        this.setSvnBusy(true);
+        while (true) {
+            this.svnLoginOK = false;
+            final LoginDialog d = new LoginDialog(0, "SVN Login", "<html>A JDownloader SVN login is required to use the Translator Extension.<br>Please insert a valid SVN username and password.", null);
+            d.setUsernameDefault(svnUser);
+            d.setPasswordDefault(svnPass);
+            d.setRememberDefault(true);
 
-        LoginData response;
-        try {
-            response = Dialog.getInstance().showDialog(d);
-        } catch (DialogClosedException e) {
-            // if (!this.svnLoginOK) validateSvnLogin();
-            return;
-        } catch (DialogCanceledException e) {
-            // if (!this.svnLoginOK) validateSvnLogin();
-            return;
+            LoginData response;
+            try {
+                response = Dialog.getInstance().showDialog(d);
+            } catch (DialogClosedException e) {
+                // if (!this.svnLoginOK) validateSvnLogin();
+                return;
+            } catch (DialogCanceledException e) {
+                // if (!this.svnLoginOK) validateSvnLogin();
+                return;
+            }
+            if (validateSvnLogin(response.getUsername(), response.getPassword())) {
+                this.setSvnLogin(response.getUsername(), response.getPassword());
+                this.svnLoginOK = true;
+                this.setSvnBusy(false);
+                return;
+            }
         }
 
-        this.setSvnLogin(response.getUsername(), response.getPassword());
-
-        validateSvnLogin();
     }
 }

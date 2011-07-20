@@ -4,6 +4,8 @@ import java.awt.event.ActionEvent;
 
 import javax.swing.AbstractAction;
 
+import jd.controlling.IOEQ;
+
 import org.jdownloader.extensions.translator.gui.TranslatorGui;
 
 public class LoginSvnAction extends AbstractAction {
@@ -15,7 +17,13 @@ public class LoginSvnAction extends AbstractAction {
     }
 
     public void actionPerformed(ActionEvent e) {
-        gui.requestSvnLogin();
+        IOEQ.add(new Runnable() {
+
+            public void run() {
+                gui.requestSvnLogin();
+            }
+
+        });
     }
 
 }
