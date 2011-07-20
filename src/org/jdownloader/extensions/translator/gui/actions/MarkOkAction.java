@@ -6,13 +6,14 @@ import javax.swing.AbstractAction;
 import javax.swing.JCheckBoxMenuItem;
 
 import org.jdownloader.extensions.translator.gui.TranslatorGui;
+import org.jdownloader.images.NewTheme;
 
 public class MarkOkAction extends AbstractAction {
 
     private TranslatorGui master;
 
     public MarkOkAction(TranslatorGui master) {
-        super("Mark OK");
+        super("Mark OK", NewTheme.I().getIcon("flags/en", 16));
         this.master = master;
     }
 

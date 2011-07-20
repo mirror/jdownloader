@@ -14,24 +14,32 @@ import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
-import javax.swing.JTextField;
 import javax.swing.KeyStroke;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
+import jd.nutils.svn.Subversion;
 import jd.plugins.AddonPanel;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.utils.logging.Log;
+import org.appwork.utils.swing.dialog.Dialog;
+import org.appwork.utils.swing.dialog.DialogCanceledException;
+import org.appwork.utils.swing.dialog.DialogClosedException;
+import org.appwork.utils.swing.dialog.LoginDialog;
+import org.appwork.utils.swing.dialog.LoginDialog.LoginData;
 import org.jdownloader.extensions.translator.TLocale;
 import org.jdownloader.extensions.translator.TranslatorExtension;
 import org.jdownloader.extensions.translator.gui.actions.LoadTranslationAction;
+import org.jdownloader.extensions.translator.gui.actions.LoginSvnAction;
 import org.jdownloader.extensions.translator.gui.actions.MarkDefaultAction;
 import org.jdownloader.extensions.translator.gui.actions.MarkOkAction;
 import org.jdownloader.extensions.translator.gui.actions.NewTranslationAction;
 import org.jdownloader.extensions.translator.gui.actions.TestSvnAction;
+import org.jdownloader.extensions.translator.gui.actions.UpdateSVNAction;
 import org.jdownloader.images.NewTheme;
+import org.tmatesoft.svn.core.SVNException;
 
 /**
  * Extension gui
@@ -44,7 +52,9 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
     private static final String ID = "TRANSLATORGUI";
     private TranslateTableModel tableModel;
     private TranslateTable      table;
+
     private SwitchPanel         panel;
+
     private JMenu               mnuFile;
     private JMenu               mnuFileLoad;
     private JMenuItem           mnuFileSave;
@@ -52,22 +62,35 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
     private JCheckBoxMenuItem   mnuViewMarkOK;
     private JCheckBoxMenuItem   mnuViewMarkDef;
     private JMenu               mnuSvn;
-    private JTextField          pnlSvnUser;
-    private JTextField          pnlSvnPass;
+    private JMenuItem           mnuSvnTest;
+    private JMenuItem           mnuSvnUpdate;
+    private JMenuItem           mnuSvnLogin;
+    private JLabel              mnuSvnRev;
 
     private JPanel              pnlIcon;
     private JLabel              lblIconOK;
+
     private JLabel              lblIconError;
     private JLabel              lblIconWarning;
+
     private JLabel              lblIconMissing;
     private JLabel              lblIconDefault;
 
+    private boolean             svnBusy;
+    private Long                latestRevision;
+
+    private String              svnUser;
+    private String              svnPass;
+    private boolean             svnLoginOK;
+
     public TranslatorGui(TranslatorExtension plg) {
         super(plg);
+
         this.panel = new SwitchPanel(new MigLayout("ins 0,wrap 1", "[grow,fill]", "[grow,fill][]")) {
 
             @Override
             protected void onShow() {
+                if (!svnLoginOK) requestSvnLogin();
             }
 
             @Override
@@ -147,19 +170,30 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
         mnuViewMarkOK.setState(true);
         mnuViewMarkOK.setVisible(false);
 
-        JPanel pnlSvnLogin = new JPanel(new MigLayout("wrap 2", "", "[30%][]"));
-        this.pnlSvnUser = new JTextField(12);
-        this.pnlSvnPass = new JTextField(12);
-        pnlSvnLogin.add(new JLabel("<html><i>Username"));
-        pnlSvnLogin.add(this.pnlSvnUser);
-        pnlSvnLogin.add(new JLabel("<html><i>Password"));
-        pnlSvnLogin.add(this.pnlSvnPass);
+        this.svnUser = "sascha";
+        this.svnPass = "91RCpyddH43zY";
 
-        JMenuItem mnuSvnTest = new JMenuItem(new TestSvnAction(this.pnlSvnUser, this.pnlSvnPass));
+        mnuSvnLogin = new JMenuItem(new LoginSvnAction(this));
+        mnuSvnTest = new JMenuItem(new TestSvnAction(this));
+        mnuSvnUpdate = new JMenuItem(new UpdateSVNAction(this));
+
+        mnuSvnRev = new JLabel("Revision: n/a", null, JLabel.RIGHT) {
+            {
+                this.setEnabled(false);
+            }
+
+            @Override
+            public String getText() {
+                return "Revision: " + getLatestRevision().toString();
+            }
+        };
 
         mnuSvn = new JMenu("SVN");
-        mnuSvn.add(pnlSvnLogin);
+        mnuSvn.add(mnuSvnLogin);
         mnuSvn.add(mnuSvnTest);
+        mnuSvn.addSeparator();
+        mnuSvn.add(mnuSvnUpdate);
+        mnuSvn.add(mnuSvnRev);
 
         // Menu-Bar zusammensetzen
         menubar.add(this.mnuFile);
@@ -168,6 +202,9 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
 
         // tableModel.setMarkDefaults(mnuViewMarkDef.getState());
         // tableModel.setMarkOK(mnuViewMarkOK.getState());
+
+        svnLoginOK = false;
+        setSvnBusy(true);
     }
 
     protected void save() {
@@ -255,5 +292,98 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
         lblIconDefault.setEnabled(state);
         tableModel.setMarkDefaults(state);
         table.repaint();
+    }
+
+    public boolean isSvnBusy() {
+        return svnBusy;
+    }
+
+    public void setSvnBusy(boolean svnBusy) {
+        this.svnBusy = svnBusy;
+        this.mnuFile.setEnabled(!this.svnBusy);
+        this.mnuView.setEnabled(!this.svnBusy);
+        this.mnuSvn.setEnabled(!this.svnBusy);
+    }
+
+    public Long getLatestRevision() {
+        if (latestRevision != null)
+            return latestRevision;
+        else {
+
+            try {
+                Subversion svn = new Subversion("svn://svn.jdownloader.org/jdownloader/trunk/translations");
+                latestRevision = new Long(svn.latestRevision());
+                return latestRevision;
+            } catch (SVNException e) {
+                return new Long(-1);
+            }
+
+        }
+    }
+
+    public String getSvnUser() {
+        return svnUser;
+    }
+
+    public String getSvnPass() {
+        return svnPass;
+    }
+
+    public void setSvnLogin(String svnUser, String svnPass) {
+        this.svnUser = svnUser;
+        this.svnPass = svnPass;
+    }
+
+    public boolean isSvnLoginOK() {
+        return svnLoginOK;
+    }
+
+    public void validateSvnLogin() {
+        this.setSvnBusy(true);
+        this.svnLoginOK = false;
+
+        if (this.svnUser.length() > 3 && this.svnPass.length() > 3) {
+            String url = "svn://svn.jdownloader.org/jdownloader";
+
+            try {
+                Subversion s = new Subversion(url, this.svnUser, this.svnPass);
+                // Dialog.getInstance().showMessageDialog("SVN Test OK",
+                // "Login successful. Username and password are OK.\r\n\r\nServer: "
+                // + url);
+                this.svnLoginOK = true;
+                this.setSvnBusy(false);
+            } catch (SVNException e) {
+                Dialog.getInstance().showMessageDialog("SVN Test Error", "Login failed. Username and/or password are not correct!\r\n\r\nServer: " + url);
+                this.svnLoginOK = false;
+                requestSvnLogin();
+            }
+
+        } else {
+            Dialog.getInstance().showMessageDialog("SVN Test Error", "Username and/or password seem to be malformed.");
+            requestSvnLogin();
+
+        }
+
+    }
+
+    public void requestSvnLogin() {
+        final LoginDialog d = new LoginDialog(0, "SVN Login", "<html>A JDownloader SVN login is required to use the Translator Extension.<br>Please insert a valid SVN username and password.", null);
+        d.setUsernameDefault(svnUser);
+        d.setPasswordDefault(svnPass);
+
+        LoginData response;
+        try {
+            response = Dialog.getInstance().showDialog(d);
+        } catch (DialogClosedException e) {
+            // if (!this.svnLoginOK) validateSvnLogin();
+            return;
+        } catch (DialogCanceledException e) {
+            // if (!this.svnLoginOK) validateSvnLogin();
+            return;
+        }
+
+        this.setSvnLogin(response.getUsername(), response.getPassword());
+
+        validateSvnLogin();
     }
 }

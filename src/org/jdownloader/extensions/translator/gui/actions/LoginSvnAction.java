@@ -6,16 +6,16 @@ import javax.swing.AbstractAction;
 
 import org.jdownloader.extensions.translator.gui.TranslatorGui;
 
-public class NewTranslationAction extends AbstractAction {
+public class LoginSvnAction extends AbstractAction {
+    private TranslatorGui gui;
 
-    private TranslatorGui master;
-
-    public NewTranslationAction(TranslatorGui translatorGui) {
-        super("Create new!");
-        master = translatorGui;
+    public LoginSvnAction(TranslatorGui gui) {
+        super("Change login");
+        this.gui = gui;
     }
 
     public void actionPerformed(ActionEvent e) {
-
+        gui.requestSvnLogin();
     }
+
 }
