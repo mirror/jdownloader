@@ -19,7 +19,10 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.plugins.Account;
+import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
@@ -27,17 +30,22 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fileape.com" }, urls = { "http://(www\\.)?fileape\\.com/(index\\.php\\?act=download\\&id=|dl/)\\w+" }, flags = { 0 })
+import org.appwork.utils.formatter.SizeFormatter;
+
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fileape.com" }, urls = { "http://(www\\.)?fileape\\.com/(index\\.php\\?act=download\\&id=|dl/)\\w+" }, flags = { 2 })
 public class FileApeCom extends PluginForHost {
 
     public FileApeCom(PluginWrapper wrapper) {
         super(wrapper);
+        this.enablePremium("http://fileape.com/?act=purchase");
     }
 
     @Override
     public String getAGBLink() {
         return "http://fileape.com/?act=tos";
     }
+
+    private static final String MAINPAGE = "http://fileape.com/";
 
     public void correctDownloadLink(DownloadLink link) {
         if (link.getDownloadURL().contains("fileape.com/dl/")) link.setUrlDownload("http://fileape.com/index.php?act=download&id=" + new Regex(link.getDownloadURL(), "fileape\\.com/dl/(.+)").getMatch(0));
@@ -88,6 +96,63 @@ public class FileApeCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
+        return -1;
+    }
+
+    private void login(Account account) throws Exception {
+        this.setBrowserExclusive();
+        // br.getPage("http://fileape.com/?act=premium");
+        br.postPage("http://fileape.com/?act=login&redir=premium", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+        if (br.getCookie(MAINPAGE, "usr_id") == null || br.getCookie(MAINPAGE, "usr_session_ident") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+    }
+
+    @Override
+    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+        AccountInfo ai = new AccountInfo();
+        try {
+            login(account);
+        } catch (PluginException e) {
+            account.setValid(false);
+            return ai;
+        }
+        br.getPage("http://fileape.com/?act=premium");
+        String availabletraffic = br.getRegex("<div class=\"aform left\">[\t\n\r ]+<div class=\"ahead\"  style=\"font\\-weight: normal\">(.*?)</div>").getMatch(0);
+        if (availabletraffic != null) {
+            ai.setTrafficLeft(SizeFormatter.getSize(availabletraffic));
+        } else {
+            ai.setUnlimitedTraffic();
+        }
+        String expire = br.getRegex("<div class=\"aform right\">[\t\n\r ]+<div class=\"ahead\" style=\"font\\-weight: normal\">(\\d+)\\.\\d+ days</div>").getMatch(0);
+        if (expire == null) {
+            ai.setExpired(true);
+            account.setValid(false);
+            return ai;
+        } else {
+            double ohCrap = Double.parseDouble(expire);
+            ohCrap = ohCrap * 24 * 60 * 60 * 1000;
+            ai.setValidUntil(System.currentTimeMillis() + (long) ohCrap);
+        }
+        account.setValid(true);
+        ai.setStatus("Premium User");
+        return ai;
+    }
+
+    @Override
+    public void handlePremium(DownloadLink link, Account account) throws Exception {
+        requestFileInformation(link);
+        login(account);
+        br.setFollowRedirects(true);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getDownloadURL(), true, 0);
+        if (dl.getConnection().getContentType().contains("html")) {
+            logger.warning("The final dllink seems not to be a file!");
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
+    }
+
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
         return -1;
     }
 

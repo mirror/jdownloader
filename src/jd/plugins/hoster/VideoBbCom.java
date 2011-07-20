@@ -32,7 +32,7 @@ import jd.plugins.DownloadLink.AvailableStatus;
 
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision: 12761 $", interfaceVersion = 2, names = { "videobb.com" }, urls = { "http://(www\\.)?videobb\\.com/video/\\w+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision: 12761 $", interfaceVersion = 2, names = { "videobb.com" }, urls = { "http://(www\\.)?videobb\\.com/(video/|watch_video\\.php\\?v=)\\w+" }, flags = { 2 })
 public class VideoBbCom extends PluginForHost {
 
     private static final Object LOCK     = new Object();
@@ -43,6 +43,10 @@ public class VideoBbCom extends PluginForHost {
         super(wrapper);
         this.enablePremium("http://www.videobb.com/premium.php");
         setStartIntervall(3000l);
+    }
+
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("/video/", "/watch_video.php?v="));
     }
 
     @Override
@@ -177,8 +181,9 @@ public class VideoBbCom extends PluginForHost {
         } catch (final Exception e) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (br.containsHTML("(>This video was either deleted by the user or in breach of a copyright holder|>Video is not available<)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        final String filename = br.getRegex("content=\"videobb - (.*?)\"  name=\"title\"").getMatch(0);
+        if (br.containsHTML("(>The page or video you are looking for cannot be found|>Video is not available<|<title>videobb \\- Free Video Hosting \\- Your #1 Video Site</title>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("Content\\-Disposition: attachment; filename\\*= UTF\\-8\\'\\'(.*?)(<|\")").getMatch(0);
+        if (filename == null) filename = br.getRegex("content=\"videobb \\- (.*?)\"  name=\"title\"").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         downloadLink.setName(filename.trim());
         return AvailableStatus.TRUE;

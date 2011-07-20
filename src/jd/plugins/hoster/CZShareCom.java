@@ -41,7 +41,7 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "czshare.com" }, urls = { "http://(www\\.)?czshare\\.com/(files/\\d+/[A-Za-z0-9_]+/.{1}|download_file\\.php\\?id=\\d+\\&code=[A-Za-z0-9_]+)" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "czshare.com" }, urls = { "http://(www\\.)?czshare\\.com/((files/)?\\d+/[A-Za-z0-9_]+/.{1}|download_file\\.php\\?id=\\d+\\&code=[A-Za-z0-9_]+)" }, flags = { 2 })
 public class CZShareCom extends PluginForHost {
 
     private final static int SIMULTANEOUS_PREMIUM = -1;
@@ -56,6 +56,7 @@ public class CZShareCom extends PluginForHost {
 
     public void correctDownloadLink(DownloadLink link) {
         Regex linkInfo = new Regex(link.getDownloadURL(), "czshare\\.com/download_file\\.php\\?id=(\\d+)\\&code=([A-Za-z0-9_]+)");
+        if (linkInfo.getMatch(0) == null && linkInfo.getMatch(1) == null) linkInfo = new Regex(link.getDownloadURL(), "czshare\\.com/(\\d+)/[A-Za-z0-9_]+)/");
         if (linkInfo.getMatch(0) != null && linkInfo.getMatch(1) != null) link.setUrlDownload("http://czshare.com/" + linkInfo.getMatch(0) + "/" + linkInfo.getMatch(1) + "/x");
     }
 
@@ -94,7 +95,7 @@ public class CZShareCom extends PluginForHost {
     }
 
     private void handleErrors() throws PluginException {
-        if (br.containsHTML("Z Vaší IP adresy momentálně probíhá jiné stahování\\. Využijte PROFI")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, JDL.L("plugins.hoster.czsharecom.ipalreadydownloading", "IP already downloading"), 15 * 60 * 1000);
+        if (br.containsHTML("Z Vaší IP adresy momentálně probíhá jiné stahování\\. Využijte PROFI")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, JDL.L("plugins.hoster.czsharecom.ipalreadydownloading", "IP already downloading"), 12 * 60 * 1001);
     }
 
     @Override

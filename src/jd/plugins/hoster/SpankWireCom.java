@@ -24,20 +24,20 @@ import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "spankwire.com" }, urls = { "http://[\\w\\.]*?spankwire\\.com/.*?/video\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "spankwire.com" }, urls = { "http://(www\\.)?spankwire\\.com/.*?/video\\d+" }, flags = { 0 })
 public class SpankWireCom extends PluginForHost {
 
     public SpankWireCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    public String dllink = null;
+    public String DLLINK = null;
 
     @Override
     public String getAGBLink() {
@@ -50,7 +50,7 @@ public class SpankWireCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(false);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.getRedirectLocation() != null && br.getRedirectLocation().matches("http://www.spankwire.com/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if ("http://www.spankwire.com/".equals(br.getRedirectLocation())) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String fileID = new Regex(downloadLink.getDownloadURL(), "spankwire\\.com/.*?/video(\\d+)").getMatch(0);
         if (fileID == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String filename = br.getRegex("<h1>(.*?)</h1>").getMatch(0);
@@ -60,16 +60,16 @@ public class SpankWireCom extends PluginForHost {
                 filename = br.getRegex("<meta name=\"Description\" content=\"(.*?)\"").getMatch(0);
             }
         }
-        String lookup = "http://cdn1.static.spankwire.com/Controls/UserControls/Players/v3/PlaylistXml.aspx?id=" + fileID;
-        br.getPage(lookup);
-        dllink = Encoding.htmlDecode(br.getRegex("url>(.*?)<").getMatch(0));
-        if (filename == null || dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        DLLINK = br.getRegex("flashvars\\.video_url = \"(http://.*?)\"").getMatch(0);
+        if (DLLINK == null) DLLINK = br.getRegex("\"(http://cdn\\d+\\.public\\.spankwire\\.com/std/.*?)\"").getMatch(0);
+        if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        DLLINK = Encoding.htmlDecode(DLLINK);
         filename = filename.trim();
         downloadLink.setFinalFileName(filename + ".flv");
         Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
-        URLConnectionAdapter con = br2.openGetConnection(dllink);
+        URLConnectionAdapter con = br2.openGetConnection(DLLINK);
         if (!con.getContentType().contains("html"))
             downloadLink.setDownloadSize(con.getLongContentLength());
         else
@@ -80,7 +80,7 @@ public class SpankWireCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
