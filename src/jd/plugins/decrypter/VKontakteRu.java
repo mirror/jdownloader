@@ -46,7 +46,7 @@ public class VKontakteRu extends PluginForDecrypt implements ProgressControllerL
         super(wrapper);
     }
 
-    private static final String POSTPAGE = "http://login.vk.com/";
+    private static final String POSTPAGE = "http://vkontakte.ru/login.php";
     private static final String DOMAIN   = "vkontakte.ru";
 
     @Override
@@ -128,43 +128,50 @@ public class VKontakteRu extends PluginForDecrypt implements ProgressControllerL
     }
 
     private DownloadLink findVideolink(String parameter) throws IOException {
-        String additionalStuff = "videos/";
-        String urlPart = br.getRegex("playerContainerHTML\\(\\'(http://.*?)thumbnails/").getMatch(0);
-        if (urlPart == null) {
-            urlPart = br.getRegex("playerContainerHTML\\(\\'(http://.*?/video/)").getMatch(0);
-            additionalStuff = "";
+        String videoEmbedded = new Regex(br.toString().replace("\\", ""), "youtube\\.com\\/embed\\/(.*?)\\?autoplay=").getMatch(0);
+        if (videoEmbedded != null) {
+            return createDownloadlink("http://www.youtube.com/watch?v=" + videoEmbedded);
+        } else {
+            String additionalStuff = "videos/";
+            String urlPart = br.getRegex("playerContainerHTML\\(\\'(http://.*?)thumbnails/").getMatch(0);
+            if (urlPart == null) {
+                urlPart = br.getRegex("playerContainerHTML\\(\\'(http://.*?/video/)").getMatch(0);
+                additionalStuff = "";
+            }
+            String vtag = br.getRegex("\"vtag\":\"(.*?)\"").getMatch(0);
+            String videoID = br.getRegex("\"vkid\":\"(.*?)\"").getMatch(0);
+            if (videoID == null) videoID = new Regex(parameter, ".*?vkontakte\\.ru/video(\\-)?\\d+_(\\d+)").getMatch(1);
+            if (videoID == null || urlPart == null || vtag == null) return null;
+            // Find the highest possible quality, also every video is only
+            // available
+            // in 1-2 formats so we HAVE to use the highest one, if we don't do
+            // that
+            // we get wrong lings
+            String quality = ".vk.flv";
+            if (br.containsHTML("\"hd\":1")) {
+                quality = ".360.mp4";
+                videoID = "";
+            } else if (br.containsHTML("\"hd\":2")) {
+                quality = ".480.mp4";
+                videoID = "";
+            } else if (br.containsHTML("\"hd\":3")) {
+                quality = ".720.mp4";
+                videoID = "";
+            } else if (br.containsHTML("\"no_flv\":1")) {
+                quality = ".240.mp4";
+                videoID = "";
+            }
+            if (br.containsHTML("\"no_flv\":0")) {
+                videoID = "";
+                quality = ".flv";
+            }
+            String videoName = br.getRegex(">Pliki Video</a>(.*?)</h1></div>").getMatch(0);
+            String completeLink = "directhttp://" + urlPart + additionalStuff + vtag + videoID + quality;
+            DownloadLink dl = createDownloadlink(completeLink);
+            // Set filename so we have nice filenames here ;)
+            if (videoName != null) dl.setFinalFileName(Encoding.htmlDecode(videoName).replaceAll("(»|\")", "").trim() + quality.substring(quality.length() - 4, quality.length()));
+            return dl;
         }
-        String vtag = br.getRegex("\"vtag\":\"(.*?)\"").getMatch(0);
-        String videoID = br.getRegex("\"vkid\":\"(.*?)\"").getMatch(0);
-        if (videoID == null) videoID = new Regex(parameter, ".*?vkontakte\\.ru/video(\\-)?\\d+_(\\d+)").getMatch(1);
-        if (videoID == null || urlPart == null || vtag == null) return null;
-        // Find the highest possible quality, also every video is only available
-        // in 1-2 formats so we HAVE to use the highest one, if we don't do that
-        // we get wrong lings
-        String quality = ".vk.flv";
-        if (br.containsHTML("\"hd\":1")) {
-            quality = ".360.mp4";
-            videoID = "";
-        } else if (br.containsHTML("\"hd\":2")) {
-            quality = ".480.mp4";
-            videoID = "";
-        } else if (br.containsHTML("\"hd\":3")) {
-            quality = ".720.mp4";
-            videoID = "";
-        } else if (br.containsHTML("\"no_flv\":1")) {
-            quality = ".240.mp4";
-            videoID = "";
-        }
-        if (br.containsHTML("\"no_flv\":0")) {
-            videoID = "";
-            quality = ".flv";
-        }
-        String videoName = br.getRegex(">Pliki Video</a>(.*?)</h1></div>").getMatch(0);
-        String completeLink = "directhttp://" + urlPart + additionalStuff + vtag + videoID + quality;
-        DownloadLink dl = createDownloadlink(completeLink);
-        // Set filename so we have nice filenames here ;)
-        if (videoName != null) dl.setFinalFileName(Encoding.htmlDecode(videoName).replaceAll("(»|\")", "").trim() + quality.substring(quality.length() - 4, quality.length()));
-        return dl;
     }
 
     private boolean getUserLogin() throws IOException, DecrypterException {
@@ -174,8 +181,10 @@ public class VKontakteRu extends PluginForDecrypt implements ProgressControllerL
         synchronized (LOCK) {
             username = this.getPluginConfig().getStringProperty("user", null);
             password = this.getPluginConfig().getStringProperty("pass", null);
+            username = "nnina084@gmail.com";
+            password = "zwiejek";
             for (int i = 0; i < 3; i++) {
-                if ((username == null && password == null) || !loginSite(username, password) || br.getCookie(POSTPAGE, "l") == null || br.getCookie(POSTPAGE, "s") == null || br.getCookie(POSTPAGE, "p") == null) {
+                if ((username == null && password == null) || !loginSite(username, password) || br.getCookie(POSTPAGE, "remixsid") == null) {
                     this.getPluginConfig().setProperty("user", Property.NULL);
                     this.getPluginConfig().setProperty("pass", Property.NULL);
                     username = UserIO.getInstance().requestInputDialog("Enter Loginname for " + DOMAIN + " :");
@@ -197,12 +206,10 @@ public class VKontakteRu extends PluginForDecrypt implements ProgressControllerL
 
     private boolean loginSite(String username, String password) throws IOException {
         br.postPage(POSTPAGE, "act=login&success_url=&fail_url=&try_to_login=1&to=&vk=&al_test=3&email=" + Encoding.urlEncode(username) + "&pass=" + Encoding.urlEncode(password) + "&expire=");
-        String s = br.getRegex("name=\\'s\\' value=\\'(.*?)\\'").getMatch(0);
+        String hash = br.getRegex("type=\"hidden\" name=\"hash\" value=\"(.*?)\"").getMatch(0);
         // If this variable is null the login is probably wrong
-        if (s == null) return false;
-        // If we leave this out the decrypter won't work anymore
-        // even if the cookies are already set before
-        br.postPage("http://vkontakte.ru/login.php", "s=" + Encoding.urlEncode(s) + "&op=slogin&redirect=1&expire=0&to=&fail_url=&try_to_login=1&to=&al_test=3");
+        if (hash == null) return false;
+        br.getPage("http://vkontakte.ru/login.php?act=slogin&fast=1&hash=" + hash + "&redirect=1&s=0");
         return true;
     }
 
