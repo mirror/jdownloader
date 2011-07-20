@@ -21,16 +21,18 @@ import java.io.IOException;
 import jd.PluginWrapper;
 import jd.http.RandomUserAgent;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploadingit.com" }, urls = { "http://[\\w\\.]*?uploadingit\\.com/(d/[A-Z0-9]{16}|file/[a-zA-Z0-9]+/.+)" }, flags = { 0 })
 public class UploadingItCom extends PluginForHost {
+
+    private final static String ua = RandomUserAgent.generate();
 
     public UploadingItCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -44,7 +46,7 @@ public class UploadingItCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
-        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
+        br.getHeaders().put("User-Agent", ua);
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("(<title>Invalid Download - Uploadingit</title>|\">Sorry, but according to our database the download link you have entered is not valid\\.)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML(">Oh Snap! File Not Found!<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
