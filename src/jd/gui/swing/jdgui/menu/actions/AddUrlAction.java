@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import jd.controlling.CNL2;
 import jd.controlling.ClipboardHandler;
 import jd.controlling.DistributeData;
+import jd.controlling.IOEQ;
 import jd.gui.UserIO;
 import jd.gui.swing.jdgui.actions.ToolBarAction;
 import jd.parser.html.HTMLParser;
@@ -39,24 +40,31 @@ public class AddUrlAction extends ToolBarAction {
 
     @Override
     public void onAction(ActionEvent e) {
-        StringBuilder def = new StringBuilder();
-        try {
-            String newText = ClipboardHandler.getClipboard().getCurrentClipboardLinks();
-            String[] links = HTMLParser.getHttpLinks(newText, null);
-            ArrayList<String> pws = HTMLParser.findPasswords(newText);
-            for (String l : links)
-                def.append(l).append("\r\n");
-            for (String pw : pws) {
-                def.append("password: ").append(pw).append("\r\n");
+        IOEQ.add(new Runnable() {
+
+            public void run() {
+                StringBuilder def = new StringBuilder();
+                try {
+                    String newText = ClipboardHandler.getClipboard().getCurrentClipboardLinks();
+                    String[] links = HTMLParser.getHttpLinks(newText, null);
+                    ArrayList<String> pws = HTMLParser.findPasswords(newText);
+                    for (String l : links)
+                        def.append(l).append("\r\n");
+                    for (String pw : pws) {
+                        def.append("password: ").append(pw).append("\r\n");
+                    }
+                } catch (Exception e2) {
+                }
+                String link = UserIO.getInstance().requestInputDialog(UserIO.NO_COUNTDOWN | UserIO.STYLE_LARGE, _GUI._.gui_dialog_addurl_title(), _GUI._.gui_dialog_addurl_message(), def.toString(), NewTheme.I().getIcon("linkgrabber", 32), _GUI._.gui_dialog_addurl_okoption_parse(), null);
+                if (link == null || link.length() == 0) return;
+                if (CNL2.checkText(link)) return;
+                DistributeData tmp = new DistributeData(link, false);
+                tmp.setDisableDeepEmergencyScan(false);
+                tmp.start();
             }
-        } catch (Exception e2) {
-        }
-        String link = UserIO.getInstance().requestInputDialog(UserIO.NO_COUNTDOWN | UserIO.STYLE_LARGE, _GUI._.gui_dialog_addurl_title(), _GUI._.gui_dialog_addurl_message(), def.toString(), NewTheme.I().getIcon("linkgrabber", 32), _GUI._.gui_dialog_addurl_okoption_parse(), null);
-        if (link == null || link.length() == 0) return;
-        if (CNL2.checkText(link)) return;
-        DistributeData tmp = new DistributeData(link, false);
-        tmp.setDisableDeepEmergencyScan(false);
-        tmp.start();
+
+        }, true);
+
     }
 
     @Override

@@ -19,11 +19,11 @@ package jd.plugins.hoster;
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
@@ -48,22 +48,29 @@ public class GoodNet extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         String link = parameter.getDownloadURL();
-        URLConnectionAdapter con = br.openGetConnection(parameter.getDownloadURL());
-        if (!con.getContentType().contains("html")) {
-            parameter.setName(getFileNameFromHeader(con));
-            parameter.setDownloadSize(con.getCompleteContentLength());
-            con.disconnect();
-        } else {
-            br.followConnection();
-            br.getPage(link);
-            String filename = br.getRegex("<title>(.*?): </title>").getMatch(0);
-            if (filename == null) filename = br.getRegex("basefilename\">(.*?)</span>").getMatch(0);
-            String filesize = br.getRegex("id=\"humansize\">(.*?)</span").getMatch(0);
-            if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            parameter.setName(filename.trim());
-            if (filesize != null) {
-                filesize = filesize.replace("i", "");
-                parameter.setDownloadSize(SizeFormatter.getSize(filesize.trim()));
+        URLConnectionAdapter con = null;
+        try {
+            con = br.openGetConnection(parameter.getDownloadURL());
+            if (!con.getContentType().contains("html")) {
+                parameter.setName(getFileNameFromHeader(con));
+                parameter.setDownloadSize(con.getLongContentLength());
+            } else {
+                br.followConnection();
+                br.getPage(link);
+                String filename = br.getRegex("<title>(.*?): </title>").getMatch(0);
+                if (filename == null) filename = br.getRegex("basefilename\">(.*?)</span>").getMatch(0);
+                String filesize = br.getRegex("id=\"humansize\">(.*?)</span").getMatch(0);
+                if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                parameter.setName(filename.trim());
+                if (filesize != null) {
+                    filesize = filesize.replace("i", "");
+                    parameter.setDownloadSize(SizeFormatter.getSize(filesize.trim()));
+                }
+            }
+        } finally {
+            try {
+                con.disconnect();
+            } catch (Throwable e) {
             }
         }
         return AvailableStatus.TRUE;

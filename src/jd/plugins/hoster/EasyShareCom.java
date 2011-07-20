@@ -18,7 +18,6 @@ package jd.plugins.hoster;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -40,7 +39,7 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "easy-share.com" }, urls = { "http://[\\w\\d\\.]*?easy-share\\.com/\\d{6}.*" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "easy-share.com" }, urls = { "http://[\\w\\d\\.]*?easy-share\\.com/\\d+" }, flags = { 2 })
 public class EasyShareCom extends PluginForHost {
 
     private static Boolean longwait = null;
@@ -114,20 +113,25 @@ public class EasyShareCom extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.getHeaders().put("User-Agent", RandomUserAgent.generate());
-        br.setCookie(MAINPAGE, "language", "en");
-        String fileID = new Regex(downloadLink.getDownloadURL(), "easy-share\\.com/(\\d+)").getMatch(0);
+        URLConnectionAdapter con = null;
         try {
-            br.getPage("http://api.easy-share.com/files/" + fileID);
-        } catch (final Throwable e) {
-            return AvailableStatus.UNCHECKABLE;
+            br.setCookie(MAINPAGE, "language", "en");
+            String fileID = new Regex(downloadLink.getDownloadURL(), "easy-share\\.com/(\\d+)").getMatch(0);
+            con = br.openGetConnection("http://www.easy-share.com/" + fileID);
+            if (con.getResponseCode() == 503) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            br.followConnection();
+        } finally {
+            try {
+                con.disconnect();
+            } catch (Throwable e) {
+            }
         }
-        if (!br.containsHTML("ed:status>O<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        if (br.containsHTML("(>errorFileNotFound<|>File Not Found<)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex(Pattern.compile("<title>(?!File info)(.*?)</title>", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
-        String filesize = br.getRegex(Pattern.compile("rel=\"enclosure\" length=\"(\\d+)\"", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
+        if (br.containsHTML("Requested file is deleted")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("You are requesting:.*?>(.*?)<").getMatch(0);
+        String filesize = br.getRegex("You are requesting:.*?>.*?txtgray.*?>\\((.*?)\\)").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         downloadLink.setName(Encoding.htmlDecode(filename.trim()));
-        downloadLink.setDownloadSize(SizeFormatter.getSize(filesize + "b"));
+        downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.trim() + "b"));
         return AvailableStatus.TRUE;
     }
 
