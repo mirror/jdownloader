@@ -21,15 +21,15 @@ import java.io.IOException;
 import jd.PluginWrapper;
 import jd.http.RandomUserAgent;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploadingit.com" }, urls = { "http://[\\w\\.]*?uploadingit\\.com/(d/[A-Z0-9]{16}|file/[a-zA-Z0-9]+/.+)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploadingit.com" }, urls = { "http://(www\\.)?uploadingit\\.com/((d/|get/)[A-Z0-9]{16}|file/[a-zA-Z0-9]{16}/.{1})" }, flags = { 0 })
 public class UploadingItCom extends PluginForHost {
 
     private final static String ua = RandomUserAgent.generate();
@@ -40,7 +40,7 @@ public class UploadingItCom extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://uploadingit.com/help/termsofservice";
+        return "http://uploadingit.com/help/tos";
     }
 
     @Override
@@ -76,8 +76,12 @@ public class UploadingItCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        sleep(12 * 1001l, downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL().replace("/download", ""), "a=download", false, 1);
+        // Waittime is skippable
+        // sleep(12 * 1001l, downloadLink);;
+        String postUrl = br.getRegex("<form action=\"(file/download/.*?)\"").getMatch(0);
+        if (postUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        postUrl = "http://uploadingit.com/" + postUrl;
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, postUrl, "a=download", true, -2);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

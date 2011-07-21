@@ -411,7 +411,7 @@ public class XFileSharingProBasic extends PluginForHost {
             if (new Regex(BRBEFORE, PASSWORDTEXT).matches() || BRBEFORE.contains("Wrong password")) {
                 logger.warning("Wrong password, the entered password \"" + passCode + "\" is wrong, retrying...");
                 theLink.setProperty("pass", null);
-                throw new PluginException(LinkStatus.ERROR_RETRY);
+                throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
             }
             if (BRBEFORE.contains("Wrong captcha")) {
                 logger.warning("Wrong captcha or wrong password!");

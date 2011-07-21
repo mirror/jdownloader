@@ -25,11 +25,11 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
@@ -44,9 +44,10 @@ public class OneClickShareNet extends PluginForHost {
 
     public void correctDownloadLink(DownloadLink link) {
         String languageText = new Regex(link.getDownloadURL(), "1clickshare\\.net/([a-z-]+/)").getMatch(0);
-        if (languageText != null && !languageText.equals("abv-fs/")) link.setUrlDownload(link.getDownloadURL().replace(languageText, ""));
+        if (!"abv-fs/".equals(languageText)) link.setUrlDownload(link.getDownloadURL().replace(languageText, ""));
     }
 
+    // Using same script as 4fastfile.com and 1-upload.com
     @Override
     public String getAGBLink() {
         return "http://1clickshare.net/terms";
