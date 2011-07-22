@@ -359,6 +359,7 @@ public class DepositFiles extends PluginForHost {
             br.setFollowRedirects(true);
             br.getPage(dllink);
             final Form finalform = br.getForm(0);
+            sleep(2000, downloadLink);
             if (finalform != null) {
                 dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finalform, true, 1);
             } else {
@@ -367,9 +368,11 @@ public class DepositFiles extends PluginForHost {
             }
             final URLConnectionAdapter con = dl.getConnection();
             if (Plugin.getFileNameFromHeader(con) == null || Plugin.getFileNameFromHeader(con).indexOf("?") >= 0) {
-                con.disconnect();
-                if (con.getHeaderField("Guest-Limit") != null) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1000l); }
-                throw new PluginException(LinkStatus.ERROR_RETRY);
+                if (!con.isContentDisposition()) {
+                    con.disconnect();
+                    if (con.getHeaderField("Guest-Limit") != null) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1000l); }
+                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                }
             }
             if (!con.isContentDisposition()) {
                 br.followConnection();
@@ -385,6 +388,12 @@ public class DepositFiles extends PluginForHost {
                 if (con.getHeaderField("Guest-Limit") != null) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1000l); }
                 if (br.containsHTML("(<title>404 Not Found</title>|<h1>404 Not Found</h1>)")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 10 * 60 * 1000l); }
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            String name = Plugin.getFileNameFromHeader(con);
+            if (name != null && name.contains("?")) {
+                /* fix invalid filenames */
+                String fixedName = new Regex(name, "(.+)\\?").getMatch(0);
+                downloadLink.setFinalFileName(fixedName);
             }
             dl.startDownload();
         }
@@ -427,12 +436,20 @@ public class DepositFiles extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, link, true, 0);
         final URLConnectionAdapter con = dl.getConnection();
         if (Plugin.getFileNameFromHeader(con) == null || Plugin.getFileNameFromHeader(con).indexOf("?") >= 0) {
-            con.disconnect();
-            throw new PluginException(LinkStatus.ERROR_RETRY);
+            if (!con.isContentDisposition()) {
+                con.disconnect();
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            }
         }
         if (!con.isContentDisposition()) {
             con.disconnect();
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l);
+        }
+        String name = Plugin.getFileNameFromHeader(con);
+        if (name != null && name.contains("?")) {
+            /* fix invalid filenames */
+            String fixedName = new Regex(name, "(.+)\\?").getMatch(0);
+            downloadLink.setFinalFileName(fixedName);
         }
         dl.startDownload();
     }

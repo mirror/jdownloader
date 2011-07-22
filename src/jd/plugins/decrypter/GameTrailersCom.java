@@ -116,6 +116,7 @@ public class GameTrailersCom extends PluginForDecrypt {
                 long size = 0;
                 try {
                     Browser br = new Browser();
+                    br.setFollowRedirects(true);
                     con = br.openGetConnection(link);
                     if (!con.isOK()) continue;
                     size = con.getLongContentLength();

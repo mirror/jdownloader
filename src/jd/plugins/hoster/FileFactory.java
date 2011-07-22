@@ -31,12 +31,12 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -187,6 +187,7 @@ public class FileFactory extends PluginForHost {
 
     public String getUrl() throws IOException, PluginException {
         String url = this.br.getRegex("<div.*?id=\"downloadLink\".*?>.*?<a .*?href=\"(.*?)\".*?\"downloadLinkTarget").getMatch(0);
+        if (url == null) url = this.br.getRegex("greyDownload\".*?<div.*?id=\"free\".*?>.*?<a .*?href=\"(http.*?)\".*?\"downloadLinkTarget").getMatch(0);
         if (url == null) {
             Context cx = null;
             try {
