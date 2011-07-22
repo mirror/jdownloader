@@ -39,13 +39,21 @@ public class WUploadComFolder extends PluginForDecrypt {
         String parameter = param.toString();
         br.setCookie("http://www.wupload.com", "lang", "en");
         br.getPage(parameter);
-        if (br.containsHTML("(>Error 9001|>The requested folder do not exist or was deleted by the owner|>If you want, you can contact the owner of the referring site to tell him about this mistake)")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+        if (br.containsHTML("(>Error 9001|>The requested folder do not exist or was deleted by the owner|>If you want, you can contact the owner of the referring site to tell him about this mistake|>No links to show<)")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
         if (br.containsHTML("(>Error 9002|>The requested folder is not public|>If you own this folder, make it public by editing the)")) throw new DecrypterException("Folder is not public");
         String[] links = br.getRegex("class=\"passwordIcon\" title=\"\"></span><a href=\"(http://.*?)\"").getColumn(0);
         if (links == null || links.length == 0) links = br.getRegex("\"(http://(www\\.)?wupload\\.com/file/\\d+/.*?)\"").getColumn(0);
-        if (links == null || links.length == 0) return null;
+        String[] folders = br.getRegex("\"(http://(www\\.)?wupload\\.com/folder/\\d+)\"").getColumn(0);
+        if ((links == null || links.length == 0) && (folders == null || folders.length == 0)) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
+        }
         for (String dl : links)
             decryptedLinks.add(createDownloadlink(dl));
+        if (folders != null && folders.length != 0) {
+            for (String folderlink : folders)
+                decryptedLinks.add(createDownloadlink(folderlink));
+        }
         return decryptedLinks;
     }
 

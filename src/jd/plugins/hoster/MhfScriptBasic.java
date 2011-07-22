@@ -45,7 +45,7 @@ public class MhfScriptBasic extends PluginForHost {
         // this.enablePremium(COOKIE_HOST + "/register.php?g=3");
     }
 
-    // MhfScriptBasic 1.1
+    // MhfScriptBasic 1.2
     // This plugin is for developers to easily implement hosters using the MHF
     // script, it's still just a beta but i will improve it till it works for
     // nearly all of those hosters!
@@ -155,6 +155,7 @@ public class MhfScriptBasic extends PluginForHost {
                 break;
             }
         }
+        if (br.containsHTML(IPBLOCKED)) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l);
         if (br.containsHTML("Password Error")) {
             logger.warning("Wrong password!");
             link.setProperty("pass", null);
@@ -179,14 +180,16 @@ public class MhfScriptBasic extends PluginForHost {
     }
 
     private String findLink() throws Exception {
-        String finalLink = null;
-        String[] sitelinks = HTMLParser.getHttpLinks(br.toString(), null);
-        if (sitelinks == null || sitelinks.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        for (String alink : sitelinks) {
-            alink = Encoding.htmlDecode(alink);
-            if (alink.contains("access_key=") || alink.contains("getfile.php?")) {
-                finalLink = alink;
-                break;
+        String finalLink = br.getRegex("(http://.{5,30}getfile\\.php\\?id=\\d+\\&a=[a-z0-9]+\\&t=[a-z0-9]+.*?)(\\'|\")").getMatch(0);
+        if (finalLink == null) {
+            String[] sitelinks = HTMLParser.getHttpLinks(br.toString(), null);
+            if (sitelinks == null || sitelinks.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            for (String alink : sitelinks) {
+                alink = Encoding.htmlDecode(alink);
+                if (alink.contains("access_key=") || alink.contains("getfile.php?")) {
+                    finalLink = alink;
+                    break;
+                }
             }
         }
         return finalLink;

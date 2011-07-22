@@ -75,7 +75,10 @@ public class FlsncCm extends PluginForDecrypt {
             links = br.getRegex("<td><a href=\"(http://.*?)\"").getColumn(0);
             if (links == null || links.length == 0) links = br.getRegex("\"(http://[^/\" ]*?filesonic\\..*?/[^\" ]*?file/\\d+/.*?)\"").getColumn(0);
         }
-        if (links == null || links.length == 0) return null;
+        if (links == null || links.length == 0) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
+        }
         progress.setRange(links.length);
         for (String data : links) {
             if (failed) {

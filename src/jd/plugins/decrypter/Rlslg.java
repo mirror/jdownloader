@@ -22,6 +22,7 @@ import java.util.regex.Pattern;
 import jd.PluginWrapper;
 import jd.controlling.DistributeData;
 import jd.controlling.ProgressController;
+import jd.http.RandomUserAgent;
 import jd.parser.Regex;
 import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
@@ -29,21 +30,22 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rlslog.net" }, urls = { "(http://[\\w\\.]*?rlslog\\.net(/.+/.+/#comments|/.+/#comments|/.+/.*))" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rlslog.net" }, urls = { "(http://(www\\.)?rlslog\\.net(/.+/.+/#comments|/.+/#comments|/.+/.*))" }, flags = { 0 })
 public class Rlslg extends PluginForDecrypt {
 
     public Rlslg(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    // @Override
+    private final static String ua = RandomUserAgent.generate();
+
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         ArrayList<String> passwords;
-        String parameter = param.toString();
+        String parameter = param.toString().replace("#comments", "");
+        br.getHeaders().put("User-Agent", ua);
         br.getPage(parameter);
-        String directComment = new Regex(param.toString(), "http://[\\w\\.]*?rlslog\\.net/.+/.+/#comments|/.+/#comments|/.+/.*?#(comment-\\d+)").getMatch(0);
-
+        String directComment = new Regex(param.toString(), "http://[\\w\\.]*?rlslog\\.net/.+/.+/#comments|/.+/#comments|/.+/.*?#(comment\\-\\d+)").getMatch(0);
         if (directComment != null) {
             String comment = br.getRegex(Pattern.compile("<li class=.*? id=.*?" + directComment + ".*?>(.*?)</li>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
             passwords = HTMLParser.findPasswords(comment);
@@ -58,32 +60,33 @@ public class Rlslg extends PluginForDecrypt {
         } else {
             ArrayList<String> pages = new ArrayList<String>();
             pages.add(param.toString());
-            String comment_pages_tag = br.getRegex(Pattern.compile("<!-- Comment page numbers -->(.*?)<!-- End comment page numbers -->", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
-            if (comment_pages_tag != null) {
-                String comment_pages[] = new Regex(comment_pages_tag, "<a class=\".*?-comment-page\" href=\"(.*?)\"").getColumn(0);
+            String comment_pages[] = br.getRegex("class=\\'page\\-numbers\\' href=\\'(http://(www\\.)?rlslog\\.net/.*?)\\'").getColumn(0);
+            if (comment_pages != null && comment_pages.length != 0) {
                 for (String page : comment_pages) {
-                    pages.add(page);
+                    if (!pages.contains(page)) pages.add(page);
                 }
             }
+            progress.setRange(pages.size());
             for (String page : pages) {
-                br.getPage(page);
-                String comments[] = br.getRegex(Pattern.compile("<li class=.*? id=.*? value=.*?>(.*?)</li>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getColumn(0);
+                // Don't enter first page as it is already entered
+                if (!page.equals(param.toString())) br.getPage(page.replace("#comments", ""));
+                String comments[] = br.getRegex(Pattern.compile("<div class=\\'commenttext\\'>(.*?)</div>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getColumn(0);
                 for (String comment : comments) {
                     passwords = HTMLParser.findPasswords(comment);
                     String[] links = new Regex(comment, "rel=\"nofollow\">(.*?)</a>", Pattern.CASE_INSENSITIVE).getColumn(0);
-                    for (String link : links) {
-                        if (!new Regex(link, this.getSupportedLinks()).matches() && DistributeData.hasPluginFor(link, true)) {
-                            DownloadLink dLink = createDownloadlink(link);
-                            dLink.addSourcePluginPasswordList(passwords);
-                            decryptedLinks.add(dLink);
+                    if (links != null && links.length != 0) {
+                        for (String link : links) {
+                            if (!new Regex(link, this.getSupportedLinks()).matches() && DistributeData.hasPluginFor(link, true)) {
+                                DownloadLink dLink = createDownloadlink(link);
+                                dLink.addSourcePluginPasswordList(passwords);
+                                decryptedLinks.add(dLink);
+                            }
                         }
                     }
                 }
+                progress.increase(1);
             }
         }
         return decryptedLinks;
     }
-
-    // @Override
-
 }
