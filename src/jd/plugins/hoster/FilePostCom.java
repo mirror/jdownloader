@@ -83,7 +83,6 @@ public class FilePostCom extends PluginForHost {
                     c++;
                 }
                 br.postPage("http://filepost.com/files/checker/?JsHttpRequest=" + System.currentTimeMillis() + "-xml", sb.toString());
-                System.out.print(br.toString());
                 String correctedBR = br.toString().replace("\\", "");
                 for (DownloadLink dl : links) {
                     String fileid = new Regex(dl.getDownloadURL(), FILEIDREGEX).getMatch(0);
