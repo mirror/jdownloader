@@ -9,6 +9,7 @@ import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filesonic.com" }, urls = { "http://[\\w\\.]*?filesonic\\..*?/.*?folder/[0-9a-z]+" }, flags = { 0 })
@@ -75,22 +76,34 @@ public class FlsncCm extends PluginForDecrypt {
             links = br.getRegex("<td><a href=\"(http://.*?)\"").getColumn(0);
             if (links == null || links.length == 0) links = br.getRegex("\"(http://[^/\" ]*?filesonic\\..*?/[^\" ]*?file/\\d+/.*?)\"").getColumn(0);
         }
-        if (links == null || links.length == 0) {
+        String[][] folderLinks = br.getRegex("\"(http://(www\\.)?filesonic\\.com/folder/\\d+)\">(.*?)</a> \\(folder\\)</td>").getMatches();
+        if ((links == null || links.length == 0) && (folderLinks == null || folderLinks.length == 0)) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-        progress.setRange(links.length);
-        for (String data : links) {
-            if (failed) {
-                if (!data.contains("/folder/")) decryptedLinks.add(createDownloadlink(data));
-            } else {
-                String filename = new Regex(data, "filesonic\\..*?/.*?file/.*?/(.*?)\"").getMatch(0);
-                DownloadLink aLink = createDownloadlink(data);
-                if (filename != null) aLink.setName(filename.trim());
-                if (filename != null) aLink.setAvailable(true);
-                if (!data.contains("/folder/")) decryptedLinks.add(createDownloadlink(data));
+        if (links != null && links.length != 0) {
+            for (String data : links) {
+                if (failed) {
+                    if (!data.contains("/folder/")) decryptedLinks.add(createDownloadlink(data));
+                } else {
+                    String filename = new Regex(data, "filesonic\\..*?/.*?file/.*?/(.*?)\"").getMatch(0);
+                    DownloadLink aLink = createDownloadlink(data);
+                    if (filename != null) aLink.setName(filename.trim());
+                    if (filename != null) aLink.setAvailable(true);
+                    if (!data.contains("/folder/")) decryptedLinks.add(createDownloadlink(data));
+                }
             }
-            progress.increase(1);
+        }
+        if (folderLinks != null && folderLinks.length != 0) {
+            for (String[] folderLink : folderLinks) {
+                DownloadLink lol = createDownloadlink(folderLink[0]);
+                if (folderLink[2] != null) {
+                    FilePackage fp = FilePackage.getInstance();
+                    fp.setName(folderLink[2].trim());
+                    lol._setFilePackage(fp);
+                }
+                decryptedLinks.add(lol);
+            }
         }
         return decryptedLinks;
     }

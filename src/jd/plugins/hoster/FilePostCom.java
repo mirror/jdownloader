@@ -83,6 +83,7 @@ public class FilePostCom extends PluginForHost {
                     c++;
                 }
                 br.postPage("http://filepost.com/files/checker/?JsHttpRequest=" + System.currentTimeMillis() + "-xml", sb.toString());
+                System.out.print(br.toString());
                 String correctedBR = br.toString().replace("\\", "");
                 for (DownloadLink dl : links) {
                     String fileid = new Regex(dl.getDownloadURL(), FILEIDREGEX).getMatch(0);
@@ -90,7 +91,7 @@ public class FilePostCom extends PluginForHost {
                         logger.warning("Filepost availablecheck is broken!");
                         return false;
                     }
-                    Regex theData = new Regex(correctedBR, ";\" target=\"_blank\">http://filepost\\.com/files/" + fileid + "/([\\w\\.]+)/</a></td>nttt<td>(.*?)</td>nttt<td>ntttt<span class=\"(x|v)\">Activettt</td>");
+                    Regex theData = new Regex(correctedBR, ";\" target=\"_blank\">http://filepost\\.com/files/" + fileid + "/(.{1,256})/</a></td>nttt<td>(.*?)</td>nttt<td>ntttt<span class=\"(x|v)\">Activettt</td>");
                     String filename = theData.getMatch(0);
                     String filesize = theData.getMatch(1);
                     if (filename == null || filesize == null || ("x".equals(theData.getMatch(2)))) {

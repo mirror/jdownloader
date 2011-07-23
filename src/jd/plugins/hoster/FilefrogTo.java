@@ -16,6 +16,7 @@
 
 package jd.plugins.hoster;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 
@@ -28,11 +29,12 @@ import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.BrowserAdapter;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
+import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
@@ -53,6 +55,8 @@ public class FilefrogTo extends PluginForHost {
     public String getAGBLink() {
         return "http://www.filefrog.to/terms";
     }
+
+    private static final String NOTRAFFIC = "traffic-exhausted";
 
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
@@ -132,19 +136,21 @@ public class FilefrogTo extends PluginForHost {
         requestFileInformation(downloadLink);
         br.forceDebug(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.getRedirectLocation() != null && br.getRedirectLocation().contains("traffic-exhausted")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 15 * 60000);
-        Form form = br.getForms()[0];
-        // workaround a base. Not required in browser versions above Rev 11067
-        form.setAction(downloadLink.getDownloadURL());
-        // not required
-        // this.sleep(30000, downloadLink);
-        br.submitForm(form);
-        if (br.getRedirectLocation() != null && br.getRedirectLocation().contains("traffic-exhausted")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 15 * 60000);
+        if (br.getRedirectLocation() != null && br.getRedirectLocation().contains(NOTRAFFIC)) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 15 * 60000);
+        PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+        jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+        rc.parse();
+        rc.load();
+        File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+        String c = getCaptchaCode(cf, downloadLink);
+        rc.setCode(c);
+        if (br.getRedirectLocation() == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (br.getRedirectLocation().contains(NOTRAFFIC)) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 15 * 60000);
+        if (br.getRedirectLocation().contains(downloadLink.getDownloadURL().replaceAll("(http://|www\\.)", ""))) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         dl = BrowserAdapter.openDownload(br, downloadLink, br.getRedirectLocation());
-
         URLConnectionAdapter con = dl.getConnection();
         if (!con.isContentDisposition()) {
-            if (br.getURL().contains("traffic-exhausted")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 15 * 60000);
+            if (br.getURL().contains(NOTRAFFIC)) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 15 * 60000);
             // server error. for some files it returns 0 byte text files.
             if (con.getLongContentLength() == 0) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 15 * 60000);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

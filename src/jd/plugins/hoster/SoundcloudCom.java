@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
+import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
@@ -57,16 +58,20 @@ public class SoundcloudCom extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
         this.setBrowserExclusive();
         br.getPage(parameter.getDownloadURL());
-        if (br.containsHTML("Oops, looks like we can't find that page")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("Oops, looks like we can\\'t find that page")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<em>(.*?)</em>").getMatch(0);
         br.setFollowRedirects(true);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        filename = filename.trim().replace("&amp; ", "");
+        String username = br.getRegex("\"username\":\"(.*?)\"").getMatch(0);
+        filename = Encoding.htmlDecode(filename.trim());
         String type = br.getRegex("title=\"Uploaded format\">(.*?)<").getMatch(0);
-        if (type == null) type = br.getRegex("class=\"file-type\">(.*?)</span>").getMatch(0);
-        if (type == null) type = "mp3";
+        if (type == null) {
+            type = br.getRegex("class=\"file-type\">(.*?)</span>").getMatch(0);
+            if (type == null) type = "mp3";
+        }
+        if (username != null) filename += " - " + username.trim();
         filename += "." + type;
-        if (!br.containsHTML("class=\"download pl-button\"")) {
+        if (!br.containsHTML("class=\"download pl\\-button\"")) {
             String[] data = br.getRegex("\"uid\":\"(.*?)\".*?\"token\":\"(.*?)\"").getRow(0);
             url = "http://media.soundcloud.com/stream/" + data[0] + "?stream_token=" + data[1];
             URLConnectionAdapter con = br.openGetConnection(url);
