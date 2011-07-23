@@ -52,8 +52,6 @@ public class SlingFileCom extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(false);
-        // Prevents having to reconnect too often as their limit-check is a bit
-        // buggy :D
         br.getHeaders().put("User-Agent", RandomUserAgent.generate());
         br.getPage(downloadLink.getDownloadURL());
         // Prevents errors, i don't know why the page sometimes shows this
@@ -66,12 +64,11 @@ public class SlingFileCom extends PluginForHost {
             logger.info("New link was set in the availableCheck, opening page...");
             br.getPage(downloadLink.getDownloadURL());
         }
-        String filename = br.getRegex("<title>(.*?) - SlingFile - Free File Hosting \\& Online Storage</title>").getMatch(0);
+        String filename = br.getRegex("<h3>Downloading <span>(.*?)</span></h3>").getMatch(0);
         if (filename == null) {
-            filename = br.getRegex("class=\"title\">(.*?)</span>").getMatch(0);
+            filename = br.getRegex("<title>(.*?) \\- SlingFile \\- Free File Hosting \\& Online Storage</title>").getMatch(0);
         }
-        String filesize = br.getRegex("class=\"maintitle\">Downloading</span><span class=\"title\">.*?</span></div>[\n\r\t ]+<p>(.*?)\\. File uploaded ").getMatch(0);
-        if (filesize == null) filesize = br.getRegex("Downloading.*?</span>.*?<p>([0-9\\. GMB]+)").getMatch(0);
+        String filesize = br.getRegex("<td>(.{2,20}) \\| Uploaded").getMatch(0);
         if (filesize == null || filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         downloadLink.setName(filename.trim());
         downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
@@ -80,6 +77,8 @@ public class SlingFileCom extends PluginForHost {
 
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
+        String waittime = br.getRegex("\\)\\.innerHTML=\\'(\\d+)\\'").getMatch(0);
+        if (waittime == null) waittime = br.getRegex("id=\"dltimer\">(\\d+)</span><br>").getMatch(0);
         if (br.containsHTML("class=\"errorbox\"")) {
             String waitthat = br.getRegex("Please wait for another (\\d+) minutes to download another file").getMatch(0);
             if (waitthat != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(waitthat) * 60 * 1001l);
@@ -88,8 +87,6 @@ public class SlingFileCom extends PluginForHost {
             if (br.getRegex(ERRORREGEX).getMatch(0) != null) errorMessage = br.getRegex("ERRORREGEX").getMatch(0);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, errorMessage);
         }
-        // At the moment we can skip their (30 seconds) waittime so if the
-        // plugin is broken this is the first thing to check!
         br.postPage(downloadLink.getDownloadURL(), "show_captcha=yes");
         PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
         jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
@@ -98,9 +95,9 @@ public class SlingFileCom extends PluginForHost {
         File cf = rc.downloadCaptcha(getLocalCaptchaFile());
         String c = getCaptchaCode(cf, downloadLink);
         rc.setCode(c);
-        if (br.containsHTML("api.recaptcha.net")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        if (br.containsHTML("(api\\.recaptcha\\.net|g>Invalid captcha entered\\. Please try again\\.<)")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         String dllink = br.getRegex("(http://sf[0-9\\-].*?.slingfile\\.com/gdl/[a-z0-9]+/[a-z0-9]+/[a-z0-9]+/[a-z0-9]+/.*?)('|\")").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("location\\.href='(http://.*?)'").getMatch(0);
+        if (dllink == null) dllink = br.getRegex("<td valign=\\'middle\\' align=\\'center\\' colspan=\\'2\\'>[\t\n\r ]+<a href=\"(http://.*?)\"").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {

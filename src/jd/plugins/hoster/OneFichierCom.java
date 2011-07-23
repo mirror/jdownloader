@@ -26,12 +26,12 @@ import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -108,8 +108,7 @@ public class OneFichierCom extends PluginForHost {
         // Their limit is just very short so a 30 second waittime for all
         // downloads will remove the limit
         String dllink = br.getRedirectLocation();
-        if (dllink != null && br.containsHTML("(/>Téléchargements en cours|>veuillez patienter avant de télécharger un autre fichier|>You already downloading some files|>Please wait a few seconds before downloading new ones)")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many simultan downloads", 45 * 1000l);
-
+        if (br.containsHTML("(/>Téléchargements en cours|>veuillez patienter avant de télécharger un autre fichier|>You already downloading some files|>Please wait a few seconds before downloading new ones)")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many simultan downloads", 45 * 1000l);
         if (br.containsHTML(PASSWORDTEXT)) {
             passCode = handlePassword(downloadLink, passCode);
             dllink = br.getRedirectLocation();
