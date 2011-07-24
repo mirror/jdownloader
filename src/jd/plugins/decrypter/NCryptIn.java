@@ -50,7 +50,7 @@ public class NCryptIn extends PluginForDecrypt {
     private final String                   RECAPTCHA      = "recaptcha/api/challenge";
     private final String                   OTHERCAPTCHA   = "/temp/anicaptcha/\\d+\\.gif";
     private final String                   PASSWORDTEXT   = "password";
-    private final String                   PASSWORDFAILED = "<td class=\"error\">&bull; Das Passwort ist ung\\&uuml;ltig";
+    private final String                   PASSWORDFAILED = "<h2><span class=\"arrow\">Gesch\\&uuml;tzter Ordner</span></h2>";
     private final HashMap<String, Boolean> CNL_URL_MAP    = new HashMap<String, Boolean>();
     private String                         aBrowser       = "";
 

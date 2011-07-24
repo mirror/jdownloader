@@ -28,6 +28,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
+import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ge.tt" }, urls = { "http://(www\\.)?api\\.ge\\.tt/\\d/[A-Za-z0-9]+/.+" }, flags = { 0 })
 public class GeTt extends PluginForHost {
@@ -43,6 +44,9 @@ public class GeTt extends PluginForHost {
         return "http://ge.tt/#terms";
     }
 
+    private static final String LIMITREACHED         = "overloaded.html";
+    private static final String LIMITREACHEDUSERTEXT = "Traffic limit for this file is reached";
+
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
@@ -51,6 +55,10 @@ public class GeTt extends PluginForHost {
         if (br.containsHTML("No htmlCode read")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         DLLINK = br.getRedirectLocation();
         if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (DLLINK.contains(LIMITREACHED)) {
+            downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.gett.trafficlimit", LIMITREACHEDUSERTEXT));
+            return AvailableStatus.TRUE;
+        }
         DLLINK = Encoding.htmlDecode(DLLINK);
         Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
@@ -76,6 +84,8 @@ public class GeTt extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
+        // Limit is on the file, reconnect doesn't remove it
+        if (DLLINK.contains(LIMITREACHED)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, LIMITREACHEDUSERTEXT, 30 * 60 * 1000l);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();

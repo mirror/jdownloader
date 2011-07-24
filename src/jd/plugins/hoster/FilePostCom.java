@@ -83,6 +83,7 @@ public class FilePostCom extends PluginForHost {
                     c++;
                 }
                 br.postPage("http://filepost.com/files/checker/?JsHttpRequest=" + System.currentTimeMillis() + "-xml", sb.toString());
+                System.out.print(br.toString());
                 String correctedBR = br.toString().replace("\\", "");
                 for (DownloadLink dl : links) {
                     String fileid = new Regex(dl.getDownloadURL(), FILEIDREGEX).getMatch(0);
@@ -90,7 +91,7 @@ public class FilePostCom extends PluginForHost {
                         logger.warning("Filepost availablecheck is broken!");
                         return false;
                     }
-                    Regex theData = new Regex(correctedBR, ";\" target=\"_blank\">http://filepost\\.com/files/" + fileid + "/(.{1,256})/</a></td>nttt<td>(.*?)</td>nttt<td>ntttt<span class=\"(x|v)\">Activettt</td>");
+                    Regex theData = new Regex(correctedBR, ";\" target=\"_blank\">http://filepost\\.com/files/" + fileid + "/(.{1,256})/</a></td>nttt<td>(.*?)</td>nttt<td>ntttt<span class=\"(x|v)\"");
                     String filename = theData.getMatch(0);
                     String filesize = theData.getMatch(1);
                     if (filename == null || filesize == null || ("x".equals(theData.getMatch(2)))) {
@@ -144,6 +145,7 @@ public class FilePostCom extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
+            if (br.getCookie(MAINPAGE, "error") != null && new Regex(br.getCookie(MAINPAGE, "error"), "(Sorry%2C%20you%20have%20exceeded%20your%20daily%20download%20limit\\.|%3Cbr%20%2F%3ETry%20again%20tomorrow%20or%20obtain%20a%20premium%20membership\\.)").matches()) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Daily limit reached", 2 * 60 * 60 * 1000l);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
