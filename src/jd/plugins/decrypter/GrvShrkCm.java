@@ -276,9 +276,9 @@ public class GrvShrkCm extends PluginForDecrypt {
     }
 
     private String getToken(final String method, final String secretKey) {
-        String topSecretKey = "bewareOfBearsharktopus";
-        if (method.equals("getSongFromToken")) {
-            topSecretKey = "backToTheScienceLab";
+        String topSecretKey = Encoding.Base64Decode("YmV3YXJlT2ZCZWFyc2hhcmt0b3B1cw==");
+        if (method.matches("(getSongFromToken|getTokenForSong)")) {
+            topSecretKey = Encoding.Base64Decode("YmFja1RvVGhlU2NpZW5jZUxhYg==");
         }
         final String lastRandomizer = makeNewRandomizer();
         final String z = lastRandomizer + JDHash.getSHA1(method + ":" + secretKey + ":" + topSecretKey + ":" + lastRandomizer);
