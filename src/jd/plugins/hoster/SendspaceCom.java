@@ -133,6 +133,18 @@ public class SendspaceCom extends PluginForHost {
                     downloadLink.setName(Encoding.htmlDecode(infos[0]).trim());
                     downloadLink.setDownloadSize(SizeFormatter.getSize(infos[1].trim().replaceAll(",", "\\.")));
                     return AvailableStatus.TRUE;
+                } else {
+                    String filename = br.getRegex("<title>Download (.*?) from Sendspace\\.com \\- send big files the easy way</title>").getMatch(0);
+                    if (filename == null) {
+                        filename = br.getRegex("<h2 class=\"bgray\"><b>(.*?)</b></h2>").getMatch(0);
+                        if (filename == null) filename = br.getRegex("title=\"download (.*?)\">Click here to start").getMatch(0);
+                    }
+                    String filesize = br.getRegex("<b>File Size:</b> (.*?)</div>").getMatch(0);
+                    if (filename != null && filesize != null) {
+                        downloadLink.setName(Encoding.htmlDecode(filename).trim());
+                        downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.trim().replaceAll(",", "\\.")));
+                        return AvailableStatus.TRUE;
+                    }
                 }
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else

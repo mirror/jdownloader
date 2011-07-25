@@ -31,7 +31,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "klipsiz.net" }, urls = { "http://[\\w\\.]*?klipsiz\\.net/(([a-zA-Z0-9-.]+|[a-z]{1}/[0-9]+)\\.php|mp3-dinle-indir/[0-9]+-[0-9]+/)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "klipsiz.org" }, urls = { "http://(www\\.)?klipsiz\\.(net|org)/(([a-zA-Z0-9-.]+|[a-z]{1}/[0-9]+)\\.php|mp3-dinle-indir/[0-9]+-[0-9]+/)" }, flags = { 0 })
 public class LlpszNt extends PluginForDecrypt {
 
     public LlpszNt(PluginWrapper wrapper) {
@@ -42,24 +42,30 @@ public class LlpszNt extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
+        String parameter = param.toString().replace("klipsiz.net/", "klipsiz.org/");
         br.setFollowRedirects(false);
         br.getPage(parameter);
-        if (br.getRedirectLocation() != null && br.getRedirectLocation().equals("http://www.klipsiz.net")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+        if (br.getRedirectLocation() != null && br.getRedirectLocation().equals("http://www.klipsiz.net") || br.containsHTML("(>404: Not Found<|<title>Bedava Yabancı Müzik Mp3 dinle indir şarkı sözü lyrics \\- klipsiz\\.org\\&nbsp;\\-\\&nbsp;Bedava Yabancı Müzik Mp3 dinle indir şarkı sözü lyrics \\- klipsiz\\.org</title>)")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
         if (Regex.matches(parameter, manylinks)) {
             String fpName = br.getRegex("\"componentheading\">(.*?)</div>").getMatch(0);
             if (fpName == null) {
-                fpName = br.getRegex("<title>(.*?)MP3'l").getMatch(0);
+                fpName = br.getRegex("<title>(.*?)MP3\\'l").getMatch(0);
             }
 
             String[] links = br.getRegex("sectiontableentry.*?<a href=\"(.*?)\">").getColumn(0);
-            if (links.length == 0) return null;
+            if (links.length == 0) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
             progress.setRange(links.length);
             for (String cryptedlink : links) {
                 br.getPage(cryptedlink);
-                String decryptedlink = br.getRegex("addVariable\\('file'.*?(http.*?)'\\)").getMatch(0);
-                if (decryptedlink == null) decryptedlink = br.getRegex("width='28px' align='right'><a href=\"(.*?)\"").getMatch(0);
-                if (decryptedlink == null) return null;
+                String decryptedlink = br.getRegex("addVariable\\(\\'file\\'.*?(http.*?)\\'\\)").getMatch(0);
+                if (decryptedlink == null) decryptedlink = br.getRegex("width=\\'28px\\' align=\\'right\\'><a href=\"(.*?)\"").getMatch(0);
+                if (decryptedlink == null) {
+                    logger.warning("Decrypter broken for link: " + parameter);
+                    return null;
+                }
                 if (decryptedlink.equals("")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
                 decryptedlink = Encoding.urlDecode((decryptedlink), true);
                 br.getPage(decryptedlink);
@@ -71,7 +77,7 @@ public class LlpszNt extends PluginForDecrypt {
                 if (br.containsHTML("Nie odnaleziono pliku")) {
                     logger.warning("Found 1 offline link");
                 } else if (finallink == null) {
-                    logger.warning("There is a problem with the decrypter!");
+                    logger.warning("Decrypter broken for link: " + parameter);
                     return null;
                 } else {
                     decryptedLinks.add(createDownloadlink("directhttp://" + finallink));
@@ -85,10 +91,16 @@ public class LlpszNt extends PluginForDecrypt {
             }
         } else {
             String finallink = br.getRegex("<param name=\"zrodlo\" value=\"(.*?)\">").getMatch(0);
-            if (finallink == null) return null;
+            if (finallink == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
             if (finallink.equals("")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
             finallink = Encoding.urlDecode((finallink), true);
-            if (finallink == null) return null;
+            if (finallink == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
             decryptedLinks.add(createDownloadlink(finallink));
         }
         return decryptedLinks;
