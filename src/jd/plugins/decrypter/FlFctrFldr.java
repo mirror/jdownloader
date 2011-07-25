@@ -39,6 +39,9 @@ public class FlFctrFldr extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.getPage(parameter);
+        if (br.getRedirectLocation() != null) {
+            br.getPage(br.getRedirectLocation());
+        }
         /* Error handling */
         if (br.containsHTML("No Files found in this folder")) {
             logger.warning("The requested document was not found on this server.");

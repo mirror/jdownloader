@@ -292,15 +292,17 @@ public class DownloadsTable extends BasicJDTable<PackageLinkNode> {
         /* split selection into downloadlinks and filepackages */
         final ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
         final ArrayList<FilePackage> fps = new ArrayList<FilePackage>();
-        for (final PackageLinkNode node : selection) {
-            if (node instanceof DownloadLink) {
-                if (!links.contains(node)) links.add((DownloadLink) node);
-            } else {
-                if (!fps.contains(node)) fps.add((FilePackage) node);
-                synchronized (node) {
-                    for (final DownloadLink dl : ((FilePackage) node).getControlledDownloadLinks()) {
-                        if (!links.contains(dl)) {
-                            links.add(dl);
+        if (selection != null) {
+            for (final PackageLinkNode node : selection) {
+                if (node instanceof DownloadLink) {
+                    if (!links.contains(node)) links.add((DownloadLink) node);
+                } else {
+                    if (!fps.contains(node)) fps.add((FilePackage) node);
+                    synchronized (node) {
+                        for (final DownloadLink dl : ((FilePackage) node).getControlledDownloadLinks()) {
+                            if (!links.contains(dl)) {
+                                links.add(dl);
+                            }
                         }
                     }
                 }

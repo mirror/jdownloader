@@ -102,15 +102,18 @@ public class GameTrailersCom extends PluginForDecrypt {
             }
         }
         String[] extensions = { "flv", "mov", "wmv", "mp4" };
+        ArrayList<String> done = new ArrayList<String>();
         for (String ext : extensions) {
             for (final String finallink : finallinks) {
                 if (parameter.contains("user-movie") && !"flv".equals(ext)) {
                     /* user movies only have flv files */
                     continue;
                 }
-                if (ext.equals("mp4") && finallink.contains("_hd")) continue;
-
-                String link = finallink.replace(".flv", "." + ext);
+                String ext2 = new Regex(finallink, ".+(\\....)$").getMatch(0);
+                String link = finallink.replace(ext2, "." + ext);
+                String check = new Regex(link, ".+/(.*?\\....)$").getMatch(0);
+                if (done.contains(check)) continue;
+                done.add(check);
                 DownloadLink dl = createDownloadlink("directhttp://" + link);
                 URLConnectionAdapter con = null;
                 long size = 0;
@@ -118,7 +121,7 @@ public class GameTrailersCom extends PluginForDecrypt {
                     Browser br = new Browser();
                     br.setFollowRedirects(true);
                     con = br.openGetConnection(link);
-                    if (!con.isOK()) continue;
+                    if (!con.isOK() || (con.getContentType() != null && con.getContentType().contains("text"))) continue;
                     size = con.getLongContentLength();
                 } catch (Throwable e) {
                 } finally {

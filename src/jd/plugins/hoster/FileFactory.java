@@ -319,10 +319,16 @@ public class FileFactory extends PluginForHost {
             } else if (this.br.containsHTML(FileFactory.SERVER_DOWN)) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 20 * 60 * 1000l);
             } else {
-                final String red = this.br.getRegex(Pattern.compile("10px 0;\">.*<a href=\"(.*?)\">Download with FileFactory Premium", Pattern.DOTALL)).getMatch(0);
+                String red = this.br.getRegex(Pattern.compile("10px 0;\">.*<a href=\"(.*?)\">Download with FileFactory Premium", Pattern.DOTALL)).getMatch(0);
+                if (red == null) red = this.br.getRegex("subPremium.*?ready.*?<a href=\"(.*?)\"").getMatch(0);
                 logger.finer("Indirect download");
                 this.br.setFollowRedirects(true);
                 this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, red, true, 0);
+                if (!this.dl.getConnection().isContentDisposition()) {
+                    this.br.followConnection();
+                    if (br.containsHTML("Unfortunately we have encountered a problem locating your file")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
             }
         } else {
             logger.finer("DIRECT download");

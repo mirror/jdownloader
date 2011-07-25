@@ -31,11 +31,11 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -56,8 +56,8 @@ public class CZShareCom extends PluginForHost {
 
     public void correctDownloadLink(DownloadLink link) {
         Regex linkInfo = new Regex(link.getDownloadURL(), "czshare\\.com/download_file\\.php\\?id=(\\d+)\\&code=([A-Za-z0-9_]+)");
-        if (linkInfo.getMatch(0) == null && linkInfo.getMatch(1) == null) linkInfo = new Regex(link.getDownloadURL(), "czshare\\.com/(\\d+)/[A-Za-z0-9_]+)/");
-        if (linkInfo.getMatch(0) != null && linkInfo.getMatch(1) != null) link.setUrlDownload("http://czshare.com/" + linkInfo.getMatch(0) + "/" + linkInfo.getMatch(1) + "/x");
+        if (linkInfo == null || linkInfo.getMatch(0) == null && linkInfo.getMatch(1) == null) linkInfo = new Regex(link.getDownloadURL(), "czshare\\.com/(\\d+)/([A-Za-z0-9_]+)/");
+        if (linkInfo != null && linkInfo.getMatch(0) != null && linkInfo.getMatch(1) != null) link.setUrlDownload("http://czshare.com/" + linkInfo.getMatch(0) + "/" + linkInfo.getMatch(1) + "/x");
     }
 
     @Override
@@ -196,7 +196,7 @@ public class CZShareCom extends PluginForHost {
         if (br.getURL().contains("/error.php?co=4") || br.containsHTML("Omluvte, prosím, výpadek databáze\\. Na opravě pracujeme")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = Encoding.htmlDecode(br.getRegex("<div class=\"left\\-col\">[\t\n\r ]+<h1>(.*?)<span>\\&nbsp;</span></h1>").getMatch(0));
         if (filename == null) filename = Encoding.htmlDecode(br.getRegex("<title>(.*?) CZshare\\.com download</title>").getMatch(0));
-        String filesize = br.getRegex("Velikost: (.*?)<br").getMatch(0);
+        String filesize = br.getRegex("Velikost: (.*?)<").getMatch(0);
         if (filename == null || filesize == null || "0 B".equals(filesize)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(filename.trim());
         downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.replace(",", ".").replace(" ", "")));
