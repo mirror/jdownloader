@@ -488,7 +488,7 @@ public class Rapidshare extends PluginForHost {
             final String host = this.br.getRegex("DL:(.*?),").getMatch(0);
             final String auth = this.br.getRegex("DL:(.*?),(.*?),").getMatch(1);
             final String wait = this.br.getRegex("DL:(.*?),(.*?),(\\d+)").getMatch(2);
-
+            if (wait == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             this.sleep(Long.parseLong(wait) * 1000l, downloadLink);
 
             String directurl = "http://" + host + "/cgi-bin/rsapi.cgi?sub=download_v1&dlauth=" + auth + "&bin=1&noflvheader=1&fileid=" + link.getId() + "&filename=" + link.getName();

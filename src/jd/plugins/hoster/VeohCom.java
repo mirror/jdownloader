@@ -54,7 +54,7 @@ import org.appwork.utils.net.throttledconnection.MeteredThrottledInputStream;
 public class VeohCom extends PluginForHost {
     private static final String         APIKEY          = "NEQzRTQyRUMtRjEwQy00MTcyLUExNzYtRDMwQjQ2OEE2OTcy";
     private URLConnectionAdapter        DL;
-    private static byte[]               IV;
+    private byte[]                      IV;
     private MeteredThrottledInputStream INPUTSTREAM;
     private byte[]                      BUFFER;
     private long                        BYTESLOADED;
@@ -182,8 +182,12 @@ public class VeohCom extends PluginForHost {
             IV = JDHexUtils.getByteArray(JDHexUtils.getHexString(Base64.decode(content[resume - 1][0])).substring(32));
         }
         int i = 0;
+        /* once init the buffer is enough */
+        BUFFER = new byte[256 * 1024];
         try {
             downloadLink.getLinkStatus().addStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS);
+            /* we have to create folder structure */
+            tmpFile.getParentFile().mkdirs();
             FILEOUT = new BufferedOutputStream(new FileOutputStream(tmpFile, true));
             for (i = resume; i < content.length; i++) {
                 final String[] T = content[i];
@@ -193,6 +197,11 @@ public class VeohCom extends PluginForHost {
                 if (pieces == null) {
                     break;
                 }
+                try {
+                    /* always close the existing connection */
+                    DL.disconnect();
+                } catch (final Throwable e) {
+                }
                 DL = br.openGetConnection(pieces);
                 if (DL.getResponseCode() != 200) {
                     if (DL.getResponseCode() == 500) {
@@ -200,84 +209,91 @@ public class VeohCom extends PluginForHost {
                     } else if (DL.getResponseCode() == 400) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Decrypt failed!");
                     } else if (DL.getResponseCode() == 404) {
-                        DL.disconnect();
                         logger.warning("Veohdownload: Video Part " + (i + 1) + " not found! Link: " + downloadLink.getDownloadURL());
                         FAILCOUNTER += 1;
                         continue;
                     }
-                    DL.disconnect();
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 long partSize = DL.getLongContentLength();
-                int bufferSize = 1;
-                try {
-                    bufferSize = Math.round(partSize);
-                    bufferSize = Math.max(bufferSize, 1);
-                    BUFFER = new byte[bufferSize];
-                } catch (final Exception e) {
-                    throw new PluginException(LinkStatus.ERROR_FATAL, "The downloadsystem is out of memory");
-                }
                 try {
                     INPUTSTREAM = new org.appwork.utils.net.throttledconnection.MeteredThrottledInputStream(DL.getInputStream(), new org.appwork.utils.speedmeter.AverageSpeedMeter(10));
+                    /* add inputstream to connectionmanager */
                     DownloadWatchDog.getInstance().getConnectionManager().addManagedThrottledInputStream(INPUTSTREAM);
                 } catch (final Throwable e) {
                     /* 0.95xx comp */
                 }
-                int miniblock = 0;
-                int partEndByte = 0;
-                while (partSize != 0) {
-                    try {
+                try {
+                    int miniblock = 0;
+                    int partEndByte = 0;
+                    while (partSize != 0) {
+                        try {
+                            if (partEndByte > 0) {
+                                miniblock = INPUTSTREAM.read(BUFFER, 0, (int) Math.min(BYTES2DO, BUFFER.length));
+                            } else {
+                                miniblock = INPUTSTREAM.read(BUFFER);
+                            }
+                        } catch (final SocketException e2) {
+                            if (!isExternalyAborted()) { throw e2; }
+                            miniblock = -1;
+                            break;
+                        } catch (final ClosedByInterruptException e) {
+                            if (!isExternalyAborted()) {
+                                logger.severe("Timeout detected");
+                            }
+                            miniblock = -1;
+                            break;
+                        } catch (final AsynchronousCloseException e3) {
+                            if (!isExternalyAborted() && !CONNECTIONCLOSE) { throw e3; }
+                            miniblock = -1;
+                            break;
+                        } catch (final IOException e4) {
+                            if (!isExternalyAborted() && !CONNECTIONCLOSE) { throw e4; }
+                            miniblock = -1;
+                            break;
+                        }
+                        if (miniblock == -1) {
+                            break;
+                        }
+                        BYTES2DO -= miniblock;
+                        partSize -= miniblock;
+                        FILEOUT.write(BUFFER, 0, miniblock);
+                        BYTESLOADED += miniblock;
+                        partEndByte += miniblock;
+                        downloadLink.setDownloadCurrent(BYTESLOADED);
                         if (partEndByte > 0) {
-                            miniblock = INPUTSTREAM.read(BUFFER, 0, (int) Math.min(BYTES2DO, BUFFER.length));
-                        } else {
-                            miniblock = INPUTSTREAM.read(BUFFER);
+                            BYTES2DO = partEndByte + 1;
                         }
-                    } catch (final SocketException e2) {
-                        if (!isExternalyAborted()) { throw e2; }
-                        miniblock = -1;
-                        break;
-                    } catch (final ClosedByInterruptException e) {
-                        if (!isExternalyAborted()) {
-                            logger.severe("Timeout detected");
-                        }
-                        miniblock = -1;
-                        break;
-                    } catch (final AsynchronousCloseException e3) {
-                        if (!isExternalyAborted() && !CONNECTIONCLOSE) { throw e3; }
-                        miniblock = -1;
-                        break;
-                    } catch (final IOException e4) {
-                        if (!isExternalyAborted() && !CONNECTIONCLOSE) { throw e4; }
-                        miniblock = -1;
+                    }
+                    if (partSize == 0) {
+                        downloadLink.setProperty("parts_finished", Long.valueOf(T[3]) + 1);
+                    } else {
+                        downloadLink.setProperty("parts_finished", Long.valueOf(T[3]));
+                    }
+                    if (isExternalyAborted() && downloadLink.getTransferStatus().supportsResume()) {
+                        downloadLink.setProperty("bytes_loaded", Long.valueOf(BYTESLOADED));
+                        downloadLink.getLinkStatus().setStatus(LinkStatus.ERROR_DOWNLOAD_INCOMPLETE);
                         break;
                     }
-                    if (miniblock == -1) {
-                        break;
+                    baseUrl = templateUrl;
+                } finally {
+                    try {
+                        INPUTSTREAM.close();
+                    } catch (final Throwable e) {
                     }
-                    BYTES2DO -= miniblock;
-                    partSize -= miniblock;
-                    FILEOUT.write(BUFFER, 0, miniblock);
-                    BYTESLOADED += miniblock;
-                    partEndByte += miniblock;
-                    downloadLink.setDownloadCurrent(BYTESLOADED);
-                    if (partEndByte > 0) {
-                        BYTES2DO = partEndByte + 1;
+                    try {
+                        /* remove inputstream from connectionmanager */
+                        DownloadWatchDog.getInstance().getConnectionManager().removeManagedThrottledInputConnection(INPUTSTREAM);
+                    } catch (final Throwable e) {
+                        /* 0.95xx comp */
                     }
                 }
-                if (partSize == 0) {
-                    downloadLink.setProperty("parts_finished", Long.valueOf(T[3]) + 1);
-                } else {
-                    downloadLink.setProperty("parts_finished", Long.valueOf(T[3]));
-                }
-                if (isExternalyAborted() && downloadLink.getTransferStatus().supportsResume()) {
-                    downloadLink.setProperty("bytes_loaded", Long.valueOf(BYTESLOADED));
-                    downloadLink.getLinkStatus().setStatus(LinkStatus.ERROR_DOWNLOAD_INCOMPLETE);
-                    break;
-                }
-                baseUrl = templateUrl;
             }
         } catch (final InvalidKeyException e) {
-            FILEOUT.close();
+            try {
+                FILEOUT.close();
+            } catch (final Throwable e2) {
+            }
             if (!tmpFile.delete()) {
                 logger.severe("Could not delete file " + tmpFile);
             }
@@ -286,16 +302,18 @@ public class VeohCom extends PluginForHost {
             }
             throw new PluginException(LinkStatus.ERROR_FATAL, "Unlimited Strength JCE Policy Files needed!");
         } catch (final Exception e2) {
+            e2.printStackTrace();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         } finally {
-            DL.disconnect();
             try {
-                INPUTSTREAM.close();
+                DL.disconnect();
             } catch (final Throwable e) {
-            } finally {
-                INPUTSTREAM = null;
             }
-            FILEOUT.close();
+            try {
+                FILEOUT.close();
+            } catch (final Throwable e) {
+            }
+
             // System.out.println("SOLL: " + downloadLink.getDownloadSize() +
             // " - IST: " + BYTESLOADED);
             if (downloadLink.getDownloadSize() == BYTESLOADED || i == content.length) {
@@ -350,6 +368,8 @@ public class VeohCom extends PluginForHost {
 
     @Override
     public void resetDownloadlink(final DownloadLink link) {
+        link.setProperty("bytes_loaded", Long.valueOf(0l));
+        link.setProperty("parts_finished", Long.valueOf(0l));
     }
 
     @Override
