@@ -20,11 +20,11 @@ import java.io.IOException;
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
@@ -64,7 +64,7 @@ public class PlunderCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         if (br.getURL().contains("/search/?f=")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<title>(.*?)download - Plunder").getMatch(0);
+        String filename = br.getRegex("<title>(.*?)download \\- Plunder").getMatch(0);
         if (filename == null) filename = br.getRegex("<h2>Download</h2>(.*?)\\(").getMatch(0);
         String filesize = br.getRegex("<h2>Download</h2>.*?\\((.*?)\\)<BR").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -84,8 +84,9 @@ public class PlunderCom extends PluginForHost {
         if ((dl.getConnection().getContentType().contains("html"))) {
             br.followConnection();
             String checklink = br.getURL();
+            if (br.containsHTML("Too many downloads from this IP") || checklink.contains("/blocked")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Too many simultan downloads!", 10 * 60 * 1000l);
             if (br.containsHTML("You must log in to download more this session") || checklink.contains("/login/")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Register or perform a reconnect to download more!", 10 * 60 * 1001l);
-            if (checklink.contains("/error")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l);
+            if (checklink.contains("/error")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1001l);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
@@ -93,7 +94,7 @@ public class PlunderCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        return 1;
     }
 
     @Override

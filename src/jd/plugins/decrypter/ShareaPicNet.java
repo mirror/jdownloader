@@ -32,7 +32,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "shareapic.net" }, urls = { "http://[\\w\\.]*?shareapic\\.net/([0-9]+|(Zoom|View)-[0-9]+|content\\.php\\?id=[0-9]+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "shareapic.net" }, urls = { "http://(www\\.)?shareapic\\.net/([0-9]+|(Zoom|View)-[0-9]+|content\\.php\\?id=[0-9]+)" }, flags = { 0 })
 public class ShareaPicNet extends PluginForDecrypt implements ProgressControllerListener {
 
     private boolean abort = false;
@@ -64,7 +64,7 @@ public class ShareaPicNet extends PluginForDecrypt implements ProgressController
 
         /* Single pictures handling */
         if (parameter.contains("Zoom") || parameter.contains("View")) {
-            String finallink = br.getRegex("<img src=\"(.*?)\"").getMatch(0);
+            String finallink = getFinallink();
             if (finallink == null) return null;
             decryptedLinks.add(createDownloadlink("directhttp://" + finallink));
             return decryptedLinks;
@@ -77,13 +77,13 @@ public class ShareaPicNet extends PluginForDecrypt implements ProgressController
             if (fpName == null) {
                 fpName = br.getRegex("Description\" CONTENT=\"(.*?)\">").getMatch(0);
                 if (fpName == null) {
-                    fpName = br.getRegex("font-stretch: normal; -x-system-font: none;\">(.*?)</h1>").getMatch(0);
+                    fpName = br.getRegex("font\\-stretch: normal; \\-x-system\\-font: none;\">(.*?)</h1>").getMatch(0);
                 }
             }
         }
         String pagepiece = br.getRegex("<textarea(.*?)</textarea>").getMatch(0);
         if (pagepiece == null) return null;
-        String[] links = new Regex(pagepiece, "\"(http://www.shareapic\\.net/View-[0-9]+)").getColumn(0);
+        String[] links = new Regex(pagepiece, "\"(http://(www\\.)?shareapic\\.net/View\\-[0-9]+)").getColumn(0);
         if (links == null || links.length == 0) return null;
         progress.setRange(links.length);
         for (String link : links) {
@@ -95,7 +95,7 @@ public class ShareaPicNet extends PluginForDecrypt implements ProgressController
             }
             link = link.replace("View", "Zoom");
             br.getPage(link + ".html");
-            String finallink = br.getRegex("<img src=\"(.*?)\"").getMatch(0);
+            String finallink = getFinallink();
             if (finallink == null) return null;
             DownloadLink dl = createDownloadlink("directhttp://" + finallink);
             dl.setAvailable(true);
@@ -108,6 +108,12 @@ public class ShareaPicNet extends PluginForDecrypt implements ProgressController
             fp.addLinks(decryptedLinks);
         }
         return decryptedLinks;
+    }
+
+    private String getFinallink() {
+        String finallink = br.getRegex("</noscript>[\t\n\r ]+</td>[\t\n\r ]+<td>[\t\n\r ]+<img src=\"(http://.*?)\"").getMatch(0);
+        if (finallink == null) finallink = br.getRegex("\"(http://images\\.shareapic\\.net/fullsize\\d+/\\d+.*?)\"").getMatch(0);
+        return finallink;
     }
 
     public void onProgressControllerEvent(ProgressControllerEvent event) {

@@ -139,22 +139,13 @@ public class FileShareInUa extends PluginForHost {
         if (br.containsHTML("Именно эта ссылка битая. Однако, это не значит, что вам нечего тут искать")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
         String continueLink = br.getRegex("id=\"popunder_lnk\" href=\"(/.*?)\"").getMatch(0);
         if (continueLink == null) continueLink = br.getRegex("\"(/dl\\d+\\?c=[a-z0-9]+)\"").getMatch(0);
-        if (continueLink == null && !br.containsHTML("\\?free")) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        } else if (continueLink == null) {
+        if (continueLink == null) {
             // Some countries got captchas
-            br.getPage(downloadLink.getDownloadURL() + "?free");
+            br.postPage(downloadLink.getDownloadURL(), "post2=1");
             if (br.containsHTML("(Файл удален|К сожалению, cсылка на этот файл не больше не действительна и запрашиваемый файл отсутствует на сервер)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             String captchapart = br.getRegex("\"(/capture\\.gif\\?m=\\d+)\"").getMatch(0);
             if (captchapart == null) captchapart = br.getRegex("<img height=\"18\" align=\"absmiddle\"  src=\"(/.*?)\"").getMatch(0);
-            Form captchaForm = null;
-            Form[] allForms = br.getForms();
-            for (Form singleForm : allForms) {
-                if (singleForm.containsHTML("capture")) {
-                    captchaForm = singleForm;
-                    break;
-                }
-            }
+            Form captchaForm = getFormWhichContainsHTML("capture");
             // This is a part of the captcha stuff. They always have one big
             // captcha
             // with random letters (about 10) but only 4 are needed. With this
@@ -168,24 +159,27 @@ public class FileShareInUa extends PluginForHost {
             String code = FsIuA.getCode(-Integer.parseInt(captchacut), 100, file);
             captchaForm.put("capture", code);
             br.setFollowRedirects(true);
+            captchaForm.remove(null);
             br.submitForm(captchaForm);
-            br.setFollowRedirects(false);
-            if (br.containsHTML("Цифры введены неверно")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-            if (!br.containsHTML("\\?gogogo")) {
+            if (br.containsHTML("Цифры введены неверно\\!<")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            Form fastForm = getFormWhichContainsHTML("dl_fast_btn");
+            if (fastForm == null) {
                 logger.warning("Error after captcha...");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+            br.submitForm(fastForm);
+            br.setFollowRedirects(false);
             br.getPage(downloadLink.getDownloadURL() + "?gogogo");
-            int wait = 60;
-            String waittime = br.getRegex("var sec=(\\d+);").getMatch(0);
-            if (waittime == null) waittime = br.getRegex("id=\"sec\">(\\d+)</span>").getMatch(0);
-            if (waittime != null) wait = Integer.parseInt(waittime);
-            sleep(wait * 1001l, downloadLink);
             Form lastForm = br.getForm(0);
             if (lastForm == null) {
                 logger.warning("Couldn't find last form...");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+            int wait = 60;
+            String waittime = br.getRegex("var sec=(\\d+);").getMatch(0);
+            if (waittime == null) waittime = br.getRegex("id=\"sec\">(\\d+)</span>").getMatch(0);
+            if (waittime != null) wait = Integer.parseInt(waittime);
+            sleep(wait * 1001l, downloadLink);
             if (lastForm.getAction() == null) lastForm.setAction(downloadLink.getDownloadURL() + "?gogogo");
             br.submitForm(lastForm);
         } else {
@@ -206,6 +200,19 @@ public class FileShareInUa extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    private Form getFormWhichContainsHTML(String searchFor) {
+        Form[] allForms = br.getForms();
+        if (allForms == null || allForms.length == 0) return null;
+        Form returnform = null;
+        for (Form singleForm : allForms) {
+            if (singleForm.containsHTML(searchFor)) {
+                returnform = singleForm;
+                break;
+            }
+        }
+        return returnform;
     }
 
     @Override
