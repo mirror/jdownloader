@@ -27,12 +27,12 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -144,7 +144,7 @@ public class WUploadCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.wupload.onlypremium", "Only downloadable for premium users!"));
             }
         }
-        if (br.containsHTML("Free users may only download 1 file at a time")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, JDL.L("plugins.hoster.wupload.alreadyloading", "This IP is already downloading"), 5 * 60 * 1000l); }
+        if (br.containsHTML("only download 1 file at a time")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, JDL.L("plugins.hoster.wupload.alreadyloading", "This IP is already downloading"), 5 * 60 * 1000l); }
         if (br.containsHTML("Free user can not download files")) { throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.wupload.largefree", "Free user can not download files over 400MB")); }
         if (br.containsHTML("Download session in progress")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, JDL.L("plugins.hoster.wupload.inprogress", "Download session in progress"), 10 * 60 * 1000l); }
         if (br.containsHTML("This file is password protected")) {
