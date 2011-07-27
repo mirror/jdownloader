@@ -3,11 +3,11 @@ package org.jdownloader.gui.views.downloads.table;
 import java.awt.AlphaComposite;
 import java.awt.Color;
 import java.awt.Composite;
-import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.io.File;
@@ -19,6 +19,7 @@ import javax.swing.JPopupMenu;
 import javax.swing.JSeparator;
 import javax.swing.KeyStroke;
 import javax.swing.ListSelectionModel;
+import javax.swing.Timer;
 
 import jd.event.ControlEvent;
 import jd.gui.swing.jdgui.BasicJDTable;
@@ -33,11 +34,17 @@ import jd.utils.JDUtilities;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Application;
 import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.swing.dialog.Dialog;
+import org.appwork.utils.swing.dialog.DialogCanceledException;
+import org.appwork.utils.swing.dialog.DialogClosedException;
+import org.appwork.utils.swing.dialog.OffScreenException;
+import org.appwork.utils.swing.dialog.SimpleTextBallon;
 import org.appwork.utils.swing.table.ExtColumn;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.DownloadTableAction;
 import org.jdownloader.gui.views.downloads.columns.FileColumn;
+import org.jdownloader.gui.views.downloads.columns.ListOrderIDColumn;
 import org.jdownloader.gui.views.downloads.context.CheckStatusAction;
 import org.jdownloader.gui.views.downloads.context.CopyPasswordAction;
 import org.jdownloader.gui.views.downloads.context.CopyURLAction;
@@ -73,11 +80,6 @@ public class DownloadsTable extends BasicJDTable<PackageLinkNode> {
     private DownloadTableAction moveDownAction;
     private DownloadTableAction moveToBottomAction;
     private Color               sortNotifyColor;
-    private Color               sortNotifyColorTransparent;
-    private String              sortingText;
-    private Font                sortedFont;
-    private String              sortingTextTiny;
-    private Font                sortedFontTiny;
 
     public DownloadsTable(final DownloadsTableModel tableModel) {
         super(tableModel);
@@ -87,18 +89,12 @@ public class DownloadsTable extends BasicJDTable<PackageLinkNode> {
         this.setDragEnabled(true);
         this.setDropMode(DropMode.INSERT_ROWS);
         initActions();
+
         onSelectionChanged(null);
         if (JsonConfig.create(GraphicalUserInterfaceSettings.class).isSortColumnHighlightEnabled()) {
             sortNotifyColor = Color.ORANGE;
-            sortNotifyColorTransparent = new Color(sortNotifyColor.getRed(), sortNotifyColor.getGreen(), sortNotifyColor.getBlue(), 0);
+        }
 
-        }
-        if (JsonConfig.create(GraphicalUserInterfaceSettings.class).isSortWarningTextEnabled()) {
-            this.sortingText = _GUI._.sorted();
-            this.sortingTextTiny = _GUI._.sorted_tiny();
-            this.sortedFont = new Font(this.getFont().getName(), Font.BOLD, 40);
-            this.sortedFontTiny = new Font(this.getFont().getName(), Font.BOLD, 20);
-        }
         // this.getExtTableModel().addExtComponentRowHighlighter(new
         // ExtComponentRowHighlighter<PackageLinkNode>(f2, b2, null) {
         //
@@ -449,6 +445,36 @@ public class DownloadsTable extends BasicJDTable<PackageLinkNode> {
 
     public AppAction getMoveDownAction() {
         return moveDownAction;
+    }
+
+    @Override
+    protected void onHeaderSortClick(final MouseEvent e1) {
+        // own thread to
+        new Timer(100, new ActionListener() {
+
+            public void actionPerformed(ActionEvent e) {
+                Timer t = (Timer) e.getSource();
+                t.stop();
+                if (getExtTableModel().getSortColumn().getClass() != ListOrderIDColumn.class) {
+                    if (getExtTableModel().getSortColumn().getSortOrderIdentifier() == ExtColumn.SORT_ASC) {
+                        try {
+
+                            SimpleTextBallon d = new SimpleTextBallon(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.DownloadsTable_actionPerformed_sortwarner_title(getExtTableModel().getSortColumn().getName()), _GUI._.DownloadsTable_actionPerformed_sortwarner_text(), NewTheme.I().getIcon("sort", 32));
+                            d.setDesiredLocation(e1.getLocationOnScreen());
+                            Dialog.getInstance().showDialog(d);
+                        } catch (OffScreenException e1) {
+                            e1.printStackTrace();
+                        } catch (DialogClosedException e1) {
+                            e1.printStackTrace();
+                        } catch (DialogCanceledException e1) {
+                            e1.printStackTrace();
+                        }
+                    }
+                }
+
+            }
+        }).start();
+
     }
 
     @Override

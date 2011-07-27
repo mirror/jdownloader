@@ -103,11 +103,4 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
     void setSortColumnHighlightEnabled(boolean b);
 
-    @AboutConfig
-    @Description("Highlight Column in Downloadview if table is not in downloadsortorder")
-    @DefaultBooleanValue(true)
-    @RequiresRestart
-    boolean isSortWarningTextEnabled();
-
-    void setSortWarningTextEnabled(boolean b);
 }
