@@ -40,6 +40,7 @@ public class FlFctrFldr extends PluginForDecrypt {
         String parameter = param.toString();
         br.getPage(parameter);
         if (br.getRedirectLocation() != null) {
+            /* to follow domain redirects */
             br.getPage(br.getRedirectLocation());
         }
         /* Error handling */

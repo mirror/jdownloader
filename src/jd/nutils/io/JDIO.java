@@ -20,18 +20,14 @@ import java.beans.XMLDecoder;
 import java.beans.XMLEncoder;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
-import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStreamWriter;
-import java.nio.channels.FileChannel;
 import java.util.ArrayList;
 import java.util.Vector;
 import java.util.regex.Pattern;
@@ -39,8 +35,8 @@ import java.util.regex.Pattern;
 import javax.swing.JFileChooser;
 
 import jd.controlling.JDLogger;
-import jd.utils.StringUtil;
 
+import org.appwork.utils.IO;
 import org.appwork.utils.Regex;
 
 public final class JDIO {
@@ -69,6 +65,8 @@ public final class JDIO {
      * @return true/False je nach Erfolg des Schreibvorgangs
      */
     public static boolean writeLocalFile(final File file, final String content, final boolean append) {
+        OutputStreamWriter ow = null;
+        FileOutputStream fo = null;
         try {
             if (!append && file.isFile() && !file.delete()) {
                 System.err.println("Konnte Datei nicht löschen " + file);
@@ -80,7 +78,8 @@ public final class JDIO {
             if (!append || !file.isFile()) {
                 file.createNewFile();
             }
-            final BufferedWriter f = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file, append), "UTF8"));
+
+            final BufferedWriter f = new BufferedWriter(ow = new OutputStreamWriter(fo = new FileOutputStream(file, append), "UTF8"));
 
             f.write(content);
             f.close();
@@ -88,6 +87,15 @@ public final class JDIO {
         } catch (Exception e) {
             JDLogger.exception(e);
             return false;
+        } finally {
+            try {
+                ow.close();
+            } catch (final Throwable e) {
+            }
+            try {
+                fo.close();
+            } catch (final Throwable e) {
+            }
         }
     }
 
@@ -105,19 +113,7 @@ public final class JDIO {
      */
     public static boolean saveToFile(final File file, final byte[] b) {
         try {
-            if (file.isFile()) {
-                if (!file.delete()) {
-                    System.err.println("Konnte Datei nicht überschreiben " + file);
-                    return false;
-                }
-            }
-            if (!file.getParentFile().exists()) {
-                file.getParentFile().mkdirs();
-            }
-            file.createNewFile();
-            final BufferedOutputStream output = new BufferedOutputStream(new FileOutputStream(file, true));
-            output.write(b, 0, b.length);
-            output.close();
+            IO.writeToFile(file, b);
             return true;
         } catch (Exception e) {
             JDLogger.exception(e);
@@ -154,8 +150,9 @@ public final class JDIO {
         if (fileOutput.exists()) {
             fileOutput.delete();
         }
+        FileOutputStream fos = null;
         try {
-            final FileOutputStream fos = new FileOutputStream(fileOutput);
+            fos = new FileOutputStream(fileOutput);
             final BufferedOutputStream buff = new BufferedOutputStream(fos);
             if (asXML) {
                 final XMLEncoder xmlEncoder = new XMLEncoder(buff);
@@ -170,6 +167,11 @@ public final class JDIO {
             fos.close();
         } catch (Exception e) {
             JDLogger.exception(e);
+        } finally {
+            try {
+                fos.close();
+            } catch (final Throwable e) {
+            }
         }
         JDIO.saveReadObject.remove(fileOutput);
     }
@@ -208,9 +210,9 @@ public final class JDIO {
 
         waitOnObject(fileInput);
         saveReadObject.add(fileInput);
-
+        FileInputStream fis = null;
         try {
-            final FileInputStream fis = new FileInputStream(fileInput);
+            fis = new FileInputStream(fileInput);
             final BufferedInputStream buff = new BufferedInputStream(fis);
             if (asXML) {
                 final XMLDecoder xmlDecoder = new XMLDecoder(new BufferedInputStream(buff));
@@ -228,49 +230,14 @@ public final class JDIO {
             return objectLoaded;
         } catch (Exception e) {
             JDLogger.exception(e);
+        } finally {
+            try {
+                fis.close();
+            } catch (final Throwable e) {
+            }
         }
         saveReadObject.remove(fileInput);
         return null;
-    }
-
-    /**
-     * Returns the contents of the file in a byte array. copied from
-     * http://www.exampledepot.com/
-     * 
-     * @param file
-     * @return
-     * @throws IOException
-     */
-    public static byte[] readFileToByteArray(final File file) throws IOException {
-        final InputStream is = new FileInputStream(file);
-
-        // Get the size of the file
-        final long length = file.length();
-
-        // You cannot create an array using a long type.
-        // It needs to be an int type.
-        // Before converting to an int type, check
-        // to ensure that file is not larger than Integer.MAX_VALUE.
-        if (length > Integer.MAX_VALUE) {
-            // File is too large
-        }
-
-        // Create the byte array to hold the data
-        final byte[] bytes = new byte[(int) length];
-
-        // Read in the bytes
-        int offset = 0;
-        int numRead = 0;
-        while (offset < bytes.length && (numRead = is.read(bytes, offset, bytes.length - offset)) >= 0) {
-            offset += numRead;
-        }
-
-        // Ensure all the bytes have been read in
-        if (offset < bytes.length) throw new IOException("Could not completely read file " + file.getName());
-
-        // Close the input stream and return bytes
-        is.close();
-        return bytes;
     }
 
     /**
@@ -283,23 +250,13 @@ public final class JDIO {
     public static String readFileToString(final File file) {
         if (file == null) return null;
         if (!file.exists()) return "";
-        final BufferedReader f;
         try {
-            f = new BufferedReader(new InputStreamReader(new FileInputStream(file), "UTF8"));
-
-            String line;
-            final StringBuffer ret = new StringBuffer();
-            // String sep = System.getProperty("line.separator");
-            final String sep = StringUtil.LINE_SEPARATOR;
-            while ((line = f.readLine()) != null) {
-                ret.append(line + sep);
-            }
-            f.close();
-            return ret.toString();
+            return IO.readFileToString(file);
         } catch (IOException e) {
             JDLogger.exception(e);
+            return "";
         }
-        return "";
+
     }
 
     /**
@@ -344,38 +301,14 @@ public final class JDIO {
      */
     public static boolean copyFile(final File in, final File out) {
         if (!in.exists()) return false;
-        FileChannel inChannel = null;
-        FileChannel outChannel = null;
-        boolean success = false;
         try {
-            try {
-                inChannel = new FileInputStream(in).getChannel();
-                outChannel = new FileOutputStream(out).getChannel();
-            } catch (Exception e1) {
-                return false;
-            }
-            try {
-                // magic number for Windows, 64Mb - 32Kb), we use 16Mb here
-                final int maxCount = (16 * 1024 * 1024) - (32 * 1024);
-                final long size = inChannel.size();
-                long position = 0;
-                while (position < size) {
-                    position += inChannel.transferTo(position, maxCount, outChannel);
-                }
-                success = true;
-            } catch (Exception e) {
-            }
-        } finally {
-            if (inChannel != null) try {
-                inChannel.close();
-            } catch (Exception e) {
-            }
-            if (outChannel != null) try {
-                outChannel.close();
-            } catch (Exception e) {
-            }
+            IO.copyFile(in, out);
+            return true;
+        } catch (Exception e) {
+            return false;
+
         }
-        return success;
+
     }
 
     public static boolean removeDirectoryOrFile(final File dir) {
@@ -440,7 +373,7 @@ public final class JDIO {
      * @param fileSelector
      */
     public static void removeRekursive(final File file, final FileSelector fileSelector) {
-        if(file==null||!file.exists())return;
+        if (file == null || !file.exists()) return;
         for (final File f : file.listFiles()) {
             if (f.isDirectory()) {
                 removeRekursive(f, fileSelector);

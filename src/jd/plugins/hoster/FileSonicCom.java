@@ -145,6 +145,10 @@ public class FileSonicCom extends PluginForHost implements ControlListener {
                     sb.append(getPureID(dl));
                     c++;
                 }
+                try {
+                    br.setCustomCharset("UTF-8");
+                } catch (final Throwable e) {
+                }
                 br.postPage("http://api.filesonic.com/link?method=getInfo", sb.toString());
                 for (final DownloadLink dllink : links) {
                     final String id = this.getPureID(dllink);
