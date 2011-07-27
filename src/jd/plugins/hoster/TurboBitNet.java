@@ -164,12 +164,14 @@ public class TurboBitNet extends PluginForHost {
             tt = Integer.parseInt(ttt);
         }
         if (tt > 250) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Limit reached or IP already loading", tt * 1001l);
-        String finalPage = br.getRegex("\\$\\(\"#timeoutBox\"\\)\\.load\\(\"(/.*?)\"\\)").getMatch(0);
-        if (finalPage == null) finalPage = br.getRegex("\"(/download/getLinkAfterTimeout/[a-z0-9]+/\\d+/)\"").getMatch(0);
+        // IMPORTANT: This is changed most of the time when the plugin is broken
+        String maxtime = br.getRegex("var maxTimeout = (\\d+);").getMatch(0);
+        if (maxtime == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        String finalPage = "http://turbobit.net/download/getLinkAfterTimeout/" + new Regex(downloadLink.getDownloadURL(), "turbobit\\.net/(.*?)\\.html").getMatch(0) + "/" + maxtime + "/";
         if (finalPage == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         sleep(tt * 1001, downloadLink);
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        br.getPage("http://turbobit.net" + finalPage);
+        br.getPage(finalPage);
         String downloadUrl = br.getRegex("<a href=\\'(.*?)\\'>").getMatch(0);
         if (downloadUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadUrl, true, 1);
