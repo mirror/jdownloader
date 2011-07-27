@@ -96,6 +96,7 @@ public class MainTabbedPane extends JTabbedPane implements MouseListener {
             view.getBroadcaster().fireEvent(new SwitchPanelEvent(view, SwitchPanelEvent.ON_ADD));
         }
         this.setFocusable(false);
+
     }
 
     private MainTabbedPane() {
