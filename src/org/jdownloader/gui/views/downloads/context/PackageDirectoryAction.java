@@ -1,4 +1,4 @@
-package jd.gui.swing.jdgui.views.downloads.contextmenu;
+package org.jdownloader.gui.views.downloads.context;
 
 import java.awt.event.ActionEvent;
 import java.io.File;

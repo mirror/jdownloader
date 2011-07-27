@@ -18,6 +18,7 @@ import jd.gui.swing.jdgui.menu.MenuAction;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.Storage;
 import org.appwork.utils.Application;
+import org.appwork.utils.logging.Log;
 
 public class RatedMenuItem implements ActionListener {
     // delegate for an Action
@@ -37,6 +38,7 @@ public class RatedMenuItem implements ActionListener {
             // increase rating
             RatedMenuItem.STORAGE.put(RatedMenuItem.this.id, RatedMenuItem.STORAGE.get(RatedMenuItem.this.id, RatedMenuItem.this.rating) + 1);
             RatedMenuItem.this.rating++;
+            Log.L.finer("MenuItem Rating: " + rating);
             this._action.actionPerformed(e);
         }
 

@@ -43,13 +43,6 @@ import jd.gui.swing.components.table.JDRowHighlighter;
 import jd.gui.swing.components.table.JDTable;
 import jd.gui.swing.components.table.JDTableColumn;
 import jd.gui.swing.jdgui.actions.ActionController;
-import jd.gui.swing.jdgui.views.downloads.contextmenu.CopyURLAction;
-import jd.gui.swing.jdgui.views.downloads.contextmenu.CreateDLCAction;
-import jd.gui.swing.jdgui.views.downloads.contextmenu.DisableAction;
-import jd.gui.swing.jdgui.views.downloads.contextmenu.EnableAction;
-import jd.gui.swing.jdgui.views.downloads.contextmenu.OpenInBrowserAction;
-import jd.gui.swing.jdgui.views.downloads.contextmenu.PriorityAction;
-import jd.gui.swing.jdgui.views.downloads.contextmenu.SetPasswordAction;
 import jd.gui.swing.jdgui.views.linkgrabber.contextmenu.CheckStatusAction;
 import jd.gui.swing.jdgui.views.linkgrabber.contextmenu.ContinueLinksAction;
 import jd.gui.swing.jdgui.views.linkgrabber.contextmenu.ContinuePackagesAction;
@@ -67,6 +60,13 @@ import jd.utils.MenuScroller;
 
 import org.appwork.utils.Application;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.gui.views.downloads.context.CopyURLAction;
+import org.jdownloader.gui.views.downloads.context.CreateDLCAction;
+import org.jdownloader.gui.views.downloads.context.DisableAction;
+import org.jdownloader.gui.views.downloads.context.EnableAction;
+import org.jdownloader.gui.views.downloads.context.OpenInBrowserAction;
+import org.jdownloader.gui.views.downloads.context.PriorityAction;
+import org.jdownloader.gui.views.downloads.context.SetPasswordAction;
 import org.jdownloader.images.NewTheme;
 
 class PropMenuItem extends JMenuItem implements ActionListener {

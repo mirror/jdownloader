@@ -1,4 +1,4 @@
-package jd.gui.swing.jdgui.views.downloads.contextmenu;
+package org.jdownloader.gui.views.downloads.context;
 
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
@@ -9,29 +9,28 @@ import jd.utils.JDUtilities;
 
 import org.jdownloader.gui.translate._GUI;
 
-public class DisableAction extends ContextMenuAction {
+public class EnableAction extends ContextMenuAction {
 
-    private static final long             serialVersionUID = -6491057147256278684L;
+    private static final long             serialVersionUID = 782024175742217929L;
 
     private final ArrayList<DownloadLink> links;
 
-    public DisableAction(ArrayList<DownloadLink> links) {
+    public EnableAction(ArrayList<DownloadLink> links) {
         this.links = new ArrayList<DownloadLink>();
         for (DownloadLink link : links) {
-            if (link.isEnabled()) this.links.add(link);
+            if (!link.isEnabled()) this.links.add(link);
         }
-
         init();
     }
 
     @Override
     protected String getIcon() {
-        return "false";
+        return "true";
     }
 
     @Override
     protected String getName() {
-        return _GUI._.gui_table_contextmenu_disable() + " (" + links.size() + ")";
+        return _GUI._.gui_table_contextmenu_enable() + " (" + links.size() + ")";
     }
 
     @Override
@@ -41,7 +40,7 @@ public class DisableAction extends ContextMenuAction {
 
     public void actionPerformed(ActionEvent e) {
         for (DownloadLink link : links) {
-            link.setEnabled(false);
+            link.setEnabled(true);
         }
         JDUtilities.getDownloadController().fireStructureUpdate();
     }

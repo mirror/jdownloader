@@ -6,7 +6,6 @@ import java.awt.Composite;
 import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
-import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
@@ -17,6 +16,7 @@ import java.util.ArrayList;
 import javax.swing.DropMode;
 import javax.swing.JMenu;
 import javax.swing.JPopupMenu;
+import javax.swing.JSeparator;
 import javax.swing.KeyStroke;
 import javax.swing.ListSelectionModel;
 
@@ -25,26 +25,6 @@ import jd.gui.swing.jdgui.BasicJDTable;
 import jd.gui.swing.jdgui.actions.ActionController;
 import jd.gui.swing.jdgui.actions.ToolBarAction;
 import jd.gui.swing.jdgui.menu.MenuAction;
-import jd.gui.swing.jdgui.views.downloads.contextmenu.CheckStatusAction;
-import jd.gui.swing.jdgui.views.downloads.contextmenu.CopyPasswordAction;
-import jd.gui.swing.jdgui.views.downloads.contextmenu.CopyURLAction;
-import jd.gui.swing.jdgui.views.downloads.contextmenu.CreateDLCAction;
-import jd.gui.swing.jdgui.views.downloads.contextmenu.DeleteAction;
-import jd.gui.swing.jdgui.views.downloads.contextmenu.DeleteFromDiskAction;
-import jd.gui.swing.jdgui.views.downloads.contextmenu.DisableAction;
-import jd.gui.swing.jdgui.views.downloads.contextmenu.EnableAction;
-import jd.gui.swing.jdgui.views.downloads.contextmenu.ForceDownloadAction;
-import jd.gui.swing.jdgui.views.downloads.contextmenu.NewPackageAction;
-import jd.gui.swing.jdgui.views.downloads.contextmenu.OpenDirectoryAction;
-import jd.gui.swing.jdgui.views.downloads.contextmenu.OpenFileAction;
-import jd.gui.swing.jdgui.views.downloads.contextmenu.OpenInBrowserAction;
-import jd.gui.swing.jdgui.views.downloads.contextmenu.PackageDirectoryAction;
-import jd.gui.swing.jdgui.views.downloads.contextmenu.PackageNameAction;
-import jd.gui.swing.jdgui.views.downloads.contextmenu.PriorityAction;
-import jd.gui.swing.jdgui.views.downloads.contextmenu.ResetAction;
-import jd.gui.swing.jdgui.views.downloads.contextmenu.ResumeAction;
-import jd.gui.swing.jdgui.views.downloads.contextmenu.SetPasswordAction;
-import jd.gui.swing.jdgui.views.downloads.contextmenu.StopsignAction;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PackageLinkNode;
@@ -58,8 +38,29 @@ import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.DownloadTableAction;
 import org.jdownloader.gui.views.downloads.columns.FileColumn;
+import org.jdownloader.gui.views.downloads.context.CheckStatusAction;
+import org.jdownloader.gui.views.downloads.context.CopyPasswordAction;
+import org.jdownloader.gui.views.downloads.context.CopyURLAction;
+import org.jdownloader.gui.views.downloads.context.CreateDLCAction;
+import org.jdownloader.gui.views.downloads.context.DeleteAction;
+import org.jdownloader.gui.views.downloads.context.DeleteFromDiskAction;
+import org.jdownloader.gui.views.downloads.context.DisableAction;
+import org.jdownloader.gui.views.downloads.context.EditLinkOrPackageAction;
+import org.jdownloader.gui.views.downloads.context.EnableAction;
+import org.jdownloader.gui.views.downloads.context.ForceDownloadAction;
+import org.jdownloader.gui.views.downloads.context.NewPackageAction;
+import org.jdownloader.gui.views.downloads.context.OpenDirectoryAction;
+import org.jdownloader.gui.views.downloads.context.OpenFileAction;
+import org.jdownloader.gui.views.downloads.context.OpenInBrowserAction;
+import org.jdownloader.gui.views.downloads.context.PackageDirectoryAction;
+import org.jdownloader.gui.views.downloads.context.PackageNameAction;
+import org.jdownloader.gui.views.downloads.context.PriorityAction;
 import org.jdownloader.gui.views.downloads.context.RatedMenuController;
 import org.jdownloader.gui.views.downloads.context.RatedMenuItem;
+import org.jdownloader.gui.views.downloads.context.ResetAction;
+import org.jdownloader.gui.views.downloads.context.ResumeAction;
+import org.jdownloader.gui.views.downloads.context.SetPasswordAction;
+import org.jdownloader.gui.views.downloads.context.StopsignAction;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 
@@ -227,12 +228,18 @@ public class DownloadsTable extends BasicJDTable<PackageLinkNode> {
     @Override
     protected void onDoubleClick(final MouseEvent e, final PackageLinkNode obj) {
         if (obj instanceof FilePackage) {
-            final int column = this.getExtColumnIndexByPoint(e.getPoint());
-            /* column 0 is filepackage/name column */
-            if (FileColumn.class == this.getExtTableModel().getExtColumn(column).getClass()) {
-                tableModel.toggleFilePackageExpand((FilePackage) obj, DownloadsTableModel.TOGGLEMODE.CURRENT);
+            final ExtColumn<PackageLinkNode> column = this.getExtColumnAtPoint(e.getPoint());
+
+            if (FileColumn.class == column.getClass()) {
+                Rectangle bounds = column.getBounds();
+                if (e.getPoint().x - bounds.x < 30) {
+                    tableModel.toggleFilePackageExpand((FilePackage) obj, DownloadsTableModel.TOGGLEMODE.CURRENT);
+                    return;
+                }
             }
+
         }
+        new EditLinkOrPackageAction(this, obj).actionPerformed(null);
     }
 
     @Override
@@ -255,11 +262,11 @@ public class DownloadsTable extends BasicJDTable<PackageLinkNode> {
     @Override
     protected void onSingleClick(MouseEvent e, final PackageLinkNode obj) {
         if (obj instanceof FilePackage) {
-            final int column = this.getExtColumnIndexByPoint(e.getPoint());
-            /* column 0 is filepackage/name column */
-            if (FileColumn.class == this.getExtTableModel().getExtColumn(column).getClass()) {
-                final Point p = this.getPointinCell(e.getPoint());
-                if (p != null && p.getX() < 30) {
+            final ExtColumn<PackageLinkNode> column = this.getExtColumnAtPoint(e.getPoint());
+
+            if (FileColumn.class == column.getClass()) {
+                Rectangle bounds = column.getBounds();
+                if (e.getPoint().x - bounds.x < 30) {
                     if (e.isControlDown() && !e.isShiftDown()) {
                         tableModel.toggleFilePackageExpand((FilePackage) obj, DownloadsTableModel.TOGGLEMODE.BOTTOM);
                     } else if (e.isControlDown() && e.isShiftDown()) {
@@ -319,6 +326,8 @@ public class DownloadsTable extends BasicJDTable<PackageLinkNode> {
         while (items.getSub().size() > 0) {
             items.getSub().remove(0).addToPopup(pop);
         }
+        popup.add(new JSeparator());
+        popup.add(new EditLinkOrPackageAction(this, contextObject));
         return popup;
     }
 
@@ -358,10 +367,10 @@ public class DownloadsTable extends BasicJDTable<PackageLinkNode> {
     private RatedMenuController createMenuItems(final Object obj, final int col, final ArrayList<DownloadLink> alllinks, final ArrayList<FilePackage> sfp) {
         final RatedMenuController ret = new RatedMenuController();
 
-        ret.add(new RatedMenuItem(new StopsignAction(obj), 10));
+        ret.add(new RatedMenuItem(new StopsignAction(obj), 0));
         ret.add(new RatedMenuItem(new EnableAction(alllinks), 10));
         ret.add(new RatedMenuItem(new DisableAction(alllinks), 10));
-        ret.add(new RatedMenuItem(new ForceDownloadAction(alllinks), 10));
+        ret.add(new RatedMenuItem(new ForceDownloadAction(alllinks), 0));
         ret.add(new RatedMenuItem(new ResumeAction(alllinks), 10));
 
         ret.add(new RatedMenuItem(new ResetAction(alllinks), 5));
