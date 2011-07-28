@@ -52,6 +52,13 @@ public class DownloadController implements DownloadControllerListener, DownloadC
 
     private final AtomicLong structureChanged = new AtomicLong(0);
 
+    /**
+     * @return the structureChanged
+     */
+    public long getStructureChanged() {
+        return structureChanged.get();
+    }
+
     public static enum MOVE {
         BEFORE,
         AFTER,

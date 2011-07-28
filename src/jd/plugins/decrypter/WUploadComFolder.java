@@ -25,7 +25,6 @@ import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.locale.JDL;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wupload.com" }, urls = { "http://(www\\.)?wupload\\.com/folder/\\d+" }, flags = { 0 })
 public class WUploadComFolder extends PluginForDecrypt {
@@ -39,7 +38,7 @@ public class WUploadComFolder extends PluginForDecrypt {
         String parameter = param.toString();
         br.setCookie("http://www.wupload.com", "lang", "en");
         br.getPage(parameter);
-        if (br.containsHTML("(>Error 9001|>The requested folder do not exist or was deleted by the owner|>If you want, you can contact the owner of the referring site to tell him about this mistake|>No links to show<)")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+        if (br.containsHTML("(>Error 9001|>The requested folder do not exist or was deleted by the owner|>If you want, you can contact the owner of the referring site to tell him about this mistake|>No links to show<)")) return decryptedLinks;
         if (br.containsHTML("(>Error 9002|>The requested folder is not public|>If you own this folder, make it public by editing the)")) throw new DecrypterException("Folder is not public");
         String[] links = br.getRegex("class=\"passwordIcon\" title=\"\"></span><a href=\"(http://.*?)\"").getColumn(0);
         if (links == null || links.length == 0) links = br.getRegex("\"(http://(www\\.)?wupload\\.com/file/\\d+/.*?)\"").getColumn(0);

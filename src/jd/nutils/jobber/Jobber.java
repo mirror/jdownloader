@@ -282,16 +282,18 @@ public class Jobber {
                     if (debug) System.out.println(this + ": I'm up");
                     continue;
                 }
-                jobsStarted.incrementAndGet();
-                fireJobStarted(ra);
                 try {
+                    jobsStarted.incrementAndGet();
+                    fireJobStarted(ra);
                     ra.go();
                 } catch (Exception e) {
                     JDLogger.exception(e);
                     fireJobException(ra, e);
+                } finally {
+                    jobsFinished.incrementAndGet();
+                    fireJobFinished(ra);
                 }
-                jobsFinished.incrementAndGet();
-                fireJobFinished(ra);
+
             }
         }
 

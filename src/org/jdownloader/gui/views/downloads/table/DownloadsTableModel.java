@@ -34,7 +34,9 @@ import org.jdownloader.gui.views.downloads.columns.TaskColumn;
 public class DownloadsTableModel extends ExtTableModel<PackageLinkNode> {
 
     public static enum TOGGLEMODE {
-        CURRENT, TOP, BOTTOM
+        CURRENT,
+        TOP,
+        BOTTOM
     }
 
     private static final long   serialVersionUID   = -198189279671615981L;
@@ -207,8 +209,10 @@ public class DownloadsTableModel extends ExtTableModel<PackageLinkNode> {
      */
     @Override
     public ArrayList<PackageLinkNode> sort(final ArrayList<PackageLinkNode> data, ExtColumn<PackageLinkNode> column) {
+        boolean needToSort = true;
         if (column.getSortOrderIdentifier() == SORT_DOWNLOADORDER) {
             column = downloadOrder;
+            needToSort = false;
             downloadOrder.setSortOrderIdentifier(ExtColumn.SORT_DESC);
         }
         this.sortColumn = column;
@@ -224,7 +228,7 @@ public class DownloadsTableModel extends ExtTableModel<PackageLinkNode> {
             ArrayList<PackageLinkNode> packages = new ArrayList<PackageLinkNode>(DownloadController.getInstance().size());
             packages.addAll(DownloadController.getInstance().getPackages());
             /* sort packages */
-            Collections.sort(packages, column.getRowSorter());
+            if (needToSort) Collections.sort(packages, column.getRowSorter());
             ArrayList<PackageLinkNode> newData = new ArrayList<PackageLinkNode>(Math.max(data.size(), packages.size()));
             for (PackageLinkNode node : packages) {
                 newData.add(node);
@@ -232,7 +236,7 @@ public class DownloadsTableModel extends ExtTableModel<PackageLinkNode> {
                 ArrayList<PackageLinkNode> files = null;
                 synchronized (node) {
                     files = new ArrayList<PackageLinkNode>(((FilePackage) node).getControlledDownloadLinks());
-                    Collections.sort(files, column.getRowSorter());
+                    if (needToSort) Collections.sort(files, column.getRowSorter());
                 }
                 newData.addAll(files);
             }
@@ -241,6 +245,6 @@ public class DownloadsTableModel extends ExtTableModel<PackageLinkNode> {
     }
 
     public boolean isDownloadOrder() {
-        return getSortColumn() == downloadOrder;
+        return getSortColumn() == downloadOrder && ExtColumn.SORT_DESC.equals(downloadOrder.getSortOrderIdentifier());
     }
 }

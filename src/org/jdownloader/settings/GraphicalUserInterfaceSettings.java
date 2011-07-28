@@ -122,6 +122,14 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     void setFontScaleFactor(int b);
 
     @AboutConfig
+    @Description("Font to be used. Default value is Dialog.")
+    @DefaultStringValue("Dialog")
+    @RequiresRestart
+    String getFontName();
+
+    void setFontName(String name);
+
+    @AboutConfig
     @Description("Disable animation and all animation threads. Optional value. Default value is true.")
     @DefaultBooleanValue(true)
     @RequiresRestart

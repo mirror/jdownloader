@@ -21,7 +21,8 @@ import org.jdownloader.images.NewTheme;
 
 public class HosterColumn extends ExtColumn<PackageLinkNode> {
 
-    private static final int           SIZE = 14;
+    private static final int           SIZE     = 14;
+    private int                        maxIcons = 10;
     private MigPanel                   panel;
     private RenderLabel[]              labels;
     private StringBuilder              sb;
@@ -34,7 +35,7 @@ public class HosterColumn extends ExtColumn<PackageLinkNode> {
         panel = new MigPanel("ins 0 5 0 5", "[]", "[grow,fill]");
         labels = new RenderLabel[10];
         // panel.add(Box.createGlue(), "pushx,growx");
-        for (int i = 0; i < 10; i++) {
+        for (int i = 0; i < maxIcons; i++) {
             labels[i] = new RenderLabel();
             labels[i].setOpaque(false);
             labels[i].setBackground(null);
@@ -102,6 +103,7 @@ public class HosterColumn extends ExtColumn<PackageLinkNode> {
 
             int i = 0;
             for (String hoster : DownloadLink.getHosterList(((FilePackage) value).getControlledDownloadLinks())) {
+                if (i == maxIcons) break;
                 labels[i].setVisible(true);
 
                 labels[i].setIcon(getIcon(hoster));
@@ -148,7 +150,7 @@ public class HosterColumn extends ExtColumn<PackageLinkNode> {
 
     @Override
     public void resetRenderer() {
-        for (int i = 0; i < 10; i++) {
+        for (int i = 0; i < maxIcons; i++) {
             labels[i].setVisible(false);
         }
         this.panel.setOpaque(false);

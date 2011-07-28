@@ -172,4 +172,11 @@ public class GraphicalUserInterfaceSettingsValidator implements GraphicalUserInt
     public void setWindowOpaque(boolean b) {
     }
 
+    public String getFontName() {
+        return null;
+    }
+
+    public void setFontName(String name) {
+    }
+
 }

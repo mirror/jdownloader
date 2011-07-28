@@ -15,10 +15,13 @@
 
 package jd.gui.swing.laf;
 
+import java.awt.Font;
 import java.util.ArrayList;
+import java.util.Enumeration;
 
 import javax.swing.UIManager;
 import javax.swing.UIManager.LookAndFeelInfo;
+import javax.swing.plaf.FontUIResource;
 
 import jd.JDInitFlags;
 import jd.controlling.JDLogger;
@@ -172,44 +175,37 @@ public class LookAndFeelController {
         if (uiInitated) return;
         uiInitated = true;
         long t = System.currentTimeMillis();
-
         try {
             String laf = getPlaf().getClassName();
-
-            JDLogger.getLogger().info("Use Look & Feel: " + laf);
-
+            Log.L.info("Use Look & Feel: " + laf);
             preSetup(laf);
-            String str = NewTheme.I().getText("lafoptions/" + laf + ".json");
+            String str = null;
+            try {
+                str = NewTheme.I().getText("lafoptions/" + laf + ".json");
+            } catch (final Throwable e) {
+                Log.exception(e);
+            }
             if (str != null) {
-
                 lafOptions = JSonStorage.restoreFromString(str, new TypeRef<LAFOptions>() {
                 }, new LAFOptions());
-
             } else {
                 Log.L.warning("Not LAF Options found: " + laf + ".json");
-
                 lafOptions = new LAFOptions();
-                Log.L.info(JSonStorage.toString(lafOptions));
             }
             defaultLAF = laf.equals(DE_JAVASOFT_PLAF_SYNTHETICA_SYNTHETICA_SIMPLE2D_LOOK_AND_FEEL);
-
             if (laf.contains("Synthetica")) {
-
                 try {
-
+                    /* special init for Synthetica */
                     de.javasoft.plaf.synthetica.SyntheticaLookAndFeel.setLookAndFeel(laf);
                     de.javasoft.plaf.synthetica.SyntheticaLookAndFeel.setExtendedFileChooserEnabled(false);
-
                 } catch (Throwable e) {
                     Log.exception(e);
                 }
-
             } else {
+                /* init for all other laf */
                 UIManager.setLookAndFeel(laf);
             }
-
             postSetup(laf);
-
         } catch (Throwable e) {
             JDLogger.exception(e);
         } finally {
@@ -226,59 +222,66 @@ public class LookAndFeelController {
     }
 
     /**
+     * Returns if currently a substance look and feel is selected. Not very
+     * fast.. do not use this in often used methods
+     * 
+     * @return
+     */
+    public static boolean isSubstance() {
+        return UIManager.getLookAndFeel().getName().toLowerCase().contains("substance");
+    }
+
+    public static boolean isSynthetica() {
+        return UIManager.getLookAndFeel().getName().toLowerCase().contains("synthetica");
+    }
+
+    /**
      * Executes laf dependend commands AFTER setting the laf
      * 
      * @param className
      */
-    private static void postSetup(String className) {
-        // TODO
-        // int fontsize =
-        // GUIUtils.getConfig().getIntegerProperty(JDGuiConstants.PARAM_GENERAL_FONT_SIZE,
-        // 100);
-        // if (isSynthetica()) {
-        // de.javasoft.plaf.synthetica.SyntheticaLookAndFeel.setFont(GUIUtils.getConfig().getStringProperty(JDGuiConstants.PARAM_GENERAL_FONT_NAME,
-        // "Dialog"), (SyntheticaLookAndFeel.getFontSize() * fontsize) / 100);
-        // } else if (isSubstance()) {
-        // try {
-        // /* set default Font to Dialog and change dynamic fontsize */
-        // Class.forName("jd.gui.swing.laf.SubstanceFontSet").getMethod("postSetup",
-        // new Class[] {}).invoke(null);
-        // } catch (Throwable e) {
-        // JDLogger.exception(e);
-        // }
-        // } else {
-        // try {
-        // Font font =
-        // Font.getFont(GUIUtils.getConfig().getStringProperty(JDGuiConstants.PARAM_GENERAL_FONT_NAME,
-        // "Dialog"));
-        // for (Enumeration<Object> e = UIManager.getDefaults().keys();
-        // e.hasMoreElements();) {
-        // Object key = e.nextElement();
-        // Object value = UIManager.get(key);
-        //
-        // if (value instanceof Font) {
-        // Font f = null;
-        // if (font != null) {
-        // f = font;
-        // } else {
-        // f = (Font) value;
-        // }
-        // UIManager.put(key, new FontUIResource(f.getName(), f.getStyle(),
-        // (f.getSize() * fontsize) / 100));
-        // }
-        // }
-        // } catch (Throwable e) {
-        // JDLogger.exception(e);
-        // }
-        // }
-
+    private void postSetup(String className) {
+        int fontSize = config.getFontScaleFactor();
+        String fontName = config.getFontName();
+        if (isSynthetica()) {
+            try {
+                de.javasoft.plaf.synthetica.SyntheticaLookAndFeel.setFont(fontName, (de.javasoft.plaf.synthetica.SyntheticaLookAndFeel.getFontSize() * fontSize) / 100);
+            } catch (final Throwable e) {
+                Log.exception(e);
+            }
+        } else if (isSubstance()) {
+            try {
+                final JDSubstanceFontPolicy fp = new JDSubstanceFontPolicy(org.pushingpixels.substance.api.SubstanceLookAndFeel.getFontPolicy().getFontSet("substance", null), fontName, fontSize);
+                org.pushingpixels.substance.api.SubstanceLookAndFeel.setFontPolicy(fp);
+            } catch (Throwable e) {
+                Log.exception(e);
+            }
+        } else {
+            try {
+                Font font = Font.getFont(fontName);
+                for (Enumeration<Object> e = UIManager.getDefaults().keys(); e.hasMoreElements();) {
+                    Object key = e.nextElement();
+                    Object value = UIManager.get(key);
+                    if (value instanceof Font) {
+                        Font f = null;
+                        if (font != null) {
+                            f = font;
+                        } else {
+                            f = (Font) value;
+                        }
+                        UIManager.put(key, new FontUIResource(f.getName(), f.getStyle(), (f.getSize() * fontSize) / 100));
+                    }
+                }
+            } catch (Throwable e) {
+                Log.exception(e);
+            }
+        }
     }
 
     /**
      * Executes LAF dependend commands BEFORE initializing the LAF
      */
     private void preSetup(String className) {
-
         UIManager.put("Synthetica.window.decoration", false);
         UIManager.put("Synthetica.text.antialias", config.isTextAntiAliasEnabled());
         UIManager.put("Synthetica.font.respectSystemDPI", config.isFontRespectsSystemDPI());
@@ -286,23 +289,21 @@ public class LookAndFeelController {
         UIManager.put("Synthetica.animation.enabled", config.isAnimationEnabled());
         UIManager.put("Synthetica.window.opaque", config.isWindowOpaque());
 
-        // JFrame.setDefaultLookAndFeelDecorated(windowDeco);
-        // JDialog.setDefaultLookAndFeelDecorated(windowDeco);
         /*
          * NOTE: This Licensee Information may only be used by AppWork UG. If
          * you like to create derived creation based on this sourcecode, you
          * have to remove this license key. Instead you may use the FREE Version
          * of synthetica found on javasoft.de
          */
-        String[] li = { "Licensee=AppWork UG", "LicenseRegistrationNumber=289416475", "Product=Synthetica", "LicenseType=Small Business License", "ExpireDate=--.--.----", "MaxVersion=2.999.999" };
-        UIManager.put("Synthetica.license.info", li);
-        UIManager.put("Synthetica.license.key", JDCrypt.decrypt(JDHexUtils.getByteArray("4a94286634a203ada63b87c54662227252490d6f10e421b7239c610138c53e4c51fc7c0a2a8a18a0a2c0a40191b1186f"), new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 11, 12, 13, 14, 15, 16 }));
-
-        // if
-        // (className.equalsIgnoreCase("de.javasoft.plaf.synthetica.SyntheticaStandardLookAndFeel"))
-        // {
-        // UIManager.put("Synthetica.window.decoration", false);
-        // }
+        try {
+            String key = JDCrypt.decrypt(JDHexUtils.getByteArray("4a94286634a203ada63b87c54662227252490d6f10e421b7239c610138c53e4c51fc7c0a2a8a18a0a2c0a40191b1186f"), new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 11, 12, 13, 14, 15, 16 });
+            if (key != null) {
+                String[] li = { "Licensee=AppWork UG", "LicenseRegistrationNumber=289416475", "Product=Synthetica", "LicenseType=Small Business License", "ExpireDate=--.--.----", "MaxVersion=2.999.999" };
+                UIManager.put("Synthetica.license.info", li);
+                UIManager.put("Synthetica.license.key", key);
+            }
+        } catch (final Throwable e) {
+            JDLogger.exception(e);
+        }
     }
-
 }

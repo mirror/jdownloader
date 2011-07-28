@@ -89,8 +89,12 @@ public class DownloadsTable extends BasicJDTable<PackageLinkNode> {
         this.tableModel = tableModel;
         this.setShowVerticalLines(false);
         this.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
-        this.setDragEnabled(true);
-        this.setDropMode(DropMode.INSERT_ROWS);
+        if (Application.getJavaVersion() >= Application.JAVA16) {
+            this.setTransferHandler(new DownloadsTableTransferHandler(this));
+            this.setDragEnabled(true);
+            this.setDropMode(DropMode.ON_OR_INSERT_ROWS);
+        }
+
         initActions();
 
         onSelectionChanged(null);
@@ -226,18 +230,7 @@ public class DownloadsTable extends BasicJDTable<PackageLinkNode> {
 
     @Override
     protected void onDoubleClick(final MouseEvent e, final PackageLinkNode obj) {
-        if (obj instanceof FilePackage) {
-            final ExtColumn<PackageLinkNode> column = this.getExtColumnAtPoint(e.getPoint());
 
-            if (FileColumn.class == column.getClass()) {
-                Rectangle bounds = column.getBounds();
-                if (e.getPoint().x - bounds.x < 30) {
-                    tableModel.toggleFilePackageExpand((FilePackage) obj, DownloadsTableModel.TOGGLEMODE.CURRENT);
-                    return;
-                }
-            }
-
-        }
         new EditLinkOrPackageAction(this, obj).actionPerformed(null);
     }
 
@@ -330,7 +323,7 @@ public class DownloadsTable extends BasicJDTable<PackageLinkNode> {
         return popup;
     }
 
-    private ArrayList<DownloadLink> getAllDownloadLinks(ArrayList<PackageLinkNode> selectedObjects) {
+    protected ArrayList<DownloadLink> getAllDownloadLinks(ArrayList<PackageLinkNode> selectedObjects) {
         final ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
         for (final PackageLinkNode node : selectedObjects) {
             if (node instanceof DownloadLink) {
@@ -556,4 +549,31 @@ public class DownloadsTable extends BasicJDTable<PackageLinkNode> {
         g2.setComposite(comp);
 
     }
+
+    public boolean isDownloadOrder() {
+        return tableModel.isDownloadOrder();
+    }
+
+    public ArrayList<FilePackage> getSelectedFilePackages() {
+        final ArrayList<FilePackage> ret = new ArrayList<FilePackage>();
+        final ArrayList<PackageLinkNode> selected = this.getExtTableModel().getSelectedObjects();
+        for (final PackageLinkNode node : selected) {
+            if (node instanceof FilePackage) {
+                ret.add((FilePackage) node);
+            }
+        }
+        return ret;
+    }
+
+    public ArrayList<DownloadLink> getSelectedDownloadLinks() {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final ArrayList<PackageLinkNode> selected = this.getExtTableModel().getSelectedObjects();
+        for (final PackageLinkNode node : selected) {
+            if (node instanceof DownloadLink) {
+                ret.add((DownloadLink) node);
+            }
+        }
+        return ret;
+    }
+
 }

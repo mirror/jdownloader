@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicLong;
 
 import jd.config.Property;
 import jd.controlling.DownloadControllerInterface;
@@ -40,16 +41,18 @@ import org.jdownloader.translate._JDT;
  */
 public class FilePackage extends Property implements Serializable, PackageLinkNode {
 
-    private static final long            serialVersionUID = -8859842964299890820L;
+    private static final AtomicLong      FilePackageIDCounter = new AtomicLong(0);
 
-    private static final long            UPDATE_INTERVAL  = 2000;
+    private static final long            serialVersionUID     = -8859842964299890820L;
+
+    private static final long            UPDATE_INTERVAL      = 2000;
 
     private String                       comment;
 
     private String                       downloadDirectory;
 
     private ArrayList<DownloadLink>      downloadLinkList;
-    private transient static FilePackage FP               = null;
+    private transient static FilePackage FP                   = null;
 
     static {
         FP = new FilePackage() {
@@ -123,6 +126,7 @@ public class FilePackage extends Property implements Serializable, PackageLinkNo
     private transient int                         listOrderID          = -1;
 
     private transient DownloadControllerInterface controlledby         = null;
+    private transient long                        uniqueID             = -1;
 
     /**
      * @return the controlledby
@@ -137,6 +141,29 @@ public class FilePackage extends Property implements Serializable, PackageLinkNo
      */
     public void setControlledby(DownloadControllerInterface controlledby) {
         this.controlledby = controlledby;
+    }
+
+    /*
+     * (non-Javadoc)
+     * 
+     * @see java.lang.Object#hashCode()
+     */
+    @Override
+    public int hashCode() {
+        return (int) (uniqueID ^ (uniqueID >>> 32));
+    }
+
+    /*
+     * (non-Javadoc)
+     * 
+     * @see java.lang.Object#equals(java.lang.Object)
+     */
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == null) return false;
+        if (obj == this) return true;
+        if (!(obj instanceof FilePackage)) return false;
+        return ((FilePackage) obj).uniqueID == this.uniqueID;
     }
 
     /**
@@ -168,6 +195,7 @@ public class FilePackage extends Property implements Serializable, PackageLinkNo
      * downloadDirectory
      */
     private FilePackage() {
+        uniqueID = FilePackageIDCounter.incrementAndGet();
         downloadDirectory = org.appwork.storage.config.JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder();
         created = System.currentTimeMillis();
         /* till refactoring is complete */
@@ -187,7 +215,7 @@ public class FilePackage extends Property implements Serializable, PackageLinkNo
         /* deserialize object and then fill other stuff(transient..) */
         stream.defaultReadObject();
         isExpanded = getBooleanProperty(DownloadTable.PROPERTY_EXPANDED, false);
-        /* convert ArrayList to ArrayList */
+        uniqueID = FilePackageIDCounter.incrementAndGet();
     }
 
     /**

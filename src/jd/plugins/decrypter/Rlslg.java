@@ -70,7 +70,7 @@ public class Rlslg extends PluginForDecrypt {
             for (String page : pages) {
                 // Don't enter first page as it is already entered
                 if (!page.equals(param.toString())) br.getPage(page.replace("#comments", ""));
-                String comments[] = br.getRegex(Pattern.compile("<div class=\\'commenttext\\'>(.*?)</div>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getColumn(0);
+                String comments[] = br.getRegex(Pattern.compile("<div class=('|\")commenttext('|\")>(.*?)</div>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getColumn(2);
                 for (String comment : comments) {
                     passwords = HTMLParser.findPasswords(comment);
                     String[] links = new Regex(comment, "rel=\"nofollow\">(.*?)</a>", Pattern.CASE_INSENSITIVE).getColumn(0);
