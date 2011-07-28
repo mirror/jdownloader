@@ -45,7 +45,7 @@ public class FileColumn extends ExtTextColumn<PackageLinkNode> {
 
     @Override
     public boolean isEditable(PackageLinkNode obj) {
-        return obj instanceof FilePackage;
+        return false;
     }
 
     @Override

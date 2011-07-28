@@ -2097,4 +2097,82 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Renaming a Package is very simple. \r\nJust double click on a Package, enter the new name, and confim with <ENTER>" })
     String DownloadsTable_editCellAt_filepackage_msg();
+
+    @Default(lngs = { "en" }, values = { "Comment" })
+    String CommentColumn_CommentColumn_();
+
+    @Default(lngs = { "en" }, values = { "Save" })
+    String PackagePropertiesDialog_PackagePropertiesDialog_save();
+
+    @Default(lngs = { "en" }, values = { "Name" })
+    String PackagePropertiesDialog_layoutDialogContent_name();
+
+    @Default(lngs = { "en" }, values = { "Comment" })
+    String PackagePropertiesDialog_layoutDialogContent_comment();
+
+    @Default(lngs = { "en" }, values = { "Archive Passwords" })
+    String PackagePropertiesDialog_layoutDialogContent_passwords();
+
+    @Default(lngs = { "en" }, values = { "Extract after download" })
+    String PackagePropertiesDialog_layoutDialogContent_extract();
+
+    @Default(lngs = { "en" }, values = { "New Password for %s1" })
+    String PackagePropertiesDialog_actionPerformed_newpassword_(String name);
+
+    @Default(lngs = { "en" }, values = { "Save to" })
+    String PackagePropertiesDialog_layoutDialogContent_downloadfolder();
+
+    @Default(lngs = { "en" }, values = { "Create Folder" })
+    String EditLinkOrPackageAction_showFilePackageDialog_downloaddir_doesnotexist_();
+
+    @Default(lngs = { "en" }, values = { "Download Directory %s1 does not exist." })
+    String EditLinkOrPackageAction_showFilePackageDialog_downloaddir_doesnotexist_msg(String path);
+
+    @Default(lngs = { "en" }, values = { "Create it" })
+    String EditLinkOrPackageAction_showFilePackageDialog_create();
+
+    @Default(lngs = { "en" }, values = { "Link: '%s1'" })
+    String LinkPropertiesDialog_LinkPropertiesDialog(String name);
+
+    @Default(lngs = { "en" }, values = { "Save" })
+    String LinkPropertiesDialog_LinkPropertiesDialog_save();
+
+    @Default(lngs = { "en" }, values = { "Filename" })
+    String LinkPropertiesDialog_layoutDialogContent_name();
+
+    @Default(lngs = { "en" }, values = { "Link Comment" })
+    String LinkPropertiesDialog_layoutDialogContent_comment();
+
+    @Default(lngs = { "en" }, values = { "Md5 Checksum" })
+    String LinkPropertiesDialog_layoutDialogContent_md5();
+
+    @Default(lngs = { "en" }, values = { "Sha1 Checksum" })
+    String LinkPropertiesDialog_layoutDialogContent_sha1();
+
+    @Default(lngs = { "en" }, values = { "Checksum Test" })
+    String LinkPropertiesDialog_focusGained_();
+
+    @Default(lngs = { "en" }, values = { "Checksums are used to find download errors (crc errors).\r\nDo not enter invalid checksums here, or your download will fail." })
+    String LinkPropertiesDialog_focusGained_msg();
+
+    @Default(lngs = { "en" }, values = { "Reset Filename to default" })
+    String LinkPropertiesDialog_layoutDialogContent_reset_filename_tt();
+
+    @Default(lngs = { "en" }, values = { "Download Password" })
+    String LinkPropertiesDialog_layoutDialogContent_downloadpassword();
+
+    @Default(lngs = { "en" }, values = { "%s1" })
+    String LinkPropertiesDialog_layoutDialogContent_size(String formatBytes);
+
+    @Default(lngs = { "en" }, values = { "%s1" })
+    String LinkPropertiesDialog_layoutDialogContent_hoster(String host);
+
+    @Default(lngs = { "en" }, values = { "Online -  Download is possible" })
+    String LinkPropertiesDialog_layoutDialogContent_available();
+
+    @Default(lngs = { "en" }, values = { "Offline -  Download not available" })
+    String LinkPropertiesDialog_layoutDialogContent_notavalable();
+
+    @Default(lngs = { "en" }, values = { "Onlinestatus not checked" })
+    String LinkPropertiesDialog_layoutDialogContent_unchecked();
 }

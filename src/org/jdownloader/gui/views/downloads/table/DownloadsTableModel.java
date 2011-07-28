@@ -61,6 +61,7 @@ public class DownloadsTableModel extends ExtTableModel<PackageLinkNode> {
         addColumn(new ConnectionColumn());
         this.addColumn(new TaskColumn());
         this.addColumn(new RemainingColumn());
+        // this.addColumn(new CommentColumn());
 
         this.addColumn(new AddedDateColumn());
         this.addColumn(new FinishedDateColumn());

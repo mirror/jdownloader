@@ -1,14 +1,21 @@
 package org.jdownloader.gui.views.downloads.context;
 
 import java.awt.event.ActionEvent;
+import java.io.File;
 
 import jd.gui.swing.jdgui.interfaces.ContextMenuAction;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PackageLinkNode;
 
+import org.appwork.utils.swing.dialog.Dialog;
+import org.appwork.utils.swing.dialog.DialogCanceledException;
+import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.gui.views.downloads.LinkPropertiesDialog;
+import org.jdownloader.gui.views.downloads.propertydialogs.PackagePropertiesDialog;
 import org.jdownloader.gui.views.downloads.table.DownloadsTable;
+import org.jdownloader.images.NewTheme;
 
 public class EditLinkOrPackageAction extends ContextMenuAction {
 
@@ -32,17 +39,47 @@ public class EditLinkOrPackageAction extends ContextMenuAction {
     }
 
     private void showDownloadLinkDialog(DownloadLink link) {
-        // Dialog.getInstance().showDialog(new LinkPropertiesDialog(link));
+        LinkPropertiesDialog d = new LinkPropertiesDialog(link);
+        try {
+            Dialog.getInstance().showDialog(d);
+            link.forceFileName(d.getLinkName());
+            link.setDownloadPassword(d.getDownloadPassword());
+            link.setMD5Hash(d.getMd5());
+            link.setSha1Hash(d.getSha1());
+
+        } catch (DialogClosedException e) {
+            e.printStackTrace();
+        } catch (DialogCanceledException e) {
+            e.printStackTrace();
+        }
     }
 
     private void showFilePackageDialog(FilePackage fp) {
-        // try {
-        // Dialog.getInstance().showDialog(new PackagePropertiesDialog(fp));
-        // } catch (DialogClosedException e) {
-        // e.printStackTrace();
-        // } catch (DialogCanceledException e) {
-        // e.printStackTrace();
-        // }
+        try {
+            PackagePropertiesDialog d = new PackagePropertiesDialog(fp);
+            Dialog.getInstance().showDialog(d);
+
+            fp.setPasswordList(d.getPasswordList());
+            fp.setName(d.getPackageName());
+            fp.setComment(d.getComment());
+            if (!new File(d.getDownloadDirectory()).exists()) {
+                try {
+                    Dialog.getInstance().showConfirmDialog(0, _GUI._.EditLinkOrPackageAction_showFilePackageDialog_downloaddir_doesnotexist_(), _GUI._.EditLinkOrPackageAction_showFilePackageDialog_downloaddir_doesnotexist_msg(d.getDownloadDirectory()), NewTheme.I().getIcon("open", 32), _GUI._.EditLinkOrPackageAction_showFilePackageDialog_create(), null);
+                    fp.setDownloadDirectory(d.getDownloadDirectory());
+                } catch (DialogClosedException e) {
+                    e.printStackTrace();
+                } catch (DialogCanceledException e) {
+                    e.printStackTrace();
+                }
+            } else {
+                fp.setDownloadDirectory(d.getDownloadDirectory());
+            }
+            fp.setPostProcessing(d.isExtractEnabled());
+        } catch (DialogClosedException e) {
+            e.printStackTrace();
+        } catch (DialogCanceledException e) {
+            e.printStackTrace();
+        }
     }
 
     @Override

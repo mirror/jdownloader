@@ -432,8 +432,10 @@ public class FilePackage extends Property implements Serializable, PackageLinkNo
     /**
      * return post processing password for this FilePackage, if it is set
      * 
+     * @deprecated Use {@link #getPasswordList()}
      * @return
      */
+    @Deprecated
     public String getPassword() {
         return password2;
     }
@@ -448,6 +450,7 @@ public class FilePackage extends Property implements Serializable, PackageLinkNo
             for (DownloadLink element : fp.getControlledDownloadLinks()) {
                 ArrayList<String> pws = null;
                 if ((pws = element.getSourcePluginPasswordList()) != null) {
+
                     for (String pw : pws) {
                         if (pw == null) continue;
                         pwList.add(pw);
@@ -585,8 +588,10 @@ public class FilePackage extends Property implements Serializable, PackageLinkNo
     /**
      * set the Password for post processing to this FilePackage
      * 
+     * @deprecated Use {@link #setPasswordList(ArrayList)}
      * @param password
      */
+    @Deprecated
     public void setPassword(String password) {
         this.password2 = password;
     }
@@ -683,6 +688,45 @@ public class FilePackage extends Property implements Serializable, PackageLinkNo
     public boolean isEnabled() {
         // if (controlledLinks.size() <= disabledLinks.get()) return false;
         return true;
+    }
+
+    private ArrayList<String> passwordList = new ArrayList<String>();
+
+    public void setPasswordList(ArrayList<String> passwordList) {
+        this.passwordList = passwordList;
+    }
+
+    public String[] getPasswordList() {
+        ArrayList<String> lst = new ArrayList<String>();
+        // can be null due to old serialized versions
+        if (passwordList != null) {
+            lst.addAll(passwordList);
+        }
+        if (getPassword() != null && getPassword().length() > 0) lst.add(getPassword());
+        for (Iterator<String> it = getPasswordAuto(this).iterator(); it.hasNext();) {
+            lst.add(it.next());
+        }
+        return lst.toArray(new String[] {});
+    }
+
+    /**
+     * Returns a list of all hoster Strings in this package
+     * 
+     * @return
+     */
+    public ArrayList<String> getHosterList() {
+        ArrayList<String> ret = new ArrayList<String>();
+        Set<String> set = new HashSet<String>();
+
+        synchronized (this) {
+            for (DownloadLink element : getControlledDownloadLinks()) {
+                if (!set.contains(element.getHost())) {
+                    set.add(element.getHost());
+                    ret.add(element.getHost());
+                }
+            }
+        }
+        return ret;
     }
 
 }
