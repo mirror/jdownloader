@@ -55,7 +55,6 @@ public class DownloadsTableModel extends ExtTableModel<PackageLinkNode> {
 
     @Override
     protected void initColumns() {
-
         this.addColumn(new FileColumn());
         this.addColumn(new SizeColumn());
         this.addColumn(new HosterColumn());

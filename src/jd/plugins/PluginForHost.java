@@ -907,10 +907,6 @@ public abstract class PluginForHost extends Plugin implements FavIconRequestor {
         return link;
     }
 
-    public void setAGBChecked(boolean b) {
-        ((HostPluginWrapper) wrapper).setAGBChecked(b);
-    }
-
     /* override this if you want to change a link to use this plugin */
     /* dont forget to change host with setHost */
     /* must return true if changing was successful */

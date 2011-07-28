@@ -18,12 +18,14 @@ package jd.plugins;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.io.Serializable;
 import java.net.URL;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
@@ -52,6 +54,8 @@ import org.jdownloader.settings.GeneralSettings;
  * @author astaldo
  */
 public class DownloadLink extends Property implements Serializable, Comparable<DownloadLink>, PackageLinkNode {
+
+    private static final AtomicLong DownloadLinkIDCounter = new AtomicLong(0);
 
     public static enum AvailableStatus {
         UNCHECKED,
@@ -170,6 +174,8 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
 
     private transient int                      listOrderID              = 0;
 
+    private transient long                     uniqueID                 = -1;
+
     /**
      * @return the listOrderID
      */
@@ -200,6 +206,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      *            Markiert diesen DownloadLink als aktiviert oder deaktiviert
      */
     public DownloadLink(PluginForHost plugin, String name, String host, String urlDownload, boolean isEnabled) {
+        uniqueID = DownloadLinkIDCounter.incrementAndGet();
         this.defaultplugin = plugin;
         priority = 0;
         setName(name);
@@ -242,6 +249,12 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
 
     public void setCreated(long created) {
         this.created = created;
+    }
+
+    private void readObject(ObjectInputStream stream) throws IOException, ClassNotFoundException {
+        /* deserialize object and then fill other stuff(transient..) */
+        stream.defaultReadObject();
+        uniqueID = DownloadLinkIDCounter.incrementAndGet();
     }
 
     public DownloadLink addSourcePluginPassword(String sourcePluginPassword) {
@@ -983,6 +996,24 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      */
     public long getDownloadMax() {
         return downloadMax;
+    }
+
+    /**
+     * DO NOT USE in 09581 Stable
+     * 
+     * @return
+     */
+    public String getDownloadPassword() {
+        return getStringProperty("pass", null);
+    }
+
+    /**
+     * DO NOT USE in 09581 Stable
+     * 
+     * @return
+     */
+    public void setDownloadPassword(String pass) {
+        this.setProperty("pass", pass);
     }
 
     /**

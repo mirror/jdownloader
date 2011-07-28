@@ -117,7 +117,6 @@ public class JDPremServController {
             this.requestedLinks.put(url, retLink);
         }
 
-        retLink.getDefaultPlugin().setAGBChecked(true);
         /* add jdpremserv package to downloadlist */
         DownloadController.getInstance().addPackage(this.premServFilePackage);
         /* update last access */

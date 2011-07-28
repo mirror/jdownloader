@@ -103,17 +103,6 @@ public class DownloadsTable extends BasicJDTable<PackageLinkNode> {
             sortNotifyColor = Color.ORANGE;
         }
 
-        // this.getExtTableModel().addExtComponentRowHighlighter(new
-        // ExtComponentRowHighlighter<PackageLinkNode>(f2, b2, null) {
-        //
-        // @Override
-        // public boolean accept(ExtColumn<PackageLinkNode> column,
-        // PackageLinkNode value, boolean selected, boolean focus, int row) {
-        // return selected;
-        // }
-        //
-        // });
-
         this.addRowHighlighter(new DropHighlighter(null, new Color(27, 164, 191, 75)));
 
     }
@@ -534,21 +523,6 @@ public class DownloadsTable extends BasicJDTable<PackageLinkNode> {
             g2.fillRect(visibleRect.x + first.x, visibleRect.y, visibleRect.x + getExtTableModel().getSortColumn().getWidth(), visibleRect.y + visibleRect.height);
         }
         if (tableModel.isDownloadOrder()) return;
-        // if (sortingText != null) {
-        // g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER,
-        // 0.1f));
-        // g2.setFont(this.sortedFont);
-        // g2.setColor(this.getForeground());
-        // FontMetrics fm = g2.getFontMetrics();
-        // int width = fm.stringWidth(this.sortingText);
-        // g.drawString(this.sortingText, (this.getWidth() - width) / 2, 60);
-        //
-        // g2.setFont(this.sortedFontTiny);
-        // fm = g2.getFontMetrics();
-        // width = fm.stringWidth(this.sortingTextTiny);
-        // g.drawString(this.sortingTextTiny, (this.getWidth() - width) / 2,
-        // 85);
-        // }
         g2.setComposite(comp);
 
     }
