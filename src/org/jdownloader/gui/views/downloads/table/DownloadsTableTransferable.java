@@ -6,6 +6,7 @@ import java.awt.datatransfer.UnsupportedFlavorException;
 import java.io.IOException;
 import java.util.ArrayList;
 
+import jd.controlling.DownloadController;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
@@ -16,7 +17,12 @@ public class DownloadsTableTransferable implements Transferable {
      * this DataFlavor is only used to signal that we might have filepackages or
      * downloadlinks available
      */
-    public static final DataFlavor  DownloadsTableFlavor = new DataFlavor(DownloadsTableTransferable.class, DownloadsTableTransferable.class.getName());
+    public static final DataFlavor  DownloadsTableFlavor = new DataFlavor(DownloadsTableTransferable.class, DownloadsTableTransferable.class.getName()) {
+                                                             @Override
+                                                             public boolean isFlavorSerializedObjectType() {
+                                                                 return false;
+                                                             }
+                                                         };
     private ArrayList<FilePackage>  packages             = null;
     private ArrayList<DownloadLink> links                = null;
     private long                    controlledVersion;
@@ -79,6 +85,15 @@ public class DownloadsTableTransferable implements Transferable {
             return ret;
         } catch (Throwable e) {
             return null;
+        }
+    }
+
+    public static boolean isVersionOkay(Transferable info) {
+        try {
+            long version = (Long) info.getTransferData(DownloadsTableFlavor);
+            return DownloadController.getInstance().getStructureChanged() == version;
+        } catch (Throwable e) {
+            return false;
         }
     }
 

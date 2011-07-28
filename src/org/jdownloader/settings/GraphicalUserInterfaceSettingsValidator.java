@@ -151,10 +151,6 @@ public class GraphicalUserInterfaceSettingsValidator implements GraphicalUserInt
     public void setFontRespectsSystemDPI(boolean b) {
     }
 
-    public int getFontScaleFactor() {
-        return 0;
-    }
-
     public void setFontScaleFactor(int b) {
     }
 
@@ -177,6 +173,10 @@ public class GraphicalUserInterfaceSettingsValidator implements GraphicalUserInt
     }
 
     public void setFontName(String name) {
+    }
+
+    public int getFontScaleFactor() {
+        return 0;
     }
 
 }

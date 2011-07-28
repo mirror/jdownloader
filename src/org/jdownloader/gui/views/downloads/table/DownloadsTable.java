@@ -42,6 +42,7 @@ import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.appwork.utils.swing.dialog.OffScreenException;
 import org.appwork.utils.swing.dialog.SimpleTextBallon;
+import org.appwork.utils.swing.table.DropHighlighter;
 import org.appwork.utils.swing.table.ExtColumn;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;
@@ -112,6 +113,8 @@ public class DownloadsTable extends BasicJDTable<PackageLinkNode> {
         // }
         //
         // });
+
+        this.addRowHighlighter(new DropHighlighter(null, new Color(27, 164, 191, 75)));
 
     }
 

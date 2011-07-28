@@ -37,6 +37,9 @@ public class DownloadsTableTransferHandler extends TransferHandler {
             JTable.DropLocation dl = (JTable.DropLocation) support.getDropLocation();
             boolean linksAvailable = support.isDataFlavorSupported(DownloadLinksDataFlavor.Flavor);
             boolean packagesAvailable = support.isDataFlavorSupported(FilePackagesDataFlavor.Flavor);
+            if (linksAvailable || packagesAvailable) {
+                if (!DownloadsTableTransferable.isVersionOkay(support.getTransferable())) return false;
+            }
             boolean isInsert = dl.isInsertRow();
             int dropRow = dl.getRow();
             if (isInsert) {
