@@ -28,6 +28,7 @@ import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.WindowEvent;
 import java.util.ArrayList;
@@ -40,6 +41,7 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.KeyStroke;
 import javax.swing.ScrollPaneConstants;
+import javax.swing.Timer;
 import javax.swing.ToolTipManager;
 import javax.swing.WindowConstants;
 
@@ -665,25 +667,34 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
         }
     }
 
-    public static void help(final String title, String msg, ImageIcon icon) {
-        try {
-            SimpleTextBallon d = new SimpleTextBallon(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, title, msg, icon) {
+    public static void help(final String title, final String msg, final ImageIcon icon) {
 
-                @Override
-                protected String getDontShowAgainKey() {
-                    return title;
+        Timer timer = new Timer(200, new ActionListener() {
+
+            public void actionPerformed(ActionEvent e) {
+                try {
+                    SimpleTextBallon d = new SimpleTextBallon(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, title, msg, icon) {
+
+                        @Override
+                        protected String getDontShowAgainKey() {
+                            return title;
+                        }
+
+                    };
+
+                    Dialog.getInstance().showDialog(d);
+                } catch (OffScreenException e1) {
+                    e1.printStackTrace();
+                } catch (DialogClosedException e1) {
+                    e1.printStackTrace();
+                } catch (DialogCanceledException e1) {
+                    e1.printStackTrace();
                 }
+            }
+        });
+        timer.setRepeats(false);
+        timer.start();
 
-            };
-
-            Dialog.getInstance().showDialog(d);
-        } catch (OffScreenException e1) {
-            e1.printStackTrace();
-        } catch (DialogClosedException e1) {
-            e1.printStackTrace();
-        } catch (DialogCanceledException e1) {
-            e1.printStackTrace();
-        }
     }
 
 }
