@@ -74,13 +74,29 @@ public class DownloadsTableModel extends ExtTableModel<PackageLinkNode> {
         this.addColumn(new StopSignColumn());
 
         this.addColumn(downloadOrder = new ListOrderIDColumn());
+        // reset sort
 
+        try {
+            getStorage().put(ExtTableModel.SORT_ORDER_ID_KEY, ExtColumn.SORT_ASC);
+            getStorage().put(ExtTableModel.SORTCOLUMN_KEY, downloadOrder.getID());
+        } catch (final Exception e) {
+            Log.exception(e);
+        }
+
+    }
+
+    /**
+     * we want to return to default sort after each start
+     */
+    protected boolean isSortStateSaverEnabled() {
+        return false;
     }
 
     /**
      * @return
      */
     protected ExtColumn<PackageLinkNode> getDefaultSortColumn() {
+        downloadOrder.setSortOrderIdentifier(ExtColumn.SORT_DESC);
         return downloadOrder;
     }
 

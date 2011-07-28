@@ -18,7 +18,7 @@ public class FinishedDateColumn extends ExtDateColumn<PackageLinkNode> {
 
     public FinishedDateColumn() {
         super(_GUI._.FinishedDateColumn_FinishedDateColumn());
-        renderer.setHorizontalAlignment(SwingConstants.CENTER);
+        rendererField.setHorizontalAlignment(SwingConstants.CENTER);
     }
 
     @Override

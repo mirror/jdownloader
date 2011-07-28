@@ -86,6 +86,10 @@ import org.appwork.utils.Application;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.EDTHelper;
 import org.appwork.utils.swing.dialog.Dialog;
+import org.appwork.utils.swing.dialog.DialogCanceledException;
+import org.appwork.utils.swing.dialog.DialogClosedException;
+import org.appwork.utils.swing.dialog.OffScreenException;
+import org.appwork.utils.swing.dialog.SimpleTextBallon;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.DownloadsView;
 import org.jdownloader.images.NewTheme;
@@ -658,6 +662,27 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
                 return;
             }
             this.closeWindow();
+        }
+    }
+
+    public static void help(final String title, String msg, ImageIcon icon) {
+        try {
+            SimpleTextBallon d = new SimpleTextBallon(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, title, msg, icon) {
+
+                @Override
+                protected String getDontShowAgainKey() {
+                    return title;
+                }
+
+            };
+
+            Dialog.getInstance().showDialog(d);
+        } catch (OffScreenException e1) {
+            e1.printStackTrace();
+        } catch (DialogClosedException e1) {
+            e1.printStackTrace();
+        } catch (DialogCanceledException e1) {
+            e1.printStackTrace();
         }
     }
 

@@ -80,6 +80,7 @@ public class LinkgrabberView extends View {
     @Override
     protected void onShow() {
         setActionStatus(true);
+        JDGui.help("Linkgrabber", "This is the linkgrabber. Add Links, create packages, blbla..", NewTheme.getInstance().getIcon("linkgrabber", 24));
     }
 
     private void setActionStatus(boolean enabled) {

@@ -7,7 +7,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PackageLinkNode;
 
-import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.downloads.table.DownloadsTable;
 
@@ -33,11 +32,17 @@ public class EditLinkOrPackageAction extends ContextMenuAction {
     }
 
     private void showDownloadLinkDialog(DownloadLink link) {
-        Dialog.getInstance().showMessageDialog(link + "");
+        // Dialog.getInstance().showDialog(new LinkPropertiesDialog(link));
     }
 
     private void showFilePackageDialog(FilePackage fp) {
-        Dialog.getInstance().showMessageDialog(fp + "");
+        // try {
+        // Dialog.getInstance().showDialog(new PackagePropertiesDialog(fp));
+        // } catch (DialogClosedException e) {
+        // e.printStackTrace();
+        // } catch (DialogCanceledException e) {
+        // e.printStackTrace();
+        // }
     }
 
     @Override

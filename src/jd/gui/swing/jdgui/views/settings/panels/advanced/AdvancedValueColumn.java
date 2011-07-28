@@ -57,7 +57,7 @@ public class AdvancedValueColumn extends ExtCompoundColumn<AdvancedConfigEntry> 
         stringColumn = new ExtTextColumn<AdvancedConfigEntry>(getName()) {
             private static final long serialVersionUID = 1L;
             {
-                renderer.setHorizontalAlignment(SwingConstants.RIGHT);
+                rendererField.setHorizontalAlignment(SwingConstants.RIGHT);
 
             }
 

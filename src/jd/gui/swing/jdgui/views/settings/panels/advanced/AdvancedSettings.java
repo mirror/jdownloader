@@ -14,6 +14,7 @@ import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 
 import jd.controlling.IOEQ;
+import jd.gui.swing.jdgui.JDGui;
 
 import org.appwork.utils.swing.HelpNotifier;
 import org.appwork.utils.swing.HelpNotifierCallbackListener;
@@ -35,6 +36,7 @@ public class AdvancedSettings extends AbstractConfigPanel implements DocumentLis
     protected void onShow() {
         super.onShow();
         AdvancedConfigManager.getInstance().getEventSender().addListener(this);
+        JDGui.help("If there ever has been any warrenty for anything, it ends here!", "These advanced settings should not be modified unless you know what you are doing. \r\nChanging them may affect stability, security and performance of JDownloader.\r\nYou have been warned.", NewTheme.I().getIcon("warning", 32));
 
     }
 

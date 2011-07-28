@@ -43,12 +43,6 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
     void setLookAndFeel(String laf);
 
-    @DefaultBooleanValue(true)
-    @AboutConfig
-    boolean isWindowDecorationEnabled();
-
-    void setWindowDecorationEnabled(boolean b);
-
     @DefaultIntValue(20)
     @AboutConfig
     int getDialogDefaultTimeout();
@@ -102,5 +96,45 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     boolean isSortColumnHighlightEnabled();
 
     void setSortColumnHighlightEnabled(boolean b);
+
+    @AboutConfig
+    @Description("Paint all labels/text with or without antialias. Default value is false.")
+    @DefaultBooleanValue(false)
+    @RequiresRestart
+    boolean isTextAntiAliasEnabled();
+
+    void setTextAntiAliasEnabled(boolean b);
+
+    @AboutConfig
+    @Description("Enable/disable support for system DPI settings. Default value is true.")
+    @DefaultBooleanValue(true)
+    @RequiresRestart
+    boolean isFontRespectsSystemDPI();
+
+    void setFontRespectsSystemDPI(boolean b);
+
+    @AboutConfig
+    @Description("Font scale factor in percent. Default value is 100 which means no font scaling.")
+    @DefaultIntValue(100)
+    @RequiresRestart
+    int getFontScaleFactor();
+
+    void setFontScaleFactor(int b);
+
+    @AboutConfig
+    @Description("Disable animation and all animation threads. Optional value. Default value is true.")
+    @DefaultBooleanValue(true)
+    @RequiresRestart
+    boolean isAnimationEnabled();
+
+    void setAnimationEnabled(boolean b);
+
+    @AboutConfig
+    @Description("Enable/disable window opacity on Java 6u10 and above. A value of 'false' disables window opacity which means that the window corner background which is visible for non-rectangular windows disappear. Furthermore the shadow for popupMenus makes use of real translucent window. Some themes like SyntheticaSimple2D support translucent titlePanes if opacity is disabled. The property is ignored on JRE's below 6u10. Note: It is recommended to activate this feature only if your graphics hardware acceleration is supported by the JVM - a value of 'false' can affect application performance. Default value is false which means the translucency feature is enabled")
+    @DefaultBooleanValue(false)
+    @RequiresRestart
+    boolean isWindowOpaque();
+
+    void setWindowOpaque(boolean b);
 
 }

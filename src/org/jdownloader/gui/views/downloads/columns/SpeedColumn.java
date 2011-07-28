@@ -22,7 +22,7 @@ public class SpeedColumn extends ExtTextColumn<jd.plugins.PackageLinkNode> {
 
     public SpeedColumn() {
         super(_GUI._.SpeedColumn_SpeedColumn());
-        renderer.setHorizontalAlignment(SwingConstants.RIGHT);
+        rendererField.setHorizontalAlignment(SwingConstants.RIGHT);
     }
 
     @Override

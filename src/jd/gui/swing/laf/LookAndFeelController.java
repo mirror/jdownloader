@@ -17,8 +17,6 @@ package jd.gui.swing.laf;
 
 import java.util.ArrayList;
 
-import javax.swing.JDialog;
-import javax.swing.JFrame;
 import javax.swing.UIManager;
 import javax.swing.UIManager.LookAndFeelInfo;
 
@@ -280,10 +278,16 @@ public class LookAndFeelController {
      * Executes LAF dependend commands BEFORE initializing the LAF
      */
     private void preSetup(String className) {
-        boolean windowDeco = config.isWindowDecorationEnabled();
-        UIManager.put("Synthetica.window.decoration", windowDeco);
-        JFrame.setDefaultLookAndFeelDecorated(windowDeco);
-        JDialog.setDefaultLookAndFeelDecorated(windowDeco);
+
+        UIManager.put("Synthetica.window.decoration", false);
+        UIManager.put("Synthetica.text.antialias", config.isTextAntiAliasEnabled());
+        UIManager.put("Synthetica.font.respectSystemDPI", config.isFontRespectsSystemDPI());
+        UIManager.put("Synthetica.font.scaleFactor", config.getFontScaleFactor());
+        UIManager.put("Synthetica.animation.enabled", config.isAnimationEnabled());
+        UIManager.put("Synthetica.window.opaque", config.isWindowOpaque());
+
+        // JFrame.setDefaultLookAndFeelDecorated(windowDeco);
+        // JDialog.setDefaultLookAndFeelDecorated(windowDeco);
         /*
          * NOTE: This Licensee Information may only be used by AppWork UG. If
          * you like to create derived creation based on this sourcecode, you

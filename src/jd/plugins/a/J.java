@@ -26,7 +26,6 @@ import jd.config.SubConfiguration;
 import jd.crypt.JDCrypt;
 import jd.gui.UserIO;
 import jd.nutils.JDHash;
-import jd.nutils.io.JDIO;
 import jd.plugins.ContainerStatus;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
@@ -34,6 +33,8 @@ import jd.plugins.PluginForHost;
 import jd.plugins.PluginsC;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.IO;
 
 public class J extends PluginsC {
     public J(PluginWrapper wrapper) {
@@ -50,7 +51,7 @@ public class J extends PluginsC {
         if (JDUtilities.getRunType() != JDUtilities.RUNTYPE_LOCAL_JARED) return cs;
 
         try {
-            byte[] array = JDIO.readFileToByteArray(lc);
+            byte[] array = IO.readFile(lc);
 
             String defaultpw = SubConfiguration.getConfig("JDC_CONFIG").getStringProperty("password", "jddefault");
             String hexString = (JDHash.getMD5(UserIO.getInstance().requestInputDialog(UserIO.NO_COUNTDOWN, JDL.L("jd.gui.swing.jdgui.menu.actions.BackupLinkListAction.password", "Enter Encryption Password"), defaultpw)));

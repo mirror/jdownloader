@@ -137,4 +137,39 @@ public class GraphicalUserInterfaceSettingsValidator implements GraphicalUserInt
     public void setSortWarningTextEnabled(boolean b) {
     }
 
+    public boolean isTextAntiAliasEnabled() {
+        return false;
+    }
+
+    public void setTextAntiAliasEnabled(boolean b) {
+    }
+
+    public boolean isFontRespectsSystemDPI() {
+        return false;
+    }
+
+    public void setFontRespectsSystemDPI(boolean b) {
+    }
+
+    public int getFontScaleFactor() {
+        return 0;
+    }
+
+    public void setFontScaleFactor(int b) {
+    }
+
+    public boolean isAnimationEnabled() {
+        return false;
+    }
+
+    public void setAnimationEnabled(boolean b) {
+    }
+
+    public boolean isWindowOpaque() {
+        return false;
+    }
+
+    public void setWindowOpaque(boolean b) {
+    }
+
 }

@@ -18,7 +18,7 @@ public class AddedDateColumn extends ExtDateColumn<PackageLinkNode> {
 
     public AddedDateColumn() {
         super(_GUI._.added_date_column_title());
-        renderer.setHorizontalAlignment(SwingConstants.CENTER);
+        rendererField.setHorizontalAlignment(SwingConstants.CENTER);
 
     }
 

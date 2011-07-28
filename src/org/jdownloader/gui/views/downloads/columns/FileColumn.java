@@ -1,6 +1,7 @@
 package org.jdownloader.gui.views.downloads.columns;
 
 import javax.swing.BorderFactory;
+import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.border.Border;
 
@@ -42,19 +43,50 @@ public class FileColumn extends ExtTextColumn<PackageLinkNode> {
         return 250;
     }
 
-    public void configureRendererComponent(PackageLinkNode value, boolean isSelected, boolean hasFocus, int row, int column) {
-        if (value instanceof FilePackage) {
-            FilePackage fp = (FilePackage) value;
-            renderer.setBorder(null);
-            renderer.setText(fp.getName());
-            renderer.setIcon(fp.isExpanded() ? iconPackageOpen : iconPackageClosed);
+    @Override
+    public boolean isEditable(PackageLinkNode obj) {
+        return obj instanceof FilePackage;
+    }
+
+    @Override
+    protected void setStringValue(String value, PackageLinkNode object) {
+        if (object instanceof FilePackage) {
+            ((FilePackage) object).setName(value);
         } else {
-            DownloadLink dLink = (DownloadLink) value;
+            // ((DownloadLink) object).setName(value);
+        }
+    }
+
+    @Override
+    protected Icon getIcon(PackageLinkNode value) {
+        if (value instanceof FilePackage) {
+
+            return (((FilePackage) value).isExpanded() ? iconPackageOpen : iconPackageClosed);
+        } else {
+            return (((DownloadLink) value).getIcon());
+
+        }
+    }
+
+    public void configureRendererComponent(PackageLinkNode value, boolean isSelected, boolean hasFocus, int row, int column) {
+        super.configureRendererComponent(value, isSelected, hasFocus, row, column);
+        if (value instanceof FilePackage) {
+            renderer.setBorder(null);
+        } else {
             renderer.setBorder(leftGapBorder);
-            renderer.setIcon(dLink.getIcon());
-            renderer.setText(dLink.getName());
+
         }
 
+    }
+
+    @Override
+    public void configureEditorComponent(PackageLinkNode value, boolean isSelected, int row, int column) {
+        super.configureEditorComponent(value, isSelected, row, column);
+        if (value instanceof FilePackage) {
+            editor.setBorder(null);
+        } else {
+            editor.setBorder(leftGapBorder);
+        }
     }
 
     @Override

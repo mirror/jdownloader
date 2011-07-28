@@ -2088,4 +2088,13 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Your Download list is not in download order any more. \r\nClick twice on the highlighted column header,\r\nto return to default (Top-Down) order." })
     String DownloadsTable_actionPerformed_sortwarner_text();
+
+    @Default(lngs = { "en" }, values = { "'%s1' - Package" })
+    String PackagePropertiesDialog_PackagePropertiesDialog(String name);
+
+    @Default(lngs = { "en" }, values = { "Tip: Renaming Packages" })
+    String DownloadsTable_editCellAt_filepackage_title();
+
+    @Default(lngs = { "en" }, values = { "Renaming a Package is very simple. \r\nJust double click on a Package, enter the new name, and confim with <ENTER>" })
+    String DownloadsTable_editCellAt_filepackage_msg();
 }

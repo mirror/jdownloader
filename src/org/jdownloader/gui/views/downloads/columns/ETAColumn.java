@@ -38,7 +38,7 @@ public class ETAColumn extends ExtTextColumn<jd.plugins.PackageLinkNode> {
 
     public ETAColumn() {
         super(_GUI._.ETAColumn_ETAColumn());
-        renderer.setHorizontalAlignment(SwingConstants.RIGHT);
+        rendererField.setHorizontalAlignment(SwingConstants.RIGHT);
     }
 
     @Override

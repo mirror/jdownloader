@@ -12,8 +12,10 @@ import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.EventObject;
 
 import javax.swing.DropMode;
+import javax.swing.ImageIcon;
 import javax.swing.JMenu;
 import javax.swing.JPopupMenu;
 import javax.swing.JSeparator;
@@ -23,6 +25,7 @@ import javax.swing.Timer;
 
 import jd.event.ControlEvent;
 import jd.gui.swing.jdgui.BasicJDTable;
+import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.actions.ActionController;
 import jd.gui.swing.jdgui.actions.ToolBarAction;
 import jd.gui.swing.jdgui.menu.MenuAction;
@@ -443,33 +446,68 @@ public class DownloadsTable extends BasicJDTable<PackageLinkNode> {
         return moveUpAction;
     }
 
+    @Override
+    public boolean editCellAt(int row, int column) {
+
+        boolean ret = super.editCellAt(row, column);
+
+        return ret;
+    }
+
+    @Override
+    public boolean editCellAt(int row, int column, EventObject e) {
+        boolean ret = super.editCellAt(row, column, e);
+        if (ret) {
+
+            PackageLinkNode object = getExtTableModel().getObjectbyRow(row);
+            if (object instanceof FilePackage) {
+                String title = _GUI._.DownloadsTable_editCellAt_filepackage_title();
+                String msg = _GUI._.DownloadsTable_editCellAt_filepackage_msg();
+                ImageIcon icon = NewTheme.I().getIcon("wizard", 32);
+                JDGui.help(title, msg, icon);
+
+            }
+
+        }
+        return ret;
+    }
+
     public AppAction getMoveDownAction() {
         return moveDownAction;
     }
 
     @Override
-    protected void onHeaderSortClick(final MouseEvent e1) {
+    protected void onHeaderSortClick(final MouseEvent e1, final ExtColumn<PackageLinkNode> oldSortColumn, String oldSortId) {
+
         // own thread to
         new Timer(100, new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {
                 Timer t = (Timer) e.getSource();
                 t.stop();
+                if (oldSortColumn == getExtTableModel().getSortColumn()) return;
                 if (getExtTableModel().getSortColumn().getClass() != ListOrderIDColumn.class) {
-                    if (getExtTableModel().getSortColumn().getSortOrderIdentifier() == ExtColumn.SORT_ASC) {
-                        try {
 
-                            SimpleTextBallon d = new SimpleTextBallon(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.DownloadsTable_actionPerformed_sortwarner_title(getExtTableModel().getSortColumn().getName()), _GUI._.DownloadsTable_actionPerformed_sortwarner_text(), NewTheme.I().getIcon("sort", 32));
-                            d.setDesiredLocation(e1.getLocationOnScreen());
-                            Dialog.getInstance().showDialog(d);
-                        } catch (OffScreenException e1) {
-                            e1.printStackTrace();
-                        } catch (DialogClosedException e1) {
-                            e1.printStackTrace();
-                        } catch (DialogCanceledException e1) {
-                            e1.printStackTrace();
-                        }
+                    try {
+
+                        SimpleTextBallon d = new SimpleTextBallon(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.DownloadsTable_actionPerformed_sortwarner_title(getExtTableModel().getSortColumn().getName()), _GUI._.DownloadsTable_actionPerformed_sortwarner_text(), NewTheme.I().getIcon("sort", 32)) {
+
+                            @Override
+                            protected String getDontShowAgainKey() {
+                                return "downloadtabe_sortwarner";
+                            }
+
+                        };
+                        d.setDesiredLocation(e1.getLocationOnScreen());
+                        Dialog.getInstance().showDialog(d);
+                    } catch (OffScreenException e1) {
+                        e1.printStackTrace();
+                    } catch (DialogClosedException e1) {
+                        e1.printStackTrace();
+                    } catch (DialogCanceledException e1) {
+                        e1.printStackTrace();
                     }
+
                 }
 
             }
