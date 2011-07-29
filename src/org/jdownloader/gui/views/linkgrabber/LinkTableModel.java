@@ -21,7 +21,9 @@ public abstract class LinkTableModel extends ExtTableModel<PackageLinkNode> {
     private static final long serialVersionUID = 1L;
 
     public static enum TOGGLEMODE {
-        CURRENT, TOP, BOTTOM
+        CURRENT,
+        TOP,
+        BOTTOM
     }
 
     public LinkTableModel(String id) {
@@ -122,8 +124,6 @@ public abstract class LinkTableModel extends ExtTableModel<PackageLinkNode> {
      */
     @Override
     public ArrayList<PackageLinkNode> sort(final ArrayList<PackageLinkNode> data, ExtColumn<PackageLinkNode> column) {
-        boolean needToSort = true;
-
         this.sortColumn = column;
         String id = column.getSortOrderIdentifier();
         try {
@@ -137,7 +137,7 @@ public abstract class LinkTableModel extends ExtTableModel<PackageLinkNode> {
             ArrayList<PackageLinkNode> packages = new ArrayList<PackageLinkNode>(DownloadController.getInstance().size());
             packages.addAll(DownloadController.getInstance().getPackages());
             /* sort packages */
-            if (needToSort) Collections.sort(packages, column.getRowSorter());
+            Collections.sort(packages, column.getRowSorter());
             ArrayList<PackageLinkNode> newData = new ArrayList<PackageLinkNode>(Math.max(data.size(), packages.size()));
             for (PackageLinkNode node : packages) {
                 newData.add(node);
@@ -145,7 +145,7 @@ public abstract class LinkTableModel extends ExtTableModel<PackageLinkNode> {
                 ArrayList<PackageLinkNode> files = null;
                 synchronized (node) {
                     files = new ArrayList<PackageLinkNode>(((FilePackage) node).getControlledDownloadLinks());
-                    if (needToSort) Collections.sort(files, column.getRowSorter());
+                    Collections.sort(files, column.getRowSorter());
                 }
                 newData.addAll(files);
             }

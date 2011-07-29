@@ -108,10 +108,8 @@ public class DownloadsTableModel extends LinkTableModel {
      */
     @Override
     public ArrayList<PackageLinkNode> sort(final ArrayList<PackageLinkNode> data, ExtColumn<PackageLinkNode> column) {
-
         if (column == null || column.getSortOrderIdentifier() == SORT_DOWNLOADORDER) {
             this.sortColumn = null;
-
             try {
                 getStorage().put(ExtTableModel.SORT_ORDER_ID_KEY, (String) null);
                 getStorage().put(ExtTableModel.SORTCOLUMN_KEY, (String) null);
@@ -122,8 +120,6 @@ public class DownloadsTableModel extends LinkTableModel {
                 /* get all packages from controller */
                 ArrayList<PackageLinkNode> packages = new ArrayList<PackageLinkNode>(DownloadController.getInstance().size());
                 packages.addAll(DownloadController.getInstance().getPackages());
-                /* sort packages */
-
                 ArrayList<PackageLinkNode> newData = new ArrayList<PackageLinkNode>(Math.max(data.size(), packages.size()));
                 for (PackageLinkNode node : packages) {
                     newData.add(node);
@@ -131,17 +127,14 @@ public class DownloadsTableModel extends LinkTableModel {
                     ArrayList<PackageLinkNode> files = null;
                     synchronized (node) {
                         files = new ArrayList<PackageLinkNode>(((FilePackage) node).getControlledDownloadLinks());
-
                     }
                     newData.addAll(files);
                 }
                 return newData;
             }
-
         } else {
             return super.sort(data, column);
         }
-
     }
 
 }

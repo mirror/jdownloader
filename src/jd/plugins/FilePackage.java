@@ -123,8 +123,6 @@ public class FilePackage extends Property implements Serializable, PackageLinkNo
 
     private transient boolean                     isExpanded           = false;
 
-    private transient int                         listOrderID          = -1;
-
     private transient DownloadControllerInterface controlledby         = null;
     private transient long                        uniqueID             = -1;
 
@@ -164,21 +162,6 @@ public class FilePackage extends Property implements Serializable, PackageLinkNo
         if (obj == this) return true;
         if (!(obj instanceof FilePackage)) return false;
         return ((FilePackage) obj).uniqueID == this.uniqueID;
-    }
-
-    /**
-     * @return the listOrderID
-     */
-    public int getListOrderID() {
-        return listOrderID;
-    }
-
-    /**
-     * @param listOrderID
-     *            the listOrderID to set
-     */
-    public void setListOrderID(int listOrderID) {
-        this.listOrderID = listOrderID;
     }
 
     /**

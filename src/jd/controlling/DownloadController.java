@@ -123,7 +123,6 @@ public class DownloadController implements DownloadControllerListener, DownloadC
         for (final FilePackage filePackage : packages) {
             filePackage.setControlledby(this);
         }
-        refreshListOrderIDS();
         return;
     }
 
@@ -250,27 +249,6 @@ public class DownloadController implements DownloadControllerListener, DownloadC
             return new LinkedList<FilePackage>(packages);
         }
         throw new Exception("Linklist incompatible");
-    }
-
-    /**
-     * refresh all FilePackage and DownloadLink ListOrderIDs
-     */
-    private void refreshListOrderIDS() {
-        synchronized (ACCESSLOCK) {
-            int id = 0;
-            Iterator<FilePackage> it = packages.iterator();
-            while (it.hasNext()) {
-                FilePackage fp = it.next();
-                fp.setListOrderID(id++);
-                synchronized (fp) {
-                    Iterator<DownloadLink> it2 = fp.getControlledDownloadLinks().iterator();
-                    while (it2.hasNext()) {
-                        DownloadLink dl = it2.next();
-                        dl.setListOrderID(id++);
-                    }
-                }
-            }
-        }
     }
 
     public LinkedList<FilePackage> getPackages() {

@@ -172,24 +172,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
 
     private long                               finishedDate             = -1l;
 
-    private transient int                      listOrderID              = 0;
-
     private transient long                     uniqueID                 = -1;
-
-    /**
-     * @return the listOrderID
-     */
-    public int getListOrderID() {
-        return listOrderID;
-    }
-
-    /**
-     * @param listOrderID
-     *            the listOrderID to set
-     */
-    public void setListOrderID(int listOrderID) {
-        this.listOrderID = listOrderID;
-    }
 
     /**
      * Erzeugt einen neuen DownloadLink

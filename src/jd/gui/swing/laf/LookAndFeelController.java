@@ -293,7 +293,8 @@ public class LookAndFeelController {
             /* only windows opaque works fine */
             UIManager.put("Synthetica.window.opaque", config.isWindowOpaque());
         } else {
-            UIManager.put("Synthetica.window.opaque", false);
+            /* must be true to disable it..strange world ;) */
+            UIManager.put("Synthetica.window.opaque", true);
         }
         /*
          * NOTE: This Licensee Information may only be used by AppWork UG. If
