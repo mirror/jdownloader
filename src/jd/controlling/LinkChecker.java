@@ -30,8 +30,8 @@ public class LinkChecker {
             for (DownloadLink link : links) {
                 String host = link.getHost();
 
-                if ("DirectHTTP".equalsIgnoreCase(host) || "http links".equalsIgnoreCase(host)) {
-                    /* direct links are divided by their hostname */
+                if ("ftp".equalsIgnoreCase(host) || "DirectHTTP".equalsIgnoreCase(host) || "http links".equalsIgnoreCase(host)) {
+                    /* direct and ftp links are divided by their hostname */
                     String specialHost = Browser.getHost(link.getDownloadURL());
                     if (specialHost != null) host = specialHost;
                 }
@@ -128,8 +128,8 @@ public class LinkChecker {
                                         LinkedList<LinkCheckJob> nextJobs = jobs.get(threadHost);
                                         if (nextJobs != null && nextJobs.size() > 0) {
                                             /* reset stopDelay */
-                                            System.out.println("got new jobs");
-                                            stopDelay = 10;
+                                            // System.out.println("got new jobs");
+                                            stopDelay = 3;
                                             currentJobList.addAll(nextJobs);
                                             for (LinkCheckJob nextJob : nextJobs) {
                                                 /* add links from jobs */
@@ -193,9 +193,10 @@ public class LinkChecker {
                                     LinkedList<LinkCheckJob> stopCheck = jobs.get(threadHost);
                                     if (stopCheck == null || stopCheck.size() == 0) {
                                         stopDelay--;
-                                        System.out.println("only " + stopDelay + " left to stop");
+                                        // System.out.println("only " +
+                                        // stopDelay + " left to stop");
                                         if (stopDelay == 0) {
-                                            System.out.println("thread died");
+                                            // System.out.println("thread died");
                                             checkThreads.remove(threadHost);
                                             return;
                                         }
