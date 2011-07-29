@@ -3,24 +3,17 @@ package jd.dynamics;
 import java.awt.Cursor;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
-import java.io.File;
-import java.io.IOException;
 import java.net.URL;
 
-import javax.imageio.ImageIO;
 import javax.swing.BorderFactory;
 import javax.swing.ImageIcon;
 import javax.swing.JDialog;
 import javax.swing.JLabel;
 
-import jd.JDInitFlags;
-import jd.config.SubConfiguration;
 import jd.controlling.DynamicPluginInterface;
 import jd.gui.swing.jdgui.JDGui;
-import jd.http.Browser;
 import jd.nutils.Screen;
 import jd.nutils.nativeintegration.LocalBrowser;
-import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
 
 public class Facebook extends DynamicPluginInterface {
@@ -28,41 +21,43 @@ public class Facebook extends DynamicPluginInterface {
     @Override
     public void execute() {
 
-        try {
-            Thread.sleep(5000);
-
-            final String id = "2";
-            if (SubConfiguration.getConfig("facebook").getGenericProperty(id, false) && JDInitFlags.SWITCH_DEBUG == false) {
-                // Schon durchgefuehrt
-
-                return;
-            }
-            SubConfiguration.getConfig("facebook").setProperty(id, true);
-
-            SubConfiguration.getConfig("facebook").save();
-            File fb = JDUtilities.getResourceFile("tmp/fb.png");
-            File fbMouseOver = JDUtilities.getResourceFile("tmp/fbmo.png");
-            fb.getParentFile().mkdirs();
-
-            fb.deleteOnExit();
-            fbMouseOver.deleteOnExit();
-
-            Browser.download(fb, "http://update0.jdownloader.org/facebook.png");
-            Browser.download(fbMouseOver, "http://update0.jdownloader.org/facebook_mo.png");
-
-            final ImageIcon ico = new ImageIcon(ImageIO.read(fb));
-            final ImageIcon icoMO = new ImageIcon(ImageIO.read(fbMouseOver));
-
-            new FBDialog(ico, icoMO);
-
-        } catch (final InterruptedException e1) {
-            e1.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        // try {
+        // Thread.sleep(5000);
+        //
+        // final String id = "2";
+        // if (SubConfiguration.getConfig("facebook").getGenericProperty(id,
+        // false) && JDInitFlags.SWITCH_DEBUG == false) {
+        // // Schon durchgefuehrt
+        //
+        // return;
+        // }
+        // SubConfiguration.getConfig("facebook").setProperty(id, true);
+        //
+        // SubConfiguration.getConfig("facebook").save();
+        // File fb = JDUtilities.getResourceFile("tmp/fb.png");
+        // File fbMouseOver = JDUtilities.getResourceFile("tmp/fbmo.png");
+        // fb.getParentFile().mkdirs();
+        //
+        // fb.deleteOnExit();
+        // fbMouseOver.deleteOnExit();
+        //
+        // Browser.download(fb, "http://update0.jdownloader.org/facebook.png");
+        // Browser.download(fbMouseOver,
+        // "http://update0.jdownloader.org/facebook_mo.png");
+        //
+        // final ImageIcon ico = new ImageIcon(ImageIO.read(fb));
+        // final ImageIcon icoMO = new ImageIcon(ImageIO.read(fbMouseOver));
+        //
+        // new FBDialog(ico, icoMO);
+        //
+        // } catch (final InterruptedException e1) {
+        // e1.printStackTrace();
+        // } catch (IOException e) {
+        // e.printStackTrace();
+        //
+        // } catch (Exception e) {
+        // e.printStackTrace();
+        // }
     }
 
     private static class FBDialog extends JDialog {
