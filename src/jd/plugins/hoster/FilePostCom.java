@@ -29,11 +29,11 @@ import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -125,6 +125,7 @@ public class FilePostCom extends PluginForHost {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(false);
         br.getPage(downloadLink.getDownloadURL());
+        if (br.containsHTML("We are sorry, the server where this file is")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Serverissue", 60 * 60 * 1000l);
         if (br.containsHTML("(>Your IP address is already downloading a file at the moment|>Please wait till the download completion and try again)")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Too many simultan downloads", 5 * 60 * 1000l);
         String premiumlimit = br.getRegex(">Files over (.*?) can be downloaded by premium members only").getMatch(0);
         if (premiumlimit != null) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.filepostcom.only4premium", "Files over " + premiumlimit + " are only downloadable for premium users"));
@@ -224,6 +225,7 @@ public class FilePostCom extends PluginForHost {
         login(account, false);
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
+        if (br.containsHTML("We are sorry, the server where this file is")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Serverissue", 60 * 60 * 1000l);
         String dllink = br.getRegex("<button onclick=\"download_file\\(\\'(http://.*?)\\'\\)").getMatch(0);
         if (dllink == null) dllink = br.getRegex("\\'(http://fs\\d+\\.filepost\\.com/get_file/.*?)\\'").getMatch(0);
         if (dllink == null) {

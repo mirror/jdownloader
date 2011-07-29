@@ -34,6 +34,7 @@ import org.appwork.storage.TypeRef;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Application;
 import org.appwork.utils.logging.Log;
+import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 
@@ -245,6 +246,7 @@ public class LookAndFeelController {
         String fontName = config.getFontName();
         if (isSynthetica()) {
             try {
+                if ("default".equalsIgnoreCase(fontName)) fontName = de.javasoft.plaf.synthetica.SyntheticaLookAndFeel.getFontName();
                 de.javasoft.plaf.synthetica.SyntheticaLookAndFeel.setFont(fontName, (de.javasoft.plaf.synthetica.SyntheticaLookAndFeel.getFontSize() * fontSize) / 100);
             } catch (final Throwable e) {
                 Log.exception(e);
@@ -287,8 +289,12 @@ public class LookAndFeelController {
         UIManager.put("Synthetica.font.respectSystemDPI", config.isFontRespectsSystemDPI());
         UIManager.put("Synthetica.font.scaleFactor", config.getFontScaleFactor());
         UIManager.put("Synthetica.animation.enabled", config.isAnimationEnabled());
-        UIManager.put("Synthetica.window.opaque", config.isWindowOpaque());
-
+        if (CrossSystem.isWindows()) {
+            /* only windows opaque works fine */
+            UIManager.put("Synthetica.window.opaque", config.isWindowOpaque());
+        } else {
+            UIManager.put("Synthetica.window.opaque", false);
+        }
         /*
          * NOTE: This Licensee Information may only be used by AppWork UG. If
          * you like to create derived creation based on this sourcecode, you

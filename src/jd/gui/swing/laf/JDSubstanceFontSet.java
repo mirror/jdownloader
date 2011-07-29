@@ -15,12 +15,21 @@ public class JDSubstanceFontSet implements FontSet {
 
     public JDSubstanceFontSet(final FontSet defaultFontSet2, String fontName, int fontSize) {
         this.defaultFontSet = defaultFontSet2;
-        this.controlFont = new FontUIResource(fontName, this.defaultFontSet.getControlFont().getStyle(), (this.defaultFontSet.getControlFont().getSize() * fontSize) / 100);
-        this.menuFont = new FontUIResource(fontName, this.defaultFontSet.getMenuFont().getStyle(), (this.defaultFontSet.getMenuFont().getSize() * fontSize) / 100);
-        this.messageFont = new FontUIResource(fontName, this.defaultFontSet.getMessageFont().getStyle(), (this.defaultFontSet.getMessageFont().getSize() * fontSize) / 100);
-        this.smallFont = new FontUIResource(fontName, this.defaultFontSet.getSmallFont().getStyle(), (this.defaultFontSet.getSmallFont().getSize() * fontSize) / 100);
-        this.titleFont = new FontUIResource(fontName, this.defaultFontSet.getTitleFont().getStyle(), (this.defaultFontSet.getTitleFont().getSize() * fontSize) / 100);
-        this.windowTitleFont = new FontUIResource(fontName, this.defaultFontSet.getWindowTitleFont().getStyle(), (this.defaultFontSet.getWindowTitleFont().getSize() * fontSize) / 100);
+        if ("default".equalsIgnoreCase(fontName)) {
+            this.controlFont = new FontUIResource(this.defaultFontSet.getControlFont().getFontName(), this.defaultFontSet.getControlFont().getStyle(), (this.defaultFontSet.getControlFont().getSize() * fontSize) / 100);
+            this.menuFont = new FontUIResource(this.defaultFontSet.getMenuFont().getFontName(), this.defaultFontSet.getMenuFont().getStyle(), (this.defaultFontSet.getMenuFont().getSize() * fontSize) / 100);
+            this.messageFont = new FontUIResource(this.defaultFontSet.getMessageFont().getFontName(), this.defaultFontSet.getMessageFont().getStyle(), (this.defaultFontSet.getMessageFont().getSize() * fontSize) / 100);
+            this.smallFont = new FontUIResource(this.defaultFontSet.getSmallFont().getFontName(), this.defaultFontSet.getSmallFont().getStyle(), (this.defaultFontSet.getSmallFont().getSize() * fontSize) / 100);
+            this.titleFont = new FontUIResource(this.defaultFontSet.getTitleFont().getFontName(), this.defaultFontSet.getTitleFont().getStyle(), (this.defaultFontSet.getTitleFont().getSize() * fontSize) / 100);
+            this.windowTitleFont = new FontUIResource(this.defaultFontSet.getWindowTitleFont().getFontName(), this.defaultFontSet.getWindowTitleFont().getStyle(), (this.defaultFontSet.getWindowTitleFont().getSize() * fontSize) / 100);
+        } else {
+            this.controlFont = new FontUIResource(fontName, this.defaultFontSet.getControlFont().getStyle(), (this.defaultFontSet.getControlFont().getSize() * fontSize) / 100);
+            this.menuFont = new FontUIResource(fontName, this.defaultFontSet.getMenuFont().getStyle(), (this.defaultFontSet.getMenuFont().getSize() * fontSize) / 100);
+            this.messageFont = new FontUIResource(fontName, this.defaultFontSet.getMessageFont().getStyle(), (this.defaultFontSet.getMessageFont().getSize() * fontSize) / 100);
+            this.smallFont = new FontUIResource(fontName, this.defaultFontSet.getSmallFont().getStyle(), (this.defaultFontSet.getSmallFont().getSize() * fontSize) / 100);
+            this.titleFont = new FontUIResource(fontName, this.defaultFontSet.getTitleFont().getStyle(), (this.defaultFontSet.getTitleFont().getSize() * fontSize) / 100);
+            this.windowTitleFont = new FontUIResource(fontName, this.defaultFontSet.getWindowTitleFont().getStyle(), (this.defaultFontSet.getWindowTitleFont().getSize() * fontSize) / 100);
+        }
     }
 
     public FontUIResource getControlFont() {

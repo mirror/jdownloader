@@ -26,7 +26,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wupload.com" }, urls = { "http://(www\\.)?wupload\\.com/folder/\\d+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wupload.com" }, urls = { "http://(www\\.)?wupload\\.com/folder/[0-9a-z]+" }, flags = { 0 })
 public class WUploadComFolder extends PluginForDecrypt {
 
     public WUploadComFolder(PluginWrapper wrapper) {
@@ -42,7 +42,7 @@ public class WUploadComFolder extends PluginForDecrypt {
         if (br.containsHTML("(>Error 9002|>The requested folder is not public|>If you own this folder, make it public by editing the)")) throw new DecrypterException("Folder is not public");
         String[] links = br.getRegex("class=\"passwordIcon\" title=\"\"></span><a href=\"(http://.*?)\"").getColumn(0);
         if (links == null || links.length == 0) links = br.getRegex("\"(http://(www\\.)?wupload\\.com/file/\\d+/.*?)\"").getColumn(0);
-        String[] folders = br.getRegex("\"(http://(www\\.)?wupload\\.com/folder/\\d+)\"").getColumn(0);
+        String[] folders = br.getRegex("\"(http://(www\\.)?wupload\\.com/folder/[0-9a-z]+)\"").getColumn(0);
         if ((links == null || links.length == 0) && (folders == null || folders.length == 0)) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
