@@ -19,7 +19,6 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.http.Cookie;
@@ -30,11 +29,11 @@ import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -275,7 +274,7 @@ public class UploadingCom extends PluginForHost {
         logger.info("Submitting form");
         try {
             // POSTing to the wrong link causes MAJOR issues...
-            br.postPage(link.getDownloadURL().replace("www.", "") + "/", "action=second_page&file_id=" + fileID + "&code=" + code);
+            br.postPage(link.getDownloadURL().replace("www.", "") + "/", "action=second_page&file_id=" + fileID + "&code=" + code + "&choose_payment_method=payment&LMI_PAYMENT_AMOUNT=%23amount%23&LMI_PAYMENT_DESC=Uploading.com+Premuim+Membership&LMI_PAYEE_PURSE=&LMI_SIM_MODE=0&user_id=%23user_id%23&proceed_without_registration=on");
         } catch (Exception e) {
             // This is the "disconnected" error...
             logger.warning("FATAL error happened with link: " + link.getDownloadURL());
@@ -436,13 +435,8 @@ public class UploadingCom extends PluginForHost {
         if (starttimer != null) {
             sleep((Long.parseLong(starttimer) + 2) * 1000l, downloadLink);
         }
-        if (fileID != null) {
-            fileID = "&file_id=" + fileID;
-        } else {
-            fileID = "";
-        }
         br.getHeaders().put("Content-Type", "application/octet-stream; charset=UTF-8");
-        br.postPage("http://uploading.com/files/get/?JsHttpRequest=" + System.currentTimeMillis() + "-xml", "code=" + code + "&action=get_link&pass=undefined" + fileID + captcha);
+        br.postPage("http://uploading.com/files/get/?JsHttpRequest=" + System.currentTimeMillis() + "-xml", "action=get_link&code=" + code + "&pass=" + captcha);
         redirect = br.getRegex("link\":( )?\"(http.*?)\"").getMatch(1);
         if (redirect != null) {
             redirect = redirect.replaceAll("\\\\/", "/");

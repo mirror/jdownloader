@@ -181,8 +181,6 @@ public class VKontakteRu extends PluginForDecrypt implements ProgressControllerL
         synchronized (LOCK) {
             username = this.getPluginConfig().getStringProperty("user", null);
             password = this.getPluginConfig().getStringProperty("pass", null);
-            username = "nnina084@gmail.com";
-            password = "zwiejek";
             for (int i = 0; i < 3; i++) {
                 if ((username == null && password == null) || !loginSite(username, password) || br.getCookie(POSTPAGE, "remixsid") == null) {
                     this.getPluginConfig().setProperty("user", Property.NULL);

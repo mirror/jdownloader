@@ -22,11 +22,13 @@ import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
+import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "justin.tv" }, urls = { "http://(www\\.)?(justin\\.tv|(de\\.)?twitchtv\\.com)/[a-z0-9\\-_]+/(b/\\d+|videos(\\?page=\\d+)?)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "justin.tv" }, urls = { "http://(www\\.)?(justin\\.tv|(de\\.)?(twitchtv\\.com|twitch\\.tv))/[a-z0-9\\-_]+/(b/\\d+|videos(\\?page=\\d+)?)" }, flags = { 0 })
 public class JustinTvDecrypt extends PluginForDecrypt {
 
     public JustinTvDecrypt(PluginWrapper wrapper) {
@@ -38,7 +40,7 @@ public class JustinTvDecrypt extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         // twitchtv belongs to justin.tv
-        String parameter = param.toString().replaceAll("((de\\.)?twitchtv\\.com)", "justin.tv");
+        String parameter = param.toString().replaceAll("((de\\.)?(twitchtv\\.com|twitch\\.tv))", "justin.tv");
         br.setFollowRedirects(true);
         br.getPage(parameter);
         if (parameter.contains("/videos")) {
@@ -48,6 +50,7 @@ public class JustinTvDecrypt extends PluginForDecrypt {
             for (String dl : links)
                 decryptedLinks.add(createDownloadlink(HOSTURL + dl));
         } else {
+            if (br.getURL().contains("/videos")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
             String filename = br.getRegex("autocomplete=\"off\"[\t\n\r ]+value=\"(.*?)\"").getMatch(0);
             if (filename == null) filename = br.getRegex("<span id=\"gameselector_meta_game\">[\t\n\r ]+\\&raquo;(.*?)</span>").getMatch(0);
             DownloadLink singleLink = createDownloadlink(parameter.replace("justin", "justindecrypted"));

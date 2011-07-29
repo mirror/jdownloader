@@ -21,15 +21,15 @@ import java.io.IOException;
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "chip.de" }, urls = { "http://[\\w\\.]*?chip\\.de/downloads/.*?_\\d+\\.html" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "chip.de" }, urls = { "http://(www\\.)?(chip\\.de/downloads|download\\.chip\\.eu/.{2})/.*?_\\d+\\.html" }, flags = { 0 })
 public class ChipDe extends PluginForHost {
 
     public ChipDe(PluginWrapper wrapper) {
@@ -41,12 +41,16 @@ public class ChipDe extends PluginForHost {
         return "http://www.chip.de/s_specials/c1_static_special_index_13162756.html";
     }
 
+    // Links sind Sprachen zugeordnet. Leider kann man diese nicht alle auf eine
+    // Sprache abändern. Somit muss man alle Sprachen manuell einbauen oder
+    // bessere Regexes finden, die überall funktionieren
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
+        br.setCustomCharset("utf-8");
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("Seite nicht gefunden")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<title>(.*?)- Download - CHIP Online</title>").getMatch(0);
+        String filename = br.getRegex("<title>(.*?)\\- Download \\- CHIP Online</title>").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("somtr\\.prop18=\"(.*?)\";").getMatch(0);
             if (filename == null) {
@@ -54,40 +58,48 @@ public class ChipDe extends PluginForHost {
                 if (filename == null) {
                     filename = br.getRegex("name=\"ueberschrift\" value=\"(.*?)\"").getMatch(0);
                     if (filename == null) {
-                        filename = br.getRegex("var cxo_adtech_page_title = '(.*?)';").getMatch(0);
+                        filename = br.getRegex("var cxo_adtech_page_title = \\'(.*?)\\';").getMatch(0);
                     }
                 }
             }
         }
         String filesize = br.getRegex("class=\"col1\">Dateigr\\&ouml;\\&szlig;e:</p>.*?<p class=\"col2\">(.*?)</p>").getMatch(0);
+        if (filesize == null) filesize = br.getRegex("<dt>(File size:|Размер файла:|Dimensioni:|Dateigröße:)<br /></dt>[\t\n\r ]+<dd>(.*?)<br /></dd>").getMatch(1);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         link.setName(filename.trim());
         link.setDownloadSize(SizeFormatter.getSize(filesize));
+        String md5 = br.getRegex("<dt>(Контрольная сумма \\(MD 5\\):|Checksum:|Prüfsumme:)<br /></dt>[\t\n\r ]+<dd>(.*?)<br /></dd>").getMatch(1);
+        if (md5 != null) link.setMD5Hash(md5);
         return AvailableStatus.TRUE;
     }
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        String step1 = br.getRegex("class=\"dl-btn\"><a href=\"(http.*?)\"").getMatch(0);
+        String step1 = br.getRegex("class=\"dl\\-btn\"><a href=\"(http.*?)\"").getMatch(0);
         if (step1 == null) {
             step1 = br.getRegex("<h2 class=\"item hProduct\"><a href=\"(http.*?)\"").getMatch(0);
             if (step1 == null) {
                 step1 = br.getRegex("\"(http://www\\.chip\\.de/downloads/.*?downloads_auswahl_\\d+\\.html.*?)\"").getMatch(0);
+                if (step1 == null) step1 = br.getRegex("\"(/.{2}/download_getfile_.*?)\"").getMatch(0);
             }
         }
         if (step1 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (downloadLink.getDownloadURL().contains("download.chip.eu") && !step1.contains("download.chip.eu")) step1 = "http://download.chip.eu" + step1;
         br.getPage(step1);
-        String step2 = br.getRegex("<div class=\"dl-faktbox-row( bottom)?\">.*?<a href=\"(http.*?)\"").getMatch(1);
-        if (step2 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        br.getPage(step2);
-        String dllink = br.getRegex("Falls der Download nicht beginnt,\\&nbsp;<a class=\"b\" href=\"(http.*?)\"").getMatch(0);
+        String dllink = br.getRegex("<div id=\"start_download_v1\">.{10,300} <a href=\"(http://.*?)\"").getMatch(0);
         if (dllink == null) {
-            dllink = br.getRegex("class=\"dl-btn\"><a href=\"(http.*?)\"").getMatch(0);
+            String step2 = br.getRegex("<div class=\"dl\\-faktbox\\-row( bottom)?\">.*?<a href=\"(http.*?)\"").getMatch(1);
+            if (step2 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            br.getPage(step2);
+            dllink = br.getRegex("Falls der Download nicht beginnt,\\&nbsp;<a class=\"b\" href=\"(http.*?)\"").getMatch(0);
             if (dllink == null) {
-                dllink = br.getRegex("</span></a></div><a href=\"(http.*?)\"").getMatch(0);
+                dllink = br.getRegex("class=\"dl\\-btn\"><a href=\"(http.*?)\"").getMatch(0);
                 if (dllink == null) {
-                    dllink = br.getRegex("\"(http://dl\\.cdn\\.chip\\.de/downloads/\\d+/.*?)\"").getMatch(0);
+                    dllink = br.getRegex("</span></a></div><a href=\"(http.*?)\"").getMatch(0);
+                    if (dllink == null) {
+                        dllink = br.getRegex("\"(http://dl\\.cdn\\.chip\\.de/downloads/\\d+/.*?)\"").getMatch(0);
+                    }
                 }
             }
         }
