@@ -16,15 +16,12 @@ import java.util.EventObject;
 
 import javax.swing.DropMode;
 import javax.swing.ImageIcon;
-import javax.swing.JMenu;
 import javax.swing.JPopupMenu;
 import javax.swing.JSeparator;
 import javax.swing.KeyStroke;
-import javax.swing.ListSelectionModel;
 import javax.swing.Timer;
 
 import jd.event.ControlEvent;
-import jd.gui.swing.jdgui.BasicJDTable;
 import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.actions.ActionController;
 import jd.gui.swing.jdgui.actions.ToolBarAction;
@@ -42,13 +39,11 @@ import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.appwork.utils.swing.dialog.OffScreenException;
 import org.appwork.utils.swing.dialog.SimpleTextBallon;
-import org.appwork.utils.swing.table.DropHighlighter;
 import org.appwork.utils.swing.table.ExtColumn;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.gui.views.DownloadTableAction;
-import org.jdownloader.gui.views.downloads.columns.FileColumn;
-import org.jdownloader.gui.views.downloads.columns.ListOrderIDColumn;
+import org.jdownloader.gui.views.components.linktable.LinkTable;
+import org.jdownloader.gui.views.downloads.DownloadTableAction;
 import org.jdownloader.gui.views.downloads.context.CheckStatusAction;
 import org.jdownloader.gui.views.downloads.context.CopyPasswordAction;
 import org.jdownloader.gui.views.downloads.context.CopyURLAction;
@@ -75,36 +70,43 @@ import org.jdownloader.gui.views.downloads.context.StopsignAction;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 
-public class DownloadsTable extends BasicJDTable<PackageLinkNode> {
+public class DownloadsTable extends LinkTable {
 
-    private static final long   serialVersionUID = 8843600834248098174L;
-    private DownloadsTableModel tableModel       = null;
-    private DownloadTableAction moveTopAction;
-    private DownloadTableAction moveUpAction;
-    private DownloadTableAction moveDownAction;
-    private DownloadTableAction moveToBottomAction;
-    private Color               sortNotifyColor;
+    private static final long serialVersionUID = 8843600834248098174L;
+
+    private Color             sortNotifyColor;
 
     public DownloadsTable(final DownloadsTableModel tableModel) {
         super(tableModel);
-        this.tableModel = tableModel;
-        this.setShowVerticalLines(false);
-        this.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
+
         if (Application.getJavaVersion() >= Application.JAVA16) {
             this.setTransferHandler(new DownloadsTableTransferHandler(this));
             this.setDragEnabled(true);
             this.setDropMode(DropMode.ON_OR_INSERT_ROWS);
         }
 
-        initActions();
-
-        onSelectionChanged(null);
         if (JsonConfig.create(GraphicalUserInterfaceSettings.class).isSortColumnHighlightEnabled()) {
             sortNotifyColor = Color.ORANGE;
         }
+        initActions();
+        onSelectionChanged(null);
+    }
 
-        this.addRowHighlighter(new DropHighlighter(null, new Color(27, 164, 191, 75)));
-
+    @Override
+    protected void onSelectionChanged(ArrayList<PackageLinkNode> selected) {
+        if (selected == null || selected.size() == 0) {
+            // disable move buttons
+            moveDownAction.setEnabled(false);
+            moveToBottomAction.setEnabled(false);
+            moveTopAction.setEnabled(false);
+            moveUpAction.setEnabled(false);
+        } else {
+            // TODO
+            moveDownAction.setEnabled(true);
+            moveToBottomAction.setEnabled(true);
+            moveTopAction.setEnabled(true);
+            moveUpAction.setEnabled(true);
+        }
     }
 
     @Override
@@ -217,7 +219,27 @@ public class DownloadsTable extends BasicJDTable<PackageLinkNode> {
             }
 
         };
+    }
 
+    private DownloadTableAction moveTopAction;
+    private DownloadTableAction moveUpAction;
+    private DownloadTableAction moveDownAction;
+    private DownloadTableAction moveToBottomAction;
+
+    public AppAction getMoveDownAction() {
+        return moveDownAction;
+    }
+
+    public AppAction getMoveTopAction() {
+        return moveTopAction;
+    }
+
+    public AppAction getMoveToBottomAction() {
+        return moveToBottomAction;
+    }
+
+    public AppAction getMoveUpAction() {
+        return moveUpAction;
     }
 
     @Override
@@ -227,110 +249,12 @@ public class DownloadsTable extends BasicJDTable<PackageLinkNode> {
     }
 
     @Override
-    protected void onSelectionChanged(ArrayList<PackageLinkNode> selected) {
-        if (selected == null || selected.size() == 0) {
-            // disable move buttons
-            moveDownAction.setEnabled(false);
-            moveToBottomAction.setEnabled(false);
-            moveTopAction.setEnabled(false);
-            moveUpAction.setEnabled(false);
-        } else {
-            // TODO
-            moveDownAction.setEnabled(true);
-            moveToBottomAction.setEnabled(true);
-            moveTopAction.setEnabled(true);
-            moveUpAction.setEnabled(true);
-        }
-    }
-
-    @Override
-    protected void onSingleClick(MouseEvent e, final PackageLinkNode obj) {
-        if (obj instanceof FilePackage) {
-            final ExtColumn<PackageLinkNode> column = this.getExtColumnAtPoint(e.getPoint());
-
-            if (FileColumn.class == column.getClass()) {
-                Rectangle bounds = column.getBounds();
-                if (e.getPoint().x - bounds.x < 30) {
-                    if (e.isControlDown() && !e.isShiftDown()) {
-                        tableModel.toggleFilePackageExpand((FilePackage) obj, DownloadsTableModel.TOGGLEMODE.BOTTOM);
-                    } else if (e.isControlDown() && e.isShiftDown()) {
-                        tableModel.toggleFilePackageExpand((FilePackage) obj, DownloadsTableModel.TOGGLEMODE.TOP);
-                    } else {
-                        tableModel.toggleFilePackageExpand((FilePackage) obj, DownloadsTableModel.TOGGLEMODE.CURRENT);
-                    }
-                    return;
-                }
-            }
-        }
-    }
-
-    /**
-     * create new table model data
-     */
-    public void recreateModel() {
-        tableModel.recreateModel();
-    }
-
-    /**
-     * refresh only the table model data
-     */
-    public void refreshModel() {
-        tableModel.refreshModel();
-    }
-
-    @Override
-    protected JPopupMenu onContextMenu(final JPopupMenu popup, final PackageLinkNode contextObject, final ArrayList<PackageLinkNode> selection, ExtColumn<PackageLinkNode> column) {
+    protected JPopupMenu onContextMenu(JPopupMenu popup, final PackageLinkNode contextObject, final ArrayList<PackageLinkNode> selection, ExtColumn<PackageLinkNode> column) {
         /* split selection into downloadlinks and filepackages */
-        final ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
-        final ArrayList<FilePackage> fps = new ArrayList<FilePackage>();
-        if (selection != null) {
-            for (final PackageLinkNode node : selection) {
-                if (node instanceof DownloadLink) {
-                    if (!links.contains(node)) links.add((DownloadLink) node);
-                } else {
-                    if (!fps.contains(node)) fps.add((FilePackage) node);
-                    synchronized (node) {
-                        for (final DownloadLink dl : ((FilePackage) node).getControlledDownloadLinks()) {
-                            if (!links.contains(dl)) {
-                                links.add(dl);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        final RatedMenuController items = this.createMenuItems(contextObject, 0, links, fps);
-        items.init(10);
-        while (items.getMain().size() > 0) {
-            items.getMain().remove(0).addToPopup(popup);
-        }
-        final JMenu pop = new JMenu(_GUI._.gui_table_contextmenu_more());
-        popup.add(pop);
-        pop.setIcon(NewTheme.I().getIcon("settings", 16));
-        while (items.getSub().size() > 0) {
-            items.getSub().remove(0).addToPopup(pop);
-        }
+        popup = super.onContextMenu(popup, contextObject, selection, column);
         popup.add(new JSeparator());
         popup.add(new EditLinkOrPackageAction(this, contextObject));
         return popup;
-    }
-
-    protected ArrayList<DownloadLink> getAllDownloadLinks(ArrayList<PackageLinkNode> selectedObjects) {
-        final ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
-        for (final PackageLinkNode node : selectedObjects) {
-            if (node instanceof DownloadLink) {
-                if (!links.contains(node)) links.add((DownloadLink) node);
-            } else {
-                synchronized (node) {
-                    for (final DownloadLink dl : ((FilePackage) node).getControlledDownloadLinks()) {
-                        if (!links.contains(dl)) {
-                            links.add(dl);
-                        }
-                    }
-                }
-            }
-        }
-        return links;
     }
 
     @Override
@@ -348,7 +272,8 @@ public class DownloadsTable extends BasicJDTable<PackageLinkNode> {
      * @param sfp
      * @return
      */
-    private RatedMenuController createMenuItems(final Object obj, final int col, final ArrayList<DownloadLink> alllinks, final ArrayList<FilePackage> sfp) {
+    @Override
+    protected RatedMenuController createMenuItems(PackageLinkNode obj, int col, ArrayList<DownloadLink> alllinks, ArrayList<FilePackage> sfp) {
         final RatedMenuController ret = new RatedMenuController();
 
         ret.add(new RatedMenuItem(new StopsignAction(obj), 0));
@@ -419,18 +344,6 @@ public class DownloadsTable extends BasicJDTable<PackageLinkNode> {
         return ret;
     }
 
-    public AppAction getMoveTopAction() {
-        return moveTopAction;
-    }
-
-    public AppAction getMoveToBottomAction() {
-        return moveToBottomAction;
-    }
-
-    public AppAction getMoveUpAction() {
-        return moveUpAction;
-    }
-
     @Override
     public boolean editCellAt(int row, int column) {
 
@@ -457,10 +370,6 @@ public class DownloadsTable extends BasicJDTable<PackageLinkNode> {
         return ret;
     }
 
-    public AppAction getMoveDownAction() {
-        return moveDownAction;
-    }
-
     @Override
     protected void onHeaderSortClick(final MouseEvent e1, final ExtColumn<PackageLinkNode> oldSortColumn, String oldSortId) {
 
@@ -471,7 +380,7 @@ public class DownloadsTable extends BasicJDTable<PackageLinkNode> {
                 Timer t = (Timer) e.getSource();
                 t.stop();
                 if (oldSortColumn == getExtTableModel().getSortColumn()) return;
-                if (getExtTableModel().getSortColumn().getClass() != ListOrderIDColumn.class) {
+                if (getExtTableModel().getSortColumn() != null) {
 
                     try {
 
@@ -500,6 +409,10 @@ public class DownloadsTable extends BasicJDTable<PackageLinkNode> {
 
     }
 
+    public boolean isDownloadOrder() {
+        return getExtTableModel().getSortColumn() == null;
+    }
+
     @Override
     public void paintComponent(Graphics g) {
         super.paintComponent(g);
@@ -508,8 +421,9 @@ public class DownloadsTable extends BasicJDTable<PackageLinkNode> {
         Composite comp = g2.getComposite();
         final Rectangle visibleRect = this.getVisibleRect();
         Rectangle first;
-
-        int index = getExtTableModel().getSortColumn().getIndex();
+        ExtColumn<PackageLinkNode> sortColumn = getExtTableModel().getSortColumn();
+        if (sortColumn == null) return;
+        int index = sortColumn.getIndex();
 
         if (index < 0) return;
 
@@ -522,35 +436,9 @@ public class DownloadsTable extends BasicJDTable<PackageLinkNode> {
             g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.1f));
             g2.fillRect(visibleRect.x + first.x, visibleRect.y, visibleRect.x + getExtTableModel().getSortColumn().getWidth(), visibleRect.y + visibleRect.height);
         }
-        if (tableModel.isDownloadOrder()) return;
+        if (isDownloadOrder()) return;
         g2.setComposite(comp);
 
-    }
-
-    public boolean isDownloadOrder() {
-        return tableModel.isDownloadOrder();
-    }
-
-    public ArrayList<FilePackage> getSelectedFilePackages() {
-        final ArrayList<FilePackage> ret = new ArrayList<FilePackage>();
-        final ArrayList<PackageLinkNode> selected = this.getExtTableModel().getSelectedObjects();
-        for (final PackageLinkNode node : selected) {
-            if (node instanceof FilePackage) {
-                ret.add((FilePackage) node);
-            }
-        }
-        return ret;
-    }
-
-    public ArrayList<DownloadLink> getSelectedDownloadLinks() {
-        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        final ArrayList<PackageLinkNode> selected = this.getExtTableModel().getSelectedObjects();
-        for (final PackageLinkNode node : selected) {
-            if (node instanceof DownloadLink) {
-                ret.add((DownloadLink) node);
-            }
-        }
-        return ret;
     }
 
 }

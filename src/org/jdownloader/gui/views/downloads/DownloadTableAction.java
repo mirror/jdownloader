@@ -1,4 +1,4 @@
-package org.jdownloader.gui.views;
+package org.jdownloader.gui.views.downloads;
 
 import org.jdownloader.actions.AppAction;
 

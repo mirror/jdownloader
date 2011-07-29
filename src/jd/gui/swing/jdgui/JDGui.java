@@ -68,7 +68,6 @@ import jd.gui.swing.jdgui.components.toolbar.ToolBar;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.gui.swing.jdgui.interfaces.View;
 import jd.gui.swing.jdgui.menu.JDMenuBar;
-import jd.gui.swing.jdgui.views.downloads.DownloadView;
 import jd.gui.swing.jdgui.views.linkgrabber.LinkGrabberPanel;
 import jd.gui.swing.jdgui.views.linkgrabber.LinkgrabberView;
 import jd.gui.swing.jdgui.views.log.LogView;
@@ -93,7 +92,8 @@ import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.appwork.utils.swing.dialog.OffScreenException;
 import org.appwork.utils.swing.dialog.SimpleTextBallon;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.gui.views.DownloadsView;
+import org.jdownloader.gui.views.downloads.DownloadsView;
+import org.jdownloader.gui.views.linkgrabber.LinkGrabberView;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
@@ -126,9 +126,9 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
 
     private StatusBar       statusBar;
     private MainTabbedPane  mainTabbedPane;
-    private DownloadView    downloadView;
+    private DownloadsView   downloadView;
 
-    private LinkgrabberView linkgrabberView;
+    private LinkGrabberView linkgrabberView;
     private MainToolBar     toolBar;
     private JPanel          waitingPane;
 
@@ -303,13 +303,13 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
         this.mainTabbedPane = MainTabbedPane.getInstance();
         this.toolBar = MainToolBar.getInstance();
         this.toolBar.registerAccelerators(this);
-        this.downloadView = DownloadView.getInstance();
-        this.linkgrabberView = LinkgrabberView.getInstance();
+        this.downloadView = new DownloadsView();
+        this.linkgrabberView = new LinkGrabberView();
 
-        this.mainTabbedPane.addTab(this.downloadView);
         this.mainTabbedPane.addTab(new DownloadsView());
-        this.mainTabbedPane.addTab(this.linkgrabberView);
 
+        this.mainTabbedPane.addTab(this.linkgrabberView);
+        this.mainTabbedPane.addTab(LinkgrabberView.getInstance());
         if (JsonConfig.create(GraphicalUserInterfaceSettings.class).isConfigViewVisible()) {
             this.mainTabbedPane.addTab(ConfigurationView.getInstance());
         }

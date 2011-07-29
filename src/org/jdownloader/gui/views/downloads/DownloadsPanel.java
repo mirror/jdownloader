@@ -1,4 +1,4 @@
-package org.jdownloader.gui.views;
+package org.jdownloader.gui.views.downloads;
 
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
@@ -12,6 +12,7 @@ import jd.controlling.IOEQ;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import net.miginfocom.swing.MigLayout;
 
+import org.jdownloader.gui.views.BottomBar;
 import org.jdownloader.gui.views.downloads.table.DownloadsTable;
 import org.jdownloader.gui.views.downloads.table.DownloadsTableModel;
 

@@ -64,7 +64,7 @@ public class LinkgrabberView extends View {
 
     @Override
     public String getTitle() {
-        return _GUI._.jd_gui_swing_jdgui_views_linkgrabberview_tab_title();
+        return "NARV-Grabber";
     }
 
     @Override
