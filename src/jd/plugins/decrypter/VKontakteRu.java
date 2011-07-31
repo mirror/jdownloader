@@ -19,6 +19,8 @@ package jd.plugins.decrypter;
 import java.awt.Color;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -26,6 +28,8 @@ import jd.controlling.ProgressController;
 import jd.controlling.ProgressControllerEvent;
 import jd.controlling.ProgressControllerListener;
 import jd.gui.UserIO;
+import jd.http.Cookie;
+import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -76,7 +80,7 @@ public class VKontakteRu extends PluginForDecrypt implements ProgressControllerL
                     else
                         finallink = new Regex(audioInfo, "return operate\\(\\'\\d+_\\d+\\',\\'(http://.*?)\\'").getMatch(0);
                     if (finallink == null) return null;
-                    Regex artistAndName = new Regex(audioInfo, "id=\"performer\\d+_\\d+\"><a href=\\'gsearch\\.php\\?section=audio\\&c\\[q\\]=(.*?)\\'>(.*?)</a></b><span>\\&nbsp;-\\&nbsp;</span><span id=\"title\\d+_\\d+\">(<a href=\"\" onclick=\"showLyrics\\(\\'\\d+_\\d+\\',\\d+\\);return false;\">)?(.*?)(</a>)?</span> </div>");
+                    Regex artistAndName = new Regex(audioInfo, "id=\"performer\\d+_\\d+\"><a href=\\'gsearch\\.php\\?section=audio\\&c\\[q\\]=(.*?)\\'>(.*?)</a></b><span>\\&nbsp;\\-\\&nbsp;</span><span id=\"title\\d+_\\d+\">(<a href=\"\" onclick=\"showLyrics\\(\\'\\d+_\\d+\\',\\d+\\);return false;\">)?(.*?)(</a>)?</span> </div>");
                     String artist = artistAndName.getMatch(0);
                     if (artist == null) artist = artistAndName.getMatch(1);
                     String name = artistAndName.getMatch(3);
@@ -85,9 +89,13 @@ public class VKontakteRu extends PluginForDecrypt implements ProgressControllerL
                     if (artist != null && name != null) dl.setFinalFileName(artist + " - " + name + ".mp3");
                     decryptedLinks.add(dl);
                 }
-            } else if (parameter.matches(".*?vkontakte\\.ru/video(-)?\\d+_\\d+")) {
+            } else if (parameter.matches(".*?vkontakte\\.ru/video(\\-)?\\d+_\\d+")) {
+                if (br.containsHTML("class=\"button_blue\"><button id=\"msg_back_button\">Wr\\&#243;\\&#263;</button>")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
                 DownloadLink finallink = findVideolink(parameter);
-                if (finallink == null) return null;
+                if (finallink == null) {
+                    logger.warning("Decrypter broken for link: " + parameter + "\n");
+                    return null;
+                }
                 decryptedLinks.add(finallink);
             } else {
                 // Video-Playlists
@@ -132,41 +140,43 @@ public class VKontakteRu extends PluginForDecrypt implements ProgressControllerL
         if (videoEmbedded != null) {
             return createDownloadlink("http://www.youtube.com/watch?v=" + videoEmbedded);
         } else {
-            String additionalStuff = "videos/";
-            String urlPart = br.getRegex("playerContainerHTML\\(\\'(http://.*?)thumbnails/").getMatch(0);
-            if (urlPart == null) {
-                urlPart = br.getRegex("playerContainerHTML\\(\\'(http://.*?/video/)").getMatch(0);
-                additionalStuff = "";
-            }
-            String vtag = br.getRegex("\"vtag\":\"(.*?)\"").getMatch(0);
-            String videoID = br.getRegex("\"vkid\":\"(.*?)\"").getMatch(0);
+            String correctedBR = br.toString().replace("\\", "");
+            String additionalStuff = "video/";
+            String urlPart = new Regex(correctedBR, "\"thumb\":\"(http:.{10,100})/video").getMatch(0);
+            if (urlPart == null) urlPart = new Regex(correctedBR, "\"host\":\"(.*?)\"").getMatch(0);
+            String vtag = new Regex(correctedBR, "\"vtag\":\"(.*?)\"").getMatch(0);
+            String videoID = new Regex(correctedBR, "\"vkid\":\"(.*?)\"").getMatch(0);
             if (videoID == null) videoID = new Regex(parameter, ".*?vkontakte\\.ru/video(\\-)?\\d+_(\\d+)").getMatch(1);
             if (videoID == null || urlPart == null || vtag == null) return null;
             // Find the highest possible quality, also every video is only
-            // available
-            // in 1-2 formats so we HAVE to use the highest one, if we don't do
-            // that
-            // we get wrong lings
+            // available in 1-2 formats so we HAVE to use the highest one, if we
+            // don't do that we get wrong lings
             String quality = ".vk.flv";
-            if (br.containsHTML("\"hd\":1")) {
-                quality = ".360.mp4";
+            if (correctedBR.contains("\"hd\":1")) {
+                quality = ".360.mov";
                 videoID = "";
-            } else if (br.containsHTML("\"hd\":2")) {
-                quality = ".480.mp4";
+            } else if (correctedBR.contains("\"hd\":2")) {
+                quality = ".480.mov";
                 videoID = "";
-            } else if (br.containsHTML("\"hd\":3")) {
-                quality = ".720.mp4";
+            } else if (correctedBR.contains("\"hd\":3")) {
+                quality = ".720.mov";
                 videoID = "";
-            } else if (br.containsHTML("\"no_flv\":1")) {
-                quality = ".240.mp4";
+            } else if (correctedBR.contains("\"no_flv\":1")) {
+                quality = ".240.mov";
                 videoID = "";
             }
-            if (br.containsHTML("\"no_flv\":0")) {
-                videoID = "";
-                quality = ".flv";
+            if (correctedBR.contains("\"no_flv\":0")) {
+                quality = ".vk.flv";
+                additionalStuff = "assets/videos/";
             }
-            String videoName = br.getRegex(">Pliki Video</a>(.*?)</h1></div>").getMatch(0);
-            String completeLink = "directhttp://" + urlPart + additionalStuff + vtag + videoID + quality;
+            String videoName = new Regex(correctedBR, "class=\"video_name\" />(.*?)</a>").getMatch(0);
+            if (videoName == null) {
+                videoName = new Regex(correctedBR, "\"md_title\":\"(.*?)\"").getMatch(0);
+                if (videoName == null) {
+                    videoName = new Regex(correctedBR, "\\{\"title\":\"(.*?)\"").getMatch(0);
+                }
+            }
+            String completeLink = "directhttp://http://" + urlPart.replace("http://", "") + "/" + additionalStuff + vtag + videoID + quality;
             DownloadLink dl = createDownloadlink(completeLink);
             // Set filename so we have nice filenames here ;)
             if (videoName != null) dl.setFinalFileName(Encoding.htmlDecode(videoName).replaceAll("(»|\")", "").trim() + quality.substring(quality.length() - 4, quality.length()));
@@ -174,29 +184,53 @@ public class VKontakteRu extends PluginForDecrypt implements ProgressControllerL
         }
     }
 
+    @SuppressWarnings("unchecked")
     private boolean getUserLogin() throws IOException, DecrypterException {
         br.setFollowRedirects(true);
         String username = null;
         String password = null;
         synchronized (LOCK) {
-            username = this.getPluginConfig().getStringProperty("user", null);
-            password = this.getPluginConfig().getStringProperty("pass", null);
-            for (int i = 0; i < 3; i++) {
-                if ((username == null && password == null) || !loginSite(username, password) || br.getCookie(POSTPAGE, "remixsid") == null) {
-                    this.getPluginConfig().setProperty("user", Property.NULL);
-                    this.getPluginConfig().setProperty("pass", Property.NULL);
-                    username = UserIO.getInstance().requestInputDialog("Enter Loginname for " + DOMAIN + " :");
-                    if (username == null) return false;
-                    password = UserIO.getInstance().requestInputDialog("Enter password for " + DOMAIN + " :");
-                    if (password == null) return false;
-                    if (!loginSite(username, password)) break;
-                } else {
-                    this.getPluginConfig().setProperty("user", username);
-                    this.getPluginConfig().setProperty("pass", password);
+            int loginCounter = this.getPluginConfig().getIntegerProperty("logincounter");
+            // Only login every 20th time to prevent getting banned
+            if (loginCounter > 20 || loginCounter == -1) {
+                username = this.getPluginConfig().getStringProperty("user", null);
+                password = this.getPluginConfig().getStringProperty("pass", null);
+                for (int i = 0; i < 3; i++) {
+                    if ((username == null && password == null) || !loginSite(username, password) || br.getCookie(POSTPAGE, "remixsid") == null) {
+                        this.getPluginConfig().setProperty("user", Property.NULL);
+                        this.getPluginConfig().setProperty("pass", Property.NULL);
+                        username = UserIO.getInstance().requestInputDialog("Enter Loginname for " + DOMAIN + " :");
+                        if (username == null) return false;
+                        password = UserIO.getInstance().requestInputDialog("Enter password for " + DOMAIN + " :");
+                        if (password == null) return false;
+                        if (!loginSite(username, password)) break;
+                    } else {
+                        this.getPluginConfig().setProperty("user", username);
+                        this.getPluginConfig().setProperty("pass", password);
+                        this.getPluginConfig().setProperty("logincounter", "1");
+                        final HashMap<String, String> cookies = new HashMap<String, String>();
+                        final Cookies add = this.br.getCookies(DOMAIN);
+                        for (final Cookie c : add.getCookies()) {
+                            cookies.put(c.getKey(), c.getValue());
+                        }
+                        this.getPluginConfig().setProperty("cookies", cookies);
+                        this.getPluginConfig().save();
+                        return true;
+                    }
+
+                }
+            } else {
+                final Object ret = this.getPluginConfig().getProperty("cookies", null);
+                if (ret != null && ret instanceof HashMap<?, ?>) {
+                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
+                    for (Map.Entry<String, String> entry : cookies.entrySet()) {
+                        this.br.setCookie(DOMAIN, entry.getKey(), entry.getValue());
+                    }
+                    loginCounter++;
+                    this.getPluginConfig().setProperty("logincounter", loginCounter);
                     this.getPluginConfig().save();
                     return true;
                 }
-
             }
         }
         throw new DecrypterException("Login or/and password for " + DOMAIN + " is wrong!");
