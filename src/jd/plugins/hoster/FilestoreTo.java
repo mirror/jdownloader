@@ -22,11 +22,11 @@ import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
@@ -106,7 +106,7 @@ public class FilestoreTo extends PluginForHost {
             }
             if (br.containsHTML(">Download\\-Datei wurde nicht gefunden<")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
             if (br.containsHTML("Entweder wurde die Datei von unseren Servern entfernt oder der Download-Link war")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-            downloadName = br.getRegex(">(Datei|Dateiname):</td>[\t\n\r ]+<td colspan=\"2\" style=\"[a-z0-9:;#\\- ]+\">(.*?)</td>").getMatch(1);
+            downloadName = br.getRegex(">(Datei|Dateiname|FileName):</td>[\t\n\r ]+<td colspan=\"2\" style=\"[a-z0-9:;#\\- ]+\">(.*?)</td>").getMatch(1);
             downloadSize = br.getRegex("<td width=\"220\" style=\"[a-z0-9:;#\\- ]+\">(.*?)</td>").getMatch(0);
             if (downloadName != null) {
                 downloadLink.setName(Encoding.htmlDecode(downloadName));

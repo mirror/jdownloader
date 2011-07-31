@@ -20,6 +20,7 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
@@ -29,7 +30,7 @@ import jd.plugins.DownloadLink.AvailableStatus;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "chip.de" }, urls = { "http://(www\\.)?(chip\\.de/downloads|download\\.chip\\.eu/.{2})/.*?_\\d+\\.html" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "chip.de" }, urls = { "http://(www\\.)?(chip\\.de/downloads|download\\.chip\\.(eu|asia)/.{2})/.*?_\\d+\\.html" }, flags = { 0 })
 public class ChipDe extends PluginForHost {
 
     public ChipDe(PluginWrapper wrapper) {
@@ -39,6 +40,10 @@ public class ChipDe extends PluginForHost {
     @Override
     public String getAGBLink() {
         return "http://www.chip.de/s_specials/c1_static_special_index_13162756.html";
+    }
+
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("www.", ""));
     }
 
     // Links sind Sprachen zugeordnet. Leider kann man diese nicht alle auf eine
@@ -63,12 +68,12 @@ public class ChipDe extends PluginForHost {
                 }
             }
         }
-        String filesize = br.getRegex("class=\"col1\">Dateigr\\&ouml;\\&szlig;e:</p>.*?<p class=\"col2\">(.*?)</p>").getMatch(0);
-        if (filesize == null) filesize = br.getRegex("<dt>(File size:|Размер файла:|Dimensioni:|Dateigröße:)<br /></dt>[\t\n\r ]+<dd>(.*?)<br /></dd>").getMatch(1);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         link.setName(filename.trim());
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
-        String md5 = br.getRegex("<dt>(Контрольная сумма \\(MD 5\\):|Checksum:|Prüfsumme:)<br /></dt>[\t\n\r ]+<dd>(.*?)<br /></dd>").getMatch(1);
+        String filesize = br.getRegex("class=\"col1\">Dateigr\\&ouml;\\&szlig;e:</p>.*?<p class=\"col2\">(.*?)</p>").getMatch(0);
+        if (filesize == null) filesize = br.getRegex("<dt>(File size:|Размер файла:|Dimensioni:|Dateigröße:|Velikost:|Fájlméret:|Bestandsgrootte:|Rozmiar pliku:|Mărime fişier:|Dosya boyu:|文件大小：)<br /></dt>[\t\n\r ]+<dd>(.*?)<br /></dd>").getMatch(1);
+        if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize));
+        String md5 = br.getRegex("<dt>(Контрольная сумма \\(MD 5\\):|Checksum:|Prüfsumme:|Kontrolní součet:|Szumma:|Suma kontrolna|Checksum|Kontrol toplamı:|校验码：)<br /></dt>[\t\n\r ]+<dd>(.*?)<br /></dd>").getMatch(1);
         if (md5 != null) link.setMD5Hash(md5);
         return AvailableStatus.TRUE;
     }
@@ -85,9 +90,9 @@ public class ChipDe extends PluginForHost {
             }
         }
         if (step1 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        if (downloadLink.getDownloadURL().contains("download.chip.eu") && !step1.contains("download.chip.eu")) step1 = "http://download.chip.eu" + step1;
+        if (downloadLink.getDownloadURL().contains("download.chip.") && !step1.contains("download.chip.")) step1 = new Regex(downloadLink.getDownloadURL(), "(http://download\\.chip\\..*?)/.{2}/").getMatch(0) + step1;
         br.getPage(step1);
-        String dllink = br.getRegex("<div id=\"start_download_v1\">.{10,300} <a href=\"(http://.*?)\"").getMatch(0);
+        String dllink = br.getRegex("<div id=\"start_download_v1\">.{10,500}<a href=\"(http://.*?)\"").getMatch(0);
         if (dllink == null) {
             String step2 = br.getRegex("<div class=\"dl\\-faktbox\\-row( bottom)?\">.*?<a href=\"(http.*?)\"").getMatch(1);
             if (step2 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
