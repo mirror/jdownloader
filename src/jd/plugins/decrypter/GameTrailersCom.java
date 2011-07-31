@@ -121,7 +121,10 @@ public class GameTrailersCom extends PluginForDecrypt {
                     Browser br = new Browser();
                     br.setFollowRedirects(true);
                     con = br.openGetConnection(link);
-                    if (!con.isOK() || (con.getContentType() != null && con.getContentType().contains("text"))) continue;
+                    if (!con.isOK() || (con.getContentType() != null && con.getContentType().contains("text"))) {
+                        done.remove(check);
+                        continue;
+                    }
                     size = con.getLongContentLength();
                 } catch (Throwable e) {
                 } finally {
