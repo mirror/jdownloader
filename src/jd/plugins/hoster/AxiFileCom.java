@@ -16,20 +16,25 @@
 
 package jd.plugins.hoster;
 
+import java.io.File;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
+import jd.parser.html.HTMLParser;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
+import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "axifile.com" }, urls = { "http://(www\\.)?axifile\\.com(/mydownload\\.php\\?file=|(/)?\\?)\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "axifile.com" }, urls = { "http://(www\\.)?axifile\\.com(/mydownload\\.php\\?file=|/en/|(/)?\\?)[A-Z0-9]+" }, flags = { 0 })
 public class AxiFileCom extends PluginForHost {
     public AxiFileCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -40,72 +45,142 @@ public class AxiFileCom extends PluginForHost {
         return "http://www.axifile.com/terms.php";
     }
 
+    private static final String RECAPTCHATEXT    = "(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)";
+    private static final String CHEAPCAPTCHATEXT = "captcha\\.php";
+    private static final String COOKIE_HOST      = "http://www.axifile.com";
+    private static final String IPBLOCKED        = "(You have got max allowed bandwidth size per hour|You have got max allowed download sessions from the same IP)";
+
     public void correctDownloadLink(DownloadLink link) {
-        if (link.getDownloadURL().contains("axifile.com?")) link.setUrlDownload(link.getDownloadURL().replace("?", "/?"));
+        String addedLink = link.getDownloadURL();
+        if (addedLink.contains("axifile.com?"))
+            link.setUrlDownload(addedLink.replace("?", "/?"));
+        else if (addedLink.contains("/en/")) link.setUrlDownload(addedLink.replace("/en/", "/?"));
     }
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws PluginException, IOException {
+        br.setCookie(COOKIE_HOST, "yab_mylang", "en");
         br.setCookiesExclusive(true);
         br.setFollowRedirects(false);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.getRedirectLocation() != null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("Download shared file \\| (.*?)</TITLE>").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex(">You have request \"(.*?)\" file").getMatch(0);
-            if (filename == null) {
-                filename = br.getRegex("content=\"FAST AND SAFE DOWNLOAD (.*?)\">").getMatch(0);
-            }
-        }
+        if (br.getRedirectLocation() != null || br.containsHTML("<title>AxiFile: Upload and download big files</title>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("class=\"data\" dir=\"ltr\"><h1 style=\"font\\-size: 14px;font\\-weight:normal;\"><span title=\"[^\"\\']+\">(.*?)</span></h1>").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        String filesize = br.getRegex(">You have request \".*?\" file \\((.*?)\\)</DIV>").getMatch(0);
+        String filesize = br.getRegex("class=\"names\"><b>File size:</b></td>[\t\n\r ]+<td class=\"data\">(.*?)</td>").getMatch(0);
         if (filesize != null) downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
         downloadLink.setName(filename.trim());
         return AvailableStatus.TRUE;
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        br.setFollowRedirects(false);
-        String link2 = downloadLink.getDownloadURL().replace(".com/?", ".com/mydownload.php?file=");
-        br.getPage(link2);
-        // password protected-links-handling
-        if (br.containsHTML("This file is password protected")) {
-            String passCode = null;
-            Form pwform = br.getForm(0);
-            if (pwform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            if (downloadLink.getStringProperty("pass", null) == null) {
-                passCode = getUserInput(null, downloadLink);
-            } else {
-                /* gespeicherten PassCode holen */
-                passCode = downloadLink.getStringProperty("pass", null);
-            }
-            pwform.put("pwd", passCode);
-            br.submitForm(pwform);
-            if (br.containsHTML("This file is password protected")) {
-                logger.warning("Wrong password!");
-                downloadLink.setProperty("pass", null);
-                throw new PluginException(LinkStatus.ERROR_RETRY);
-            }
-            if (passCode != null) {
-                downloadLink.setProperty("pass", passCode);
+    public void handleFree(DownloadLink link) throws Exception {
+        this.setBrowserExclusive();
+        requestFileInformation(link);
+        if (br.containsHTML("value=\"Free Users\""))
+            br.postPage(link.getDownloadURL(), "Free=Free+Users");
+        else if (br.getFormbyProperty("name", "entryform1") != null) br.submitForm(br.getFormbyProperty("name", "entryform1"));
+        String passCode = null;
+        Form captchaform = br.getFormbyProperty("name", "myform");
+        if (captchaform == null) {
+            captchaform = br.getFormbyProperty("name", "validateform");
+            if (captchaform == null) {
+                captchaform = br.getFormbyProperty("name", "valideform");
+                if (captchaform == null) {
+                    captchaform = br.getFormbyProperty("name", "verifyform");
+                }
             }
         }
-        String dllink = br.getRegex("pnlLink1\"><b>.*?</b><br> <A href=\"(.*?)\"").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("\"(http://dl\\d+\\.axifile\\.com/[a-z0-9]+/.*?)\"").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -3);
-        /*
-         * hoster supported wahlweise 3 files mit 1 chunk oder 1 file mit 3
-         * chunks
-         */
+        if (br.containsHTML("class=textinput name=downloadpw") || br.containsHTML(RECAPTCHATEXT) || br.containsHTML(CHEAPCAPTCHATEXT)) {
+            if (captchaform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            for (int i = 0; i <= 3; i++) {
+                if (br.containsHTML(CHEAPCAPTCHATEXT)) {
+                    logger.info("Found normal captcha");
+                    String captchaurl = COOKIE_HOST + "/captcha.php";
+                    String code = getCaptchaCode("mhfstandard", captchaurl, link);
+                    captchaform.put("captchacode", code);
+                } else if (br.containsHTML(RECAPTCHATEXT)) {
+                    logger.info("Found reCaptcha");
+                    PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+                    jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+                    rc.parse();
+                    rc.load();
+                    File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+                    captchaform.put("recaptcha_challenge_field", rc.getChallenge());
+                    captchaform.put("recaptcha_response_field", getCaptchaCode(cf, link));
+                }
+                if (br.containsHTML("class=textinput name=downloadpw")) {
+                    if (link.getStringProperty("pass", null) == null) {
+                        passCode = Plugin.getUserInput("Password?", link);
+
+                    } else {
+                        /* gespeicherten PassCode holen */
+                        passCode = link.getStringProperty("pass", null);
+                    }
+                    captchaform.put("downloadpw", passCode);
+                }
+                br.submitForm(captchaform);
+                if (br.containsHTML("Password Error")) {
+                    logger.warning("Wrong password!");
+                    link.setProperty("pass", null);
+                    continue;
+                }
+                if (br.containsHTML(IPBLOCKED)) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l);
+                if (br.containsHTML("Captcha number error") || br.containsHTML(RECAPTCHATEXT) || br.containsHTML(CHEAPCAPTCHATEXT)) {
+                    logger.warning("Wrong captcha or wrong password!");
+                    link.setProperty("pass", null);
+                    continue;
+                }
+                break;
+            }
+        }
+        if (br.containsHTML(IPBLOCKED)) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l);
+        if (br.containsHTML("Password Error")) {
+            logger.warning("Wrong password!");
+            link.setProperty("pass", null);
+            throw new PluginException(LinkStatus.ERROR_RETRY);
+        }
+        if (br.containsHTML("Captcha number error") || br.containsHTML(RECAPTCHATEXT) || br.containsHTML(CHEAPCAPTCHATEXT)) {
+            logger.warning("Wrong captcha or wrong password!");
+            link.setProperty("pass", null);
+            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        }
+        if (passCode != null) {
+            link.setProperty("pass", passCode);
+        }
+        String finalLink = findLink();
+        if (finalLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        String waittime = br.getRegex("var timeout=\\'(\\d+)\\';").getMatch(0);
+        int wait = 40;
+        if (waittime != null) wait = Integer.parseInt(waittime);
+        sleep(wait * 1001l, link);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, finalLink, false, 1);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            if (br.containsHTML("(<title>404 Not Found</title>|<h1>Not Found</h1>)")) throw new PluginException(LinkStatus.ERROR_FATAL, "FATAL Server error or too many simultan downloads");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl.startDownload();
+    }
+
+    private String findLink() throws Exception {
+        String finalLink = br.getRegex("(http://.{5,30}getfile\\.php\\?id=\\d+[^\"\\']{10,500})(\"|\\')").getMatch(0);
+        if (finalLink == null) {
+            String[] sitelinks = HTMLParser.getHttpLinks(br.toString(), null);
+            if (sitelinks == null || sitelinks.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            for (String alink : sitelinks) {
+                alink = Encoding.htmlDecode(alink);
+                if (alink.contains("access_key=") || alink.contains("getfile.php?")) {
+                    finalLink = alink;
+                    break;
+                }
+            }
+        }
+        return finalLink;
     }
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 3;
+        return 1;
     }
 
     @Override

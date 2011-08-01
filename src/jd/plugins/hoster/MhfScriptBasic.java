@@ -118,7 +118,7 @@ public class MhfScriptBasic extends PluginForHost {
                 if (br.containsHTML(CHEAPCAPTCHATEXT)) {
                     logger.info("Found normal captcha");
                     String captchaurl = COOKIE_HOST + "/captcha.php";
-                    String code = getCaptchaCode(captchaurl, link);
+                    String code = getCaptchaCode("mhfstandard", captchaurl, link);
                     captchaform.put("captchacode", code);
                 } else if (br.containsHTML(RECAPTCHATEXT)) {
                     logger.info("Found reCaptcha");
@@ -180,7 +180,7 @@ public class MhfScriptBasic extends PluginForHost {
     }
 
     private String findLink() throws Exception {
-        String finalLink = br.getRegex("(http://.{5,30}getfile\\.php\\?id=\\d+\\&a=[a-z0-9]+\\&t=[a-z0-9]+.*?)(\\'|\")").getMatch(0);
+        String finalLink = br.getRegex("(http://.{5,30}getfile\\.php\\?id=\\d+[^\"\\']{10,500})(\"|\\')").getMatch(0);
         if (finalLink == null) {
             String[] sitelinks = HTMLParser.getHttpLinks(br.toString(), null);
             if (sitelinks == null || sitelinks.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

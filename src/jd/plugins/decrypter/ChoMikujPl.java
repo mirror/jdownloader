@@ -97,6 +97,8 @@ public class ChoMikujPl extends PluginForDecrypt {
             return null;
         }
         logger.info("Found " + pageCount + " pages. Starting to decrypt them now.");
+        // Add 1 so we have all pages
+        pageCount++;
         progress.setRange(pageCount);
         // Alle Seiten decrypten
         for (int i = 0; i < pageCount; ++i) {
@@ -163,7 +165,7 @@ public class ChoMikujPl extends PluginForDecrypt {
                 break;
             }
             String[] lolpages = null;
-            if (pagePiece != null) lolpages = new Regex(pagePiece, "=\"javascript:;\">(\\d+)<").getColumn(0);
+            if (pagePiece != null) lolpages = new Regex(pagePiece, "ch\\.changeFilesPage\\((\\d+)\\)").getColumn(0);
             if (lolpages == null || lolpages.length == 0) return -1;
             // Find highest number of page
             for (String page : lolpages) {

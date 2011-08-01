@@ -51,8 +51,8 @@ public class PornOxoCom extends PluginForHost {
         if (br.containsHTML("(>Video was not found<|<title> at PornoXO</title>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<h1>(.*?)</h1><").getMatch(0);
         if (filename == null) filename = br.getRegex("<title>(.*?) at PornoXO</title>").getMatch(0);
-        DLLINK = br.getRegex("addVariable\\(\\'file\\',\\'(http://.*?)\\'\\);").getMatch(0);
-        if (DLLINK == null) DLLINK = br.getRegex("\\'(http://\\d+\\.\\d+\\.\\d+\\.\\d+/protect/\\d+/.*?)\\'").getMatch(0);
+        DLLINK = br.getRegex("\\'file\\': \"(http://.*?)\"").getMatch(0);
+        if (DLLINK == null) DLLINK = br.getRegex("\"(http://(www\\.)?vipstreamservice\\.com/key=.*?)\"").getMatch(0);
         if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         DLLINK = Encoding.htmlDecode(DLLINK);
         filename = filename.trim();
