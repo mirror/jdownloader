@@ -21,21 +21,22 @@ import java.io.IOException;
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "eporner.com" }, urls = { "http://[\\w\\.]*?eporner\\.com/hd-porn/\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "eporner.com" }, urls = { "http://(www\\.)?eporner\\.com/hd\\-porn/\\d+" }, flags = { 0 })
 public class EPornerCom extends PluginForHost {
 
     public EPornerCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    public String dllink = null;
+    public String DLLINK = null;
 
     @Override
     public String getAGBLink() {
@@ -45,31 +46,39 @@ public class EPornerCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
-        br.setFollowRedirects(false);
+        br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (!br.containsHTML("mfdown")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<title>EPORNER\\.COM :(.*?) - Free HD Porn Tube - Sex, Porno, Porn Tube, Free porn movies</title>").getMatch(0);
-        if (filename == null) filename = br.getRegex("name=\"description\" content=\"Free HD Porn Tube: (.*?)\"").getMatch(0);
-        dllink = br.getRegex("id=\"mfdown\"><a href=\"(http://.*?)\"").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("\"(http://www\\.eporner\\.com/download-key/[a-z0-9]+/dload)\"").getMatch(0);
-        if (filename == null || dllink == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("\\'File has been removed due to copyright owner request")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("<title>EPORNER\\.COM :(.*?) \\- Free HD Porn Tube \\- Sex, Porno, Porn Tube, Free porn movies</title>").getMatch(0);
+        if (filename == null) filename = br.getRegex("name=\"description\" content=\"Free HD Porn Tube: (.*?)\\. Eporner is the largest hd porn source").getMatch(0);
+        br.getPage("http://www.eporner.com/config/" + new Regex(downloadLink.getDownloadURL(), "eporner\\.com/hd\\-porn/(\\d+)").getMatch(0));
+        DLLINK = br.getRegex("<file>(http://.*?)</file>").getMatch(0);
+        if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         filename = filename.trim();
         downloadLink.setFinalFileName(filename + ".flv");
         Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
-        URLConnectionAdapter con = br2.openGetConnection(dllink);
-        if (!con.getContentType().contains("html"))
-            downloadLink.setDownloadSize(con.getLongContentLength());
-        else
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        return AvailableStatus.TRUE;
+        URLConnectionAdapter con = null;
+        try {
+            con = br2.openGetConnection(DLLINK);
+            if (!con.getContentType().contains("html"))
+                downloadLink.setDownloadSize(con.getLongContentLength());
+            else
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            return AvailableStatus.TRUE;
+        } finally {
+            try {
+                con.disconnect();
+            } catch (Throwable e) {
+            }
+        }
     }
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, -2);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -79,7 +88,7 @@ public class EPornerCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        return 1;
     }
 
     @Override
