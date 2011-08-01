@@ -63,7 +63,8 @@ public class MyVideo extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
+        AvailableStatus status = requestFileInformation(downloadLink);
+        if (status == AvailableStatus.UNCHECKABLE) throw new PluginException(LinkStatus.ERROR_FATAL, "Wait for next available JDownloader version");
         if (CLIPURL.startsWith("rtmp")) {
             dl = new RTMPDownload(this, downloadLink, CLIPURL);
             final jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();

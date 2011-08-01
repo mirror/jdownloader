@@ -69,6 +69,7 @@ public class Megauploadcom extends PluginForHost {
 
     private static final Object   LOGINLOCK       = new Object();
     private static int            simultanpremium = 1;
+    private boolean               directDL        = false;
 
     private synchronized void handleWaittimeWorkaround(final DownloadLink link, final Browser br) throws PluginException {
         if (br.containsHTML("gencap\\.php\\?")) {
@@ -262,33 +263,35 @@ public class Megauploadcom extends PluginForHost {
         }
         url = url.replaceFirst("megaupload\\.com/", "megaupload\\.com:" + this.usePort(link) + "/");
         this.br.setFollowRedirects(true);
-        final String waitb = this.br.getRegex("count=(\\d+);").getMatch(0);
-        logger.info("Waittime: " + waitb);
-        if (waitb == null) {
-            /* debug */
-            try {
-                logger.severe(br.toString());
-            } catch (Throwable e) {
-            }
-        }
-        long waittime = 0;
-        try {
-            if (Megauploadcom.WaittimeWorkaround == 0) {
-                /* try not to wait */
-                waittime = 0;
-            } else if (Megauploadcom.WaittimeWorkaround == 1) {
-                /* try normal waittime */
-                if (waitb != null) {
-                    waittime = Long.parseLong(waitb);
+        if (directDL == false) {
+            final String waitb = this.br.getRegex("count=(\\d+);").getMatch(0);
+            logger.info("Waittime: " + waitb);
+            if (waitb == null) {
+                /* debug */
+                try {
+                    logger.severe(br.toString());
+                } catch (Throwable e) {
                 }
-            } else {
-                /* last try with 60 secs */
-                waittime = 60;
             }
-        } catch (final Exception e) {
-        }
-        if (waittime > 0) {
-            this.sleep(waittime * 1000, link);
+            long waittime = 0;
+            try {
+                if (Megauploadcom.WaittimeWorkaround == 0) {
+                    /* try not to wait */
+                    waittime = 0;
+                } else if (Megauploadcom.WaittimeWorkaround == 1) {
+                    /* try normal waittime */
+                    if (waitb != null) {
+                        waittime = Long.parseLong(waitb);
+                    }
+                } else {
+                    /* last try with 60 secs */
+                    waittime = 60;
+                }
+            } catch (final Exception e) {
+            }
+            if (waittime > 0) {
+                this.sleep(waittime * 1000, link);
+            }
         }
         try {
             try {
@@ -438,6 +441,7 @@ public class Megauploadcom extends PluginForHost {
 
     private STATUS getFileStatus(final DownloadLink link) throws MalformedURLException, PluginException {
         this.onlyapi = false;
+        this.directDL = false;
         this.checkWWWWorkaround();
         this.setBrowserExclusive();
         this.br.setCookie("http://" + Megauploadcom.wwwWorkaround + "megaupload.com", "l", "en");
@@ -533,38 +537,45 @@ public class Megauploadcom extends PluginForHost {
     }
 
     public void handleAPIDownload(final DownloadLink link, final Account account) throws Exception {
-        this.setBrowserExclusive();
-        this.br.setFollowRedirects(false);
-        final String dlID = this.getDownloadID(link);
-        this.br.setDebug(true);
-        /*
-         * here the customized headers are needed because without api download
-         * does not work
-         */
-        this.br.getHeaders().clear();
-        this.br.getHeaders().setDominant(true);
-        this.br.getHeaders().put("Accept", "text/plain,text/html,*/*;q=0.3");
-        this.br.getHeaders().put("Accept-Encoding", "*;q=0.1");
-        this.br.getHeaders().put("TE", "trailers");
-        this.br.getHeaders().put("Host", "" + Megauploadcom.wwwWorkaround + "megaupload.com");
-        this.br.getHeaders().put("Connection", "TE");
-        this.br.getHeaders().put("User-Agent", "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1)");
-        String user = null;
-        if (account != null) {
-            user = account.getStringProperty("user", null);
-        }
-        if (user != null) {
-            this.getRedirectforAPI("http://" + Megauploadcom.wwwWorkaround + "megaupload.com/mgr_dl.php?d=" + dlID + "&u=" + user, link);
-        } else {
-            this.getRedirectforAPI("http://" + Megauploadcom.wwwWorkaround + "megaupload.com/mgr_dl.php?d=" + dlID, link);
-        }
-        if (this.br.getRedirectLocation() == null || this.br.getRedirectLocation().toUpperCase().contains(dlID)) {
-            this.limitReached(link, 10 * 60, "API Limit reached!");
-        }
+        String url = null;
+        if (directDL == false) {
+            this.setBrowserExclusive();
+            this.br.setFollowRedirects(false);
+            final String dlID = this.getDownloadID(link);
+            this.br.setDebug(true);
+            /*
+             * here the customized headers are needed because without api
+             * download does not work
+             */
+            this.br.getHeaders().clear();
+            this.br.getHeaders().setDominant(true);
+            this.br.getHeaders().put("Accept", "text/plain,text/html,*/*;q=0.3");
+            this.br.getHeaders().put("Accept-Encoding", "*;q=0.1");
+            this.br.getHeaders().put("TE", "trailers");
+            this.br.getHeaders().put("Host", "" + Megauploadcom.wwwWorkaround + "megaupload.com");
+            this.br.getHeaders().put("Connection", "TE");
+            this.br.getHeaders().put("User-Agent", "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1)");
+            String user = null;
+            if (account != null) {
+                user = account.getStringProperty("user", null);
+            }
+            if (user != null) {
+                this.getRedirectforAPI("http://" + Megauploadcom.wwwWorkaround + "megaupload.com/mgr_dl.php?d=" + dlID + "&u=" + user, link);
+            } else {
+                this.getRedirectforAPI("http://" + Megauploadcom.wwwWorkaround + "megaupload.com/mgr_dl.php?d=" + dlID, link);
+            }
+            if (this.br.getRedirectLocation() == null || this.br.getRedirectLocation().toUpperCase().contains(dlID)) {
+                this.limitReached(link, 10 * 60, "API Limit reached!");
+            }
 
-        final String url = this.br.getRedirectLocation();
-        this.br.getHeaders().put("Host", new URL(url).getHost());
-        this.br.getHeaders().put("Connection", "Keep-Alive,TE");
+            url = this.br.getRedirectLocation();
+            this.br.getHeaders().put("Host", new URL(url).getHost());
+            this.br.getHeaders().put("Connection", "Keep-Alive,TE");
+        } else {
+            br.setFollowRedirects(false);
+            br.getPage(link.getDownloadURL());
+            url = this.br.getRedirectLocation();
+        }
         this.doDownload(link, url, true, account);
     }
 
@@ -655,109 +666,207 @@ public class Megauploadcom extends PluginForHost {
         }
         /* website download premium */
         String url = null;
-        this.br.setFollowRedirects(false);
-        this.br.getPage("http://" + Megauploadcom.wwwWorkaround + "megaupload.com/?d=" + this.getDownloadID(parameter));
+        if (directDL == false) {
+            this.br.setFollowRedirects(false);
+            this.br.getPage("http://" + Megauploadcom.wwwWorkaround + "megaupload.com/?d=" + this.getDownloadID(parameter));
 
-        if (br.containsHTML("The file has been deleted because it was violating")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-        if (br.containsHTML("Invalid link")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-        if (this.br.containsHTML("Unfortunately, the link you have clicked is not available")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+            if (br.containsHTML("The file has been deleted because it was violating")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+            if (br.containsHTML("Invalid link")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+            if (this.br.containsHTML("Unfortunately, the link you have clicked is not available")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
 
-        if (this.br.getRedirectLocation() == null) {
-            if (this.br.toString().trim().length() == 0) {
-                // megupload bug. probably direct download is activated.
-                if (UserIO.isOK(UserIO.getInstance().requestConfirmDialog(0, "Direct Download Workaround", "Direct download is enabled. \r\nThis mode is not supported. \r\nDo you want to disable direct download?", null, null, null))) {
-                    this.br.cloneBrowser().postPage("http://megaupload.com/?c=account", "do=directdownloads&accountupdate=1");
-                    throw new PluginException(LinkStatus.ERROR_RETRY);
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_FATAL, "Direct download not supported");
-                }
+            if (this.br.getRedirectLocation() == null) {
+                if (this.br.toString().trim().length() == 0) {
+                    // megupload bug. probably direct download is activated.
+                    if (UserIO.isOK(UserIO.getInstance().requestConfirmDialog(0, "Direct Download Workaround", "Direct download is enabled. \r\nThis mode is not supported. \r\nDo you want to disable direct download?", null, null, null))) {
+                        this.br.cloneBrowser().postPage("http://megaupload.com/?c=account", "do=directdownloads&accountupdate=1");
+                        throw new PluginException(LinkStatus.ERROR_RETRY);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_FATAL, "Direct download not supported");
+                    }
 
-            }
-            /* check if we are still premium user, because we login via cookie */
-            final String red = this.br.getRegex("document\\.location='(.*?)'").getMatch(0);
-            if (red != null || this.br.containsHTML("trying to download is larger than")) {
-                if (!this.isPremium(account, this.br.cloneBrowser(), true, true)) {
-                    /* no longer premium retry */
-                    logger.info("No longer a premiumaccount, retry as normal account!");
-                    parameter.getLinkStatus().setRetryCount(parameter.getLinkStatus().getRetryCount() + 1);
-                    throw new PluginException(LinkStatus.ERROR_RETRY);
-                } else {
-                    /* still premium, so something went wrong */
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-            }
-            Form form = this.br.getForm(0);
-            if (form != null && form.containsHTML("logout")) {
-                form = this.br.getForm(1);
-            }
-            if (form != null && form.containsHTML("filepassword")) {
-                String passCode;
-                if (parameter.getStringProperty("pass", null) == null) {
-                    passCode = Plugin.getUserInput("Password?", parameter);
-                } else {
-                    /* gespeicherten PassCode holen */
-                    passCode = parameter.getStringProperty("pass", null);
+                /*
+                 * check if we are still premium user, because we login via
+                 * cookie
+                 */
+                final String red = this.br.getRegex("document\\.location='(.*?)'").getMatch(0);
+                if (red != null || this.br.containsHTML("trying to download is larger than")) {
+                    if (!this.isPremium(account, this.br.cloneBrowser(), true, true)) {
+                        /* no longer premium retry */
+                        logger.info("No longer a premiumaccount, retry as normal account!");
+                        parameter.getLinkStatus().setRetryCount(parameter.getLinkStatus().getRetryCount() + 1);
+                        throw new PluginException(LinkStatus.ERROR_RETRY);
+                    } else {
+                        /* still premium, so something went wrong */
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
                 }
-                form.put("filepassword", passCode);
-                this.br.submitForm(form);
-                form = this.br.getForm(0);
+                Form form = this.br.getForm(0);
                 if (form != null && form.containsHTML("logout")) {
                     form = this.br.getForm(1);
                 }
                 if (form != null && form.containsHTML("filepassword")) {
-                    parameter.setProperty("pass", null);
-                    throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.errors.wrongpassword", "Password wrong"));
-                } else {
-                    parameter.setProperty("pass", passCode);
+                    String passCode;
+                    if (parameter.getStringProperty("pass", null) == null) {
+                        passCode = Plugin.getUserInput("Password?", parameter);
+                    } else {
+                        /* gespeicherten PassCode holen */
+                        passCode = parameter.getStringProperty("pass", null);
+                    }
+                    form.put("filepassword", passCode);
+                    this.br.submitForm(form);
+                    form = this.br.getForm(0);
+                    if (form != null && form.containsHTML("logout")) {
+                        form = this.br.getForm(1);
+                    }
+                    if (form != null && form.containsHTML("filepassword")) {
+                        parameter.setProperty("pass", null);
+                        throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.errors.wrongpassword", "Password wrong"));
+                    } else {
+                        parameter.setProperty("pass", passCode);
+                    }
                 }
-            }
-            if (form != null && form.containsHTML("captchacode")) {
-                /* captcha form as premiumuser? check status again */
-                if (!this.isPremium(account, this.br.cloneBrowser(), true, true)) {
-                    /* no longer premium retry */
-                    logger.info("No longer a premiumaccount, retry as normal account!");
-                    parameter.getLinkStatus().setRetryCount(parameter.getLinkStatus().getRetryCount() + 1);
-                    throw new PluginException(LinkStatus.ERROR_RETRY);
-                } else {
-                    /* still premium, so something went wrong */
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                if (form != null && form.containsHTML("captchacode")) {
+                    /* captcha form as premiumuser? check status again */
+                    if (!this.isPremium(account, this.br.cloneBrowser(), true, true)) {
+                        /* no longer premium retry */
+                        logger.info("No longer a premiumaccount, retry as normal account!");
+                        parameter.getLinkStatus().setRetryCount(parameter.getLinkStatus().getRetryCount() + 1);
+                        throw new PluginException(LinkStatus.ERROR_RETRY);
+                    } else {
+                        /* still premium, so something went wrong */
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
                 }
-            }
-            if (this.br.containsHTML("location='http://www\\.megaupload\\.com/\\?c=msg")) {
-                this.br.getPage("http://www.megaupload.com/?c=msg");
-                this.wait = this.br.getRegex("Please check back in (\\d+) minutes").getMatch(0);
-                logger.info("Megaupload blocked this IP(3): " + this.wait + " mins");
-                if (this.wait != null) {
-                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(this.wait.trim()) * 60 * 1000l);
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 25 * 60 * 1000l);
+                if (this.br.containsHTML("location='http://www\\.megaupload\\.com/\\?c=msg")) {
+                    this.br.getPage("http://www.megaupload.com/?c=msg");
+                    this.wait = this.br.getRegex("Please check back in (\\d+) minutes").getMatch(0);
+                    logger.info("Megaupload blocked this IP(3): " + this.wait + " mins");
+                    if (this.wait != null) {
+                        throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(this.wait.trim()) * 60 * 1000l);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 25 * 60 * 1000l);
+                    }
                 }
-            }
-            url = this.br.getRegex("id=\"downloadlink\">.*?<a href=\"(.*?)\"").getMatch(0);
-            if (url == null) {
-                url = br.getRegex("href=\"(http://[^\"]*?)\" class=\"down_ad_butt1\">").getMatch(0);
-            }
-            if (url == null) {
+                url = this.br.getRegex("id=\"downloadlink\">.*?<a href=\"(.*?)\"").getMatch(0);
+                if (url == null) {
+                    url = br.getRegex("href=\"(http://[^\"]*?)\" class=\"down_ad_butt1\">").getMatch(0);
+                }
+                if (url == null) {
+                    url = this.br.getRedirectLocation();
+                }
+            } else {
+                /* direct download */
                 url = this.br.getRedirectLocation();
             }
         } else {
-            /* direct download */
+            br.setFollowRedirects(false);
+            br.getPage(parameter.getDownloadURL());
             url = this.br.getRedirectLocation();
         }
         this.doDownload(parameter, url, true, account);
     }
 
     public void handleWebsiteDownload(final DownloadLink link, final Account account) throws Exception {
-        if (account != null) {
-            this.login(account, true);
-        }
-        int captchTries = 10;
-        Form form = null;
-        String code = null;
         String url = null;
-        while (captchTries-- >= 0) {
-            this.br.getPage("http://" + Megauploadcom.wwwWorkaround + "megaupload.com/?d=" + this.getDownloadID(link));
-            url = this.br.getRegex("id=\"downloadlink\">.*?<a href=\"(.*?)\"").getMatch(0);
+        if (directDL == false) {
+            if (account != null) {
+                this.login(account, true);
+            }
+            int captchTries = 10;
+            Form form = null;
+            String code = null;
+            while (captchTries-- >= 0) {
+                this.br.getPage("http://" + Megauploadcom.wwwWorkaround + "megaupload.com/?d=" + this.getDownloadID(link));
+                url = this.br.getRegex("id=\"downloadlink\">.*?<a href=\"(.*?)\"").getMatch(0);
+                if (url == null) {
+                    url = br.getRegex("href=\"(http://[^\"]*?)\" class=\"down_ad_butt1\">").getMatch(0);
+                }
+                if (url == null) {
+                    /*
+                     * seems free users get directdownload too sometimes, maybe
+                     * for special links?
+                     */
+                    url = br.getRedirectLocation();
+                }
+                if (url != null) break;
+                /* check for iplimit */
+                final String red = this.br.getRegex("document\\.location='(.*?)'").getMatch(0);
+                if (red != null) {
+                    logger.severe("Your IP got banned");
+                    this.br.getPage(red);
+                    final String wait = this.br.getRegex("Please check back in (\\d+) minute").getMatch(0);
+                    int l = 30;
+                    if (wait != null) {
+                        l = Integer.parseInt(wait.trim());
+                    }
+                    this.limitReached(link, l * 60, "Limit Reached (1)!");
+                }
+                /* free users can download filesizes up to 1gb max */
+                if (this.br.containsHTML("trying to download is larger than")) { throw new PluginException(LinkStatus.ERROR_FATAL, "File is over 1GB and needs Premium Account"); }
+
+                form = this.br.getForm(0);
+                if (form != null && form.containsHTML("logout")) {
+                    form = this.br.getForm(1);
+                }
+                if (form != null && form.containsHTML("filepassword")) {
+                    String passCode;
+                    if (link.getStringProperty("pass", null) == null) {
+                        passCode = Plugin.getUserInput("Password?", link);
+                    } else {
+                        /* gespeicherten PassCode holen */
+                        passCode = link.getStringProperty("pass", null);
+                    }
+                    form.put("filepassword", passCode);
+                    this.br.submitForm(form);
+                    form = this.br.getForm(0);
+                    if (form != null && form.containsHTML("logout")) {
+                        form = this.br.getForm(1);
+                    }
+                    if (form != null && form.containsHTML("filepassword")) {
+                        link.setProperty("pass", null);
+                        throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.errors.wrongpassword", "Password wrong"));
+                    } else {
+                        link.setProperty("pass", passCode);
+                    }
+                }
+                if (form != null && form.containsHTML("captchacode")) {
+                    final String captcha = form.getRegex("Enter this.*?src=\"(.*?gencap.*?)\"").getMatch(0);
+                    final File file = this.getLocalCaptchaFile();
+                    final Browser c = this.br.cloneBrowser();
+                    c.getHeaders().put("Accept", "image/png,image/*;q=0.8,*/*;q=0.5");
+                    final URLConnectionAdapter con = c.openGetConnection(captcha);
+                    Browser.download(file, con);
+                    code = this.getCaptchaCode(file, link);
+                    if (code == null) {
+                        continue;
+                    }
+                    form.put("captcha", code);
+                    this.br.submitForm(form);
+                    form = this.br.getForm(0);
+                    if (form != null && form.containsHTML("logout")) {
+                        form = this.br.getForm(1);
+                    }
+                    if (form != null && form.containsHTML("captchacode")) {
+                        continue;
+                    } else {
+                        break;
+                    }
+                }
+            }
+            if (form != null && form.containsHTML("captchacode")) { throw new PluginException(LinkStatus.ERROR_CAPTCHA); }
+            if (this.br.containsHTML("location='http://www\\.megaupload\\.com/\\?c=msg")) {
+                this.br.getPage("http://www.megaupload.com/?c=msg");
+                this.wait = this.br.getRegex("Please check back in (\\d+) minutes").getMatch(0);
+                if (this.wait != null) {
+                    logger.info("Megaupload blocked this IP(3): " + this.wait + " mins");
+                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(this.wait.trim()) * 60 * 1000l);
+                } else {
+                    logger.severe("Waittime not found!: " + this.br.toString());
+                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 25 * 60 * 1000l);
+                }
+            }
+            if (url == null) url = this.br.getRegex("id=\"downloadlink\">.*?<a href=\"(.*?)\"").getMatch(0);
             if (url == null) {
                 url = br.getRegex("href=\"(http://[^\"]*?)\" class=\"down_ad_butt1\">").getMatch(0);
             }
@@ -768,92 +877,9 @@ public class Megauploadcom extends PluginForHost {
                  */
                 url = br.getRedirectLocation();
             }
-            if (url != null) break;
-            /* check for iplimit */
-            final String red = this.br.getRegex("document\\.location='(.*?)'").getMatch(0);
-            if (red != null) {
-                logger.severe("Your IP got banned");
-                this.br.getPage(red);
-                final String wait = this.br.getRegex("Please check back in (\\d+) minute").getMatch(0);
-                int l = 30;
-                if (wait != null) {
-                    l = Integer.parseInt(wait.trim());
-                }
-                this.limitReached(link, l * 60, "Limit Reached (1)!");
-            }
-            /* free users can download filesizes up to 1gb max */
-            if (this.br.containsHTML("trying to download is larger than")) { throw new PluginException(LinkStatus.ERROR_FATAL, "File is over 1GB and needs Premium Account"); }
-
-            form = this.br.getForm(0);
-            if (form != null && form.containsHTML("logout")) {
-                form = this.br.getForm(1);
-            }
-            if (form != null && form.containsHTML("filepassword")) {
-                String passCode;
-                if (link.getStringProperty("pass", null) == null) {
-                    passCode = Plugin.getUserInput("Password?", link);
-                } else {
-                    /* gespeicherten PassCode holen */
-                    passCode = link.getStringProperty("pass", null);
-                }
-                form.put("filepassword", passCode);
-                this.br.submitForm(form);
-                form = this.br.getForm(0);
-                if (form != null && form.containsHTML("logout")) {
-                    form = this.br.getForm(1);
-                }
-                if (form != null && form.containsHTML("filepassword")) {
-                    link.setProperty("pass", null);
-                    throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.errors.wrongpassword", "Password wrong"));
-                } else {
-                    link.setProperty("pass", passCode);
-                }
-            }
-            if (form != null && form.containsHTML("captchacode")) {
-                final String captcha = form.getRegex("Enter this.*?src=\"(.*?gencap.*?)\"").getMatch(0);
-                final File file = this.getLocalCaptchaFile();
-                final Browser c = this.br.cloneBrowser();
-                c.getHeaders().put("Accept", "image/png,image/*;q=0.8,*/*;q=0.5");
-                final URLConnectionAdapter con = c.openGetConnection(captcha);
-                Browser.download(file, con);
-                code = this.getCaptchaCode(file, link);
-                if (code == null) {
-                    continue;
-                }
-                form.put("captcha", code);
-                this.br.submitForm(form);
-                form = this.br.getForm(0);
-                if (form != null && form.containsHTML("logout")) {
-                    form = this.br.getForm(1);
-                }
-                if (form != null && form.containsHTML("captchacode")) {
-                    continue;
-                } else {
-                    break;
-                }
-            }
-        }
-        if (form != null && form.containsHTML("captchacode")) { throw new PluginException(LinkStatus.ERROR_CAPTCHA); }
-        if (this.br.containsHTML("location='http://www\\.megaupload\\.com/\\?c=msg")) {
-            this.br.getPage("http://www.megaupload.com/?c=msg");
-            this.wait = this.br.getRegex("Please check back in (\\d+) minutes").getMatch(0);
-            if (this.wait != null) {
-                logger.info("Megaupload blocked this IP(3): " + this.wait + " mins");
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(this.wait.trim()) * 60 * 1000l);
-            } else {
-                logger.severe("Waittime not found!: " + this.br.toString());
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 25 * 60 * 1000l);
-            }
-        }
-        if (url == null) url = this.br.getRegex("id=\"downloadlink\">.*?<a href=\"(.*?)\"").getMatch(0);
-        if (url == null) {
-            url = br.getRegex("href=\"(http://[^\"]*?)\" class=\"down_ad_butt1\">").getMatch(0);
-        }
-        if (url == null) {
-            /*
-             * seems free users get directdownload too sometimes, maybe for
-             * special links?
-             */
+        } else {
+            br.setFollowRedirects(false);
+            br.getPage(link.getDownloadURL());
             url = br.getRedirectLocation();
         }
         this.doDownload(link, url, true, account);
@@ -1003,6 +1029,7 @@ public class Megauploadcom extends PluginForHost {
             l.setAvailableStatus(AvailableStatus.UNCHECKABLE);
             return;
         }
+        URLConnectionAdapter con = null;
         try {
             if (br == null) {
                 br = new Browser();
@@ -1010,7 +1037,21 @@ public class Megauploadcom extends PluginForHost {
                 br.setCookie("http://" + Megauploadcom.wwwWorkaround + "megaupload.com", "l", "en");
             }
             this.antiJDBlock(br);
+            br.setFollowRedirects(false);
             br.getPage("http://" + Megauploadcom.wwwWorkaround + "megaupload.com/?d=" + this.getDownloadID(l));
+            if (br.getRedirectLocation() != null) {
+                String url = br.getRedirectLocation();
+                con = br.openGetConnection(url);
+                if (con.isContentDisposition()) {
+                    directDL = true;
+                    /* direct download */
+                    l.setDownloadSize(con.getLongContentLength());
+                    l.setAvailableStatus(AvailableStatus.TRUE);
+                    return;
+                } else {
+                    br.followConnection();
+                }
+            }
             if (br.containsHTML("location='http://www\\.megaupload\\.com/\\?c=msg")) {
                 br.getPage("http://www.megaupload.com/?c=msg");
             }
@@ -1065,6 +1106,11 @@ public class Megauploadcom extends PluginForHost {
             JDLogger.exception(e);
             logger.info("Megaupload blocked this IP(2): 25 mins");
             l.setAvailableStatus(AvailableStatus.UNCHECKABLE);
+        } finally {
+            try {
+                con.disconnect();
+            } catch (final Throwable e) {
+            }
         }
         return;
     }
