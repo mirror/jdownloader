@@ -3,6 +3,8 @@ package org.jdownloader.settings.advanced;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import jd.controlling.linkchecker.LinkCheckerConfig;
+
 import org.appwork.storage.config.ConfigEventListener;
 import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.JsonConfig;
@@ -34,6 +36,7 @@ public class AdvancedConfigManager implements ConfigEventListener {
         register(JsonConfig.create(InternetConnectionSettings.class));
         register(JsonConfig.create(AccountSettings.class));
         register(JsonConfig.create(GraphicalUserInterfaceSettings.class));
+        register(JsonConfig.create(LinkCheckerConfig.class));
 
     }
 

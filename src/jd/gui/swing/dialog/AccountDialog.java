@@ -32,8 +32,8 @@ import javax.swing.JTextField;
 
 import jd.HostPluginWrapper;
 import jd.PluginWrapper;
-import jd.controlling.AccountChecker;
-import jd.controlling.AccountChecker.AccountCheckJob;
+import jd.controlling.accountchecker.AccountChecker;
+import jd.controlling.accountchecker.AccountChecker.AccountCheckJob;
 import jd.controlling.AccountController;
 import jd.controlling.IOEQ;
 import jd.gui.UserIO;

@@ -6,9 +6,9 @@ import java.util.ArrayList;
 import javax.swing.AbstractAction;
 
 import jd.HostPluginWrapper;
-import jd.controlling.AccountChecker;
 import jd.controlling.AccountController;
 import jd.controlling.IOEQ;
+import jd.controlling.accountchecker.AccountChecker;
 import jd.plugins.Account;
 
 import org.jdownloader.gui.translate._GUI;

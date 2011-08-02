@@ -426,6 +426,7 @@ public class TbCm extends PluginForDecrypt {
         YT_FILENAME = br.getRegex(TbCm.YT_FILENAME_PATTERN).count() != 0 ? Encoding.htmlDecode(br.getRegex(TbCm.YT_FILENAME_PATTERN).getMatch(0).trim()) : VIDEOID;
         final HashMap<Integer, String[]> links = new HashMap<Integer, String[]>();
         String html5_fmt_map = br.getRegex("\"html5_fmt_map\": \\[(.*?)\\]").getMatch(0);
+
         if (html5_fmt_map != null) {
             String[] html5_hits = new Regex(html5_fmt_map, "\\{(.*?)\\}").getColumn(0);
             if (html5_hits != null) {
@@ -437,9 +438,25 @@ public class TbCm extends PluginForDecrypt {
                         hitUrl = unescape(hitUrl.replaceAll("\\\\/", "/"));
                         links.put(Integer.parseInt(hitFmt), new String[] { Encoding.htmlDecode(Encoding.urlDecode(hitUrl, true)), hitQ });
                     }
-
                 }
-
+            }
+        } else {
+            /* new format since ca. 1.8.2011 */
+            html5_fmt_map = br.getRegex("\"url_encoded_fmt_stream_map\": \"(.*?)\"").getMatch(0);
+            if (html5_fmt_map != null) {
+                String[] html5_hits = new Regex(html5_fmt_map, "(.*?),").getColumn(0);
+                if (html5_hits != null) {
+                    for (String hit : html5_hits) {
+                        hit = unescape(hit);
+                        String hitUrl = new Regex(hit, "url=(http.*?)\\&").getMatch(0);
+                        String hitFmt = new Regex(hit, "itag=(\\d+)").getMatch(0);
+                        String hitQ = new Regex(hit, "quality=(.*?)&").getMatch(0);
+                        if (hitUrl != null && hitFmt != null && hitQ != null) {
+                            hitUrl = unescape(hitUrl.replaceAll("\\\\/", "/"));
+                            links.put(Integer.parseInt(hitFmt), new String[] { Encoding.htmlDecode(Encoding.urlDecode(hitUrl, true)), hitQ });
+                        }
+                    }
+                }
             }
         }
 

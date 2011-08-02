@@ -3,8 +3,8 @@ package org.jdownloader.gui.views.downloads.context;
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 
-import jd.controlling.LinkChecker;
-import jd.controlling.LinkChecker.LinkCheckJob;
+import jd.controlling.linkchecker.LinkChecker;
+import jd.controlling.linkchecker.LinkChecker.LinkCheckJob;
 import jd.gui.swing.jdgui.interfaces.ContextMenuAction;
 import jd.plugins.DownloadLink;
 

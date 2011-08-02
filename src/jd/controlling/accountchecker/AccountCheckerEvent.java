@@ -1,4 +1,4 @@
-package jd.controlling;
+package jd.controlling.accountchecker;
 
 import org.appwork.utils.event.SimpleEvent;
 

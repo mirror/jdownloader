@@ -9,12 +9,12 @@ import javax.swing.JTable;
 import javax.swing.table.JTableHeader;
 
 import jd.HostPluginWrapper;
-import jd.controlling.AccountChecker;
-import jd.controlling.AccountCheckerEventListener;
 import jd.controlling.AccountController;
 import jd.controlling.AccountControllerEvent;
 import jd.controlling.AccountControllerListener;
 import jd.controlling.IOEQ;
+import jd.controlling.accountchecker.AccountChecker;
+import jd.controlling.accountchecker.AccountCheckerEventListener;
 import jd.nutils.Formatter;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;

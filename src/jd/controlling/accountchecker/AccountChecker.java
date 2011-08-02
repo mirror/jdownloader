@@ -1,10 +1,11 @@
-package jd.controlling;
+package jd.controlling.accountchecker;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.concurrent.atomic.AtomicLong;
 
+import jd.controlling.AccountController;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 

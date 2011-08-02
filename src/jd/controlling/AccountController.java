@@ -30,6 +30,7 @@ import java.util.logging.Logger;
 
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
+import jd.controlling.accountchecker.AccountChecker;
 import jd.gui.swing.components.Balloon;
 import jd.http.Browser;
 import jd.plugins.Account;

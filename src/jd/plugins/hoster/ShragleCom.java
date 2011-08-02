@@ -74,7 +74,7 @@ public class ShragleCom extends PluginForHost {
         } else if (accountinfos[0].trim().equalsIgnoreCase("2")) {
             account.setValid(true);
         }
-        ai.setValidUntil(Long.parseLong(accountinfos[1]) * 1000l);
+        ai.setValidUntil(Long.parseLong(accountinfos[1].trim()) * 1000l);
         return ai;
     }
 
