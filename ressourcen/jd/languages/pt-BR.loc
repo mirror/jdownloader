@@ -713,7 +713,6 @@ jd.plugins.hoster.filebaseto.serversideerror = Erro do servidor. Tente depois
 jd.plugins.hoster.rapidshare.handleerrors.message.nofreeslots = Não há slots disponíveis, tente mais tarde
 jd.plugins.hoster.rapidshare.handleerrors.message.stopflood = Por favor pare de "floodar" nossos servidores de downloads
 jd.plugins.optional.awesomebar.awesomebar = Barra Awesome*
-jd.plugins.optional.awesomebar.awesomebar.description = 
 jd.plugins.optional.awesomebar.panel.description = Este é um teste
 jd.plugins.optional.interfaces.jdexterninterface.flashgot = Instalar
 jd.plugins.optional.interfaces.jdexterninterface.flashgot.configgroup = Instalar FlashGot addon para Firefox
