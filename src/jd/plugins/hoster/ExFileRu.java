@@ -20,11 +20,11 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
@@ -44,9 +44,9 @@ public class ExFileRu extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("Файл не найден")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("\">Название файла:</td>[\t\n\r ]+<td class=\"align_left\"><strong>(.*?)</strong></td>").getMatch(0);
-        if (filename == null) filename = br.getRegex("<title>Файлообменник ExFile -=- (.*?)</title>").getMatch(0);
+        if (br.containsHTML("(Файл не найден|>Файл удалён с сервера|>Истёк срок его хранения)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("<title>Файлообменник ExFile \\-=\\- (.*?)</title>").getMatch(0);
+        if (filename == null) filename = br.getRegex("\">Название файла:</td>[\t\n\r ]+<td class=\"align_left\"><strong>(.*?)</strong></td>").getMatch(0);
         String filesize = br.getRegex("\">Размер:</td>[\t\n\r ]+<td class=\"align_left\"><strong>(.*?)</strong></td>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setFinalFileName(filename.trim());
