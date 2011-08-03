@@ -28,7 +28,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xhamster.com" }, urls = { "http://[\\w\\.]*?xhamster\\.com/photos/gallery/[0-9]+-[0-9]+\\.html" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xhamster.com" }, urls = { "http://(www\\.)?xhamster\\.com/photos/gallery/[0-9]+/.*?\\.html" }, flags = { 0 })
 public class XHamsterGallery extends PluginForDecrypt {
 
     public XHamsterGallery(PluginWrapper wrapper) {
@@ -41,18 +41,25 @@ public class XHamsterGallery extends PluginForDecrypt {
         br.getPage(parameter);
         /* Error handling */
         if (br.containsHTML("Sorry, no photos found")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
-        String fpname = br.getRegex("<title>(.*?)</title>").getMatch(0);
-        if (fpname == null) fpname = br.getRegex("width='100%'><tr><td >(.*?)>").getMatch(0);
-        String[] redirectLinks = br.getRegex("align=\"center\" width=\"100%\">.*?<a href=\"(http.*?)\"").getColumn(0);
-        if (redirectLinks == null || redirectLinks.length == 0) redirectLinks = br.getRegex("\"(http://xhamster.com/photos/view/.*?\\.html)\"").getColumn(0);
+        String fpname = br.getRegex("title\\'Start SlideShow\\'></a><h1>(.*?)</h1>").getMatch(0);
+        if (fpname == null) fpname = br.getRegex("<title>(.*?) \\- \\d+ Pics \\- xHamster\\.com</title>").getMatch(0);
+        String[] redirectLinks = br.getRegex("\"(http://xhamster.com/photos/view/.*?\\.html)\"").getColumn(0);
+        if (redirectLinks == null || redirectLinks.length == 0) redirectLinks = br.getRegex("<div class=\\'galleryItem  galleryItemList imgItem \\' id=\\'i_\\d+\\'>[\t\n\r ]+<table cellpadding=\"0\" cellspacing=\"0\" class=\\'img\\'>[\t\n\r ]+<tr><td valign=\"middle\" align=\"center\" width=\"100%\">[\t\n\r ]+<a href=\"(http://.*?)\"").getColumn(0);
         if (redirectLinks == null || redirectLinks.length == 0) return null;
         progress.setRange(redirectLinks.length);
         for (String link : redirectLinks) {
             br.getPage(link);
-            String finallink = br.getRegex("id='imgSized' src='(http.*?)'").getMatch(0);
-            if (finallink == null) finallink = br.getRegex("'(http://p[0-9]+\\.xhamster\\.com/.*?\\..*?)'").getMatch(0);
+            String finallink = br.getRegex("title=\\'Click to Next Photo \\&gt\\&gt\\'>[\t\n\r ]+<img  src=\\'(http://.*?)\\'").getMatch(0);
+            if (finallink == null) {
+                finallink = br.getRegex("valign=\"middle\" align=\"center\" id=\\'slideTd\\'>[\t\n\r ]+<img src=\\'(http://.*?)\\'").getMatch(0);
+                if (finallink == null) {
+                    finallink = br.getRegex("\\'(http://p\\d+\\-\\d+\\.xhamster\\.com/\\d+/\\d+/.*?)\\'").getMatch(0);
+                }
+            }
             if (finallink == null) return null;
-            decryptedLinks.add(createDownloadlink("directhttp://" + finallink));
+            DownloadLink dl = createDownloadlink("directhttp://" + finallink);
+            dl.setAvailable(true);
+            decryptedLinks.add(dl);
             progress.increase(1);
         }
         if (fpname != null) {

@@ -23,11 +23,11 @@ import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -166,10 +166,19 @@ public class FilesMailRu extends PluginForHost {
 
     private void login(Account account) throws Exception {
         this.setBrowserExclusive();
-        br.postPage("http://swa.mail.ru/cgi-bin/auth", "Page=http%3A%2F%2Ffiles.mail.ru%2F&Login=" + Encoding.urlEncode(account.getUser()) + "&Domain=mail.ru&Password=" + Encoding.urlEncode(account.getPass()));
+        prepareBrowser();
         br.setFollowRedirects(true);
+        br.postPage("http://swa.mail.ru/cgi-bin/auth", "Page=http%3A%2F%2Ffiles.mail.ru%2F&Login=" + Encoding.urlEncode(account.getUser()) + "&Domain=mail.ru&Password=" + Encoding.urlEncode(account.getPass()));
         br.getPage("http://files.mail.ru/eng?back=%2Fsms-services");
         if (!br.containsHTML(">You have a VIP status<")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+    }
+
+    private void prepareBrowser() {
+        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows; U; Windows NT 6.1; de; rv:1.9.2.18) Gecko/20110614 Firefox/3.6.18");
+        br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
+        br.getHeaders().put("Accept-Language", "de-de,de;q=0.8,en-us;q=0.5,en;q=0.3");
+        br.getHeaders().put("Accept-Encoding", "");
+        br.getHeaders().put("Accept-Charset", "ISO-8859-1,utf-8;q=0.7,*;q=0.7");
     }
 
     @Override
