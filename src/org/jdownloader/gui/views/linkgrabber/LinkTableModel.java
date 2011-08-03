@@ -125,10 +125,16 @@ public abstract class LinkTableModel extends ExtTableModel<PackageLinkNode> {
     @Override
     public ArrayList<PackageLinkNode> sort(final ArrayList<PackageLinkNode> data, ExtColumn<PackageLinkNode> column) {
         this.sortColumn = column;
-        String id = column.getSortOrderIdentifier();
+        String id = null;
+        if (column != null) id = column.getSortOrderIdentifier();
         try {
-            getStorage().put(ExtTableModel.SORT_ORDER_ID_KEY, id);
-            getStorage().put(ExtTableModel.SORTCOLUMN_KEY, column.getID());
+            if (column != null) {
+                getStorage().put(ExtTableModel.SORT_ORDER_ID_KEY, id);
+                getStorage().put(ExtTableModel.SORTCOLUMN_KEY, column.getID());
+            } else {
+                getStorage().put(ExtTableModel.SORT_ORDER_ID_KEY, (String) null);
+                getStorage().put(ExtTableModel.SORTCOLUMN_KEY, (String) null);
+            }
         } catch (final Exception e) {
             Log.exception(e);
         }
@@ -137,7 +143,7 @@ public abstract class LinkTableModel extends ExtTableModel<PackageLinkNode> {
             ArrayList<PackageLinkNode> packages = new ArrayList<PackageLinkNode>(DownloadController.getInstance().size());
             packages.addAll(DownloadController.getInstance().getPackages());
             /* sort packages */
-            Collections.sort(packages, column.getRowSorter());
+            if (column != null) Collections.sort(packages, column.getRowSorter());
             ArrayList<PackageLinkNode> newData = new ArrayList<PackageLinkNode>(Math.max(data.size(), packages.size()));
             for (PackageLinkNode node : packages) {
                 newData.add(node);
@@ -145,7 +151,7 @@ public abstract class LinkTableModel extends ExtTableModel<PackageLinkNode> {
                 ArrayList<PackageLinkNode> files = null;
                 synchronized (node) {
                     files = new ArrayList<PackageLinkNode>(((FilePackage) node).getControlledDownloadLinks());
-                    Collections.sort(files, column.getRowSorter());
+                    if (column != null) Collections.sort(files, column.getRowSorter());
                 }
                 newData.addAll(files);
             }
