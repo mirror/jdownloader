@@ -18,16 +18,16 @@ package jd.plugins.hoster;
 
 import jd.PluginWrapper;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "indowebster.com" }, urls = { "http://[\\w\\.]*?indowebster\\.com/[^\\s]+\\.html" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "indowebster.com" }, urls = { "http://[\\w\\.]*?indowebster\\.com/(download/files/.+|[^\\s]+\\.html)" }, flags = { 0 })
 public class Indowebster extends PluginForHost {
 
     public Indowebster(PluginWrapper wrapper) {
@@ -42,17 +42,28 @@ public class Indowebster extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
+        br.setFollowRedirects(true);
         br.setReadTimeout(3 * 60 * 1000);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("Requested file is deleted")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("Original name :</b><!--INFOLINKS_ON-->(.*?)<").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("<b>Original name:</b>(.*?)</div>").getMatch(0);
-            if (filename == null) filename = br.getRegex("<b>Original name: </b><\\!--INFOLINKS_ON-->(.*?)<\\!--INFOLINKS_OFF-->").getMatch(0);
+        if (br.containsHTML("(Requested file is deleted|image/default/404\\.png\")") || br.getURL().contains("/error") || br.getURL().contains("/files_not_found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        // Convert old links to new links
+        String newlink = br.getRegex("<meta http\\-equiv=\"refresh\" content=\"\\d+;URL=(http://v\\d+\\.indowebster\\.com/.*?)\"").getMatch(0);
+        if (newlink != null) {
+            newlink = newlink.trim();
+            downloadLink.setUrlDownload(newlink.trim());
+            logger.info("New link set...");
+            br.getPage(newlink);
         }
-        String filesize = br.getRegex("<b>Size:([ ]+)?</b>(.*?)</div>").getMatch(1);
+        String filename = br.getRegex("<title>Free Download (.*?) \\| ").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("class=\"dl\\-title\" title=\"(.*?)\">").getMatch(0);
+        }
+        String filesize = br.getRegex(">Size : <span style=\"float:none;\">(.*?)</span><").getMatch(0);
+        if (filesize == null) {
+            filesize = br.getRegex("Date upload: .{1,20} Size: (.*?)\"").getMatch(0);
+        }
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        downloadLink.setFinalFileName(filename.trim());
+        downloadLink.setName(filename.trim());
         if (filesize != null) downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
     }
@@ -60,17 +71,25 @@ public class Indowebster extends PluginForHost {
     @Override
     public void handleFree(DownloadLink link) throws Exception {
         requestFileInformation(link);
-        String ad_url = br.getRegex("<div style=\"float:left;margin-left:5px;\"><a href=\"(download=.*?)\" class=\"tn_button1\">DOWNLOAD").getMatch(0);
-        if (ad_url == null) ad_url = br.getRegex("\"(download=.*?\\&do=[A-Za-z0-9]+)\"").getMatch(0);
+        String ad_url = br.getRegex("<a id=\"download\" href=\"(http://.*?)\"").getMatch(0);
+        if (ad_url == null) {
+            ad_url = br.getRegex("\"(http://v\\d+\\.indowebster\\.com/downloads/jgjbcf/[a-z0-9]+)\"").getMatch(0);
+        }
         if (ad_url == null) {
             logger.warning("ad_url is null!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        br.getPage("http://www.indowebster.com/" + ad_url);
+        if (!ad_url.startsWith("http://")) ad_url = "http://www.indowebster.com/" + ad_url;
+        br.getPage(ad_url);
         String dllink = br.getRegex("id=\"link\\-download\" align=\"center\"><a href=\"(http://.*?)\"").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("\"(http://www\\d+\\.indowebster\\.com/.*?)\"").getMatch(0);
+        if (dllink == null) dllink = br.getRegex("\"(http://v\\d+\\.indowebster\\.com/downloads/jgjbcf/[a-z0-9]+/\\d+)\"").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dllink = dllink.trim();
+        String waittime = br.getRegex("var sec = (\\d+);").getMatch(0);
+        if (waittime == null) waittime = br.getRegex("document\\.counter\\.dl2\\.value=\\'(\\d+)\\';").getMatch(0);
+        int wait = 25;
+        if (waittime != null) wait = Integer.parseInt(waittime);
+        sleep(wait * 1001l, link);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();

@@ -71,7 +71,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
             // Account is valid, let's just add it
             AccountController.getInstance().addAccount(facebookPlugin, aa);
             br.getPage(parameter);
-            String fpName = br.getRegex("</script><title>(.*?)</title><noscript").getMatch(0);
+            String fpName = br.getRegex("<title>(.*?)</title>").getMatch(0);
             boolean doExtended = false;
             String[] links = br.getRegex("\\&amp;src=(http\\\\u00253A.*?)\\&amp;theater\\\\\"").getColumn(0);
             if (links == null || links.length == 0) {
