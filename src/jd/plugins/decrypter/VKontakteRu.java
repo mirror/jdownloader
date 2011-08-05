@@ -28,6 +28,7 @@ import jd.controlling.ProgressController;
 import jd.controlling.ProgressControllerEvent;
 import jd.controlling.ProgressControllerListener;
 import jd.gui.UserIO;
+import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
@@ -39,7 +40,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vkontakte.ru" }, urls = { "http://(www\\.)?(vkontakte\\.ru|vk\\.com)/(audio\\.php\\?id=\\d+|video(-)?\\d+_\\d+|videos\\d+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vkontakte.ru" }, urls = { "http://(www\\.)?(vkontakte\\.ru|vk\\.com)/(audio(\\.php)?\\?id=\\d+|video(-)?\\d+_\\d+|videos\\d+)" }, flags = { 0 })
 public class VKontakteRu extends PluginForDecrypt implements ProgressControllerListener {
 
     /* must be static so all plugins share same lock */
@@ -66,27 +67,41 @@ public class VKontakteRu extends PluginForDecrypt implements ProgressControllerL
         br.setCookiesExclusive(true);
         synchronized (LOCK) {
             if (!getUserLogin()) return null;
-            br.setFollowRedirects(false);
             // Access the page
             br.getPage(parameter);
-            if (parameter.matches(".*?vkontakte\\.ru/audio\\.php\\?id=\\d+")) {
-                String[] audioLinks = br.getRegex("(class=\"playimg\" onclick=\"return operate\\(\\'\\d+_\\d+\\',\\'http://.*?class=\"duration\">)").getColumn(0);
-                if (audioLinks == null || audioLinks.length == 0) audioLinks = br.getRegex("\\'(http://cs\\d+\\.vkontakte\\.ru/u\\d+/audio/[a-z0-9]+\\.mp3)\\'").getColumn(0);
+            // Retry if failed
+            if (br.getRedirectLocation() != null && br.getRedirectLocation().contains("login.vk.com") || br.containsHTML("method=\"post\" name=\"login\" id=\"login\"")) {
+                logger.info("Retrying vkontakte.ru login...");
+                this.getPluginConfig().setProperty("logincounter", "-1");
+                this.getPluginConfig().save();
+                br.clearCookies(DOMAIN);
+                br.clearCookies("login.vk.com");
+                br.clearCookies("vk.com");
+                if (!getUserLogin()) return null;
+                br.getPage(parameter);
+            }
+            br.setFollowRedirects(false);
+            if (parameter.matches(".*?vkontakte\\.ru/audio.*?")) {
+                String[] audioLinks = br.getRegex("(id=\"audio_info\\d+_\\d+\" value=\"http://.*?/>.*?)class=\"user\">").getColumn(0);
+                if (audioLinks == null || audioLinks.length == 0) {
+                    audioLinks = br.getRegex("id=\"audio_info\\d+_\\d+\" value=\"(http://[^\"\\']+),\\d+\"").getColumn(0);
+                    if (audioLinks == null || audioLinks.length == 0) audioLinks = br.getRegex("\"(http://cs\\d+\\.vkontakte\\.ru/u\\d+/audio/[a-z0-9]+\\.mp3),\\d+\"").getColumn(0);
+                }
                 if (audioLinks == null || audioLinks.length == 0) return null;
                 for (String audioInfo : audioLinks) {
                     String finallink = null;
                     if (audioInfo.startsWith("http"))
                         finallink = audioInfo;
                     else
-                        finallink = new Regex(audioInfo, "return operate\\(\\'\\d+_\\d+\\',\\'(http://.*?)\\'").getMatch(0);
+                        finallink = new Regex(audioInfo, "id=\"audio_info\\d+_\\d+\" value=\"(http://[^\"\\']+),\\d+\"").getMatch(0);
                     if (finallink == null) return null;
-                    Regex artistAndName = new Regex(audioInfo, "id=\"performer\\d+_\\d+\"><a href=\\'gsearch\\.php\\?section=audio\\&c\\[q\\]=(.*?)\\'>(.*?)</a></b><span>\\&nbsp;\\-\\&nbsp;</span><span id=\"title\\d+_\\d+\">(<a href=\"\" onclick=\"showLyrics\\(\\'\\d+_\\d+\\',\\d+\\);return false;\">)?(.*?)(</a>)?</span> </div>");
+                    Regex artistAndName = new Regex(audioInfo, "return; Audio\\.selectPerformer\\(event, \\'[^\"\\']+\\'\\); return false\">(.*?)</a></b> \\- <span class=\"title\">(<a href=\"\" onclick=\"Audio\\.showLyrics\\(\\'\\d+_\\d+\\',\\d+\\);return false;\">)?(.*?)(</a>)? </span><span");
                     String artist = artistAndName.getMatch(0);
-                    if (artist == null) artist = artistAndName.getMatch(1);
-                    String name = artistAndName.getMatch(3);
+                    String name = artistAndName.getMatch(2);
                     DownloadLink dl = createDownloadlink("directhttp://" + finallink);
                     // Set filename so we have nice filenames here ;)
-                    if (artist != null && name != null) dl.setFinalFileName(artist + " - " + name + ".mp3");
+                    if (artist != null && name != null) dl.setFinalFileName(Encoding.htmlDecode(artist.trim()) + " - " + Encoding.htmlDecode(name.trim()) + ".mp3");
+                    dl.setAvailable(true);
                     decryptedLinks.add(dl);
                 }
             } else if (parameter.matches(".*?vkontakte\\.ru/video(\\-)?\\d+_\\d+")) {
@@ -121,7 +136,7 @@ public class VKontakteRu extends PluginForDecrypt implements ProgressControllerL
                     br.getPage(completeVideolink);
                     DownloadLink finallink = findVideolink(completeVideolink);
                     if (finallink == null) {
-                        logger.warning("Videolink is null...");
+                        logger.warning("Decrypter broken for link: " + parameter);
                         return null;
                     }
                     decryptedLinks.add(finallink);
@@ -136,52 +151,63 @@ public class VKontakteRu extends PluginForDecrypt implements ProgressControllerL
     }
 
     private DownloadLink findVideolink(String parameter) throws IOException {
-        String videoEmbedded = new Regex(br.toString().replace("\\", ""), "youtube\\.com\\/embed\\/(.*?)\\?autoplay=").getMatch(0);
+        String correctedBR = br.toString().replace("\\", "");
+        String videoEmbedded = new Regex(correctedBR, "youtube\\.com/embed/(.*?)\\?autoplay=").getMatch(0);
+        if (videoEmbedded != null) { return createDownloadlink("http://www.youtube.com/watch?v=" + videoEmbedded); }
+        videoEmbedded = new Regex(correctedBR, "video\\.rutube\\.ru/(.*?)\\'").getMatch(0);
         if (videoEmbedded != null) {
-            return createDownloadlink("http://www.youtube.com/watch?v=" + videoEmbedded);
-        } else {
-            String correctedBR = br.toString().replace("\\", "");
-            String additionalStuff = "video/";
-            String urlPart = new Regex(correctedBR, "\"thumb\":\"(http:.{10,100})/video").getMatch(0);
-            if (urlPart == null) urlPart = new Regex(correctedBR, "\"host\":\"(.*?)\"").getMatch(0);
-            String vtag = new Regex(correctedBR, "\"vtag\":\"(.*?)\"").getMatch(0);
-            String videoID = new Regex(correctedBR, "\"vkid\":\"(.*?)\"").getMatch(0);
-            if (videoID == null) videoID = new Regex(parameter, ".*?vkontakte\\.ru/video(\\-)?\\d+_(\\d+)").getMatch(1);
-            if (videoID == null || urlPart == null || vtag == null) return null;
-            // Find the highest possible quality, also every video is only
-            // available in 1-2 formats so we HAVE to use the highest one, if we
-            // don't do that we get wrong lings
-            String quality = ".vk.flv";
-            if (correctedBR.contains("\"hd\":1")) {
-                quality = ".360.mov";
-                videoID = "";
-            } else if (correctedBR.contains("\"hd\":2")) {
-                quality = ".480.mov";
-                videoID = "";
-            } else if (correctedBR.contains("\"hd\":3")) {
-                quality = ".720.mov";
-                videoID = "";
-            } else if (correctedBR.contains("\"no_flv\":1")) {
-                quality = ".240.mov";
-                videoID = "";
+            br.getPage("http://rutube.ru/trackinfo/" + videoEmbedded + ".html");
+            String finalID = br.getRegex("<track_id>(\\d+)</track_id>").getMatch(0);
+            if (finalID == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
             }
-            if (correctedBR.contains("\"no_flv\":0")) {
-                quality = ".vk.flv";
-                additionalStuff = "assets/videos/";
-            }
-            String videoName = new Regex(correctedBR, "class=\"video_name\" />(.*?)</a>").getMatch(0);
-            if (videoName == null) {
-                videoName = new Regex(correctedBR, "\"md_title\":\"(.*?)\"").getMatch(0);
-                if (videoName == null) {
-                    videoName = new Regex(correctedBR, "\\{\"title\":\"(.*?)\"").getMatch(0);
-                }
-            }
-            String completeLink = "directhttp://http://" + urlPart.replace("http://", "") + "/" + additionalStuff + vtag + videoID + quality;
-            DownloadLink dl = createDownloadlink(completeLink);
-            // Set filename so we have nice filenames here ;)
-            if (videoName != null) dl.setFinalFileName(Encoding.htmlDecode(videoName).replaceAll("(»|\")", "").trim() + quality.substring(quality.length() - 4, quality.length()));
-            return dl;
+            return createDownloadlink("http://rutube.ru/tracks/" + finalID + ".html");
         }
+        // No external video found, try finding a hosted video
+        String additionalStuff = "video/";
+        String urlPart = new Regex(correctedBR, "\"thumb\":\"(http:.{10,100})/video").getMatch(0);
+        if (urlPart == null) urlPart = new Regex(correctedBR, "\"host\":\"(.*?)\"").getMatch(0);
+        String vtag = new Regex(correctedBR, "\"vtag\":\"(.*?)\"").getMatch(0);
+        String videoID = new Regex(correctedBR, "\"vkid\":\"(.*?)\"").getMatch(0);
+        if (videoID == null) videoID = new Regex(parameter, ".*?vkontakte\\.ru/video(\\-)?\\d+_(\\d+)").getMatch(1);
+        if (videoID == null || urlPart == null || vtag == null) return null;
+        // Find the highest possible quality, also every video is only
+        // available in 1-2 formats so we HAVE to use the highest one, if we
+        // don't do that we get wrong lings
+        String quality = ".vk.flv";
+        if (correctedBR.contains("\"hd\":1")) {
+            quality = ".360.mov";
+            videoID = "";
+        } else if (correctedBR.contains("\"hd\":2")) {
+            quality = ".480.mov";
+            videoID = "";
+        } else if (correctedBR.contains("\"hd\":3")) {
+            quality = ".720.mov";
+            videoID = "";
+        } else if (correctedBR.contains("\"no_flv\":1")) {
+            quality = ".240.mov";
+            videoID = "";
+        }
+        if (correctedBR.contains("\"hd\":3") && correctedBR.contains("\"no_flv\":0")) {
+            quality = ".720.mp4";
+            videoID = "";
+        } else if (correctedBR.contains("\"no_flv\":0")) {
+            quality = ".vk.flv";
+            additionalStuff = "assets/videos/";
+        }
+        String videoName = new Regex(correctedBR, "class=\"video_name\" />(.*?)</a>").getMatch(0);
+        if (videoName == null) {
+            videoName = new Regex(correctedBR, "\"md_title\":\"(.*?)\"").getMatch(0);
+            if (videoName == null) {
+                videoName = new Regex(correctedBR, "\\{\"title\":\"(.*?)\"").getMatch(0);
+            }
+        }
+        String completeLink = "directhttp://http://" + urlPart.replace("http://", "") + "/" + additionalStuff + vtag + videoID + quality;
+        DownloadLink dl = createDownloadlink(completeLink);
+        // Set filename so we have nice filenames here ;)
+        if (videoName != null) dl.setFinalFileName(Encoding.htmlDecode(videoName).replaceAll("(»|\")", "").trim() + quality.substring(quality.length() - 4, quality.length()));
+        return dl;
     }
 
     @SuppressWarnings("unchecked")
@@ -237,7 +263,14 @@ public class VKontakteRu extends PluginForDecrypt implements ProgressControllerL
     }
 
     private boolean loginSite(String username, String password) throws IOException {
-        br.postPage(POSTPAGE, "act=login&success_url=&fail_url=&try_to_login=1&to=&vk=&al_test=3&email=" + Encoding.urlEncode(username) + "&pass=" + Encoding.urlEncode(password) + "&expire=");
+        br.getPage(POSTPAGE);
+        Browser br2 = br.cloneBrowser();
+        br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        br2.postPage(POSTPAGE, "op=a_login_attempt");
+        String damnIPH = br.getRegex("name=\"ip_h\" value=\"(.*?)\"").getMatch(0);
+        if (damnIPH == null) damnIPH = br.getRegex("\\{loginscheme: \\'https\\', ip_h: \\'(.*?)\\'\\}").getMatch(0);
+        if (damnIPH == null) return false;
+        br.postPage("https://login.vk.com/", "act=login&success_url=&fail_url=&try_to_login=1&to=&vk=&al_test=3&from_hostvkontakte.ru&ip_h=" + damnIPH + "&email=" + Encoding.urlEncode(username) + "&pass=" + Encoding.urlEncode(password) + "&expire=");
         String hash = br.getRegex("type=\"hidden\" name=\"hash\" value=\"(.*?)\"").getMatch(0);
         // If this variable is null the login is probably wrong
         if (hash == null) return false;

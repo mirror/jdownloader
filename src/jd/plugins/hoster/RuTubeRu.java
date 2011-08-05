@@ -22,11 +22,11 @@ import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
@@ -104,19 +104,15 @@ public class RuTubeRu extends PluginForHost {
         br.getPage(downloadLink.getDownloadURL());
         if (br.getRedirectLocation() != null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         final String fsk18 = br.getRegex("<p><b>.*?18.*?href=\"(http://rutube.ru/.*?confirm=.*?)\"").getMatch(0);
-        if (fsk18 != null) {
-            br.getPage(fsk18);
-        }
+        if (fsk18 != null) br.getPage(fsk18);
         br.setFollowRedirects(true);
         String filename = br.getRegex("<title>(.*?):: Видео на RuTube").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("meta name=\"title\" content=\"(.*?):: Видео на RuTube").getMatch(0);
-        }
+        if (filename == null) filename = br.getRegex("meta name=\"title\" content=\"(.*?):: Видео на RuTube").getMatch(0);
         final String filesize = br.getRegex("<span class=\"icn-size\"[^>]*>(.*?)</span>").getMatch(0);
         if (filename == null || filesize == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         filename = filename.replaceFirst("::", "-");
         filename = filename.replace("::", "");
-        downloadLink.setName(filename.trim() + ".flv");
+        downloadLink.setName(Encoding.htmlDecode(filename.trim()) + ".flv");
         downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.replace(",", ".")));
         return AvailableStatus.TRUE;
     }
