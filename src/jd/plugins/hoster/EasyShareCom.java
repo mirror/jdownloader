@@ -29,11 +29,11 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -56,6 +56,7 @@ public class EasyShareCom extends PluginForHost {
 
     private static final String MAINPAGE     = "http://www.easy-share.com/";
     private static final String FILENOTFOUND = "Requested file is deleted";
+    private static final String ONLY4PREMIUM = ">You need Premium membership to download this file";
 
     private void login(Account account) throws Exception {
         this.setBrowserExclusive();
@@ -154,7 +155,7 @@ public class EasyShareCom extends PluginForHost {
         }
         if (br.containsHTML(FILENOTFOUND)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML("There is another download in progress from your IP")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 15 * 60 * 1000l);
-        if (br.containsHTML("You need a premium membership to download this file")) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.host.errormsg.only4premium", "Only downloadable for premium users!"));
+        if (br.containsHTML(ONLY4PREMIUM)) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.host.errormsg.only4premium", "Only downloadable for premium users!"));
         String wait = br.getRegex("w=\\'(\\d+)\\'").getMatch(0);
         int waittime = 0;
         if (wait != null) waittime = Integer.parseInt(wait.trim());

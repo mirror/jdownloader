@@ -78,6 +78,6 @@ public class MultiupOrg extends PluginForDecrypt {
         } catch (Exception e) {
             return null;
         }
-        return new Regex(decoded, "<a target=\"_\\d+\" href=\"(.*?)\"").getMatch(0);
+        return new Regex(decoded, "<a target=\"[^\"\\']+\" href=\"(.*?)\"").getMatch(0);
     }
 }

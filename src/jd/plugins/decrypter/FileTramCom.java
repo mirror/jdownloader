@@ -45,11 +45,19 @@ public class FileTramCom extends PluginForDecrypt {
             String fpName = br.getRegex("<h1 class=\"title\">(.*?)</h1>").getMatch(0);
             if (fpName == null) fpName = br.getRegex("<title>(.*?) \\- [A-Za-z0-9\\-]+ download</title>").getMatch(0);
             String textArea = br.getRegex("id=\"copy\\-links\" class=\"select\\-content\" wrap=\"off\">(.*?)</textarea>").getMatch(0);
-            if (textArea == null) return null;
-            String[] links = HTMLParser.getHttpLinks(textArea, "");
-            if (links == null || links.length == 0) return null;
-            for (String dl : links)
-                decryptedLinks.add(createDownloadlink(dl));
+            String singleLink = br.getRegex("globalVar\\.url=\\'(.*?)\\'").getMatch(0);
+            if (singleLink == null) singleLink = br.getRegex("<div id=\"urlHolder\" style=\"display:none\">[\t\n\r ]+<a href=\"(.*?)\"").getMatch(0);
+            if ((textArea == null || textArea.length() == 0) && singleLink == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            if (textArea != null && textArea.length() != 0) {
+                String[] links = HTMLParser.getHttpLinks(textArea, "");
+                if (links == null || links.length == 0) return null;
+                for (String dl : links)
+                    decryptedLinks.add(createDownloadlink(dl));
+            }
+            if (singleLink != null) decryptedLinks.add(createDownloadlink(singleLink));
             if (fpName != null) {
                 FilePackage fp = FilePackage.getInstance();
                 fp.setName(fpName.trim());

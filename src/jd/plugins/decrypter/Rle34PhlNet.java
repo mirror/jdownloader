@@ -27,7 +27,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rule34.paheal.net" }, urls = { "http://(www\\.)?rule34\\.paheal\\.net/post/list/[A-Za-z0-9]+/\\d+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rule34.paheal.net" }, urls = { "http://(www\\.)?rule34\\.paheal\\.net/post/list/[A-Za-z0-9_\\-]+/\\d+" }, flags = { 0 })
 public class Rle34PhlNet extends PluginForDecrypt {
 
     public Rle34PhlNet(PluginWrapper wrapper) {

@@ -52,8 +52,10 @@ public class ChipDe extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
+        br.setFollowRedirects(true);
         br.setCustomCharset("utf-8");
         br.getPage(link.getDownloadURL());
+        br.setFollowRedirects(false);
         if (br.containsHTML("Seite nicht gefunden")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<title>(.*?)\\- Download \\- CHIP Online</title>").getMatch(0);
         if (filename == null) {
