@@ -19,6 +19,7 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
@@ -48,6 +49,7 @@ public class ShareOnlineBiz extends PluginForHost {
     private final static long                                      waitNoFreeSlot = 10 * 60 * 1000l;
     private final static String                                    UA             = RandomUserAgent.generate();
     private boolean                                                hideID         = true;
+    private static AtomicInteger                                   maxChunksnew   = new AtomicInteger(-2);
 
     public ShareOnlineBiz(PluginWrapper wrapper) {
         super(wrapper);
@@ -242,18 +244,22 @@ public class ShareOnlineBiz extends PluginForHost {
         final String status = dlInfos.get("STATUS");
         if (filename == null || size == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         parameter.setMD5Hash(dlInfos.get("MD5"));
-        if (!"online".equalsIgnoreCase(status)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (!"online".equalsIgnoreCase(status)) {
+            if ("server_under_maintenance".equalsIgnoreCase(dlInfos.get("URL"))) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server currently Offline", 2 * 60 * 60 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         if (size != null) parameter.setDownloadSize(Long.parseLong(size));
         if (filename != null) parameter.setFinalFileName(filename);
         final String dlURL = dlInfos.get("URL");
         // http://api.share-online.biz/api/account.php?act=fileError&fid=FILE_ID
         if (dlURL == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if ("server_under_maintenance".equals(dlURL)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server currently Offline", 2 * 60 * 60 * 1000l);
         br.setFollowRedirects(true);
         /* Datei herunterladen */
         /* api does allow resume, but only 1 chunk */
         logger.info("used url: " + dlURL);
         br.setDebug(true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, parameter, dlURL, true, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, parameter, dlURL, true, maxChunksnew.get());
         if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
             errorHandling(br, parameter);
@@ -278,9 +284,20 @@ public class ShareOnlineBiz extends PluginForHost {
             }
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.shareonlinebiz.errors.servernotavailable3", "No free Free-User Slots! Get PremiumAccount or wait!"), waitNoFreeSlot);
         }
+        if (br.getURL().contains("failure/server")) {
+            /* server offline */
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server currently Offline", 2 * 60 * 60 * 1000l);
+        }
         if (br.getURL().contains("failure/threads")) {
             /* already loading,too many threads */
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 15 * 60 * 1000l);
+        }
+        if (br.getURL().contains("failure/chunks")) {
+            /* max chunks reached */
+            String maxCN = new Regex(br.getURL(), "failure/chunks/(\\d+)").getMatch(0);
+            if (maxCN != null) maxChunksnew.set(Integer.parseInt(maxCN));
+            downloadLink.setChunksProgress(null);
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "MaxChunks Error", 10 * 60 * 1000l);
         }
         if (br.getURL().contains("failure/bandwidth")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l); }
         if (br.getURL().contains("failure/filenotfound")) {
