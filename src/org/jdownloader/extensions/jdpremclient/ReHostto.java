@@ -16,11 +16,11 @@ import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.TransferStatus;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.download.DownloadInterface;
 
 public class ReHostto extends PluginForHost implements JDPremInterface {
@@ -374,7 +374,6 @@ public class ReHostto extends PluginForHost implements JDPremInterface {
             if (hoster.contains("freakshare.")) return true;
             if (hoster.contains("filesonic")) return true;
             if (hoster.contains("easy-share")) return true;
-            if (hoster.contains("duckload")) return true;
             if (hoster.contains("megaupload")) return true;
             if (hoster.contains("megavideo")) return true;
             if (hoster.contains("fileserve.com")) return true;

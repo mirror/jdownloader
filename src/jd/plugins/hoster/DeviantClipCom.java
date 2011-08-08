@@ -24,11 +24,11 @@ import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "deviantclip.com" }, urls = { "http://[\\w\\.]*?gsghe366REHrtzegiolp/Media-([0-9]+-[0-9]+_|[0-9]+_).*?\\.html(---picture|---video)" }, flags = { 0 })
 public class DeviantClipCom extends PluginForHost {
@@ -59,9 +59,9 @@ public class DeviantClipCom extends PluginForHost {
             br.getPage(thelink.replace("---video", ""));
             String filename = br.getRegex("<li class=\"text\"><h1>(.*?)</h1></li>").getMatch(0);
             if (filename == null) {
-                filename = br.getRegex("title:'(.*?)'").getMatch(0);
+                filename = br.getRegex("title:\\'(.*?)\\'").getMatch(0);
                 if (filename == null) {
-                    filename = br.getRegex("class=\"main-sectioncontent\"><p class=\"footer\">.*?<b>(.*?)</b>").getMatch(0);
+                    filename = br.getRegex("class=\"main\\-sectioncontent\"><p class=\"footer\">.*?<b>(.*?)</b>").getMatch(0);
                     if (filename == null) {
                         filename = br.getRegex("name=\"DC\\.title\" content=\"(.*?)\">").getMatch(0);
                         if (filename == null) {

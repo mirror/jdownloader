@@ -35,15 +35,15 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "deviantclip.com" }, urls = { "http://[\\w\\.]*?deviantclip\\.com/Media-([0-9]+-[0-9]+_|[0-9]+_).*?\\.html" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "deviantclip.com" }, urls = { "http://[\\w\\.]*?deviantclip\\.com/Media\\-([0-9]+\\-[0-9]+|[0-9]+_).*?\\.html" }, flags = { 0 })
 public class DeviantClipComGallery extends PluginForDecrypt implements ProgressControllerListener {
 
     public DeviantClipComGallery(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private boolean abort = false;
-    public String fpName = null;
+    private boolean abort  = false;
+    public String   fpName = null;
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         try {
@@ -54,8 +54,8 @@ public class DeviantClipComGallery extends PluginForDecrypt implements ProgressC
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.getPage(parameter);
-        if (br.containsHTML(">PICTURE GALLERY<") || parameter.matches(".*?deviantclip\\.com/Media-[0-9]+-[0-9]+_.*?\\.html")) {
-            if (parameter.matches(".*?deviantclip\\.com/Media-[0-9]+-[0-9]+_.*?\\.html")) {
+        if (br.containsHTML(">PICTURE GALLERY<") || parameter.matches(".*?deviantclip\\.com/Media-[0-9]+\\-[0-9]+_.*?\\.html")) {
+            if (parameter.matches(".*?deviantclip\\.com/Media\\-[0-9]+\\-[0-9]+_.*?\\.html")) {
                 getfpName();
                 if (fpName != null) {
                     DownloadLink dl = createDownloadlink(parameter.replace("deviantclip.com", "gsghe366REHrtzegiolp") + "---picture");

@@ -70,7 +70,7 @@ public class VKontakteRu extends PluginForDecrypt implements ProgressControllerL
             // Access the page
             br.getPage(parameter);
             // Retry if failed
-            if (br.getRedirectLocation() != null && br.getRedirectLocation().contains("login.vk.com") || br.containsHTML("method=\"post\" name=\"login\" id=\"login\"")) {
+            if (br.getRedirectLocation() != null && br.getRedirectLocation().contains("login.vk.com") || br.containsHTML("(method=\"post\" name=\"login\" id=\"login\"|name=\"login\" id=\"quick_login_form\")")) {
                 logger.info("Retrying vkontakte.ru login...");
                 this.getPluginConfig().setProperty("logincounter", "-1");
                 this.getPluginConfig().save();
@@ -270,11 +270,11 @@ public class VKontakteRu extends PluginForDecrypt implements ProgressControllerL
         String damnIPH = br.getRegex("name=\"ip_h\" value=\"(.*?)\"").getMatch(0);
         if (damnIPH == null) damnIPH = br.getRegex("\\{loginscheme: \\'https\\', ip_h: \\'(.*?)\\'\\}").getMatch(0);
         if (damnIPH == null) return false;
-        br.postPage("https://login.vk.com/", "act=login&success_url=&fail_url=&try_to_login=1&to=&vk=&al_test=3&from_hostvkontakte.ru&ip_h=" + damnIPH + "&email=" + Encoding.urlEncode(username) + "&pass=" + Encoding.urlEncode(password) + "&expire=");
+        br.postPage("https://login.vk.com/", "act=login&success_url=&fail_url=&try_to_login=1&to=&vk=&al_test=3&from_host=vkontakte.ru&ip_h=" + damnIPH + "&email=" + Encoding.urlEncode(username) + "&pass=" + Encoding.urlEncode(password) + "&expire=1");
         String hash = br.getRegex("type=\"hidden\" name=\"hash\" value=\"(.*?)\"").getMatch(0);
         // If this variable is null the login is probably wrong
         if (hash == null) return false;
-        br.getPage("http://vkontakte.ru/login.php?act=slogin&fast=1&hash=" + hash + "&redirect=1&s=0");
+        br.getPage("http://vkontakte.ru/login.php?act=slogin&fast=1&hash=" + hash + "&redirect=1&s=1");
         return true;
     }
 
