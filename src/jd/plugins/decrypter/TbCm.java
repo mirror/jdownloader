@@ -444,7 +444,7 @@ public class TbCm extends PluginForDecrypt {
             /* new format since ca. 1.8.2011 */
             html5_fmt_map = br.getRegex("\"url_encoded_fmt_stream_map\": \"(.*?)\"").getMatch(0);
             if (html5_fmt_map != null) {
-                String[] html5_hits = new Regex(html5_fmt_map, "(.*?),").getColumn(0);
+                String[] html5_hits = new Regex(html5_fmt_map, "(.*?)(,|$)").getColumn(0);
                 if (html5_hits != null) {
                     for (String hit : html5_hits) {
                         hit = unescape(hit);

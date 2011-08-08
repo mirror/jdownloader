@@ -341,14 +341,20 @@ public class DepositFiles extends PluginForHost {
                 }
             }
             /* check for waittime */
-            if (br.containsHTML("Please wait \\d+ sec or use GOLD account to download with no time limits")) {
-                int waitThis = 60;
-                final String wait = br.getRegex("Please wait (\\d+) sec").getMatch(0);
-                if (wait != null) {
-                    waitThis = Integer.parseInt(wait);
-                }
-                this.sleep(waitThis * 1001l, downloadLink);
+            // if
+            // (br.containsHTML("Please wait \\d+ sec or use GOLD account to download with no time limits"))
+            // {
+            /*
+             * seems somethings wrong with waittime parsing so we do wait each
+             * time to be sure
+             */
+            int waitThis = 62;
+            final String wait = br.getRegex("Please wait (\\d+) sec").getMatch(0);
+            if (wait != null) {
+                waitThis = Integer.parseInt(wait);
             }
+            this.sleep(waitThis * 1001l, downloadLink);
+            // }
             // Important! Setup Header
             br.getHeaders().put("Accept-Charset", null);
             br.getHeaders().put("Pragma", null);
@@ -375,8 +381,11 @@ public class DepositFiles extends PluginForHost {
                 }
             }
             if (!con.isContentDisposition()) {
+                if (con.getHeaderField("Guest-Limit") != null) {
+                    con.disconnect();
+                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1000l);
+                }
                 br.followConnection();
-                if (con.getHeaderField("Guest-Limit") != null) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1000l); }
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 10 * 60 * 1000l);
             }
             if (passCode != null) {
@@ -384,8 +393,11 @@ public class DepositFiles extends PluginForHost {
             }
             if (con.getContentType().contains("html")) {
                 logger.warning("The finallink doesn't lead to a file, following connection...");
+                if (con.getHeaderField("Guest-Limit") != null) {
+                    con.disconnect();
+                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1000l);
+                }
                 br.followConnection();
-                if (con.getHeaderField("Guest-Limit") != null) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1000l); }
                 if (br.containsHTML("(<title>404 Not Found</title>|<h1>404 Not Found</h1>)")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 10 * 60 * 1000l); }
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }

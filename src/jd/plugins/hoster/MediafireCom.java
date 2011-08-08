@@ -383,6 +383,7 @@ public class MediafireCom extends PluginForHost {
         this.br.postPageRaw("http://www.mediafire.com/basicapi/premiumapi.php", "premium_key=" + MediafireCom.CONFIGURATION_KEYS.get(account) + "&files=" + this.fileID);
         String url = this.br.getRegex("<url>(http.*?)</url>").getMatch(0);
         boolean passwordprotected = false;
+        if ("-202".equals(this.br.getRegex("<flags>(.*?)</").getMatch(0))) { throw new PluginException(LinkStatus.ERROR_FATAL, "Private file. No Download possible"); }
         if ("-204".equals(this.br.getRegex("<flags>(.*?)</").getMatch(0))) {
             passwordprotected = true;
             new PasswordSolver(this, this.br, downloadLink) {

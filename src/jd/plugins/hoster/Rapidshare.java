@@ -273,17 +273,7 @@ public class Rapidshare extends PluginForHost {
                         u.getLinkStatus().setStatusText("");
                         u.getLinkStatus().setErrorMessage(null);
                         break;
-                    case 51:
-                        u.setAvailable(true);
-                        u.getLinkStatus().setStatusText(JDL.L("plugin.host.rapidshare.status.directdownload", "Direct Download(normal)"));
-                        u.getLinkStatus().setErrorMessage(null);
-                        break;
-                    case 52:
-                        u.setAvailable(true);
-                        u.getLinkStatus().setStatusText(JDL.L("plugin.host.rapidshare.status.directdownload", "Direct Download(secured)"));
-                        u.getLinkStatus().setErrorMessage(null);
-                        break;
-                    case 2:
+                    case 5:
                         u.setAvailable(true);
                         u.getLinkStatus().setStatusText(JDL.L("plugin.host.rapidshare.status.directdownload", "Direct Download"));
                         u.getLinkStatus().setErrorMessage(null);
@@ -297,11 +287,6 @@ public class Rapidshare extends PluginForHost {
                         u.setAvailable(false);
                         u.getLinkStatus().setErrorMessage(JDL.L("plugin.host.rapidshare.status.abused", "File abused"));
                         u.getLinkStatus().setStatusText(JDL.L("plugin.host.rapidshare.status.abused", "File abused"));
-                        break;
-                    case 5:
-                        u.setAvailableStatus(AvailableStatus.UNCHECKABLE);
-                        u.getLinkStatus().setErrorMessage(JDL.L("plugin.host.rapidshare.status.anonymous", "File without Account(annonymous)"));
-                        u.getLinkStatus().setStatusText(JDL.L("plugin.host.rapidshare.status.anonymous", "File without Account(annonymous)"));
                         break;
                     }
                     i++;

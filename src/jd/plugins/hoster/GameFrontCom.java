@@ -21,11 +21,11 @@ import java.io.IOException;
 import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
@@ -65,7 +65,9 @@ public class GameFrontCom extends PluginForHost {
         }
         String filename = br.getRegex("<td><div style=\"width: 300px; overflow: hidden; margin-top: 0pt;\">(.*?)</div></td>").getMatch(0);
         if (filename == null) filename = br.getRegex("Lucida Grande\\',\\'Lucida Sans Unicode\\',Arial,sans-serif; font-size: 28px; font-weight: normal;\">(.*?)</h1>").getMatch(0);
+        if (filename == null) filename = br.getRegex("File Name:<.*?<.*?>(.*?)<").getMatch(0);
         String filesize = br.getRegex("\">File size:</td>[\t\n\r ]+<td>(.*?)</td>").getMatch(0);
+        if (filesize == null) filesize = br.getRegex("File Size:<.*?<.*?>(.*?)<").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         filesize = filesize.trim();
         downloadLink.setName(filename.trim());
@@ -82,12 +84,9 @@ public class GameFrontCom extends PluginForHost {
         br.getPage("http://www.gamefront.com/files/service/thankyou?id=" + fileID);
         br.setFollowRedirects(true);
         String finallink = br.getRegex("begin in a moment\\. If it does not, <a href=\"(http://.*?)\"").getMatch(0);
-        if (finallink == null) {
-            finallink = br.getRegex("http-equiv=\"refresh\" content=\"\\d+;url=(http://.*?)\"").getMatch(0);
-            if (finallink == null) {
-                finallink = br.getRegex("\"(http://media\\d+\\.gamefront\\.com/personal/\\d+/\\d+/[a-z0-9]+/.*?)\"").getMatch(0);
-            }
-        }
+        if (finallink == null) finallink = br.getRegex("http-equiv=\"refresh\" content=\"\\d+;url=(http://.*?)\"").getMatch(0);
+        if (finallink == null) finallink = br.getRegex("(\"|')(http://media\\d+\\.gamefront\\.com/personal/\\d+/\\d+/[a-z0-9]+/.*?)(\"|')").getMatch(1);
+        if (finallink == null) finallink = br.getRegex("downloadURL.*?(http://media\\d+\\.gamefront\\.com/.*?)'").getMatch(0);
         if (finallink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finallink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
