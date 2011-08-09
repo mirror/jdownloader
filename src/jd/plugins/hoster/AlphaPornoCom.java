@@ -25,11 +25,11 @@ import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 import org.appwork.utils.Hash;
 
@@ -76,13 +76,10 @@ public class AlphaPornoCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         setBrowserExclusive();
-        br.setFollowRedirects(false);
+        br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("(<h2>Sorry, this video is no longer available|<title></title>)")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-        String filename = br.getRegex("<h2><span></span>(.*?)</h2>").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
-        }
+        String filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
         DLLINK = br.getRegex("video_url=(http://.*?)/\\&amp;preview_url").getMatch(0);
         if (DLLINK == null) {
             DLLINK = br.getRegex("video_url:.*?\\('(http://.*?)'\\)").getMatch(0);

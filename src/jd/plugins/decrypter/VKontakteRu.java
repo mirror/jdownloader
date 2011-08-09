@@ -28,11 +28,11 @@ import jd.controlling.ProgressController;
 import jd.controlling.ProgressControllerEvent;
 import jd.controlling.ProgressControllerListener;
 import jd.gui.UserIO;
-import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
@@ -211,7 +211,7 @@ public class VKontakteRu extends PluginForDecrypt implements ProgressControllerL
     }
 
     @SuppressWarnings("unchecked")
-    private boolean getUserLogin() throws IOException, DecrypterException {
+    private boolean getUserLogin() throws Exception {
         br.setFollowRedirects(true);
         String username = null;
         String password = null;
@@ -222,7 +222,7 @@ public class VKontakteRu extends PluginForDecrypt implements ProgressControllerL
                 username = this.getPluginConfig().getStringProperty("user", null);
                 password = this.getPluginConfig().getStringProperty("pass", null);
                 for (int i = 0; i < 3; i++) {
-                    if ((username == null && password == null) || !loginSite(username, password) || br.getCookie(POSTPAGE, "remixsid") == null) {
+                    if (username == null || password == null) {
                         this.getPluginConfig().setProperty("user", Property.NULL);
                         this.getPluginConfig().setProperty("pass", Property.NULL);
                         username = UserIO.getInstance().requestInputDialog("Enter Loginname for " + DOMAIN + " :");
@@ -262,11 +262,23 @@ public class VKontakteRu extends PluginForDecrypt implements ProgressControllerL
         throw new DecrypterException("Login or/and password for " + DOMAIN + " is wrong!");
     }
 
-    private boolean loginSite(String username, String password) throws IOException {
+    private boolean loginSite(String username, String password) throws Exception {
+        // br.getHeaders().put("User-Agent",
+        // "Mozilla/5.0 (Windows; U; Windows NT 6.1; de; rv:1.9.2.18) Gecko/20110614 Firefox/3.6.18");
+        // br.getHeaders().put("Accept",
+        // "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
+        // br.getHeaders().put("Accept-Language",
+        // "de-de,de;q=0.8,en-us;q=0.5,en;q=0.3");
+        // br.getHeaders().put("Accept-Encoding", "gzip,deflate");
+        // br.getHeaders().put("Accept-Charset",
+        // "ISO-8859-1,utf-8;q=0.7,*;q=0.7");
+        // br.getHeaders().put("Referer", "http://vkontakte.ru/login.php");
+        // br.getHeaders().put("Content-Type",
+        // "application/x-www-form-urlencoded");
         br.getPage(POSTPAGE);
-        Browser br2 = br.cloneBrowser();
-        br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        br2.postPage(POSTPAGE, "op=a_login_attempt");
+        // Browser br2 = br.cloneBrowser();
+        // br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        // br2.postPage(POSTPAGE, "op=a_login_attempt");
         String damnIPH = br.getRegex("name=\"ip_h\" value=\"(.*?)\"").getMatch(0);
         if (damnIPH == null) damnIPH = br.getRegex("\\{loginscheme: \\'https\\', ip_h: \\'(.*?)\\'\\}").getMatch(0);
         if (damnIPH == null) return false;
@@ -274,7 +286,15 @@ public class VKontakteRu extends PluginForDecrypt implements ProgressControllerL
         String hash = br.getRegex("type=\"hidden\" name=\"hash\" value=\"(.*?)\"").getMatch(0);
         // If this variable is null the login is probably wrong
         if (hash == null) return false;
-        br.getPage("http://vkontakte.ru/login.php?act=slogin&fast=1&hash=" + hash + "&redirect=1&s=1");
+        br.getPage("http://vkontakte.ru/login.php?act=slogin&fast=1&hash=" + hash + "&redirect=1&s=0");
+        // Finish login
+        Form lol = br.getFormbyProperty("name", "login");
+        if (lol != null) {
+            lol.put("email", Encoding.urlEncode(username));
+            lol.put("pass", Encoding.urlEncode(password));
+            lol.put("expire", "0");
+            br.submitForm(lol);
+        }
         return true;
     }
 

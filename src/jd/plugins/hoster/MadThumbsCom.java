@@ -24,11 +24,11 @@ import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDHexUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "madthumbs.com" }, urls = { "http://(www\\.)?madthumbs\\.com/videos/[\\w-]+/[\\w-]+/\\d+" }, flags = { 0 })
@@ -49,16 +49,26 @@ public class MadThumbsCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
+        // Falls das vor .bismarck's Fix released wird wird immer ein- und
+        // dasselbe Video geladen->So isses besser
+        boolean pluginBroken = true;
+        if (pluginBroken) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.setFollowRedirects(false);
+        br.setCookie("http://www.madthumbs.com/", "language", "en");
         br.getPage(downloadLink.getDownloadURL());
-
-        if (br.containsHTML("var vid_title = \"\"")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("var vid_title = \"(.*?)\"").getMatch(0);
-        if (filename == null) filename = br.getRegex("content=\"(.*?) \\- Madthumbs\\.com\"").getMatch(0);
-
+        if (br.containsHTML("(<title>Free Porn Tube \\- MadThumbs\\&trade;</title>|<meta property=\"og:title\" content=\"Free Porn Tube \\- MadThumbs\")")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("vid_title:\"(.*?)\"").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("<title>(.*?) \\- MadThumbs\\&trade;</title> ").getMatch(0);
+            if (filename == null) {
+                filename = br.getRegex("<meta property=\"og:title\" content=\"(.*?) \\- MadThumbs\"").getMatch(0);
+                if (filename == null) {
+                    filename = br.getRegex("<div class=\"title\"><h1 class=\"fl\"><a href=\"\">(.*?)</a></h1></div>").getMatch(0);
+                }
+            }
+        }
         String[] param = br.getRegex("flowplayer\\((.*?)\\)\\;").getMatch(0).replaceAll("\n|\\s|'", "").split(",");
         if (param == null || param.length == 0 || param.length < 4 || filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-
         // Generate hashvalue
         String hash = null;
         try {
@@ -66,7 +76,6 @@ public class MadThumbsCom extends PluginForHost {
         } catch (final Throwable e) {
         }
         if (hash == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-
         DLLINK = Encoding.htmlDecode(param[1]) + "&hash=" + hash.trim();
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".flv");
         Browser br2 = br.cloneBrowser();

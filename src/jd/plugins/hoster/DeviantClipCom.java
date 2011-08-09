@@ -30,7 +30,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "deviantclip.com" }, urls = { "http://[\\w\\.]*?gsghe366REHrtzegiolp/Media-([0-9]+-[0-9]+_|[0-9]+_).*?\\.html(---picture|---video)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "deviantclip.com" }, urls = { "http://(www\\.)?(gsghe366REHrtzegiolp/Media\\-([0-9]+-[0-9]+_|[0-9]+_).*?\\.html(\\-\\-\\-picture|\\-\\-\\-video)|deviantclip\\.com/watch/.+)" }, flags = { 0 })
 public class DeviantClipCom extends PluginForHost {
 
     public DeviantClipCom(PluginWrapper wrapper) {
@@ -55,7 +55,7 @@ public class DeviantClipCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(false);
         String thelink = downloadLink.getDownloadURL();
-        if (thelink.contains("---video")) {
+        if (thelink.contains("---video") || thelink.contains("/watch/")) {
             br.getPage(thelink.replace("---video", ""));
             String filename = br.getRegex("<li class=\"text\"><h1>(.*?)</h1></li>").getMatch(0);
             if (filename == null) {
@@ -80,7 +80,7 @@ public class DeviantClipCom extends PluginForHost {
             dllink = br.getRegex("\"(http://medias\\.deviantclip\\.com/media/[0-9]+/.*?)\"").getMatch(0);
         }
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dllink = Encoding.htmlDecode(dllink.replace("amp;", ""));
+        dllink = Encoding.htmlDecode(dllink);
         URLConnectionAdapter con = br.openGetConnection(dllink);
         if (thelink.contains("---picture") && downloadLink.getName() != null) {
             String ending = LoadImage.getFileType(dllink, con.getContentType());

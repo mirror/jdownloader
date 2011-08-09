@@ -25,8 +25,6 @@ import jd.controlling.ProgressController;
 import jd.controlling.ProgressControllerEvent;
 import jd.controlling.ProgressControllerListener;
 import jd.http.URLConnectionAdapter;
-import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -35,7 +33,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "deviantclip.com" }, urls = { "http://[\\w\\.]*?deviantclip\\.com/Media\\-([0-9]+\\-[0-9]+|[0-9]+_).*?\\.html" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "deviantclip.com" }, urls = { "http://(www\\.)?deviantclip\\.com/Media\\-([0-9]+\\-[0-9]+|[0-9]+_).*?\\.html" }, flags = { 0 })
 public class DeviantClipComGallery extends PluginForDecrypt implements ProgressControllerListener {
 
     public DeviantClipComGallery(PluginWrapper wrapper) {
@@ -81,7 +79,7 @@ public class DeviantClipComGallery extends PluginForDecrypt implements ProgressC
                 }
             } else {
                 getfpName();
-                String[] links = br.getRegex("(http://www\\.deviantclip\\.com/Media-[0-9]+-[0-9]+_.*?\\.html)").getColumn(0);
+                String[] links = br.getRegex("(http://www\\.deviantclip\\.com/Media\\-[0-9]+\\-[0-9]+_.*?\\.html)").getColumn(0);
                 if (links == null || links.length == 0) return null;
                 progress.setRange(links.length);
                 if (fpName != null) {
@@ -128,21 +126,8 @@ public class DeviantClipComGallery extends PluginForDecrypt implements ProgressC
         } else {
             getfpName();
             if (fpName != null) {
-                String dllink = br.getRegex("\"file\":\"(.*?)\"").getMatch(0);
-                if (dllink == null) dllink = new Regex(Encoding.htmlDecode(br.toString()), "\"(http://medias\\.deviantclip\\.com/media/[0-9]+/.*?\\.flv\\?.*?)\"").getMatch(0);
                 DownloadLink dl = createDownloadlink(parameter.replace("deviantclip.com", "gsghe366REHrtzegiolp") + "---video");
                 dl.setFinalFileName(fpName + ".flv");
-                if (dllink != null) {
-                    dllink = Encoding.htmlDecode(dllink.replace("amp;", ""));
-                    URLConnectionAdapter con = br.openGetConnection(dllink);
-                    if (!con.getContentType().contains("html")) {
-                        long size = con.getLongContentLength();
-                        if (size != 0) {
-                            dl.setDownloadSize(con.getLongContentLength());
-                            dl.setAvailable(true);
-                        }
-                    }
-                }
                 decryptedLinks.add(dl);
             } else {
                 decryptedLinks.add(createDownloadlink(parameter.replace("deviantclip.com", "gsghe366REHrtzegiolp") + "---video"));
@@ -160,9 +145,9 @@ public class DeviantClipComGallery extends PluginForDecrypt implements ProgressC
     public void getfpName() throws NumberFormatException, PluginException {
         fpName = br.getRegex("<li class=\"text\"><h1>(.*?)</h1></li>").getMatch(0);
         if (fpName == null) {
-            fpName = br.getRegex("title:'(.*?)'").getMatch(0);
+            fpName = br.getRegex("title:\\'(.*?)\\'").getMatch(0);
             if (fpName == null) {
-                fpName = br.getRegex("class=\"main-sectioncontent\"><p class=\"footer\">.*?<b>(.*?)</b>").getMatch(0);
+                fpName = br.getRegex("class=\"main\\-sectioncontent\"><p class=\"footer\">.*?<b>(.*?)</b>").getMatch(0);
                 if (fpName == null) {
                     fpName = br.getRegex("name=\"DC\\.title\" content=\"(.*?)\">").getMatch(0);
                     if (fpName == null) {
