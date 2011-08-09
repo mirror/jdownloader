@@ -21,6 +21,7 @@ import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
@@ -64,6 +65,9 @@ public class FlStbCm extends PluginForDecrypt {
                     }
                 }
             }
+            String alternatives = br.getRegex("Alternatives\\('(http:.*?)'").getMatch(0);
+            String alterID = br.getRegex("getAlternatives\\('(.*?)'").getMatch(0);
+            String alterID2 = br.getRegex("getAlternatives\\('.*?', '(.*?)'").getMatch(0);
             String pagePiece = br.getRegex(Pattern.compile("id=\"copy_paste_links\" style=\".*?\">(.*?)</pre>", Pattern.DOTALL)).getMatch(0);
             if (pagePiece == null) return null;
             String temp[] = pagePiece.split("\r\n");
@@ -71,6 +75,21 @@ public class FlStbCm extends PluginForDecrypt {
             if (temp == null || temp.length == 0) return null;
             for (String data : temp)
                 decryptedLinks.add(createDownloadlink(data));
+            if (alternatives != null && alterID != null && alterID2 != null) {
+                Browser br2 = br.cloneBrowser();
+                br2.getPage(alternatives + "/get/" + alterID + "/" + alterID2 + "?callback=jsonp" + System.currentTimeMillis());
+                String alts[] = br2.getRegex("'t':'(.*?)'").getColumn(0);
+                if (alts != null) {
+                    for (String link : alts) {
+                        Browser br3 = br.cloneBrowser();
+                        br3.getPage("http://www.filestube.com/" + link + "/go.html");
+                        String finallink = br3.getRegex("<noframes> <br /> <a href=\"(.*?)\"").getMatch(0);
+                        if (finallink == null) finallink = br3.getRegex("<iframe style=\".*?\" src=\"(.*?)\"").getMatch(0);
+                        if (finallink != null) decryptedLinks.add(createDownloadlink(finallink));
+                    }
+                }
+            }
+
             if (fpName != null) {
                 fp.setName(fpName.trim());
                 fp.addLinks(decryptedLinks);
@@ -78,4 +97,5 @@ public class FlStbCm extends PluginForDecrypt {
         }
         return decryptedLinks;
     }
+
 }
