@@ -17,11 +17,14 @@
 package jd.plugins.hoster;
 
 import java.util.HashMap;
+import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.http.Browser;
+import jd.http.Cookie;
+import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -42,14 +45,15 @@ import jd.utils.locale.JDL;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "youtube.com" }, urls = { "httpJDYoutube://[\\w\\.\\-]*?youtube\\.com/(videoplayback\\?.+|get_video\\?.*?video_id=.+&.+(&fmt=\\d+)?)" }, flags = { 2 })
 public class Youtube extends PluginForHost {
 
-    private static final Object lock         = new Object();
-    private boolean             prem         = false;
-    private static final String IDASFILENAME = "ISASFILENAME";
-    private static final String ALLOW_MP3    = "ALLOW_MP3";
-    private static final String ALLOW_MP4    = "ALLOW_MP4";
-    private static final String ALLOW_WEBM   = "ALLOW_WEBM";
-    private static final String ALLOW_FLV    = "ALLOW_FLV";
-    private static final String ALLOW_3GP    = "ALLOW_3GP";
+    private static final Object                              lock         = new Object();
+    private boolean                                          prem         = false;
+    private static final String                              IDASFILENAME = "ISASFILENAME";
+    private static final String                              ALLOW_MP3    = "ALLOW_MP3";
+    private static final String                              ALLOW_MP4    = "ALLOW_MP4";
+    private static final String                              ALLOW_WEBM   = "ALLOW_WEBM";
+    private static final String                              ALLOW_FLV    = "ALLOW_FLV";
+    private static final String                              ALLOW_3GP    = "ALLOW_3GP";
+    private static HashMap<Account, HashMap<String, String>> loginCookies = new HashMap<Account, HashMap<String, String>>();
 
     public Youtube(final PluginWrapper wrapper) {
         super(wrapper);
@@ -82,7 +86,7 @@ public class Youtube extends PluginForHost {
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
         try {
-            this.login(account, this.br);
+            this.login(account, this.br, true);
         } catch (final PluginException e) {
             account.setValid(false);
             return ai;
@@ -124,14 +128,12 @@ public class Youtube extends PluginForHost {
 
     @Override
     public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
-        synchronized (Youtube.lock) {
-            this.login(account, this.br);
-            this.prem = true;
-            /* we now have to get fresh links */
-            this.requestFileInformation(downloadLink);
-            this.br.setDebug(true);
-            this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, downloadLink.getDownloadURL(), true, 0);
-        }
+        this.login(account, this.br, false);
+        this.prem = true;
+        /* we now have to get fresh links */
+        this.requestFileInformation(downloadLink);
+        this.br.setDebug(true);
+        this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, downloadLink.getDownloadURL(), true, 0);
         if (!this.dl.getConnection().isContentDisposition() && !this.dl.getConnection().getContentType().startsWith("video")) {
             downloadLink.setProperty("valid", false);
             this.dl.getConnection().disconnect();
@@ -142,37 +144,142 @@ public class Youtube extends PluginForHost {
         }
     }
 
-    public void login(final Account account, Browser br) throws Exception {
-        if (br == null) {
-            br = this.br;
-        }
-        br.setDebug(true);
-        this.setBrowserExclusive();
-        br.setFollowRedirects(true);
-        /* TODO: google accounts with youtube profile do not work yet */
-        br.getPage("http://www.youtube.com/");
-        br.getPage("https://www.google.com/accounts/ServiceLogin?uilel=3&service=youtube&passive=true&continue=http%3A%2F%2Fwww.youtube.com%2Fsignin%3Faction_handle_signin%3Dtrue%26nomobiletemp%3D1%26hl%3Den_US%26next%3D%252Findex&hl=en_US&ltmpl=sso");
-        final Form form = br.getForm(1);
-        form.put("continue", Encoding.urlEncode_light("http%3A%2F%2Fwww.youtube.com%2Fsignin%3Faction_handle_signin%3Dtrue%26amp%3Bnomobiletemp%3D1%26amp%3Bhl%3Den_US%26amp%3Bnext%3D%252Findex"));
-        form.put("Email", Encoding.urlEncode(account.getUser()));
-        form.put("Passwd", Encoding.urlEncode(account.getPass()));
-        br.setFollowRedirects(false);
-        final String cook = br.getCookie("http://www.google.com", "GALX");
-        if (cook == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-        br.submitForm(form);
-        if (br.getRedirectLocation() == null) {
-            final String page = Encoding.htmlDecode(br.toString());
-            final String red = new Regex(page, "url='(http://.*?)'").getMatch(0);
-            if (red == null) {
-                account.setValid(false);
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+    public void login(final Account account, Browser br, boolean refresh) throws Exception {
+        synchronized (Youtube.lock) {
+            if (br == null) {
+                br = this.br;
             }
-            br.getPage(red);
+            try {
+                br.setDebug(true);
+                this.setBrowserExclusive();
+                if (refresh == false && loginCookies.containsKey(account)) {
+                    HashMap<String, String> cookies = loginCookies.get(account);
+                    if (cookies != null) {
+                        if (cookies.containsKey("LOGIN_INFO")) {
+                            for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
+                                final String key = cookieEntry.getKey();
+                                final String value = cookieEntry.getValue();
+                                br.setCookie("youtube.com", key, value);
+                            }
+                            return;
+                        }
+                    }
+                }
+                br.setFollowRedirects(true);
+                br.getPage("http://www.youtube.com/");
+                /* first call to google */
+                br.getPage("https://www.google.com/accounts/ServiceLogin?uilel=3&service=youtube&passive=true&continue=http%3A%2F%2Fwww.youtube.com%2Fsignin%3Faction_handle_signin%3Dtrue%26nomobiletemp%3D1%26hl%3Den_US%26next%3D%252Findex&hl=en_US&ltmpl=sso");
+                String checkConnection = br.getRegex("iframeUri: '(https.*?)'").getMatch(0);
+                if (checkConnection != null) {
+                    /*
+                     * dont know if this is important but seems to set pstMsg to
+                     * 1 ;)
+                     */
+                    checkConnection = unescape(checkConnection);
+                    br.cloneBrowser().getPage(checkConnection);
+                }
+                final Form form = br.getForm(1);
+                form.put("pstMsg", "1");
+                form.put("dnConn", "https%3A%2F%2Faccounts.youtube.com&continue=http%3A%2F%2Fwww.youtube.com%2Fsignin%3Faction_handle_signin%3Dtrue%26nomobiletemp%3D1%26hl%3Den_US%26next%3D%252F");
+                form.put("Email", Encoding.urlEncode(account.getUser()));
+                form.put("Passwd", Encoding.urlEncode(account.getPass()));
+                form.put("GALX", br.getCookie("http://www.google.com", "GALX"));
+                form.put("timeStmp", "");
+                form.put("secTok", "");
+                form.put("rmShown", "1");
+                form.put("signIn", "Anmelden");
+                form.put("asts", "");
+                br.setFollowRedirects(false);
+                final String cook = br.getCookie("http://www.google.com", "GALX");
+                if (cook == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+                br.submitForm(form);
+                if (br.getRedirectLocation() == null) {
+                    final String page = Encoding.htmlDecode(br.toString());
+                    final String red = new Regex(page, "url='(http://.*?)'").getMatch(0);
+                    if (red == null) {
+                        account.setValid(false);
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
+                    br.getPage(red);
+                }
+                /* second call to google */
+                br.getPage(br.getRedirectLocation());
+                String setCookies[] = br.getRegex("DOMAIN_SETTINGS.*?uri: '(https.*?)'").getColumn(0);
+                String signIn = br.getRegex("CONTINUE_URL = '(http.*?)'").getMatch(0);
+                if (setCookies == null || signIn == null || br.getCookie("http://www.youtube.com", "GEO") == null) {
+                    account.setValid(false);
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+                for (String page : setCookies) {
+                    br.cloneBrowser().getPage(unescape(page));
+                }
+                br.getPage(unescape(signIn));
+                br.getPage("http://www.youtube.com/index?hl=en");
+                if (br.getCookie("http://www.youtube.com", "LOGIN_INFO") == null || br.getCookie("http://www.youtube.com", "GEO") == null) {
+                    account.setValid(false);
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+                final HashMap<String, String> cookies = new HashMap<String, String>();
+                final Cookies cYT = this.br.getCookies("youtube.com");
+                for (final Cookie c : cYT.getCookies()) {
+                    cookies.put(c.getKey(), c.getValue());
+                }
+                loginCookies.put(account, cookies);
+            } catch (PluginException e) {
+                loginCookies.remove(account);
+                throw e;
+            }
         }
-        br.setFollowRedirects(true);
-        br.getPage(br.getRedirectLocation());
-        if (br.getCookie("http://www.youtube.com", "GEO") == null) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE); }
-        br.getPage("http://www.youtube.com/index?hl=en");
+    }
+
+    public static String unescape(final String s) {
+        char ch;
+        final StringBuilder sb = new StringBuilder();
+        int ii;
+        int i;
+        for (i = 0; i < s.length(); i++) {
+            ch = s.charAt(i);
+            switch (ch) {
+            case '\\':
+                ch = s.charAt(++i);
+                StringBuilder sb2 = null;
+                switch (ch) {
+                case 'u':
+                    /* unicode */
+                    sb2 = new StringBuilder();
+                    i++;
+                    ii = i + 4;
+                    for (; i < ii; i++) {
+                        ch = s.charAt(i);
+                        if (sb2.length() > 0 || ch != '0') {
+                            sb2.append(ch);
+                        }
+                    }
+                    i--;
+                    sb.append((char) Short.parseShort(sb2.toString(), 16));
+                    continue;
+                case 'x':
+                    /* normal hex coding */
+                    sb2 = new StringBuilder();
+                    i++;
+                    ii = i + 2;
+                    for (; i < ii; i++) {
+                        ch = s.charAt(i);
+                        sb2.append(ch);
+                    }
+                    i--;
+                    sb.append((char) Short.parseShort(sb2.toString(), 16));
+                    continue;
+                default:
+                    sb.append(ch);
+                    continue;
+                }
+
+            }
+            sb.append(ch);
+        }
+
+        return sb.toString();
     }
 
     private void postprocess(final DownloadLink downloadLink) {

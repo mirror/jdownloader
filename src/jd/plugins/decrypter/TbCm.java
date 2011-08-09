@@ -106,6 +106,7 @@ public class TbCm extends PluginForDecrypt {
     private static final String                 TEMP_EXT            = ".tmp$";
 
     ArrayList<String>                           done                = new ArrayList<String>();
+    private static boolean                      pluginloaded        = false;
 
     public static boolean ConvertFile(final DownloadLink downloadlink, final DestinationFormat InType, final DestinationFormat OutType) {
         TbCm.LOG.info("Convert " + downloadlink.getName() + " - " + InType.getText() + " - " + OutType.getText());
@@ -509,42 +510,14 @@ public class TbCm extends PluginForDecrypt {
         return links;
     }
 
-    private static String unescape(final String s) {
-        char ch;
-        final StringBuilder sb = new StringBuilder();
-        final StringBuilder sb2 = new StringBuilder();
-        int ii;
-        int i;
-        for (i = 0; i < s.length(); i++) {
-            ch = s.charAt(i);
-            switch (ch) {
-            case '\\':
-                ch = s.charAt(++i);
-                switch (ch) {
-                case 'u':
-                    sb2.delete(0, sb2.length());
-
-                    i++;
-                    ii = i + 4;
-                    for (; i < ii; i++) {
-                        ch = s.charAt(i);
-                        if (sb2.length() > 0 || ch != '0') {
-                            sb2.append(ch);
-                        }
-                    }
-                    i--;
-                    sb.append((char) Short.parseShort(sb2.toString(), 16));
-                    continue;
-                default:
-                    sb.append(ch);
-                    continue;
-                }
-
-            }
-            sb.append(ch);
+    private static synchronized String unescape(final String s) {
+        /* we have to make sure the youtube plugin is loaded */
+        if (pluginloaded == false) {
+            final PluginForHost plugin = JDUtilities.getPluginForHost("youtube.com");
+            if (plugin == null) throw new IllegalStateException("youtube plugin not found!");
+            pluginloaded = true;
         }
-
-        return sb.toString();
+        return jd.plugins.hoster.Youtube.unescape(s);
     }
 
     @Override
@@ -557,7 +530,7 @@ public class TbCm extends PluginForDecrypt {
         final PluginForHost plugin = JDUtilities.getPluginForHost("youtube.com");
         try {
             if (plugin != null) {
-                ((Youtube) plugin).login(account, this.br);
+                ((Youtube) plugin).login(account, this.br, false);
             } else {
                 return false;
             }
