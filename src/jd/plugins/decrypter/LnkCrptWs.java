@@ -26,7 +26,6 @@ import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
 import jd.PluginWrapper;
-import jd.captcha.utils.Utilities;
 import jd.controlling.ProgressController;
 import jd.gui.UserIO;
 import jd.gui.swing.components.Balloon;
@@ -59,22 +58,20 @@ public class LnkCrptWs extends PluginForDecrypt {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         setBrowserExclusive();
-        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
-        br.getHeaders().put("Accept-Language", "en-EN");
+        prepareBrowser(RandomUserAgent.generate());
         final String containerId = new Regex(parameter, "dir/([a-zA-Z0-9]+)").getMatch(0);
-        br.setReadTimeout(150000);
-        try {
-            br.getPage("http://linkcrypt.ws/dir/" + containerId);
-        } catch (final Exception e) {
-            if (Utilities.isLoggerActive()) {
-                logger.severe("Error Server: " + e.getLocalizedMessage());
-            }
-            throw e;
-        }
+        br.getPage("http://linkcrypt.ws/dir/" + containerId);
         if (br.containsHTML("Error 404 - Ordner nicht gefunden")) { throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore.")); }
+        br.cloneBrowser().openGetConnection("http://linkcrypt.ws/js/jquery.js");
         // Different captcha types
         boolean valid = true;
         // Key-Captchas not supported yet
+        for (int i = 0; i < 3; i++) {
+            if (br.containsHTML("Key-Captcha")) {
+                br.clearCookies("linkcrypt.ws");
+                br.getPage("http://linkcrypt.ws/dir/" + containerId);
+            }
+        }
         if (br.containsHTML("Key-Captcha")) { throw new DecrypterException(DecrypterException.CAPTCHA); }
         if (br.containsHTML("CaptX|TextX")) {
             final int max_attempts = 3;
@@ -96,8 +93,10 @@ public class LnkCrptWs extends PluginForDecrypt {
                             captcha.put("x", p.x + "");
                             captcha.put("y", p.y + "");
                             br.submitForm(captcha);
-                            if (!br.containsHTML("CaptX|TextX")) {
+                            if (!br.containsHTML("(Our system could not identify you as human beings\\!|Your choice was wrong\\! Please wait some seconds and try it again\\.)")) {
                                 valid = true;
+                            } else {
+                                br.getPage("http://linkcrypt.ws/dir/" + containerId);
                             }
                         }
                     }
@@ -151,6 +150,15 @@ public class LnkCrptWs extends PluginForDecrypt {
                 map.put(row[1], row[0]);
             }
         }
+
+        final Form preRequest = br.getForm(0);
+        if (preRequest != null) {
+            final String url = preRequest.getRegex("http://.*/captcha\\.php\\?id=\\d+").getMatch(-1);
+            if (url != null) {
+                br.cloneBrowser().openGetConnection(url);
+            }
+        }
+
         File container = null;
         if (map.containsKey("dlc")) {
             container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".dlc", true);
@@ -247,5 +255,14 @@ public class LnkCrptWs extends PluginForDecrypt {
     @Override
     protected String getInitials() {
         return "LC";
+    }
+
+    private void prepareBrowser(final String userAgent) {
+        br.getHeaders().put("Cache-Control", null);
+        br.getHeaders().put("Accept-Charset", null);
+        br.getHeaders().put("Accept", "*/*");
+        br.getHeaders().put("Accept-Language", "en-EN");
+        br.getHeaders().put("User-Agent", userAgent);
+        br.getHeaders().put("Connection", null);
     }
 }
