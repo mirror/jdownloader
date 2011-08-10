@@ -29,33 +29,34 @@ import jd.plugins.PluginForDecrypt;
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "telona.biz" }, urls = { "http://(www\\.)?telona\\.biz/continuar/\\?id=[a-z0-9]+" }, flags = { 0 })
 public class TelonaBiz extends PluginForDecrypt {
 
-    public TelonaBiz(PluginWrapper wrapper) {
+    public TelonaBiz(final PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
-        String finallink = decodeHex(new Regex(parameter, ".*?\\?id=(.+)").getMatch(0));
-        if (finallink == null) return null;
-        decryptedLinks.add(createDownloadlink(finallink));
-        return decryptedLinks;
+    private String decodeHex(String data) {
+        try {
+            final StringBuilder sb = new StringBuilder();
+            if (data.length() % 2 == 0) {
+                data = data + "0";
+            }
+            for (int i = 0; i < data.length() - 1; i += 2) {
+                final String output = data.substring(i, i + 2);
+                sb.append((char) Integer.parseInt(output, 16));
+            }
+            return sb.toString();
+        } catch (final Throwable e) {
+            // !hexstring
+        }
+        return null;
     }
 
-    private String decodeHex(String data) {
-        String b16_digits = "0123456789abcdef";
-        ArrayList<String> b16_map = new ArrayList<String>();
-        for (int i = 0; i < 256; i++) {
-            b16_map.add(Integer.valueOf(b16_digits.charAt(i >> 4) + b16_digits.charAt(i & 15)), Integer.toString((char) (i)));
-        }
-        // if (!data.match(/^[a-f0-9]*$/i)) return false;
-        if (data.length() % 2 == 0) data = "0" + data;
-        ArrayList<String> result = new ArrayList<String>();
-        int j = 0;
-        for (int i = 0; i < data.length(); i += 2) {
-            result.set(j++, b16_map.get(Integer.parseInt(data.substring(i, 2))));
-        }
-        // return result.join('')
-        return result.toString();
+    @Override
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final String parameter = param.toString();
+        final String finallink = decodeHex(new Regex(parameter, ".*?\\?id=(.+)").getMatch(0));
+        if (finallink == null) { return null; }
+        decryptedLinks.add(createDownloadlink(finallink));
+        return decryptedLinks;
     }
 }
