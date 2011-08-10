@@ -73,9 +73,13 @@ public class UppItCom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(false);
-        if (downloadLink.getDownloadURL().matches("uppit\\.com/[a-z0-9]{2,}/.+")) {
+        if (downloadLink.getDownloadURL().matches(".*?uppit\\.com/[a-z0-9]{2,}/.+")) {
             Form dlform = br.getFormbyProperty("name", "F1");
             if (dlform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            int wait = 6;
+            String waitRegexed = br.getRegex("id=\"countdown_str\">Wait <span id=\"[a-z0-9]+\">(\\d+)</span>").getMatch(0);
+            if (waitRegexed != null) wait = Integer.parseInt(waitRegexed);
+            sleep(wait * 1001l, downloadLink);
             br.submitForm(dlform);
         }
         String dllink = br.getRegex("<span style=\"background:#f9f9f9;border:1px dotted #bbb;padding:7px;\">[\t\n\r ]+<a href=\"(http://.*?)\"").getMatch(0);

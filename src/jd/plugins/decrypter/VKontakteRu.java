@@ -263,22 +263,7 @@ public class VKontakteRu extends PluginForDecrypt implements ProgressControllerL
     }
 
     private boolean loginSite(String username, String password) throws Exception {
-        // br.getHeaders().put("User-Agent",
-        // "Mozilla/5.0 (Windows; U; Windows NT 6.1; de; rv:1.9.2.18) Gecko/20110614 Firefox/3.6.18");
-        // br.getHeaders().put("Accept",
-        // "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
-        // br.getHeaders().put("Accept-Language",
-        // "de-de,de;q=0.8,en-us;q=0.5,en;q=0.3");
-        // br.getHeaders().put("Accept-Encoding", "gzip,deflate");
-        // br.getHeaders().put("Accept-Charset",
-        // "ISO-8859-1,utf-8;q=0.7,*;q=0.7");
-        // br.getHeaders().put("Referer", "http://vkontakte.ru/login.php");
-        // br.getHeaders().put("Content-Type",
-        // "application/x-www-form-urlencoded");
         br.getPage(POSTPAGE);
-        // Browser br2 = br.cloneBrowser();
-        // br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        // br2.postPage(POSTPAGE, "op=a_login_attempt");
         String damnIPH = br.getRegex("name=\"ip_h\" value=\"(.*?)\"").getMatch(0);
         if (damnIPH == null) damnIPH = br.getRegex("\\{loginscheme: \\'https\\', ip_h: \\'(.*?)\\'\\}").getMatch(0);
         if (damnIPH == null) return false;
