@@ -98,7 +98,6 @@ jd.plugins.hoster.filebaseto.serversideerror = Erro no servidor. Tente mais tard
 jd.plugins.hoster.rapidshare.handleerrors.message.nofreeslots = Sem slots disponíveis. Tente mais tarde.
 jd.plugins.hoster.rapidshare.handleerrors.message.stopflood = Por favor pare de entupir os nossos servidores
 jd.plugins.optional.awesomebar.awesomebar = BarraFantástica
-jd.plugins.optional.awesomebar.awesomebar.description = 
 jd.plugins.optional.awesomebar.panel.description = istoéumteste
 passwordsolver.askdialog = Palavra-passe de descarga para %s/%s
 plugin.host.rapidshare.status.abused = Ficheiro abusado
