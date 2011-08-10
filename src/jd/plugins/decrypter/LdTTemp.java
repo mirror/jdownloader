@@ -38,7 +38,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.hoster.DirectHTTP;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "lof.cc" }, urls = { "http://[\\w\\.]*?(lof\\.cc|92\\.241\\.168\\.5)/[!a-zA-Z0-9_]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "lof.cc" }, urls = { "http://(www\\.)?iload\\.to/de/l/[a-z]+" }, flags = { 0 })
 public class LdTTemp extends PluginForDecrypt {
 
     public static final Object   LOCK                = new Object();
@@ -88,13 +88,30 @@ public class LdTTemp extends PluginForDecrypt {
             br.getPage(parameter);
             int i;
             for (i = 0; i < 5; i++) {
-                final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
-                rc.parse();
-                rc.load();
-                final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                final String c = getCaptchaCode(cf, param);
-                rc.setCode(c);
+                if (br.containsHTML("api\\.recaptcha")) {
+                    final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+                    final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+                    rc.parse();
+                    rc.load();
+                    final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+                    final String c = getCaptchaCode(cf, param);
+                    rc.setCode(c);
+                } else {
+                    final Form form = br.getForm(0);
+                    if (form == null) {
+                        continue;
+                    }
+                    String url = form.getRegex("<img src=\"(.*?)\"").getMatch(0);
+                    if (url == null) {
+                        continue;
+                    }
+                    url = "http://iload.to" + url;
+                    final File file = this.getLocalCaptchaFile();
+                    br.cloneBrowser().getDownload(file, url);
+
+                    form.put("captcha", getCaptchaCode(file, param));
+                    br.submitForm(form);
+                }
                 if (br.getRegex(PATTERN_WAITTIME).matches()) {
                     final int waittime = Integer.valueOf(br.getRegex(PATTERN_WAITTIME).getMatch(0));
                     if (waittime > 50 && limitsReached(br, waittime)) {
