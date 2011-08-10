@@ -27,9 +27,9 @@ import jd.config.ConfigEntry;
 import jd.config.ConfigEntry.PropertyType;
 import jd.config.ConfigGroup;
 import jd.config.SubConfiguration;
+import jd.controlling.AccountController;
 import jd.controlling.accountchecker.AccountChecker;
 import jd.controlling.accountchecker.AccountChecker.AccountCheckJob;
-import jd.controlling.AccountController;
 import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.plugins.Account;
 import jd.plugins.AddonPanel;
@@ -122,6 +122,7 @@ public class PremiumCompoundExtension extends AbstractExtension<PremiumCompoundC
                 premShareHosts.put("streammania.com", "Streammaniacom");
                 premShareHosts.put("fireload.org", "Fireloadorg");
                 premShareHosts.put("real-debrid.com", "RealDebridcom");
+                premShareHosts.put("leech.io", "LeechIo");
                 int replaceIndex = 0;
                 for (String key : premShareHosts.keySet()) {
                     /* init replacePlugin */

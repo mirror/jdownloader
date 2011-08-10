@@ -47,7 +47,6 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
-import jd.plugins.hoster.Youtube;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 import de.savemytube.flv.FLV;
@@ -530,7 +529,7 @@ public class TbCm extends PluginForDecrypt {
         final PluginForHost plugin = JDUtilities.getPluginForHost("youtube.com");
         try {
             if (plugin != null) {
-                ((Youtube) plugin).login(account, this.br, false);
+                ((jd.plugins.hoster.Youtube) plugin).login(account, this.br, false);
             } else {
                 return false;
             }
