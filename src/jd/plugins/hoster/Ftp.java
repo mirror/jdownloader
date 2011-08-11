@@ -281,7 +281,7 @@ public class Ftp extends PluginForHost {
 
                         ftp.download(Encoding.urlDecode(filePath, false), tmp = new File(downloadLink.getFileOutput() + ".part"), downloadLink.getBooleanProperty("RESUME", true));
                     } catch (IOException e) {
-                        if (e.getMessage().contains("Resume not supported")) {
+                        if (e.getMessage() != null && e.getMessage().contains("Resume not supported")) {
                             /* resume not supported, retry without resume */
                             downloadLink.setProperty("RESUME", false);
                             throw new PluginException(LinkStatus.ERROR_RETRY);
@@ -310,13 +310,16 @@ public class Ftp extends PluginForHost {
             if (!tmp.renameTo(new File(downloadLink.getFileOutput()))) { throw new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED, " Rename failed. file exists?"); }
             downloadLink.getLinkStatus().addStatus(LinkStatus.FINISHED);
         } catch (IOException e) {
-            if (e.getMessage().contains("530 Login incorrect")) {
+            if (e.getMessage() != null && e.getMessage().contains("530 Login incorrect")) {
                 downloadLink.getLinkStatus().setErrorMessage("Login incorrect");
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else
                 throw e;
         } finally {
-            ftp.disconnect();
+            try {
+                ftp.disconnect();
+            } catch (final Throwable e) {
+            }
         }
     }
 
