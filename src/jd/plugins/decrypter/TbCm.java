@@ -260,6 +260,7 @@ public class TbCm extends PluginForDecrypt {
                     String id = new Regex(parameter, "v=([a-z\\-_A-Z0-9]+)").getMatch(0);
                     if (id != null) YT_FILENAME = id.toUpperCase(Locale.ENGLISH);
                 }
+                final boolean fast = cfg.getBooleanProperty("FAST_CHECK", true);
                 final boolean mp3 = cfg.getBooleanProperty("ALLOW_MP3", true);
                 final boolean mp4 = cfg.getBooleanProperty("ALLOW_MP4", true);
                 final boolean webm = cfg.getBooleanProperty("ALLOW_WEBM", true);
@@ -323,9 +324,10 @@ public class TbCm extends PluginForDecrypt {
                         continue;
                     }
                     dlLink = LinksFound.get(format)[0];
-                    System.out.println(dlLink);
                     try {
-                        if (this.br.openGetConnection(dlLink).getResponseCode() == 200) {
+                        if (fast) {
+                            this.addtopos(cMode, dlLink, 0, vQuality, format);
+                        } else if (this.br.openGetConnection(dlLink).getResponseCode() == 200) {
                             this.addtopos(cMode, dlLink, this.br.getHttpConnection().getLongContentLength(), vQuality, format);
                         }
                     } finally {
@@ -336,7 +338,9 @@ public class TbCm extends PluginForDecrypt {
                     }
                     if (format == 0 || format == 5 || format == 6) {
                         try {
-                            if (this.br.openGetConnection(dlLink).getResponseCode() == 200) {
+                            if (fast) {
+                                this.addtopos(DestinationFormat.AUDIOMP3, dlLink, 0, "", format);
+                            } else if (this.br.openGetConnection(dlLink).getResponseCode() == 200) {
                                 this.addtopos(DestinationFormat.AUDIOMP3, dlLink, this.br.getHttpConnection().getLongContentLength(), "", format);
                             }
                         } finally {
@@ -360,7 +364,7 @@ public class TbCm extends PluginForDecrypt {
                         thislink.setBrowserUrl(parameter);
                         thislink.setFinalFileName(YT_FILENAME + info.desc + convertTo.getExtFirst());
                         thislink.setSourcePluginComment("Convert to " + convertTo.getText());
-                        thislink.setProperty("size", Long.valueOf(info.size));
+                        thislink.setProperty("size", info.size);
                         if (convertTo != DestinationFormat.AUDIOMP3) {
                             thislink.setProperty("name", YT_FILENAME + info.desc + convertTo.getExtFirst());
                         } else {

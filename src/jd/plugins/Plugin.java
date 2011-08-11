@@ -199,7 +199,7 @@ public abstract class Plugin implements ActionListener {
      *            der zu prüfende Text
      * @return wahr, falls ein Treffer gefunden wurde.
      */
-    public synchronized boolean canHandle(final String data) {
+    public boolean canHandle(final String data) {
         if (data == null) { return false; }
         final Pattern pattern = this.getSupportedLinks();
         if (pattern != null) {

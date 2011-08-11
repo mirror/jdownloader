@@ -203,7 +203,7 @@ public class DistributeData extends Thread {
                             try {
                                 final PluginForDecrypt plg = pDecrypt.getPlugin();
 
-                                final CryptedLink[] decryptableLinks = plg.getDecryptableLinks(url);
+                                final ArrayList<CryptedLink> decryptableLinks = plg.getDecryptableLinks(url);
                                 url = plg.cutMatches(url);
                                 // Reicht die Decrypter Passwörter weiter
                                 for (CryptedLink cLink : decryptableLinks) {
@@ -445,18 +445,20 @@ public class DistributeData extends Thread {
         if (DecryptPluginWrapper.getDecryptWrapper() == null) return decryptedLinks;
 
         class DThread implements JDRunnable {
-            private final CryptedLink[]    decryptableLinks;
-            private final PluginForDecrypt plg;
+            private final ArrayList<CryptedLink> decryptableLinks;
+            private final PluginForDecrypt       plg;
 
-            public DThread(final PluginForDecrypt plg, final CryptedLink[] decryptableLinks) {
+            public DThread(final PluginForDecrypt plg, final ArrayList<CryptedLink> decryptableLinks) {
                 this.decryptableLinks = decryptableLinks;
                 this.plg = plg;
             }
 
             public void go() {
                 final ArrayList<DownloadLink> tmp = plg.decryptLinks(decryptableLinks);
-                synchronized (decryptedLinks) {
-                    decryptedLinks.addAll(tmp);
+                if (tmp != null) {
+                    synchronized (decryptedLinks) {
+                        decryptedLinks.addAll(tmp);
+                    }
                 }
             }
         }
@@ -465,7 +467,7 @@ public class DistributeData extends Thread {
             if (pDecrypt.canHandle(data)) {
                 try {
                     final PluginForDecrypt plg = pDecrypt.getPlugin();
-                    final CryptedLink[] decryptableLinks = plg.getDecryptableLinks(data);
+                    final ArrayList<CryptedLink> decryptableLinks = plg.getDecryptableLinks(data);
                     data = plg.cutMatches(data);
                     decryptJobbers.add(new DThread(plg, decryptableLinks));
                 } catch (Exception e) {

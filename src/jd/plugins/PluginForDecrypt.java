@@ -19,11 +19,9 @@ package jd.plugins;
 import java.awt.Color;
 import java.io.File;
 import java.io.IOException;
-import java.net.SocketTimeoutException;
-import java.net.URL;
-import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.logging.Level;
 
 import jd.DecryptPluginWrapper;
 import jd.PluginWrapper;
@@ -71,23 +69,7 @@ public abstract class PluginForDecrypt extends Plugin {
         this.br = br;
     }
 
-    private CryptedLink                                             curcryptedLink      = null;
-
-    private static HashMap<Class<? extends PluginForDecrypt>, Long> LAST_STARTED_TIME   = new HashMap<Class<? extends PluginForDecrypt>, Long>();
-    private Long                                                    WAIT_BETWEEN_STARTS = 0L;
-
-    public synchronized long getLastTimeStarted() {
-        if (!LAST_STARTED_TIME.containsKey(this.getClass())) { return 0; }
-        return Math.max(0, (LAST_STARTED_TIME.get(this.getClass())));
-    }
-
-    public synchronized void putLastTimeStarted(long time) {
-        LAST_STARTED_TIME.put(this.getClass(), time);
-    }
-
-    public void setStartIntervall(long interval) {
-        WAIT_BETWEEN_STARTS = interval;
-    }
+    private CryptedLink curcryptedLink = null;
 
     @Override
     public DecryptPluginWrapper getWrapper() {
@@ -97,24 +79,6 @@ public abstract class PluginForDecrypt extends Plugin {
     @Override
     public long getVersion() {
         return this.getWrapper().getVersion();
-    }
-
-    public boolean waitForNextStartAllowed(CryptedLink link) throws InterruptedException {
-        String temp = link.getProgressController().getStatusText();
-        long time = Math.max(0, WAIT_BETWEEN_STARTS - (System.currentTimeMillis() - getLastTimeStarted()));
-        if (time > 0) {
-            try {
-                this.sleep(time, link);
-            } catch (InterruptedException e) {
-                link.getProgressController().setStatusText(temp);
-                throw e;
-            }
-            link.getProgressController().setStatusText(temp);
-            return true;
-        } else {
-            link.getProgressController().setStatusText(temp);
-            return false;
-        }
     }
 
     public void sleep(long i, CryptedLink link) throws InterruptedException {
@@ -164,59 +128,81 @@ public abstract class PluginForDecrypt extends Plugin {
      */
     public ArrayList<DownloadLink> decryptLink(CryptedLink cryptedLink) {
         curcryptedLink = cryptedLink;
-        ProgressController progress = new ProgressController(_JDT._.jd_plugins_PluginForDecrypt_decrypting(getHost(), getLinkName()), null);
-        progress.setInitials(getInitials());
-        curcryptedLink.setProgressController(progress);
+        ProgressController progress = null;
+        int progressShow = 0;
+        Color color = null;
         try {
-            while (waitForNextStartAllowed(curcryptedLink)) {
+            progress = new ProgressController(_JDT._.jd_plugins_PluginForDecrypt_decrypting(getHost()), null);
+            progress.setInitials(getInitials());
+            curcryptedLink.setProgressController(progress);
+            ArrayList<DownloadLink> tmpLinks = null;
+            try {
+                /*
+                 * we now lets log into plugin specific loggers with all
+                 * verbose/debug on
+                 */
+                br.setLogger(logger);
+                br.setVerbose(true);
+                br.setDebug(true);
+                /* now we let the decrypter do its magic */
+                tmpLinks = decryptIt(curcryptedLink, progress);
+            } catch (DecrypterException e) {
+                /*
+                 * we got a decrypter exception, clear log and note that
+                 * something went wrong
+                 */
+                progress.setStatusText(this.getHost() + ": " + e.getErrorMessage());
+                logger.clear();
+                logger.log(Level.SEVERE, "DecrypterException", e);
+                color = Color.RED;
+                progressShow = 15000;
+            } catch (InterruptedException e) {
+                /* plugin got interrupted, clear log and note what happened */
+                logger.clear();
+                logger.log(Level.SEVERE, "Interrupted", e);
+                progressShow = 0;
+            } catch (Throwable e) {
+                /*
+                 * damn, something must have gone really really bad, lets keep
+                 * the log
+                 */
+                progress.setStatusText(this.getHost() + ": " + e.getMessage());
+                logger.log(Level.SEVERE, "Exception", e);
+                color = Color.RED;
+                progressShow = 15000;
             }
-        } catch (InterruptedException e) {
-            return new ArrayList<DownloadLink>();
+            if (tmpLinks == null) {
+                /*
+                 * null as return value? something must have happened, do not
+                 * clear log
+                 */
+                logger.severe("Decrypter out of date: " + this);
+                logger.severe("Decrypter out of date: " + getVersion());
+                progress.setStatusText(_JDT._.jd_plugins_PluginForDecrypt_error_outOfDate(this.getHost()));
+                color = Color.RED;
+                progressShow = 15000;
+            }
+            if (tmpLinks == null) {
+                /* null as return value? lets forward the log */
+                if (logger instanceof JDPluginLogger) {
+                    /* make sure we use the right logger */
+                    ((JDPluginLogger) logger).logInto(JDLogger.getLogger());
+                }
+            }
+            return tmpLinks;
+        } finally {
+            try {
+                if (progressShow > 0) {
+                    if (color != null) {
+                        progress.setColor(color);
+                    }
+                    progress.doFinalize(progressShow);
+                } else {
+                    progress.doFinalize();
+                }
+            } catch (Throwable e) {
+            }
         }
-        putLastTimeStarted(System.currentTimeMillis());
-        ArrayList<DownloadLink> tmpLinks = null;
-        try {
-            tmpLinks = decryptIt(curcryptedLink, progress);
-        } catch (SocketTimeoutException e2) {
-            progress.setStatusText(_JDT._.jd_plugins_PluginForDecrypt_error_server());
-            progress.setColor(Color.RED);
-            progress.doFinalize(15000l);
-            return new ArrayList<DownloadLink>();
-        } catch (UnknownHostException e) {
-            progress.setStatusText(_JDT._.jd_plugins_PluginForDecrypt_error_connection());
-            progress.setColor(Color.RED);
-            progress.doFinalize(15000l);
-            return new ArrayList<DownloadLink>();
-        } catch (DecrypterException e) {
-            e.printStackTrace();
-            tmpLinks = new ArrayList<DownloadLink>();
-            progress.setStatusText(this.getHost() + ": " + e.getErrorMessage());
-            progress.setColor(Color.RED);
-
-            progress.doFinalize(15000l);
-        } catch (InterruptedException e2) {
-            tmpLinks = new ArrayList<DownloadLink>();
-        } catch (Throwable e) {
-            progress.doFinalize();
-            JDLogger.exception(e);
-        }
-        if (tmpLinks == null) {
-            logger.severe("Decrypter out of date: " + this);
-            logger.severe("Decrypter out of date: " + getVersion());
-            progress.setStatusText(_JDT._.jd_plugins_PluginForDecrypt_error_outOfDate(this.getHost()));
-
-            progress.setColor(Color.RED);
-            progress.doFinalize(15000l);
-            return new ArrayList<DownloadLink>();
-        }
-
-        if (tmpLinks.size() == 0) {
-            progress.doFinalize();
-            return new ArrayList<DownloadLink>();
-        }
-
-        progress.doFinalize();
-        return tmpLinks;
     }
 
     protected String getCaptchaCode(String captchaAddress, CryptedLink param) throws IOException, DecrypterException {
@@ -233,18 +219,20 @@ public abstract class PluginForDecrypt extends Plugin {
             throw new DecrypterException(DecrypterException.CAPTCHA);
         }
         File captchaFile = this.getLocalCaptchaFile();
-        Browser brc = br.cloneBrowser();
         try {
-            brc.getDownload(captchaFile, captchaAddress);
-        } catch (Exception e) {
-            logger.severe("Captcha Download fehlgeschlagen: " + captchaAddress);
-            throw new DecrypterException(DecrypterException.CAPTCHA);
+            Browser brc = br.cloneBrowser();
+            try {
+                brc.getDownload(captchaFile, captchaAddress);
+            } catch (Exception e) {
+                logger.severe("Captcha Download fehlgeschlagen: " + captchaAddress);
+                throw new DecrypterException(DecrypterException.CAPTCHA);
+            }
+            // erst im Nachhinein das der Bilddownload nicht gestört wird
+            String captchaCode = getCaptchaCode(method, captchaFile, param);
+            return captchaCode;
+        } finally {
+            if (captchaFile != null) captchaFile.delete();
         }
-        // erst im Nachhinein das der Bilddownload nicht gestört wird
-
-        String captchaCode = getCaptchaCode(method, captchaFile, param);
-        captchaFile.delete();
-        return captchaCode;
     }
 
     protected String getCaptchaCode(File captchaFile, CryptedLink param) throws DecrypterException {
@@ -280,8 +268,8 @@ public abstract class PluginForDecrypt extends Plugin {
         return cc;
     }
 
-    public ArrayList<DownloadLink> decryptLinks(CryptedLink[] cryptedLinks) {
-        if (isAborted(this.getInitTime(), this.getHost())) return new ArrayList<DownloadLink>();
+    public ArrayList<DownloadLink> decryptLinks(ArrayList<CryptedLink> cryptedLinks) {
+        if (isAborted(this.getInitTime(), this.getHost())) return null;
         fireControlEvent(ControlEvent.CONTROL_PLUGIN_ACTIVE, cryptedLinks);
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         Jobber decryptJobbers = new Jobber(4);
@@ -304,11 +292,13 @@ public abstract class PluginForDecrypt extends Plugin {
                 if (isAborted(getInitTime(), getHost())) return;
                 if (LinkGrabberController.isFiltered(decryptableLink)) return;
                 ArrayList<DownloadLink> links = plg.decryptLink(decryptableLink);
-                for (DownloadLink link : links) {
-                    link.setBrowserUrl(decryptableLink.getCryptedUrl());
-                }
-                synchronized (decryptedLinks) {
-                    decryptedLinks.addAll(links);
+                if (links != null) {
+                    for (DownloadLink link : links) {
+                        link.setBrowserUrl(decryptableLink.getCryptedUrl());
+                    }
+                    synchronized (decryptedLinks) {
+                        decryptedLinks.addAll(links);
+                    }
                 }
             }
 
@@ -317,9 +307,9 @@ public abstract class PluginForDecrypt extends Plugin {
             }
         }
 
-        for (int b = cryptedLinks.length - 1; b >= 0; b--) {
+        for (int b = cryptedLinks.size() - 1; b >= 0; b--) {
             if (isAborted(this.getInitTime(), this.getHost())) return new ArrayList<DownloadLink>();
-            DThread dthread = new DThread(cryptedLinks[b], getWrapper().getPlugin());
+            DThread dthread = new DThread(cryptedLinks.get(b), getWrapper().getPlugin());
             decryptJobbers.add(dthread);
         }
         int todo = decryptJobbers.getJobsAdded();
@@ -342,51 +332,40 @@ public abstract class PluginForDecrypt extends Plugin {
      * @param data
      * @return
      */
-    public CryptedLink[] getDecryptableLinks(String data) {
-        String[] hits = new Regex(data, getSupportedLinks()).getColumn(-1);
-        ArrayList<CryptedLink> chits = new ArrayList<CryptedLink>();
+    public ArrayList<CryptedLink> getDecryptableLinks(String data) {
+        /*
+         * we dont need memory optimization here as downloadlink, crypted link
+         * itself take care of this
+         */
+        String[] hits = new Regex(data, getSupportedLinks()).setMemoryOptimized(false).getColumn(-1);
+        ArrayList<CryptedLink> chits = null;
         if (hits != null && hits.length > 0) {
-
-            for (int i = hits.length - 1; i >= 0; i--) {
-                String file = hits[i];
+            chits = new ArrayList<CryptedLink>(hits.length);
+        } else {
+            chits = new ArrayList<CryptedLink>();
+        }
+        if (hits != null && hits.length > 0) {
+            for (String hit : hits) {
+                String file = hit;
                 file = file.trim();
-
+                /* cut of any unwanted chars */
                 while (file.length() > 0 && file.charAt(0) == '"') {
                     file = file.substring(1);
                 }
-
                 while (file.length() > 0 && file.charAt(file.length() - 1) == '"') {
                     file = file.substring(0, file.length() - 1);
                 }
-                hits[i] = file;
-
-            }
-
-            for (String hit : hits) {
+                file = file.trim();
                 chits.add(new CryptedLink(hit));
             }
         }
-        return chits.toArray((new CryptedLink[chits.size()]));
+        return chits;
     }
 
     protected void setBrowserExclusive() {
         if (br == null) return;
         br.setCookiesExclusive(true);
         br.clearCookies(getHost());
-    }
-
-    /**
-     * Gibt den namen des internen CryptedLinks zurück
-     * 
-     * @return encryptedLink
-     */
-    public String getLinkName() {
-        if (curcryptedLink == null) return "";
-        try {
-            return new URL(curcryptedLink.toString()).toURI().getPath();
-        } catch (Exception e) {
-            return "";
-        }
     }
 
     /**
@@ -408,7 +387,6 @@ public abstract class PluginForDecrypt extends Plugin {
         synchronized (HOST_BLOCK_MAP) {
             HOST_BLOCK_MAP.put(host, System.currentTimeMillis());
         }
-
     }
 
     /**

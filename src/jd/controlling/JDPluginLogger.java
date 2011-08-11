@@ -23,7 +23,7 @@ public class JDPluginLogger extends Logger {
         this.setUseParentHandlers(false);
         this.setLevel(Level.ALL);
         if (trash) return;
-        if (JDInitFlags.SWITCH_DEBUG || true) {
+        if (JDInitFlags.SWITCH_FORCELOG) {
             for (Handler handler : JDLogger.getLogger().getHandlers()) {
                 addHandler(handler);
             }
@@ -65,6 +65,10 @@ public class JDPluginLogger extends Logger {
     }
 
     public void logInto(Logger logger) {
+        if (JDInitFlags.SWITCH_FORCELOG) {
+            /* the main logger already contains all logs */
+            return;
+        }
         if (logger == null) return;
         synchronized (records) {
             for (LogRecord record : records) {

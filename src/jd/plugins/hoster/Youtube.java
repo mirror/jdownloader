@@ -53,6 +53,7 @@ public class Youtube extends PluginForHost {
     private static final String                              ALLOW_WEBM   = "ALLOW_WEBM";
     private static final String                              ALLOW_FLV    = "ALLOW_FLV";
     private static final String                              ALLOW_3GP    = "ALLOW_3GP";
+    private static final String                              FAST_CHECK   = "FAST_CHECK";
     private static HashMap<Account, HashMap<String, String>> loginCookies = new HashMap<Account, HashMap<String, String>>();
 
     public Youtube(final PluginWrapper wrapper) {
@@ -67,6 +68,7 @@ public class Youtube extends PluginForHost {
     }
 
     private void setConfigElements() {
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FAST_CHECK, JDL.L("plugins.hoster.youtube.fast", "Fast LinkCheck?")).setDefaultValue(true));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), IDASFILENAME, JDL.L("plugins.hoster.youtube.idasfilename", "Use Video-ID as filename?")).setDefaultValue(false));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_WEBM, JDL.L("plugins.hoster.youtube.checkwebm", "Grab WEBM?")).setDefaultValue(true));
@@ -220,7 +222,7 @@ public class Youtube extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 final HashMap<String, String> cookies = new HashMap<String, String>();
-                final Cookies cYT = this.br.getCookies("youtube.com");
+                final Cookies cYT = br.getCookies("youtube.com");
                 for (final Cookie c : cYT.getCookies()) {
                     cookies.put(c.getKey(), c.getValue());
                 }
@@ -299,7 +301,7 @@ public class Youtube extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         if (downloadLink.getBooleanProperty("valid", true)) {
             downloadLink.setFinalFileName(downloadLink.getStringProperty("name", "video.tmp"));
-            downloadLink.setDownloadSize((Long) downloadLink.getProperty("size", Long.valueOf(0l)));
+            downloadLink.setDownloadSize((Long) downloadLink.getProperty("size", 0l));
             return AvailableStatus.TRUE;
         } else {
             downloadLink.setFinalFileName(downloadLink.getStringProperty("name", "video.tmp"));

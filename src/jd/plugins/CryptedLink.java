@@ -26,17 +26,17 @@ import jd.controlling.ProgressController;
  * @author jiaz
  */
 public class CryptedLink extends Property {
-    private static final long serialVersionUID = 6493927031856751251L;
+    private static final long  serialVersionUID = 6493927031856751251L;
 
     /**
      * enthält die Url, welche an das Decrypter-Plugin übergeben wird
      */
-    private String cryptedUrl;
+    private String             cryptedUrl;
 
     private ProgressController progress;
 
     // Password welches dem Decrypter-Plugin übergeben wird (zb FolderPassword)
-    private String decrypterPassword;
+    private String             decrypterPassword;
 
     public CryptedLink(String cryptedUrl) {
         // this.cryptedUrl = cryptedUrl;
@@ -46,7 +46,11 @@ public class CryptedLink extends Property {
     }
 
     public CryptedLink(String cryptedUrl, String pw) {
-        this.cryptedUrl = cryptedUrl;
+        if (cryptedUrl != null) {
+            this.cryptedUrl = new String(cryptedUrl);
+        } else {
+            this.cryptedUrl = null;
+        }
         this.decrypterPassword = pw;
         this.progress = null;
     }

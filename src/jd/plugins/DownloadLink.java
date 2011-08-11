@@ -946,7 +946,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      */
     public void setUrlDownload(String urlDownload) {
         if (urlDownload != null) {
-            this.urlDownload = urlDownload.trim();
+            this.urlDownload = new String(urlDownload.trim());
         } else {
             this.urlDownload = null;
         }

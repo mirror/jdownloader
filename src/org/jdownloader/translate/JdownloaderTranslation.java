@@ -474,8 +474,8 @@ public interface JdownloaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Hoster offline?" })
     String plugins_errors_hosteroffline();
 
-    @Default(lngs = { "en" }, values = { "Decrypt %s1: %s2" })
-    String jd_plugins_PluginForDecrypt_decrypting(Object s1, Object s2);
+    @Default(lngs = { "en" }, values = { "Decrypt %s1" })
+    String jd_plugins_PluginForDecrypt_decrypting(Object s1);
 
     @Default(lngs = { "en" }, values = { "[convert failed]" })
     String gui_downloadlink_errorpostprocess3();

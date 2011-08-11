@@ -252,7 +252,10 @@ public class Main {
         Main.LOG.info("Start JDownloader");
 
         for (final String p : args) {
-            if (p.equalsIgnoreCase("-debug")) {
+            if (p.equalsIgnoreCase("-forcelog")) {
+                JDInitFlags.SWITCH_FORCELOG = true;
+                Main.LOG.info("FORCED LOGGING Modus aktiv");
+            } else if (p.equalsIgnoreCase("-debug")) {
                 JDInitFlags.SWITCH_DEBUG = true;
                 Main.LOG.info("DEBUG Modus aktiv");
             } else if (p.equalsIgnoreCase("-brdebug")) {

@@ -33,7 +33,6 @@ import jd.gui.UserIO;
 import jd.gui.swing.SwingGui;
 import jd.gui.swing.components.Balloon;
 import jd.http.Browser;
-import jd.http.BrowserSettings;
 import jd.nutils.Formatter;
 import jd.nutils.io.JDIO;
 import jd.plugins.Account;
@@ -60,7 +59,7 @@ import org.jdownloader.translate._JDT;
  * 
  * @author astaldo/JD-Team
  */
-public class SingleDownloadController extends Thread implements BrowserSettings, StateMachineInterface {
+public class SingleDownloadController extends BrowserSettingsThread implements StateMachineInterface {
     // public static final String WAIT_TIME_ON_CONNECTION_LOSS =
     // "WAIT_TIME_ON_CONNECTION_LOSS";
 
@@ -88,8 +87,6 @@ public class SingleDownloadController extends Thread implements BrowserSettings,
     private SingleDownloadControllerHandler           handler       = null;
 
     private ProxyInfo                                 proxyInfo     = null;
-
-    private HTTPProxy                                 httpproxy     = null;
 
     private StateMachine                              stateMachine;
 
@@ -137,6 +134,7 @@ public class SingleDownloadController extends Thread implements BrowserSettings,
         this.proxyInfo = proxy;
         if (proxyInfo != null) {
             /* mark this host active in proxyInfo */
+            super.setCurrentProxy(proxyInfo.getProxy());
             setCurrentProxy(proxyInfo.getProxy());
             proxyInfo.increaseActiveDownloads(dlink.getHost());
         }
@@ -691,7 +689,8 @@ public class SingleDownloadController extends Thread implements BrowserSettings,
              */
             downloadLink.setLivePlugin(downloadLink.getDefaultPlugin().getWrapper().getNewPluginInstance());
             currentPlugin = plugin = downloadLink.getLivePlugin();
-            currentPlugin.setLogger(new JDPluginLogger(downloadLink.getHost() + ":" + downloadLink.getName()));
+            currentPlugin.setLogger(logger = new JDPluginLogger(downloadLink.getHost() + ":" + downloadLink.getName()));
+            super.setLogger(logger);
             logger = currentPlugin.getLogger();
             /*
              * handle is only called in download situation, that why we create a
@@ -769,33 +768,14 @@ public class SingleDownloadController extends Thread implements BrowserSettings,
         }
     }
 
-    public HTTPProxy getCurrentProxy() {
-        return httpproxy;
-    }
-
+    @Override
     public void setCurrentProxy(HTTPProxy proxy) {
-        this.httpproxy = proxy;
+        /* we dont allow external changes */
     }
 
-    public void setVerbose(boolean b) {
-    }
-
-    public boolean isVerbose() {
-        return false;
-    }
-
-    public void setDebug(boolean b) {
-    }
-
-    public boolean isDebug() {
-        return false;
-    }
-
+    @Override
     public void setLogger(Logger logger) {
-    }
-
-    public Logger getLogger() {
-        return logger;
+        /* we dont allow external changes */
     }
 
     /**

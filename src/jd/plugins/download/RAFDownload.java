@@ -20,6 +20,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.util.logging.Level;
 
 import jd.controlling.JDLogger;
 import jd.http.Request;
@@ -32,7 +33,9 @@ import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
 import org.appwork.storage.config.JsonConfig;
+import org.appwork.utils.Application;
 import org.appwork.utils.Hash;
+import org.appwork.utils.IO;
 import org.appwork.utils.Regex;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.translate._JDT;
@@ -68,10 +71,47 @@ public class RAFDownload extends DownloadInterface {
         if (!handleErrors()) return;
         try {
             downloadLink.getLinkStatus().setStatusText(null);
-            logger.finest("no errors : rename");
-            if (!new File(downloadLink.getFileOutput() + ".part").renameTo(new File(downloadLink.getFileOutput()))) {
-                logger.severe("Could not rename file " + new File(downloadLink.getFileOutput() + ".part") + " to " + downloadLink.getFileOutput());
-                error(LinkStatus.ERROR_LOCAL_IO, _JDT._.system_download_errors_couldnotrename());
+            File part = new File(downloadLink.getFileOutput() + ".part");
+            File complete = new File(downloadLink.getFileOutput());
+            boolean renameOkay = false;
+            int retry = 5;
+            while (retry > 0) {
+                if (part.renameTo(complete)) {
+                    renameOkay = true;
+                    break;
+                }
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    break;
+                }
+                retry--;
+            }
+
+            if (renameOkay == false) {
+                logger.severe("Could not rename file " + part + " to " + complete);
+                logger.severe("Try copy workaround!");
+                boolean workaroundOkay = false;
+                try {
+                    if (Application.getJavaVersion() >= Application.JAVA16) {
+                        if (part.getParentFile().getFreeSpace() < part.length()) { throw new Throwable("not enough diskspace free to copy part to complete file"); }
+                    }
+                    IO.copyFile(part, complete);
+                    workaroundOkay = true;
+                    part.deleteOnExit();
+                    part.delete();
+                } catch (Throwable e) {
+                    logger.log(Level.SEVERE, "Exception", e);
+                    /* error happened, lets delete complete file */
+                    complete.delete();
+                    complete.deleteOnExit();
+                }
+                if (!workaroundOkay) {
+                    logger.severe("Copy workaround: :(");
+                    error(LinkStatus.ERROR_LOCAL_IO, _JDT._.system_download_errors_couldnotrename());
+                } else {
+                    logger.severe("Copy workaround: :)");
+                }
             }
 
             /*
