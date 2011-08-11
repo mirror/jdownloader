@@ -25,11 +25,11 @@ import jd.controlling.JDLogger;
 import jd.parser.Regex;
 import jd.plugins.BrowserAdapter;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 @HostPlugin(revision = "$Revision: 12299 $", interfaceVersion = 2, names = { "ustream.tv" }, urls = { "http://(www\\.)?ustream.tv/recorded/\\d+(/highlight/\\d+)?" }, flags = { 0 })
 public class UstreamTv extends PluginForHost {
@@ -52,7 +52,7 @@ public class UstreamTv extends PluginForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         // Setup Gateway
-        final String url = "http://216.52.240.138/gateway.php";
+        final String url = "http://rgw.ustream.tv/gateway.php";
         // Generate Parameter
         final Date rpin = new Date();
         final String pageUrl = downloadLink.getDownloadURL();
@@ -108,9 +108,12 @@ public class UstreamTv extends PluginForHost {
         setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("We\\'re sorry, the page you requested cannot be found\\.")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-        String filename = br.getRegex("VideoTitle\">(.*?)<").getMatch(0);
+        String filename = br.getRegex("<meta name=\"title\" content=\"(.*?), Recorded on ").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("<title>(.*?),.*?</title>").getMatch(0);
+            if (filename == null) {
+                filename = br.getRegex("<meta property=\"og:title\" content=\"(.*?), Recorded on ").getMatch(0);
+            }
         }
         if (filename == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         if (downloadLink.getDownloadURL().contains("highlight")) {
