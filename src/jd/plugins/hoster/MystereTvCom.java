@@ -32,63 +32,30 @@ import jd.plugins.PluginForHost;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mystere-tv.com" }, urls = { "http://(www\\.)?decryptedmystere\\-tv\\.com/.*?\\-v\\d+\\.html" }, flags = { 0 })
 public class MystereTvCom extends PluginForHost {
 
-    public MystereTvCom(PluginWrapper wrapper) {
+    private String DLLINK = null;
+
+    public MystereTvCom(final PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private String DLLINK = null;
+    @Override
+    public void correctDownloadLink(final DownloadLink link) {
+        // Links are coming from a decrypter
+        link.setUrlDownload(link.getDownloadURL().replace("decryptedmystere-tv.com", "mystere-tv.com"));
+    }
 
     @Override
     public String getAGBLink() {
         return "http://www.mystere-tv.com/";
     }
 
-    public void correctDownloadLink(DownloadLink link) {
-        // Links are coming from a decrypter
-        link.setUrlDownload(link.getDownloadURL().replace("decryptedmystere-tv.com", "mystere-tv.com"));
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL());
-        if (br.getURL().equals("http://www.mystere-tv.com/") || br.containsHTML("<title>Paranormal \\- Ovni \\- Mystere TV </title>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<h1 class=\"videoTitle\">(.*?)</h1>").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("<br /><br /><strong><u>(.*?)</u></strong>").getMatch(0);
-            if (filename == null) {
-                filename = br.getRegex("<title>(.*?) \\- Paranormal</title>").getMatch(0);
-            }
-        }
-        DLLINK = br.getRegex("addVariable\\(\"file\",\"(http://.*?)\"\\)").getMatch(0);
-        if (DLLINK == null) DLLINK = br.getRegex("\"(http://(www\\.)?.mystere\\-tv\\.net/flv/.*?)\"").getMatch(0);
-        if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        DLLINK = Encoding.htmlDecode(DLLINK);
-        filename = filename.trim();
-        downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ".flv");
-        Browser br2 = br.cloneBrowser();
-        // In case the link redirects to the finallink
-        br2.setFollowRedirects(true);
-        URLConnectionAdapter con = null;
-        try {
-            con = br2.openGetConnection(DLLINK);
-            if (con.getContentType().contains("html") && con.getLongContentLength() < 100) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            } else {
-                downloadLink.setDownloadSize(con.getLongContentLength());
-                return AvailableStatus.TRUE;
-            }
-        } finally {
-            try {
-                con.disconnect();
-            } catch (Throwable e) {
-            }
-        }
-    }
-
-    @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
+    public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 1);
         if (dl.getConnection().getContentType().contains("html") && dl.getConnection().getLongContentLength() < 100) {
@@ -99,8 +66,49 @@ public class MystereTvCom extends PluginForHost {
     }
 
     @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+        setBrowserExclusive();
+        br.setFollowRedirects(true);
+        br.getPage(downloadLink.getDownloadURL());
+        if (br.getURL().equals("http://www.mystere-tv.com/") || br.containsHTML("<title>Paranormal \\- Ovni \\- Mystere TV </title>")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        String filename = br.getRegex("<h1 class=\"videoTitle\">(.*?)</h1>").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("<br /><br /><strong><u>(.*?)</u></strong>").getMatch(0);
+            if (filename == null) {
+                filename = br.getRegex("<title>(.*?) \\- Paranormal</title>").getMatch(0);
+            }
+        }
+        DLLINK = br.getRegex("addVariable\\(\"file\",\"(http://.*?)\"\\)").getMatch(0);
+        if (DLLINK == null) {
+            DLLINK = br.getRegex("\"?(http://(www\\.)?mystere\\-tv\\.(net|com)/flv/[\\w-\\.\\?=]+)\"?").getMatch(0);
+        }
+        if (filename == null || DLLINK == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        DLLINK = Encoding.htmlDecode(DLLINK);
+        filename = filename.trim();
+        downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ".flv");
+        if (!br.containsHTML("\\.flv\\?key=")) {
+            final Browser br2 = br.cloneBrowser();
+            // In case the link redirects to the finallink
+            br2.setFollowRedirects(true);
+            URLConnectionAdapter con = null;
+            try {
+                con = br2.openGetConnection(DLLINK);
+                if (con.getContentType().contains("html") && con.getLongContentLength() < 100) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                } else {
+                    downloadLink.setDownloadSize(con.getLongContentLength());
+                    return AvailableStatus.TRUE;
+                }
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (final Throwable e) {
+                }
+            }
+        } else {
+            // no Content-Length/!html Header
+            return AvailableStatus.TRUE;
+        }
     }
 
     @Override
@@ -108,10 +116,10 @@ public class MystereTvCom extends PluginForHost {
     }
 
     @Override
-    public void resetPluginGlobals() {
+    public void resetDownloadlink(final DownloadLink link) {
     }
 
     @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetPluginGlobals() {
     }
 }

@@ -25,25 +25,30 @@ import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 
 import org.appwork.utils.Hash;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "alphaporno.com" }, urls = { "http://(www\\.)?alphaporno\\.com/videos/[a-z0-9\\-]+" }, flags = { 0 })
 public class AlphaPornoCom extends PluginForHost {
 
-    private String DLLINK = null;
+    private String        DLLINK = null;
+    private static String AHV    = "YzMwZWI0YTA5MWEwNjQwNjNlYmY1MTgyMDA5YzQ1Mjc=";
 
     public AlphaPornoCom(final PluginWrapper wrapper) {
         super(wrapper);
     }
 
     private String checkMD(final String videoUrl, final String time) {
-        return Hash.getMD5(videoUrl + time + "2b6a528405ecd332426bd282e20d441b");
+        return Hash.getMD5(videoUrl + time + Encoding.Base64Decode(AHV));
+    }
+
+    private String checkMD2(final String time) {
+        return Hash.getMD5(time + Encoding.Base64Decode(AHV));
     }
 
     private String checkTM() {
@@ -90,7 +95,7 @@ public class AlphaPornoCom extends PluginForHost {
 
         final String time = checkTM();
         final String ahv = checkMD(DLLINK, time);
-        DLLINK = DLLINK + "?time=" + time + "&ahv=" + ahv;
+        DLLINK = DLLINK + "?time=" + time + "&ahv=" + ahv + "&cv=" + checkMD2(time);
 
         final Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink

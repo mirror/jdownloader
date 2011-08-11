@@ -24,20 +24,20 @@ import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDHexUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "madthumbs.com" }, urls = { "http://(www\\.)?madthumbs\\.com/videos/[\\w-]+/[\\w-]+/\\d+" }, flags = { 0 })
 public class MadThumbsCom extends PluginForHost {
 
-    private String DLLINK = null;
-    private String KEY    = "YTk3OWNjMTdjZjk2NjE5MzEzNjJiOTBlMmU5Yjc2MmM=";
+    private String       DLLINK = null;
+    private final String KEY    = "ZGJmOGE5ZWZlMDkxMzBlMDJkODYyOGQ1MDE5ZGI4ODI=";
 
-    public MadThumbsCom(PluginWrapper wrapper) {
+    public MadThumbsCom(final PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -47,58 +47,12 @@ public class MadThumbsCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        // Falls das vor .bismarck's Fix released wird wird immer ein- und
-        // dasselbe Video geladen->So isses besser
-        boolean pluginBroken = true;
-        if (pluginBroken) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        br.setFollowRedirects(false);
-        br.setCookie("http://www.madthumbs.com/", "language", "en");
-        br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("(<title>Free Porn Tube \\- MadThumbs\\&trade;</title>|<meta property=\"og:title\" content=\"Free Porn Tube \\- MadThumbs\")")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("vid_title:\"(.*?)\"").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("<title>(.*?) \\- MadThumbs\\&trade;</title> ").getMatch(0);
-            if (filename == null) {
-                filename = br.getRegex("<meta property=\"og:title\" content=\"(.*?) \\- MadThumbs\"").getMatch(0);
-                if (filename == null) {
-                    filename = br.getRegex("<div class=\"title\"><h1 class=\"fl\"><a href=\"\">(.*?)</a></h1></div>").getMatch(0);
-                }
-            }
-        }
-        String[] param = br.getRegex("flowplayer\\((.*?)\\)\\;").getMatch(0).replaceAll("\n|\\s|'", "").split(",");
-        if (param == null || param.length == 0 || param.length < 4 || filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        // Generate hashvalue
-        String hash = null;
-        try {
-            hash = JDCrypt.decrypt(JDHexUtils.getByteArray(param[3]), JDHexUtils.getByteArray(Encoding.Base64Decode(KEY)), JDHexUtils.getByteArray(param[2]));
-        } catch (final Throwable e) {
-        }
-        if (hash == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        DLLINK = Encoding.htmlDecode(param[1]) + "&hash=" + hash.trim();
-        downloadLink.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".flv");
-        Browser br2 = br.cloneBrowser();
-        // In case the link redirects to the finallink
-        br2.setFollowRedirects(true);
-        URLConnectionAdapter con = null;
-        try {
-            con = br2.openGetConnection(DLLINK);
-            if (!con.getContentType().contains("html"))
-                downloadLink.setDownloadSize(con.getLongContentLength());
-            else
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            return AvailableStatus.TRUE;
-        } finally {
-            try {
-                con.disconnect();
-            } catch (Throwable e) {
-            }
-        }
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
+    public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, -4);
         if (dl.getConnection().getContentType().contains("html")) {
@@ -109,8 +63,51 @@ public class MadThumbsCom extends PluginForHost {
     }
 
     @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+        setBrowserExclusive();
+        br.setFollowRedirects(false);
+        br.setCookie("http://www.madthumbs.com/", "language", "en");
+        br.getPage(downloadLink.getDownloadURL());
+        if (br.containsHTML("(<title>Free Porn Tube \\- MadThumbs\\&trade;</title>|<meta property=\"og:title\" content=\"Free Porn Tube \\- MadThumbs\")")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        String filename = br.getRegex("vid_title:\"(.*?)\"").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("<title>(.*?) \\- MadThumbs\\&trade;</title> ").getMatch(0);
+            if (filename == null) {
+                filename = br.getRegex("<meta property=\"og:title\" content=\"(.*?) \\- MadThumbs\"").getMatch(0);
+                if (filename == null) {
+                    filename = br.getRegex("<div class=\"title\"><h1 class=\"fl\"><a href=\"\">(.*?)</a></h1></div>").getMatch(0);
+                }
+            }
+        }
+        final String[] param = br.getRegex("flowplayer\\((.*?)\\)\\;").getMatch(0).replaceAll("\n|\\s|'", "").split(",");
+        if (param == null || param.length == 0 || param.length < 4 || filename == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        // Generate hashvalue
+        String hash = null;
+        try {
+            hash = JDCrypt.decrypt(JDHexUtils.getByteArray(param[3]), JDHexUtils.getByteArray(Encoding.Base64Decode(KEY)), JDHexUtils.getByteArray(param[2]));
+        } catch (final Throwable e) {
+        }
+        if (hash == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        DLLINK = Encoding.htmlDecode(param[1]) + "&hash=" + hash.trim();
+        downloadLink.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".flv");
+        final Browser br2 = br.cloneBrowser();
+        // In case the link redirects to the finallink
+        br2.setFollowRedirects(true);
+        URLConnectionAdapter con = null;
+        try {
+            con = br2.openGetConnection(DLLINK);
+            if (!con.getContentType().contains("html")) {
+                downloadLink.setDownloadSize(con.getLongContentLength());
+            } else {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            return AvailableStatus.TRUE;
+        } finally {
+            try {
+                con.disconnect();
+            } catch (final Throwable e) {
+            }
+        }
     }
 
     @Override
@@ -118,10 +115,10 @@ public class MadThumbsCom extends PluginForHost {
     }
 
     @Override
-    public void resetPluginGlobals() {
+    public void resetDownloadlink(final DownloadLink link) {
     }
 
     @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetPluginGlobals() {
     }
 }
