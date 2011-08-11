@@ -299,7 +299,7 @@ public class ShareOnlineBiz extends PluginForHost {
             downloadLink.setChunksProgress(null);
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "MaxChunks Error", 10 * 60 * 1000l);
         }
-        if (br.getURL().contains("failure/bandwidth")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l); }
+        if (br.getURL().contains("failure/bandwidth")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1000l); }
         if (br.getURL().contains("failure/filenotfound")) {
             try {
                 final Browser br2 = new Browser();

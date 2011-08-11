@@ -69,8 +69,6 @@ public abstract class PluginForDecrypt extends Plugin {
         this.br = br;
     }
 
-    private CryptedLink curcryptedLink = null;
-
     @Override
     public DecryptPluginWrapper getWrapper() {
         return (DecryptPluginWrapper) super.getWrapper();
@@ -127,14 +125,13 @@ public abstract class PluginForDecrypt extends Plugin {
      * @return Ein Vector mit Klartext-links
      */
     public ArrayList<DownloadLink> decryptLink(CryptedLink cryptedLink) {
-        curcryptedLink = cryptedLink;
         ProgressController progress = null;
         int progressShow = 0;
         Color color = null;
         try {
             progress = new ProgressController(_JDT._.jd_plugins_PluginForDecrypt_decrypting(getHost()), null);
             progress.setInitials(getInitials());
-            curcryptedLink.setProgressController(progress);
+            cryptedLink.setProgressController(progress);
             ArrayList<DownloadLink> tmpLinks = null;
             try {
                 /*
@@ -145,7 +142,7 @@ public abstract class PluginForDecrypt extends Plugin {
                 br.setVerbose(true);
                 br.setDebug(true);
                 /* now we let the decrypter do its magic */
-                tmpLinks = decryptIt(curcryptedLink, progress);
+                tmpLinks = decryptIt(cryptedLink, progress);
             } catch (DecrypterException e) {
                 /*
                  * we got a decrypter exception, clear log and note that
