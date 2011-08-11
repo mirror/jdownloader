@@ -32,14 +32,16 @@ public class LanguageColumn extends ExtTextColumn<KeyInfo> {
         super(name, table);
     }
 
+    @Override
     protected void prepareLabel(KeyInfo value) {
         if (value.hasWrongParameterCount()) {
-//            label.setBackground(LFEGui.COLOR_MISSING);
+            label.setBackground(LFEGui.COLOR_MISSING);
         } else if (new Regex(value.getKey(), "gui\\.menu\\.(.*?)\\.accel").matches() && new Regex(value.getLanguage(), "(CONTROL|STRG|UMSCHALT|ALT GR|ALT_GR)").matches()) {
-//            label.setBackground(LFEGui.COLOR_MISSING);
+            label.setBackground(LFEGui.COLOR_MISSING);
         }
     }
 
+    @Override
     public String getToolTip(KeyInfo obj) {
         if (obj.hasWrongParameterCount()) return T._.jd_plugins_optional_langfileeditor_columns_LanguageColumn_tooltip_wrongParameterCount();
 
@@ -53,12 +55,11 @@ public class LanguageColumn extends ExtTextColumn<KeyInfo> {
             return toolTip.toString();
         }
 
-//        return super.getToolTip(obj);
-        return null;
+        return super.getToolTip(obj);
     }
 
     @Override
-    public String getStringValue(KeyInfo value) {
+    protected String getStringValue(KeyInfo value) {
         return value.getLanguage();
     }
 
