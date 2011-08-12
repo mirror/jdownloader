@@ -203,7 +203,6 @@ public class LetitBitNet extends PluginForHost {
         } catch (Throwable e) {
             /* only available after 0.9xx version */
         }
-        int i = 1;
         requestFileInformation(downloadLink);
         Form freeForm = br.getFormbyProperty("id", "ifree_form");
         if (freeForm == null) {
