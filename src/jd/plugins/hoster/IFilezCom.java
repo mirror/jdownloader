@@ -29,11 +29,12 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
+import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "i-filez.com" }, urls = { "http://(www\\.)?i-filez\\.com/downloads/i/\\d+/f/.+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "i-filez.com" }, urls = { "http://(www\\.)?i\\-filezdecrypted\\.com/downloads/i/\\d+/f/.+" }, flags = { 2 })
 public class IFilezCom extends PluginForHost {
 
     public IFilezCom(PluginWrapper wrapper) {
@@ -43,13 +44,20 @@ public class IFilezCom extends PluginForHost {
         // this.setStartIntervall(11 * 1000l);
     }
 
+    public void correctDownloadLink(DownloadLink link) {
+        // Links come from a decrypter
+        link.setUrlDownload(link.getDownloadURL().replace("i-filezdecrypted.com/", "i-filez.com/"));
+    }
+
     @Override
     public String getAGBLink() {
         return "http://i-filez.com/terms";
     }
 
-    private static final String CAPTCHATEXT = "includes/vvc\\.php\\?vvcid=";
-    private static final String MAINPAGE    = "http://i-filez.com/";
+    private static final String CAPTCHATEXT          = "includes/vvc\\.php\\?vvcid=";
+    private static final String MAINPAGE             = "http://i-filez.com/";
+    private static final String ONLY4PREMIUM         = ">Owner of the file is restricted to download this file only Premium users";
+    private static final String ONLY4PREMIUMUSERTEXT = "Only downloadable for premium users";
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
@@ -62,16 +70,18 @@ public class IFilezCom extends PluginForHost {
         String filename = new Regex(link.getDownloadURL(), "i-filez\\.com/downloads/i/\\d+/f/(.+)").getMatch(0);
         String filesize = br.getRegex("<th>Size:</th>[\r\t\n ]+<td>(.*?)</td>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        link.setName(filename.trim().replace(".html", ""));
+        link.setName(Encoding.htmlDecode(filename.trim().replace(".html", "")));
         link.setDownloadSize(SizeFormatter.getSize(filesize));
         String md5 = br.getRegex("<th>MD5:</th>[\r\t\n ]+<td>([a-z0-9]{32})</td>").getMatch(0);
         if (md5 != null) link.setMD5Hash(md5);
+        if (br.containsHTML(ONLY4PREMIUM)) link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.ifilezcom.only4premium", ONLY4PREMIUMUSERTEXT));
         return AvailableStatus.TRUE;
     }
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        if (br.containsHTML(ONLY4PREMIUM)) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.ifilezcom.only4premium", ONLY4PREMIUMUSERTEXT));
         String verifycode = br.getRegex("name=\"vvcid\" value=\"(\\d+)\"").getMatch(0);
         if (verifycode == null) verifycode = br.getRegex("\\?vvcid=(\\d+)\"").getMatch(0);
         if (!br.containsHTML(CAPTCHATEXT) || verifycode == null) {
@@ -116,6 +126,11 @@ public class IFilezCom extends PluginForHost {
         br.setCookie(MAINPAGE, "sdlanguageid", "2");
         br.setCustomCharset("utf-8");
         br.postPage(MAINPAGE, "login=login&loginusername=" + Encoding.urlEncode(account.getUser()) + "&loginpassword=" + Encoding.urlEncode(account.getPass()) + "&submit=login&rememberme=on");
+        // Language not English? Change setting and go on!
+        if (!"2".equals(br.getCookie(MAINPAGE, "sdlanguageid"))) {
+            br.setCookie(MAINPAGE, "sdlanguageid", "2");
+            br.getPage(MAINPAGE);
+        }
         if (br.getCookie(MAINPAGE, "sduserid") == null || br.getCookie(MAINPAGE, "sdpassword") == null || !br.containsHTML(">Premium account till")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
 

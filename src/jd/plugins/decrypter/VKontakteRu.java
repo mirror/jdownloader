@@ -23,7 +23,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 import jd.PluginWrapper;
-import jd.config.Property;
 import jd.controlling.ProgressController;
 import jd.controlling.ProgressControllerEvent;
 import jd.controlling.ProgressControllerListener;
@@ -222,14 +221,17 @@ public class VKontakteRu extends PluginForDecrypt implements ProgressControllerL
                 username = this.getPluginConfig().getStringProperty("user", null);
                 password = this.getPluginConfig().getStringProperty("pass", null);
                 for (int i = 0; i < 3; i++) {
-                    if (username == null || password == null) {
-                        this.getPluginConfig().setProperty("user", Property.NULL);
-                        this.getPluginConfig().setProperty("pass", Property.NULL);
-                        username = UserIO.getInstance().requestInputDialog("Enter Loginname for " + DOMAIN + " :");
-                        if (username == null) return false;
-                        password = UserIO.getInstance().requestInputDialog("Enter password for " + DOMAIN + " :");
-                        if (password == null) return false;
-                        if (!loginSite(username, password)) break;
+                    if (username == null || password == null || loginCounter > 20 || loginCounter == -1) {
+                        if (username == null || password == null) {
+                            username = UserIO.getInstance().requestInputDialog("Enter Loginname for " + DOMAIN + " :");
+                            if (username == null) return false;
+                            password = UserIO.getInstance().requestInputDialog("Enter password for " + DOMAIN + " :");
+                            if (password == null) return false;
+                        }
+                        if (!loginSite(username, password))
+                            break;
+                        else
+                            loginCounter++;
                     } else {
                         this.getPluginConfig().setProperty("user", username);
                         this.getPluginConfig().setProperty("pass", password);

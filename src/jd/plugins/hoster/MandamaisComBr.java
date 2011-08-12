@@ -16,16 +16,19 @@
 
 package jd.plugins.hoster;
 
+import java.io.File;
 import java.io.IOException;
+import java.util.Random;
 
 import jd.PluginWrapper;
-import jd.parser.Regex;
+import jd.config.Property;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
+import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
@@ -44,14 +47,13 @@ public class MandamaisComBr extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
-        br.setFollowRedirects(false);
+        br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        String check = br.getRedirectLocation();
-        if (br.containsHTML("or was removed") || check != null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex(">Nome do arquivo:</strong> <strong>(.*?)</stro").getMatch(0);
-        if (filename == null) br.getRegex("<title>(.*?)::").getMatch(0);
-        String filesize = br.getRegex("Tamanho do arquivo:</strong>(.*?)</td>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("<title>MandaMais\\.com\\.br :: Disco Virtual Grátis") || br.getURL().contains("mandamais.com.br/home.html")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("<title>(.*?) \\| MandaMais\\.com\\.br ::").getMatch(0);
+        if (filename == null) br.getRegex("Nome do arquivo:</b> <font color=\"#49436B\"><b>(.*?)</b>").getMatch(0);
+        String filesize = br.getRegex("<b>Tamanho do arquivo:</b> (.*?)<br />").getMatch(0);
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setName(filename.trim());
         link.setDownloadSize(SizeFormatter.getSize(filesize.replace(",", ".")));
         return AvailableStatus.TRUE;
@@ -60,15 +62,35 @@ public class MandamaisComBr extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        String id = new Regex(downloadLink.getDownloadURL(), "mandamais\\.com\\.br/download/([a-z0-9]+)").getMatch(0);
-        String dlfree = "http://www.mandamais.com.br/get/getdownload/" + id;
-        br.setFollowRedirects(true);
-        br.getPage(dlfree);
-        if (br.containsHTML("Limite de download por hora excedido")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1001l);
-        String dllink = br.getRegex("link11-azul\"><strong>(.*?)</strong>").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("\"(http://download\\.mandamais\\.com\\.br/.*?)\"").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        String dllink = downloadLink.getStringProperty("dllink");
+        if (dllink == null) {
+            PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+            jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+            rc.parse();
+            rc.load();
+            File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+            String c = getCaptchaCode(cf, downloadLink);
+            rc.getForm().put("imageField.x", Integer.toString(new Random().nextInt(100)));
+            rc.getForm().put("imageField.y", Integer.toString(new Random().nextInt(100)));
+            rc.setCode(c);
+            if (br.containsHTML("api\\.recaptcha\\.net/")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            dllink = br.getRegex("</span><br /><br /><center><a href=\"(http://.*?)\"").getMatch(0);
+            if (dllink == null) dllink = br.getRegex("\"(http://download\\.mandamais\\.com\\.br/\\d+/\\d+/.*?)\"").getMatch(0);
+            if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        if (dl.getConnection().getContentType().contains("html")) {
+            if (downloadLink.getStringProperty("dllink") != null) {
+                logger.info("resetting dllink and trying again");
+                downloadLink.setProperty("dllink", Property.NULL);
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            }
+            logger.warning("The final dllink seems not to be a file!");
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        // Save downloadlink to try to skip captcha when resuming
+        downloadLink.setProperty("dllink", dllink);
         dl.startDownload();
     }
 
