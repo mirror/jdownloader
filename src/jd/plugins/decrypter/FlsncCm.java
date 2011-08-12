@@ -1,6 +1,7 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -76,7 +77,7 @@ public class FlsncCm extends PluginForDecrypt {
             links = br.getRegex("<td><a href=\"(http://.*?)\"").getColumn(0);
             if (links == null || links.length == 0) links = br.getRegex("\"(http://[^/\" ]*?filesonic\\..*?/[^\" ]*?file/\\d+/.*?)\"").getColumn(0);
         }
-        String[][] folderLinks = br.getRegex("\"(http://(www\\.)?filesonic\\..*?/folder/\\d+)\">(.*?)</a> \\(folder\\)</td>").getMatches();
+        String[][] folderLinks = br.getRegex("\"(http://(www\\.)?filesonic\\..{2,3}/folder/\\d+)\">(.*?)</a> \\(folder\\)</td>").getMatches();
         if ((links == null || links.length == 0) && (folderLinks == null || folderLinks.length == 0)) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
@@ -94,13 +95,18 @@ public class FlsncCm extends PluginForDecrypt {
                 }
             }
         }
+        HashMap<String, FilePackage> packageMap = new HashMap<String, FilePackage>();
         if (folderLinks != null && folderLinks.length != 0) {
             for (String[] folderLink : folderLinks) {
                 DownloadLink lol = createDownloadlink(folderLink[0]);
                 if (folderLink[2] != null) {
-                    FilePackage fp = FilePackage.getInstance();
-                    fp.setName(folderLink[2].trim());
-                    lol._setFilePackage(fp);
+                    FilePackage fp = packageMap.get(folderLink[2].trim());
+                    if (fp == null) {
+                        fp = FilePackage.getInstance();
+                        fp.setName(folderLink[2].trim());
+                        packageMap.put(folderLink[2].trim(), fp);
+                    }
+                    fp.add(lol);
                 }
                 decryptedLinks.add(lol);
             }

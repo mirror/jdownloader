@@ -26,11 +26,11 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -169,7 +169,6 @@ public class TurboBitNet extends PluginForHost {
         if (maxtime == null) maxtime = br.getRegex("var Timeout.*?maxLimit: (\\d+)").getMatch(0);
         if (maxtime == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String finalPage = "http://turbobit.net/download/getLinkAfterTimeout/" + new Regex(downloadLink.getDownloadURL(), "turbobit\\.net/(.*?)\\.html").getMatch(0) + "/" + maxtime + "/";
-        if (finalPage == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         sleep(tt * 1001, downloadLink);
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         br.getPage(finalPage);

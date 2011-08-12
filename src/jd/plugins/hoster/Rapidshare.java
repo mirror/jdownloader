@@ -40,7 +40,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
@@ -449,7 +448,6 @@ public class Rapidshare extends PluginForHost {
         }
         try {
 
-            this.br.setAcceptLanguage(Plugin.ACCEPT_LANGUAGE);
             this.br.setFollowRedirects(false);
             RSLink link = null;
             try {
@@ -542,7 +540,7 @@ public class Rapidshare extends PluginForHost {
                 this.br = this.login(account, false);
             }
             this.br.setFollowRedirects(false);
-            this.br.setAcceptLanguage(Plugin.ACCEPT_LANGUAGE);
+
             RSLink link = null;
             try {
                 link = RSLink.parse(downloadLink);

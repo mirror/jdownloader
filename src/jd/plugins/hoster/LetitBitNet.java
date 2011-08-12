@@ -27,11 +27,11 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
@@ -203,6 +203,7 @@ public class LetitBitNet extends PluginForHost {
         } catch (Throwable e) {
             /* only available after 0.9xx version */
         }
+        int i = 1;
         requestFileInformation(downloadLink);
         Form freeForm = br.getFormbyProperty("id", "ifree_form");
         if (freeForm == null) {
@@ -216,7 +217,7 @@ public class LetitBitNet extends PluginForHost {
         if (allforms == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         boolean skipfirst = true;
         for (Form singleform : allforms) {
-            if (singleform.containsHTML("md5crypt")) {
+            if (singleform.containsHTML("md5crypt") && singleform.getAction() != null && singleform.getAction().contains("download")) {
                 if (skipfirst == false) {
                     skipfirst = true;
                     continue;
@@ -246,6 +247,24 @@ public class LetitBitNet extends PluginForHost {
         br.submitForm(down);
         url = br.getRegex("<frame src=\"http://[a-z0-9A-Z\\.]*?letitbit.net/tmpl/tmpl_frame_top.php\\?link=(.*?)\"").getMatch(0);
         if (url == null || url.equals("")) {
+            /* check for another waiting page , eg in russia */
+            Form[] allforms2 = br.getForms();
+            boolean skipfirst2 = true;
+            Form down2 = null;
+            for (Form singleform : allforms2) {
+                if (singleform.containsHTML("md5crypt") && singleform.getAction() != null && singleform.getAction().contains("download")) {
+                    if (skipfirst2 == false) {
+                        skipfirst2 = true;
+                        continue;
+                    }
+                    down2 = singleform;
+                    break;
+                }
+            }
+            if (down2 != null) {
+                br.submitForm(down2);
+                down = down2;
+            }
             // Example: http://s8.letitbit.net/ajax/download3.php
             String damnAction = down.getAction().replace("/download", "/ajax/download");
             // Ticket Time
