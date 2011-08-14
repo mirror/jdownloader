@@ -29,7 +29,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "empflix.com" }, urls = { "http://(www\\.)?empflix\\.com/view\\.php\\?id=\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "empflix.com" }, urls = { "http://(www\\.)?empflix\\.com/(view\\.php\\?id=\\d+|videos/.*?\\-\\d+\\.html)" }, flags = { 0 })
 public class EmpFlixCom extends PluginForHost {
 
     public EmpFlixCom(PluginWrapper wrapper) {
@@ -52,10 +52,18 @@ public class EmpFlixCom extends PluginForHost {
         String filename = br.getRegex("<title>(.*?), Free Streaming Porn</title>").getMatch(0);
         if (filename == null) filename = br.getRegex("class=\"leftSideView\">.*?<div class=\"line\">.*?<h2>(.*?)</h2>").getMatch(0);
         DLLINK = br.getRegex("addVariable\\(\\'config\\', \\'(http://.*?)\\'\\)").getMatch(0);
-        if (DLLINK == null) DLLINK = br.getRegex("\\'(http://cdn\\.empflix\\.com/empflv/.*?)\\'").getMatch(0);
+        if (DLLINK == null) {
+            DLLINK = br.getRegex("(\\'|\")(http://cdn\\.empflix\\.com/empflv(\\d+)?/.*?)(\\'|\")").getMatch(1);
+            if (DLLINK == null) {
+                DLLINK = br.getRegex("id=\"config\" name=\"config\" value=\"(http://.*?)\"").getMatch(0);
+                if (DLLINK == null) {
+                    DLLINK = br.getRegex("flashvars\\.config = escape\\(\"(http://.*?)\"\\)").getMatch(0);
+                }
+            }
+        }
         if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.getPage(Encoding.htmlDecode(DLLINK));
-        DLLINK = br.getRegex("<file>(http://.*?)</file>").getMatch(0);
+        DLLINK = br.getRegex("<(file|videoLink)>(http://.*?)</(file|videoLink)>").getMatch(1);
         if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         DLLINK = Encoding.htmlDecode(DLLINK);
         filename = filename.trim();

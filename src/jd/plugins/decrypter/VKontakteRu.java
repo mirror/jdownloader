@@ -285,6 +285,7 @@ public class VKontakteRu extends PluginForDecrypt implements ProgressControllerL
         return true;
     }
 
+    @SuppressWarnings("deprecation")
     public void onProgressControllerEvent(ProgressControllerEvent event) {
         if (event.getID() == ProgressControllerEvent.CANCEL) {
             abort = true;
