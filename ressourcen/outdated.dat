@@ -577,3 +577,4 @@ jd/plugins/hoster/ShareCx.class
 jd/plugins/decrypter/ShareCxFolder.java
 jd/plugins/decrypter/DuckLoadComFolder.java
 jd/plugins/hoster/DuckLoad.class
+jd/plugins/decrypter/FrrlNt.java
