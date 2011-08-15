@@ -28,12 +28,12 @@ import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.parser.html.HTMLParser;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -305,6 +305,7 @@ public class FileKeenCom extends PluginForHost {
     }
 
     public void checkErrors(DownloadLink theLink, boolean checkAll, String passCode, boolean loggedIn) throws NumberFormatException, PluginException {
+        if (BRBEFORE.contains("err\">No such file with this filename<")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         if (checkAll) {
             if (BRBEFORE.contains("<br><b>Password:</b> <input") || BRBEFORE.contains("<br><b>Passwort:</b> <input") || BRBEFORE.contains("Wrong password")) {
                 logger.warning("Wrong password, the entered password \"" + passCode + "\" is wrong, retrying...");

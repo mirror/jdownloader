@@ -515,7 +515,7 @@ public abstract class PluginForHost extends Plugin implements FavIconRequestor {
                      * use this REGEX to cut of following http links,
                      * (?=https?:|$|\r|\n|)
                      */
-                    final DownloadLink link = new DownloadLink((PluginForHost) wrapper.getPlugin(), file.substring(file.lastIndexOf("/") + 1, file.length()), getHost(), file, true);
+                    final DownloadLink link = new DownloadLink(this, file.substring(file.lastIndexOf("/") + 1, file.length()), getHost(), file, true);
                     links.add(link);
                 } catch (IllegalArgumentException e) {
                     JDLogger.exception(e);
@@ -530,7 +530,10 @@ public abstract class PluginForHost extends Plugin implements FavIconRequestor {
         return links;
     }
 
-    /** ueberschreiben falls die downloadurl erst rekonstruiert werden muss */
+    /*
+     * OVERRIDE this function if you need to modify the link, ATTENTION: you
+     * have to use new browser instances, this plugin might not have one!
+     */
     public void correctDownloadLink(final DownloadLink link) throws Exception {
     }
 

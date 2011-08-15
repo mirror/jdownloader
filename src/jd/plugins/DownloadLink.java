@@ -24,6 +24,7 @@ import java.net.URL;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Logger;
@@ -44,6 +45,7 @@ import jd.plugins.download.DownloadInterface.Chunk;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.Regex;
+import org.appwork.utils.logging.Log;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.GeneralSettings;
 
@@ -195,22 +197,16 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         setName(name);
         sourcePluginPasswordList = null;
         downloadMax = 0;
-        this.host = host == null ? null : host.toLowerCase();
+        this.host = host == null ? null : host.toLowerCase(Locale.ENGLISH);
         this.isEnabled = isEnabled;
         created = System.currentTimeMillis();
         finishedDate = -1l;
         this.setUrlDownload(urlDownload);
         if (plugin != null && this.getDownloadURL() != null) {
             try {
-                /*
-                 * we have to use new instance here as correctDownloadLink might
-                 * use a browser, create new browser instance too
-                 */
-                PluginForHost plg = defaultplugin.getWrapper().getNewPluginInstance();
-                plg.setBrowser(new Browser());
-                plg.correctDownloadLink(this);
+                plugin.correctDownloadLink(this);
             } catch (Throwable e) {
-                JDLogger.exception(e);
+                Log.exception(e);
             }
         }
         if (name == null && urlDownload != null) {

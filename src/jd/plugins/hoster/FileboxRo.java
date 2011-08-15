@@ -19,6 +19,7 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -41,7 +42,8 @@ public class FileboxRo extends PluginForHost {
 
     @Override
     public void correctDownloadLink(DownloadLink link) throws Exception {
-        this.setBrowserExclusive();
+        Browser br = new Browser();
+        br.setCookiesExclusive(true);
         br.setCookie(link.getDownloadURL(), "filebox_language", "en");
         if (!Regex.matches(link.getDownloadURL(), "http://[\\w\\.]*?filebox\\.ro/download\\.php\\?k=[0-9a-z]{16}")) {
             if (!Regex.matches(link.getDownloadURL(), ".+(/video/|/v/).+")) {

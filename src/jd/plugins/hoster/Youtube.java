@@ -53,7 +53,7 @@ public class Youtube extends PluginForHost {
     private static final String                              ALLOW_WEBM   = "ALLOW_WEBM";
     private static final String                              ALLOW_FLV    = "ALLOW_FLV";
     private static final String                              ALLOW_3GP    = "ALLOW_3GP";
-    private static final String                              FAST_CHECK   = "FAST_CHECK";
+    private static final String                              FAST_CHECK   = "FAST_CHECK2";
     private static HashMap<Account, HashMap<String, String>> loginCookies = new HashMap<Account, HashMap<String, String>>();
 
     public Youtube(final PluginWrapper wrapper) {
@@ -68,7 +68,7 @@ public class Youtube extends PluginForHost {
     }
 
     private void setConfigElements() {
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FAST_CHECK, JDL.L("plugins.hoster.youtube.fast", "Fast LinkCheck?")).setDefaultValue(true));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FAST_CHECK, JDL.L("plugins.hoster.youtube.fast", "Fast LinkCheck?")).setDefaultValue(false));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), IDASFILENAME, JDL.L("plugins.hoster.youtube.idasfilename", "Use Video-ID as filename?")).setDefaultValue(false));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_WEBM, JDL.L("plugins.hoster.youtube.checkwebm", "Grab WEBM?")).setDefaultValue(true));

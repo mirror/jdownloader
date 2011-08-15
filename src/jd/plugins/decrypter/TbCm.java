@@ -260,7 +260,7 @@ public class TbCm extends PluginForDecrypt {
                     String id = new Regex(parameter, "v=([a-z\\-_A-Z0-9]+)").getMatch(0);
                     if (id != null) YT_FILENAME = id.toUpperCase(Locale.ENGLISH);
                 }
-                final boolean fast = cfg.getBooleanProperty("FAST_CHECK", true);
+                final boolean fast = cfg.getBooleanProperty("FAST_CHECK2", false);
                 final boolean mp3 = cfg.getBooleanProperty("ALLOW_MP3", true);
                 final boolean mp4 = cfg.getBooleanProperty("ALLOW_MP4", true);
                 final boolean webm = cfg.getBooleanProperty("ALLOW_WEBM", true);

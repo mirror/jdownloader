@@ -21,12 +21,10 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.locale.JDL;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fileserve.com" }, urls = { "http://[\\w\\.]*?fileserve\\.com/list/[a-zA-Z0-9]+" }, flags = { 0 })
 public class FileServeComFolder extends PluginForDecrypt {
@@ -40,7 +38,7 @@ public class FileServeComFolder extends PluginForDecrypt {
         String parameter = param.toString();
         br.setCustomCharset("utf-8");
         br.getPage(parameter);
-        if (br.containsHTML("(>Total file size: 0 Bytes<|Fileserve - 404 - Page not found|<h4>The file or page you tried to access is no longer accessible)")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+        if (br.containsHTML("(>Total file size: 0 Bytes<|Fileserve - 404 - Page not found|<h4>The file or page you tried to access is no longer accessible)")) return decryptedLinks;
         String fpName = br.getRegex("<h1>Viewing public folder (.*?)</h1>").getMatch(0);
         String[] links = br.getRegex("\"(/file/[a-zA-Z0-9]+)\"").getColumn(0);
         if (links == null || links.length == 0) return null;
