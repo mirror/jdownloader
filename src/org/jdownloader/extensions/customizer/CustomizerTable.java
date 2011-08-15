@@ -23,7 +23,7 @@ public class CustomizerTable extends ExtTable<CustomizeSetting> {
     private static final long serialVersionUID = 2767338885884748758L;
 
     public CustomizerTable() {
-        super(new CustomizerTableModel(), "customizer");
+        super(new CustomizerTableModel());
 
         setRowHeight(22);
     }

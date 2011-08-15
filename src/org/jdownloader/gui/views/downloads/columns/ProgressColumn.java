@@ -26,9 +26,9 @@ public class ProgressColumn extends ExtProgressColumn<jd.plugins.PackageLinkNode
     }
 
     @Override
-    public int getMaxWidth() {
+    public int getMinWidth() {
 
-        return 150;
+        return 30;
     }
 
     @Override

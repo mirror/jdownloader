@@ -2175,4 +2175,7 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Onlinestatus not checked" })
     String LinkPropertiesDialog_layoutDialogContent_unchecked();
+
+    @Default(lngs = { "en" }, values = { "Click here to add this link or package to your download list." })
+    String ConfirmAction_ConfirmAction_tooltip();
 }

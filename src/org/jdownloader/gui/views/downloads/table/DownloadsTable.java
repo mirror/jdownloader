@@ -18,6 +18,7 @@ import javax.swing.DropMode;
 import javax.swing.ImageIcon;
 import javax.swing.JPopupMenu;
 import javax.swing.JSeparator;
+import javax.swing.JTable;
 import javax.swing.KeyStroke;
 import javax.swing.Timer;
 
@@ -90,6 +91,7 @@ public class DownloadsTable extends LinkTable {
         }
         initActions();
         onSelectionChanged(null);
+        setAutoResizeMode(JTable.AUTO_RESIZE_LAST_COLUMN);
     }
 
     @Override

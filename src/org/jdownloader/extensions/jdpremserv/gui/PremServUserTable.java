@@ -32,7 +32,7 @@ public class PremServUserTable extends ExtTable<PremServUser> {
 
     private PremServUserTable() {
 
-        super(PremServUserTableModel.getInstance(), "PremServUserTable");
+        super(PremServUserTableModel.getInstance());
         // this.setFocusable(false);
         // setShowHorizontalLines(false);
         setShowVerticalLines(false);
