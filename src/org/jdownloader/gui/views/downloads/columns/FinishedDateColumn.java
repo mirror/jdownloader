@@ -31,11 +31,11 @@ public class FinishedDateColumn extends ExtDateColumn<PackageLinkNode> {
         return false;
     }
 
-    @Override
-    public int getMaxWidth() {
-
-        return 110;
-    }
+    // @Override
+    // public int getMaxWidth() {
+    //
+    // return 110;
+    // }
 
     @Override
     public boolean isEnabled(PackageLinkNode obj) {

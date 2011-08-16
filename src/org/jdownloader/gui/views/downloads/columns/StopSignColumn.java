@@ -63,10 +63,10 @@ public class StopSignColumn extends ExtTextColumn<jd.plugins.PackageLinkNode> {
         return 30;
     }
 
-    @Override
-    protected int getMaxWidth() {
-        return getDefaultWidth();
-    }
+    // @Override
+    // protected int getMaxWidth() {
+    // return getDefaultWidth();
+    // }
 
     @Override
     public boolean isEnabled(PackageLinkNode obj) {

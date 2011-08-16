@@ -15,6 +15,7 @@ import jd.plugins.PackageLinkNode;
 
 import org.appwork.app.gui.MigPanel;
 import org.appwork.utils.swing.renderer.RenderLabel;
+import org.appwork.utils.swing.renderer.RendererMigPanel;
 import org.appwork.utils.swing.table.ExtColumn;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
@@ -32,7 +33,7 @@ public class HosterColumn extends ExtColumn<PackageLinkNode> {
 
     public HosterColumn() {
         super(_GUI._.HosterColumn_HosterColumn(), null);
-        panel = new MigPanel("ins 0 5 0 5", "[]", "[grow,fill]");
+        panel = new RendererMigPanel("ins 0 5 0 5", "[]", "[grow,fill]");
         labels = new RenderLabel[10];
         // panel.add(Box.createGlue(), "pushx,growx");
         for (int i = 0; i < maxIcons; i++) {
@@ -79,11 +80,11 @@ public class HosterColumn extends ExtColumn<PackageLinkNode> {
         return 55;
     }
 
-    @Override
-    public int getMaxWidth() {
-
-        return 150;
-    }
+    // @Override
+    // public int getMaxWidth() {
+    //
+    // return 150;
+    // }
 
     public JToolTip createToolTip(final PackageLinkNode obj) {
         if (obj instanceof DownloadLink) {

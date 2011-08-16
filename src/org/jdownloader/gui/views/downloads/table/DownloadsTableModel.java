@@ -40,6 +40,13 @@ public class DownloadsTableModel extends LinkTableModel {
 
     @Override
     protected void initColumns() {
+        // addColumn(new ExtTextColumn<PackageLinkNode>("TEst") {
+        //
+        // @Override
+        // public String getStringValue(PackageLinkNode value) {
+        // return value + "";
+        // }
+        // });
         this.addColumn(new FileColumn());
         this.addColumn(new SizeColumn());
         this.addColumn(new HosterColumn());

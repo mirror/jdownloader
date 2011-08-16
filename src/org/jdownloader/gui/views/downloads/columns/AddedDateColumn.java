@@ -32,11 +32,11 @@ public class AddedDateColumn extends ExtDateColumn<PackageLinkNode> {
         return false;
     }
 
-    @Override
-    public int getMaxWidth() {
-
-        return 110;
-    }
+    // @Override
+    // public int getMaxWidth() {
+    //
+    // return 110;
+    // }
 
     @Override
     protected String getBadDateText(PackageLinkNode value) {

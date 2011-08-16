@@ -29,11 +29,11 @@ public class ConnectionColumn extends ExtTextColumn<jd.plugins.PackageLinkNode> 
         return 85;
     }
 
-    @Override
-    public int getMaxWidth() {
-
-        return 150;
-    }
+    // @Override
+    // public int getMaxWidth() {
+    //
+    // return 150;
+    // }
 
     @Override
     public String getStringValue(PackageLinkNode value) {

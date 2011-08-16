@@ -24,11 +24,11 @@ public class TaskColumn extends ExtTextColumn<jd.plugins.PackageLinkNode> {
         return 80;
     }
 
-    @Override
-    public int getMaxWidth() {
-
-        return 150;
-    }
+    // @Override
+    // public int getMaxWidth() {
+    //
+    // return 150;
+    // }
 
     @Override
     public boolean isEnabled(PackageLinkNode obj) {

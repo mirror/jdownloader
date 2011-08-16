@@ -87,13 +87,13 @@ public class PriorityColumn extends ExtIconColumn<PackageLinkNode> {
         return false;
     }
 
-    /**
-     * Sets max width to 30. overwrite to set other maxsizes
-     */
-    @Override
-    protected int getMaxWidth() {
-        return 30;
-    }
+    // /**
+    // * Sets max width to 30. overwrite to set other maxsizes
+    // */
+    // @Override
+    // protected int getMaxWidth() {
+    // return 30;
+    // }
 
     @Override
     public int getMinWidth() {

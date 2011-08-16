@@ -30,11 +30,11 @@ public class ETAColumn extends ExtTextColumn<jd.plugins.PackageLinkNode> {
         return obj.isEnabled();
     }
 
-    @Override
-    public int getMaxWidth() {
-
-        return 85;
-    }
+    // @Override
+    // public int getMaxWidth() {
+    //
+    // return 85;
+    // }
 
     public ETAColumn() {
         super(_GUI._.ETAColumn_ETAColumn());

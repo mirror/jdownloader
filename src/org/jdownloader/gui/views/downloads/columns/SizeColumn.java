@@ -24,11 +24,11 @@ public class SizeColumn extends ExtFileSizeColumn<PackageLinkNode> {
         return 65;
     }
 
-    @Override
-    public int getMaxWidth() {
-
-        return 83;
-    }
+    // @Override
+    // public int getMaxWidth() {
+    //
+    // return 83;
+    // }
 
     @Override
     protected long getBytes(PackageLinkNode o2) {
