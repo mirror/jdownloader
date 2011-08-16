@@ -19,7 +19,6 @@ package jd.plugins;
 import java.awt.Color;
 import java.io.File;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Iterator;
 
 import jd.HostPluginWrapper;
@@ -57,23 +56,22 @@ public abstract class PluginsC extends Plugin {
         logger = new JDPluginLogger(wrapper.getHost() + System.currentTimeMillis());
     }
 
-    private static final HashMap<String, PluginsC> PLUGINS                 = new HashMap<String, PluginsC>();
+    private static final int          STATUS_NOTEXTRACTED     = 0;
 
-    private static final int                       STATUS_NOTEXTRACTED     = 0;
+    private static final int          STATUS_ERROR_EXTRACTING = 1;
 
-    private static final int                       STATUS_ERROR_EXTRACTING = 1;
+    protected ArrayList<DownloadLink> cls                     = new ArrayList<DownloadLink>();
 
-    protected ArrayList<DownloadLink>              cls                     = new ArrayList<DownloadLink>();
+    private ContainerStatus           containerStatus         = null;
 
-    private ContainerStatus                        containerStatus         = null;
+    protected ArrayList<String>       dlU;
 
-    protected ArrayList<String>                    dlU;
+    protected String                  md5;
+    protected byte[]                  k;
 
-    protected String                               md5;
-    protected byte[]                               k;
-    protected ProgressController                   progress;
-
-    private int                                    status                  = STATUS_NOTEXTRACTED;
+    private int                       status                  = STATUS_NOTEXTRACTED;
+    private static final Object       LOCK                    = new Object();
+    private static long               lastUpdateRequest       = 0;
 
     public abstract ContainerStatus callDecryption(File file);
 
@@ -81,7 +79,6 @@ public abstract class PluginsC extends Plugin {
     public synchronized boolean canHandle(final String data) {
         if (data == null) { return false; }
         final String match = new Regex(data, this.getSupportedLinks()).getMatch(-1);
-
         return match != null && match.equalsIgnoreCase(data);
     }
 
@@ -98,7 +95,7 @@ public abstract class PluginsC extends Plugin {
      * geht die containedLinks liste durch und decrypted alle links die darin
      * sind.
      */
-    private void decryptLinkProtectorLinks() {
+    private void decryptLinkProtectorLinks(ProgressController progress) {
         final ArrayList<DownloadLink> tmpDlink = new ArrayList<DownloadLink>();
         final ArrayList<String> tmpURL = new ArrayList<String>();
         int i = 0;
@@ -125,7 +122,9 @@ public abstract class PluginsC extends Plugin {
                     next.setContainerFile(srcLink.getContainerFile());
                     next.setContainerIndex(c++);
                 }
-                next.getSourcePluginPasswordList().addAll(srcLink.getSourcePluginPasswordList());
+                if (srcLink.getSourcePluginPasswordList() != null && srcLink.getSourcePluginPasswordList().size() > 0) {
+                    next.addSourcePluginPasswordList(srcLink.getSourcePluginPasswordList());
+                }
                 String comment = "";
                 if (srcLink.getSourcePluginComment() != null) {
                     comment += srcLink.getSourcePluginComment();
@@ -321,27 +320,6 @@ public abstract class PluginsC extends Plugin {
         return cls == null ? new ArrayList<DownloadLink>() : cls;
     }
 
-    /**
-     * Gibt das passende plugin für diesen container zurück. falls schon eins
-     * exestiert wird dieses zurückgegeben.
-     * 
-     * @param containerFile
-     * @return
-     */
-    public PluginsC getPlugin(final String containerFile) {
-        if (PLUGINS.containsKey(containerFile)) { return PLUGINS.get(containerFile); }
-        try {
-            final PluginsC newPlugin = this.getClass().newInstance();
-            PLUGINS.put(containerFile, newPlugin);
-            return newPlugin;
-        } catch (InstantiationException e) {
-            JDLogger.exception(e);
-        } catch (IllegalAccessException e) {
-            JDLogger.exception(e);
-        }
-        return null;
-    }
-
     public synchronized void initContainer(String filename, final byte[] bs) {
         if (filename == null) return;
         final File rel = JDUtilities.getResourceFile(filename);
@@ -361,43 +339,61 @@ public abstract class PluginsC extends Plugin {
         if (cls == null || cls.size() == 0) {
             logger.info("Init Container");
             fireControlEvent(ControlEvent.CONTROL_PLUGIN_ACTIVE, this);
-            if (progress != null) {
-                progress.doFinalize();
-            }
-            progress = new ProgressController(_JDT._.plugins_container_open(), 10, null);
-            progress.increase(1);
-            if (bs != null) k = bs;
-            try {
-                doDecryption(filename);
-            } catch (Throwable e) {
-                JDLogger.exception(e);
-            }
-            progress.increase(1);
 
-            logger.info(filename + " Parse");
-            if (cls != null && dlU != null) {
-                progress.setStatusText(_JDT._.plugins_container_found(cls.size()));
-                decryptLinkProtectorLinks();
-                progress.setStatusText(_JDT._.plugins_container_exit(cls.size()));
-                final Iterator<DownloadLink> it = cls.iterator();
-                while (it.hasNext()) {
-                    it.next().setLinkType(DownloadLink.LINKTYPE_CONTAINER);
+            ProgressController progress = null;
+            Color color = null;
+            String errorTxt = null;
+            int wait = 0;
+            try {
+                progress = new ProgressController(_JDT._.plugins_container_open(), 10, null);
+                progress.increase(1);
+                if (bs != null) k = bs;
+                try {
+                    doDecryption(filename);
+                } catch (Throwable e) {
+                    JDLogger.exception(e);
                 }
                 progress.increase(1);
+
+                logger.info(filename + " Parse");
+                if (cls != null && dlU != null) {
+                    progress.setStatusText(_JDT._.plugins_container_found(cls.size()));
+                    decryptLinkProtectorLinks(progress);
+                    progress.setStatusText(_JDT._.plugins_container_exit(cls.size()));
+                    final Iterator<DownloadLink> it = cls.iterator();
+                    while (it.hasNext()) {
+                        it.next().setLinkType(DownloadLink.LINKTYPE_CONTAINER);
+                    }
+                    progress.increase(1);
+                }
+                if (this.containerStatus == null) {
+                    color = Color.RED;
+                    errorTxt = _JDT._.plugins_container_exit_error("Container not found!");
+                    wait = 500;
+                } else if (!this.containerStatus.hasStatus(ContainerStatus.STATUS_FINISHED)) {
+                    color = Color.RED;
+                    errorTxt = _JDT._.plugins_container_exit_error(containerStatus.getStatusText());
+                    wait = 1000;
+                    synchronized (LOCK) {
+                        if (System.currentTimeMillis() - PluginsC.lastUpdateRequest > 10 * 60 * 1000) {
+                            PluginsC.lastUpdateRequest = System.currentTimeMillis();
+                            WebUpdate.doUpdateCheck(false);
+                        }
+                    }
+                }
+            } finally {
+                fireControlEvent(ControlEvent.CONTROL_PLUGIN_INACTIVE, this);
+                try {
+                    if (color != null) progress.setColor(color);
+                    if (errorTxt != null) progress.setStatusText(errorTxt);
+                    if (wait > 0) {
+                        progress.doFinalize(wait);
+                    } else {
+                        progress.doFinalize();
+                    }
+                } catch (final Throwable e) {
+                }
             }
-            if (this.containerStatus == null) {
-                progress.setColor(Color.RED);
-                progress.setStatusText(_JDT._.plugins_container_exit_error("Container not found!"));
-                progress.doFinalize(500);
-            } else if (!this.containerStatus.hasStatus(ContainerStatus.STATUS_FINISHED)) {
-                progress.setColor(Color.RED);
-                progress.setStatusText(_JDT._.plugins_container_exit_error(containerStatus.getStatusText()));
-                progress.doFinalize(5000);
-                WebUpdate.doUpdateCheck(false);
-            } else {
-                progress.doFinalize();
-            }
-            fireControlEvent(ControlEvent.CONTROL_PLUGIN_INACTIVE, this);
         }
     }
 

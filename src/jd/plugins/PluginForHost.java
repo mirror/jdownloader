@@ -176,6 +176,7 @@ public abstract class PluginForHost extends Plugin implements FavIconRequestor {
     @Override
     public void clean() {
         dl = null;
+        br = null;
         super.clean();
     }
 
@@ -517,9 +518,7 @@ public abstract class PluginForHost extends Plugin implements FavIconRequestor {
                      */
                     final DownloadLink link = new DownloadLink(this, file.substring(file.lastIndexOf("/") + 1, file.length()), getHost(), file, true);
                     links.add(link);
-                } catch (IllegalArgumentException e) {
-                    JDLogger.exception(e);
-                } catch (SecurityException e) {
+                } catch (Throwable e) {
                     JDLogger.exception(e);
                 }
             }
@@ -687,7 +686,7 @@ public abstract class PluginForHost extends Plugin implements FavIconRequestor {
                     dl.getConnection().disconnect();
                 } catch (Exception e) {
                 }
-                dl = null;
+                setDownloadInterface(null);
             }
 
             final long traffic = Math.max(0, downloadLink.getDownloadCurrent() - before);
@@ -746,7 +745,7 @@ public abstract class PluginForHost extends Plugin implements FavIconRequestor {
                     dl.getConnection().disconnect();
                 } catch (Throwable e) {
                 }
-                dl = null;
+                setDownloadInterface(null);
             }
         }
         return;

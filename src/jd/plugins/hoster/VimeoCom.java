@@ -28,11 +28,11 @@ import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vimeo.com" }, urls = { "http://(www\\.)?vimeo\\.com/[0-9]+" }, flags = { 2 })
 public class VimeoCom extends PluginForHost {
@@ -65,6 +65,7 @@ public class VimeoCom extends PluginForHost {
         br.getPage(dlURL);
         this.finalURL = br.getRedirectLocation();
         if (finalURL == null || title == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        title = Encoding.htmlDecode(title);
         URLConnectionAdapter con = null;
         try {
             con = br.openGetConnection(finalURL);

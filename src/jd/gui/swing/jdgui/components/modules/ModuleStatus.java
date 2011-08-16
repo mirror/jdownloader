@@ -108,7 +108,6 @@ public final class ModuleStatus extends JPanel implements ControlListener, Mouse
                     if (!controllers.contains(add)) {
 
                         controllers.add(add);
-                        System.out.println("Dialog");
                         if (add.getType() == Type.DIALOG) {
                             ProgressControllerDialog.show(add);
                         }

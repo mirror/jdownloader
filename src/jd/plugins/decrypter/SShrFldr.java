@@ -21,12 +21,10 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.locale.JDL;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "easy-share.com" }, urls = { "http://[\\w\\.]*?easy-share\\.com/f/\\d+/" }, flags = { 0 })
 public class SShrFldr extends PluginForDecrypt {
@@ -40,7 +38,7 @@ public class SShrFldr extends PluginForDecrypt {
         String parameter = param.toString();
         br.setCookie("http://www.easy-share.com", "language", "en");
         br.getPage(parameter);
-        if (br.containsHTML("(Folder not found|No files in this folder)")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+        if (br.containsHTML("(Folder not found|No files in this folder)")) return decryptedLinks;
         String fpName = br.getRegex("<h1>(.*?)</h1>").getMatch(0);
         if (fpName == null) fpName = br.getRegex("<title>Download(.*?), upload").getMatch(0);
         String[] links = br.getRegex("\"(http://www\\.easy-share\\.com/[0-9]+).*?\"").getColumn(0);

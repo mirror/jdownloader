@@ -31,6 +31,7 @@ import jd.controlling.JDPluginLogger;
 import jd.controlling.LinkGrabberController;
 import jd.controlling.ProgressController;
 import jd.controlling.captcha.CaptchaController;
+import jd.controlling.linkcrawler.CrawledLinkInfo;
 import jd.event.ControlEvent;
 import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.http.Browser;
@@ -353,7 +354,40 @@ public abstract class PluginForDecrypt extends Plugin {
                     file = file.substring(0, file.length() - 1);
                 }
                 file = file.trim();
-                chits.add(new CryptedLink(hit));
+                chits.add(new CryptedLink(file));
+            }
+        }
+        return chits;
+    }
+
+    public ArrayList<CrawledLinkInfo> crawlLinks(String data) {
+        /*
+         * we dont need memory optimization here as downloadlink, crypted link
+         * itself take care of this
+         */
+        String[] hits = new Regex(data, getSupportedLinks()).setMemoryOptimized(false).getColumn(-1);
+        ArrayList<CrawledLinkInfo> chits = null;
+        if (hits != null && hits.length > 0) {
+            chits = new ArrayList<CrawledLinkInfo>(hits.length);
+        } else {
+            chits = new ArrayList<CrawledLinkInfo>();
+        }
+        if (hits != null && hits.length > 0) {
+            for (String hit : hits) {
+                String file = hit;
+                file = file.trim();
+                /* cut of any unwanted chars */
+                while (file.length() > 0 && file.charAt(0) == '"') {
+                    file = file.substring(1);
+                }
+                while (file.length() > 0 && file.charAt(file.length() - 1) == '"') {
+                    file = file.substring(0, file.length() - 1);
+                }
+                file = file.trim();
+
+                CrawledLinkInfo cli;
+                chits.add(cli = new CrawledLinkInfo(new CryptedLink(file)));
+                cli.setdPlugin(this);
             }
         }
         return chits;
