@@ -9,7 +9,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PackageLinkNode;
 
-import org.appwork.utils.swing.table.columns.ExtTextColumn;
+import org.appwork.swing.exttable.columns.ExtTextColumn;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 

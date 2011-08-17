@@ -16,7 +16,7 @@
 
 package org.jdownloader.extensions.customizer;
 
-import org.appwork.utils.swing.table.ExtTable;
+import org.appwork.swing.exttable.ExtTable;
 
 public class CustomizerTable extends ExtTable<CustomizeSetting> {
 

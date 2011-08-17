@@ -8,9 +8,9 @@ import jd.controlling.DownloadController;
 import jd.plugins.FilePackage;
 import jd.plugins.PackageLinkNode;
 
+import org.appwork.swing.exttable.ExtColumn;
+import org.appwork.swing.exttable.ExtTableModel;
 import org.appwork.utils.logging.Log;
-import org.appwork.utils.swing.table.ExtColumn;
-import org.appwork.utils.swing.table.ExtTableModel;
 import org.jdownloader.gui.views.downloads.columns.AddedDateColumn;
 import org.jdownloader.gui.views.downloads.columns.ConnectionColumn;
 import org.jdownloader.gui.views.downloads.columns.ETAColumn;

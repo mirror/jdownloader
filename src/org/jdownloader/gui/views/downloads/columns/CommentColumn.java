@@ -4,7 +4,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PackageLinkNode;
 
-import org.appwork.utils.swing.table.columns.ExtTextAreaColumn;
+import org.appwork.swing.exttable.columns.ExtTextAreaColumn;
 import org.jdownloader.gui.translate._GUI;
 
 public class CommentColumn extends ExtTextAreaColumn<PackageLinkNode> {

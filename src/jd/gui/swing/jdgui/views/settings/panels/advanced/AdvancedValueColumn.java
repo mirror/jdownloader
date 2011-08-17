@@ -10,15 +10,15 @@ import javax.swing.SwingConstants;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
+import org.appwork.swing.exttable.ExtColumn;
+import org.appwork.swing.exttable.columns.ExtCheckColumn;
+import org.appwork.swing.exttable.columns.ExtComboColumn;
+import org.appwork.swing.exttable.columns.ExtCompoundColumn;
+import org.appwork.swing.exttable.columns.ExtSpinnerColumn;
+import org.appwork.swing.exttable.columns.ExtTextAreaColumn;
+import org.appwork.swing.exttable.columns.ExtTextColumn;
 import org.appwork.utils.reflection.Clazz;
 import org.appwork.utils.swing.dialog.Dialog;
-import org.appwork.utils.swing.table.ExtColumn;
-import org.appwork.utils.swing.table.columns.ExtCheckColumn;
-import org.appwork.utils.swing.table.columns.ExtComboColumn;
-import org.appwork.utils.swing.table.columns.ExtCompoundColumn;
-import org.appwork.utils.swing.table.columns.ExtSpinnerColumn;
-import org.appwork.utils.swing.table.columns.ExtTextAreaColumn;
-import org.appwork.utils.swing.table.columns.ExtTextColumn;
 import org.jdownloader.settings.advanced.AdvancedConfigEntry;
 import org.jdownloader.settings.advanced.RangeValidator;
 

@@ -9,8 +9,8 @@ import javax.swing.table.JTableHeader;
 import jd.controlling.DownloadWatchDog;
 import jd.plugins.PackageLinkNode;
 
-import org.appwork.utils.swing.table.ExtTableHeaderRenderer;
-import org.appwork.utils.swing.table.columns.ExtTextColumn;
+import org.appwork.swing.exttable.ExtTableHeaderRenderer;
+import org.appwork.swing.exttable.columns.ExtTextColumn;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 

@@ -8,12 +8,12 @@ import javax.swing.ListSelectionModel;
 
 import jd.gui.swing.laf.LookAndFeelController;
 
+import org.appwork.swing.exttable.AlternateHighlighter;
+import org.appwork.swing.exttable.ExtColumn;
+import org.appwork.swing.exttable.ExtComponentRowHighlighter;
+import org.appwork.swing.exttable.ExtTable;
+import org.appwork.swing.exttable.ExtTableModel;
 import org.appwork.utils.ColorUtils;
-import org.appwork.utils.swing.table.AlternateHighlighter;
-import org.appwork.utils.swing.table.ExtColumn;
-import org.appwork.utils.swing.table.ExtComponentRowHighlighter;
-import org.appwork.utils.swing.table.ExtTable;
-import org.appwork.utils.swing.table.ExtTableModel;
 
 public class BasicJDTable<T> extends ExtTable<T> {
 

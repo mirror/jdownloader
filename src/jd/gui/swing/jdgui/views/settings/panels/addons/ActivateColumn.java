@@ -20,9 +20,9 @@ import jd.gui.UserIO;
 import jd.gui.swing.jdgui.menu.AddonsMenu;
 import jd.gui.swing.jdgui.menu.WindowMenu;
 
+import org.appwork.swing.exttable.ExtTableModel;
+import org.appwork.swing.exttable.columns.ExtCheckColumn;
 import org.appwork.utils.swing.dialog.Dialog;
-import org.appwork.utils.swing.table.ExtTableModel;
-import org.appwork.utils.swing.table.columns.ExtCheckColumn;
 import org.jdownloader.extensions.AbstractExtensionWrapper;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;

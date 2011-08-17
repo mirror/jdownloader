@@ -10,16 +10,16 @@ import jd.controlling.IOEQ;
 import jd.controlling.proxy.ProxyController;
 import jd.controlling.proxy.ProxyInfo;
 
+import org.appwork.swing.exttable.ExtTableHeaderRenderer;
+import org.appwork.swing.exttable.ExtTableModel;
+import org.appwork.swing.exttable.columns.ExtCheckColumn;
+import org.appwork.swing.exttable.columns.ExtComboColumn;
+import org.appwork.swing.exttable.columns.ExtPasswordEditorColumn;
+import org.appwork.swing.exttable.columns.ExtRadioColumn;
+import org.appwork.swing.exttable.columns.ExtSpinnerColumn;
+import org.appwork.swing.exttable.columns.ExtTextColumn;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.appwork.utils.swing.dialog.Dialog;
-import org.appwork.utils.swing.table.ExtTableHeaderRenderer;
-import org.appwork.utils.swing.table.ExtTableModel;
-import org.appwork.utils.swing.table.columns.ExtCheckColumn;
-import org.appwork.utils.swing.table.columns.ExtComboColumn;
-import org.appwork.utils.swing.table.columns.ExtPasswordEditorColumn;
-import org.appwork.utils.swing.table.columns.ExtRadioColumn;
-import org.appwork.utils.swing.table.columns.ExtSpinnerColumn;
-import org.appwork.utils.swing.table.columns.ExtTextColumn;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 

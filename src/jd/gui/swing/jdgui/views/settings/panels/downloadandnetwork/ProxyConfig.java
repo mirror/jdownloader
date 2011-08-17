@@ -14,9 +14,9 @@ import jd.controlling.proxy.ProxyInfo;
 import jd.gui.swing.jdgui.views.settings.ConfigPanel;
 
 import org.appwork.app.gui.MigPanel;
+import org.appwork.swing.exttable.utils.MinimumSelectionObserver;
 import org.appwork.utils.event.DefaultEventListener;
 import org.appwork.utils.swing.EDTRunner;
-import org.appwork.utils.swing.table.utils.MinimumSelectionObserver;
 import org.jdownloader.gui.settings.AbstractConfigPanel;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.translate._JDT;

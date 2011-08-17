@@ -2,7 +2,7 @@ package jd.gui.swing.jdgui.views.settings.panels.downloadandnetwork;
 
 import jd.controlling.proxy.ProxyInfo;
 
-import org.appwork.utils.swing.table.columns.ExtTextColumn;
+import org.appwork.swing.exttable.columns.ExtTextColumn;
 import org.jdownloader.gui.translate._GUI;
 
 public class HostColumn extends ExtTextColumn<ProxyInfo> {

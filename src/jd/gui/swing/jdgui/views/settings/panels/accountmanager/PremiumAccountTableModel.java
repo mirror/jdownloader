@@ -21,14 +21,14 @@ import jd.plugins.AccountInfo;
 import jd.utils.JDUtilities;
 
 import org.appwork.scheduler.DelayedRunnable;
+import org.appwork.swing.exttable.ExtTableHeaderRenderer;
+import org.appwork.swing.exttable.ExtTableModel;
+import org.appwork.swing.exttable.columns.ExtCheckColumn;
+import org.appwork.swing.exttable.columns.ExtDateColumn;
+import org.appwork.swing.exttable.columns.ExtPasswordEditorColumn;
+import org.appwork.swing.exttable.columns.ExtProgressColumn;
+import org.appwork.swing.exttable.columns.ExtTextColumn;
 import org.appwork.utils.swing.EDTRunner;
-import org.appwork.utils.swing.table.ExtTableHeaderRenderer;
-import org.appwork.utils.swing.table.ExtTableModel;
-import org.appwork.utils.swing.table.columns.ExtCheckColumn;
-import org.appwork.utils.swing.table.columns.ExtDateColumn;
-import org.appwork.utils.swing.table.columns.ExtPasswordEditorColumn;
-import org.appwork.utils.swing.table.columns.ExtProgressColumn;
-import org.appwork.utils.swing.table.columns.ExtTextColumn;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 

@@ -7,10 +7,10 @@ import java.util.ArrayList;
 import javax.swing.JPopupMenu;
 import javax.swing.ListSelectionModel;
 
-import org.appwork.utils.swing.table.AlternateHighlighter;
-import org.appwork.utils.swing.table.ExtColumn;
-import org.appwork.utils.swing.table.ExtTable;
-import org.appwork.utils.swing.table.SelectionHighlighter;
+import org.appwork.swing.exttable.AlternateHighlighter;
+import org.appwork.swing.exttable.ExtColumn;
+import org.appwork.swing.exttable.ExtTable;
+import org.appwork.swing.exttable.SelectionHighlighter;
 import org.jdownloader.extensions.jdpremserv.gui.actions.AddUserAction;
 import org.jdownloader.extensions.jdpremserv.gui.actions.EditHosterUserAction;
 import org.jdownloader.extensions.jdpremserv.gui.actions.EditTrafficUserAction;

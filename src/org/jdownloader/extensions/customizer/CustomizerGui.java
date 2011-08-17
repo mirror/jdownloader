@@ -39,9 +39,9 @@ import jd.gui.swing.jdgui.views.ViewToolbar;
 import jd.nutils.JDFlags;
 import net.miginfocom.swing.MigLayout;
 
-import org.appwork.utils.swing.table.ExtRowHighlighter;
-import org.appwork.utils.swing.table.ExtTable;
-import org.appwork.utils.swing.table.SelectionHighlighter;
+import org.appwork.swing.exttable.ExtRowHighlighter;
+import org.appwork.swing.exttable.ExtTable;
+import org.appwork.swing.exttable.SelectionHighlighter;
 import org.jdownloader.extensions.customizer.translate.T;
 import org.jdownloader.images.NewTheme;
 

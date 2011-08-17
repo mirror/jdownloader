@@ -10,7 +10,7 @@ import javax.swing.JPanel;
 import jd.plugins.Account;
 import net.miginfocom.swing.MigLayout;
 
-import org.appwork.utils.swing.table.columns.ExtComponentColumn;
+import org.appwork.swing.exttable.columns.ExtComponentColumn;
 import org.jdownloader.gui.translate._GUI;
 
 public class ActionColumn extends ExtComponentColumn<Account> {

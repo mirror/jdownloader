@@ -7,9 +7,9 @@ import javax.swing.JPopupMenu;
 
 import jd.gui.swing.jdgui.BasicJDTable;
 
-import org.appwork.utils.swing.table.ExtColumn;
-import org.appwork.utils.swing.table.ExtRowHighlighter;
-import org.appwork.utils.swing.table.ExtTable;
+import org.appwork.swing.exttable.ExtColumn;
+import org.appwork.swing.exttable.ExtRowHighlighter;
+import org.appwork.swing.exttable.ExtTable;
 import org.jdownloader.extensions.translator.TranslateEntry;
 import org.jdownloader.extensions.translator.gui.actions.SetDefaultAction;
 

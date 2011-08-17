@@ -6,7 +6,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PackageLinkNode;
 
-import org.appwork.utils.swing.table.columns.ExtProgressColumn;
+import org.appwork.swing.exttable.columns.ExtProgressColumn;
 import org.jdownloader.gui.translate._GUI;
 
 public class ProgressColumn extends ExtProgressColumn<jd.plugins.PackageLinkNode> {

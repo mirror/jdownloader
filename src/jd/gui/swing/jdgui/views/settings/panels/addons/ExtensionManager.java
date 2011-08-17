@@ -22,7 +22,7 @@ import javax.swing.JTextArea;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
-import org.appwork.utils.swing.table.ExtTable;
+import org.appwork.swing.exttable.ExtTable;
 import org.jdownloader.extensions.AbstractExtensionWrapper;
 import org.jdownloader.gui.settings.AbstractConfigPanel;
 import org.jdownloader.gui.translate._GUI;

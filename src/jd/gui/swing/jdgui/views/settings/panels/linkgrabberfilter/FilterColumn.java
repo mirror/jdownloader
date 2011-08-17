@@ -9,10 +9,10 @@ import javax.swing.ListCellRenderer;
 
 import jd.HostPluginWrapper;
 
-import org.appwork.utils.swing.table.ExtColumn;
-import org.appwork.utils.swing.table.columns.ExtComboColumn;
-import org.appwork.utils.swing.table.columns.ExtCompoundColumn;
-import org.appwork.utils.swing.table.columns.ExtTextColumn;
+import org.appwork.swing.exttable.ExtColumn;
+import org.appwork.swing.exttable.columns.ExtComboColumn;
+import org.appwork.swing.exttable.columns.ExtCompoundColumn;
+import org.appwork.swing.exttable.columns.ExtTextColumn;
 import org.jdownloader.controlling.LinkFilter;
 import org.jdownloader.gui.translate._GUI;
 

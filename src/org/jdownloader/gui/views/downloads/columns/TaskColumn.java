@@ -8,7 +8,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PackageLinkNode;
 import jd.plugins.PluginProgress;
 
-import org.appwork.utils.swing.table.columns.ExtTextColumn;
+import org.appwork.swing.exttable.columns.ExtTextColumn;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 

@@ -14,9 +14,9 @@ import jd.plugins.FilePackage;
 import jd.plugins.PackageLinkNode;
 
 import org.appwork.app.gui.MigPanel;
+import org.appwork.swing.exttable.ExtColumn;
 import org.appwork.utils.swing.renderer.RenderLabel;
 import org.appwork.utils.swing.renderer.RendererMigPanel;
-import org.appwork.utils.swing.table.ExtColumn;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 

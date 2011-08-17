@@ -10,7 +10,7 @@ import javax.swing.ListSelectionModel;
 import jd.controlling.proxy.ProxyInfo;
 import jd.gui.swing.jdgui.BasicJDTable;
 
-import org.appwork.utils.swing.table.ExtColumn;
+import org.appwork.swing.exttable.ExtColumn;
 
 public class ProxyTable extends BasicJDTable<ProxyInfo> {
 

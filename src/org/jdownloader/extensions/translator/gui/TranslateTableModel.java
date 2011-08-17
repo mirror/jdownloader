@@ -11,13 +11,13 @@ import javax.swing.table.JTableHeader;
 
 import jd.nutils.encoding.Encoding;
 
+import org.appwork.swing.exttable.ExtColumn;
+import org.appwork.swing.exttable.ExtDefaultRowSorter;
+import org.appwork.swing.exttable.ExtTableHeaderRenderer;
+import org.appwork.swing.exttable.ExtTableModel;
+import org.appwork.swing.exttable.columns.ExtIconColumn;
+import org.appwork.swing.exttable.columns.ExtTextColumn;
 import org.appwork.utils.swing.EDTRunner;
-import org.appwork.utils.swing.table.ExtColumn;
-import org.appwork.utils.swing.table.ExtDefaultRowSorter;
-import org.appwork.utils.swing.table.ExtTableHeaderRenderer;
-import org.appwork.utils.swing.table.ExtTableModel;
-import org.appwork.utils.swing.table.columns.ExtIconColumn;
-import org.appwork.utils.swing.table.columns.ExtTextColumn;
 import org.jdownloader.extensions.translator.TranslateEntry;
 import org.jdownloader.extensions.translator.TranslationProblem;
 import org.jdownloader.extensions.translator.TranslatorExtension;

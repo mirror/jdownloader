@@ -33,6 +33,7 @@ import jd.plugins.PackageLinkNode;
 import jd.utils.JDUtilities;
 
 import org.appwork.storage.config.JsonConfig;
+import org.appwork.swing.exttable.ExtColumn;
 import org.appwork.utils.Application;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.dialog.Dialog;
@@ -40,7 +41,6 @@ import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.appwork.utils.swing.dialog.OffScreenException;
 import org.appwork.utils.swing.dialog.SimpleTextBallon;
-import org.appwork.utils.swing.table.ExtColumn;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.components.linktable.LinkTable;

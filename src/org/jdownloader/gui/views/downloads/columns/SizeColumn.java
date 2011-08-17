@@ -4,7 +4,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PackageLinkNode;
 
-import org.appwork.utils.swing.table.columns.ExtFileSizeColumn;
+import org.appwork.swing.exttable.columns.ExtFileSizeColumn;
 import org.jdownloader.gui.translate._GUI;
 
 public class SizeColumn extends ExtFileSizeColumn<PackageLinkNode> {

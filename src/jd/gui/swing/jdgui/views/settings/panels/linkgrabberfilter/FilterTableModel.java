@@ -9,10 +9,10 @@ import javax.swing.table.JTableHeader;
 
 import jd.HostPluginWrapper;
 
-import org.appwork.utils.swing.table.ExtTableHeaderRenderer;
-import org.appwork.utils.swing.table.ExtTableModel;
-import org.appwork.utils.swing.table.columns.ExtCheckColumn;
-import org.appwork.utils.swing.table.columns.ExtComboColumn;
+import org.appwork.swing.exttable.ExtTableHeaderRenderer;
+import org.appwork.swing.exttable.ExtTableModel;
+import org.appwork.swing.exttable.columns.ExtCheckColumn;
+import org.appwork.swing.exttable.columns.ExtComboColumn;
 import org.jdownloader.controlling.LinkFilter;
 import org.jdownloader.controlling.LinkFilter.Types;
 import org.jdownloader.controlling.LinkFilterOperator;

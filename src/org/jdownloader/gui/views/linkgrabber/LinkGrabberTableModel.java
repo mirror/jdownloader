@@ -16,8 +16,8 @@ import jd.plugins.FilePackage;
 import jd.plugins.PackageLinkNode;
 
 import org.appwork.app.gui.MigPanel;
-import org.appwork.utils.swing.table.ExtTableHeaderRenderer;
-import org.appwork.utils.swing.table.columns.ExtComponentColumn;
+import org.appwork.swing.exttable.ExtTableHeaderRenderer;
+import org.appwork.swing.exttable.columns.ExtComponentColumn;
 import org.jdownloader.gui.views.downloads.columns.AddedDateColumn;
 import org.jdownloader.gui.views.downloads.columns.FileColumn;
 import org.jdownloader.gui.views.downloads.columns.HosterColumn;

@@ -10,10 +10,10 @@ import javax.swing.table.JTableHeader;
 import jd.plugins.DownloadLink;
 import jd.plugins.PackageLinkNode;
 
-import org.appwork.utils.swing.table.ExtColumn;
-import org.appwork.utils.swing.table.ExtDefaultRowSorter;
-import org.appwork.utils.swing.table.ExtTableHeaderRenderer;
-import org.appwork.utils.swing.table.columns.ExtIconColumn;
+import org.appwork.swing.exttable.ExtColumn;
+import org.appwork.swing.exttable.ExtDefaultRowSorter;
+import org.appwork.swing.exttable.ExtTableHeaderRenderer;
+import org.appwork.swing.exttable.columns.ExtIconColumn;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 

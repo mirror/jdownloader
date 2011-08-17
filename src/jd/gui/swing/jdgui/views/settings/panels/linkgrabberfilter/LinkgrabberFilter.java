@@ -11,9 +11,9 @@ import jd.gui.swing.jdgui.views.settings.components.SettingsComponent;
 import jd.gui.swing.jdgui.views.settings.components.StateUpdateListener;
 import net.miginfocom.swing.MigLayout;
 
+import org.appwork.swing.exttable.utils.MinimumSelectionObserver;
 import org.appwork.utils.swing.HelpNotifier;
 import org.appwork.utils.swing.HelpNotifierCallbackListener;
-import org.appwork.utils.swing.table.utils.MinimumSelectionObserver;
 import org.jdownloader.gui.translate._GUI;
 
 public class LinkgrabberFilter extends JPanel implements SettingsComponent {

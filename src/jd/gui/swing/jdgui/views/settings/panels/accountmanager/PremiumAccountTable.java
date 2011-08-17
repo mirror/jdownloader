@@ -8,7 +8,7 @@ import javax.swing.JPopupMenu;
 import jd.gui.swing.jdgui.BasicJDTable;
 import jd.plugins.Account;
 
-import org.appwork.utils.swing.table.ExtColumn;
+import org.appwork.swing.exttable.ExtColumn;
 
 public class PremiumAccountTable extends BasicJDTable<Account> {
 

@@ -18,10 +18,10 @@ package org.jdownloader.extensions.customizer;
 
 import java.util.ArrayList;
 
-import org.appwork.utils.swing.table.ExtTableModel;
-import org.appwork.utils.swing.table.columns.ExtCheckColumn;
-import org.appwork.utils.swing.table.columns.ExtLongColumn;
-import org.appwork.utils.swing.table.columns.ExtTextColumn;
+import org.appwork.swing.exttable.ExtTableModel;
+import org.appwork.swing.exttable.columns.ExtCheckColumn;
+import org.appwork.swing.exttable.columns.ExtLongColumn;
+import org.appwork.swing.exttable.columns.ExtTextColumn;
 import org.jdownloader.extensions.customizer.columns.DLPriorityColumn;
 import org.jdownloader.extensions.customizer.columns.DownloadDirColumn;
 import org.jdownloader.extensions.customizer.translate.T;

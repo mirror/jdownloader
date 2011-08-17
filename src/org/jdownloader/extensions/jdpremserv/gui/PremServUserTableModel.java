@@ -5,12 +5,12 @@ import java.util.Iterator;
 import java.util.Map.Entry;
 
 
+import org.appwork.swing.exttable.ExtTableModel;
+import org.appwork.swing.exttable.columns.ExtCheckColumn;
+import org.appwork.swing.exttable.columns.ExtTextColumn;
 import org.appwork.utils.event.BasicEvent;
 import org.appwork.utils.event.BasicListener;
 import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.swing.table.ExtTableModel;
-import org.appwork.utils.swing.table.columns.ExtCheckColumn;
-import org.appwork.utils.swing.table.columns.ExtTextColumn;
 import org.jdownloader.extensions.jdpremserv.controlling.UserController;
 import org.jdownloader.extensions.jdpremserv.model.PremServHoster;
 import org.jdownloader.extensions.jdpremserv.model.PremServUser;

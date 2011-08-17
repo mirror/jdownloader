@@ -9,10 +9,10 @@ import jd.controlling.IOEQ;
 import jd.plugins.FilePackage;
 import jd.plugins.PackageLinkNode;
 
+import org.appwork.swing.exttable.ExtColumn;
+import org.appwork.swing.exttable.ExtTableModel;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.swing.EDTRunner;
-import org.appwork.utils.swing.table.ExtColumn;
-import org.appwork.utils.swing.table.ExtTableModel;
 
 public abstract class LinkTableModel extends ExtTableModel<PackageLinkNode> {
     /**

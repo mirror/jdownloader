@@ -6,8 +6,8 @@ import java.util.Iterator;
 import jd.controlling.IOEQ;
 
 import org.appwork.scheduler.DelayedRunnable;
-import org.appwork.utils.swing.table.ExtTableModel;
-import org.appwork.utils.swing.table.columns.ExtTextColumn;
+import org.appwork.swing.exttable.ExtTableModel;
+import org.appwork.swing.exttable.columns.ExtTextColumn;
 import org.jdownloader.settings.advanced.AdvancedConfigEntry;
 import org.jdownloader.settings.advanced.AdvancedConfigManager;
 

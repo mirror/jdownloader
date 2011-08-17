@@ -6,7 +6,7 @@ import javax.swing.SwingConstants;
 
 import jd.plugins.PackageLinkNode;
 
-import org.appwork.utils.swing.table.columns.ExtDateColumn;
+import org.appwork.swing.exttable.columns.ExtDateColumn;
 import org.jdownloader.gui.translate._GUI;
 
 public class FinishedDateColumn extends ExtDateColumn<PackageLinkNode> {

@@ -15,8 +15,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PackageLinkNode;
 
-import org.appwork.utils.swing.table.DropHighlighter;
-import org.appwork.utils.swing.table.ExtColumn;
+import org.appwork.swing.exttable.DropHighlighter;
+import org.appwork.swing.exttable.ExtColumn;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.downloads.columns.FileColumn;
 import org.jdownloader.gui.views.downloads.context.RatedMenuController;

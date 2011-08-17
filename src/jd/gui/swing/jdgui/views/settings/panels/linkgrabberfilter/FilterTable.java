@@ -9,7 +9,7 @@ import javax.swing.JSeparator;
 
 import jd.gui.swing.jdgui.BasicJDTable;
 
-import org.appwork.utils.swing.table.ExtColumn;
+import org.appwork.swing.exttable.ExtColumn;
 import org.jdownloader.controlling.LinkFilter;
 
 public class FilterTable extends BasicJDTable<LinkFilter> {

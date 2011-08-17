@@ -8,7 +8,7 @@ import javax.swing.JPopupMenu;
 import jd.controlling.authentication.AuthenticationInfo;
 import jd.gui.swing.jdgui.BasicJDTable;
 
-import org.appwork.utils.swing.table.ExtColumn;
+import org.appwork.swing.exttable.ExtColumn;
 
 public class AuthTable extends BasicJDTable<AuthenticationInfo> {
     private static final long serialVersionUID = 1L;

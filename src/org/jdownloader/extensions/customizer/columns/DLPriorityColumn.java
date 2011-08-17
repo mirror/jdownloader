@@ -21,8 +21,8 @@ import javax.swing.JComponent;
 
 import jd.gui.swing.jdgui.views.downloads.DownloadTable;
 
-import org.appwork.utils.swing.table.ExtColumn;
-import org.appwork.utils.swing.table.ExtTableModel;
+import org.appwork.swing.exttable.ExtColumn;
+import org.appwork.swing.exttable.ExtTableModel;
 import org.jdesktop.swingx.renderer.JRendererLabel;
 import org.jdownloader.extensions.customizer.CustomizeSetting;
 

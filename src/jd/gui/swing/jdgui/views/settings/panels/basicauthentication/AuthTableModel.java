@@ -9,12 +9,12 @@ import javax.swing.table.JTableHeader;
 
 import jd.controlling.authentication.AuthenticationInfo;
 
-import org.appwork.utils.swing.table.ExtTableHeaderRenderer;
-import org.appwork.utils.swing.table.ExtTableModel;
-import org.appwork.utils.swing.table.columns.ExtCheckColumn;
-import org.appwork.utils.swing.table.columns.ExtComboColumn;
-import org.appwork.utils.swing.table.columns.ExtPasswordEditorColumn;
-import org.appwork.utils.swing.table.columns.ExtTextColumn;
+import org.appwork.swing.exttable.ExtTableHeaderRenderer;
+import org.appwork.swing.exttable.ExtTableModel;
+import org.appwork.swing.exttable.columns.ExtCheckColumn;
+import org.appwork.swing.exttable.columns.ExtComboColumn;
+import org.appwork.swing.exttable.columns.ExtPasswordEditorColumn;
+import org.appwork.swing.exttable.columns.ExtTextColumn;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 

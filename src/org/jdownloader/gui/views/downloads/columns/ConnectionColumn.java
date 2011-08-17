@@ -5,7 +5,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PackageLinkNode;
 import jd.plugins.download.DownloadInterface;
 
-import org.appwork.utils.swing.table.columns.ExtTextColumn;
+import org.appwork.swing.exttable.columns.ExtTextColumn;
 import org.jdownloader.gui.translate._GUI;
 
 public class ConnectionColumn extends ExtTextColumn<jd.plugins.PackageLinkNode> {
