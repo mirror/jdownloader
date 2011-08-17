@@ -140,34 +140,49 @@ public class FilePostCom extends PluginForHost {
         if (premiumlimit != null) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.filepostcom.only4premium", "Files over " + premiumlimit + " are only downloadable for premium users"));
         // Errorhandling in case their linkchecker lies
         if (br.containsHTML("(<title>FilePost\\.com: Download  \\- fast \\&amp; secure\\!</title>|>File not found<|>It may have been deleted by the uploader or due to the received complaint|<div class=\"file_info file_info_deleted\">)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        /* token used for all requests */
         String token = br.getRegex("flp_token', '(.*?)'").getMatch(0);
+        String id = new Regex(downloadLink.getDownloadURL(), FILEIDREGEX).getMatch(0);
+        Browser brc = br.cloneBrowser();
         Form form = new Form();
         form.setMethod(MethodType.POST);
         form.setAction("http://filepost.com/files/get/?JsHttpRequest=" + System.currentTimeMillis() + "-xml");
         form.put("action", "set_download");
         form.put("download", token);
-        form.put("code", new Regex(downloadLink.getDownloadURL(), FILEIDREGEX).getMatch(0));
+        form.put("code", id);
         form.setEncoding("application/octet-stream; charset=UTF-8");
-        br.submitForm(form);
-        String waittime = br.getRegex("wait_time\":\"(\\d+)").getMatch(0);
+        /* click on low speed button */
+        brc.submitForm(form);
+        String waittime = brc.getRegex("wait_time\":\"(\\d+)").getMatch(0);
         int wait = 30;
         if (waittime != null) {
             if (waittime.contains("-")) waittime = "0";
             wait = Integer.parseInt(waittime);
         }
         sleep(wait * 1001l, downloadLink);
-        final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-        final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
-
-        String id = this.br.getRegex("\\?k=([A-Za-z0-9%_\\+\\- ]+)\"").getMatch(0);
-        rc.setId(id);
-        rc.load();
-        File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-        String c = getCaptchaCode(cf, downloadLink);
-        rc.prepareForm(c);
-        logger.info("Put captchacode " + c + " obtained by captcha metod \"Re Captcha\" in the form and submitted it.");
-
-        String correctedBR = br.toString().replace("\\", "");
+        boolean captchaNeeded = br.containsHTML("show_captcha = 1");
+        form = new Form();
+        form.setMethod(MethodType.POST);
+        form.setAction("http://filepost.com/files/get/?JsHttpRequest=" + System.currentTimeMillis() + "-xml");
+        form.put("download", token);
+        form.put("file_pass", "undefined");
+        form.put("code", id);
+        form.setEncoding("application/octet-stream; charset=UTF-8");
+        if (captchaNeeded) {
+            PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+            jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+            String cid = br.getRegex("Captcha\\.init.*?key.*?'(.*?)'").getMatch(0);
+            rc.setId(cid);
+            rc.load();
+            File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+            String c = getCaptchaCode(cf, downloadLink);
+            form.put("recaptcha_response_field", Encoding.urlEncode(c));
+            form.put("recaptcha_challenge_field", rc.getChallenge());
+        }
+        brc = br.cloneBrowser();
+        brc.submitForm(form);
+        if (brc.containsHTML("You entered a wrong CAPTCHA code")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        String correctedBR = brc.toString().replace("\\", "");
         String dllink = new Regex(correctedBR, "\"answer\":\\{\"link\":\"(http://.*?)\"").getMatch(0);
         if (dllink == null) dllink = new Regex(correctedBR, "\"(http://fs\\d+\\.filepost\\.com/get_file/.*?)\"").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
