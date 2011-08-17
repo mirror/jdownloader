@@ -476,18 +476,12 @@ public class TbCm extends PluginForDecrypt {
         for (final String[] fmt : fmt_list_map) {
             fmt_list.put(fmt[0], fmt[1]);
         }
-        String fmt_stream_map_str = "";
-        if (ythack) {
-            fmt_stream_map_str = (br.getMatch("&fmt_stream_map=(.+?)&") + "|").replaceAll("%7C", "|");
-        } else {
-            fmt_stream_map_str = (br.getMatch("\"fmt_stream_map\":\\s+\"(.+?)\",") + "|").replaceAll("\\\\/", "/");
-        }
-        final String fmt_stream_map[][] = new Regex(fmt_stream_map_str, "(\\d+)\\|(http.*?)\\|").getMatches();
-        String Videoq = "";
-        for (final String fmt_str[] : fmt_stream_map) {
-            if (fmt_list.containsKey(fmt_str[0])) {
-                final Integer q = Integer.parseInt(fmt_list.get(fmt_str[0]).split("x")[1]);
-                if (fmt_str[0].equals("40")) {
+        for (Integer fmt : links.keySet()) {
+            String fmt2 = fmt + "";
+            if (fmt_list.containsKey(fmt2)) {
+                String Videoq = links.get(fmt)[1];
+                final Integer q = Integer.parseInt(fmt_list.get(fmt2).split("x")[1]);
+                if (fmt == 40) {
                     Videoq = "240p Light";
                 } else if (q > 1080) {
                     Videoq = "Original";
@@ -502,10 +496,8 @@ public class TbCm extends PluginForDecrypt {
                 } else {
                     Videoq = "240p";
                 }
-            } else {
-                Videoq = "unk";
+                links.get(fmt)[1] = Videoq;
             }
-            links.put(Integer.parseInt(fmt_str[0]), new String[] { Encoding.htmlDecode(unescape(Encoding.urlDecode(fmt_str[1], true))), Videoq });
         }
         if (YT_FILENAME != null) {
             links.put(-1, new String[] { YT_FILENAME });

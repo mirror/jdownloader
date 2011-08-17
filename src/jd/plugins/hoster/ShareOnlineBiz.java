@@ -16,6 +16,7 @@
 
 package jd.plugins.hoster;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -35,6 +36,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -361,32 +363,42 @@ public class ShareOnlineBiz extends PluginForHost {
         br.postPage("http://www.share-online.biz/dl/" + ID + "/free/", "dl_free=1");
         errorHandling(br, downloadLink);
         String wait = br.getRegex("var wait=(\\d+)").getMatch(0);
-        if (wait != null) {
-            this.sleep(Integer.parseInt(wait) * 1000l, downloadLink);
+        boolean captcha = br.containsHTML("RECAPTCHA active");
+        long startWait = 0;
+        if (captcha == true) {
+            startWait = System.currentTimeMillis();
+        } else {
+            if (wait != null) {
+                this.sleep(Integer.parseInt(wait) * 1000l, downloadLink);
+            }
         }
-        /* DownloadLink holen, thx @dwd */
         String dlINFO = br.getRegex("var dl=\"(.*?)\"").getMatch(0);
         String url = Encoding.Base64Decode(dlINFO);
-        // String nfoINFO = br.getRegex("var nfo=\"(.*?)\"").getMatch(0);
-        // Browser brc = br.cloneBrowser();
-        // brc.getPage("http://www.share-online.biz/template/js/tools.js");
-        // String fun =
-        // brc.getRegex("(function info.*?)(function|$)").getMatch(0);
-        // Context cx = null;
-        // String res = null;
-        // try {
-        // cx = ContextFactory.getGlobal().enterContext();
-        // Scriptable scope = cx.initStandardObjects();
-        // String fun2 = "function f(){ " + fun.trim() + ";\nreturn info('" +
-        // nfoINFO + "')  } f()";
-        // Object result = cx.evaluateString(scope, fun2, "<cmd>", 1, null);
-        // res = Context.toString(result);
-        // } catch (final Throwable e) {
-        // e.printStackTrace();
-        // } finally {
-        // if (cx != null) Context.exit();
-        // }
-        // if (res != null) res = Encoding.Base64Decode(res);
+        if (captcha) {
+            /* recaptcha handling */
+            PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+            jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+            rc.setId("6LdatrsSAAAAAHZrB70txiV5p-8Iv8BtVxlTtjKX");
+            rc.load();
+            File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+            String c = getCaptchaCode("recaptcha", cf, downloadLink);
+            if (wait != null) {
+                long gotWait = Integer.parseInt(wait) * 500l;
+                long waited = System.currentTimeMillis() - startWait;
+                gotWait -= waited;
+                if (gotWait > 0) {
+                    this.sleep(gotWait, downloadLink);
+                }
+            }
+            br.postPage("http://www.share-online.biz/dl/" + ID + "/free/captcha/" + System.currentTimeMillis(), "dl_free=1&recaptcha_response_field=" + Encoding.urlEncode(c) + "&recaptcha_challenge_field=" + rc.getChallenge());
+            url = br.getRegex("([a-zA-Z0-9=]+)").getMatch(0);
+            if ("0".equals(url)) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            url = Encoding.Base64Decode(url);
+            if (url == null || !url.startsWith("http")) url = null;
+            if (wait != null) {
+                this.sleep(Integer.parseInt(wait) * 1000l, downloadLink);
+            }
+        }
         br.setFollowRedirects(true);
         /* Datei herunterladen */
         if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

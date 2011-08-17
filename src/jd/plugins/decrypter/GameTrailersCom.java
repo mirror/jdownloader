@@ -22,6 +22,7 @@ import java.util.Arrays;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
+import jd.http.RandomUserAgent;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -33,6 +34,7 @@ import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gametrailers.com" }, urls = { "http://[\\w\\.]*?gametrailers\\.com/(video|user\\-movie)/.*?/[0-9]+" }, flags = { 0 })
 public class GameTrailersCom extends PluginForDecrypt {
+    private static final String ua = RandomUserAgent.generate();
 
     public GameTrailersCom(final PluginWrapper wrapper) {
         super(wrapper);
@@ -43,11 +45,29 @@ public class GameTrailersCom extends PluginForDecrypt {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         final ArrayList<String> damnedIDs = new ArrayList<String>();
+        br.getHeaders().put("User-Agent", ua);
         br.getPage(parameter);
         br.setFollowRedirects(true);
         // you must logged in for mov/wmv download
-        final String[] httpLinks = br.getRegex("<a href=\"(http://www.gametrailers\\.com/download/\\d+/[\\w-\\.\\_]+mp4)\"").getColumn(0);
+        boolean newFormat = false;
+        String[] httpLinks = br.getRegex("<a href=\"(http://www.gamerailers\\.com/download/\\d+/[\\w-\\.\\_]+mp4)\"").getColumn(0);
+        if (httpLinks == null || httpLinks.length == 0) {
+            /* new format */
+            newFormat = true;
+            httpLinks = br.getRegex("<a href=\"(/download/\\d+/[\\w-\\.\\_]+mp4)\"").getColumn(0);
+        }
         final ArrayList<String> finallinks = new ArrayList<String>(Arrays.asList(httpLinks));
+        if (newFormat) {
+            String otherQ = br.getRegex("class=\"hdButton\".*?href=\"(.*?)\"").getMatch(0);
+            if (otherQ != null) {
+                Browser brc = br.cloneBrowser();
+                brc.getHeaders().put("User-Agent", ua);
+                brc.setCookiesExclusive(true);
+                brc.getPage(otherQ);
+                String[] httpLinks2 = brc.getRegex("<a href=\"(/download/\\d+/[\\w-\\.\\_]+mp4)\"").getColumn(0);
+                finallinks.addAll(Arrays.asList(httpLinks2));
+            }
+        }
         String videoTitle = br.getRegex("<title>(.*?)Video Game, Review Pod").getMatch(0);
         if (videoTitle == null) {
             videoTitle = br.getRegex("name=\"title\" content=\"(.*?)\"").getMatch(0);
@@ -72,6 +92,7 @@ public class GameTrailersCom extends PluginForDecrypt {
         if (damnedIDs == null || damnedIDs.size() == 0) { return null; }
         for (final String damnedID : damnedIDs) {
             final Browser br2 = br.cloneBrowser();
+            br2.getHeaders().put("User-Agent", ua);
             if (parameter.contains("user-movie")) {
                 br2.getPage("http://www.gametrailers.com/neo/?page=xml.mediaplayer.Mediagen&movieId=" + damnedID + "&hd=1&um=1");
             } else {
@@ -102,12 +123,16 @@ public class GameTrailersCom extends PluginForDecrypt {
             }
         }
         String[] extensions = { "flv", "mov", "wmv", "mp4" };
+        if (newFormat) extensions = new String[] { "mp4" };
         ArrayList<String> done = new ArrayList<String>();
         for (String ext : extensions) {
-            for (final String finallink : finallinks) {
+            for (String finallink : finallinks) {
                 if (parameter.contains("user-movie") && !"flv".equals(ext)) {
                     /* user movies only have flv files */
                     continue;
+                }
+                if (!finallink.startsWith("http:")) {
+                    finallink = "http://www.gametrailers.com" + finallink;
                 }
                 String ext2 = new Regex(finallink, ".+(\\....)$").getMatch(0);
                 String link = finallink.replace(ext2, "." + ext);
@@ -118,9 +143,10 @@ public class GameTrailersCom extends PluginForDecrypt {
                 URLConnectionAdapter con = null;
                 long size = 0;
                 try {
-                    Browser br = new Browser();
-                    br.setFollowRedirects(true);
-                    con = br.openGetConnection(link);
+                    Browser br3 = new Browser();
+                    br3.getHeaders().put("User-Agent", ua);
+                    br3.setFollowRedirects(true);
+                    con = br3.openGetConnection(link);
                     if (!con.isOK() || (con.getContentType() != null && con.getContentType().contains("text"))) {
                         done.remove(check);
                         continue;
@@ -138,10 +164,15 @@ public class GameTrailersCom extends PluginForDecrypt {
                 if (videoTitle != null) {
                     // correct title without "HD" or "SD"
                     videoTitle = videoTitle.trim().replaceAll(" [SH]D ?", "");
-                    if (finallink.contains("_hd")) {
-                        dl.setFinalFileName(videoTitle.trim() + " [HD-" + ext.toUpperCase() + "]." + ext);
+                    if (newFormat) {
+                        String vsize = new Regex(finallink, "_(\\d+x\\d+)").getMatch(0);
+                        dl.setFinalFileName(videoTitle.trim() + " [" + vsize + "]." + ext);
                     } else {
-                        dl.setFinalFileName(videoTitle.trim() + " [SD-" + ext.toUpperCase() + "]." + ext);
+                        if (finallink.contains("_hd")) {
+                            dl.setFinalFileName(videoTitle.trim() + " [HD-" + ext.toUpperCase() + "]." + ext);
+                        } else {
+                            dl.setFinalFileName(videoTitle.trim() + " [SD-" + ext.toUpperCase() + "]." + ext);
+                        }
                     }
                 }
                 decryptedLinks.add(dl);
@@ -156,5 +187,4 @@ public class GameTrailersCom extends PluginForDecrypt {
         }
         return decryptedLinks;
     }
-
 }

@@ -16,16 +16,20 @@
 
 package jd.plugins.hoster;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
+import jd.parser.html.Form.MethodType;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -34,6 +38,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -41,6 +46,8 @@ import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filepost.com" }, urls = { "http://(www\\.)?filepost\\.com/files/[a-z0-9]+" }, flags = { 2 })
 public class FilePostCom extends PluginForHost {
+    private static final String ua                 = "Mozilla/5.0 (X11; U; Linux x86_64; en-US; rv:1.9.2.18) Gecko/20110628 Ubuntu/10.10 (maverick) Firefox/3.6.18";
+    private boolean             showAccountCaptcha = false;
 
     public FilePostCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -59,6 +66,7 @@ public class FilePostCom extends PluginForHost {
     public boolean checkLinks(DownloadLink[] urls) {
         if (urls == null || urls.length == 0) { return false; }
         try {
+            Browser br = new Browser();
             ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
             int index = 0;
             StringBuilder sb = new StringBuilder();
@@ -82,8 +90,8 @@ public class FilePostCom extends PluginForHost {
                     sb.append(Encoding.urlEncode(dl.getDownloadURL()));
                     c++;
                 }
+                br.getHeaders().put("User-Agent", ua);
                 br.postPage("http://filepost.com/files/checker/?JsHttpRequest=" + System.currentTimeMillis() + "-xml", sb.toString());
-                System.out.print(br.toString());
                 String correctedBR = br.toString().replace("\\", "");
                 for (DownloadLink dl : links) {
                     String fileid = new Regex(dl.getDownloadURL(), FILEIDREGEX).getMatch(0);
@@ -124,6 +132,7 @@ public class FilePostCom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(false);
+        br.getHeaders().put("User-Agent", ua);
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("We are sorry, the server where this file is")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Serverissue", 60 * 60 * 1000l);
         if (br.containsHTML("(>Your IP address is already downloading a file at the moment|>Please wait till the download completion and try again)")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Too many simultan downloads", 5 * 60 * 1000l);
@@ -131,14 +140,33 @@ public class FilePostCom extends PluginForHost {
         if (premiumlimit != null) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.filepostcom.only4premium", "Files over " + premiumlimit + " are only downloadable for premium users"));
         // Errorhandling in case their linkchecker lies
         if (br.containsHTML("(<title>FilePost\\.com: Download  \\- fast \\&amp; secure\\!</title>|>File not found<|>It may have been deleted by the uploader or due to the received complaint|<div class=\"file_info file_info_deleted\">)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String waittime = br.getRegex("var wait_time = \\'(\\-?\\d+)\\';").getMatch(0);
+        String token = br.getRegex("flp_token', '(.*?)'").getMatch(0);
+        Form form = new Form();
+        form.setMethod(MethodType.POST);
+        form.setAction("http://filepost.com/files/get/?JsHttpRequest=" + System.currentTimeMillis() + "-xml");
+        form.put("action", "set_download");
+        form.put("download", token);
+        form.put("code", new Regex(downloadLink.getDownloadURL(), FILEIDREGEX).getMatch(0));
+        form.setEncoding("application/octet-stream; charset=UTF-8");
+        br.submitForm(form);
+        String waittime = br.getRegex("wait_time\":\"(\\d+)").getMatch(0);
         int wait = 30;
         if (waittime != null) {
             if (waittime.contains("-")) waittime = "0";
             wait = Integer.parseInt(waittime);
         }
         sleep(wait * 1001l, downloadLink);
-        br.postPage("http://filepost.com/files/get/?JsHttpRequest=" + System.currentTimeMillis() + "-xml", "code=" + new Regex(downloadLink.getDownloadURL(), FILEIDREGEX).getMatch(0) + "&pass=undefined");
+        final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+        final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+
+        String id = this.br.getRegex("\\?k=([A-Za-z0-9%_\\+\\- ]+)\"").getMatch(0);
+        rc.setId(id);
+        rc.load();
+        File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+        String c = getCaptchaCode(cf, downloadLink);
+        rc.prepareForm(c);
+        logger.info("Put captchacode " + c + " obtained by captcha metod \"Re Captcha\" in the form and submitted it.");
+
         String correctedBR = br.toString().replace("\\", "");
         String dllink = new Regex(correctedBR, "\"answer\":\\{\"link\":\"(http://.*?)\"").getMatch(0);
         if (dllink == null) dllink = new Regex(correctedBR, "\"(http://fs\\d+\\.filepost\\.com/get_file/.*?)\"").getMatch(0);
@@ -159,31 +187,65 @@ public class FilePostCom extends PluginForHost {
             // Load cookies, because no multiple downloads possible when always
             // loggin in for every download
             br.setCookiesExclusive(false);
-            final Object ret = account.getProperty("cookies", null);
-            boolean acmatch = Encoding.urlEncode(account.getUser()).matches(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-            if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).matches(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
-            if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
-                final HashMap<String, String> cookies = (HashMap<String, String>) ret;
-                if (cookies.containsKey("SSL") && account.isValid()) {
-                    for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
-                        final String key = cookieEntry.getKey();
-                        final String value = cookieEntry.getValue();
-                        this.br.setCookie(MAINPAGE, key, value);
+            try {
+                final Object ret = account.getProperty("cookies", null);
+                boolean acmatch = Encoding.urlEncode(account.getUser()).matches(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
+                if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).matches(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
+                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
+                    if (cookies.containsKey("remembered_user") && account.isValid()) {
+                        for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
+                            final String key = cookieEntry.getKey();
+                            final String value = cookieEntry.getValue();
+                            this.br.setCookie(MAINPAGE, key, value);
+                        }
+                        return;
                     }
-                    return;
                 }
+                br.postPage("https://filepost.com/general/login_form/?JsHttpRequest=" + System.currentTimeMillis() + "-xml", "email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&remember=on&recaptcha_response_field=");
+                if (br.containsHTML("captcha\":true")) {
+                    /* too many logins result in recaptcha login */
+                    if (showAccountCaptcha == false) {
+                        AccountInfo ai = account.getAccountInfo();
+                        if (ai != null) {
+                            ai.setStatus("Logout/Login in Browser please!");
+                        }
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        br.getPage("https://filepost.com");
+                        PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+                        jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+                        String id = br.getRegex("Captcha\\.init.*?key.*?'(.*?)'").getMatch(0);
+                        rc.setId(id);
+                        rc.load();
+                        File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+                        DownloadLink dummyLink = new DownloadLink(null, "Account", "filepost.com", "http://filepost.com", true);
+                        String c = getCaptchaCode(cf, dummyLink);
+                        br.postPage("https://filepost.com/general/logn_form/?JsHttpRequest=" + System.currentTimeMillis() + "-xml", "email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&remember=on&recaptcha_response_field=" + Encoding.urlEncode(c) + "&recaptcha_challenge_field=" + rc.getChallenge());
+                    }
+                }
+                if (br.containsHTML("captcha\":true")) {
+                    /* too many logins result in recaptcha login */
+                    AccountInfo ai = account.getAccountInfo();
+                    if (ai != null) {
+                        ai.setStatus("Captcha Wrong!");
+                    }
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+                if (br.getCookie(MAINPAGE, "u") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                // Save cookies
+                final HashMap<String, String> cookies = new HashMap<String, String>();
+                final Cookies add = this.br.getCookies(MAINPAGE);
+                for (final Cookie c : add.getCookies()) {
+                    cookies.put(c.getKey(), c.getValue());
+                }
+                account.setProperty("name", Encoding.urlEncode(account.getUser()));
+                account.setProperty("pass", Encoding.urlEncode(account.getPass()));
+                account.setProperty("cookies", cookies);
+            } catch (PluginException e) {
+                account.setProperty("cookies", null);
+                throw e;
             }
-            br.postPage("https://filepost.com/general/login_form/?JsHttpRequest=" + System.currentTimeMillis() + "-xml", "email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&remember=on&recaptcha_response_field=");
-            if (br.getCookie(MAINPAGE, "u") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-            // Save cookies
-            final HashMap<String, String> cookies = new HashMap<String, String>();
-            final Cookies add = this.br.getCookies(MAINPAGE);
-            for (final Cookie c : add.getCookies()) {
-                cookies.put(c.getKey(), c.getValue());
-            }
-            account.setProperty("name", Encoding.urlEncode(account.getUser()));
-            account.setProperty("pass", Encoding.urlEncode(account.getPass()));
-            account.setProperty("cookies", cookies);
         }
     }
 
@@ -191,19 +253,22 @@ public class FilePostCom extends PluginForHost {
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         try {
+            showAccountCaptcha = true;
             login(account, true);
         } catch (PluginException e) {
             account.setValid(false);
             return ai;
+        } finally {
+            showAccountCaptcha = false;
         }
         br.getPage(MAINPAGE);
-        if (!br.containsHTML("<li>Accout type: <span>Premium</span>")) {
+        if (!br.containsHTML("<li>Account type: <span>Premium</span>")) {
             account.setValid(false);
             return ai;
         }
-        String space = br.getRegex("<li>Used storage: <span>(.*?)</span></li>").getMatch(0);
+        String space = br.getRegex("<li>Used storage: <span.*?>(.*?)</span></li>").getMatch(0);
         if (space != null) ai.setUsedSpace(space.trim());
-        String filesNum = br.getRegex("<li>Active files: <span>(\\d+)</span>").getMatch(0);
+        String filesNum = br.getRegex("<li>Active files: <span.*?>(\\d+)</span>").getMatch(0);
         if (filesNum != null) ai.setFilesNum(Integer.parseInt(filesNum));
         ai.setUnlimitedTraffic();
         String expire = br.getRegex("<li>Valid until: <span>(.*?)</span>").getMatch(0);

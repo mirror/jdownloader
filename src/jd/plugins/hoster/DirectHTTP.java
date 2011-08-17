@@ -77,7 +77,12 @@ public class DirectHTTP extends PluginForHost {
                 this.reload();
             }
             this.rcBr.setFollowRedirects(true);
-            Browser.download(captchaFile, this.rcBr.openGetConnection(this.captchaAddress));
+            try {
+                Browser.download(captchaFile, this.rcBr.openGetConnection(this.captchaAddress));
+            } catch (IOException e) {
+                captchaFile.delete();
+                throw e;
+            }
             return captchaFile;
         }
 

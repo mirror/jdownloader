@@ -25,11 +25,11 @@ import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -214,7 +214,7 @@ public class ExtaBitCom extends PluginForHost {
         if (dllink == null) {
             if (br.containsHTML(NOTAVAILABLETEXT) || br.containsHTML("No htmlCode read")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.ExtaBitCom.errors.TempUnavailable", "This file is temporary unavailable"));
             dllink = br.getRegex("<div id=\"download_filename\" class=\"df_archive\">3 g i.part1.rar</div>[\n\r\t ]+<a href=\"(http://.*?)\"").getMatch(0);
-            if (dllink == null) dllink = br.getRegex("\"(http://p\\d+\\.extabit\\.com/[a-z0-9]+/.*?)\"").getMatch(0);
+            if (dllink == null) dllink = br.getRegex("\"(http://[a-z]+\\d+\\.extabit\\.com/[a-z0-9]+/.*?)\"").getMatch(0);
         }
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, -10);
