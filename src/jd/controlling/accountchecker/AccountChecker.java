@@ -65,6 +65,7 @@ public class AccountChecker {
                     try {
                         AccountCheckJob.this.wait();
                     } catch (InterruptedException e) {
+                        return null;
                     }
                 }
             }

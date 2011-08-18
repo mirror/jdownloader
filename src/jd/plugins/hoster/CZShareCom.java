@@ -67,9 +67,9 @@ public class CZShareCom extends PluginForHost {
         if (!br.containsHTML("Stáhnout FREE(</span>)?</a><a href=\"/download\\.php\\?id=")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.CZShareCom.nofreeslots", "No free slots available"), 60 * 1000);
         br.setFollowRedirects(false);
         String freeLink = br.getRegex("allowTransparency=\"true\"></iframe><a href=\"(/.*?)\"").getMatch(0);
-        if (freeLink == null) freeLink = br.getRegex("\"(/download\\.php\\?id=\\d+\\&code=.*?)\"").getMatch(0);
+        if (freeLink == null) freeLink = br.getRegex("\"(/download\\.php\\?id=\\d+.*?code=.*?)\"").getMatch(0);
         if (freeLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        br.getPage("http://czshare.com" + freeLink);
+        br.getPage("http://czshare.com" + Encoding.htmlDecode(freeLink));
         handleErrors();
         Form down = br.getForm(1); // the 0-th is the login (usr/pwd) form,
         // the 1-st one is the free one
