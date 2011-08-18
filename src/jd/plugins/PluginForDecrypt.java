@@ -28,17 +28,13 @@ import jd.PluginWrapper;
 import jd.captcha.easy.load.LoadImage;
 import jd.controlling.JDLogger;
 import jd.controlling.JDPluginLogger;
-import jd.controlling.LinkGrabberController;
 import jd.controlling.ProgressController;
 import jd.controlling.captcha.CaptchaController;
 import jd.controlling.linkcrawler.CrawledLinkInfo;
-import jd.event.ControlEvent;
 import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.http.Browser;
 import jd.nutils.Formatter;
 import jd.nutils.encoding.Encoding;
-import jd.nutils.jobber.JDRunnable;
-import jd.nutils.jobber.Jobber;
 
 import org.appwork.utils.Regex;
 import org.jdownloader.translate._JDT;
@@ -266,101 +262,7 @@ public abstract class PluginForDecrypt extends Plugin {
         return cc;
     }
 
-    public ArrayList<DownloadLink> decryptLinks(ArrayList<CryptedLink> cryptedLinks) {
-        if (isAborted(this.getInitTime(), this.getHost())) return null;
-        fireControlEvent(ControlEvent.CONTROL_PLUGIN_ACTIVE, cryptedLinks);
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        Jobber decryptJobbers = new Jobber(4);
-
-        class DThread extends Thread implements JDRunnable {
-            private CryptedLink      decryptableLink = null;
-            private PluginForDecrypt plg             = null;
-
-            public DThread(CryptedLink decryptableLink, PluginForDecrypt plg) {
-
-                this.decryptableLink = decryptableLink;
-                this.plg = plg.getWrapper().getNewPluginInstance();
-                // DThreads inittime should be derived from master plugin
-                this.plg.setInitTime(plg.getInitTime());
-                this.plg.setBrowser(new Browser());
-            }
-
-            @Override
-            public void run() {
-                if (isAborted(getInitTime(), getHost())) return;
-                if (LinkGrabberController.isFiltered(decryptableLink)) return;
-                ArrayList<DownloadLink> links = plg.decryptLink(decryptableLink);
-                if (links != null) {
-                    for (DownloadLink link : links) {
-                        link.setBrowserUrl(decryptableLink.getCryptedUrl());
-                    }
-                    synchronized (decryptedLinks) {
-                        decryptedLinks.addAll(links);
-                    }
-                }
-            }
-
-            public void go() throws Exception {
-                run();
-            }
-        }
-
-        for (int b = cryptedLinks.size() - 1; b >= 0; b--) {
-            if (isAborted(this.getInitTime(), this.getHost())) return new ArrayList<DownloadLink>();
-            DThread dthread = new DThread(cryptedLinks.get(b), getWrapper().getPlugin());
-            decryptJobbers.add(dthread);
-        }
-        int todo = decryptJobbers.getJobsAdded();
-        decryptJobbers.start();
-        while (decryptJobbers.getJobsFinished() != todo) {
-            try {
-                Thread.sleep(200);
-            } catch (InterruptedException e) {
-            }
-        }
-        decryptJobbers.stop();
-        fireControlEvent(ControlEvent.CONTROL_PLUGIN_INACTIVE, decryptedLinks);
-
-        return decryptedLinks;
-    }
-
-    /**
-     * Sucht in data nach allen passenden links und gibt diese als vektor zurück
-     * 
-     * @param data
-     * @return
-     */
-    public ArrayList<CryptedLink> getDecryptableLinks(String data) {
-        /*
-         * we dont need memory optimization here as downloadlink, crypted link
-         * itself take care of this
-         */
-        String[] hits = new Regex(data, getSupportedLinks()).setMemoryOptimized(false).getColumn(-1);
-        ArrayList<CryptedLink> chits = null;
-        if (hits != null && hits.length > 0) {
-            chits = new ArrayList<CryptedLink>(hits.length);
-        } else {
-            chits = new ArrayList<CryptedLink>();
-        }
-        if (hits != null && hits.length > 0) {
-            for (String hit : hits) {
-                String file = hit;
-                file = file.trim();
-                /* cut of any unwanted chars */
-                while (file.length() > 0 && file.charAt(0) == '"') {
-                    file = file.substring(1);
-                }
-                while (file.length() > 0 && file.charAt(file.length() - 1) == '"') {
-                    file = file.substring(0, file.length() - 1);
-                }
-                file = file.trim();
-                chits.add(new CryptedLink(file));
-            }
-        }
-        return chits;
-    }
-
-    public ArrayList<CrawledLinkInfo> crawlLinks(String data) {
+    public ArrayList<CrawledLinkInfo> getCrawlableLinks(String data) {
         /*
          * we dont need memory optimization here as downloadlink, crypted link
          * itself take care of this

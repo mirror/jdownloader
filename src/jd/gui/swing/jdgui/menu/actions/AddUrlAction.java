@@ -21,14 +21,16 @@ import java.util.ArrayList;
 
 import jd.controlling.CNL2;
 import jd.controlling.ClipboardHandler;
-import jd.controlling.DistributeData;
 import jd.controlling.IOEQ;
+import jd.controlling.linkcrawler.LinkCrawler;
 import jd.gui.UserIO;
 import jd.gui.swing.jdgui.actions.ToolBarAction;
+import jd.nutils.JDFlags;
 import jd.parser.html.HTMLParser;
 
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.translate._JDT;
 
 public class AddUrlAction extends ToolBarAction {
 
@@ -45,6 +47,10 @@ public class AddUrlAction extends ToolBarAction {
             public void run() {
                 StringBuilder def = new StringBuilder();
                 try {
+                    /*
+                     * first we catch the current clipboard and find all links
+                     * in it
+                     */
                     String newText = ClipboardHandler.getClipboard().getCurrentClipboardLinks();
                     String[] links = HTMLParser.getHttpLinks(newText, null);
                     ArrayList<String> pws = HTMLParser.findPasswords(newText);
@@ -53,14 +59,48 @@ public class AddUrlAction extends ToolBarAction {
                     for (String pw : pws) {
                         def.append("password: ").append(pw).append("\r\n");
                     }
-                } catch (Exception e2) {
+                } catch (Throwable e) {
                 }
-                String link = UserIO.getInstance().requestInputDialog(UserIO.NO_COUNTDOWN | UserIO.STYLE_LARGE, _GUI._.gui_dialog_addurl_title(), _GUI._.gui_dialog_addurl_message(), def.toString(), NewTheme.I().getIcon("linkgrabber", 32), _GUI._.gui_dialog_addurl_okoption_parse(), null);
-                if (link == null || link.length() == 0) return;
-                if (CNL2.checkText(link)) return;
-                DistributeData tmp = new DistributeData(link, false);
-                tmp.setDisableDeepEmergencyScan(false);
-                tmp.start();
+                final String text = UserIO.getInstance().requestInputDialog(UserIO.NO_COUNTDOWN | UserIO.STYLE_LARGE, _GUI._.gui_dialog_addurl_title(), _GUI._.gui_dialog_addurl_message(), def.toString(), NewTheme.I().getIcon("linkgrabber", 32), _GUI._.gui_dialog_addurl_okoption_parse(), null);
+                if (text == null || text.length() == 0) return;
+                if (CNL2.checkText(text)) return;
+                Thread addThread = new Thread(new Runnable() {
+
+                    public void run() {
+                        final LinkCrawler lf = new LinkCrawler();
+                        /* lets try normal parsing */
+                        lf.crawlNormal(text, null);
+                        lf.waitForCrawling();
+                        if (lf.getCrawledLinks().size() == 0) {
+                            /* nothing found, lets try deepCrawling */
+                            final String[] deeplinks = HTMLParser.getHttpLinks(text, null);
+                            if (deeplinks != null && deeplinks.length > 0) {
+                                StringBuilder deeptxt = new StringBuilder();
+                                for (final String deeplink : deeplinks) {
+                                    if (deeptxt.length() > 0) {
+                                        deeptxt.append("\r\n");
+                                    }
+                                    deeptxt.append(deeplink);
+                                }
+                                final String title = _JDT._.gui_dialog_deepdecrypt_title();
+                                final String message = _JDT._.gui_dialog_deepdecrypt_message(deeptxt.toString());
+                                final int res = UserIO.getInstance().requestConfirmDialog(0, title, message, NewTheme.I().getIcon("search", 32), _JDT._.gui_btn_continue(), null);
+                                deeptxt = null;
+                                if (JDFlags.hasAllFlags(res, UserIO.RETURN_OK)) {
+                                    lf.crawlDeep(deeplinks);
+                                    lf.waitForCrawling();
+                                    System.out.println(lf.getCrawledLinks().size() + " deepLinks found");
+                                }
+                            }
+                        } else {
+                            /* yeah, we found some links */
+                            System.out.println(lf.getCrawledLinks().size() + " normalLinks found");
+                        }
+                    }
+                });
+                addThread.setDaemon(true);
+                addThread.setName("AddUrlAction");
+                addThread.start();
             }
 
         }, true);

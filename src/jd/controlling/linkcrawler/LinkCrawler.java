@@ -1,5 +1,6 @@
 package jd.controlling.linkcrawler;
 
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -17,6 +18,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 
+import org.appwork.utils.Regex;
 import org.appwork.utils.logging.Log;
 
 public class LinkCrawler {
@@ -25,8 +27,7 @@ public class LinkCrawler {
     private static ArrayList<HostPluginWrapper>    pHosts;
     private static PluginForHost                   directHTTP      = null;
     private ArrayList<CrawledLinkInfo>             crawledLinks    = new ArrayList<CrawledLinkInfo>();
-    private AtomicInteger                          tasks           = new AtomicInteger(0);
-    public AtomicInteger                           distributes     = new AtomicInteger(0);
+    public AtomicInteger                           crawler         = new AtomicInteger(0);
     private HashSet<String>                        duplicateFinder = new HashSet<String>();
     private static ThreadPoolExecutor              threadPool      = null;
     static {
@@ -45,9 +46,6 @@ public class LinkCrawler {
             @Override
             protected void beforeExecute(Thread t, Runnable r) {
                 super.beforeExecute(t, r);
-                if (r instanceof LinkCrawlerRunnable) {
-                    ((LinkCrawlerRunnable) r).getLinkCrawler().tasks.incrementAndGet();
-                }
                 /*
                  * WORKAROUND for stupid SUN /ORACLE way of
                  * "how a threadpool should work" !
@@ -64,27 +62,6 @@ public class LinkCrawler {
                         threadPool.setCorePoolSize(Math.min(max, active + 1));
                     }
                 }
-            }
-
-            @Override
-            protected void afterExecute(Runnable r, Throwable t) {
-                super.afterExecute(r, t);
-                if (r instanceof LinkCrawlerRunnable) {
-                    LinkCrawler crawler = ((LinkCrawlerRunnable) r).getLinkCrawler();
-                    if (crawler.tasks.decrementAndGet() == 0) {
-                        synchronized (crawler) {
-                            crawler.notifyAll();
-                        }
-                        /*
-                         * all tasks are done , we can now cleanup our
-                         * duplicateFinder
-                         */
-                        synchronized (crawler.duplicateFinder) {
-                            crawler.duplicateFinder.clear();
-                        }
-                    }
-                }
-
             }
 
         };
@@ -122,18 +99,107 @@ public class LinkCrawler {
     }
 
     public void crawlDeep(String[] links) {
+        for (final String url : links) {
+            if (insideDecrypterPlugin()) {
+                /*
+                 * direct decrypt this link because we are already inside a
+                 * LinkCrawlerThread and this avoids deadlocks on plugin waiting
+                 * for linkcrawler results
+                 */
+                crawlDeeper(url);
+            } else {
+                /*
+                 * enqueue this cryptedLink for decrypting
+                 */
+                crawler.incrementAndGet();
+                threadPool.execute(new LinkCrawlerRunnable(LinkCrawler.this) {
+                    public void run() {
+                        try {
+                            crawlDeeper(url);
+                        } finally {
+                            checkFinishNotify();
+                        }
+                    }
+                });
+            }
+        }
+    }
 
+    private boolean insideDecrypterPlugin() {
+        if (Thread.currentThread() instanceof LinkCrawlerThread && ((LinkCrawlerThread) Thread.currentThread()).isLinkCrawlerThreadUsedbyDecrypter()) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    /*
+     * check if all known crawlers are done and notify all waiting listener +
+     * cleanup DuplicateFinder
+     */
+    private void checkFinishNotify() {
+        if (crawler.decrementAndGet() == 0) {
+            synchronized (crawler) {
+                crawler.notifyAll();
+            }
+            /*
+             * all tasks are done , we can now cleanup our duplicateFinder
+             */
+            synchronized (duplicateFinder) {
+                duplicateFinder.clear();
+            }
+        }
+    }
+
+    protected void crawlDeeper(String url) {
+        crawler.incrementAndGet();
+        try {
+            Browser br = new Browser();
+            try {
+                new URL(url);
+                br.openGetConnection(url);
+                if (br.getHttpConnection().isContentDisposition() || (br.getHttpConnection().getContentType() != null && !br.getHttpConnection().getContentType().contains("text"))) {
+                    try {
+                        br.getHttpConnection().disconnect();
+                    } catch (Throwable e) {
+                    }
+                    /*
+                     * downloadable content, we use directhttp and distribute
+                     * the url
+                     */
+                    ArrayList<CrawledLinkInfo> links = new ArrayList<CrawledLinkInfo>();
+                    links.add(new CrawledLinkInfo("directhttp://" + url));
+                    distribute(links);
+                } else {
+                    /* try to load the webpage and find links on it */
+                    br.followConnection();
+                    String baseUrl = new Regex(url, "(.+)(/|$)").getMatch(0);
+                    if (baseUrl != null && !baseUrl.endsWith("/")) {
+                        baseUrl = baseUrl + "/";
+                    }
+                    crawlNormal(br.toString(), baseUrl);
+                }
+            } catch (Throwable e) {
+            } finally {
+                try {
+                    br.getHttpConnection().disconnect();
+                } catch (Throwable e) {
+                }
+            }
+        } finally {
+            checkFinishNotify();
+        }
     }
 
     protected void distribute(ArrayList<CrawledLinkInfo> possibleCryptedLinks) {
-        distributes.incrementAndGet();
+        crawler.incrementAndGet();
         try {
             if (possibleCryptedLinks == null || possibleCryptedLinks.size() == 0) return;
-            for (final CrawledLinkInfo possibleCryptedLink : possibleCryptedLinks) {
+            mainloop: for (final CrawledLinkInfo possibleCryptedLink : possibleCryptedLinks) {
                 String url = possibleCryptedLink.getURL();
                 synchronized (duplicateFinder) {
                     if (!duplicateFinder.add(url)) {
-                        continue;
+                        continue mainloop;
                     }
                 }
                 if (url == null) continue;
@@ -143,7 +209,7 @@ public class LinkCrawler {
                         try {
                             PluginForDecrypt plg = pDecrypt.getPlugin();
                             if (plg != null) {
-                                ArrayList<CrawledLinkInfo> allPossibleCryptedLinks = plg.crawlLinks(url);
+                                ArrayList<CrawledLinkInfo> allPossibleCryptedLinks = plg.getCrawlableLinks(url);
                                 if (allPossibleCryptedLinks != null) {
                                     for (final CrawledLinkInfo decryptThis : allPossibleCryptedLinks) {
                                         if (possibleCryptedLink.getCryptedLink() != null) {
@@ -157,17 +223,29 @@ public class LinkCrawler {
                                             }
                                             decryptThis.getCryptedLink().setDecrypterPassword(possibleCryptedLink.getCryptedLink().getDecrypterPassword());
                                         }
-                                        /*
-                                         * enqueue this cryptedLink for
-                                         * decrypting
-                                         */
-                                        if (Thread.currentThread() instanceof LinkCrawlerThread && ((LinkCrawlerThread) Thread.currentThread()).isLinkCrawlerThreadUsedbyDecrypter()) {
-                                            System.out.println("direct decrypt");
+
+                                        if (insideDecrypterPlugin()) {
+                                            /*
+                                             * direct decrypt this link because
+                                             * we are already inside a
+                                             * LinkCrawlerThread and this avoids
+                                             * deadlocks on plugin waiting for
+                                             * linkcrawler results
+                                             */
                                             crawl(decryptThis);
                                         } else {
+                                            /*
+                                             * enqueue this cryptedLink for
+                                             * decrypting
+                                             */
+                                            crawler.incrementAndGet();
                                             threadPool.execute(new LinkCrawlerRunnable(LinkCrawler.this) {
                                                 public void run() {
-                                                    crawl(decryptThis);
+                                                    try {
+                                                        crawl(decryptThis);
+                                                    } finally {
+                                                        checkFinishNotify();
+                                                    }
                                                 }
                                             });
                                         }
@@ -177,7 +255,7 @@ public class LinkCrawler {
                         } catch (Throwable e) {
                             Log.exception(e);
                         }
-                        continue;
+                        continue mainloop;
                     }
                 }
                 /* now we will walk through all available hoster plugins */
@@ -197,7 +275,7 @@ public class LinkCrawler {
                         } catch (Throwable e) {
                             Log.exception(e);
                         }
-                        continue;
+                        continue mainloop;
                     }
                 }
                 /* now we will check for normal http links */
@@ -220,17 +298,12 @@ public class LinkCrawler {
                 }
             }
         } finally {
-            distributes.decrementAndGet();
-            if (distributes.get() == 0) {
-                synchronized (LinkCrawler.this) {
-                    LinkCrawler.this.notifyAll();
-                }
-            }
+            checkFinishNotify();
         }
     }
 
     public boolean waitForCrawling() {
-        while (threadPool.getActiveCount() > 0 && (tasks.get() > 0 || distributes.get() > 0)) {
+        while (crawler.get() > 0) {
             synchronized (LinkCrawler.this) {
                 try {
                     LinkCrawler.this.wait(1000);
@@ -239,40 +312,50 @@ public class LinkCrawler {
                 }
             }
         }
-        return threadPool.getActiveCount() == 0 || (tasks.get() == 0 && distributes.get() == 0);
+        return crawler.get() == 0;
     }
 
     protected void crawl(CrawledLinkInfo cryptedLink) {
-        if (cryptedLink == null || cryptedLink.getdPlugin() == null || cryptedLink.getCryptedLink() == null) return;
-        /* we have to create new plugin instance here */
-        PluginForDecrypt plg = cryptedLink.getdPlugin().getWrapper().getNewPluginInstance();
-        plg.setBrowser(new Browser());
-        /* now we run the plugin and let it find some links */
-        LinkCrawlerThread lct = null;
-        if (Thread.currentThread() instanceof LinkCrawlerThread) {
-            lct = (LinkCrawlerThread) Thread.currentThread();
-        }
-        ArrayList<DownloadLink> decryptedPossibleLinks = null;
-        boolean lctb = false;
+        crawler.incrementAndGet();
         try {
-            if (lct != null) {
-                lctb = lct.isLinkCrawlerThreadUsedbyDecrypter();
-                lct.setLinkCrawlerThreadUsedbyDecrypter(true);
+            if (cryptedLink == null || cryptedLink.getdPlugin() == null || cryptedLink.getCryptedLink() == null) return;
+            /* we have to create new plugin instance here */
+            PluginForDecrypt plg = cryptedLink.getdPlugin().getWrapper().getNewPluginInstance();
+            plg.setBrowser(new Browser());
+            /* now we run the plugin and let it find some links */
+            LinkCrawlerThread lct = null;
+            if (Thread.currentThread() instanceof LinkCrawlerThread) {
+                lct = (LinkCrawlerThread) Thread.currentThread();
             }
-            decryptedPossibleLinks = plg.decryptLink(cryptedLink.getCryptedLink());
+            ArrayList<DownloadLink> decryptedPossibleLinks = null;
+            boolean lctb = false;
+            try {
+                if (lct != null) {
+                    /* mark thread to be used by decrypter plugin */
+                    lctb = lct.isLinkCrawlerThreadUsedbyDecrypter();
+                    lct.setLinkCrawlerThreadUsedbyDecrypter(true);
+                }
+                decryptedPossibleLinks = plg.decryptLink(cryptedLink.getCryptedLink());
+            } finally {
+                if (lct != null) {
+                    /* reset thread to last known used state */
+                    lct.setLinkCrawlerThreadUsedbyDecrypter(lctb);
+                }
+            }
+            if (decryptedPossibleLinks != null && decryptedPossibleLinks.size() > 0) {
+                ArrayList<CrawledLinkInfo> possibleCryptedLinks = new ArrayList<CrawledLinkInfo>(decryptedPossibleLinks.size());
+                for (DownloadLink decryptedLink : decryptedPossibleLinks) {
+                    /*
+                     * we set source url here to hide the original link if
+                     * needed
+                     */
+                    decryptedLink.setBrowserUrl(cryptedLink.getURL());
+                    possibleCryptedLinks.add(new CrawledLinkInfo(decryptedLink));
+                }
+                distribute(possibleCryptedLinks);
+            }
         } finally {
-            if (lct != null) {
-                lct.setLinkCrawlerThreadUsedbyDecrypter(lctb);
-            }
-        }
-        if (decryptedPossibleLinks != null && decryptedPossibleLinks.size() > 0) {
-            ArrayList<CrawledLinkInfo> possibleCryptedLinks = new ArrayList<CrawledLinkInfo>(decryptedPossibleLinks.size());
-            for (DownloadLink decryptedLink : decryptedPossibleLinks) {
-                /* we set source url here to hide the original link if needed */
-                decryptedLink.setBrowserUrl(cryptedLink.getURL());
-                possibleCryptedLinks.add(new CrawledLinkInfo(decryptedLink));
-            }
-            distribute(possibleCryptedLinks);
+            checkFinishNotify();
         }
     }
 

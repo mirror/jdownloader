@@ -78,4 +78,12 @@ public class CrawledLinkInfo {
         if (url != null) return url;
         return null;
     }
+
+    @Override
+    public String toString() {
+        if (url != null) return "URL:" + getURL();
+        if (dlLink != null) return "DLLink:" + getURL();
+        if (cLink != null) return "CLink:" + getURL();
+        return null;
+    }
 }
