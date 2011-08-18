@@ -29,11 +29,11 @@ import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -199,18 +199,29 @@ public class UploadingCom extends PluginForHost {
                 }
             }
         }
+        String redirect = null;
+        br.setFollowRedirects(false);
         br.getPage(link.getDownloadURL());
-        if (free) {
-            handleFree0(link);
-            return;
+        if (br.getRedirectLocation() != null) {
+            String red = br.getRedirectLocation();
+            if (red.contains("get_file/")) {
+                redirect = red;
+            } else {
+                br.getPage(red);
+            }
         }
-
-        String code = new Regex(link.getDownloadURL(), CODEREGEX).getMatch(0);
-        if (code == null) {
-            logger.warning("The first form equals null");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (redirect == null) {
+            if (free) {
+                handleFree0(link);
+                return;
+            }
+            String code = new Regex(link.getDownloadURL(), CODEREGEX).getMatch(0);
+            if (code == null) {
+                logger.warning("The first form equals null");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            redirect = getDownloadUrl(link, null, code);
         }
-        String redirect = getDownloadUrl(link, null, code);
         br.setFollowRedirects(false);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, redirect, true, 0);
         handleDownloadErrors();
