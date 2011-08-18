@@ -44,7 +44,7 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filepost.com" }, urls = { "http://(www\\.)?filepost\\.com/files/[a-z0-9]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filepost.com" }, urls = { "https?://(www\\.)?filepost\\.com/files/[a-z0-9]+" }, flags = { 2 })
 public class FilePostCom extends PluginForHost {
     private static final String ua                 = "Mozilla/5.0 (X11; U; Linux x86_64; en-US; rv:1.9.2.18) Gecko/20110628 Ubuntu/10.10 (maverick) Firefox/3.6.18";
     private boolean             showAccountCaptcha = false;
@@ -57,6 +57,17 @@ public class FilePostCom extends PluginForHost {
     @Override
     public String getAGBLink() {
         return "http://filepost.com/terms/";
+    }
+
+    /*
+     * (non-Javadoc)
+     * 
+     * @see
+     * jd.plugins.PluginForHost#correctDownloadLink(jd.plugins.DownloadLink)
+     */
+    @Override
+    public void correctDownloadLink(DownloadLink link) throws Exception {
+        link.setUrlDownload(link.getDownloadURL().replaceFirst("https:", "http:"));
     }
 
     private static final String FILEIDREGEX = "filepost\\.com/files/(.+)";
@@ -99,7 +110,7 @@ public class FilePostCom extends PluginForHost {
                         logger.warning("Filepost availablecheck is broken!");
                         return false;
                     }
-                    Regex theData = new Regex(correctedBR, ";\" target=\"_blank\">http://filepost\\.com/files/" + fileid + "/(.{1,256})/</a></td>nttt<td>(.*?)</td>nttt<td>ntttt<span class=\"(x|v)\"");
+                    Regex theData = new Regex(correctedBR, ";\" target=\"_blank\">https?://filepost\\.com/files/" + fileid + "/(.{1,256})/</a></td>nttt<td>(.*?)</td>nttt<td>ntttt<span class=\"(x|v)\"");
                     String filename = theData.getMatch(0);
                     String filesize = theData.getMatch(1);
                     if (filename == null || filesize == null || ("x".equals(theData.getMatch(2)))) {
@@ -108,7 +119,7 @@ public class FilePostCom extends PluginForHost {
                     } else {
                         dl.setAvailable(true);
                     }
-                    dl.setName(filename);
+                    dl.setName(Encoding.htmlDecode(filename));
                     dl.setDownloadSize(SizeFormatter.getSize(filesize));
                 }
                 if (index == urls.length) break;
@@ -183,8 +194,8 @@ public class FilePostCom extends PluginForHost {
         brc.submitForm(form);
         if (brc.containsHTML("You entered a wrong CAPTCHA code")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         String correctedBR = brc.toString().replace("\\", "");
-        String dllink = new Regex(correctedBR, "\"answer\":\\{\"link\":\"(http://.*?)\"").getMatch(0);
-        if (dllink == null) dllink = new Regex(correctedBR, "\"(http://fs\\d+\\.filepost\\.com/get_file/.*?)\"").getMatch(0);
+        String dllink = new Regex(correctedBR, "\"answer\":\\{\"link\":\"(https?://.*?)\"").getMatch(0);
+        if (dllink == null) dllink = new Regex(correctedBR, "\"(https?://fs\\d+\\.filepost\\.com/get_file/.*?)\"").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
@@ -306,8 +317,8 @@ public class FilePostCom extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("We are sorry, the server where this file is")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Serverissue", 60 * 60 * 1000l);
-        String dllink = br.getRegex("<button onclick=\"download_file\\(\\'(http://.*?)\\'\\)").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("\\'(http://fs\\d+\\.filepost\\.com/get_file/.*?)\\'").getMatch(0);
+        String dllink = br.getRegex("<button onclick=\"download_file\\(\\'(https?://.*?)\\'\\)").getMatch(0);
+        if (dllink == null) dllink = br.getRegex("\\'(https?://fs\\d+\\.filepost\\.com/get_file/.*?)\\'").getMatch(0);
         if (dllink == null) {
             logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
