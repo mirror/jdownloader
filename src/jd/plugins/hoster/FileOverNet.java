@@ -70,11 +70,11 @@ public class FileOverNet extends PluginForHost {
         br.getPage(link.getDownloadURL());
         if (br.getURL().contains("/deleted/") || br.containsHTML("(<title>No such file \\| Fileover\\.Net\\! \\- Error</title>|>No such file<|The following file is unavailable\\.|>Not found or deleted by a user\\.<)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<h2 style=\"text\\-align: center; padding: 0 50px 10px 50px; word\\-wrap: break\\-word;\">(.*?)</h2>").getMatch(0);
-        String filesize = br.getRegex(">File Size: (.*?)</h3>").getMatch(0);
         if (filename == null) filename = br.getRegex("<title>(.*?) \\| Fileover\\.Net\\! \\- Download</title>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setName(filename.trim());
         // Filesize is only shown if no limits are reached
+        String filesize = br.getRegex(">File Size: (.*?)</h3>").getMatch(0);
         if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
     }
