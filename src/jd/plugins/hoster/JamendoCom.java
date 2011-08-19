@@ -104,6 +104,7 @@ public class JamendoCom extends PluginForHost {
             dlurl = br.getRedirectLocation();
         } else if (link.getStringProperty("linktyp", "webtrack").equalsIgnoreCase("downloadalbum")) {
             String AlbumID = br.getRegex("Jamendo.page.play\\('album/(.*?)'\\)").getMatch(0);
+            if (AlbumID == null) AlbumID = new Regex(link.getDownloadURL(), "/download/album/(\\d+)").getMatch(0);
             dlurl = prepareDownload("album", AlbumID, link);
         } else if (link.getStringProperty("linktyp", "webtrack").equalsIgnoreCase("downloadTrack")) {
             String TrackID = new Regex(link.getDownloadURL(), "track/(\\d+)").getMatch(0);
@@ -140,7 +141,7 @@ public class JamendoCom extends PluginForHost {
                 /* HTTPDownloadCallback */
                 if (status.equalsIgnoreCase("ready")) {
                     link.setFinalFileName(filename);
-                    dlurl = "http://download" + dl_serverno + ".jamendo.com/download/" + dl_unit + "/" + ID + "/" + dl_encoding + "/" + data + "/" + Encoding.urlEncode(filename);
+                    dlurl = "http://download" + dl_serverno + ".jamendo.com/download/" + dl_unit + "/" + ID + "/" + dl_encoding + "/" + data + "/" + Encoding.urlEncode_light(filename);
                     break;
                 }
                 if (status.equalsIgnoreCase("making")) {

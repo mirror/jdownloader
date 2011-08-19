@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 import jd.controlling.linkchecker.LinkCheckerConfig;
+import jd.controlling.linkcrawler.LinkCrawlerConfig;
 
 import org.appwork.storage.config.ConfigEventListener;
 import org.appwork.storage.config.ConfigInterface;
@@ -37,6 +38,7 @@ public class AdvancedConfigManager implements ConfigEventListener {
         register(JsonConfig.create(AccountSettings.class));
         register(JsonConfig.create(GraphicalUserInterfaceSettings.class));
         register(JsonConfig.create(LinkCheckerConfig.class));
+        register(JsonConfig.create(LinkCrawlerConfig.class));
 
     }
 

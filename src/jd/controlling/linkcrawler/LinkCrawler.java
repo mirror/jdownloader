@@ -18,6 +18,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 
+import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Regex;
 import org.appwork.utils.logging.Log;
 
@@ -31,7 +32,9 @@ public class LinkCrawler {
     private HashSet<String>                        duplicateFinder = new HashSet<String>();
     private static ThreadPoolExecutor              threadPool      = null;
     static {
-        threadPool = new ThreadPoolExecutor(0, 8, 30, TimeUnit.SECONDS, new LinkedBlockingDeque<Runnable>(), new ThreadFactory() {
+        int maxThreads = Math.max(JsonConfig.create(LinkCrawlerConfig.class).getMaxThreads(), 1);
+        int keepAlive = Math.max(JsonConfig.create(LinkCrawlerConfig.class).getThreadKeepAlive(), 100);
+        threadPool = new ThreadPoolExecutor(0, maxThreads, keepAlive, TimeUnit.MILLISECONDS, new LinkedBlockingDeque<Runnable>(), new ThreadFactory() {
 
             public Thread newThread(Runnable r) {
                 /*
