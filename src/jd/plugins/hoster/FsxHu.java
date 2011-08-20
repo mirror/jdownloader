@@ -20,11 +20,11 @@ import jd.PluginWrapper;
 import jd.http.RandomUserAgent;
 import jd.plugins.BrowserAdapter;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -98,14 +98,7 @@ public class FsxHu extends PluginForHost {
             if (serverQueueLength == null) {
                 this.logger.warning("serverQueueLength is null...");
                 serverQueueLength = "notfound";
-                // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-
-            // <div class="gombbefoglalo" style="text-align:center;float:left;">
-            // <a
-            // href="http://s4.fsx.hu/jie2w2mt/82111078/Criminal.Minds.Suspect.Behavior.S01E06.HUN.HDTV.XviD-m4m.r14"><span
-            // class="gomb jovahagyas" style="height:
-
             // next run of handleFree() will report the file as deleted
             // if it is really deleted because fsx.hu sometimes reports
             // timeouted sessions as non-existing/removed downloads
@@ -141,14 +134,8 @@ public class FsxHu extends PluginForHost {
         this.br.clearCookies("www.fsx.hu");
         this.br.getHeaders().put("User-Agent", RandomUserAgent.generate());
         this.br.getPage(downloadLink.getDownloadURL());
-        // if
-        // (!this.br.containsHTML("V.lassz az ingyenes let.lt.s .s a regisztr.ci. k.z.l!"))
         if (!this.br.containsHTML("V..lassz az ingyenes let..lt..s ..s a regisztr..ci.. k..z..l!")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         this.br.getPage("http://www.fsx.hu/download.php?i=1");
-        // final String filename =
-        // this.br.getRegex("<font color=\"#FF0000\" size=\"4\">(.+?)</font>").getMatch(0);
-        // final String filesize =
-        // this.br.getRegex("M.ret: (.+?) B.jt").getMatch(0);
         final String filename = this.br.getRegex("<h1 style=\"padding-bottom:0;font-size:16px;\">(.+?)</h1>").getMatch(0);
         final String filesize = this.br.getRegex("M..ret: (.+?) b..jt").getMatch(0);
         if ((filename == null) || (filesize == null)) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }

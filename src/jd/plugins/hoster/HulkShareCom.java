@@ -314,7 +314,7 @@ public class HulkShareCom extends PluginForHost {
     }
 
     private String getLink() throws Exception {
-        String dllink = br.getRegex("dotted #bbb;padding.*?<a href=\"(.*?)\"").getMatch(0);
+        String dllink = br.getRegex("<div style=\"width: 300px; margin: 0 10px 15px; margin\\-top: 10px; float: left; text\\-align:justify;\">[\t\n\r ]+<div style=\"float: right; text\\-align:justify;\">[\t\n\r ]+<a href=\"(http://.*?)\"").getMatch(0);
         if (dllink == null) {
             dllink = br.getRegex("This direct link will be available for your IP.*?href=\"(http.*?)\"").getMatch(0);
             if (dllink == null) {
@@ -323,6 +323,9 @@ public class HulkShareCom extends PluginForHost {
                     dllink = br.getRegex("\"(http://[0-9\\.]+/d/[a-z0-9]+/.*?)\"").getMatch(0);
                     if (dllink == null) {
                         dllink = br.getRegex("\"(http://[0-9w]+\\.hulkshare\\.com/d/[a-z0-9]+/.*?)\"").getMatch(0);
+                        if (dllink == null) {
+                            dllink = br.getRegex("\"(http://[a-z0-9]+\\.hulkshare\\.com/hulkdl/[a-z0-9]+/.*?)\"").getMatch(0);
+                        }
                     }
                     if (dllink == null) {
                         String jsCrap = br.getRegex("style=\"width: 360px; height: 100px; margin: 0 10px; overflow: auto; float: left;\">[\t\n\r ]+<script language=\"JavaScript\">[\t\n\r ]+function [A-Za-z0-9]+\\(\\)[\t\n\r ]+\\{(.*?)window\\.").getMatch(0);

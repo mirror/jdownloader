@@ -37,7 +37,7 @@ import jd.plugins.hoster.FaceBookComVideos;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "facebook.com" }, urls = { "http(s)?://(www\\.)?facebook\\.com/media/set/\\?set=a\\.\\d+\\.\\d+\\.\\d+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "facebook.com" }, urls = { "http(s)?://(www\\.)?facebook\\.com/(#\\!/)?media/set/\\?set=a\\.\\d+\\.\\d+\\.\\d+" }, flags = { 0 })
 public class FaceBookComGallery extends PluginForDecrypt {
 
     public FaceBookComGallery(PluginWrapper wrapper) {
@@ -45,13 +45,14 @@ public class FaceBookComGallery extends PluginForDecrypt {
     }
 
     /* must be static so all plugins share same lock */
-    private static final Object LOCK = new Object();
+    private static final Object LOCK             = new Object();
+    private static String       FACEBOOKMAINPAGE = "http://www.facebook.com";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         synchronized (LOCK) {
             ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-            String parameter = param.toString();
-            br.setCookie("http://www.facebook.com", "locale", "en_GB");
+            String parameter = param.toString().replace("#!/", "");
+            br.setCookie(FACEBOOKMAINPAGE, "locale", "en_GB");
             final PluginForHost facebookPlugin = JDUtilities.getPluginForHost("facebook.com");
             Account aa = AccountController.getInstance().getValidAccount(facebookPlugin);
             if (aa == null) {
