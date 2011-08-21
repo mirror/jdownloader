@@ -20,6 +20,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -343,7 +344,15 @@ public class Multi extends IExtraction {
                     continue;
                 }
 
-                final File extractTo = new File(archive.getExtractTo().getAbsoluteFile() + File.separator + item.getPath());
+                String filename = archive.getExtractTo().getAbsoluteFile() + File.separator + item.getPath();
+
+                try {
+                    filename = new String(filename.getBytes(), Charset.defaultCharset());
+                } catch (Exception e) {
+                    logger.warning("Encoding " + Charset.defaultCharset().toString() + " not supported. Using default filename.");
+                }
+
+                final File extractTo = new File(filename);
 
                 if (!extractTo.exists()) {
                     if ((!extractTo.getParentFile().exists() && !extractTo.getParentFile().mkdirs()) || !extractTo.createNewFile()) {
