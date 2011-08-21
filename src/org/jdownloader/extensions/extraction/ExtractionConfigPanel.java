@@ -7,6 +7,7 @@ import jd.gui.swing.jdgui.views.settings.components.FolderChooser;
 import jd.gui.swing.jdgui.views.settings.components.Spinner;
 import jd.gui.swing.jdgui.views.settings.components.TextInput;
 
+import org.appwork.utils.logging.Log;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.extraction.translate.T;
@@ -83,6 +84,19 @@ public class ExtractionConfigPanel extends ExtensionConfigPanel<ExtractionExtens
 
     @Override
     public void save() {
+        final ExtractionConfig s = extension.getSettings();
+        s.setCustomExtractionPathEnabled(toggleCustomizedPath.getComponent().isSelected());
+        s.setCustomExtractionPath(customPath.getComponent().getText());
+        s.setDeleteArchiveFilesAfterExtraction(toggleDeleteArchives.getComponent().isSelected());
+        s.setOverwriteExistingFilesEnabled(toggleOverwriteExisting.getComponent().isSelected());
+        s.setSubpathEnabled(toggleUseSubpath.getComponent().isSelected());
+        s.setSubPath(subPath.getComponent().getText());
+        try {
+            s.setSubPathFilesTreshhold((Integer) subPathMinFiles.getComponent().getValue());
+        } catch (final Throwable e) {
+            Log.exception(e);
+        }
+        s.setSubpathEnabledIfAllFilesAreInAFolder(toggleUseSubpathOnlyIfNotFoldered.getComponent().isSelected());
     }
 
 }

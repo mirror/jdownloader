@@ -18,45 +18,35 @@ package jd.plugins.hoster;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
-import java.util.HashMap;
-
-import javax.crypto.BadPaddingException;
-import javax.crypto.Cipher;
-import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.NoSuchPaddingException;
-import javax.crypto.spec.SecretKeySpec;
 
 import jd.PluginWrapper;
-import jd.controlling.JDLogger;
 import jd.http.Browser;
 import jd.http.RandomUserAgent;
-import jd.nutils.encoding.Base64;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fileserve.com" }, urls = { "http://(www\\.)?fileserve\\.com/file/[a-zA-Z0-9]+" }, flags = { 2 })
 public class FileServeCom extends PluginForHost {
 
-    public String        FILEIDREGEX = "fileserve\\.com/file/([a-zA-Z0-9]+)(http:.*)?";
-    public static String agent       = RandomUserAgent.generate();
+    public String               FILEIDREGEX = "fileserve\\.com/file/([a-zA-Z0-9]+)(http:.*)?";
+    public static String        agent       = RandomUserAgent.generate();
+    private static final String COOKIE_HOST = "http://www.fileserve.com";
 
     public FileServeCom(final PluginWrapper wrapper) {
         super(wrapper);
@@ -98,7 +88,7 @@ public class FileServeCom extends PluginForHost {
                     sb.append(Encoding.urlEncode(dl.getDownloadURL()));
                     c++;
                 }
-                this.br.postPage("http://fileserve.com/link-checker.php", sb.toString());
+                this.br.postPage("http://jd.fileserve.com/link-checker.php", sb.toString());
                 for (final DownloadLink dl : links) {
                     final String fileid = new Regex(dl.getDownloadURL(), this.FILEIDREGEX).getMatch(0);
                     if (fileid == null) {
@@ -266,24 +256,17 @@ public class FileServeCom extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        HashMap<String, String> ret = null;
-        this.setBrowserExclusive();
         try {
-            ret = loginAPI(br, account);
-        } catch (final IOException e) {
-            account.setValid(true);
-            account.setTempDisabled(true);
-            ai.setStatus("ServerError, will retry later");
-            return ai;
-        } catch (final Throwable e) {
+            login(br, account);
+        } catch (PluginException e) {
             account.setValid(false);
             return ai;
         }
-        String expired = ret.get("expiry_date");
-        String type = ret.get("user_type");
+        String expire = br.getRegex("Premium Until<\\/h4><\\/th>.*?<td><h5>(.*?)<\\/h5").getMatch(0);
+        String type = br.getRegex("Account Type<\\/h4><\\/td> <td><h5 class\\=\\\"inline\\\">(.*?) <\\/h5").getMatch(0);
         account.setValid(true);
         if (type != null) ai.setStatus(type);
-        if (!"PREMIUM".equals(type)) {
+        if (!"Premium".equals(type)) {
             try {
                 account.setMaxSimultanDownloads(1);
             } catch (final Throwable e) {
@@ -292,13 +275,15 @@ public class FileServeCom extends PluginForHost {
             account.setProperty("type", "free");
             account.setValid(false);
         } else {
-            if (expired != null) ai.setValidUntil(Long.parseLong(expired) * 1000);
-            try {
-                account.setMaxSimultanDownloads(Integer.MAX_VALUE);
-            } catch (final Throwable e) {
-                /* not available in 0.9xxx */
+            if (expire == null) {
+                ai.setExpired(true);
+                account.setValid(false);
+                return ai;
+            } else {
+                ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy zzz", null));
+                ai.setStatus("Premium User");
+                return ai;
             }
-            account.setProperty("type", "premium");
         }
         return ai;
     }
@@ -369,11 +354,10 @@ public class FileServeCom extends PluginForHost {
 
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         this.requestFileInformation(link);
-        HashMap<String, String> ret = this.loginAPI(br, account);
-        ret = getShorten(br, ret.get("token"), link);
-        ret = getDirectLink(br, ret.get("token"));
-        String dllink = ret.get("result_string");
-        br.setFollowRedirects(true);
+        this.login(br, account);
+        br.setFollowRedirects(false);
+        br.getPage(link.getDownloadURL());
+        String dllink = br.getRedirectLocation();
         this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, link, dllink, true, 0);
         if (this.dl.getConnection().getResponseCode() == 404) {
             this.br.followConnection();
@@ -397,9 +381,13 @@ public class FileServeCom extends PluginForHost {
         this.dl.startDownload();
     }
 
-    private HashMap<String, String> loginAPI(final Browser useBr, final Account account) throws IOException, PluginException {
+    private void login(final Browser useBr, final Account account) throws Exception {
         Browser br = useBr;
         if (br == null) br = new Browser();
+        this.setBrowserExclusive();
+        br.getPage(COOKIE_HOST + "/index.php");
+        Form loginform = br.getForm(1);
+        if (loginform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String username = account.getUser();
         String password = account.getPass();
         if (username != null && username.length() > 20) {
@@ -408,98 +396,12 @@ public class FileServeCom extends PluginForHost {
         if (password != null && password.length() > 20) {
             password = password.substring(0, 20);
         }
-        try {
-            br.getHeaders().put("User-Agent", "Mozilla/4.0 (compatible; MSIE 6.0; MS Web Services Client Protocol 2.0.50727.4952)");
-            br.getHeaders().put("SOAPAction", "\"urn:FileserveAPIWebServiceAction\"");
-            br.postPage("http://api.fileserve.com/api/fileserveAPIServer.php", "<?xml version=\"1.0\" encoding=\"utf-8\"?><soap:Envelope xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:soapenc=\"http://schemas.xmlsoap.org/soap/encoding/\" xmlns:tns=\"urn:FileserveAPI\" xmlns:types=\"urn:FileserveAPI/encodedTypes\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\"><soap:Body soap:encodingStyle=\"http://schemas.xmlsoap.org/soap/encoding/\"><tns:login><username xsi:type=\"xsd:string\">" + username + "</username><password xsi:type=\"xsd:string\">" + password + "</password></tns:login></soap:Body></soap:Envelope>");
-        } finally {
-            br.getHeaders().remove("SOAPAction");
-        }
-        String loginResp = br.getRegex("<loginReturn.*?>(.*?)</loginReturn").getMatch(0);
-        HashMap<String, String> ret = null;
-        try {
-            ret = parse(decrypt(loginResp));
-        } catch (final Throwable e) {
-            JDLogger.exception(e);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        if ("LOGIN_FAIL".equals(ret.get("error"))) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-        if (!"PREMIUM".equals(ret.get("user_type"))) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-        return ret;
-    }
-
-    private HashMap<String, String> getShorten(final Browser useBr, final String token, final DownloadLink link) throws IOException, PluginException {
-        Browser br = useBr;
-        if (br == null) br = new Browser();
-        try {
-            if (token == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            final String fileid = new Regex(link.getDownloadURL(), this.FILEIDREGEX).getMatch(0);
-            br.getHeaders().put("User-Agent", "Mozilla/4.0 (compatible; MSIE 6.0; MS Web Services Client Protocol 2.0.50727.4952)");
-            br.getHeaders().put("SOAPAction", "\"urn:FileserveAPIWebServiceAction\"");
-            br.postPage("http://api.fileserve.com/api/fileserveAPIServer.php", "<?xml version=\"1.0\" encoding=\"utf-8\"?><soap:Envelope xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:soapenc=\"http://schemas.xmlsoap.org/soap/encoding/\" xmlns:tns=\"urn:FileserveAPI\" xmlns:types=\"urn:FileserveAPI/encodedTypes\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\"><soap:Body soap:encodingStyle=\"http://schemas.xmlsoap.org/soap/encoding/\"><tns:downloadGetShorten><token xsi:type=\"xsd:string\">" + token + "</token><shorten xsi:type=\"xsd:string\">" + fileid + "</shorten></tns:downloadGetShorten></soap:Body></soap:Envelope>");
-        } finally {
-            br.getHeaders().remove("SOAPAction");
-        }
-        String resp = br.getRegex("<downloadGetShortenReturn.*?>(.*?)</downloadGetShortenReturn").getMatch(0);
-        HashMap<String, String> ret = null;
-        try {
-            ret = parse(decrypt(resp));
-        } catch (final Throwable e) {
-            JDLogger.exception(e);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        /* 101 OK, 302 direct link okay */
-        if ("111".equals(ret.get("result_code"))) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 30 * 60 * 1000l);
-        if ("110".equals(ret.get("result_code"))) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        return ret;
-    }
-
-    private HashMap<String, String> getDirectLink(final Browser useBr, final String token) throws IOException, PluginException {
-        Browser br = useBr;
-        if (br == null) br = new Browser();
-        try {
-            if (token == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            br.getHeaders().put("User-Agent", "Mozilla/4.0 (compatible; MSIE 6.0; MS Web Services Client Protocol 2.0.50727.4952)");
-            br.getHeaders().put("SOAPAction", "\"urn:FileserveAPIWebServiceAction\"");
-            br.postPage("http://api.fileserve.com/api/fileserveAPIServer.php", "<?xml version=\"1.0\" encoding=\"utf-8\"?><soap:Envelope xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:soapenc=\"http://schemas.xmlsoap.org/soap/encoding/\" xmlns:tns=\"urn:FileserveAPI\" xmlns:types=\"urn:FileserveAPI/encodedTypes\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\"><soap:Body soap:encodingStyle=\"http://schemas.xmlsoap.org/soap/encoding/\"><tns:downloadDirectLink><token xsi:type=\"xsd:string\">" + token + "</token></tns:downloadDirectLink></soap:Body></soap:Envelope>");
-        } finally {
-            br.getHeaders().remove("SOAPAction");
-        }
-        String resp = br.getRegex("<downloadDirectLinkReturn.*?>(.*?)</downloadDirectLinkReturn").getMatch(0);
-        HashMap<String, String> ret = null;
-        try {
-            ret = parse(decrypt(resp));
-        } catch (final Throwable e) {
-            JDLogger.exception(e);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        if (!"302".equals(ret.get("result_code"))) {
-            logger.info(ret.toString());
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Waiting for downloadLink", 2 * 60 * 1000l);
-        }
-        if (ret.get("result_string") == null || !ret.get("result_string").startsWith("http")) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-        return ret;
-    }
-
-    private HashMap<String, String> parse(String response) throws PluginException {
-        if (response == null || response.length() == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        String infos[] = Regex.getLines(response);
-        HashMap<String, String> ret = new HashMap<String, String>();
-        for (String info : infos) {
-            String data[][] = new Regex(info, "(.*?)=(.*?)($|\r|\n)").getMatches();
-            ret.put(data[0][0].trim(), data[0][1].trim());
-        }
-        return ret;
-    }
-
-    private static String decrypt(String string) throws UnsupportedEncodingException, IllegalBlockSizeException, BadPaddingException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException {
-        if (string == null) return null;
-        byte[] decoded = Base64.decode(string);
-        final byte[] key = Encoding.Base64Decode("L3hpTDJGaFNPVVlnc2FUdg==").getBytes();
-        SecretKeySpec skeySpec = new SecretKeySpec(key, "AES");
-        Cipher c = Cipher.getInstance("AES/ECB/NoPadding");
-        c.init(Cipher.DECRYPT_MODE, skeySpec);
-        return new String(c.doFinal(decoded));
+        loginform.put("loginUserName", Encoding.urlEncode(username));
+        loginform.put("loginUserPassword", Encoding.urlEncode(password));
+        br.submitForm(loginform);
+        br.getPage(COOKIE_HOST + "/dashboard.php");
+        if (!br.containsHTML("Login Name")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        if (br.getCookie(COOKIE_HOST, "cookie") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
 
     @Override
