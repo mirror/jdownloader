@@ -289,7 +289,7 @@ public class XFileSharingProBasic extends PluginForHost {
             ai.setUnlimitedTraffic();
         }
         if (!NOPREMIUM) {
-            String expire = new Regex(BRBEFORE, "<td>Premium-Account expire:</td>.*?<td>(.*?)</td>").getMatch(0);
+            String expire = new Regex(BRBEFORE, Pattern.compile("<td>Premium(\\-| )Account expire:</td>.*?<td>(<b>)?(\\d{2} [A-Za-z]+ \\d{4})(</b>)?</td>", Pattern.CASE_INSENSITIVE)).getMatch(2);
             if (expire == null) {
                 ai.setExpired(true);
                 account.setValid(false);
@@ -476,7 +476,7 @@ public class XFileSharingProBasic extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FATAL, "Free users can only download files up to " + filesizelimit);
             } else {
                 logger.warning("Only downloadable via premium");
-                throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable via premium");
+                throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable via premium or registered");
             }
         }
         if (BRBEFORE.contains(MAINTENANCE)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.xfilesharingprobasic.undermaintenance", MAINTENANCEUSERTEXT), 2 * 60 * 60 * 1000l);

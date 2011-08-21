@@ -228,7 +228,7 @@ public class AsixFilesCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        doFree(downloadLink, true, 0);
+        doFree(downloadLink, false, 1);
     }
 
     @Override
@@ -281,7 +281,7 @@ public class AsixFilesCom extends PluginForHost {
             ai.setUnlimitedTraffic();
         }
         if (!NOPREMIUM) {
-            String expire = new Regex(BRBEFORE, "<td>Premium-Account expire:</td>.*?<td>(.*?)</td>").getMatch(0);
+            String expire = new Regex(BRBEFORE, Pattern.compile("<td>Premium(\\-| )Account expire:</td>.*?<td>(<b>)?(\\d{2} [A-Za-z]+ \\d{4})(</b>)?</td>", Pattern.CASE_INSENSITIVE)).getMatch(2);
             if (expire == null) {
                 ai.setExpired(true);
                 account.setValid(false);
@@ -347,7 +347,7 @@ public class AsixFilesCom extends PluginForHost {
     }
 
     private void waitTime(long timeBefore, DownloadLink downloadLink) throws PluginException {
-        int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000) - 1;
+        int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000) - 2;
         // Ticket Time
         String ttt = new Regex(BRBEFORE, "countdown\">.*?(\\d+).*?</span>").getMatch(0);
         if (ttt == null) ttt = new Regex(BRBEFORE, "id=\"countdown_str\".*?<span id=\".*?\">.*?(\\d+).*?</span").getMatch(0);
@@ -458,7 +458,7 @@ public class AsixFilesCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FATAL, "Free users can only download files up to " + filesizelimit);
             } else {
                 logger.warning("Only downloadable via premium");
-                throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable via premium");
+                throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable via premium or registered");
             }
         }
     }

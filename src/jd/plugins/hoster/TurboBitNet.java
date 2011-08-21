@@ -166,10 +166,16 @@ public class TurboBitNet extends PluginForHost {
         if (tt > 250) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Limit reached or IP already loading", tt * 1001l);
         // IMPORTANT: This is changed most of the time when the plugin is broken
         // maxLimit : 60
-        String maxtime = br.getRegex("maxLimit([ ]+)?:([ ]+)?(\\d+)").getMatch(2);
-        if (maxtime == null) maxtime = br.getRegex("var Timeout.*?maxLimit: (\\d+)").getMatch(0);
-        if (maxtime == null) maxtime = Encoding.Base64Decode("NjA=");
-        String finalPage = "http://turbobit.net/download/getLinkAfterTimeout/" + new Regex(downloadLink.getDownloadURL(), "turbobit\\.net/(.*?)\\.html").getMatch(0) + "/" + maxtime + "/";
+        // String maxtime =
+        // br.getRegex("maxLimit([ ]+)?:([ ]+)?(\\d+)").getMatch(2);
+        // if (maxtime == null) maxtime =
+        // br.getRegex("var Timeout.*?maxLimit: (\\d+)").getMatch(0);
+        // if (maxtime == null) maxtime = Encoding.Base64Decode("NjA=");
+        // String finalPage =
+        // "http://turbobit.net/download/getLinkAfterTimeout/" + new
+        // Regex(downloadLink.getDownloadURL(),
+        // "turbobit\\.net/(.*?)\\.html").getMatch(0) + "/" + maxtime + "/";
+        String finalPage = "http://turbobit.net/download/getLinkAfterTimeout/" + new Regex(downloadLink.getDownloadURL(), "turbobit\\.net/(.*?)\\.html").getMatch(0) + "/";
         sleep(tt * 1001, downloadLink);
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         br.getPage(finalPage);

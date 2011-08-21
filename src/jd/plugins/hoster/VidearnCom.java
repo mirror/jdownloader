@@ -20,13 +20,13 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "videarn.com" }, urls = { "http://(www\\.)?videarn\\.com/video\\.php\\?id=\\d+" }, flags = { PluginWrapper.DEBUG_ONLY })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "videarn.com" }, urls = { "http://(www\\.)?videarndecrypted\\.com/video\\.php\\?id=\\d+" }, flags = { PluginWrapper.DEBUG_ONLY })
 public class VidearnCom extends PluginForHost {
 
     public VidearnCom(final PluginWrapper wrapper) {
@@ -41,6 +41,11 @@ public class VidearnCom extends PluginForHost {
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return -1;
+    }
+
+    public void correctDownloadLink(DownloadLink link) {
+        // Links come from a decrypter
+        link.setUrlDownload(link.getDownloadURL().replace("videarndecrypted.com/", "videarn.com/"));
     }
 
     @Override
@@ -78,9 +83,12 @@ public class VidearnCom extends PluginForHost {
         final String dllink = downloadLink.getDownloadURL();
         br.getPage(dllink);
         if (!br.containsHTML("\\w+")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-        String filename = br.getRegex("<h2 class=\"page_title\"><br />(.*?)</h2>").getMatch(0);
+        String filename = br.getRegex("<h3 class=\"page\\-title\"><strong>(.*?)</strong></h3>").getMatch(0);
         if (filename == null) {
-            filename = dllink.substring(dllink.lastIndexOf("/"));
+            filename = br.getRegex("<title>Video \\- (.*?)</title>").getMatch(0);
+            if (filename == null) {
+                filename = dllink.substring(dllink.lastIndexOf("/"));
+            }
         }
         if (filename == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         downloadLink.setName(filename.trim() + ".flv");
