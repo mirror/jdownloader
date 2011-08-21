@@ -390,12 +390,12 @@ public class FileServeCom extends PluginForHost {
         if (loginform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String username = account.getUser();
         String password = account.getPass();
-        if (username != null && username.length() > 20) {
-            username = username.substring(0, 20);
-        }
-        if (password != null && password.length() > 20) {
-            password = password.substring(0, 20);
-        }
+        // if (username != null && username.length() > 20) {
+        // username = username.substring(0, 20);
+        // }
+        // if (password != null && password.length() > 20) {
+        // password = password.substring(0, 20);
+        // }
         loginform.put("loginUserName", Encoding.urlEncode(username));
         loginform.put("loginUserPassword", Encoding.urlEncode(password));
         br.submitForm(loginform);
