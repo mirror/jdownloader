@@ -147,7 +147,7 @@ public class WUploadCom extends PluginForHost {
         if (br.containsHTML("only download 1 file at a time")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, JDL.L("plugins.hoster.wupload.alreadyloading", "This IP is already downloading"), 5 * 60 * 1000l); }
         if (br.containsHTML("Free user can not download files")) { throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.wupload.largefree", "Free user can not download files over 400MB")); }
         if (br.containsHTML("Download session in progress")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, JDL.L("plugins.hoster.wupload.inprogress", "Download session in progress"), 10 * 60 * 1000l); }
-        if (br.containsHTML("We have detected some suspicious behaviour coming from your IP address")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, JDL.L("plugins.hoster.wupload.ipblock", "Hoster blocking IP address due to abuse"), 10 * 60 * 1000l); }
+        if (br.containsHTML("We have detected some suspicious behaviour coming from your IP address")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, JDL.L("plugins.hoster.wupload.ipabuse", "Hoster blocking IP address due to abuse"), 6 * 60 * 60 * 1000l); }
         if (br.containsHTML("This file is password protected")) {
             downloadLink.setProperty("pass", null);
             throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.errors.wrongpassword", "Password wrong"));
