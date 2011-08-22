@@ -23,7 +23,7 @@ public class PremiumAccountTable extends BasicJDTable<Account> {
      * (non-Javadoc)
      * 
      * @see
-     * org.appwork.utils.swing.table.ExtTable#onShortcutDelete(java.util.ArrayList
+     * org.appwork.swing.exttable.ExtTable#onShortcutDelete(java.util.ArrayList
      * , java.awt.event.KeyEvent, boolean)
      */
     @Override
@@ -36,9 +36,9 @@ public class PremiumAccountTable extends BasicJDTable<Account> {
      * (non-Javadoc)
      * 
      * @see
-     * org.appwork.utils.swing.table.ExtTable#onContextMenu(javax.swing.JPopupMenu
+     * org.appwork.swing.exttable.ExtTable#onContextMenu(javax.swing.JPopupMenu
      * , java.lang.Object, java.util.ArrayList,
-     * org.appwork.utils.swing.table.ExtColumn)
+     * org.appwork.swing.exttable.ExtColumn)
      */
     @Override
     protected JPopupMenu onContextMenu(JPopupMenu popup, Account contextObject, ArrayList<Account> selection, ExtColumn<Account> column) {

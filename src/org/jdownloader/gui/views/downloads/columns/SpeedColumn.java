@@ -25,6 +25,15 @@ public class SpeedColumn extends ExtTextColumn<jd.plugins.PackageLinkNode> {
         rendererField.setHorizontalAlignment(SwingConstants.RIGHT);
     }
 
+    public boolean isPaintWidthLockIcon() {
+        return false;
+    }
+
+    @Override
+    protected boolean isDefaultResizable() {
+        return false;
+    }
+
     @Override
     public boolean isEnabled(PackageLinkNode obj) {
         return obj.isEnabled();

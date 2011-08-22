@@ -22,6 +22,10 @@ public class AddedDateColumn extends ExtDateColumn<PackageLinkNode> {
 
     }
 
+    public boolean isPaintWidthLockIcon() {
+        return false;
+    }
+
     @Override
     public boolean isEnabled(PackageLinkNode obj) {
         return obj.isEnabled();
@@ -32,11 +36,15 @@ public class AddedDateColumn extends ExtDateColumn<PackageLinkNode> {
         return false;
     }
 
-    // @Override
-    // public int getMaxWidth() {
-    //
-    // return 110;
-    // }
+    @Override
+    protected boolean isDefaultResizable() {
+        return false;
+    }
+
+    @Override
+    public int getDefaultWidth() {
+        return 95;
+    }
 
     @Override
     protected String getBadDateText(PackageLinkNode value) {

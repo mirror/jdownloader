@@ -18,6 +18,7 @@ import org.appwork.swing.exttable.ExtColumn;
 import org.appwork.utils.swing.renderer.RenderLabel;
 import org.appwork.utils.swing.renderer.RendererMigPanel;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.gui.views.downloads.HosterToolTip;
 import org.jdownloader.images.NewTheme;
 
 public class HosterColumn extends ExtColumn<PackageLinkNode> {
@@ -56,6 +57,11 @@ public class HosterColumn extends ExtColumn<PackageLinkNode> {
     }
 
     @Override
+    protected boolean isDefaultResizable() {
+        return false;
+    }
+
+    @Override
     public boolean isEditable(PackageLinkNode obj) {
         return false;
     }
@@ -63,6 +69,10 @@ public class HosterColumn extends ExtColumn<PackageLinkNode> {
     @Override
     public boolean isEnabled(PackageLinkNode obj) {
         return obj.isEnabled();
+    }
+
+    public boolean isPaintWidthLockIcon() {
+        return false;
     }
 
     @Override
@@ -77,7 +87,7 @@ public class HosterColumn extends ExtColumn<PackageLinkNode> {
 
     @Override
     public int getDefaultWidth() {
-        return 55;
+        return 65;
     }
 
     // @Override

@@ -65,9 +65,9 @@ import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
-import org.appwork.utils.swing.table.ExtRowHighlighter;
-import org.appwork.utils.swing.table.ExtTable;
-import org.appwork.utils.swing.table.SelectionHighlighter;
+import org.appwork.swing.exttable.ExtRowHighlighter;
+import org.appwork.swing.exttable.ExtTable;
+import org.appwork.swing.exttable.SelectionHighlighter;
 import org.jdownloader.extensions.langfileeditor.translate.T;
 import org.tmatesoft.svn.core.wc.SVNInfo;
 

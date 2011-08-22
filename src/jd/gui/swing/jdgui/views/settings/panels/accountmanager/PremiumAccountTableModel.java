@@ -121,7 +121,7 @@ public class PremiumAccountTableModel extends ExtTableModel<Account> implements 
             }
 
             @Override
-            protected int getMaxWidth() {
+            public int getMaxWidth() {
                 return 30;
             }
 
@@ -199,7 +199,7 @@ public class PremiumAccountTableModel extends ExtTableModel<Account> implements 
             }
 
             @Override
-            protected int getMaxWidth() {
+            public int getMaxWidth() {
                 return 140;
             }
 
@@ -237,7 +237,7 @@ public class PremiumAccountTableModel extends ExtTableModel<Account> implements 
             }
 
             @Override
-            protected int getMaxWidth() {
+            public int getMaxWidth() {
                 return 140;
             }
 
@@ -271,7 +271,7 @@ public class PremiumAccountTableModel extends ExtTableModel<Account> implements 
             }
 
             @Override
-            protected int getMaxWidth() {
+            public int getMaxWidth() {
                 return 100;
             }
 

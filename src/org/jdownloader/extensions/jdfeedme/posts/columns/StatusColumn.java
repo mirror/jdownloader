@@ -83,7 +83,7 @@ public class StatusColumn extends JDTableColumn {
     }
 
     @Override
-    protected int getMaxWidth() {
+    public int getMaxWidth() {
         return 60;
     }
 

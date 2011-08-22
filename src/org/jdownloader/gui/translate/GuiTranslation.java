@@ -2178,4 +2178,16 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Click here to add this link or package to your download list." })
     String ConfirmAction_ConfirmAction_tooltip();
+
+    @Default(lngs = { "en" }, values = { "Linkgrabber" })
+    String LinkGrabberSideBarHeader_LinkGrabberSideBarHeader();
+
+    @Default(lngs = { "en" }, values = { "Add Downloads" })
+    String AddLinksAction_();
+
+    @Default(lngs = { "en" }, values = { "Clears the list" })
+    String ClearAction_tt_();
+
+    @Default(lngs = { "en" }, values = { "Download all" })
+    String ConfirmAction_ConfirmAction_();
 }

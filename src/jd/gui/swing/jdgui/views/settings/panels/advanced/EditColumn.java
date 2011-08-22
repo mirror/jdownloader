@@ -136,7 +136,7 @@ public class EditColumn extends ExtComponentColumn<AdvancedConfigEntry> {
     }
 
     @Override
-    protected int getMaxWidth() {
+    public int getMaxWidth() {
         return getMinWidth();
     }
 

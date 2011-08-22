@@ -29,9 +29,9 @@ public class ProxyTable extends BasicJDTable<ProxyInfo> {
      * (non-Javadoc)
      * 
      * @see
-     * org.appwork.utils.swing.table.ExtTable#onContextMenu(javax.swing.JPopupMenu
+     * org.appwork.swing.exttable.ExtTable#onContextMenu(javax.swing.JPopupMenu
      * , java.lang.Object, java.util.ArrayList,
-     * org.appwork.utils.swing.table.ExtColumn)
+     * org.appwork.swing.exttable.ExtColumn)
      */
     @Override
     protected JPopupMenu onContextMenu(JPopupMenu popup, ProxyInfo contextObject, ArrayList<ProxyInfo> selection, ExtColumn<ProxyInfo> column) {

@@ -60,7 +60,7 @@ public abstract class JDTableColumn extends AbstractCellEditor implements TableC
      * Should be overwritten when there should be a maximal width for this
      * column (e.g. for checkboxes)
      */
-    protected int getMaxWidth() {
+    public int getMaxWidth() {
         return -1;
     }
 

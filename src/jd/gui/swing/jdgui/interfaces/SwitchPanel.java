@@ -32,13 +32,14 @@ import org.appwork.utils.event.Eventsender;
  */
 public abstract class SwitchPanel extends JPanel {
 
-    private static final long serialVersionUID = -7856570342778191232L;
-    private boolean currentlyVisible = false;
+    private static final long                                  serialVersionUID = -7856570342778191232L;
+    private boolean                                            currentlyVisible = false;
     private Eventsender<SwitchPanelListener, SwitchPanelEvent> broadcaster;
 
     public SwitchPanel(LayoutManager layout) {
         super(layout);
         initBroadcaster();
+
     }
 
     public SwitchPanel() {

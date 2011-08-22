@@ -17,8 +17,8 @@
 package org.jdownloader.extensions.langfileeditor.columns;
 
 import org.appwork.utils.Regex;
-import org.appwork.utils.swing.table.ExtTableModel;
-import org.appwork.utils.swing.table.columns.ExtTextColumn;
+import org.appwork.swing.exttable.ExtTableModel;
+import org.appwork.swing.exttable.columns.ExtTextColumn;
 import org.jdownloader.extensions.langfileeditor.KeyInfo;
 import org.jdownloader.extensions.langfileeditor.LFEGui;
 import org.jdownloader.extensions.langfileeditor.LFETableModel;

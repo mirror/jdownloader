@@ -34,7 +34,7 @@ public class DownloadsTableModel extends LinkTableModel {
     private static final String SORT_DOWNLOADORDER = "DOWNLOAD";
 
     public DownloadsTableModel() {
-        super("downloadstable");
+        super("downloadstable3");
 
     }
 

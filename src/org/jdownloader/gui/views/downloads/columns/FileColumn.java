@@ -27,6 +27,10 @@ public class FileColumn extends ExtTextColumn<PackageLinkNode> {
 
     }
 
+    public boolean isPaintWidthLockIcon() {
+        return false;
+    }
+
     @Override
     public boolean isEnabled(PackageLinkNode obj) {
         return obj.isEnabled();
@@ -40,7 +44,7 @@ public class FileColumn extends ExtTextColumn<PackageLinkNode> {
     //
     @Override
     public int getDefaultWidth() {
-        return 250;
+        return 350;
     }
 
     @Override

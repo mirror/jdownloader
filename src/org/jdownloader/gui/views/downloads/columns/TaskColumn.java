@@ -21,7 +21,11 @@ public class TaskColumn extends ExtTextColumn<jd.plugins.PackageLinkNode> {
 
     @Override
     public int getDefaultWidth() {
-        return 80;
+        return 180;
+    }
+
+    public boolean isPaintWidthLockIcon() {
+        return false;
     }
 
     // @Override

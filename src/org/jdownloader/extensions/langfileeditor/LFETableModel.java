@@ -18,8 +18,8 @@ package org.jdownloader.extensions.langfileeditor;
 
 import java.util.ArrayList;
 
-import org.appwork.utils.swing.table.ExtTableModel;
-import org.appwork.utils.swing.table.columns.ExtTextColumn;
+import org.appwork.swing.exttable.ExtTableModel;
+import org.appwork.swing.exttable.columns.ExtTextColumn;
 import org.jdownloader.extensions.langfileeditor.columns.LanguageColumn;
 import org.jdownloader.extensions.langfileeditor.translate.T;
 

@@ -1,6 +1,7 @@
 package org.jdownloader.gui.views.downloads.columns;
 
 import java.awt.Component;
+import java.util.Date;
 
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
@@ -83,7 +84,20 @@ public class PriorityColumn extends ExtIconColumn<PackageLinkNode> {
     }
 
     @Override
+    protected boolean isDefaultResizable() {
+        return false;
+    }
+
+    @Override
     public boolean isDefaultVisible() {
+        return false;
+    }
+
+    public static void main(String[] args) {
+        System.out.println(new Date());
+    }
+
+    public boolean isPaintWidthLockIcon() {
         return false;
     }
 
@@ -91,7 +105,7 @@ public class PriorityColumn extends ExtIconColumn<PackageLinkNode> {
     // * Sets max width to 30. overwrite to set other maxsizes
     // */
     // @Override
-    // protected int getMaxWidth() {
+    // public int getMaxWidth() {
     // return 30;
     // }
 
@@ -102,7 +116,7 @@ public class PriorityColumn extends ExtIconColumn<PackageLinkNode> {
 
     @Override
     public int getDefaultWidth() {
-        return 60;
+        return 30;
     }
 
     protected int getPriority(PackageLinkNode value) {

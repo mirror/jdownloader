@@ -70,7 +70,7 @@ public class ActionColumn extends ExtComponentColumn<Account> {
     }
 
     @Override
-    protected int getMaxWidth() {
+    public int getMaxWidth() {
         return getMinWidth();
     }
 

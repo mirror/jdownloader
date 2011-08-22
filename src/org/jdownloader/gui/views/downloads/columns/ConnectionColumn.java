@@ -25,6 +25,11 @@ public class ConnectionColumn extends ExtTextColumn<jd.plugins.PackageLinkNode> 
     }
 
     @Override
+    protected boolean isDefaultResizable() {
+        return false;
+    }
+
+    @Override
     public int getDefaultWidth() {
         return 85;
     }
@@ -34,6 +39,9 @@ public class ConnectionColumn extends ExtTextColumn<jd.plugins.PackageLinkNode> 
     //
     // return 150;
     // }
+    public boolean isPaintWidthLockIcon() {
+        return false;
+    }
 
     @Override
     public String getStringValue(PackageLinkNode value) {

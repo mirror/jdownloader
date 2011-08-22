@@ -1,4 +1,4 @@
-package org.jdownloader.gui.views.downloads.columns;
+package org.jdownloader.gui.views.downloads;
 
 import javax.swing.JPanel;
 import javax.swing.JTextField;

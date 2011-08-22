@@ -62,7 +62,7 @@ public abstract class JDIconColumn extends JDTableColumn {
     }
 
     @Override
-    protected int getMaxWidth() {
+    public int getMaxWidth() {
         return 100;
     }
 

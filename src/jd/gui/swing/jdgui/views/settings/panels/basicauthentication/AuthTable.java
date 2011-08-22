@@ -29,7 +29,7 @@ public class AuthTable extends BasicJDTable<AuthenticationInfo> {
      * (non-Javadoc)
      * 
      * @see
-     * org.appwork.utils.swing.table.ExtTable#onShortcutDelete(java.util.ArrayList
+     * org.appwork.swing.exttable.ExtTable#onShortcutDelete(java.util.ArrayList
      * , java.awt.event.KeyEvent, boolean)
      */
     @Override

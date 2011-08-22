@@ -18,6 +18,10 @@ public class CommentColumn extends ExtTextAreaColumn<PackageLinkNode> {
         return true;
     }
 
+    public boolean isPaintWidthLockIcon() {
+        return false;
+    }
+
     @Override
     protected void setStringValue(String value, PackageLinkNode object) {
         if (object instanceof FilePackage) {

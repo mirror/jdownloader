@@ -25,6 +25,10 @@ public class ETAColumn extends ExtTextColumn<jd.plugins.PackageLinkNode> {
         return 80;
     }
 
+    public boolean isPaintWidthLockIcon() {
+        return false;
+    }
+
     @Override
     public boolean isEnabled(PackageLinkNode obj) {
         return obj.isEnabled();
@@ -35,6 +39,10 @@ public class ETAColumn extends ExtTextColumn<jd.plugins.PackageLinkNode> {
     //
     // return 85;
     // }
+    @Override
+    protected boolean isDefaultResizable() {
+        return false;
+    }
 
     public ETAColumn() {
         super(_GUI._.ETAColumn_ETAColumn());

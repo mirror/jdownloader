@@ -55,7 +55,7 @@ public class FilterTableModel extends ExtTableModel<LinkFilter> {
             }
 
             @Override
-            protected int getMaxWidth() {
+            public int getMaxWidth() {
                 return 30;
             }
 
@@ -117,7 +117,7 @@ public class FilterTableModel extends ExtTableModel<LinkFilter> {
             }
 
             @Override
-            protected int getMaxWidth() {
+            public int getMaxWidth() {
                 return 90;
             }
 
@@ -177,7 +177,7 @@ public class FilterTableModel extends ExtTableModel<LinkFilter> {
             }
 
             @Override
-            protected int getMaxWidth() {
+            public int getMaxWidth() {
                 return 90;
             }
 
@@ -234,7 +234,7 @@ public class FilterTableModel extends ExtTableModel<LinkFilter> {
             }
 
             @Override
-            protected int getMaxWidth() {
+            public int getMaxWidth() {
                 return 30;
             }
 

@@ -90,7 +90,7 @@ public class ExtensionsTable extends BasicJDTable<AbstractExtensionWrapper> impl
                 }
 
                 @Override
-                protected int getMaxWidth() {
+                public int getMaxWidth() {
                     return 30;
                 }
 

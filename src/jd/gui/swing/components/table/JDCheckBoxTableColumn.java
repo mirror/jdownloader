@@ -29,7 +29,7 @@ public abstract class JDCheckBoxTableColumn extends JDTableColumn implements Act
     protected abstract void setBooleanValue(boolean value, Object object);
 
     @Override
-    protected int getMaxWidth() {
+    public int getMaxWidth() {
         return 100;
     }
 

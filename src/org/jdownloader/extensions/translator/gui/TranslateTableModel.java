@@ -105,7 +105,7 @@ public class TranslateTableModel extends ExtTableModel<TranslateEntry> {
             }
 
             @Override
-            protected int getMaxWidth() {
+            public int getMaxWidth() {
                 return getDefaultWidth();
             }
 
@@ -165,7 +165,7 @@ public class TranslateTableModel extends ExtTableModel<TranslateEntry> {
             }
 
             @Override
-            protected int getMaxWidth() {
+            public int getMaxWidth() {
                 return getDefaultWidth();
             }
 

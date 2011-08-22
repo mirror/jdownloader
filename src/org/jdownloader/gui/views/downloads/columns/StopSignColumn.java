@@ -47,6 +47,15 @@ public class StopSignColumn extends ExtTextColumn<jd.plugins.PackageLinkNode> {
     }
 
     @Override
+    protected boolean isDefaultResizable() {
+        return false;
+    }
+
+    public boolean isPaintWidthLockIcon() {
+        return false;
+    }
+
+    @Override
     protected Icon getIcon(PackageLinkNode value) {
         if (DownloadWatchDog.getInstance().isStopMark(value)) { return NewTheme.I().getIcon("stopsign", 16); }
         return null;
@@ -64,7 +73,7 @@ public class StopSignColumn extends ExtTextColumn<jd.plugins.PackageLinkNode> {
     }
 
     // @Override
-    // protected int getMaxWidth() {
+    // public int getMaxWidth() {
     // return getDefaultWidth();
     // }
 

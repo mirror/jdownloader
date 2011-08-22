@@ -43,7 +43,7 @@ public class TimestampColumn extends JDTextEditorTableColumn {
     }
 
     @Override
-    protected int getMaxWidth() {
+    public int getMaxWidth() {
         return 190;
     }
 

@@ -19,6 +19,15 @@ public class SizeColumn extends ExtFileSizeColumn<PackageLinkNode> {
 
     }
 
+    public boolean isPaintWidthLockIcon() {
+        return false;
+    }
+
+    @Override
+    protected boolean isDefaultResizable() {
+        return false;
+    }
+
     @Override
     public int getDefaultWidth() {
         return 65;

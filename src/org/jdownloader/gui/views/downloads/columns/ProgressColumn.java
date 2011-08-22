@@ -31,6 +31,10 @@ public class ProgressColumn extends ExtProgressColumn<jd.plugins.PackageLinkNode
         return 30;
     }
 
+    public boolean isPaintWidthLockIcon() {
+        return false;
+    }
+
     @Override
     public int getDefaultWidth() {
         return 100;

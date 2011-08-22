@@ -26,6 +26,20 @@ public class FinishedDateColumn extends ExtDateColumn<PackageLinkNode> {
         return "";
     }
 
+    public boolean isPaintWidthLockIcon() {
+        return false;
+    }
+
+    @Override
+    protected boolean isDefaultResizable() {
+        return false;
+    }
+
+    @Override
+    public int getDefaultWidth() {
+        return 95;
+    }
+
     @Override
     public boolean isDefaultVisible() {
         return false;

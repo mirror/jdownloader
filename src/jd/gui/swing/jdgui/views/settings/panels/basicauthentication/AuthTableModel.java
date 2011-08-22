@@ -51,7 +51,7 @@ public class AuthTableModel extends ExtTableModel<AuthenticationInfo> {
             }
 
             @Override
-            protected int getMaxWidth() {
+            public int getMaxWidth() {
                 return 30;
             }
 
@@ -191,7 +191,7 @@ public class AuthTableModel extends ExtTableModel<AuthenticationInfo> {
             }
 
             @Override
-            protected int getMaxWidth() {
+            public int getMaxWidth() {
                 return 140;
             }
 

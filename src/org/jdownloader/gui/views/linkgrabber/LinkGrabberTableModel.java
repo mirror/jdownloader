@@ -88,7 +88,7 @@ public class LinkGrabberTableModel extends LinkTableModel {
             }
 
             @Override
-            protected int getMaxWidth() {
+            public int getMaxWidth() {
                 return 20;
             }
 

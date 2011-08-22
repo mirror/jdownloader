@@ -281,7 +281,7 @@ public class ProxyTableModel extends ExtTableModel<ProxyInfo> {
             }
 
             @Override
-            protected int getMaxWidth() {
+            public int getMaxWidth() {
                 return 30;
             }
 
@@ -341,7 +341,7 @@ public class ProxyTableModel extends ExtTableModel<ProxyInfo> {
             }
 
             @Override
-            protected int getMaxWidth() {
+            public int getMaxWidth() {
                 return 30;
             }
 

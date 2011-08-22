@@ -16,11 +16,24 @@ public class RemainingColumn extends ExtFileSizeColumn<PackageLinkNode> {
         super(_GUI._.RemainingColumn_RemainingColumn());
     }
 
+    public boolean isPaintWidthLockIcon() {
+        return false;
+    }
+
     // @Override
     // public int getMaxWidth() {
     //
     // return 85;
     // }
+    @Override
+    protected boolean isDefaultResizable() {
+        return false;
+    }
+
+    @Override
+    public int getDefaultWidth() {
+        return 90;
+    }
 
     @Override
     protected long getBytes(PackageLinkNode o2) {

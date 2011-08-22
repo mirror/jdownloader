@@ -19,8 +19,17 @@ public class LoadedColumn extends ExtFileSizeColumn<PackageLinkNode> {
     }
 
     @Override
+    protected boolean isDefaultResizable() {
+        return false;
+    }
+
+    public boolean isPaintWidthLockIcon() {
+        return false;
+    }
+
+    @Override
     public int getDefaultWidth() {
-        return 85;
+        return 90;
     }
 
     // @Override

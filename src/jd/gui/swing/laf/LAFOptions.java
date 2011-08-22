@@ -1,13 +1,28 @@
 package jd.gui.swing.laf;
 
+import java.awt.Color;
+
+import javax.swing.JTable;
+import javax.swing.table.JTableHeader;
+
 import org.appwork.storage.Storable;
 
 public class LAFOptions implements Storable {
 
-    private boolean paintStatusbarTopBorder    = true;
-    private int     panelBackgroundColor       = -1;
-    private int     panelHeaderColor           = -1;
-    private int     panelHeaderForegroundColor = 0;
+    private boolean paintStatusbarTopBorder = true;
+    private int     panelBackgroundColor    = new JTable().getBackground().getRGB();
+    private int     panelHeaderLineColor    = Color.LIGHT_GRAY.getRGB();
+
+    public int getPanelHeaderLineColor() {
+        return panelHeaderLineColor;
+    }
+
+    public void setPanelHeaderLineColor(int panelHeaderLineColor) {
+        this.panelHeaderLineColor = panelHeaderLineColor;
+    }
+
+    private int panelHeaderColor           = new JTableHeader().getBackground().getRGB();
+    private int panelHeaderForegroundColor = 0;
 
     public void setPanelHeaderForegroundColor(int panelHeaderForegroundColor) {
         this.panelHeaderForegroundColor = panelHeaderForegroundColor;
