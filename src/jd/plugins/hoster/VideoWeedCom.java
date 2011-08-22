@@ -21,15 +21,16 @@ import java.io.IOException;
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "videoweed.com" }, urls = { "http://((www\\.)?videoweed\\.com/file/|embed\\.videoweed\\.com/embed\\.php\\?.*?v=)[a-z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "videoweed.com" }, urls = { "http://((www\\.)?videoweed\\.(com|es)/file/|embed\\.videoweed\\.(com|es)/embed\\.php\\?.*?v=)[a-z0-9]+" }, flags = { 0 })
 public class VideoWeedCom extends PluginForHost {
 
     public VideoWeedCom(PluginWrapper wrapper) {
@@ -46,7 +47,8 @@ public class VideoWeedCom extends PluginForHost {
     public void correctDownloadLink(DownloadLink link) {
         // Make normal links out of embedded links
         String fileID = new Regex(link.getDownloadURL(), "v=([a-z0-9]+)").getMatch(0);
-        if (fileID != null) link.setUrlDownload("http://www.videoweed.com/file/" + fileID);
+        if (fileID != null) link.setUrlDownload("http://www.videoweed.es/file/" + fileID);
+        link.setUrlDownload(link.getDownloadURL().replace("videoweed.com/", "videoweed.es/"));
     }
 
     @Override
@@ -66,19 +68,10 @@ public class VideoWeedCom extends PluginForHost {
                 }
             }
         }
-        dllink = br.getRegex("flashvars\\.file=\"(http://.*?)\"").getMatch(0);
-        if (dllink == null) {
-            dllink = br.getRegex("\"(http://(www\\.)?videoweed\\.com/stream/.*?\\.flv)\"").getMatch(0);
-            if (dllink == null) {
-                dllink = br.getRegex("\"(http://(www\\.)?n\\d+\\.(epornik|videoweed)\\.com/dl/[a-z0-9]+/[a-z0-9]+/[a-z0-9]+\\.flv)\"").getMatch(0);
-                if (dllink == null) {
-                    dllink = br.getRegex("addVariable\\(\"(file|streamer)\",\"(http://.*?)\"\\)").getMatch(1);
-                    if (dllink == null) {
-                        dllink = br.getRegex("\"(http://\\d+\\.\\d+\\.\\d+\\.\\d+/dl/[a-z0-9]+/[a-z0-9]+/.*?\\.flv)\"").getMatch(0);
-                    }
-                }
-            }
-        }
+        String key = br.getRegex("flashvars\\.filekey=\"(.*?)\"").getMatch(0);
+        if (key == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        br.getPage("http://www.videoweed.es/api/player.api.php?user=undefined&codes=1&file=" + new Regex(downloadLink.getDownloadURL(), "videoweed\\.es/file/(.+)").getMatch(0) + "&pass=undefined&key=" + Encoding.urlEncode(key));
+        dllink = br.getRegex("url=(http://.*?)\\&title").getMatch(0);
         if (filename == null || dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         filename = filename.trim();
         downloadLink.setFinalFileName(filename.replace(filename.substring(filename.length() - 4, filename.length()), "") + ".flv");

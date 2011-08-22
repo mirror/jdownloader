@@ -24,6 +24,9 @@ import java.util.TreeMap;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
+import jd.config.Property;
+import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -51,7 +54,7 @@ public class XFileSharingProBasic extends PluginForHost {
         // this.enablePremium(COOKIE_HOST + "/premium.html");
     }
 
-    // XfileSharingProBasic Version 2.3.0.2
+    // XfileSharingProBasic Version 2.4.0.2
     // This is only for developers to easily implement hosters using the
     // "xfileshare(pro)" script (more informations can be found on
     // xfilesharing.net)!
@@ -123,7 +126,6 @@ public class XFileSharingProBasic extends PluginForHost {
     }
 
     public void doFree(DownloadLink downloadLink, boolean resumable, int maxchunks) throws Exception, PluginException {
-        String dllink = null;
         String passCode = null;
         if (BRBEFORE.contains("\"download1\"")) {
             br.postPage(downloadLink.getDownloadURL(), "op=download1&usr_login=&id=" + new Regex(downloadLink.getDownloadURL(), COOKIE_HOST.replace("http://", "") + "/" + "([a-z0-9]{12})").getMatch(0) + "&fname=" + Encoding.urlEncode(downloadLink.getName()) + "&referer=&method_free=Free+Download");
@@ -137,6 +139,20 @@ public class XFileSharingProBasic extends PluginForHost {
             downloadLink.setMD5Hash(md5hash);
         }
         br.setFollowRedirects(false);
+        Browser br2 = br.cloneBrowser();
+        String dllink = downloadLink.getStringProperty("freelink");
+        try {
+            if (dllink != null) {
+                URLConnectionAdapter con = br2.openGetConnection(dllink);
+                if (con.getContentType().contains("html")) {
+                    downloadLink.setProperty("freelink", Property.NULL);
+                    dllink = null;
+                }
+                con.disconnect();
+            }
+        } catch (Exception e) {
+            dllink = null;
+        }
         // Videolinks can already be found here, if a link is found here we can
         // skip waittimes and captchas
         dllink = getDllink();
@@ -230,6 +246,7 @@ public class XFileSharingProBasic extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (passCode != null) downloadLink.setProperty("pass", passCode);
+        downloadLink.setProperty("freelink", dllink);
         dl.startDownload();
     }
 
@@ -310,43 +327,61 @@ public class XFileSharingProBasic extends PluginForHost {
         String passCode = null;
         requestFileInformation(link);
         login(account);
-        br.setCookie(COOKIE_HOST, "lang", "english");
-        br.setFollowRedirects(false);
-        br.getPage(link.getDownloadURL());
-        doSomething();
-        if (NOPREMIUM) {
-            doFree(link, true, 0);
-        } else {
-            String dllink = br.getRedirectLocation();
-            if (dllink == null) {
-                doSomething();
-                Form DLForm = br.getFormbyProperty("name", "F1");
-                if (DLForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                if (new Regex(BRBEFORE, PASSWORDTEXT).matches()) passCode = handlePassword(passCode, DLForm, link);
-                br.submitForm(DLForm);
-                doSomething();
+        Browser br2 = br.cloneBrowser();
+        String dllink = link.getStringProperty("dllink");
+        try {
+            if (dllink != null) {
+                URLConnectionAdapter con = br2.openGetConnection(dllink);
+                if (con.getContentType().contains("html")) {
+                    link.setProperty("premlink", Property.NULL);
+                    dllink = null;
+                }
+                con.disconnect();
+            }
+        } catch (Exception e) {
+            dllink = null;
+        }
+        if (dllink == null) {
+            br.setCookie(COOKIE_HOST, "lang", "english");
+            br.setFollowRedirects(false);
+            br.getPage(link.getDownloadURL());
+            doSomething();
+            if (NOPREMIUM) {
+                link.setProperty("freelink", Property.NULL);
+                doFree(link, true, 0);
+            } else {
                 dllink = br.getRedirectLocation();
                 if (dllink == null) {
-                    checkErrors(link, true, passCode);
-                    dllink = getDllink();
+                    doSomething();
+                    Form DLForm = br.getFormbyProperty("name", "F1");
+                    if (DLForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    if (new Regex(BRBEFORE, PASSWORDTEXT).matches()) passCode = handlePassword(passCode, DLForm, link);
+                    br.submitForm(DLForm);
+                    doSomething();
+                    dllink = br.getRedirectLocation();
+                    if (dllink == null) {
+                        checkErrors(link, true, passCode);
+                        dllink = getDllink();
+                    }
+                }
+                if (dllink == null) {
+                    logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
             }
-            if (dllink == null) {
-                logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            logger.info("Final downloadlink = " + dllink + " starting the download...");
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
-            if (passCode != null) link.setProperty("pass", passCode);
-            if (dl.getConnection().getContentType().contains("html")) {
-                logger.warning("The final dllink seems not to be a file!");
-                br.followConnection();
-                doSomething();
-                checkServerErrors();
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            dl.startDownload();
         }
+        logger.info("Final downloadlink = " + dllink + " starting the download...");
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+        if (passCode != null) link.setProperty("pass", passCode);
+        if (dl.getConnection().getContentType().contains("html")) {
+            logger.warning("The final dllink seems not to be a file!");
+            br.followConnection();
+            doSomething();
+            checkServerErrors();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        link.setProperty("premlink", dllink);
+        dl.startDownload();
     }
 
     @Override

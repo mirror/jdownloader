@@ -79,12 +79,17 @@ public class FilEarnCom extends PluginForHost {
         br.setFollowRedirects(false);
         Browser br2 = br.cloneBrowser();
         String dllink = downloadLink.getStringProperty("dllink");
-        if (dllink != null) {
-            URLConnectionAdapter con = br2.openGetConnection(dllink);
-            if (con.getContentType().contains("html")) {
-                downloadLink.setProperty("dllink", Property.NULL);
-                dllink = null;
+        try {
+            if (dllink != null) {
+                URLConnectionAdapter con = br2.openGetConnection(dllink);
+                if (con.getContentType().contains("html")) {
+                    downloadLink.setProperty("dllink", Property.NULL);
+                    dllink = null;
+                }
+                con.disconnect();
             }
+        } catch (Exception e) {
+            dllink = null;
         }
         if (dllink == null) {
             if (br.containsHTML(">Only premium users can download more than one file at a time")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Too many simultan downloads", 5 * 60 * 1000l);

@@ -38,7 +38,7 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
         String parameter = param.toString().replaceAll("(/download|\\\\)", "");
         boolean decryptList = parameter.matches(".*?soundcloud\\.com/[a-z\\-_0-9]+/(tracks|favorites)(\\?page=\\d+)?");
         if (!decryptList) {
-            decryptList = !parameter.matches(".*?soundcloud\\.com/[a-z\\-_0-9]+/[a-z\\-_0-9]+");
+            decryptList = !parameter.matches(".*?soundcloud\\.com/[a-z\\-_0-9]+/[a-z\\-_0-9]+(/)?");
             if (!decryptList) decryptList = parameter.contains("/groups/");
         }
         if (decryptList) {
