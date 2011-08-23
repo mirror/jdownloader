@@ -25,6 +25,7 @@ import java.awt.Image;
 import java.awt.MediaTracker;
 import java.awt.Point;
 import java.awt.Toolkit;
+import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -36,11 +37,14 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.Map;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.swing.BorderFactory;
+import javax.swing.JButton;
 import javax.swing.JComponent;
+import javax.swing.JFrame;
 import javax.swing.JLayeredPane;
 import javax.swing.JPanel;
 import javax.swing.event.MouseInputAdapter;
@@ -74,6 +78,7 @@ import org.appwork.utils.swing.dialog.Dialog;
 public class LnkCrptWs extends PluginForDecrypt {
 
     public static class KeyCaptcha {
+        private static Object                LOCK = new Object();
         private final Browser                br;
         private Form                         FORM;
         private HashMap<String, String>      PARAMS;
@@ -118,9 +123,26 @@ public class LnkCrptWs extends PluginForDecrypt {
             // fragmentiertes Hintergrundbild
             sscGetImagest(sscStc[0], sscStc[1], sscStc[2], Boolean.parseBoolean(sscStc[3]));
 
-            final KeyCaptchaDialog vC = new KeyCaptchaDialog(0, "KeyCaptcha", new String[] { sscStc[1], stImgs[1] }, fmsImg, null);
-            vC.displayDialog();
-            String out = vC.getReturnValue();
+            final boolean stable = true;
+            String out;
+
+            if (!stable) {
+                final KeyCaptchaDialog vC = new KeyCaptchaDialog(0, "KeyCaptcha", new String[] { sscStc[1], stImgs[1] }, fmsImg, null);
+                vC.displayDialog();
+                out = vC.getReturnValue();
+            } else {
+                final KeyCaptchaShowDialog vC = new KeyCaptchaShowDialog(new String[] { sscStc[1], stImgs[1] }, fmsImg);
+                // Warten bis der KeyCaptcha-Dialog geschlossen ist
+                synchronized (LOCK) {
+                    try {
+                        LOCK.wait();
+                    } catch (final InterruptedException e) {
+                        // TODO Auto-generated catch block
+                        e.printStackTrace();
+                    }
+                }
+                out = vC.POSITION;
+            }
             SERVERSTRING = SERVERSTRING.replace("cOut=", "cOut=" + out + "&cP=");
             out = rcBr.getPage(SERVERSTRING);
             out = new Regex(out, "s_s_c_setcapvalue\\( \"(.*?)\" \\)").getMatch(0);
@@ -134,7 +156,6 @@ public class LnkCrptWs extends PluginForDecrypt {
             rcBr.getHeaders().put("Referer", DLURL);
             rcBr.getHeaders().put("Pragma", null);
             rcBr.getHeaders().put("Cache-Control", null);
-            rcBr.setDebug(true);
             if (PARAMS.containsKey("src")) {
                 rcBr.getPage(PARAMS.get("src"));
                 PARAMS.put("src", DLURL);
@@ -555,6 +576,173 @@ public class LnkCrptWs extends PluginForDecrypt {
             super.paintComponent(g);
             if (image != null) {
                 g.drawImage(image, 0, 0, this);
+            }
+        }
+    }
+
+    private static class KeyCaptchaShowDialog extends JFrame {
+        private static final long            serialVersionUID = 1L;
+        private Image[]                      IMAGE;
+        private BufferedImage[]              kcImages;
+        private LinkedHashMap<String, int[]> rectanglecCoordinates;
+        private Graphics                     go;
+        private int                          kcSampleImg;
+        private final ActionListener         AL;
+        public String                        POSITION;
+        private final JFrame                 FRAME            = this;
+
+        public KeyCaptchaShowDialog(final String[] arg0, final LinkedHashMap<String, int[]> arg1) throws Exception {
+            super("KeyCaptcha");
+            loadImage(arg0);
+            handleCoordinates(arg1);
+            final JLayeredPane drawPanel = new JLayeredPane();
+            drawPanel.setLayout(new BorderLayout());
+            FRAME.setSize(new Dimension(450, 180));
+            makePieces();
+            makeBackground();
+            int offset = 4;
+            boolean sampleImg = false;
+            for (int i = 1; i < kcImages.length; i++) {
+                if (kcImages[i] == null) {
+                    continue;
+                } else if (i == kcSampleImg) {
+                    sampleImg = true;
+                } else {
+                    sampleImg = false;
+                }
+                drawPanel.add(new KeyCaptchaDragPieces(kcImages[i], offset, sampleImg), null, new Integer(JLayeredPane.DEFAULT_LAYER + i));
+                offset += 4;
+            }
+            drawPanel.add(new KeyCaptchaDrawBackgroundPanel(kcImages[0]), null, new Integer(JLayeredPane.DEFAULT_LAYER + kcImages.length));
+            AL = new ActionListener() {
+
+                public void actionPerformed(final ActionEvent e) {
+                    POSITION = getPosition(drawPanel);
+                    try {
+                        FRAME.dispose();
+                    } finally {
+                        synchronized (KeyCaptcha.LOCK) {
+                            KeyCaptcha.LOCK.notify();
+                        }
+                    }
+                }
+            };
+
+            final JButton button = new JButton("OK");
+            final JPanel p = new JPanel();
+            button.addActionListener(AL);
+            p.add(button);
+
+            getContentPane().add(p, BorderLayout.PAGE_END);
+            getContentPane().add(drawPanel, BorderLayout.CENTER);
+
+            toFront();
+            final Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+            setLocation((screenSize.width - getWidth()) / 2, (screenSize.height - getHeight()) / 2);
+            pack();
+            // setResizable(false);
+            setVisible(true);
+        }
+
+        private String getPosition(final JLayeredPane drawPanel) {
+            int i = 0;
+            String positions = "";
+            for (final Component comp : drawPanel.getComponents()) {
+                if (comp.getMouseListeners().length == 0) {
+                    continue;
+                }
+                final Point p = comp.getLocation();
+                positions += (i != 0 ? "." : "") + String.valueOf(p.x) + "." + String.valueOf(p.y);
+                i++;
+            }
+            return positions;
+        }
+
+        public void handleCoordinates(final LinkedHashMap<String, int[]> arg0) {
+            rectanglecCoordinates = new LinkedHashMap<String, int[]>();
+            for (final Map.Entry<String, int[]> entry : arg0.entrySet()) {
+                rectanglecCoordinates.put(entry.getKey(), entry.getValue());
+            }
+            kcImages = new BufferedImage[rectanglecCoordinates.size()];
+        }
+
+        public void loadImage(final String[] imagesUrl) throws MalformedURLException {
+            int i = 0;
+            IMAGE = new Image[imagesUrl.length];
+            final MediaTracker mt = new MediaTracker(this);
+            for (final String imgUrl : imagesUrl) {
+                IMAGE[i] = Toolkit.getDefaultToolkit().getImage(new URL(imgUrl));
+                if (IMAGE[i] != null) {
+                    repaint();
+                }
+                mt.addImage(IMAGE[i], i);
+                i++;
+            }
+            try {
+                mt.waitForAll();
+            } catch (final InterruptedException ex) {
+            }
+        }
+
+        private void makeBackground() {
+            int curx = 0;
+            int cik = 0;
+            kcImages[0] = new BufferedImage(450, 160, BufferedImage.TYPE_INT_RGB);
+            go = kcImages[0].getGraphics();
+            final int[] bgCoord = rectanglecCoordinates.get("backGroundImage");
+            while (cik < bgCoord.length) {
+                go.drawImage(IMAGE[0], bgCoord[cik], bgCoord[cik + 1], bgCoord[cik] + bgCoord[cik + 2], bgCoord[cik + 1] + bgCoord[cik + 3], curx, 0, curx + bgCoord[cik + 2], bgCoord[cik + 3], this);
+                curx = curx + bgCoord[cik + 2];
+                cik = cik + 4;
+            }
+        }
+
+        private void makePieces() {
+            final Object[] key = rectanglecCoordinates.keySet().toArray();
+            int pieces = 1;
+            for (final Object element : key) {
+                if (element.equals("backGroundImage")) {
+                    continue;
+                }
+                final int[] imgcs = rectanglecCoordinates.get(element);
+                if (imgcs == null | imgcs.length == 0) {
+                    break;
+                }
+                final int w = imgcs[1] + imgcs[5] + imgcs[9];
+                final int h = imgcs[3] + imgcs[15] + imgcs[27];
+                int dX = 0;
+                int dY = 0;
+                kcImages[pieces] = new BufferedImage(w, h, BufferedImage.TYPE_INT_RGB);
+                go = kcImages[pieces].getGraphics();
+                if (element.equals("kc_sample_image")) {
+                    kcSampleImg = pieces;
+                }
+                int sX = 0, sY = 0, sW = 0, sH = 0;
+                dX = 0;
+                dY = 0;
+                for (int cik2 = 0; cik2 < 36; cik2 += 4) {
+                    sX = imgcs[cik2];
+                    sY = imgcs[cik2 + 2];
+                    sW = imgcs[cik2 + 1];
+                    sH = imgcs[cik2 + 3];
+                    if (sX + sW > IMAGE[1].getWidth(this) || sY + sH > IMAGE[1].getHeight(this)) {
+                        continue;
+                    }
+                    if (dX + sW > w || dY + sH > h) {
+                        continue;
+                    }
+                    if (sW == 0 || sH == 0) {
+                        continue;
+                    }
+                    // Puzzlebild erstellen
+                    go.drawImage(IMAGE[1], dX, dY, dX + sW, dY + sH, sX, sY, sX + sW, sY + sH, this);
+                    dX = dX + sW;
+                    if (dX >= w) {
+                        dY = dY + sH;
+                        dX = 0;
+                    }
+                }
+                pieces += 1;
             }
         }
     }
