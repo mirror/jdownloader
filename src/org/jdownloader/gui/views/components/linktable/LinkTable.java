@@ -101,7 +101,7 @@ public abstract class LinkTable extends BasicJDTable<PackageLinkNode> {
                 if (!links.contains(node)) links.add((DownloadLink) node);
             } else {
                 synchronized (node) {
-                    for (final DownloadLink dl : ((FilePackage) node).getControlledDownloadLinks()) {
+                    for (final DownloadLink dl : ((FilePackage) node).getChildren()) {
                         if (!links.contains(dl)) {
                             links.add(dl);
                         }
@@ -124,7 +124,7 @@ public abstract class LinkTable extends BasicJDTable<PackageLinkNode> {
                 } else {
                     if (!fps.contains(node)) fps.add((FilePackage) node);
                     synchronized (node) {
-                        for (final DownloadLink dl : ((FilePackage) node).getControlledDownloadLinks()) {
+                        for (final DownloadLink dl : ((FilePackage) node).getChildren()) {
                             if (!links.contains(dl)) {
                                 links.add(dl);
                             }

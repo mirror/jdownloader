@@ -8,7 +8,6 @@ import jd.gui.UserIO;
 import jd.gui.swing.jdgui.interfaces.ContextMenuAction;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.utils.JDUtilities;
 
 import org.appwork.storage.config.JsonConfig;
 import org.jdownloader.gui.translate._GUI;
@@ -54,9 +53,9 @@ public class NewPackageAction extends ContextMenuAction {
         DownloadController.getInstance().move(links, nfp, DownloadController.MOVE.BEGIN);
 
         if (JsonConfig.create(GeneralSettings.class).isAddNewLinksOnTop()) {
-            JDUtilities.getDownloadController().addPackageAt(nfp, 0);
+            DownloadController.getInstance().addmovePackageAt(fp, 0);
         } else {
-            JDUtilities.getDownloadController().addPackage(nfp);
+            DownloadController.getInstance().addmovePackageAt(fp, -1);
         }
     }
 

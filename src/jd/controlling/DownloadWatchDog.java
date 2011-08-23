@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 
@@ -222,10 +223,10 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         ProxyController.getInstance().resetIPBlockWaittime(null, true);
         /* reset temp unavailble times for all ips */
         ProxyController.getInstance().resetTempUnavailWaittime(null, false);
-        synchronized (DownloadController.ACCESSLOCK) {
+        synchronized (DownloadController.getInstance()) {
             for (final FilePackage filePackage : DownloadController.getInstance().getPackages()) {
                 synchronized (filePackage) {
-                    for (final DownloadLink link : filePackage.getControlledDownloadLinks()) {
+                    for (final DownloadLink link : filePackage.getChildren()) {
                         /*
                          * do not reset if link is offline, finished , already
                          * exist or pluginerror (because only plugin updates can
@@ -392,7 +393,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         final int maxPerHost = this.getSimultanDownloadNumPerHost();
         try {
             for (final FilePackage filePackage : this.dlc.getPackages()) {
-                for (final Iterator<DownloadLink> it2 = filePackage.getControlledDownloadLinks().iterator(); it2.hasNext();) {
+                for (final Iterator<DownloadLink> it2 = filePackage.getChildren().iterator(); it2.hasNext();) {
                     nextDownloadLink = it2.next();
                     if (nextDownloadLink.getDefaultPlugin() == null || !nextDownloadLink.isEnabled() || nextDownloadLink.getLinkStatus().hasStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE)) {
                         /*
@@ -561,7 +562,15 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
             if (this.currentstopMark == event.getParameter()) {
                 /* now the stopmark is hidden */
                 this.setStopMark(STOPMARK.HIDDEN);
+            } else if (event.getParameter() != null && event.getParameter() instanceof List) {
+                List<?> list = (List<?>) event.getParameter();
+                for (Object l : list) {
+                    if (l == this.currentstopMark) {
+                        this.setStopMark(STOPMARK.HIDDEN);
+                    }
+                }
             }
+
         }
     }
 
@@ -630,7 +639,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         }
         if (stop instanceof FilePackage) {
             synchronized (stop) {
-                for (final DownloadLink dl : ((FilePackage) stop).getControlledDownloadLinks()) {
+                for (final DownloadLink dl : ((FilePackage) stop).getChildren()) {
                     synchronized (sessionHistory) {
                         if (sessionHistory.contains(dl)) {
                             /*
@@ -800,7 +809,6 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                     stopMark.setSelected(true);
                     stopMark.setEnabled(true);
                     stopMark.setToolTipText(_JDT._.jd_controlling_DownloadWatchDog_stopmark_downloadlink(((DownloadLink) entry).getName()));
-                    DownloadController.getInstance().fireDownloadLinkUpdate(entry);
                 } else if (entry instanceof FilePackage) {
                     stopMark.setSelected(true);
                     stopMark.setEnabled(true);
@@ -813,6 +821,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                     stopMark.setSelected(false);
                     stopMark.setToolTipText(_JDT._.jd_gui_swing_jdgui_actions_actioncontroller_toolbar_control_stopmark_tooltip());
                 }
+                DownloadController.getInstance().fireDataUpdate();
             }
         }, true);
     }
@@ -880,7 +889,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                 public void run() {
                     this.setName("DownloadWatchDog");
                     try {
-                        ArrayList<DownloadLink> links;
+                        List<DownloadLink> links;
                         final ArrayList<FilePackage> fps = new ArrayList<FilePackage>();
                         DownloadLink link;
                         LinkStatus linkStatus;
@@ -900,6 +909,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                             hasTempDisabledLinks = false;
                             waitingNewIP = false;
                             resetWaitingNewIP = false;
+                            long lastChange = -1;
                             if (DownloadWatchDog.this.lastReconnectCounter < Reconnecter.getReconnectCounter()) {
                                 /* an IP-change happend, reset waittimes */
                                 lastReconnectCounter = Reconnecter.getReconnectCounter();
@@ -907,20 +917,19 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                                 resetWaitingNewIP = true;
                             }
                             /* so we can work on a list without threading errors */
-                            fps.clear();
-                            synchronized (DownloadController.ACCESSLOCK) {
-                                /*
-                                 * TODO: change to a much better way, for
-                                 * example keep copy of current structure and
-                                 * build temp structure to optimize
-                                 * nextDownloadLink
-                                 */
-                                fps.addAll(DownloadWatchDog.this.dlc.getPackages());
+                            if (lastChange != DownloadController.getInstance().getPackageControllerChanges()) {
+                                fps.clear();
+                                final boolean readL = DownloadController.getInstance().readLock();
+                                try {
+                                    fps.addAll(DownloadController.getInstance().getPackages());
+                                } finally {
+                                    DownloadController.getInstance().readUnlock(readL);
+                                }
                             }
                             inProgress = 0;
                             try {
                                 for (final FilePackage filePackage : fps) {
-                                    links = filePackage.getControlledDownloadLinks();
+                                    links = filePackage.getChildren();
                                     for (int i = 0; i < links.size(); i++) {
                                         link = links.get(i);
                                         if (link.getDefaultPlugin() == null) {

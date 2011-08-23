@@ -45,14 +45,17 @@ public class RemoveFailedAction extends ToolBarAction {
 
                 DownloadController dlc = DownloadController.getInstance();
                 LinkedList<DownloadLink> downloadstodelete = new LinkedList<DownloadLink>();
-                synchronized (DownloadController.ACCESSLOCK) {
+                final boolean readL = dlc.readLock();
+                try {
                     for (FilePackage fp : dlc.getPackages()) {
                         synchronized (fp) {
-                            for (DownloadLink dl : fp.getControlledDownloadLinks()) {
+                            for (DownloadLink dl : fp.getChildren()) {
                                 if (dl.getLinkStatus().isFailed()) downloadstodelete.add(dl);
                             }
                         }
                     }
+                } finally {
+                    dlc.readUnlock(readL);
                 }
                 for (DownloadLink dl : downloadstodelete) {
                     dl.getFilePackage().remove(dl);

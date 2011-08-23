@@ -68,9 +68,8 @@ public class DownloadsPanel extends SwitchPanel implements DownloadControllerLis
 
     public void onDownloadControllerEvent(DownloadControllerEvent event) {
         switch (event.getEventID()) {
-        case DownloadControllerEvent.ADD_DOWNLOADLINK:
+        case DownloadControllerEvent.REFRESH_STRUCTURE:
         case DownloadControllerEvent.REMOVE_DOWNLOADLINK:
-        case DownloadControllerEvent.ADD_FILEPACKAGE:
         case DownloadControllerEvent.REMOVE_FILPACKAGE:
             table.recreateModel();
             break;

@@ -123,7 +123,8 @@ public class DownloadsTableModel extends LinkTableModel {
             } catch (final Exception e) {
                 Log.exception(e);
             }
-            synchronized (DownloadController.ACCESSLOCK) {
+            final boolean readL = DownloadController.getInstance().readLock();
+            try {
                 /* get all packages from controller */
                 ArrayList<PackageLinkNode> packages = new ArrayList<PackageLinkNode>(DownloadController.getInstance().size());
                 packages.addAll(DownloadController.getInstance().getPackages());
@@ -133,11 +134,13 @@ public class DownloadsTableModel extends LinkTableModel {
                     if (!((FilePackage) node).isExpanded()) continue;
                     ArrayList<PackageLinkNode> files = null;
                     synchronized (node) {
-                        files = new ArrayList<PackageLinkNode>(((FilePackage) node).getControlledDownloadLinks());
+                        files = new ArrayList<PackageLinkNode>(((FilePackage) node).getChildren());
                     }
                     newData.addAll(files);
                 }
                 return newData;
+            } finally {
+                DownloadController.getInstance().readUnlock(readL);
             }
         } else {
             return super.sort(data, column);

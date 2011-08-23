@@ -128,7 +128,7 @@ public class RAFDownload extends DownloadInterface {
                     boolean success = false;
                     DownloadLink sfv = null;
                     synchronized (downloadLink.getFilePackage()) {
-                        for (DownloadLink dl : downloadLink.getFilePackage().getControlledDownloadLinks()) {
+                        for (DownloadLink dl : downloadLink.getFilePackage().getChildren()) {
                             if (dl.getFileOutput().toLowerCase().endsWith(".sfv")) {
                                 sfv = dl;
                                 break;

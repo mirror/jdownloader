@@ -20,13 +20,17 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 
 import jd.config.Property;
-import jd.controlling.DownloadControllerInterface;
+import jd.controlling.packagecontroller.AbstractPackageNode;
+import jd.controlling.packagecontroller.PackageController;
 import jd.gui.swing.jdgui.views.downloads.DownloadTable;
 import jd.nutils.io.JDIO;
 import jd.utils.JDUtilities;
@@ -39,7 +43,7 @@ import org.jdownloader.translate._JDT;
  * 
  * @author JD-Team
  */
-public class FilePackage extends Property implements Serializable, PackageLinkNode {
+public class FilePackage extends Property implements Serializable, PackageLinkNode, AbstractPackageNode<DownloadLink, FilePackage> {
 
     private static final AtomicLong      FilePackageIDCounter = new AtomicLong(0);
 
@@ -56,9 +60,6 @@ public class FilePackage extends Property implements Serializable, PackageLinkNo
 
     static {
         FP = new FilePackage() {
-            /**
-             * 
-             */
             private static final long serialVersionUID = 1L;
 
             @Override
@@ -66,15 +67,51 @@ public class FilePackage extends Property implements Serializable, PackageLinkNo
             }
 
             @Override
-            public ArrayList<DownloadLink> getControlledDownloadLinks() {
-                return new ArrayList<DownloadLink>();
+            public void remove(DownloadLink... links) {
             }
 
             @Override
-            public void remove(DownloadLink... links) {
+            public void setControlledBy(PackageController<FilePackage, DownloadLink> controller) {
             }
         };
         FP.setName(_JDT._.controller_packages_defaultname());
+        FP.downloadLinkList = new ArrayList<DownloadLink>() {
+
+            /**
+             * 
+             */
+            private static final long serialVersionUID = 1L;
+
+            @Override
+            public boolean isEmpty() {
+                return true;
+            }
+
+            @Override
+            public DownloadLink set(int index, DownloadLink element) {
+                return null;
+            }
+
+            @Override
+            public boolean add(DownloadLink e) {
+                return true;
+            }
+
+            @Override
+            public void add(int index, DownloadLink element) {
+            }
+
+            @Override
+            public boolean addAll(Collection<? extends DownloadLink> c) {
+                return false;
+            }
+
+            @Override
+            public boolean addAll(int index, Collection<? extends DownloadLink> c) {
+                return false;
+            }
+
+        };
     }
 
     /**
@@ -87,59 +124,44 @@ public class FilePackage extends Property implements Serializable, PackageLinkNo
         return FP;
     }
 
-    private int                                   linksFailed;
+    private int                                                    linksFailed;
 
-    private int                                   linksFinished;
+    private int                                                    linksFinished;
 
-    private int                                   linksInProgress;
+    private int                                                    linksInProgress;
 
-    private String                                name                 = null;
+    private String                                                 name                 = null;
 
-    private String                                password2;
+    private String                                                 password2;
 
-    private boolean                               extractAfterDownload = true;
+    private boolean                                                extractAfterDownload = true;
 
-    private long                                  totalBytesLoaded_v2;
+    private long                                                   totalBytesLoaded_v2;
 
-    private long                                  totalDownloadSpeed_v2;
+    private long                                                   totalDownloadSpeed_v2;
 
-    private long                                  totalEstimatedPackageSize_v2;
+    private long                                                   totalEstimatedPackageSize_v2;
 
-    private long                                  updateTime;
+    private long                                                   updateTime;
 
-    private long                                  updateTime1;
+    private long                                                   updateTime1;
 
-    private boolean                               isFinished;
+    private boolean                                                isFinished;
     /* no longer in use, pay attention when removing */
     @Deprecated
-    private Integer                               links_Disabled;
+    private Integer                                                links_Disabled;
     /* no longer in use, pay attention when removing */
     @Deprecated
-    private String                                ListHoster           = null;
+    private String                                                 ListHoster           = null;
 
-    private long                                  created              = -1l;
+    private long                                                   created              = -1l;
 
-    private long                                  finishedDate         = -1l;
+    private long                                                   finishedDate         = -1l;
 
-    private transient boolean                     isExpanded           = false;
+    private transient boolean                                      isExpanded           = false;
 
-    private transient DownloadControllerInterface controlledby         = null;
-    private transient long                        uniqueID             = -1;
-
-    /**
-     * @return the controlledby
-     */
-    public DownloadControllerInterface getControlledby() {
-        return controlledby;
-    }
-
-    /**
-     * @param controlledby
-     *            the controlledby to set
-     */
-    public void setControlledby(DownloadControllerInterface controlledby) {
-        this.controlledby = controlledby;
-    }
+    private transient PackageController<FilePackage, DownloadLink> controlledby         = null;
+    private transient long                                         uniqueID             = -1;
 
     /*
      * (non-Javadoc)
@@ -276,7 +298,7 @@ public class FilePackage extends Property implements Serializable, PackageLinkNo
                 }
             }
         } else {
-            this.controlledby.addDownloadLinks(this, links);
+            this.controlledby.addmoveChildren(this, Arrays.asList(links), -1);
         }
     }
 
@@ -314,15 +336,6 @@ public class FilePackage extends Property implements Serializable, PackageLinkNo
      */
     public String getDownloadDirectory() {
         return downloadDirectory;
-    }
-
-    /**
-     * return all DownloadLinks controlled by this FilePackage
-     * 
-     * @return
-     */
-    public ArrayList<DownloadLink> getControlledDownloadLinks() {
-        return downloadLinkList;
     }
 
     /**
@@ -430,7 +443,7 @@ public class FilePackage extends Property implements Serializable, PackageLinkNo
         Set<String> pwList = new HashSet<String>();
         if (fp == null) return pwList;
         synchronized (fp) {
-            for (DownloadLink element : fp.getControlledDownloadLinks()) {
+            for (DownloadLink element : fp.getChildren()) {
                 ArrayList<String> pws = null;
                 if ((pws = element.getSourcePluginPasswordList()) != null) {
 
@@ -529,7 +542,7 @@ public class FilePackage extends Property implements Serializable, PackageLinkNo
                 }
             }
         } else {
-            this.controlledby.removeDownloadLinks(this, links);
+            this.controlledby.removeChildren(this, Arrays.asList(links), true);
         }
     }
 
@@ -673,7 +686,9 @@ public class FilePackage extends Property implements Serializable, PackageLinkNo
         return true;
     }
 
-    private ArrayList<String> passwordList = new ArrayList<String>();
+    private ArrayList<String>           passwordList = new ArrayList<String>();
+
+    private transient PackageController pc;
 
     public void setPasswordList(ArrayList<String> passwordList) {
         this.passwordList = passwordList;
@@ -702,7 +717,7 @@ public class FilePackage extends Property implements Serializable, PackageLinkNo
         Set<String> set = new HashSet<String>();
 
         synchronized (this) {
-            for (DownloadLink element : getControlledDownloadLinks()) {
+            for (DownloadLink element : downloadLinkList) {
                 if (!set.contains(element.getHost())) {
                     set.add(element.getHost());
                     ret.add(element.getHost());
@@ -710,6 +725,18 @@ public class FilePackage extends Property implements Serializable, PackageLinkNo
             }
         }
         return ret;
+    }
+
+    public List<DownloadLink> getChildren() {
+        return downloadLinkList;
+    }
+
+    public PackageController<FilePackage, DownloadLink> getControlledBy() {
+        return controlledby;
+    }
+
+    public void setControlledBy(PackageController<FilePackage, DownloadLink> controller) {
+        controlledby = controller;
     }
 
 }

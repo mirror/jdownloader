@@ -322,7 +322,7 @@ public class JDController implements ControlListener {
                 fireControlEventDirect(new ControlEvent(this, ControlEvent.CONTROL_SYSTEM_EXIT, this));
             }
             LOGGER.info("Save Downloadlist");
-            JDUtilities.getDownloadController().saveDownloadLinksSyncnonThread();
+            JDUtilities.getDownloadController().saveDownloadLinks();
             LOGGER.info("Sync FavIconController");
             FavIconController.getInstance().saveSyncnonThread();
             LOGGER.info("Save Passwordlist");
@@ -351,7 +351,7 @@ public class JDController implements ControlListener {
     public void syncDatabase() {
         if (DatabaseConnector.isDatabaseShutdown()) return;
         LOGGER.info("Sync Downloadlist");
-        JDUtilities.getDownloadController().saveDownloadLinksSyncnonThread();
+        JDUtilities.getDownloadController().saveDownloadLinks();
 
         LOGGER.info("Sync FavIconController");
         FavIconController.getInstance().saveSyncnonThread();

@@ -66,7 +66,7 @@ public final class Replacer {
 
         if (key.equalsIgnoreCase("LAST_FINISHED_PACKAGE.AUTO_PASSWORD")) { return FilePackage.getPasswordAuto(dLink.getFilePackage()).toString(); }
         synchronized (dLink.getFilePackage()) {
-            if (key.equalsIgnoreCase("LAST_FINISHED_PACKAGE.FILELIST")) { return dLink.getFilePackage().getControlledDownloadLinks().toString(); }
+            if (key.equalsIgnoreCase("LAST_FINISHED_PACKAGE.FILELIST")) { return dLink.getFilePackage().getChildren().toString(); }
         }
         if (key.equalsIgnoreCase("LAST_FINISHED_PACKAGE.PACKAGENAME")) {
             final String name = dLink.getFilePackage().getName();

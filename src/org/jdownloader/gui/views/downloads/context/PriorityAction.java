@@ -46,7 +46,7 @@ public class PriorityAction extends ContextMenuAction {
         for (DownloadLink link : links) {
             link.setPriority(priority);
         }
-        DownloadController.getInstance().fireDownloadLinkUpdate(links);
+        DownloadController.getInstance().fireDataUpdate(links);
     }
 
     public static JMenu createPrioMenu(final ArrayList<DownloadLink> links) {

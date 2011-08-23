@@ -246,7 +246,7 @@ public class FilePackageInfo extends JDCollapser implements ActionListener, Focu
                             long[] values = new long[fp.size()];
                             int i = 0;
                             synchronized (fp) {
-                                for (DownloadLink dl : fp.getControlledDownloadLinks()) {
+                                for (DownloadLink dl : fp.getChildren()) {
                                     max[i] = Math.max(1, dl.getDownloadSize());
                                     if (dl.getLinkStatus().hasStatus(LinkStatus.ERROR_FILE_NOT_FOUND)) {
                                         values[i] = -1;

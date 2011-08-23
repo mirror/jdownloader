@@ -89,7 +89,7 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
             DownloadLink next = null;
             int i = 1;
             synchronized (fp) {
-                for (Iterator<DownloadLink> it = fp.getControlledDownloadLinks().iterator(); it.hasNext(); i++) {
+                for (Iterator<DownloadLink> it = fp.getChildren().iterator(); it.hasNext(); i++) {
                     Hashtable<Object, Object> h_info = new Hashtable<Object, Object>();
                     next = it.next();
                     if (next.isEnabled()) {
@@ -204,7 +204,7 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
             ids = requestParameter.get("single_info").toString().split("[+]", 2);
             package_id = Formatter.filterInt(ids[0].toString());
             download_id = Formatter.filterInt(ids[1].toString());
-            downloadLink = JDUtilities.getController().getPackages().get(package_id).getControlledDownloadLinks().get(download_id);
+            downloadLink = JDUtilities.getController().getPackages().get(package_id).getChildren().get(download_id);
 
             addEntry("file", new File(downloadLink.getFileOutput()).getName() + " @ " + downloadLink.getHost());
             if (downloadLink.getFilePackage() != null && downloadLink.getFilePackage().getPassword() != null) {
@@ -334,7 +334,7 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
             v2 = new Vector<Object>();
 
             for (Download_ID = 0; Download_ID < filePackage.size(); Download_ID++) {
-                dLink = filePackage.getControlledDownloadLinks().get(Download_ID);
+                dLink = filePackage.getChildren().get(Download_ID);
 
                 // Download Infos
                 percent = (double) (dLink.getDownloadCurrent() * 100.0 / Math.max(1, dLink.getDownloadSize()));

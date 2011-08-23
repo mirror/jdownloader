@@ -207,6 +207,7 @@ public class JDUtilities {
      * 
      * @return gerade verwendete CONTROLLER-instanz
      */
+    @Deprecated
     public static JDController getController() {
         return JDController.getInstance();
     }

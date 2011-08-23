@@ -61,10 +61,13 @@ public class BackupLinkListAction extends ToolBarAction {
                     // Serialize to a byte array
                     ByteArrayOutputStream bos = new ByteArrayOutputStream();
                     ObjectOutputStream out = new ObjectOutputStream(bos);
-                    synchronized (DownloadController.ACCESSLOCK) {
+                    final boolean readL = DownloadController.getInstance().readLock();
+                    try {
                         /* MUST BE ARRAYLIST HERE */
                         ArrayList<FilePackage> ret = new ArrayList<FilePackage>(DownloadController.getInstance().getPackages());
                         out.writeObject(ret);
+                    } finally {
+                        DownloadController.getInstance().readUnlock(readL);
                     }
                     out.close();
 

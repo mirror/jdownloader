@@ -131,7 +131,7 @@ public abstract class PluginForHost extends Plugin implements FavIconRequestor {
             } catch (Exception e) {
                 e.printStackTrace();
             }
-            downloadController.fireDownloadLinkUpdate(link);
+            downloadController.fireDataUpdate(link);
 
             final String cc = new CaptchaController(this.getInitTime(), getHost(), method, file, defaultValue, explain).getCode(flag);
             if (cc == null) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
@@ -140,7 +140,7 @@ public abstract class PluginForHost extends Plugin implements FavIconRequestor {
             linkStatus.removeStatus(LinkStatus.WAITING_USERIO);
             linkStatus.setStatusText(status);
             linkStatus.setStatusIcon(null);
-            downloadController.fireDownloadLinkUpdate(link);
+            downloadController.fireDataUpdate(link);
         }
     }
 

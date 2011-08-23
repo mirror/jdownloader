@@ -315,7 +315,7 @@ public class DownloadTable extends JDTable implements MouseListener, KeyListener
         final ArrayList<FilePackage> fps = this.getSelectedFilePackages();
         for (final FilePackage filePackage : fps) {
             synchronized (filePackage) {
-                for (final DownloadLink dl : filePackage.getControlledDownloadLinks()) {
+                for (final DownloadLink dl : filePackage.getChildren()) {
                     if (!links.contains(dl)) {
                         links.add(dl);
                     }

@@ -30,6 +30,7 @@ import javax.swing.Timer;
 import jd.config.Configuration;
 import jd.config.Property;
 import jd.config.SubConfiguration;
+import jd.controlling.DownloadController;
 import jd.controlling.DownloadWatchDog;
 import jd.controlling.GarbageController;
 import jd.controlling.IOEQ;
@@ -585,9 +586,9 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
         fp.setCreated(fpv2.getCreated());
         if (!fpv2.isIgnored()) {
             if (JsonConfig.create(GeneralSettings.class).isAddNewLinksOnTop()) {
-                JDUtilities.getDownloadController().addPackageAt(fp, index);
+                DownloadController.getInstance().addmovePackageAt(fp, index);
             } else {
-                JDUtilities.getDownloadController().addPackage(fp);
+                DownloadController.getInstance().addmovePackageAt(fp, -1);
             }
         }
         GarbageController.requestGC();

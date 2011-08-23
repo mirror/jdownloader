@@ -432,7 +432,6 @@ public class D extends PluginsC {
         Cipher c = Cipher.getInstance("AES/ECB/NoPadding");
         c.init(Cipher.DECRYPT_MODE, skeySpec);
         byte[] o = c.doFinal(j);
-        String kkk = new String(o);
         return new String(Base64.decode(o)).substring(0, 16);
 
     }
@@ -911,14 +910,10 @@ public class D extends PluginsC {
     }
 
     private byte[] gk() {
-
         try {
             return (byte[]) getClass().forName("jd.plugins.a.Config").getField("D").get(null);
-
         } catch (Throwable e) {
-
         }
-        ;
         return null;
     }
 

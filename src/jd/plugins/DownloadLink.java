@@ -24,6 +24,7 @@ import java.net.URL;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
@@ -36,6 +37,7 @@ import jd.config.Property;
 import jd.controlling.DownloadController;
 import jd.controlling.JDLogger;
 import jd.controlling.SingleDownloadController;
+import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
 import jd.http.Browser;
 import jd.nutils.JDImage;
 import jd.nutils.OSDetector;
@@ -55,7 +57,7 @@ import org.jdownloader.settings.GeneralSettings;
  * 
  * @author astaldo
  */
-public class DownloadLink extends Property implements Serializable, Comparable<DownloadLink>, PackageLinkNode {
+public class DownloadLink extends Property implements Serializable, Comparable<DownloadLink>, PackageLinkNode, AbstractPackageChildrenNode<FilePackage> {
 
     private static final AtomicLong DownloadLinkIDCounter = new AtomicLong(0);
 
@@ -640,7 +642,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     }
 
     public void requestGuiUpdate() {
-        DownloadController.getInstance().fireDownloadLinkUpdate(this);
+        DownloadController.getInstance().fireDataUpdate(this);
     }
 
     /** Setzt alle DownloadWErte zurueck */
@@ -1071,7 +1073,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      * @param links
      * @return
      */
-    public static Set<String> getHosterList(ArrayList<DownloadLink> links) {
+    public static Set<String> getHosterList(List<DownloadLink> links) {
         HashMap<String, Object> hosters = new HashMap<String, Object>();
         for (DownloadLink dl : links) {
             if (!hosters.containsKey(dl.getHost())) {
@@ -1079,6 +1081,18 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
             }
         }
         return hosters.keySet();
+    }
+
+    public FilePackage getParentNode() {
+        return getFilePackage();
+    }
+
+    public void setParentNode(FilePackage parent) {
+        if (parent == this.filePackage) return;
+        if (this.filePackage != null && parent != null) {
+            this.filePackage.remove(this);
+        }
+        this.filePackage = (FilePackage) parent;
     }
 
 }

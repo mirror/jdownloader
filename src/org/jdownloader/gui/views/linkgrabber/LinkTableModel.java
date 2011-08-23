@@ -92,7 +92,8 @@ public abstract class LinkTableModel extends ExtTableModel<PackageLinkNode> {
                  * we use size of old table to minimize need to increase table
                  * size while adding nodes to it
                  */
-                synchronized (DownloadController.ACCESSLOCK) {
+                final boolean readL = DownloadController.getInstance().readLock();
+                try {
                     for (FilePackage fp : DownloadController.getInstance().getPackages()) {
                         if (mode != TOGGLEMODE.CURRENT) {
                             if (doToggle) {
@@ -106,6 +107,8 @@ public abstract class LinkTableModel extends ExtTableModel<PackageLinkNode> {
                             }
                         }
                     }
+                } finally {
+                    DownloadController.getInstance().readUnlock(readL);
                 }
                 if (tableChangesDone.incrementAndGet() != tableChangesReq.get()) {
                     System.out.println("skip tableMod_toggle");
@@ -138,7 +141,8 @@ public abstract class LinkTableModel extends ExtTableModel<PackageLinkNode> {
         } catch (final Exception e) {
             Log.exception(e);
         }
-        synchronized (DownloadController.ACCESSLOCK) {
+        final boolean readL = DownloadController.getInstance().readLock();
+        try {
             /* get all packages from controller */
             ArrayList<PackageLinkNode> packages = new ArrayList<PackageLinkNode>(DownloadController.getInstance().size());
             packages.addAll(DownloadController.getInstance().getPackages());
@@ -150,12 +154,14 @@ public abstract class LinkTableModel extends ExtTableModel<PackageLinkNode> {
                 if (!((FilePackage) node).isExpanded()) continue;
                 ArrayList<PackageLinkNode> files = null;
                 synchronized (node) {
-                    files = new ArrayList<PackageLinkNode>(((FilePackage) node).getControlledDownloadLinks());
+                    files = new ArrayList<PackageLinkNode>(((FilePackage) node).getChildren());
                     if (column != null) Collections.sort(files, column.getRowSorter());
                 }
                 newData.addAll(files);
             }
             return newData;
+        } finally {
+            DownloadController.getInstance().readUnlock(readL);
         }
     }
 }

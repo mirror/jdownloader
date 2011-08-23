@@ -43,7 +43,7 @@ public class DisableAction extends ContextMenuAction {
         for (DownloadLink link : links) {
             link.setEnabled(false);
         }
-        JDUtilities.getDownloadController().fireStructureUpdate();
+        JDUtilities.getDownloadController().fireDataUpdate();
     }
 
 }

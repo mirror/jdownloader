@@ -179,7 +179,6 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
             this.startTime = System.currentTimeMillis();
             linkStatus.setStatusText(_JDT._.gui_download_create_connection());
             fireControlEvent(ControlEvent.CONTROL_PLUGIN_ACTIVE, currentPlugin);
-            DownloadController.getInstance().fireDownloadLinkUpdate(downloadLink);
             currentPlugin.init();
             if ((downloadLink.getLinkStatus().getRetryCount()) <= currentPlugin.getMaxRetries()) {
                 try {
@@ -380,12 +379,12 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
                     link.getLinkStatus().addStatus(LinkStatus.ERROR_ALREADYEXISTS);
                     link.getLinkStatus().setErrorMessage(_JDT._.controller_status_fileexists_othersource(downloadLink.getHost()));
                     link.setEnabled(false);
-                    if (SwingGui.getInstance() != null) DownloadController.getInstance().fireDownloadLinkUpdate(link);
+                    if (SwingGui.getInstance() != null) DownloadController.getInstance().fireDataUpdate(link);
                 }
             }
         }
 
-        if (SwingGui.getInstance() != null) DownloadController.getInstance().fireDownloadLinkUpdate(downloadLink);
+        if (SwingGui.getInstance() != null) DownloadController.getInstance().fireDataUpdate(downloadLink);
         if (JDController.isContainerFile(new File(downloadLink.getFileOutput()))) {
             if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_RELOADCONTAINER, true)) {
                 JDController.loadContainerFile(new File(downloadLink.getFileOutput()));
@@ -419,13 +418,13 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
                 plugin.sleep(Math.max((int) downloadLink.getLinkStatus().getValue(), 2000), downloadLink);
             } catch (PluginException e) {
                 downloadLink.getLinkStatus().setStatusText(null);
-                if (SwingGui.getInstance() != null) DownloadController.getInstance().fireDownloadLinkUpdate(downloadLink);
+                if (SwingGui.getInstance() != null) DownloadController.getInstance().fireDataUpdate(downloadLink);
                 return;
             }
         } else {
             downloadLink.getLinkStatus().addStatus(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (SwingGui.getInstance() != null) DownloadController.getInstance().fireDownloadLinkUpdate(downloadLink);
+        if (SwingGui.getInstance() != null) DownloadController.getInstance().fireDataUpdate(downloadLink);
     }
 
     private void onErrorChunkloadFailed(DownloadLink downloadLink, PluginForHost plugin) {
@@ -533,7 +532,7 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
                 status.setErrorMessage(_JDT._.controller_status_fileexists_overwritefailed() + downloadLink.getFileOutput());
             }
         }
-        if (SwingGui.getInstance() != null) DownloadController.getInstance().fireDownloadLinkUpdate(downloadLink);
+        if (SwingGui.getInstance() != null) DownloadController.getInstance().fireDataUpdate(downloadLink);
     }
 
     /**
@@ -622,7 +621,7 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
             /* plugin can evaluate retrycount and act differently then */
             downloadLink.getLinkStatus().setRetryCount(downloadLink.getLinkStatus().getRetryCount() + 1);
         }
-        if (SwingGui.getInstance() != null) DownloadController.getInstance().fireDownloadLinkUpdate(downloadLink);
+        if (SwingGui.getInstance() != null) DownloadController.getInstance().fireDataUpdate(downloadLink);
     }
 
     private void onErrorHostTemporarilyUnavailable(DownloadLink downloadLink, PluginForHost plugin) {
@@ -638,7 +637,7 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
             /* set remaining waittime for host-temp unavailable */
             proxyInfo.setRemainingTempUnavail(plugin.getHost(), milliSeconds);
         }
-        if (SwingGui.getInstance() != null) DownloadController.getInstance().fireDownloadLinkUpdate(downloadLink);
+        if (SwingGui.getInstance() != null) DownloadController.getInstance().fireDataUpdate(downloadLink);
     }
 
     /**
@@ -663,7 +662,7 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
             /* set remaining waittime for host-temp unavailable */
             proxyInfo.setRemainingIPBlockWaittime(plugin.getHost(), milliSeconds);
         }
-        if (SwingGui.getInstance() != null) DownloadController.getInstance().fireDownloadLinkUpdate(downloadLink);
+        if (SwingGui.getInstance() != null) DownloadController.getInstance().fireDataUpdate(downloadLink);
     }
 
     /*

@@ -293,89 +293,91 @@ public class Serverhandler implements Handler {
             // Get number of all DLs in DL-list
 
             int counter = 0;
-
-            for (final FilePackage fp : JDUtilities.getController().getPackages()) {
-                counter += fp.size();
+            final boolean readL = DownloadController.getInstance().readLock();
+            try {
+                for (final FilePackage fp : DownloadController.getInstance().getPackages()) {
+                    counter += fp.size();
+                }
+            } finally {
+                DownloadController.getInstance().readUnlock(readL);
             }
-
             response.addContent(counter);
         } else if (requestUrl.equals("/get/downloads/current/count")) {
             // Get number of current DLs
 
-            int counter = 0;
-            synchronized (DownloadController.ACCESSLOCK) {
-                for (final FilePackage fp : JDUtilities.getController().getPackages()) {
-                    synchronized (fp) {
-                        for (final DownloadLink dl : fp.getControlledDownloadLinks()) {
-                            if (dl.getLinkStatus().isPluginActive()) {
-                                counter++;
-                            }
-                        }
-                    }
-                }
-            }
-
-            response.addContent(counter);
+            response.addContent(DownloadWatchDog.getInstance().getActiveDownloads());
         } else if (requestUrl.equals("/get/downloads/finished/count")) {
             // Get number of finished DLs
 
             int counter = 0;
-            synchronized (DownloadController.ACCESSLOCK) {
-                for (final FilePackage fp : JDUtilities.getController().getPackages()) {
+            final boolean readL = DownloadController.getInstance().readLock();
+            try {
+                for (final FilePackage fp : DownloadController.getInstance().getPackages()) {
                     synchronized (fp) {
-                        for (final DownloadLink dl : fp.getControlledDownloadLinks()) {
+                        for (final DownloadLink dl : fp.getChildren()) {
                             if (dl.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
                                 counter++;
                             }
                         }
                     }
                 }
+            } finally {
+                DownloadController.getInstance().readUnlock(readL);
             }
 
             response.addContent(counter);
         } else if (requestUrl.equals("/get/downloads/all/list")) {
             // Get DLList
-            synchronized (DownloadController.ACCESSLOCK) {
-                for (final FilePackage fp : JDUtilities.getController().getPackages()) {
+            final boolean readL = DownloadController.getInstance().readLock();
+            try {
+                for (final FilePackage fp : DownloadController.getInstance().getPackages()) {
                     final Element fp_xml = this.addFilePackage(xml, fp);
                     synchronized (fp) {
-                        for (final DownloadLink dl : fp.getControlledDownloadLinks()) {
+                        for (final DownloadLink dl : fp.getChildren()) {
                             fp_xml.appendChild(this.addDownloadLink(xml, dl));
                         }
                     }
                 }
+            } finally {
+                DownloadController.getInstance().readUnlock(readL);
             }
 
             response.addContent(xml);
         } else if (requestUrl.equals("/get/downloads/current/list")) {
             // Get current DLs
-            synchronized (DownloadController.ACCESSLOCK) {
-                for (final FilePackage fp : JDUtilities.getController().getPackages()) {
+            final boolean readL = DownloadController.getInstance().readLock();
+            try {
+                for (final FilePackage fp : DownloadController.getInstance().getPackages()) {
                     final Element fp_xml = this.addFilePackage(xml, fp);
                     synchronized (fp) {
-                        for (final DownloadLink dl : fp.getControlledDownloadLinks()) {
+                        for (final DownloadLink dl : fp.getChildren()) {
                             if (dl.getLinkStatus().isPluginActive()) {
                                 fp_xml.appendChild(this.addDownloadLink(xml, dl));
                             }
                         }
                     }
                 }
+            } finally {
+                DownloadController.getInstance().readUnlock(readL);
             }
 
             response.addContent(xml);
         } else if (requestUrl.equals("/get/downloads/finished/list")) {
             // Get finished DLs
-            synchronized (DownloadController.ACCESSLOCK) {
-                for (final FilePackage fp : JDUtilities.getController().getPackages()) {
+            final boolean readL = DownloadController.getInstance().readLock();
+            try {
+                for (final FilePackage fp : DownloadController.getInstance().getPackages()) {
                     final Element fp_xml = this.addFilePackage(xml, fp);
                     synchronized (fp) {
-                        for (final DownloadLink dl : fp.getControlledDownloadLinks()) {
+                        for (final DownloadLink dl : fp.getChildren()) {
                             if (dl.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
                                 fp_xml.appendChild(this.addDownloadLink(xml, dl));
                             }
                         }
                     }
                 }
+            } finally {
+                DownloadController.getInstance().readUnlock(readL);
             }
 
             response.addContent(xml);
@@ -536,9 +538,8 @@ public class Serverhandler implements Handler {
                     try {
                         Thread.sleep(5000);
                     } catch (final InterruptedException e) {
-                        JDLogger.exception(e);
                     }
-                    JDUtilities.getController().exit();
+                    RestartController.getInstance().exit();
                 }
             }).start();
         } else if (requestUrl.matches("(?is).*/action/add/links/.+")) {
@@ -1048,8 +1049,11 @@ public class Serverhandler implements Handler {
         } else if (requestUrl.matches("(?is).*/action/downloads/removeall")) {
             // remove all packages in download list
             ArrayList<FilePackage> packages = null;
-            synchronized (DownloadController.ACCESSLOCK) {
+            boolean readL = DownloadController.getInstance().readLock();
+            try {
                 packages = new ArrayList<FilePackage>(DownloadController.getInstance().getPackages());
+            } finally {
+                DownloadController.getInstance().readUnlock(readL);
             }
             for (final FilePackage fp : packages) {
                 DownloadController.getInstance().removePackage(fp);
@@ -1062,8 +1066,11 @@ public class Serverhandler implements Handler {
             ArrayList<FilePackage> packages = null;
             final ArrayList<FilePackage> removelist = new ArrayList<FilePackage>();
             final String[] packagenames = this.getHTMLDecoded(new Regex(requestUrl, ".*/action/downloads/remove/(.+)").getMatch(0).split("/"));
-            synchronized (DownloadController.ACCESSLOCK) {
+            final boolean readL = DownloadController.getInstance().readLock();
+            try {
                 packages = new ArrayList<FilePackage>(DownloadController.getInstance().getPackages());
+            } finally {
+                DownloadController.getInstance().readUnlock(readL);
             }
 
             final int packagesSize = packages.size();

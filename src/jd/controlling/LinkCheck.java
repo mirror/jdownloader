@@ -165,7 +165,7 @@ public class LinkCheck implements ActionListener, ProgressControllerListener {
                 pc.increase(hosterList.size());
             }
         }
-        DownloadController.getInstance().fireDownloadLinkUpdate(hosterList);
+        DownloadController.getInstance().fireDataUpdate(hosterList);
     }
 
     private void startLinkCheck() {

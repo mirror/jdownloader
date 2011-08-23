@@ -4,6 +4,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 
 import org.appwork.utils.event.queue.Queue;
+import org.appwork.utils.logging.Log;
 
 /**
  * InOrderExecutionQueue, use this Queue to enqueue Actions that should be run
@@ -18,6 +19,7 @@ public class IOEQ {
     private static final Queue                   INSTANCE    = new Queue("InOrderExcecutionQueue") {
                                                                  @Override
                                                                  public void killQueue() {
+                                                                     Log.exception(new Throwable("YOU CANNOT KILL ME!"));
                                                                      /*
                                                                       * this
                                                                       * queue

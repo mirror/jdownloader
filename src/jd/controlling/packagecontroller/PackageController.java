@@ -9,6 +9,9 @@ import java.util.ListIterator;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock.ReadLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock.WriteLock;
 
 import jd.controlling.IOEQ;
 
@@ -22,7 +25,11 @@ public abstract class PackageController<E extends AbstractPackageNode<V, E>, V e
         return structureChanged.get();
     }
 
-    protected LinkedList<E> packages = new LinkedList<E>();
+    protected LinkedList<E>              packages  = new LinkedList<E>();
+
+    private final ReentrantReadWriteLock lock      = new ReentrantReadWriteLock();
+    private final ReadLock               readLock  = this.lock.readLock();
+    private final WriteLock              writeLock = this.lock.writeLock();
 
     /**
      * add a Package at given position position in this PackageController. in
@@ -39,20 +46,22 @@ public abstract class PackageController<E extends AbstractPackageNode<V, E>, V e
                 @Override
                 protected Void run() throws RuntimeException {
                     boolean isNew = true;
-                    synchronized (PackageController.this) {
-                        /**
-                         * iterate through all packages, remove the existing one
-                         * and add at given position
-                         */
-                        PackageController<E, V> controller = pkg.getControlledBy();
-                        boolean need2Remove = false;
-                        if (PackageController.this == controller) {
-                            /* we have to reposition the package */
-                            need2Remove = true;
-                        } else if (controller != null) {
-                            /* remove package from another controller */
-                            controller.removePackage(pkg);
-                        }
+
+                    /**
+                     * iterate through all packages, remove the existing one and
+                     * add at given position
+                     */
+                    PackageController<E, V> controller = pkg.getControlledBy();
+                    boolean need2Remove = false;
+                    if (PackageController.this == controller) {
+                        /* we have to reposition the package */
+                        need2Remove = true;
+                    } else if (controller != null) {
+                        /* remove package from another controller */
+                        controller.removePackage(pkg);
+                    }
+                    writeLock();
+                    try {
                         ListIterator<E> li = packages.listIterator();
                         int counter = 0;
                         boolean done = false;
@@ -81,6 +90,8 @@ public abstract class PackageController<E extends AbstractPackageNode<V, E>, V e
                             packages.addLast(pkg);
                         }
                         pkg.setControlledBy(PackageController.this);
+                    } finally {
+                        writeUnlock();
                     }
                     structureChanged.incrementAndGet();
                     if (isNew) {
@@ -95,9 +106,7 @@ public abstract class PackageController<E extends AbstractPackageNode<V, E>, V e
     }
 
     public int size() {
-        synchronized (PackageController.this) {
-            return packages.size();
-        }
+        return packages.size();
     }
 
     /* remove the Package from this PackageController */
@@ -114,18 +123,21 @@ public abstract class PackageController<E extends AbstractPackageNode<V, E>, V e
                         Log.exception(new Throwable("NO CONTROLLER!!!"));
                         return null;
                     }
-                    synchronized (controller) {
-                        if (pkg.getControlledBy() != null) {
-                            if (PackageController.this != pkg.getControlledBy()) {
-                                /* this should never happen */
-                                Log.exception(new Throwable("removing a package which is not controlled by this controller?!?!?"));
-                            }
-                            pkg.setControlledBy(null);
+                    if (pkg.getControlledBy() != null) {
+                        if (PackageController.this != pkg.getControlledBy()) {
+                            /* this should never happen */
+                            Log.exception(new Throwable("removing a package which is not controlled by this controller?!?!?"));
+                        }
+                        pkg.setControlledBy(null);
+                        writeLock();
+                        try {
                             removed = packages.remove(pkg);
+                        } finally {
+                            writeUnlock();
                         }
-                        synchronized (pkg) {
-                            remove = new ArrayList<V>(pkg.getChildren());
-                        }
+                    }
+                    synchronized (pkg) {
+                        remove = new ArrayList<V>(pkg.getChildren());
                     }
                     if (removed && remove != null) {
                         controller._controllerParentlessLinks(remove);
@@ -177,7 +189,8 @@ public abstract class PackageController<E extends AbstractPackageNode<V, E>, V e
                         PackageController<E, V> controller = cpkg.getControlledBy();
                         controller.removeChildren(cpkg, next.getValue(), false);
                     }
-                    synchronized (PackageController.this) {
+                    writeLock();
+                    try {
                         synchronized (pkg) {
                             List<V> pkgchildren = pkg.getChildren();
                             /* remove all */
@@ -193,6 +206,8 @@ public abstract class PackageController<E extends AbstractPackageNode<V, E>, V e
                                 child.setParentNode(pkg);
                             }
                         }
+                    } finally {
+                        writeUnlock();
                     }
                     structureChanged.incrementAndGet();
                     _controllerStructureChanged();
@@ -221,7 +236,8 @@ public abstract class PackageController<E extends AbstractPackageNode<V, E>, V e
                         Log.exception(new Throwable("NO CONTROLLER!!!"));
                         return null;
                     }
-                    synchronized (controller) {
+                    writeLock();
+                    try {
                         synchronized (pkg) {
                             List<V> pkgchildren = pkg.getChildren();
                             Iterator<V> it = links.iterator();
@@ -243,6 +259,8 @@ public abstract class PackageController<E extends AbstractPackageNode<V, E>, V e
                                 }
                             }
                         }
+                    } finally {
+                        writeUnlock();
                     }
                     if (links.size() > 0) {
                         controller.structureChanged.incrementAndGet();
@@ -264,4 +282,33 @@ public abstract class PackageController<E extends AbstractPackageNode<V, E>, V e
     abstract protected void _controllerStructureChanged();
 
     abstract protected void _controllerPackageNodeAdded(E pkg);
+
+    public boolean readLock() {
+        if (!this.writeLock.isHeldByCurrentThread()) {
+            this.readLock.lock();
+            return true;
+        }
+        return false;
+    }
+
+    public void readUnlock(boolean state) {
+        if (state == false) return;
+        readUnlock();
+    }
+
+    public void readUnlock() {
+        try {
+            this.readLock.unlock();
+        } catch (final IllegalMonitorStateException e) {
+            Log.exception(e);
+        }
+    }
+
+    public void writeLock() {
+        this.writeLock.lock();
+    }
+
+    public void writeUnlock() {
+        this.writeLock.unlock();
+    }
 }

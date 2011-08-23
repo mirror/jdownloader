@@ -137,7 +137,7 @@ public class J extends PluginsC {
                 pack.setName(p.getName());
                 pack.setPassword(p.getPassword());
 
-                for (DownloadLink l : p.getControlledDownloadLinks()) {
+                for (DownloadLink l : p.getChildren()) {
                     /*
                      * TODO: bad idea, cause direct http links wont work here
                      * also many other hosts will not, we should use hoster name

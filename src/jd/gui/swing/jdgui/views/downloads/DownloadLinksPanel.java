@@ -27,16 +27,14 @@ import javax.swing.Timer;
 import jd.controlling.DownloadController;
 import jd.controlling.DownloadController.MOVE;
 import jd.controlling.DownloadControllerEvent;
-import jd.controlling.DownloadControllerListener;
 import jd.controlling.JDLogger;
 import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
 
-public class DownloadLinksPanel extends SwitchPanel implements ActionListener, DownloadControllerListener {
+public class DownloadLinksPanel extends SwitchPanel implements ActionListener {
 
     private static final long         serialVersionUID                        = -6029423913449902141L;
 
@@ -76,7 +74,6 @@ public class DownloadLinksPanel extends SwitchPanel implements ActionListener, D
         scrollPane.setBorder(null);
 
         this.add(scrollPane, "cell 0 0");
-        JDUtilities.getDownloadController().addListener(this);
         asyncUpdate = new Timer(UPDATE_TIMING, this);
         latestAsyncUpdate = 0;
         asyncUpdate.setInitialDelay(UPDATE_TIMING);
@@ -169,7 +166,6 @@ public class DownloadLinksPanel extends SwitchPanel implements ActionListener, D
 
     public void onShow() {
         updateTableTask(REFRESH_DATA_AND_STRUCTURE_CHANGED_FAST, null);
-        JDUtilities.getDownloadController().addListener(this);
         internalTable.removeKeyListener(internalTable);
         internalTable.addKeyListener(internalTable);
         notvisible = false;
@@ -177,7 +173,6 @@ public class DownloadLinksPanel extends SwitchPanel implements ActionListener, D
 
     public void onHide() {
         notvisible = true;
-        JDUtilities.getDownloadController().removeListener(this);
         asyncUpdate.stop();
         internalTable.removeKeyListener(internalTable);
     }
@@ -282,24 +277,7 @@ public class DownloadLinksPanel extends SwitchPanel implements ActionListener, D
     }
 
     public void onDownloadControllerEvent(DownloadControllerEvent event) {
-        switch (event.getEventID()) {
-        case DownloadControllerEvent.REMOVE_FILPACKAGE:
-            if (filePackageInfo.getPackage() != null && filePackageInfo.getPackage() == ((FilePackage) event.getParameter())) {
-                this.hideFilePackageInfo();
-            }
-            break;
-        case DownloadControllerEvent.REMOVE_DOWNLOADLINK:
-            if (filePackageInfo.getDownloadLink() != null && filePackageInfo.getDownloadLink() == ((DownloadLink) event.getParameter())) {
-                this.hideFilePackageInfo();
-            }
-            break;
-        case DownloadControllerEvent.REFRESH_STRUCTURE:
-            updateTableTask(REFRESH_DATA_AND_STRUCTURE_CHANGED, null);
-            break;
-        case DownloadControllerEvent.REFRESH_SPECIFIC:
-            updateTableTask(REFRESH_SPECIFIED_LINKS, event.getParameter());
-            break;
-        }
+
     }
 
     public JScrollPane getScrollPane() {

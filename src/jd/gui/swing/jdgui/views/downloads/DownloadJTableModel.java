@@ -54,16 +54,19 @@ public class DownloadJTableModel extends JDTableModel {
     }
 
     public void refreshModel() {
-        synchronized (DownloadController.ACCESSLOCK) {
+        final boolean readL = DownloadController.getInstance().readLock();
+        try {
             list.clear();
             for (FilePackage fp : DownloadController.getInstance().getPackages()) {
                 list.add(fp);
                 if (fp.isExpanded()) {
                     synchronized (fp) {
-                        list.addAll(fp.getControlledDownloadLinks());
+                        list.addAll(fp.getChildren());
                     }
                 }
             }
+        } finally {
+            DownloadController.getInstance().readUnlock(readL);
         }
     }
 }

@@ -113,7 +113,7 @@ public class HosterColumn extends ExtColumn<PackageLinkNode> {
         if (value instanceof FilePackage) {
 
             int i = 0;
-            for (String hoster : DownloadLink.getHosterList(((FilePackage) value).getControlledDownloadLinks())) {
+            for (String hoster : DownloadLink.getHosterList(((FilePackage) value).getChildren())) {
                 if (i == maxIcons) break;
                 labels[i].setVisible(true);
 

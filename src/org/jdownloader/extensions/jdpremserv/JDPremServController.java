@@ -54,22 +54,22 @@ public class JDPremServController {
 
     public synchronized void cleanUp() {
         final LinkedList<DownloadLink> remove = new LinkedList<DownloadLink>();
-        synchronized (DownloadController.ACCESSLOCK) {
-            synchronized (this.premServFilePackage) {
-                for (final DownloadLink link : this.premServFilePackage.getControlledDownloadLinks()) {
-                    Long last = this.lastAccessLinks.get(link);
-                    if (last == null) {
-                        last = 0l;
-                    }
-                    Integer reqs = this.requestedDownloads.get(link);
-                    if (reqs == null) {
-                        reqs = 0;
-                    }
-                    if (reqs == 0 && last + 1000 * 60 * 10 < System.currentTimeMillis()) {
-                        remove.add(link);
-                    }
+
+        synchronized (this.premServFilePackage) {
+            for (final DownloadLink link : this.premServFilePackage.getChildren()) {
+                Long last = this.lastAccessLinks.get(link);
+                if (last == null) {
+                    last = 0l;
+                }
+                Integer reqs = this.requestedDownloads.get(link);
+                if (reqs == null) {
+                    reqs = 0;
+                }
+                if (reqs == 0 && last + 1000 * 60 * 10 < System.currentTimeMillis()) {
+                    remove.add(link);
                 }
             }
+
         }
         for (DownloadLink link : remove) {
             link.deleteFile(true, true);
@@ -94,7 +94,7 @@ public class JDPremServController {
             retLink = null;
             /* search premservfilepackage for downloadlink with this url */
             synchronized (premServFilePackage) {
-                for (final DownloadLink current : this.premServFilePackage.getControlledDownloadLinks()) {
+                for (final DownloadLink current : this.premServFilePackage.getChildren()) {
                     if (current.getDownloadURL().equalsIgnoreCase(hostUrl)) {
                         retLink = current;
                         break;
@@ -127,22 +127,25 @@ public class JDPremServController {
     /* get the filepackage to use for jdpremserv */
     private FilePackage getPremServFilePackage() {
         FilePackage found = null;
-        synchronized (DownloadController.ACCESSLOCK) {
+        final boolean readL = DownloadController.getInstance().readLock();
+        try {
             for (final FilePackage current : DownloadController.getInstance().getPackages()) {
                 if (current.getName().equalsIgnoreCase(JDPremServController.PackageName)) {
                     found = current;
                     break;
                 }
             }
-            if (found == null) {
-                found = FilePackage.getInstance();
-                found.setName(JDPremServController.PackageName);
-            }
+        } finally {
+            DownloadController.getInstance().readUnlock(readL);
+        }
+        if (found == null) {
+            found = FilePackage.getInstance();
+            found.setName(JDPremServController.PackageName);
         }
         /* we dont want postprocessing for this filepackage */
         found.setPostProcessing(false);
         synchronized (found) {
-            for (final DownloadLink link : found.getControlledDownloadLinks()) {
+            for (final DownloadLink link : found.getChildren()) {
                 this.lastAccessLinks.put(link, System.currentTimeMillis());
             }
         }
