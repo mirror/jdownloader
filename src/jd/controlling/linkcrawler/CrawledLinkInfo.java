@@ -1,13 +1,15 @@
 package jd.controlling.linkcrawler;
 
+import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 
-public class CrawledLinkInfo {
+public class CrawledLinkInfo implements AbstractPackageChildrenNode<CrawledPackageInfo> {
 
-    private PluginForDecrypt dPlugin = null;
+    private CrawledPackageInfo parent  = null;
+    private PluginForDecrypt   dPlugin = null;
 
     /**
      * @return the dPlugin
@@ -85,5 +87,13 @@ public class CrawledLinkInfo {
         if (dlLink != null) return "DLLink:" + getURL();
         if (cLink != null) return "CLink:" + getURL();
         return null;
+    }
+
+    public CrawledPackageInfo getParentNode() {
+        return parent;
+    }
+
+    public void setParentNode(CrawledPackageInfo parent) {
+        this.parent = parent;
     }
 }
