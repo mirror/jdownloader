@@ -21,9 +21,7 @@ public abstract class LinkTableModel extends ExtTableModel<PackageLinkNode> {
     private static final long serialVersionUID = 1L;
 
     public static enum TOGGLEMODE {
-        CURRENT,
-        TOP,
-        BOTTOM
+        CURRENT, TOP, BOTTOM
     }
 
     public LinkTableModel(String id) {

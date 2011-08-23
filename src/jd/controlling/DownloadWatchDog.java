@@ -922,6 +922,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                                 final boolean readL = DownloadController.getInstance().readLock();
                                 try {
                                     fps.addAll(DownloadController.getInstance().getPackages());
+                                    lastChange = DownloadController.getInstance().getPackageControllerChanges();
                                 } finally {
                                     DownloadController.getInstance().readUnlock(readL);
                                 }

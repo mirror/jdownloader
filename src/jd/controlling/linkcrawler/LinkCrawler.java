@@ -4,6 +4,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -270,6 +271,7 @@ public class LinkCrawler {
                                 /* TODO: package handling, info forwarding */
                                 ArrayList<DownloadLink> hosterLinks = plg.getDownloadLinks(url, null);
                                 if (hosterLinks != null) {
+                                    forwardDownloadLinkInfos(possibleCryptedLink.getDownloadLink(), hosterLinks);
                                     for (DownloadLink hosterLink : hosterLinks) {
                                         handleFinalLink(new CrawledLinkInfo(hosterLink));
                                     }
@@ -290,6 +292,7 @@ public class LinkCrawler {
                             /* TODO: package handling, info forwarding */
                             ArrayList<DownloadLink> httpLinks = directHTTP.getDownloadLinks(url, null);
                             if (httpLinks != null) {
+                                forwardDownloadLinkInfos(possibleCryptedLink.getDownloadLink(), httpLinks);
                                 for (DownloadLink hosterLink : httpLinks) {
                                     handleFinalLink(new CrawledLinkInfo(hosterLink));
                                 }
@@ -302,6 +305,28 @@ public class LinkCrawler {
             }
         } finally {
             checkFinishNotify();
+        }
+    }
+
+    protected void forwardDownloadLinkInfos(DownloadLink source, List<DownloadLink> dests) {
+        if (source == null || dests == null || dests.size() == 0) return;
+        source.getFilePackage().remove(source);
+        for (DownloadLink dl : dests) {
+            dl.addSourcePluginPasswordList(source.getSourcePluginPasswordList());
+            dl.setSourcePluginComment(source.getSourcePluginComment());
+            dl.setName(source.getName());
+            dl.forceFileName(source.getForcedFileName());
+            dl.setFinalFileName(source.getFinalFileName());
+            dl.setBrowserUrl(source.getBrowserUrl());
+            if (source.isAvailabilityStatusChecked()) {
+                dl.setAvailable(source.isAvailable());
+            }
+            if (!source.getProperties().isEmpty()) {
+                dl.setProperties(new HashMap<String, Object>(source.getProperties()));
+            }
+            dl.getLinkStatus().setStatusText(source.getLinkStatus().getStatusString());
+            dl.setDownloadSize(source.getDownloadSize());
+            dl.setSubdirectory(source);
         }
     }
 

@@ -60,19 +60,10 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
     }
 
     public static enum MOVE {
-        BEFORE,
-        AFTER,
-        BEGIN,
-        END,
-        TOP,
-        BOTTOM,
-        UP,
-        DOWN
+        BEFORE, AFTER, BEGIN, END, TOP, BOTTOM, UP, DOWN
     }
 
     private transient DownloadControllerBroadcaster broadcaster = new DownloadControllerBroadcaster();
-
-    private LinkedList<FilePackage>                 packages;
 
     private DelayedRunnable                         asyncSaving = null;
     private static DownloadController               INSTANCE    = new DownloadController();
@@ -544,6 +535,7 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
     @Override
     protected void _controllerPackageNodeAdded(FilePackage pkg) {
         asyncSaving.run();
+        broadcaster.fireEvent(new DownloadControllerEvent(this, DownloadControllerEvent.REFRESH_STRUCTURE));
     }
 
 }
