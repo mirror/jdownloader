@@ -607,3 +607,4 @@ jd/plugins/hoster/AddatHu.class
 jd/plugins/hoster/NextGenVidzCom.class
 jd/plugins/hoster/MegaShareVn.class
 jd/plugins/hoster/XFilesKz.class
+jd/plugins/decrypter/UltraPrtcCom.java

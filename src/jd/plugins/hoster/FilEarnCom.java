@@ -52,6 +52,8 @@ public class FilEarnCom extends PluginForHost {
         return "http://www.filearn.com/legal/tos";
     }
 
+    private static final String TOOMANYSIMLUTANDOWNLOADS = ">Only premium users can download more than one file at a time";
+
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
@@ -92,7 +94,7 @@ public class FilEarnCom extends PluginForHost {
             dllink = null;
         }
         if (dllink == null) {
-            if (br.containsHTML(">Only premium users can download more than one file at a time")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Too many simultan downloads", 5 * 60 * 1000l);
+            if (br.containsHTML(TOOMANYSIMLUTANDOWNLOADS)) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Too many simultan downloads", 5 * 60 * 1000l);
             String jsCrap = br.getRegex("</span></code>[\t\n\r ]+<div>[\t\n\r ]+<script language=\"javascript\">[\t\n\r ]+function [A-Za-z0-9]+\\(iioo\\) \\{(.*?return .*?;)").getMatch(0);
             if (jsCrap == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             String action = br.getRegex("\"(http://(www\\.)?filearn\\.com/files/gen/.*?)\"").getMatch(0);
@@ -129,7 +131,8 @@ public class FilEarnCom extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
-            if (br.containsHTML("(>Download link does not exist|>An Error Was Encountered<)")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 3 * 60 * 1000l);
+            if (br.containsHTML(TOOMANYSIMLUTANDOWNLOADS)) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Too many simultan downloads", 5 * 60 * 1000l);
+            if (br.containsHTML("(>Download link does not exist|>An Error Was Encountered<)")) throw new PluginException(LinkStatus.ERROR_RETRY, "Server error");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         downloadLink.setProperty("dllink", dllink);

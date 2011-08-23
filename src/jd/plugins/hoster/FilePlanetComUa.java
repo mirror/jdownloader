@@ -63,11 +63,6 @@ public class FilePlanetComUa extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(false);
-        // First check over their linkchecker because we cannot find out the
-        // status directly over the link
-        this.checkLinks(new DownloadLink[] { link });
-        if (!link.isAvailabilityStatusChecked()) return AvailableStatus.UNCHECKED;
-        if (link.isAvailabilityStatusChecked() && !link.isAvailable()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         br.setCookie(COOKIE_HOST, "lang", "english");
         br.getPage(link.getDownloadURL());
         doSomething();
@@ -99,10 +94,7 @@ public class FilePlanetComUa extends PluginForHost {
         if (filesize == null) {
             filesize = new Regex(brbefore, "\\(([0-9]+ bytes)\\)").getMatch(0);
             if (filesize == null) {
-                filesize = new Regex(brbefore, "</font>[ ]+\\((.*?)\\)(.*?)</font>").getMatch(0);
-                if (filesize == null) {
-                    filesize = new Regex(brbefore, "Size: (.*?)</font>").getMatch(0);
-                }
+                filesize = new Regex(brbefore, ">Size:</font> <b>(.*?)</b><").getMatch(0);
             }
         }
         if (filename == null || filename.equals("")) {
@@ -299,7 +291,7 @@ public class FilePlanetComUa extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 1;
+        return 4;
     }
 
     public String handlePassword(String passCode, Form pwform, DownloadLink thelink) throws IOException, PluginException {
@@ -400,54 +392,6 @@ public class FilePlanetComUa extends PluginForHost {
         for (String fun : someStuff) {
             brbefore = brbefore.replace(fun, "");
         }
-    }
-
-    public boolean checkLinks(DownloadLink[] urls) {
-        if (urls == null || urls.length == 0) { return false; }
-        br.setCookie(COOKIE_HOST, "lang", "english");
-        try {
-            ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
-            int index = 0;
-            StringBuilder sb = new StringBuilder();
-            while (true) {
-                sb.delete(0, sb.capacity());
-                sb.append("links=");
-                links.clear();
-                while (true) {
-                    /* we test 100 links at once */
-                    if (index == urls.length || links.size() > 100) break;
-                    links.add(urls[index]);
-                    index++;
-                }
-                int c = 0;
-                for (DownloadLink dl : links) {
-                    /*
-                     * append fake filename, because api will not report
-                     * anything else
-                     */
-                    if (c > 0) sb.append("%0D%0A");
-                    sb.append(dl.getDownloadURL());
-                    c++;
-                }
-                br.postPage("http://fileplanet.com.ua/checkfiles.html", "op=checkfiles&process=URLs+pr%C3%BCfen&list=" + sb.toString());
-                for (DownloadLink dl : links) {
-                    String linkpart = new Regex(dl.getDownloadURL(), "fileplanet\\.com\\.ua/([a-z0-9]+)").getMatch(0);
-                    if (linkpart == null) {
-                        logger.warning(this.getHost() + " availablecheck is broken!");
-                        return false;
-                    }
-                    if (br.containsHTML(linkpart + " not found") || !br.containsHTML(linkpart + " found")) {
-                        dl.setAvailable(false);
-                    } else {
-                        dl.setAvailable(true);
-                    }
-                }
-                if (index == urls.length) break;
-            }
-        } catch (Exception e) {
-            return false;
-        }
-        return true;
     }
 
     @Override

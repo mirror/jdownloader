@@ -19,6 +19,8 @@ package jd.plugins.hoster;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.regex.Pattern;
@@ -26,6 +28,8 @@ import java.util.regex.Pattern;
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
+import jd.http.Cookie;
+import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -54,7 +58,7 @@ public class XFileSharingProBasic extends PluginForHost {
         // this.enablePremium(COOKIE_HOST + "/premium.html");
     }
 
-    // XfileSharingProBasic Version 2.4.0.2
+    // XfileSharingProBasic Version 2.5.0.2
     // This is only for developers to easily implement hosters using the
     // "xfileshare(pro)" script (more informations can be found on
     // xfilesharing.net)!
@@ -69,6 +73,7 @@ public class XFileSharingProBasic extends PluginForHost {
     public boolean              NOPREMIUM           = false;
     private static final String MAINTENANCE         = ">This server is in maintenance mode";
     private static final String MAINTENANCEUSERTEXT = "This server is under Maintenance";
+    private static final Object LOCK                = new Object();
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
@@ -125,7 +130,7 @@ public class XFileSharingProBasic extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    public void doFree(DownloadLink downloadLink, boolean resumable, int maxchunks) throws Exception, PluginException {
+    public void doFree(DownloadLink downloadLink, boolean resumable, int maxchunks, boolean checkFastWay) throws Exception, PluginException {
         String passCode = null;
         if (BRBEFORE.contains("\"download1\"")) {
             br.postPage(downloadLink.getDownloadURL(), "op=download1&usr_login=&id=" + new Regex(downloadLink.getDownloadURL(), COOKIE_HOST.replace("http://", "") + "/" + "([a-z0-9]{12})").getMatch(0) + "&fname=" + Encoding.urlEncode(downloadLink.getName()) + "&referer=&method_free=Free+Download");
@@ -138,24 +143,26 @@ public class XFileSharingProBasic extends PluginForHost {
             logger.info("Found md5hash: " + md5hash);
             downloadLink.setMD5Hash(md5hash);
         }
-        br.setFollowRedirects(false);
-        Browser br2 = br.cloneBrowser();
-        String dllink = downloadLink.getStringProperty("freelink");
-        try {
-            if (dllink != null) {
-                URLConnectionAdapter con = br2.openGetConnection(dllink);
-                if (con.getContentType().contains("html")) {
-                    downloadLink.setProperty("freelink", Property.NULL);
-                    dllink = null;
+        String dllink = null;
+        if (checkFastWay) {
+            dllink = downloadLink.getStringProperty("freelink");
+            try {
+                if (dllink != null) {
+                    Browser br2 = br.cloneBrowser();
+                    URLConnectionAdapter con = br2.openGetConnection(dllink);
+                    if (con.getContentType().contains("html")) {
+                        downloadLink.setProperty("freelink", Property.NULL);
+                        dllink = null;
+                    }
+                    con.disconnect();
                 }
-                con.disconnect();
+            } catch (Exception e) {
+                dllink = null;
             }
-        } catch (Exception e) {
-            dllink = null;
         }
         // Videolinks can already be found here, if a link is found here we can
         // skip waittimes and captchas
-        dllink = getDllink();
+        if (dllink == null) dllink = getDllink();
         if (dllink == null) {
             Form dlForm = br.getFormbyProperty("name", "F1");
             if (dlForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -253,7 +260,7 @@ public class XFileSharingProBasic extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        doFree(downloadLink, true, 0);
+        doFree(downloadLink, true, 0, true);
     }
 
     @Override
@@ -261,27 +268,54 @@ public class XFileSharingProBasic extends PluginForHost {
         return -1;
     }
 
-    private void login(Account account) throws Exception {
-        this.setBrowserExclusive();
-        br.setCookie(COOKIE_HOST, "lang", "english");
-        br.getPage(COOKIE_HOST + "/login.html");
-        Form loginform = br.getForm(0);
-        if (loginform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        loginform.put("login", Encoding.urlEncode(account.getUser()));
-        loginform.put("password", Encoding.urlEncode(account.getPass()));
-        br.submitForm(loginform);
-        if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-        br.getPage(COOKIE_HOST + "/?op=my_account");
-        doSomething();
-        if (!new Regex(BRBEFORE, "(Premium-Account expire|Upgrade to premium|>Renew premium<)").matches()) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-        if (!new Regex(BRBEFORE, "(Premium-Account expire|>Renew premium<)").matches()) NOPREMIUM = true;
+    @SuppressWarnings("unchecked")
+    private void login(Account account, boolean force) throws Exception {
+        synchronized (LOCK) {
+            // Load cookies
+            br.setCookiesExclusive(false);
+            final Object ret = account.getProperty("cookies", null);
+            boolean acmatch = Encoding.urlEncode(account.getUser()).matches(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
+            if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).matches(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+            if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
+                final HashMap<String, String> cookies = (HashMap<String, String>) ret;
+                if (cookies.containsKey("login") && cookies.containsKey("xfss") && account.isValid()) {
+                    for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
+                        final String key = cookieEntry.getKey();
+                        final String value = cookieEntry.getValue();
+                        this.br.setCookie(COOKIE_HOST, key, value);
+                    }
+                    return;
+                }
+            }
+            br.setCookie(COOKIE_HOST, "lang", "english");
+            br.getPage(COOKIE_HOST + "/login.html");
+            Form loginform = br.getForm(0);
+            if (loginform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            loginform.put("login", Encoding.urlEncode(account.getUser()));
+            loginform.put("password", Encoding.urlEncode(account.getPass()));
+            br.submitForm(loginform);
+            if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            br.getPage(COOKIE_HOST + "/?op=my_account");
+            doSomething();
+            if (!new Regex(BRBEFORE, "(Premium\\-Account expire|Upgrade to premium|>Renew premium<)").matches()) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            if (!new Regex(BRBEFORE, "(Premium\\-Account expire|>Renew premium<)").matches()) NOPREMIUM = true;
+            // Save cookies
+            final HashMap<String, String> cookies = new HashMap<String, String>();
+            final Cookies add = this.br.getCookies(COOKIE_HOST);
+            for (final Cookie c : add.getCookies()) {
+                cookies.put(c.getKey(), c.getValue());
+            }
+            account.setProperty("name", Encoding.urlEncode(account.getUser()));
+            account.setProperty("pass", Encoding.urlEncode(account.getPass()));
+            account.setProperty("cookies", cookies);
+        }
     }
 
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         try {
-            login(account);
+            login(account, true);
         } catch (PluginException e) {
             account.setValid(false);
             return ai;
@@ -306,7 +340,7 @@ public class XFileSharingProBasic extends PluginForHost {
             ai.setUnlimitedTraffic();
         }
         if (!NOPREMIUM) {
-            String expire = new Regex(BRBEFORE, Pattern.compile("<td>Premium(\\-| )Account expire:</td>.*?<td>(<b>)?(\\d{2} [A-Za-z]+ \\d{4})(</b>)?</td>", Pattern.CASE_INSENSITIVE)).getMatch(2);
+            String expire = new Regex(BRBEFORE, Pattern.compile("<td>Premium(\\-| )Account expire:</td>.*?<td>(<b>)?(\\d{1,2} [A-Za-z]+ \\d{4})(</b>)?</td>", Pattern.CASE_INSENSITIVE)).getMatch(2);
             if (expire == null) {
                 ai.setExpired(true);
                 account.setValid(false);
@@ -326,11 +360,11 @@ public class XFileSharingProBasic extends PluginForHost {
     public void handlePremium(DownloadLink link, Account account) throws Exception {
         String passCode = null;
         requestFileInformation(link);
-        login(account);
-        Browser br2 = br.cloneBrowser();
-        String dllink = link.getStringProperty("dllink");
+        login(account, false);
+        String dllink = link.getStringProperty("premlink");
         try {
             if (dllink != null) {
+                Browser br2 = br.cloneBrowser();
                 URLConnectionAdapter con = br2.openGetConnection(dllink);
                 if (con.getContentType().contains("html")) {
                     link.setProperty("premlink", Property.NULL);
@@ -342,26 +376,26 @@ public class XFileSharingProBasic extends PluginForHost {
             dllink = null;
         }
         if (dllink == null) {
-            br.setCookie(COOKIE_HOST, "lang", "english");
-            br.setFollowRedirects(false);
             br.getPage(link.getDownloadURL());
             doSomething();
             if (NOPREMIUM) {
-                link.setProperty("freelink", Property.NULL);
-                doFree(link, true, 0);
+                doFree(link, true, 0, false);
             } else {
                 dllink = br.getRedirectLocation();
                 if (dllink == null) {
                     doSomething();
-                    Form DLForm = br.getFormbyProperty("name", "F1");
-                    if (DLForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    if (new Regex(BRBEFORE, PASSWORDTEXT).matches()) passCode = handlePassword(passCode, DLForm, link);
-                    br.submitForm(DLForm);
-                    doSomething();
-                    dllink = br.getRedirectLocation();
+                    dllink = getDllink();
                     if (dllink == null) {
-                        checkErrors(link, true, passCode);
-                        dllink = getDllink();
+                        Form DLForm = br.getFormbyProperty("name", "F1");
+                        if (DLForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        if (new Regex(BRBEFORE, PASSWORDTEXT).matches()) passCode = handlePassword(passCode, DLForm, link);
+                        br.submitForm(DLForm);
+                        doSomething();
+                        dllink = br.getRedirectLocation();
+                        if (dllink == null) {
+                            checkErrors(link, true, passCode);
+                            dllink = getDllink();
+                        }
                     }
                 }
                 if (dllink == null) {
