@@ -23,11 +23,11 @@ import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.BrowserAdapter;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -81,7 +81,8 @@ public class FsxHu extends PluginForHost {
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return -1;
+        // Max 2 connections at all
+        return 1;
     }
 
     @Override
@@ -164,7 +165,7 @@ public class FsxHu extends PluginForHost {
         login(account);
         br.setFollowRedirects(true);
         br.setCustomCharset("utf-8");
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getDownloadURL(), true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getDownloadURL(), true, -2);
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
