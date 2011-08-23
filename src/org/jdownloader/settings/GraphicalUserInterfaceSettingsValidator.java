@@ -179,4 +179,11 @@ public class GraphicalUserInterfaceSettingsValidator implements GraphicalUserInt
         return 0;
     }
 
+    public boolean isLinkgrabberQuickSettingsVisible() {
+        return false;
+    }
+
+    public void setLinkgrabberQuickSettingsVisible(boolean b) {
+    }
+
 }

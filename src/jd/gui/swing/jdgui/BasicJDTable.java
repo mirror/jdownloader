@@ -47,6 +47,7 @@ public class BasicJDTable<T> extends ExtTable<T> {
             }
 
         });
+
         // this.getExtTableModel().addExtComponentRowHighlighter(new
         // ExtComponentRowHighlighter<T>(f2, b2.darker(), null) {
         //

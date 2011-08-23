@@ -2179,7 +2179,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Click here to add this link or package to your download list." })
     String ConfirmAction_ConfirmAction_tooltip();
 
-    @Default(lngs = { "en" }, values = { "Linkgrabber" })
+    @Default(lngs = { "en" }, values = { "Quick Filter" })
     String LinkGrabberSideBarHeader_LinkGrabberSideBarHeader();
 
     @Default(lngs = { "en" }, values = { "Add Downloads" })
@@ -2190,4 +2190,55 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Download all" })
     String ConfirmAction_ConfirmAction_();
+
+    @Default(lngs = { "en" }, values = { "Hoster Filter" })
+    String LinkGrabberSidebar_LinkGrabberSidebar_hosterfilter();
+
+    @Default(lngs = { "en" }, values = { "File Type Filter" })
+    String LinkGrabberSidebar_LinkGrabberSidebar_extensionfilter();
+
+    @Default(lngs = { "en" }, values = { "Quick Settings" })
+    String LinkGrabberSidebar_LinkGrabberSidebar_settings();
+
+    @Default(lngs = { "en" }, values = { "Add at top" })
+    String LinkGrabberSidebar_LinkGrabberSidebar_addtop();
+
+    @Default(lngs = { "en" }, values = { "Adds links at top of download list. They will be next in downloadorder" })
+    String LinkGrabberSidebar_LinkGrabberSidebar_addtop_tt();
+
+    @Default(lngs = { "en" }, values = { "Auto confirm" })
+    String LinkGrabberSidebar_LinkGrabberSidebar_autoconfirm();
+
+    @Default(lngs = { "en" }, values = { "If enabled, Links will be moved to downloadlist automatically after a given timeout" })
+    String LinkGrabberSidebar_LinkGrabberSidebar_autoconfirm_tt();
+
+    @Default(lngs = { "en" }, values = { "Autostart Download" })
+    String LinkGrabberSidebar_LinkGrabberSidebar_autostart();
+
+    @Default(lngs = { "en" }, values = { "Starts downloading after adding links to the downloadlist" })
+    String LinkGrabberSidebar_LinkGrabberSidebar_autostart_tt();
+
+    @Default(lngs = { "en" }, values = { "Load Linkcontainer" })
+    String AddContainerAction();
+
+    @Default(lngs = { "en" }, values = { "Analyse Text with Links" })
+    String AddOptionsAction_actionPerformed_addlinks();
+
+    @Default(lngs = { "en" }, values = { "Are you sure?" })
+    String ClearAction_actionPerformed_();
+
+    @Default(lngs = { "en" }, values = { "Do you really want to remove all links from Linkgrabber?" })
+    String ClearAction_actionPerformed_msg();
+
+    @Default(lngs = { "en" }, values = { "Yes" })
+    String literally_yes();
+
+    @Default(lngs = { "en" }, values = { "No" })
+    String literall_no();
+
+    @Default(lngs = { "en" }, values = { "Load a Link Container" })
+    String AddContainerAction_actionPerformed_();
+
+    @Default(lngs = { "en" }, values = { "Link Container (%s1)" })
+    String AddContainerAction_actionPerformed_extensions(String containerExtensions);
 }
