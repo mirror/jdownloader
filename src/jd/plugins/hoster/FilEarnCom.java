@@ -128,11 +128,12 @@ public class FilEarnCom extends PluginForHost {
             dllink = br.getRedirectLocation();
             if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        // More chunks are possible but i think they cause many servererrors
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             if (br.containsHTML(TOOMANYSIMLUTANDOWNLOADS)) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Too many simultan downloads", 5 * 60 * 1000l);
-            if (br.containsHTML("(>Download link does not exist|>An Error Was Encountered<)")) throw new PluginException(LinkStatus.ERROR_RETRY, "Server error");
+            if (br.containsHTML("(>Download link does not exist|>An Error Was Encountered<)")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server problems", 120 * 1000l);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         downloadLink.setProperty("dllink", dllink);
