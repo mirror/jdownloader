@@ -41,7 +41,6 @@ public class DownloadsPanel extends SwitchPanel implements DownloadControllerLis
 
     @Override
     protected void onShow() {
-        DownloadController.getInstance().addListener(this);
         table.recreateModel();
         synchronized (this) {
             if (timer != null) timer.cancel(false);
@@ -53,6 +52,7 @@ public class DownloadsPanel extends SwitchPanel implements DownloadControllerLis
 
             }, 250, 1000, TimeUnit.MILLISECONDS);
         }
+        DownloadController.getInstance().addListener(this);
     }
 
     @Override
@@ -67,13 +67,12 @@ public class DownloadsPanel extends SwitchPanel implements DownloadControllerLis
     }
 
     public void onDownloadControllerEvent(DownloadControllerEvent event) {
-        switch (event.getEventID()) {
-        case DownloadControllerEvent.REFRESH_STRUCTURE:
-        case DownloadControllerEvent.REMOVE_DOWNLOADLINK:
-        case DownloadControllerEvent.REMOVE_FILPACKAGE:
+        switch (event.getType()) {
+        case REFRESH_STRUCTURE:
+        case REMOVE_CONTENT:
             table.recreateModel();
             break;
-        case DownloadControllerEvent.REFRESH_DATA:
+        case REFRESH_DATA:
             table.refreshModel();
             break;
         }

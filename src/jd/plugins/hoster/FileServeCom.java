@@ -29,12 +29,12 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -141,87 +141,93 @@ public class FileServeCom extends PluginForHost {
         link.setUrlDownload("http://fileserve.com/file/" + fileId);
     }
 
-    public void doFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        this.handleErrors(br);
-        final String fileId = this.br.getRegex("fileserve\\.com/file/([a-zA-Z0-9]+)").getMatch(0);
-        this.br.setFollowRedirects(false);
-        String captchaJSPage = this.br.getRegex("\"(/landing/.*?/download_captcha\\.js)\"").getMatch(0);
-        if (captchaJSPage == null) {
-            logger.warning("captchaJSPage is null...");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+    public void doFree(final DownloadLink downloadLink, boolean direct) throws Exception, PluginException {
+        String dllink = null;
+        if (direct) {
+            dllink = br.getRedirectLocation();
         }
-        captchaJSPage = "http://fileserve.com" + captchaJSPage;
-        final Browser br2 = this.br.cloneBrowser();
-        br2.setCustomCharset("utf-8");
-        // It doesn't work without accessing this page!!
-        br2.getPage(captchaJSPage);
-        br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        br2.postPage(downloadLink.getDownloadURL(), "checkDownload=check");
-        if (!br2.containsHTML("success\":\"showCaptcha\"")) {
-            logger.info("There seems to be an error, no captcha is shown!");
-            handleCaptchaErrors(br2, downloadLink);
-            handleErrors(br2);
-        }
-        // Captcha should appear always
-        // if
-        // (!this.br.containsHTML("<div id=\"captchaArea\" style=\"display:none;\">")
-        // || br2.containsHTML("showCaptcha\\(\\);")) {
-        Boolean failed = true;
-        for (int i = 0; i <= 10; i++) {
-            final String id = this.br.getRegex("var reCAPTCHA_publickey=\\'(.*?)\\';").getMatch(0);
-            if (!this.br.containsHTML("api\\.recaptcha\\.net") || id == null || fileId == null) {
-                handleCaptchaErrors(br2, downloadLink);
-                logger.warning("id or fileId is null or the browser doesn't contain the reCaptcha text...");
+        if (dllink == null) {
+            this.handleErrors(br);
+            final String fileId = this.br.getRegex("fileserve\\.com/file/([a-zA-Z0-9]+)").getMatch(0);
+            this.br.setFollowRedirects(false);
+            String captchaJSPage = this.br.getRegex("\"(/landing/.*?/download_captcha\\.js)\"").getMatch(0);
+            if (captchaJSPage == null) {
+                logger.warning("captchaJSPage is null...");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            final Form reCaptchaForm = new Form();
-            reCaptchaForm.setMethod(Form.MethodType.POST);
-            reCaptchaForm.setAction("http://www.fileserve.com/checkReCaptcha.php");
-            reCaptchaForm.put("recaptcha_shortencode_field", fileId);
-            final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-            final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(this.br);
-            rc.setForm(reCaptchaForm);
-            rc.setId(id);
-            rc.load();
-            final File cf = rc.downloadCaptcha(this.getLocalCaptchaFile());
-            final String c = this.getCaptchaCode(cf, downloadLink);
-            if (c == null || c.length() == 0) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Recaptcha failed");
-            rc.getForm().put("recaptcha_response_field", c);
-            rc.getForm().put("recaptcha_challenge_field", rc.getChallenge());
-            br2.submitForm(rc.getForm());
-            if (br2.containsHTML("incorrect-captcha-sol")) {
+            captchaJSPage = "http://fileserve.com" + captchaJSPage;
+            final Browser br2 = this.br.cloneBrowser();
+            br2.setCustomCharset("utf-8");
+            // It doesn't work without accessing this page!!
+            br2.getPage(captchaJSPage);
+            br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+            br2.postPage(downloadLink.getDownloadURL(), "checkDownload=check");
+            if (!br2.containsHTML("success\":\"showCaptcha\"")) {
+                logger.info("There seems to be an error, no captcha is shown!");
                 handleCaptchaErrors(br2, downloadLink);
-                this.br.getPage(downloadLink.getDownloadURL());
-                continue;
+                handleErrors(br2);
             }
-            failed = false;
-            break;
+            // Captcha should appear always
+            // if
+            // (!this.br.containsHTML("<div id=\"captchaArea\" style=\"display:none;\">")
+            // || br2.containsHTML("showCaptcha\\(\\);")) {
+            Boolean failed = true;
+            for (int i = 0; i <= 10; i++) {
+                final String id = this.br.getRegex("var reCAPTCHA_publickey=\\'(.*?)\\';").getMatch(0);
+                if (!this.br.containsHTML("api\\.recaptcha\\.net") || id == null || fileId == null) {
+                    handleCaptchaErrors(br2, downloadLink);
+                    logger.warning("id or fileId is null or the browser doesn't contain the reCaptcha text...");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                final Form reCaptchaForm = new Form();
+                reCaptchaForm.setMethod(Form.MethodType.POST);
+                reCaptchaForm.setAction("http://www.fileserve.com/checkReCaptcha.php");
+                reCaptchaForm.put("recaptcha_shortencode_field", fileId);
+                final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+                final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(this.br);
+                rc.setForm(reCaptchaForm);
+                rc.setId(id);
+                rc.load();
+                final File cf = rc.downloadCaptcha(this.getLocalCaptchaFile());
+                final String c = this.getCaptchaCode(cf, downloadLink);
+                if (c == null || c.length() == 0) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Recaptcha failed");
+                rc.getForm().put("recaptcha_response_field", c);
+                rc.getForm().put("recaptcha_challenge_field", rc.getChallenge());
+                br2.submitForm(rc.getForm());
+                if (br2.containsHTML("incorrect-captcha-sol")) {
+                    handleCaptchaErrors(br2, downloadLink);
+                    this.br.getPage(downloadLink.getDownloadURL());
+                    continue;
+                }
+                failed = false;
+                break;
+            }
+            if (failed) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            handleCaptchaErrors(br2, downloadLink);
+            handleErrors(br2);
+            // }
+            this.br.postPage(downloadLink.getDownloadURL(), "downloadLink=wait");
+            // Ticket Time
+            if (!this.br.getHttpConnection().isOK()) {
+                logger.warning("The connection is not okay...");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            String reconTime = br.toString();
+            int tt = 60;
+            if (reconTime.length() < 500) {
+                reconTime = new Regex(reconTime, ".*?(\\d+).*?").getMatch(0);
+                logger.info("Waittime detected, waiting " + reconTime + " seconds from now on...");
+                tt = Integer.parseInt(reconTime.trim());
+            } else {
+                logger.warning("Couldn't find dynamic waittime");
+                logger.warning(br.toString());
+            }
+            this.sleep(tt * 1001, downloadLink);
+            br2.postPage(downloadLink.getDownloadURL(), "downloadLink=show");
+            br.setDebug(true);
+            this.br.postPage(downloadLink.getDownloadURL(), "download=normal");
+            dllink = this.br.getRedirectLocation();
         }
-        if (failed) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-        handleCaptchaErrors(br2, downloadLink);
-        handleErrors(br2);
-        // }
-        this.br.postPage(downloadLink.getDownloadURL(), "downloadLink=wait");
-        // Ticket Time
-        if (!this.br.getHttpConnection().isOK()) {
-            logger.warning("The connection is not okay...");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        String reconTime = br.toString();
-        int tt = 60;
-        if (reconTime.length() < 500) {
-            reconTime = new Regex(reconTime, ".*?(\\d+).*?").getMatch(0);
-            logger.info("Waittime detected, waiting " + reconTime + " seconds from now on...");
-            tt = Integer.parseInt(reconTime.trim());
-        } else {
-            logger.warning("Couldn't find dynamic waittime");
-            logger.warning(br.toString());
-        }
-        this.sleep(tt * 1001, downloadLink);
-        br2.postPage(downloadLink.getDownloadURL(), "downloadLink=show");
-        br.setDebug(true);
-        this.br.postPage(downloadLink.getDownloadURL(), "download=normal");
-        final String dllink = this.br.getRedirectLocation();
         if (dllink == null) {
             this.handleErrors(br);
             logger.warning("dllink is null...");
@@ -348,8 +354,8 @@ public class FileServeCom extends PluginForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         this.sleep(30 * 1000l, downloadLink);
         this.requestFileInformation(downloadLink);
-        this.getDownloadUrlPage(downloadLink);
-        this.doFree(downloadLink);
+        boolean direct = getDownloadUrlPage(downloadLink);
+        this.doFree(downloadLink, direct);
     }
 
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
@@ -358,6 +364,13 @@ public class FileServeCom extends PluginForHost {
         br.setFollowRedirects(false);
         br.getPage(link.getDownloadURL());
         String dllink = br.getRedirectLocation();
+        if (dllink == null) {
+            /* seems to be no direct download */
+            br.postPage(link.getDownloadURL(), "download=premium");
+            dllink = br.getRedirectLocation();
+        }
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        br.setFollowRedirects(true);
         this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, link, dllink, true, 0);
         if (this.dl.getConnection().getResponseCode() == 404) {
             this.br.followConnection();
@@ -414,10 +427,18 @@ public class FileServeCom extends PluginForHost {
         return link.getAvailableStatus();
     }
 
-    private void getDownloadUrlPage(DownloadLink downloadLink) throws IOException {
+    private boolean getDownloadUrlPage(DownloadLink downloadLink) throws IOException {
         // To get the english language
-        br.postPage(downloadLink.getDownloadURL(), "locale=en-us");
+        boolean b = br.isFollowingRedirects();
+        br.setFollowRedirects(false);
+        try {
+            br.postPage(downloadLink.getDownloadURL(), "locale=en-us");
+        } finally {
+            br.setFollowRedirects(b);
+        }
+        if (br.getRedirectLocation() != null) { return true; }
         if (!br.getURL().equals(downloadLink.getDownloadURL())) br.getPage(downloadLink.getDownloadURL());
+        return false;
     }
 
     @Override

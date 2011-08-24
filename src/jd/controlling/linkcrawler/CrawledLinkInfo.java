@@ -26,11 +26,18 @@ public class CrawledLinkInfo implements AbstractPackageChildrenNode<CrawledPacka
         this.dPlugin = dPlugin;
     }
 
+    public long getSize() {
+        if (dlLink != null) return dlLink.getDownloadSize();
+        return -1;
+    }
+
     /**
      * @return the hPlugin
      */
     public PluginForHost gethPlugin() {
-        return hPlugin;
+        if (hPlugin != null) return hPlugin;
+        if (dlLink != null) return dlLink.getDefaultPlugin();
+        return null;
     }
 
     /**
@@ -72,6 +79,11 @@ public class CrawledLinkInfo implements AbstractPackageChildrenNode<CrawledPacka
     public CrawledLinkInfo(String url) {
         if (url == null) return;
         this.url = new String(url);
+    }
+
+    public String getName() {
+        if (dlLink != null) return dlLink.getName();
+        return "DUMMY";
     }
 
     public String getURL() {

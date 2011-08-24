@@ -21,7 +21,6 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Pattern;
 
 import jd.config.Configuration;
@@ -50,17 +49,15 @@ class DownloadControllerBroadcaster extends Eventsender<DownloadControllerListen
 
 public class DownloadController extends PackageController<FilePackage, DownloadLink> {
 
-    private final AtomicLong structureChanged = new AtomicLong(0);
-
-    /**
-     * @return the structureChanged
-     */
-    public long getStructureChanged() {
-        return structureChanged.get();
-    }
-
     public static enum MOVE {
-        BEFORE, AFTER, BEGIN, END, TOP, BOTTOM, UP, DOWN
+        BEFORE,
+        AFTER,
+        BEGIN,
+        END,
+        TOP,
+        BOTTOM,
+        UP,
+        DOWN
     }
 
     private transient DownloadControllerBroadcaster broadcaster = new DownloadControllerBroadcaster();
@@ -444,9 +441,9 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
 
     public void fireDataUpdate(Object o) {
         if (o != null) {
-            broadcaster.fireEvent(new DownloadControllerEvent(this, DownloadControllerEvent.REFRESH_DATA, o));
+            broadcaster.fireEvent(new DownloadControllerEvent(this, DownloadControllerEvent.TYPE.REFRESH_DATA, o));
         } else {
-            broadcaster.fireEvent(new DownloadControllerEvent(this, DownloadControllerEvent.REFRESH_DATA));
+            broadcaster.fireEvent(new DownloadControllerEvent(this, DownloadControllerEvent.TYPE.REFRESH_DATA));
         }
     }
 
@@ -511,7 +508,7 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
     @Override
     protected void _controllerParentlessLinks(List<DownloadLink> links) {
         asyncSaving.run();
-        broadcaster.fireEvent(new DownloadControllerEvent(DownloadController.this, DownloadControllerEvent.REMOVE_DOWNLOADLINK, links));
+        broadcaster.fireEvent(new DownloadControllerEvent(DownloadController.this, DownloadControllerEvent.TYPE.REMOVE_CONTENT, links));
         if (links != null) {
             /* we stop all parentless downloads */
             for (DownloadLink link : links) {
@@ -523,19 +520,19 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
     @Override
     protected void _controllerPackageNodeRemoved(FilePackage pkg) {
         asyncSaving.run();
-        broadcaster.fireEvent(new DownloadControllerEvent(DownloadController.this, DownloadControllerEvent.REMOVE_FILPACKAGE, pkg));
+        broadcaster.fireEvent(new DownloadControllerEvent(DownloadController.this, DownloadControllerEvent.TYPE.REMOVE_CONTENT, pkg));
     }
 
     @Override
     protected void _controllerStructureChanged() {
         asyncSaving.run();
-        broadcaster.fireEvent(new DownloadControllerEvent(this, DownloadControllerEvent.REFRESH_STRUCTURE));
+        broadcaster.fireEvent(new DownloadControllerEvent(this, DownloadControllerEvent.TYPE.REFRESH_STRUCTURE));
     }
 
     @Override
     protected void _controllerPackageNodeAdded(FilePackage pkg) {
         asyncSaving.run();
-        broadcaster.fireEvent(new DownloadControllerEvent(this, DownloadControllerEvent.REFRESH_STRUCTURE));
+        broadcaster.fireEvent(new DownloadControllerEvent(this, DownloadControllerEvent.TYPE.REFRESH_STRUCTURE));
     }
 
 }

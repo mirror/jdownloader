@@ -495,7 +495,7 @@ public abstract class PluginForHost extends Plugin implements FavIconRequestor {
 
         final String[] hits = new Regex(data, getSupportedLinks()).getColumn(-1);
         if (hits != null && hits.length > 0) {
-            links = new ArrayList<DownloadLink>();
+            links = new ArrayList<DownloadLink>(hits.length);
             for (String file : hits) {
                 /* remove newlines... */
                 file = file.trim();
@@ -523,7 +523,7 @@ public abstract class PluginForHost extends Plugin implements FavIconRequestor {
                 }
             }
         }
-        if (links != null && fp != null) {
+        if (links != null && fp != null && fp != FilePackage.getDefaultFilePackage()) {
             fp.addLinks(links);
         }
         return links;

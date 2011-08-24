@@ -554,11 +554,9 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
      * this keeps track of stopmark in case the link/package got removed from
      * downloadlist
      */
-    @SuppressWarnings("deprecation")
     public void onDownloadControllerEvent(final DownloadControllerEvent event) {
-        switch (event.getEventID()) {
-        case DownloadControllerEvent.REMOVE_FILPACKAGE:
-        case DownloadControllerEvent.REMOVE_DOWNLOADLINK:
+        switch (event.getType()) {
+        case REMOVE_CONTENT:
             if (this.currentstopMark == event.getParameter()) {
                 /* now the stopmark is hidden */
                 this.setStopMark(STOPMARK.HIDDEN);
@@ -916,7 +914,6 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                                 ProxyController.getInstance().resetIPBlockWaittime(null, true);
                                 resetWaitingNewIP = true;
                             }
-                            /* so we can work on a list without threading errors */
                             if (lastChange != DownloadController.getInstance().getPackageControllerChanges()) {
                                 fps.clear();
                                 final boolean readL = DownloadController.getInstance().readLock();
@@ -926,6 +923,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                                 } finally {
                                     DownloadController.getInstance().readUnlock(readL);
                                 }
+
                             }
                             inProgress = 0;
                             try {

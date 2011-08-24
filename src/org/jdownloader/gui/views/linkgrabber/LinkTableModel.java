@@ -9,8 +9,11 @@ import jd.controlling.IOEQ;
 import jd.plugins.FilePackage;
 import jd.plugins.PackageLinkNode;
 
+import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.swing.exttable.ExtColumn;
 import org.appwork.swing.exttable.ExtTableModel;
+import org.appwork.utils.event.queue.Queue.QueuePriority;
+import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.swing.EDTRunner;
 
@@ -21,11 +24,28 @@ public abstract class LinkTableModel extends ExtTableModel<PackageLinkNode> {
     private static final long serialVersionUID = 1L;
 
     public static enum TOGGLEMODE {
-        CURRENT, TOP, BOTTOM
+        CURRENT,
+        TOP,
+        BOTTOM
     }
+
+    private DelayedRunnable asyncRefresh;
 
     public LinkTableModel(String id) {
         super(id);
+        asyncRefresh = new DelayedRunnable(IOEQ.TIMINGQUEUE, 150l, 250l) {
+            @Override
+            public void delayedrun() {
+                new EDTRunner() {
+                    @Override
+                    protected void runInEDT() {
+                        /* we just want to repaint */
+                        getTable().repaint();
+                    }
+                };
+            }
+
+        };
     }
 
     private AtomicLong tableChangesDone = new AtomicLong(0);
@@ -48,32 +68,26 @@ public abstract class LinkTableModel extends ExtTableModel<PackageLinkNode> {
     }
 
     public void refreshModel() {
-        tableChangesReq.incrementAndGet();
-        IOEQ.add(new Runnable() {
-
-            public void run() {
-                if (tableChangesDone.incrementAndGet() != tableChangesReq.get()) {
-                    System.out.println("skip tableMod_refresh");
-                    return;
-                }
-                new EDTRunner() {
-                    @Override
-                    protected void runInEDT() {
-                        /* we just want to repaint */
-                        getTable().repaint();
-                    }
-                };
-            }
-
-        }, true);
+        asyncRefresh.run();
     }
 
     public void toggleFilePackageExpand(final FilePackage fp2, final TOGGLEMODE mode) {
         tableChangesReq.incrementAndGet();
-        final boolean cur = !fp2.isExpanded();
-        IOEQ.add(new Runnable() {
+        IOEQ.getQueue().addAsynch(new QueueAction<Void, RuntimeException>() {
 
-            public void run() {
+            @Override
+            protected boolean allowAsync() {
+                return true;
+            }
+
+            @Override
+            public QueuePriority getQueuePrio() {
+                return QueuePriority.HIGH;
+            }
+
+            @Override
+            protected Void run() throws RuntimeException {
+                final boolean cur = !fp2.isExpanded();
                 boolean doToggle = true;
                 switch (mode) {
                 case CURRENT:
@@ -86,14 +100,11 @@ public abstract class LinkTableModel extends ExtTableModel<PackageLinkNode> {
                     doToggle = false;
                     break;
                 }
-                /*
-                 * we use size of old table to minimize need to increase table
-                 * size while adding nodes to it
-                 */
-                final boolean readL = DownloadController.getInstance().readLock();
-                try {
-                    for (FilePackage fp : DownloadController.getInstance().getPackages()) {
-                        if (mode != TOGGLEMODE.CURRENT) {
+                if (mode != TOGGLEMODE.CURRENT) {
+                    final boolean readL = DownloadController.getInstance().readLock();
+                    try {
+                        for (FilePackage fp : DownloadController.getInstance().getPackages()) {
+
                             if (doToggle) {
                                 fp.setExpanded(cur);
                                 if (fp == fp2) doToggle = false;
@@ -103,17 +114,19 @@ public abstract class LinkTableModel extends ExtTableModel<PackageLinkNode> {
                                     fp.setExpanded(cur);
                                 }
                             }
+
                         }
+                    } finally {
+                        DownloadController.getInstance().readUnlock(readL);
                     }
-                } finally {
-                    DownloadController.getInstance().readUnlock(readL);
                 }
                 if (tableChangesDone.incrementAndGet() != tableChangesReq.get()) {
                     System.out.println("skip tableMod_toggle");
-                    return;
+                    return null;
                 }
                 final ArrayList<PackageLinkNode> newtableData = refreshSort(tableData);
                 _fireTableStructureChanged(newtableData, false);
+                return null;
             }
         });
     }

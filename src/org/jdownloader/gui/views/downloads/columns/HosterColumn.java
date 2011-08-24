@@ -1,14 +1,11 @@
 package org.jdownloader.gui.views.downloads.columns;
 
-import java.util.HashMap;
-
 import javax.swing.Box;
-import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JComponent;
 import javax.swing.JToolTip;
 
-import jd.HostPluginWrapper;
+import jd.controlling.FilePackageInfoController;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PackageLinkNode;
@@ -19,23 +16,18 @@ import org.appwork.utils.swing.renderer.RenderLabel;
 import org.appwork.utils.swing.renderer.RendererMigPanel;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.downloads.HosterToolTip;
-import org.jdownloader.images.NewTheme;
 
 public class HosterColumn extends ExtColumn<PackageLinkNode> {
 
-    private static final int           SIZE     = 14;
-    private int                        maxIcons = 10;
-    private MigPanel                   panel;
-    private RenderLabel[]              labels;
-    private StringBuilder              sb;
-    private HashMap<String, ImageIcon> iconCache;
-    private PackageLinkNode            value;
-    private HosterToolTip              tooltip;
+    private int           maxIcons = 10;
+    private MigPanel      panel;
+    private RenderLabel[] labels;
+    private HosterToolTip tooltip;
 
     public HosterColumn() {
         super(_GUI._.HosterColumn_HosterColumn(), null);
         panel = new RendererMigPanel("ins 0 5 0 5", "[]", "[grow,fill]");
-        labels = new RenderLabel[10];
+        labels = new RenderLabel[maxIcons];
         // panel.add(Box.createGlue(), "pushx,growx");
         for (int i = 0; i < maxIcons; i++) {
             labels[i] = new RenderLabel();
@@ -47,8 +39,6 @@ public class HosterColumn extends ExtColumn<PackageLinkNode> {
         panel.add(Box.createGlue(), "pushx,growx");
         tooltip = new HosterToolTip();
         resetRenderer();
-        sb = new StringBuilder();
-        iconCache = new HashMap<String, ImageIcon>();
     }
 
     @Override
@@ -109,39 +99,26 @@ public class HosterColumn extends ExtColumn<PackageLinkNode> {
     }
 
     public void configureRendererComponent(PackageLinkNode value, boolean isSelected, boolean hasFocus, int row, int column) {
-        this.value = value;
         if (value instanceof FilePackage) {
-
             int i = 0;
-            for (String hoster : DownloadLink.getHosterList(((FilePackage) value).getChildren())) {
+            FilePackageInfoController.getInstance().getFilePackageInfo((FilePackage) value);
+            for (DownloadLink link : ((FilePackage) value).getChildren()) {
                 if (i == maxIcons) break;
-                labels[i].setVisible(true);
-
-                labels[i].setIcon(getIcon(hoster));
-                i++;
-            }
-
-        } else if (value instanceof DownloadLink) {
-            labels[0].setVisible(true);
-            labels[0].setIcon(getIcon(((DownloadLink) value).getHost()));
-
-        }
-
-    }
-
-    private Icon getIcon(String hoster) {
-        ImageIcon ret = iconCache.get(hoster);
-        if (ret == null) {
-            for (HostPluginWrapper hw : HostPluginWrapper.getHostWrapper()) {
-                if (hoster.equalsIgnoreCase(hw.getHost())) {
-                    ImageIcon icon = hw.getIconUnscaled();
-                    ret = NewTheme.I().getScaledInstance(icon, SIZE);
-                    iconCache.put(hoster, ret);
-                    break;
+                ImageIcon icon = link.getHosterIcon(true);
+                if (icon != null) {
+                    labels[i].setWorkaroundNotVisible(false);
+                    labels[i].setIcon(icon);
+                    i++;
                 }
             }
+        } else if (value instanceof DownloadLink) {
+            ImageIcon icon = ((DownloadLink) value).getHosterIcon(true);
+            if (icon != null) {
+                labels[0].setWorkaroundNotVisible(false);
+                labels[0].setIcon(icon);
+            }
+
         }
-        return ret;
 
     }
 
@@ -162,7 +139,7 @@ public class HosterColumn extends ExtColumn<PackageLinkNode> {
     @Override
     public void resetRenderer() {
         for (int i = 0; i < maxIcons; i++) {
-            labels[i].setVisible(false);
+            labels[i].setWorkaroundNotVisible(true);
         }
         this.panel.setOpaque(false);
         this.panel.setBackground(null);

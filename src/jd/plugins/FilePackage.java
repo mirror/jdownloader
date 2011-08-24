@@ -686,9 +686,7 @@ public class FilePackage extends Property implements Serializable, PackageLinkNo
         return true;
     }
 
-    private ArrayList<String>           passwordList = new ArrayList<String>();
-
-    private transient PackageController pc;
+    private ArrayList<String> passwordList = new ArrayList<String>();
 
     public void setPasswordList(ArrayList<String> passwordList) {
         this.passwordList = passwordList;

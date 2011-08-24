@@ -111,7 +111,7 @@ public class DownloadsTableTransferHandler extends TransferHandler {
          */
         ArrayList<FilePackage> packages = table.getSelectedFilePackages();
         ArrayList<DownloadLink> links = table.getSelectedDownloadLinks();
-        if ((links != null && links.size() > 0) || (packages != null && packages.size() > 0)) { return new DownloadsTableTransferable(packages, links, DownloadController.getInstance().getStructureChanged()); }
+        if ((links != null && links.size() > 0) || (packages != null && packages.size() > 0)) { return new DownloadsTableTransferable(packages, links, DownloadController.getInstance().getPackageControllerChanges()); }
         return null;
     }
 

@@ -39,8 +39,6 @@ import jd.controlling.JDLogger;
 import jd.controlling.SingleDownloadController;
 import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
 import jd.http.Browser;
-import jd.nutils.JDImage;
-import jd.nutils.OSDetector;
 import jd.nutils.io.JDIO;
 import jd.plugins.download.DownloadInterface;
 import jd.plugins.download.DownloadInterface.Chunk;
@@ -48,6 +46,7 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.Regex;
 import org.appwork.utils.logging.Log;
+import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.GeneralSettings;
 
@@ -1045,22 +1044,30 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      */
     public ImageIcon getIcon() {
         if (icon == null) {
-            if (OSDetector.isLinux() || OSDetector.isMac()) {
-
-                icon = NewTheme.I().getIcon("url", 16);
-
-            } else {
+            String ext = JDIO.getFileExtension(getFileOutput());
+            if (ext != null) {
                 try {
-                    icon = JDImage.getScaledImageIcon(JDImage.getFileIcon(JDIO.getFileExtension(getFileOutput())), 16, 16);
-                } catch (Exception e) {
-
-                    icon = NewTheme.I().getIcon("url", 16);
-
+                    icon = CrossSystem.getMime().getFileIcon(ext, 16, 16);
+                } catch (Throwable e) {
+                    Log.exception(e);
                 }
-
             }
+            if (icon == null) icon = NewTheme.I().getIcon("url", 16);
         }
         return icon;
+    }
+
+    /**
+     * returns the current set Icon for this DownloadLink
+     * 
+     * @param scaled
+     * @return
+     */
+    public ImageIcon getHosterIcon(boolean scaled) {
+        PluginForHost plugin = this.liveplugin;
+        if (plugin == null) plugin = this.defaultplugin;
+        if (scaled) return plugin.getHosterIconScaled();
+        return plugin.getHosterIconUnscaled();
     }
 
     public String getType() {

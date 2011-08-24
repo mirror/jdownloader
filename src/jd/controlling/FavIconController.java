@@ -1,6 +1,5 @@
 package jd.controlling;
 
-import java.awt.Image;
 import java.awt.image.BufferedImage;
 import java.io.BufferedInputStream;
 import java.io.File;
@@ -32,11 +31,11 @@ public final class FavIconController extends SubConfiguration implements Runnabl
 
     public static ImageIcon getFavIcon(String favIconhost, FavIconRequestor requestor, boolean useOriginalHost) {
         String host = useOriginalHost == false ? Browser.getHost(favIconhost) : favIconhost;
-        if (host == null || requestor == null) return null;
+        if (host == null) return null;
         synchronized (LOCK) {
             /* check if we already have a favicon? */
-            Image image = JDImage.getImage("favicons/" + host);
-            if (image != null) return new ImageIcon(image);
+            ImageIcon image = JDImage.getImageIcon("favicons/" + host);
+            if (image != null) return image;
         }
         /* add to queue list */
         getInstance().add(host, requestor);
@@ -54,7 +53,7 @@ public final class FavIconController extends SubConfiguration implements Runnabl
                 queue.put(host, ret);
             }
             /* add to queue */
-            ret.add(requestor);
+            if (requestor != null) ret.add(requestor);
         }
         /* notify our favicon loader */
         synchronized (WAITLOCK) {
@@ -132,11 +131,11 @@ public final class FavIconController extends SubConfiguration implements Runnabl
                         File imageFile = JDUtilities.getResourceFile("jd/img/favicons/" + host + ".png", true);
                         ImageIO.write(favicon, "png", imageFile);
                         /* load and scale it again */
-                        Image image = JDImage.getImage("favicons/" + host);
+                        ImageIcon image = JDImage.getImageIcon("favicons/" + host);
                         if (image != null) {
                             /* refresh icons for all queued plugins */
                             for (FavIconRequestor requestor : requestors) {
-                                requestor.setFavIcon(new ImageIcon(image));
+                                requestor.setFavIcon(image);
                             }
                         }
                     } catch (Exception e) {

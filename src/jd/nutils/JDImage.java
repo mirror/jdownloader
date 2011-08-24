@@ -43,9 +43,9 @@ public class JDImage {
      * Alle verfügbaren Bilder werden hier gespeichert
      */
     private static HashMap<String, BufferedImage> BUFFERED_IMAGE_CACHE = new HashMap<String, BufferedImage>();
-    private static HashMap<String, ImageIcon> IMAGE_ICON_CACHE = new HashMap<String, ImageIcon>();
-    private static HashMap<Icon, Icon> DISABLED_ICON_CACHE = new HashMap<Icon, Icon>();
-    private static HashMap<String, Image> SCALED_IMAGE_CACHE = new HashMap<String, Image>();
+    private static HashMap<String, ImageIcon>     IMAGE_ICON_CACHE     = new HashMap<String, ImageIcon>();
+    private static HashMap<Icon, Icon>            DISABLED_ICON_CACHE  = new HashMap<Icon, Icon>();
+    private static HashMap<String, Image>         SCALED_IMAGE_CACHE   = new HashMap<String, Image>();
 
     public static ImageIcon iconToImage(Icon icon) {
         if (icon == null) return null;
@@ -182,7 +182,9 @@ public class JDImage {
     public static ImageIcon getImageIcon(String string) {
         ImageIcon ret = IMAGE_ICON_CACHE.get(string);
         if (ret != null) return ret;
-        ret = new ImageIcon(getImage(string));
+        BufferedImage ret2 = getImage(string);
+        if (ret2 == null) return null;
+        ret = new ImageIcon(ret2);
         IMAGE_ICON_CACHE.put(string, ret);
         return ret;
     }
@@ -199,7 +201,9 @@ public class JDImage {
     public static ImageIcon getImageIcon(File pat) {
         ImageIcon ret = IMAGE_ICON_CACHE.get(pat.getAbsolutePath());
         if (ret != null) return ret;
-        ret = new ImageIcon(getImage(pat));
+        BufferedImage ret2 = getImage(pat);
+        if (ret2 == null) return null;
+        ret = new ImageIcon(ret2);
         IMAGE_ICON_CACHE.put(pat.getAbsolutePath(), ret);
         return ret;
     }

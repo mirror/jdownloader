@@ -91,7 +91,7 @@ public class DownloadsTableTransferable implements Transferable {
     public static boolean isVersionOkay(Transferable info) {
         try {
             long version = (Long) info.getTransferData(DownloadsTableFlavor);
-            return DownloadController.getInstance().getStructureChanged() == version;
+            return DownloadController.getInstance().getPackageControllerChanges() == version;
         } catch (Throwable e) {
             return false;
         }

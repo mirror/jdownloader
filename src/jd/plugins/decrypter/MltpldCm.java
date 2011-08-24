@@ -56,8 +56,7 @@ public class MltpldCm extends PluginForDecrypt {
                 br.getPage(redirectLink);
                 String finallink = br.getRedirectLocation();
                 if (finallink == null) {
-                    logger.warning("finallink is null...");
-                    return null;
+                    continue;
                 }
                 if (finallink.contains("mediafire")) finallink = finallink.replace("mediafire.com?", "mediafire.com/?");
                 decryptedLinks.add(createDownloadlink(finallink));

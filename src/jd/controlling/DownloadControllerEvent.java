@@ -16,29 +16,26 @@
 
 package jd.controlling;
 
-import org.appwork.utils.event.DefaultIntEvent;
+import org.appwork.utils.event.SimpleEvent;
 
-public class DownloadControllerEvent extends DefaultIntEvent {
+public class DownloadControllerEvent extends SimpleEvent<DownloadController, Object, DownloadControllerEvent.TYPE> {
 
-    public static final int REFRESH_DATA        = 13;
-
-    /**
-     * Wird bei Strukturänderungen der DownloadListe
-     */
-    public static final int REFRESH_STRUCTURE   = 1;
-
-    public static final int REMOVE_FILPACKAGE   = 3;
-
-    public static final int ADD_DOWNLOADLINK    = 4;
-
-    public static final int REMOVE_DOWNLOADLINK = 5;
-
-    public DownloadControllerEvent(final Object source, final int ID) {
-        super(source, ID);
+    public DownloadControllerEvent(DownloadController caller, TYPE type, Object[] parameters) {
+        super(caller, type, parameters);
     }
 
-    public DownloadControllerEvent(final Object source, final int ID, final Object param) {
-        super(source, ID, param);
+    public DownloadControllerEvent(DownloadController caller, TYPE type, Object parameter) {
+        super(caller, type, new Object[] { parameter });
+    }
+
+    public DownloadControllerEvent(DownloadController caller, TYPE type) {
+        super(caller, type);
+    }
+
+    public static enum TYPE {
+        REFRESH_DATA,
+        REFRESH_STRUCTURE,
+        REMOVE_CONTENT
     }
 
 }

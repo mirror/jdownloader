@@ -65,9 +65,11 @@ public abstract class PackageController<E extends AbstractPackageNode<V, E>, V e
                         ListIterator<E> li = packages.listIterator();
                         int counter = 0;
                         boolean done = false;
+                        boolean addLast = false;
                         if (index < 0) {
                             /* add end of list */
                             done = true;
+                            addLast = true;
                         }
                         while (li.hasNext()) {
                             if (done && !need2Remove) break;
@@ -83,7 +85,7 @@ public abstract class PackageController<E extends AbstractPackageNode<V, E>, V e
                             }
                             counter++;
                         }
-                        if (!done) {
+                        if (!done || addLast) {
                             /**
                              * index > packages.size , then add at end
                              */
