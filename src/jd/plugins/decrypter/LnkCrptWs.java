@@ -45,6 +45,7 @@ import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JFrame;
+import javax.swing.JLabel;
 import javax.swing.JLayeredPane;
 import javax.swing.JPanel;
 import javax.swing.event.MouseInputAdapter;
@@ -70,6 +71,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
+import net.miginfocom.swing.MigLayout;
 
 import org.appwork.utils.swing.dialog.AbstractDialog;
 import org.appwork.utils.swing.dialog.Dialog;
@@ -105,6 +107,18 @@ public class LnkCrptWs extends PluginForDecrypt {
             return result;
         }
 
+        private boolean isStableEnviroment() {
+            String prev = JDUtilities.getRevision();
+            if (prev == null || prev.length() < 3) {
+                prev = "0";
+            } else {
+                prev = prev.replaceAll(",|\\.", "");
+            }
+            int rev = Integer.parseInt(prev);
+            if (rev < 10000) return true;
+            return false;
+        }
+
         public synchronized String handleAuto(final String parameter) throws Exception {
             DLURL = parameter;
             parse();
@@ -123,13 +137,14 @@ public class LnkCrptWs extends PluginForDecrypt {
             // fragmentiertes Hintergrundbild
             sscGetImagest(sscStc[0], sscStc[1], sscStc[2], Boolean.parseBoolean(sscStc[3]));
 
-            final boolean stable = true;
             String out;
 
-            if (!stable) {
+            if (!isStableEnviroment()) {
+
                 final KeyCaptchaDialog vC = new KeyCaptchaDialog(0, "KeyCaptcha", new String[] { sscStc[1], stImgs[1] }, fmsImg, null);
                 vC.displayDialog();
                 out = vC.getReturnValue();
+
             } else {
                 final KeyCaptchaShowDialog vC = new KeyCaptchaShowDialog(new String[] { sscStc[1], stImgs[1] }, fmsImg);
                 // Warten bis der KeyCaptcha-Dialog geschlossen ist
@@ -356,10 +371,21 @@ public class LnkCrptWs extends PluginForDecrypt {
 
         private Graphics                           go;
 
+        private JPanel                             p;
+
+        private Dimension                          dimensions;
+
         public KeyCaptchaDialog(final int flag, final String title, final String[] imageUrl, final LinkedHashMap<String, int[]> coordinates, final String cancelOption) {
-            super(flag | Dialog.STYLE_HIDE_ICON, title, null, null, null);
+            super(flag | Dialog.STYLE_HIDE_ICON | Dialog.LOGIC_COUNTDOWN, title, null, null, null);
+            this.setCountdownTime(120);
             this.imageUrl = imageUrl;
             this.coordinates = coordinates;
+            dimensions = new Dimension(460, 250);
+        }
+
+        @Override
+        protected boolean isIgnoreSizeLimitations() {
+            return true;
         }
 
         @Override
@@ -389,13 +415,18 @@ public class LnkCrptWs extends PluginForDecrypt {
         @Override
         public JComponent layoutDialogContent() {
             loadImage(imageUrl);
+            // use a container
+            p = new JPanel(new MigLayout("ins 0,wrap 1", "[grow,fill]", "[][grow,fill]"));
+
             handleCoordinates(coordinates);
             drawPanel = new JLayeredPane();
-            drawPanel.setLayout(new BorderLayout());
+
             makePieces();
             makeBackground();
             int offset = 4;
             boolean sampleImg = false;
+            drawPanel.add(new KeyCaptchaDrawBackgroundPanel(kcImages[0]), new Integer(JLayeredPane.DEFAULT_LAYER), new Integer(JLayeredPane.DEFAULT_LAYER));
+
             for (int i = 1; i < kcImages.length; i++) {
                 if (kcImages[i] == null) {
                     continue;
@@ -404,12 +435,19 @@ public class LnkCrptWs extends PluginForDecrypt {
                 } else {
                     sampleImg = false;
                 }
-                drawPanel.add(new KeyCaptchaDragPieces(kcImages[i], offset, sampleImg), null, new Integer(JLayeredPane.DEFAULT_LAYER + i));
+                drawPanel.add(new KeyCaptchaDragPieces(kcImages[i], offset, sampleImg), new Integer(JLayeredPane.DEFAULT_LAYER) + i, new Integer(JLayeredPane.DEFAULT_LAYER) + i);
+
                 offset += 4;
             }
-            drawPanel.add(new KeyCaptchaDrawBackgroundPanel(kcImages[0]), null, new Integer(JLayeredPane.DEFAULT_LAYER + kcImages.length));
-            dialog.add(drawPanel);
-            return drawPanel;
+
+            p.add(new JLabel("Assemble the image as you see at the upper right corner"));
+
+            p.add(drawPanel);
+            return p;
+        }
+
+        public Dimension getPreferredSize() {
+            return dimensions;
         }
 
         public void loadImage(final String[] imagesUrl) {
