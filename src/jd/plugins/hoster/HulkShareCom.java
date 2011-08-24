@@ -113,7 +113,7 @@ public class HulkShareCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         filename = filename.replaceAll("(</b>|<b>|\\.html)", "");
-        link.setName(filename.trim());
+        link.setFinalFileName(filename.trim());
         if (filesize != null) {
             logger.info("Filesize found, filesize = " + filesize);
             link.setDownloadSize(SizeFormatter.getSize(filesize));
@@ -147,6 +147,10 @@ public class HulkShareCom extends PluginForHost {
         }
         br.setFollowRedirects(false);
         dllink = getLink();
+        if (dllink == null && ".mp3".equals(downloadLink.getName().substring(downloadLink.getName().lastIndexOf(".")))) {
+            br.getPage("http://hulkshare.com/ap-" + new Regex(downloadLink.getDownloadURL(), "hulkshare\\.com/(.+)").getMatch(0) + ".mp3");
+            dllink = br.getRedirectLocation();
+        }
         if (dllink == null) {
             Form DLForm = br.getFormbyProperty("name", "F1");
             if (DLForm == null) {
@@ -277,7 +281,7 @@ public class HulkShareCom extends PluginForHost {
                         logger.warning("Wrong captcha or wrong password!");
                         throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                     }
-                    if (dllink == null) dllink = getLink();
+                    dllink = getLink();
                 }
                 if (dllink == null) {
                     checkErrors(downloadLink);
