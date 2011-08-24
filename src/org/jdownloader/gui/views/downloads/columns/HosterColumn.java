@@ -5,7 +5,6 @@ import javax.swing.ImageIcon;
 import javax.swing.JComponent;
 import javax.swing.JToolTip;
 
-import jd.controlling.FilePackageInfoController;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PackageLinkNode;
@@ -101,7 +100,6 @@ public class HosterColumn extends ExtColumn<PackageLinkNode> {
     public void configureRendererComponent(PackageLinkNode value, boolean isSelected, boolean hasFocus, int row, int column) {
         if (value instanceof FilePackage) {
             int i = 0;
-            FilePackageInfoController.getInstance().getFilePackageInfo((FilePackage) value);
             for (DownloadLink link : ((FilePackage) value).getChildren()) {
                 if (i == maxIcons) break;
                 ImageIcon icon = link.getHosterIcon(true);
