@@ -47,7 +47,6 @@ public class Uploadedto extends PluginForHost {
     public Uploadedto(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://uploaded.to/");
-        setMaxConnections(20);
         this.setStartIntervall(2000l);
     }
 

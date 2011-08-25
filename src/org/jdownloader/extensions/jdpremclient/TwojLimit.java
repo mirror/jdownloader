@@ -28,15 +28,15 @@ import org.appwork.utils.formatter.TimeFormatter;
 
 public class TwojLimit extends PluginForHost implements JDPremInterface {
 
-    private boolean proxyused = false;
-    private String infostring = null;
-    private PluginForHost plugin = null;
-    private static boolean enabled = false;
+    private boolean                  proxyused    = false;
+    private String                   infostring   = null;
+    private PluginForHost            plugin       = null;
+    private static boolean           enabled      = false;
     private static ArrayList<String> premiumHosts = new ArrayList<String>();
-    private static final Object LOCK = new Object();
-    private String Info = null;
-    private String validUntil = null;
-    private boolean expired = false;
+    private static final Object      LOCK         = new Object();
+    private String                   Info         = null;
+    private String                   validUntil   = null;
+    private boolean                  expired      = false;
 
     /* function returns transfer left */
     private long GetTrasferLeft(String wynik) {
@@ -59,18 +59,6 @@ public class TwojLimit extends PluginForHost implements JDPremInterface {
     public String getAGBLink() {
         if (plugin == null) return "http://www.twojlimit.pl/terms.php";
         return plugin.getAGBLink();
-    }
-
-    @Override
-    public synchronized int getFreeConnections() {
-        if (plugin != null) return plugin.getFreeConnections();
-        return super.getFreeConnections();
-    }
-
-    @Override
-    public int getMaxConnections() {
-        if (plugin != null) return plugin.getMaxConnections();
-        return super.getMaxConnections();
     }
 
     @Override

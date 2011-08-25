@@ -28,7 +28,6 @@ import java.util.Map.Entry;
 import java.util.Vector;
 import java.util.logging.Logger;
 
-import jd.controlling.ByteArray;
 import jd.controlling.DownloadWatchDog;
 import jd.controlling.GarbageController;
 import jd.controlling.JDLogger;
@@ -46,6 +45,8 @@ import jd.utils.JDUtilities;
 
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Regex;
+import org.appwork.utils.ReusableByteArrayOutputStreamPool;
+import org.appwork.utils.ReusableByteArrayOutputStreamPool.ReusableByteArrayOutputStream;
 import org.appwork.utils.net.httpconnection.HTTPConnection.RequestMethod;
 import org.appwork.utils.net.throttledconnection.MeteredThrottledInputStream;
 import org.appwork.utils.speedmeter.AverageSpeedMeter;
@@ -68,34 +69,32 @@ abstract public class DownloadInterface {
          * kleinen Buffer und eine sehr hohe Intervalzeit. Das fuehrt zu
          * verstaerkt intervalartigem laden und ist ungewuenscht
          */
-        public static final long            MIN_CHUNKSIZE        = 1 * 1024 * 1024;
+        public static final long                MIN_CHUNKSIZE        = 1 * 1024 * 1024;
 
-        protected ByteArray                 buffer               = null;
+        protected ReusableByteArrayOutputStream buffer               = null;
 
-        private long                        chunkBytesLoaded     = 0;
+        private long                            chunkBytesLoaded     = 0;
 
-        private URLConnectionAdapter        connection;
+        private URLConnectionAdapter            connection;
 
-        private long                        endByte;
+        private long                            endByte;
 
-        private int                         id                   = -1;
+        private int                             id                   = -1;
 
-        private MeteredThrottledInputStream inputStream;
+        private MeteredThrottledInputStream     inputStream;
 
-        private int                         MAX_BUFFERSIZE       = 4 * 1024 * 1024;
+        private long                            startByte;
+        private long                            bytes2Do             = -1;
 
-        private long                        startByte;
-        private long                        bytes2Do             = -1;
+        private DownloadInterface               dl;
 
-        private DownloadInterface           dl;
+        private boolean                         connectionclosed     = false;
 
-        private boolean                     connectionclosed     = false;
+        private boolean                         addedtoStartedChunks = false;
 
-        private boolean                     addedtoStartedChunks = false;
+        private boolean                         chunkinprogress      = false;
 
-        private boolean                     chunkinprogress      = false;
-
-        private boolean                     clonedconnection     = false;
+        private boolean                         clonedconnection     = false;
 
         /**
          * Die Connection wird entsprechend der start und endbytes neu
@@ -113,7 +112,6 @@ abstract public class DownloadInterface {
             this.clonedconnection = false;
             this.dl = dl;
             setPriority(Thread.MIN_PRIORITY);
-            MAX_BUFFERSIZE = JsonConfig.create(GeneralSettings.class).getMaxBufferSize() * 1024;
         }
 
         private void addChunkBytesLoaded(long limit) {
@@ -253,17 +251,13 @@ abstract public class DownloadInterface {
 
         /** Die eigentliche Downloadfunktion */
         private void download() {
-            int bufferSize = 1;
             if (speedDebug) {
                 logger.finer("Resume Chunk with " + getChunkSize() + " at " + getCurrentBytesPosition());
             }
             try {
-                bufferSize = MAX_BUFFERSIZE;
-                bufferSize = Math.max(bufferSize, 1);
-                /* max 2gb buffer */
-                buffer = new ByteArray(bufferSize);
-
-            } catch (Exception e) {
+                int maxbuffersize = JsonConfig.create(GeneralSettings.class).getMaxBufferSize() * 1024;
+                buffer = ReusableByteArrayOutputStreamPool.getReusableByteArrayOutputStream(Math.max(maxbuffersize, 10240), false);
+            } catch (Throwable e) {
                 error(LinkStatus.ERROR_FATAL, _JDT._.download_error_message_outofmemory());
                 return;
             }
@@ -276,42 +270,80 @@ abstract public class DownloadInterface {
                 inputStream = new MeteredThrottledInputStream(connection.getInputStream(), new AverageSpeedMeter(10));
                 DownloadWatchDog.getInstance().getConnectionManager().addManagedThrottledInputStream(inputStream);
 
-                int miniblock = 0;
+                int towrite = 0;
+                int read = 0;
+                boolean reachedEOF = false;
                 while (!isExternalyAborted()) {
                     try {
-                        if (endByte > 0) {
-                            miniblock = inputStream.read(buffer.getBuffer(), 0, (int) Math.min(bytes2Do, buffer.getBuffer().length));
+                        buffer.reset();
+                        if (reachedEOF == true) {
+                            /* we already reached EOF, so nothing more to read */
+                            towrite = -1;
                         } else {
-                            miniblock = inputStream.read(buffer.getBuffer());
+                            /* lets try to read some data */
+                            towrite = 0;
                         }
+                        while (!reachedEOF && buffer.free() > 0) {
+                            if (endByte > 0) {
+                                /* read only as much as needed */
+                                read = inputStream.read(buffer.getInternalBuffer(), buffer.size(), (int) Math.min(bytes2Do, (buffer.getInternalBuffer().length - buffer.size())));
+                                if (read > 0) {
+                                    bytes2Do -= read;
+                                    if (bytes2Do == 0) {
+                                        /* we reached our artificial EOF */
+                                        reachedEOF = true;
+                                    }
+                                }
+                            } else {
+                                /* read as much as possible */
+                                read = inputStream.read(buffer.getInternalBuffer(), buffer.size(), (buffer.getInternalBuffer().length - buffer.size()));
+                            }
+                            if (read > 0) {
+                                /* we read some data */
+                                towrite += read;
+                                buffer.setUsed(towrite);
+                            } else if (read == -1) {
+                                /* we reached EOF */
+                                reachedEOF = true;
+                            } else {
+                                /*
+                                 * wait a moment, give system chance to fill up
+                                 * its buffers
+                                 */
+                                synchronized (this) {
+                                    this.wait(500);
+                                }
+                            }
+                        }
+
                     } catch (SocketException e2) {
                         if (!isExternalyAborted()) throw e2;
-                        miniblock = -1;
+                        towrite = -1;
                         break;
                     } catch (ClosedByInterruptException e) {
                         if (!isExternalyAborted()) {
                             logger.severe("Timeout detected");
                             error(LinkStatus.ERROR_TIMEOUT_REACHED, null);
                         }
-                        miniblock = -1;
+                        towrite = -1;
                         break;
                     } catch (AsynchronousCloseException e3) {
                         if (!isExternalyAborted() && !connectionclosed) throw e3;
-                        miniblock = -1;
+                        towrite = -1;
                         break;
                     } catch (IOException e4) {
                         if (!isExternalyAborted() && !connectionclosed) throw e4;
-                        miniblock = -1;
+                        towrite = -1;
                         break;
                     }
-                    if (miniblock == -1 || isExternalyAborted() || connectionclosed) {
+                    if (towrite == -1 || isExternalyAborted() || connectionclosed) {
                         break;
                     }
-                    addToTotalLinkBytesLoaded(miniblock);
-                    addChunkBytesLoaded(miniblock);
-                    bytes2Do -= miniblock;
-                    buffer.setMark(miniblock);
-                    writeBytes(this);
+                    if (towrite > 0) {
+                        addToTotalLinkBytesLoaded(towrite);
+                        addChunkBytesLoaded(towrite);
+                        writeBytes(this);
+                    }
                     /* enough bytes loaded */
                     if (bytes2Do == 0 && endByte > 0) break;
                     if (getCurrentBytesPosition() > endByte && endByte > 0) {
@@ -358,8 +390,8 @@ abstract public class DownloadInterface {
                 error(LinkStatus.ERROR_RETRY, JDUtilities.convertExceptionReadable(e));
                 addException(e);
             } finally {
-                /* TODO */
-                // if (buffer != null) buffer.setUnused();
+                ReusableByteArrayOutputStreamPool.reuseReusableByteArrayOutputStream(buffer);
+                buffer = null;
                 chunkinprogress = false;
                 try {
                     inputStream.close();
@@ -371,16 +403,10 @@ abstract public class DownloadInterface {
                     if (this.clonedconnection) {
                         /* cloned connection, we can disconnect now */
                         this.connection.disconnect();
+                        this.connection = null;
                     }
                 } catch (Throwable e) {
                 }
-            }
-        }
-
-        @Override
-        public void finalize() {
-            if (speedDebug) {
-                logger.finer("Finalized: " + downloadLink + " : " + getID());
             }
         }
 
@@ -433,7 +459,7 @@ abstract public class DownloadInterface {
          */
         public long getWritePosition() throws Exception {
             long c = getCurrentBytesPosition();
-            long l = buffer.getMark();
+            long l = buffer.size();
             return c - l;
         }
 
@@ -453,7 +479,6 @@ abstract public class DownloadInterface {
          */
         @Override
         public void run() {
-            PluginForHost.setCurrentConnections(PluginForHost.getCurrentConnections() + 1);
             try {
                 run0();
                 while (true) {
@@ -471,7 +496,6 @@ abstract public class DownloadInterface {
                 }
             } finally {
                 try {
-                    PluginForHost.setCurrentConnections(PluginForHost.getCurrentConnections() - 1);
                     addToChunksInProgress(-1);
                 } catch (Throwable e) {
                     JDLogger.exception(e);
@@ -639,6 +663,7 @@ abstract public class DownloadInterface {
                     /* we can close cloned connections here */
                     if (this.clonedconnection) {
                         connection.disconnect();
+                        connection = null;
                     }
                 } catch (Throwable e) {
                 }
@@ -671,6 +696,8 @@ abstract public class DownloadInterface {
             try {
                 connection.disconnect();
             } catch (Throwable e) {
+            } finally {
+                connection = null;
             }
             logger.info("Closed connection before closing file");
         }
@@ -857,7 +884,6 @@ abstract public class DownloadInterface {
         } else {
             if (this.isFileSizeVerified()) {
                 int tmp = Math.min(Math.max(1, (int) (downloadLink.getDownloadSize() / Chunk.MIN_CHUNKSIZE)), getChunkNum());
-                tmp = Math.min(tmp, plugin.getFreeConnections());
 
                 if (tmp != getChunkNum()) {
                     logger.finer("Corrected Chunknum: " + getChunkNum() + " -->" + tmp);

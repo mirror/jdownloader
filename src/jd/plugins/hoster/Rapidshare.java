@@ -157,7 +157,6 @@ public class Rapidshare extends PluginForHost {
         super(wrapper);
         this.setConfigElements();
         this.enablePremium("http://rapidshare.com/premium.html");
-        this.setMaxConnections(30);
     }
 
     /**

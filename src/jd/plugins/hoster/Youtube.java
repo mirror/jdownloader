@@ -288,7 +288,7 @@ public class Youtube extends PluginForHost {
         if (downloadLink.getProperty("convertto") != null) {
             final DestinationFormat convertto = DestinationFormat.valueOf(downloadLink.getProperty("convertto").toString());
             DestinationFormat InType = DestinationFormat.VIDEOFLV;
-            if (convertto.equals(DestinationFormat.VIDEOMP4) || convertto.equals(DestinationFormat.VIDEO3GP)) {
+            if (convertto.equals(DestinationFormat.VIDEOWEBM) || convertto.equals(DestinationFormat.VIDEOMP4) || convertto.equals(DestinationFormat.VIDEO3GP)) {
                 InType = convertto;
             }
             if (!TbCm.ConvertFile(downloadLink, InType, convertto)) {

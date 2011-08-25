@@ -304,7 +304,7 @@ public class RAFDownload extends DownloadInterface {
         try {
             synchronized (outputFile) {
                 outputFile.seek(chunk.getWritePosition());
-                outputFile.write(chunk.buffer.getBuffer(), 0, chunk.buffer.getMark());
+                outputFile.write(chunk.buffer.getInternalBuffer(), 0, chunk.buffer.size());
                 if (chunk.getID() >= 0) {
                     downloadLink.getChunksProgress()[chunk.getID()] = chunk.getCurrentBytesPosition() - 1;
                 }

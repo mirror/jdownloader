@@ -16,11 +16,11 @@ import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.TransferStatus;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.download.DownloadInterface;
 
 public class ReHostto extends PluginForHost implements JDPremInterface {
@@ -42,18 +42,6 @@ public class ReHostto extends PluginForHost implements JDPremInterface {
     public String getAGBLink() {
         if (plugin == null) return "http://rehost.to";
         return plugin.getAGBLink();
-    }
-
-    @Override
-    public synchronized int getFreeConnections() {
-        if (plugin != null) return plugin.getFreeConnections();
-        return super.getFreeConnections();
-    }
-
-    @Override
-    public int getMaxConnections() {
-        if (plugin != null) return plugin.getMaxConnections();
-        return super.getMaxConnections();
     }
 
     @Override

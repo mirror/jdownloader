@@ -162,11 +162,6 @@ public class DataHu extends PluginForHost {
     }
 
     @Override
-    public int getMaxConnections() {
-        return 1;
-    }
-
-    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 3;
     }

@@ -144,10 +144,7 @@ public abstract class PluginForHost extends Plugin implements FavIconRequestor {
         }
     }
 
-    private static int                         currentConnections     = 0;
-
     protected DownloadInterface                dl                     = null;
-    private int                                maxConnections         = 50;
 
     private static final HashMap<String, Long> LAST_CONNECTION_TIME   = new HashMap<String, Long>();
     private static final HashMap<String, Long> LAST_STARTED_TIME      = new HashMap<String, Long>();
@@ -478,10 +475,6 @@ public abstract class PluginForHost extends Plugin implements FavIconRequestor {
         enablePremium = true;
     }
 
-    public static synchronized int getCurrentConnections() {
-        return currentConnections;
-    }
-
     /**
      * Hier werden Treffer fuer Downloadlinks dieses Anbieters in diesem Text
      * gesucht. Gefundene Links werden dann in einem ArrayList zurueckgeliefert
@@ -557,14 +550,6 @@ public abstract class PluginForHost extends Plugin implements FavIconRequestor {
      */
     public String getFileInformationString(final DownloadLink downloadLink) {
         return downloadLink.getName() + " (" + Formatter.formatReadable(downloadLink.getDownloadSize()) + ")";
-    }
-
-    public synchronized int getFreeConnections() {
-        return Math.max(1, getMaxConnections() - currentConnections);
-    }
-
-    public int getMaxConnections() {
-        return maxConnections;
     }
 
     public int getMaxRetries() {
@@ -774,10 +759,6 @@ public abstract class PluginForHost extends Plugin implements FavIconRequestor {
     public void resetPluginGlobals() {
     }
 
-    public static synchronized void setCurrentConnections(final int CurrentConnections) {
-        currentConnections = CurrentConnections;
-    }
-
     public int getTimegapBetweenConnections() {
         return 50;
     }
@@ -808,10 +789,6 @@ public abstract class PluginForHost extends Plugin implements FavIconRequestor {
         } else {
             return false;
         }
-    }
-
-    public void setMaxConnections(final int maxConnections) {
-        this.maxConnections = maxConnections;
     }
 
     public void sleep(final long i, final DownloadLink downloadLink) throws PluginException {

@@ -23,11 +23,11 @@ import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.BrowserAdapter;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -67,11 +67,6 @@ public class FsxHu extends PluginForHost {
     @Override
     public String getAGBLink() {
         return "http://www.fsx.hu/index.php?m=home&o=szabalyzat";
-    }
-
-    @Override
-    public int getMaxConnections() {
-        return 1;
     }
 
     @Override

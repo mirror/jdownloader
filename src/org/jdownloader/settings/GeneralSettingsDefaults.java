@@ -177,7 +177,7 @@ public class GeneralSettingsDefaults implements GeneralSettings {
     }
 
     public int getMaxBufferSize() {
-        return 1000;
+        return 500;
     }
 
     public void setMaxBufferSize(int num) {

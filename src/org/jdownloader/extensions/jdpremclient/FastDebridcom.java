@@ -28,13 +28,13 @@ import org.appwork.utils.Regex;
 
 public class FastDebridcom extends PluginForHost implements JDPremInterface {
 
-    private boolean proxyused = false;
-    private String infostring = null;
-    private PluginForHost plugin = null;
-    private static boolean enabled = false;
-    private static ArrayList<String> premiumHosts = new ArrayList<String>();
-    private static final Object LOCK = new Object();
-    private static HashMap<String, String> accDetails = new HashMap<String, String>();
+    private boolean                        proxyused    = false;
+    private String                         infostring   = null;
+    private PluginForHost                  plugin       = null;
+    private static boolean                 enabled      = false;
+    private static ArrayList<String>       premiumHosts = new ArrayList<String>();
+    private static final Object            LOCK         = new Object();
+    private static HashMap<String, String> accDetails   = new HashMap<String, String>();
 
     public FastDebridcom(PluginWrapper wrapper) {
         super(wrapper);
@@ -46,18 +46,6 @@ public class FastDebridcom extends PluginForHost implements JDPremInterface {
     public String getAGBLink() {
         if (plugin == null) return "https://www.fast-debrid.com/charte.php";
         return plugin.getAGBLink();
-    }
-
-    @Override
-    public synchronized int getFreeConnections() {
-        if (plugin != null) return plugin.getFreeConnections();
-        return super.getFreeConnections();
-    }
-
-    @Override
-    public int getMaxConnections() {
-        if (plugin != null) return plugin.getMaxConnections();
-        return super.getMaxConnections();
     }
 
     @Override

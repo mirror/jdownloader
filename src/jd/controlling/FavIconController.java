@@ -132,7 +132,7 @@ public final class FavIconController extends SubConfiguration implements Runnabl
                         ImageIO.write(favicon, "png", imageFile);
                         /* load and scale it again */
                         ImageIcon image = JDImage.getImageIcon("favicons/" + host);
-                        if (image != null) {
+                        if (image != null && requestors != null) {
                             /* refresh icons for all queued plugins */
                             for (FavIconRequestor requestor : requestors) {
                                 requestor.setFavIcon(image);

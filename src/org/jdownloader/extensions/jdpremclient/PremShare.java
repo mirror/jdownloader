@@ -28,12 +28,12 @@ import org.appwork.utils.Regex;
 
 public class PremShare extends PluginForHost implements JDPremInterface {
 
-    private boolean proxyused = false;
-    private String infostring = null;
-    private PluginForHost plugin = null;
+    private boolean                  proxyused    = false;
+    private String                   infostring   = null;
+    private PluginForHost            plugin       = null;
     private static ArrayList<String> premiumHosts = new ArrayList<String>();
-    private static final Object LOCK = new Object();
-    private static boolean enabled = false;
+    private static final Object      LOCK         = new Object();
+    private static boolean           enabled      = false;
 
     public void setReplacedPlugin(PluginForHost plugin) {
         this.plugin = plugin;
@@ -43,18 +43,6 @@ public class PremShare extends PluginForHost implements JDPremInterface {
         super(wrapper);
         this.enablePremium();
         infostring = "JDPremium @ " + wrapper.getHost();
-    }
-
-    @Override
-    public synchronized int getFreeConnections() {
-        if (plugin != null) return plugin.getFreeConnections();
-        return super.getFreeConnections();
-    }
-
-    @Override
-    public int getMaxConnections() {
-        if (plugin != null) return plugin.getMaxConnections();
-        return super.getMaxConnections();
     }
 
     @Override

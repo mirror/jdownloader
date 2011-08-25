@@ -136,7 +136,7 @@ public interface GeneralSettings extends ConfigInterface {
     void setMaxChunksPerFile(int num);
 
     @AboutConfig
-    @Description("Max Buffersize for downloading")
+    @Description("Max Buffersize for downloading in kb")
     int getMaxBufferSize();
 
     void setMaxBufferSize(int num);

@@ -45,18 +45,6 @@ public class Zevera extends PluginForHost implements JDPremInterface {
     }
 
     @Override
-    public synchronized int getFreeConnections() {
-        if (plugin != null) return plugin.getFreeConnections();
-        return super.getFreeConnections();
-    }
-
-    @Override
-    public int getMaxConnections() {
-        if (plugin != null) return plugin.getMaxConnections();
-        return super.getMaxConnections();
-    }
-
-    @Override
     public long getVersion() {
         if (plugin == null) return getVersion("$Revision: 13504 $");
         return plugin.getVersion();
