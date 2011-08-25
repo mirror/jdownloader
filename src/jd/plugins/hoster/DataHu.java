@@ -108,6 +108,7 @@ public class DataHu extends PluginForHost {
         }
         String points = br.getRegex(Pattern.compile("title=\"Mi az a DataPont\\?\">(\\d+) pont</a>", Pattern.CASE_INSENSITIVE)).getMatch(0);
         if (points != null) ai.setPremiumPoints(Long.parseLong(points));
+        ai.setStatus("Premium account");
         account.setValid(true);
         return ai;
     }

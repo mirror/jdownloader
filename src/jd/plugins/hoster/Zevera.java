@@ -161,19 +161,6 @@ public class Zevera extends PluginForHost {
                 String infos[] = br.getRegex("(.*?)(,|$)").getColumn(0);
                 if (infos[0].contains("FileID:0")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Error adding file, FileID doesnt exist"); }
                 if (infos[6].contains("Status:Downloaded")) {
-                    // 0 FileID:1198253,
-                    // 1 FileName:file.rar,
-                    // 2 FileNameOnServer:C14316_2011618105645130_8832.zip,
-                    // 3 StorageServerURL:Http://rapidus.000.gr,
-                    // 4 FileSizeInBytes:6391068,
-                    // 5
-                    // DownloadURL:Http://rapidus.000.gr/downloadFile.ashx?link=C14316_2011618105645130_8832.zip&fid=1198253&cid=0,
-                    // 6 Status:Downloaded,
-                    // 7 BytesReceived:6391068,
-                    // 8 TotalBytesToReceive:6391068,
-                    // 9 ProgressPercentage:100,
-                    // 10 StatusText:Downloaded,
-                    // 11 ProgressText:Finished
                     String DownloadURL = br.getRegex("DownloadURL:(Http.*?),").getMatch(0);
                     if (DownloadURL == null) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE); }
                     showMessage(downloadLink, "Phase 3/3: OK Download starting");

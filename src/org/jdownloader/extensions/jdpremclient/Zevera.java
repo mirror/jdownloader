@@ -208,14 +208,7 @@ public class Zevera extends PluginForHost implements JDPremInterface {
             while (true) {
                 br.getPage("http://www.zevera.com/jDownloader.ashx?cmd=fileinfo&login=" + user + "&pass=" + pw + "&FileID=" + FileID);
                 if (br.containsHTML("Status:Downloaded")) {
-                    // FileID:1198253,FileName:Terraria.v1.0.4.cracked-THETA.rar,
-                    // FileNameOnServer:C14316_2011618105645130_8832.zip,
-                    // StorageServerURL:Http://rapidus.000.gr,FileSizeInBytes:6391068,
-                    // DownloadURL:Http://rapidus.000.gr/downloadFile.ashx?link=C14316_2011618105645130_8832.zip&fid=1198253&cid=0,
-                    // Status:Downloaded,BytesReceived:6391068,TotalBytesToReceive:6391068,ProgressPercentage:100,
-                    // StatusText:Downloaded,
-                    // ProgressText:Finished
-                    dlUrl = br.getRegex("DownloadURL:(.+)").getMatch(0);
+                    dlUrl = br.getRegex("DownloadURL:(.*?)(,|$)").getMatch(0);
                     showMessage(link, "Phase 2/3: Check Download");
                     break;
                 }
@@ -225,14 +218,7 @@ public class Zevera extends PluginForHost implements JDPremInterface {
             if (br.containsHTML("Status:Downloaded")) {
                 logger.severe("3: Status:Downloaded");
                 logger.severe("3: Infos[5]=" + infos[5]);
-                // FileID:1198815,
-                // FileName:RarLab.WinRAR.v4.01.Cracked-EAT.rar,
-                // FileNameOnServer:C14316_201161813458548_2339.zip,
-                // StorageServerURL:Http://rapidus.000.gr,
-                // FileSizeInBytes:2273644,
-                // DownloadURL:Http://rapidus.000.gr/downloadFile.ashx?link=C14316_201161813458548_2339.zip&fid=1198815&cid=14316,
-                // Status:Downloaded,TotalBytesToReceive:2273644
-                dlUrl = br.getRegex("DownloadURL:(.+)").getMatch(0);
+                dlUrl = br.getRegex("DownloadURL:(.*?)(,|$)").getMatch(0);
                 showMessage(link, "Phase 2/3: Check Download");
             } else {
                 logger.severe("5:ERROR_FILE_NOT_FOUND");
@@ -310,7 +296,7 @@ public class Zevera extends PluginForHost implements JDPremInterface {
             String hosts = null;
             try {
                 loginPage = br.getPage("http://www.zevera.com/jDownloader.ashx?cmd=accountinfo&login=" + username + "&pass=" + pass);
-                ses = new Regex(loginPage, "AvailableExtraTraffic(.*?),").getMatch(0);
+                ses = new Regex(loginPage, "AvailableExtraTraffic:(.*?),").getMatch(0);
                 trafficLeft = Long.parseLong(ses);
                 hosts = br.getPage("http://www.zevera.com/jDownloader.ashx?cmd=gethosters&login=" + username + "&pass=" + pass);
             } catch (Exception e) {

@@ -115,7 +115,7 @@ public class HosterColumn extends ExtColumn<PackageLinkNode> {
                 if (i == maxIcons) break;
                 ImageIcon icon = link.getHosterIcon(true);
                 if (icon != null) {
-                    labels[i].setVisible(false);
+                    labels[i].setVisible(true);
                     labels[i].setIcon(icon);
                     i++;
                 }
@@ -123,7 +123,7 @@ public class HosterColumn extends ExtColumn<PackageLinkNode> {
         } else if (value instanceof DownloadLink) {
             ImageIcon icon = ((DownloadLink) value).getHosterIcon(true);
             if (icon != null) {
-                labels[0].setVisible(false);
+                labels[0].setVisible(true);
                 labels[0].setIcon(icon);
             }
 
@@ -148,7 +148,7 @@ public class HosterColumn extends ExtColumn<PackageLinkNode> {
     @Override
     public void resetRenderer() {
         for (int i = 0; i < maxIcons; i++) {
-            labels[i].setVisible(true);
+            labels[i].setVisible(false);
         }
         this.panel.setOpaque(false);
         this.panel.setBackground(null);

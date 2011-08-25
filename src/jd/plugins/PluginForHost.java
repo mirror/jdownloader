@@ -686,6 +686,10 @@ public abstract class PluginForHost extends Plugin implements FavIconRequestor {
                     dl.getConnection().disconnect();
                 } catch (Exception e) {
                 }
+                try {
+                    br.getHttpConnection().disconnect();
+                } catch (Exception e) {
+                }
                 setDownloadInterface(null);
             }
 
@@ -744,6 +748,10 @@ public abstract class PluginForHost extends Plugin implements FavIconRequestor {
                 try {
                     dl.getConnection().disconnect();
                 } catch (Throwable e) {
+                }
+                try {
+                    br.getHttpConnection().disconnect();
+                } catch (Exception e) {
                 }
                 setDownloadInterface(null);
             }
