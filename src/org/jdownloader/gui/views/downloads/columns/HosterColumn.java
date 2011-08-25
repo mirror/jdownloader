@@ -29,7 +29,18 @@ public class HosterColumn extends ExtColumn<PackageLinkNode> {
         labels = new RenderLabel[maxIcons];
         // panel.add(Box.createGlue(), "pushx,growx");
         for (int i = 0; i < maxIcons; i++) {
-            labels[i] = new RenderLabel();
+            labels[i] = new RenderLabel() {
+
+                @Override
+                public void show(boolean b) {
+                    if (b) {
+                        show();
+                    } else {
+                        hide();
+                    }
+                }
+
+            };
             labels[i].setOpaque(false);
             labels[i].setBackground(null);
             panel.add(labels[i], "gapleft 1,hidemode 3");
@@ -104,7 +115,7 @@ public class HosterColumn extends ExtColumn<PackageLinkNode> {
                 if (i == maxIcons) break;
                 ImageIcon icon = link.getHosterIcon(true);
                 if (icon != null) {
-                    labels[i].setWorkaroundNotVisible(false);
+                    labels[i].setVisible(false);
                     labels[i].setIcon(icon);
                     i++;
                 }
@@ -112,7 +123,7 @@ public class HosterColumn extends ExtColumn<PackageLinkNode> {
         } else if (value instanceof DownloadLink) {
             ImageIcon icon = ((DownloadLink) value).getHosterIcon(true);
             if (icon != null) {
-                labels[0].setWorkaroundNotVisible(false);
+                labels[0].setVisible(false);
                 labels[0].setIcon(icon);
             }
 
@@ -137,7 +148,7 @@ public class HosterColumn extends ExtColumn<PackageLinkNode> {
     @Override
     public void resetRenderer() {
         for (int i = 0; i < maxIcons; i++) {
-            labels[i].setWorkaroundNotVisible(true);
+            labels[i].setVisible(true);
         }
         this.panel.setOpaque(false);
         this.panel.setBackground(null);

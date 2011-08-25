@@ -186,4 +186,11 @@ public class GraphicalUserInterfaceSettingsValidator implements GraphicalUserInt
     public void setLinkgrabberQuickSettingsVisible(boolean b) {
     }
 
+    public void setAddDialogHelpTextVisible(boolean b) {
+    }
+
+    public boolean isAddDialogHelpTextVisible() {
+        return false;
+    }
+
 }

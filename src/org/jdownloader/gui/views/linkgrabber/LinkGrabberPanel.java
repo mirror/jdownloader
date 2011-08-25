@@ -19,6 +19,7 @@ import org.jdownloader.gui.views.linkgrabber.actions.AddLinksAction;
 import org.jdownloader.gui.views.linkgrabber.actions.AddOptionsAction;
 import org.jdownloader.gui.views.linkgrabber.actions.ClearAction;
 import org.jdownloader.gui.views.linkgrabber.actions.ConfirmAllAction;
+import org.jdownloader.gui.views.linkgrabber.actions.ConfirmOptionsAction;
 
 public class LinkGrabberPanel extends SwitchPanel {
     private LinkGrabberTableModel tableModel;
@@ -29,6 +30,7 @@ public class LinkGrabberPanel extends SwitchPanel {
     private JButton               confirmAll;
     private JButton               clearAll;
     private JButton               popup;
+    private JButton               popupConfirm;
 
     public LinkGrabberPanel() {
         super(new MigLayout("ins 0, wrap 2", "[grow,fill]2[fill]", "[grow, fill]2[]"));
@@ -60,18 +62,29 @@ public class LinkGrabberPanel extends SwitchPanel {
         addLinks = new JButton(new AddLinksAction());
         confirmAll = new JButton(new ConfirmAllAction());
         clearAll = new JButton(new ClearAction());
-        popup = new JButton(new AddOptionsAction(addLinks));
+        popup = new JButton(new AddOptionsAction(addLinks)) {
+            public void setBounds(int x, int y, int width, int height) {
+                super.setBounds(x - 2, y, width + 2, height);
+            }
+        };
+        popupConfirm = new JButton(new ConfirmOptionsAction(table, confirmAll)) {
+            public void setBounds(int x, int y, int width, int height) {
+                super.setBounds(x - 2, y, width + 2, height);
+            }
+        };
+
         MigPanel leftBar = new MigPanel("ins 0", "[]1[][][grow,fill]", "[]");
-        MigPanel rightBar = new MigPanel("ins 0", "[grow,fill]", "[]");
+        MigPanel rightBar = new MigPanel("ins 0", "[grow,fill]1[]0", "[]");
         add(leftBar);
 
         add(rightBar, "");
         leftBar.add(addLinks, "height 24!");
-        leftBar.add(popup, "height 24!,width 10!");
+
+        leftBar.add(popup, "height 24!,width 8!");
         leftBar.add(clearAll, "width 24!,height 24!");
         leftBar.add(Box.createGlue());
         rightBar.add(confirmAll, "height 24!");
-
+        rightBar.add(popupConfirm, "height 24!,width 8!");
     }
 
     @Override

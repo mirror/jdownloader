@@ -2188,7 +2188,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Clears the list" })
     String ClearAction_tt_();
 
-    @Default(lngs = { "en" }, values = { "Download all" })
+    @Default(lngs = { "en" }, values = { "Add to Download List" })
     String ConfirmAction_ConfirmAction_();
 
     @Default(lngs = { "en" }, values = { "Hoster Filter" })
@@ -2241,4 +2241,43 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Link Container (%s1)" })
     String AddContainerAction_actionPerformed_extensions(String containerExtensions);
+
+    @Default(lngs = { "en" }, values = { "Download All" })
+    String ConfirmOptionsAction_actionPerformed_all();
+
+    @Default(lngs = { "en" }, values = { "Download Selected" })
+    String ConfirmOptionsAction_actionPerformed_selected();
+
+    @Default(lngs = { "en" }, values = { "Force Download now!" })
+    String ConfirmAction_ConfirmAction_forced();
+
+    @Default(lngs = { "en" }, values = { "Force Download now!" })
+    String ConfirmAllAction_ConfirmAllAction_force();
+
+    @Default(lngs = { "en" }, values = { "Add to Download List" })
+    String ConfirmAllAction_ConfirmAllAction_();
+
+    @Default(lngs = { "en" }, values = { "Add this Link or Package to Download List" })
+    String ConfirmSingleNodeAction_ConfirmSingleNodeAction_tt();
+
+    @Default(lngs = { "en" }, values = { "Analyse and Add Links" })
+    String AddLinksDialog_AddLinksDialog_();
+
+    @Default(lngs = { "en" }, values = { "Continue" })
+    String AddLinksDialog_AddLinksDialog_confirm();
+
+    @Default(lngs = { "en" }, values = { "JDownloader helps you to parse text or websites for links. Enter Links, URLs, Websites, or text below, \r\nchoose a Download Destination, and click 'Start Analyse'. \r\nAll 'downloadable' Files will be listed in the the Linkgrabber view afterwards." })
+    String AddLinksDialog_layoutDialogContent_description();
+
+    @Default(lngs = { "en" }, values = { "Enter Links, URLs, Websites, or any other text here..." })
+    String AddLinksDialog_layoutDialogContent_input_help();
+
+    @Default(lngs = { "en" }, values = { "Toggle Help Text visibility" })
+    String AddLinksDialog_mouseClicked();
+
+    @Default(lngs = { "en" }, values = { "Please choose Download Destination here." })
+    String AddLinksDialog_layoutDialogContent_save_tt();
+
+    @Default(lngs = { "en" }, values = { "Browse" })
+    String literally_browse();
 }

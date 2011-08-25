@@ -16,7 +16,6 @@ public interface AccountSettings extends ConfigInterface {
     HashMap<String, ArrayList<AccountData>> getAccounts();
 
     @AllowStorage({ Object.class })
-    @CryptedStorage(key = { 1, 6, 4, 5, 2, 7, 4, 3, 12, 61, 14, 75, -2, -7, -44, 33 })
     void setAccounts(HashMap<String, ArrayList<AccountData>> data);
 
     @AboutConfig

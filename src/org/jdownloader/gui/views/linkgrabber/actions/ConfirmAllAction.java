@@ -12,12 +12,18 @@ import org.jdownloader.images.NewTheme;
 
 public class ConfirmAllAction extends AbstractAction {
     private PackageLinkNode value;
+    private boolean         force;
+
+    public ConfirmAllAction(boolean force) {
+        putValue(SMALL_ICON, force ? NewTheme.I().getIcon("media-playback-start_forced", 16) : NewTheme.I().getIcon("media-playback-start", 16));
+
+        putValue(NAME, force ? _GUI._.ConfirmAllAction_ConfirmAllAction_force() : _GUI._.ConfirmAllAction_ConfirmAllAction_());
+        this.force = force;
+
+    }
 
     public ConfirmAllAction() {
-        putValue(SMALL_ICON, NewTheme.I().getIcon("media-playback-start", 16));
-
-        putValue(NAME, _GUI._.ConfirmAction_ConfirmAction_());
-
+        this(false);
     }
 
     public void actionPerformed(ActionEvent e) {

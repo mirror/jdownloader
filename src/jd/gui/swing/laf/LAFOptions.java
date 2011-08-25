@@ -24,6 +24,12 @@ public class LAFOptions implements Storable {
     private int panelHeaderColor           = new JTableHeader().getBackground().getRGB();
     private int panelHeaderForegroundColor = 0;
 
+    public void setPopupBorderInsets(int[] popupBorderInsets) {
+        this.popupBorderInsets = popupBorderInsets;
+    }
+
+    private int[] popupBorderInsets = new int[] { 0, 0, 0, 0 };
+
     public void setPanelHeaderForegroundColor(int panelHeaderForegroundColor) {
         this.panelHeaderForegroundColor = panelHeaderForegroundColor;
     }
@@ -62,5 +68,9 @@ public class LAFOptions implements Storable {
 
     public int getPanelHeaderForegroundColor() {
         return panelHeaderForegroundColor;
+    }
+
+    public int[] getPopupBorderInsets() {
+        return popupBorderInsets;
     }
 }

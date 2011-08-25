@@ -24,7 +24,7 @@ import org.jdownloader.gui.views.downloads.columns.HosterColumn;
 import org.jdownloader.gui.views.downloads.columns.PriorityColumn;
 import org.jdownloader.gui.views.downloads.columns.SizeColumn;
 import org.jdownloader.gui.views.downloads.columns.StopSignColumn;
-import org.jdownloader.gui.views.linkgrabber.actions.ConfirmAction;
+import org.jdownloader.gui.views.linkgrabber.actions.ConfirmSingleNodeAction;
 import org.jdownloader.gui.views.linkgrabber.actions.RemoveAction;
 import org.jdownloader.images.NewTheme;
 
@@ -42,15 +42,15 @@ public class LinkGrabberTableModel extends LinkTableModel {
         this.addColumn(new FileColumn());
         this.addColumn(new ExtComponentColumn<PackageLinkNode>("Start") {
 
-            private ConfirmAction confirmAction;
-            private MigPanel      renderer;
-            private MigPanel      editor;
+            private ConfirmSingleNodeAction confirmAction;
+            private MigPanel                renderer;
+            private MigPanel                editor;
 
-            private RemoveAction  removeAction;
-            private JLabel        confirmRenderer;
+            private RemoveAction            removeAction;
+            private JLabel                  confirmRenderer;
 
             {
-                confirmAction = new ConfirmAction();
+                confirmAction = new ConfirmSingleNodeAction();
                 removeAction = new RemoveAction();
 
                 renderer = new MigPanel("ins 1 0 0 0", "[]0[]", "[]");
