@@ -186,6 +186,7 @@ public class LinkChecker {
                                 jobs.remove(threadHost);
                             }
                             if (!linksToCheck.isEmpty()) {
+                                System.out.println(linksToCheck.size());
                                 DownloadLink linksList[] = new DownloadLink[linksToCheck.size()];
                                 Iterator<DownloadLink> it = linksToCheck.iterator();
                                 int i = 0;

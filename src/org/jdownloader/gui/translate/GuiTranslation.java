@@ -2323,4 +2323,10 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Please enter a valid Download Folder" })
     String AddLinksDialog_layoutDialogContent_help_destination();
 
+    @Default(lngs = { "en" }, values = { "Create Folder" })
+    String AddLinksDialog_layoutDialogContent_mkdir();
+
+    @Default(lngs = { "en" }, values = { "Creating Folder failed" })
+    String AddLinksDialog_actionPerformed_mkdir_failed();
+
 }
