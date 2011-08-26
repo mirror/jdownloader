@@ -136,10 +136,23 @@ public interface GeneralSettings extends ConfigInterface {
     void setMaxChunksPerFile(int num);
 
     @AboutConfig
-    @Description("Max Buffersize for downloading in kb")
+    @Description("max buffer size for each download connection in kb")
     int getMaxBufferSize();
 
     void setMaxBufferSize(int num);
+
+    @AboutConfig
+    @Description("flush download buffers when filled up to x percent (1-100)")
+    @RangeValidatorMarker(range = { 1, 100 })
+    int getFlushBufferLevel();
+
+    void setFlushBufferLevel(int level);
+
+    @AboutConfig
+    @Description("flush download buffers after x ms")
+    int getFlushBufferTimeout();
+
+    void setFlushBufferTimeout(int ms);
 
     @AboutConfig
     @Description("Timeout for connecting to a httpserver")

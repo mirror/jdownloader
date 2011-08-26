@@ -2,9 +2,11 @@ package org.jdownloader.gui.views.linkgrabber;
 
 import javax.swing.ImageIcon;
 
+import jd.controlling.FavIconRequestor;
+
 import org.jdownloader.images.NewTheme;
 
-public class Filter {
+public class Filter implements FavIconRequestor {
     private boolean   enabled = true;
     private ImageIcon icon    = null;
     private String    info    = "" + (int) (Math.random() * 100);
@@ -22,12 +24,12 @@ public class Filter {
     }
 
     public void setIcon(ImageIcon icon) {
-        this.icon = icon;
+        if (icon != null) this.icon = NewTheme.I().getScaledInstance(icon, 16);
     }
 
     public Filter(String string, ImageIcon icon, boolean b) {
         this.hoster = string;
-        this.icon = NewTheme.I().getScaledInstance(icon, 16);
+        if (icon != null) this.icon = NewTheme.I().getScaledInstance(icon, 16);
         this.enabled = b;
     }
 
@@ -48,4 +50,8 @@ public class Filter {
     }
 
     private String hoster = null;
+
+    public void setFavIcon(ImageIcon icon) {
+        setIcon(icon);
+    }
 }

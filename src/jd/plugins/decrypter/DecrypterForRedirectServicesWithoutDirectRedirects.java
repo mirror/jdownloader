@@ -65,6 +65,9 @@ public class DecrypterForRedirectServicesWithoutDirectRedirects extends PluginFo
         if (parameter.contains("protect-ddl.com") || parameter.contains("hide.linkleak.org") || parameter.contains("href.hu") || parameter.contains("madmimi.com") || parameter.contains("http://t.co")) {
             br.getPage(parameter);
             finallink = br.getRedirectLocation();
+            if (finallink == null) {
+                finallink = br.getRegex("REFRESH.*?url=(http.*?)\"").getMatch(0);
+            }
         } else if (!parameter.contains("imageto.net/") && !parameter.contains("musicloud.fm/dl") && !parameter.contains("oneclickmoviez.com/dwnl/") && !parameter.contains("1tool.biz") && !parameter.contains("catchfile.net") && !parameter.contains("file4ever.us") && !parameter.contains("trailerzone.info/") && !parameter.contains("fairtilizer.com/") && !parameter.contains("tm-exchange.com/") && !parameter.contains("fileblip.com/") && !parameter.contains("mixconnect.com/") && !parameter.contains("machines.") && !parameter.contains("ubuntuone.com") && !parameter.contains("stardima.com/") && !parameter.contains("1lien.com/") && !parameter.contains("dropbox.com/") && !parameter.contains("trancearoundtheworld.com/")) {
             br.getPage(parameter);
         }

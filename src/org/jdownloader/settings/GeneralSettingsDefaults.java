@@ -170,7 +170,7 @@ public class GeneralSettingsDefaults implements GeneralSettings {
     }
 
     public int getMaxChunksPerFile() {
-        return 3;
+        return 2;
     }
 
     public void setMaxChunksPerFile(int num) {
@@ -209,6 +209,20 @@ public class GeneralSettingsDefaults implements GeneralSettings {
     }
 
     public void setWaittimeOnConnectionLoss(long milliseconds) {
+    }
+
+    public int getFlushBufferLevel() {
+        return 80;
+    }
+
+    public void setFlushBufferLevel(int level) {
+    }
+
+    public int getFlushBufferTimeout() {
+        return 2 * 60 * 1000;
+    }
+
+    public void setFlushBufferTimeout(int ms) {
     }
 
 }

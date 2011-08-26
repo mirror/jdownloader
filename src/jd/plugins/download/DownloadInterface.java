@@ -254,9 +254,16 @@ abstract public class DownloadInterface {
             if (speedDebug) {
                 logger.finer("Resume Chunk with " + getChunkSize() + " at " + getCurrentBytesPosition());
             }
+            int flushLevel = 0;
+            int flushTimeout = JsonConfig.create(GeneralSettings.class).getFlushBufferTimeout();
             try {
                 int maxbuffersize = JsonConfig.create(GeneralSettings.class).getMaxBufferSize() * 1024;
                 buffer = ReusableByteArrayOutputStreamPool.getReusableByteArrayOutputStream(Math.max(maxbuffersize, 10240), false);
+                /*
+                 * now we calculate the max fill level when to force buffer
+                 * flushing
+                 */
+                flushLevel = Math.max((maxbuffersize / 100 * JsonConfig.create(GeneralSettings.class).getFlushBufferLevel()), 1);
             } catch (Throwable e) {
                 error(LinkStatus.ERROR_FATAL, _JDT._.download_error_message_outofmemory());
                 return;
@@ -273,6 +280,7 @@ abstract public class DownloadInterface {
                 int towrite = 0;
                 int read = 0;
                 boolean reachedEOF = false;
+                long lastFlush = 0;
                 while (!isExternalyAborted()) {
                     try {
                         buffer.reset();
@@ -283,7 +291,8 @@ abstract public class DownloadInterface {
                             /* lets try to read some data */
                             towrite = 0;
                         }
-                        while (!reachedEOF && buffer.free() > 0) {
+                        lastFlush = System.currentTimeMillis();
+                        while (!reachedEOF && buffer.free() > 0 && buffer.size() <= flushLevel) {
                             if (endByte > 0) {
                                 /* read only as much as needed */
                                 read = inputStream.read(buffer.getInternalBuffer(), buffer.size(), (int) Math.min(bytes2Do, (buffer.getInternalBuffer().length - buffer.size())));
@@ -313,6 +322,10 @@ abstract public class DownloadInterface {
                                 synchronized (this) {
                                     this.wait(500);
                                 }
+                            }
+                            if (System.currentTimeMillis() - lastFlush > flushTimeout) {
+                                /* we reached our flush timeout */
+                                break;
                             }
                         }
 

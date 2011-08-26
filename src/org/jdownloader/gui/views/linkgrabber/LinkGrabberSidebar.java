@@ -7,10 +7,8 @@ import java.awt.event.ActionListener;
 import java.io.IOException;
 
 import javax.swing.Box;
-import javax.swing.ImageIcon;
 
 import jd.controlling.FavIconController;
-import jd.controlling.FavIconRequestor;
 import jd.gui.swing.laf.LookAndFeelController;
 
 import org.appwork.app.gui.MigPanel;
@@ -71,27 +69,12 @@ public class LinkGrabberSidebar extends MigPanel {
         });
 
         hosterFilterTable = new FilterTable();
-
-        hosterFilterTable.getExtTableModel().addAllElements(new Filter("rapidshare.com", FavIconController.getFavIcon("rapidshare.com", new FavIconRequestor() {
-
-            public void setFavIcon(ImageIcon icon) {
-            }
-        }, true), true), new Filter("megaupload.com", FavIconController.getFavIcon("megaupload.com", new FavIconRequestor() {
-
-            public void setFavIcon(ImageIcon icon) {
-            }
-        }, true), true), new Filter("share-online.biz", FavIconController.getFavIcon("share-online.biz", new FavIconRequestor() {
-
-            public void setFavIcon(ImageIcon icon) {
-            }
-        }, true), true), new Filter("oron.com", FavIconController.getFavIcon("oron.com", new FavIconRequestor() {
-
-            public void setFavIcon(ImageIcon icon) {
-            }
-        }, true), true)
-
-        );
-
+        Filter filter = new Filter("rapidshare.com", null, true);
+        filter.setIcon(FavIconController.getFavIcon("rapidshare.com", filter, true));
+        hosterFilterTable.getExtTableModel().addElement(filter);
+        filter = new Filter("share-online.biz", null, true);
+        filter.setIcon(FavIconController.getFavIcon("share-online.biz", filter, true));
+        hosterFilterTable.getExtTableModel().addElement(filter);
         filetypeFilterTable = new FilterTable();
         filetypeFilterTable.setVisible(config.isLinkgrabberFiletypeQuickfilterEnabled());
         try {
