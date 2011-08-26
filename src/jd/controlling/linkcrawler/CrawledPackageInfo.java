@@ -24,4 +24,7 @@ public class CrawledPackageInfo implements AbstractPackageNode<CrawledLinkInfo, 
         return children;
     }
 
+    public void notifyChanges() {
+    }
+
 }

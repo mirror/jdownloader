@@ -162,6 +162,7 @@ public class FilePackage extends Property implements Serializable, PackageLinkNo
 
     private transient PackageController<FilePackage, DownloadLink> controlledby         = null;
     private transient long                                         uniqueID             = -1;
+    private transient FilePackageInfo                              fpInfo               = null;
 
     /*
      * (non-Javadoc)
@@ -221,6 +222,23 @@ public class FilePackage extends Property implements Serializable, PackageLinkNo
         stream.defaultReadObject();
         isExpanded = getBooleanProperty(DownloadTable.PROPERTY_EXPANDED, false);
         uniqueID = FilePackageIDCounter.incrementAndGet();
+    }
+
+    /*
+     * fpInfo is null by default, will get created on first use
+     */
+    public FilePackageInfo getFilePackageInfo() {
+        if (fpInfo != null) return fpInfo;
+        synchronized (this) {
+            if (fpInfo == null) {
+                fpInfo = new FilePackageInfo(this);
+            }
+        }
+        return fpInfo;
+    }
+
+    public boolean isFilePackageInfoAvailable() {
+        return fpInfo != null;
     }
 
     /**
@@ -296,6 +314,7 @@ public class FilePackage extends Property implements Serializable, PackageLinkNo
                         this.downloadLinkList.add(link);
                     }
                 }
+                notifyChanges();
             }
         } else {
             this.controlledby.addmoveChildren(this, Arrays.asList(links), -1);
@@ -540,6 +559,7 @@ public class FilePackage extends Property implements Serializable, PackageLinkNo
                         if (link.getFilePackage() == this) link._setFilePackage(null);
                     }
                 }
+                notifyChanges();
             }
         } else {
             this.controlledby.removeChildren(this, Arrays.asList(links), true);
@@ -737,4 +757,11 @@ public class FilePackage extends Property implements Serializable, PackageLinkNo
         controlledby = controller;
     }
 
+    public void notifyChanges() {
+        if (fpInfo != null) {
+            synchronized (fpInfo) {
+                fpInfo.structureVersion++;
+            }
+        }
+    }
 }

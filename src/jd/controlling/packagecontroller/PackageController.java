@@ -207,6 +207,7 @@ public abstract class PackageController<E extends AbstractPackageNode<V, E>, V e
                             for (V child : children) {
                                 child.setParentNode(pkg);
                             }
+                            pkg.notifyChanges();
                         }
                     } finally {
                         writeUnlock();
@@ -260,6 +261,7 @@ public abstract class PackageController<E extends AbstractPackageNode<V, E>, V e
                                     it.remove();
                                 }
                             }
+                            pkg.notifyChanges();
                         }
                     } finally {
                         writeUnlock();

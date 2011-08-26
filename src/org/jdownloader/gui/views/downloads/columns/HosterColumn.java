@@ -8,6 +8,7 @@ import javax.swing.JToolTip;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PackageLinkNode;
+import jd.plugins.PluginForHost;
 
 import org.appwork.app.gui.MigPanel;
 import org.appwork.swing.exttable.ExtColumn;
@@ -111,9 +112,9 @@ public class HosterColumn extends ExtColumn<PackageLinkNode> {
     public void configureRendererComponent(PackageLinkNode value, boolean isSelected, boolean hasFocus, int row, int column) {
         if (value instanceof FilePackage) {
             int i = 0;
-            for (DownloadLink link : ((FilePackage) value).getChildren()) {
+            for (PluginForHost link : ((FilePackage) value).getFilePackageInfo().getIcons()) {
                 if (i == maxIcons) break;
-                ImageIcon icon = link.getHosterIcon(true);
+                ImageIcon icon = link.getHosterIconScaled();
                 if (icon != null) {
                     labels[i].setVisible(true);
                     labels[i].setIcon(icon);
