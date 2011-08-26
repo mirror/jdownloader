@@ -170,12 +170,12 @@ public class AccountDialog extends AbstractDialog<Integer> {
         hoster = new SearchComboBox<HostPluginWrapper>(plugins, IOEQ.TIMINGQUEUE) {
 
             @Override
-            protected Icon getIcon(HostPluginWrapper value) {
+            protected Icon getIconForValue(HostPluginWrapper value) {
                 return value.getIconScaled();
             }
 
             @Override
-            protected String getText(HostPluginWrapper value) {
+            protected String getTextForValue(HostPluginWrapper value) {
                 return value.getHost();
             }
         };

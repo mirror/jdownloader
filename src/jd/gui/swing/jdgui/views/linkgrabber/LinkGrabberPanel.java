@@ -348,8 +348,10 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
 
     public void recheckLinks(final ArrayList<DownloadLink> links) {
         new Thread() {
+
             @Override
             public void run() {
+
                 synchronized (waitingList) {
                     /* remove links from waitinglist, so we can check again */
                     waitingList.removeAll(links);

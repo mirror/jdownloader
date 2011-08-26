@@ -21,7 +21,7 @@ import org.appwork.update.updateclient.event.UpdaterEvent;
 import org.appwork.update.updateclient.event.UpdaterListener;
 import org.appwork.update.updateclient.gui.UpdaterCoreGui;
 import org.appwork.utils.images.IconIO;
-import org.appwork.utils.locale.APPWORKUTILS;
+import org.appwork.utils.locale._AWU;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.SwingUtils;
 import org.appwork.utils.swing.dialog.Dialog;
@@ -161,7 +161,7 @@ public class UpdaterGUI extends JFrame implements ActionListener, UpdaterListene
     }
 
     public void reset() {
-        cancel.setText(APPWORKUTILS.T.ABSTRACTDIALOG_BUTTON_CANCEL());
+        cancel.setText(_AWU.T.ABSTRACTDIALOG_BUTTON_CANCEL());
         panel.reset();
         setLocation(SwingUtils.getCenter(JDGui.getInstance().getMainFrame(), this));
         ok.setVisible(false);

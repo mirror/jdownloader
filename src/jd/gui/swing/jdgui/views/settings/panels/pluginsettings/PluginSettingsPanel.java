@@ -47,7 +47,7 @@ public class PluginSettingsPanel extends JPanel implements SettingsComponent, Ac
             private static final long serialVersionUID = 1L;
 
             @Override
-            protected Icon getIcon(PluginWrapper value) {
+            protected Icon getIconForValue(PluginWrapper value) {
                 if (value == null) return null;
                 if (value instanceof HostPluginWrapper) {
                     return (((HostPluginWrapper) value).getIcon());
@@ -57,7 +57,7 @@ public class PluginSettingsPanel extends JPanel implements SettingsComponent, Ac
             }
 
             @Override
-            protected String getText(PluginWrapper value) {
+            protected String getTextForValue(PluginWrapper value) {
                 if (value == null) return null;
                 return value.getHost();
             }

@@ -97,13 +97,13 @@ public class BuyAction extends AbstractAction {
                             combo = new SearchComboBox<HostPluginWrapper>(plugins, IOEQ.TIMINGQUEUE) {
 
                                 @Override
-                                protected Icon getIcon(HostPluginWrapper value) {
+                                protected Icon getIconForValue(HostPluginWrapper value) {
 
                                     return isPopupVisible() ? value.getIconScaled() : null;
                                 }
 
                                 @Override
-                                protected String getText(HostPluginWrapper value) {
+                                protected String getTextForValue(HostPluginWrapper value) {
                                     return value.getHost();
                                 }
                             };

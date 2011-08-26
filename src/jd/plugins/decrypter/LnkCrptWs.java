@@ -435,11 +435,6 @@ public class LnkCrptWs extends PluginForDecrypt {
         }
 
         @Override
-        protected boolean isIgnoreSizeLimitations() {
-            return true;
-        }
-
-        @Override
         public JComponent layoutDialogContent() {
             loadImage(imageUrl);
             // use a container

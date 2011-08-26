@@ -4,6 +4,7 @@
   "panelHeaderColor" : 14149616,
   "popupBorderInsets" : [ 0,2,4,2],
   "panelHeaderLineColor": -4144960,
-  "panelHeaderLineForegroundColor" : 0
+  "panelHeaderLineForegroundColor" : 0,
+  "errorForeground": 16711680
   
 }

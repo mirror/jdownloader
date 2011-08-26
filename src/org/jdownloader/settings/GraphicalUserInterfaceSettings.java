@@ -145,10 +145,4 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
     void setWindowOpaque(boolean b);
 
-    @AboutConfig
-    @Description("Set this to false if you do not want to see the help text in the Add-Links Dialog")
-    @DefaultBooleanValue(true)
-    void setAddDialogHelpTextVisible(boolean b);
-
-    boolean isAddDialogHelpTextVisible();
 }

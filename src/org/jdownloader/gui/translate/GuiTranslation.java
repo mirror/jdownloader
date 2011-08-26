@@ -2280,4 +2280,44 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Browse" })
     String literally_browse();
+
+    @Default(lngs = { "en" }, values = { "Choose a Package Name for the Downloads above. If empty, JDownloader will create Packages based on the filenames" })
+    String AddLinksDialog_layoutDialogContent_package_tt();
+
+    @Default(lngs = { "en" }, values = { "Enter a Package name, or leave empty for auto mode" })
+    String AddLinksDialog_layoutDialogContent_packagename_help();
+
+    @Default(lngs = { "en" }, values = { "Archives" })
+    String AddLinksDialog_layoutDialogContent_Extractionheader();
+
+    @Default(lngs = { "en" }, values = { "Extract after Download" })
+    String AddLinksDialog_createExtracOptionsPanel_autoextract();
+
+    @Default(lngs = { "en" }, values = { "Enter the archive's extraction password" })
+    String AddLinksDialog_createExtracOptionsPanel_password();
+
+    @Default(lngs = { "en" }, values = { "Extract" })
+    String AddLinksDialog_layoutDialogContent_autoextract();
+
+    @Default(lngs = { "en" }, values = { "Enable this option to extract all found archives after download" })
+    String AddLinksDialog_layoutDialogContent_autoextract_tooltip();
+
+    @Default(lngs = { "en" }, values = { "Disable this option if you do not want to extract the archives after download" })
+    String AddLinksDialog_layoutDialogContent_autoextract_tooltip_enabled();
+
+    @Default(lngs = { "en" }, values = { "Start Deep Link Analyse" })
+    String ConfirmOptionsAction_actionPerformed_deep();
+
+    @Default(lngs = { "en" }, values = { "Start Normal Link Analyse" })
+    String ConfirmOptionsAction_actionPerformed_normale();
+
+    @Default(lngs = { "en" }, values = { "Save files to" })
+    String AddLinksDialog_actionPerformed_browse();
+
+    @Default(lngs = { "en" }, values = { "Please enter Urls, Links, Websites, or plain text" })
+    String AddLinksDialog_validateForm_input_missing();
+
+    @Default(lngs = { "en" }, values = { "Please make sure to enter a valid Download Destination." })
+    String AddLinksDialog_validateForm_folder_invalid_missing();
+
 }

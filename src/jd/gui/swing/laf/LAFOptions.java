@@ -29,6 +29,7 @@ public class LAFOptions implements Storable {
     }
 
     private int[] popupBorderInsets = new int[] { 0, 0, 0, 0 };
+    private int   errorForeground   = 16711680;
 
     public void setPanelHeaderForegroundColor(int panelHeaderForegroundColor) {
         this.panelHeaderForegroundColor = panelHeaderForegroundColor;
@@ -72,5 +73,9 @@ public class LAFOptions implements Storable {
 
     public int[] getPopupBorderInsets() {
         return popupBorderInsets;
+    }
+
+    public int getErrorForeground() {
+        return errorForeground;
     }
 }
