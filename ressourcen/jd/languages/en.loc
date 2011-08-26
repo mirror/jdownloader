@@ -1367,6 +1367,7 @@ plugins.hoster.vipfilecom.errors.nofreedownloadlink = Only downloadable for prem
 plugins.hoster.wattv.countryblocked = Not available for your country
 plugins.hoster.wupload.alreadyloading = This IP is already downloading
 plugins.hoster.wupload.inprogress = Download session in progress
+plugins.hoster.wupload.ipabuse = Host is blocking your IP due to abuse
 plugins.hoster.wupload.largefree = Only downloadable for premium users (file larger than 400 MB)
 plugins.hoster.wupload.onlypremium = Only downloadable for premium users
 plugins.hoster.wupload.onlypremiumsize = Only downloadable for premium users (file larger than %s MB)
