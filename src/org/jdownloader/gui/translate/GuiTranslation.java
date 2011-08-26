@@ -2320,4 +2320,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Please make sure to enter a valid Download Destination." })
     String AddLinksDialog_validateForm_folder_invalid_missing();
 
+    @Default(lngs = { "en" }, values = { "Please enter a valid Download Folder" })
+    String AddLinksDialog_layoutDialogContent_help_destination();
+
 }

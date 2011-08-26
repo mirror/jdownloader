@@ -94,7 +94,7 @@ public class BuyAction extends AbstractAction {
                         @Override
                         protected JComboBox getComboBox(final Object[] options2) {
 
-                            combo = new SearchComboBox<HostPluginWrapper>(plugins, IOEQ.TIMINGQUEUE) {
+                            combo = new SearchComboBox<HostPluginWrapper>(plugins) {
 
                                 @Override
                                 protected Icon getIconForValue(HostPluginWrapper value) {

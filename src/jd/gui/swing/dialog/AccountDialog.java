@@ -32,10 +32,9 @@ import javax.swing.JTextField;
 
 import jd.HostPluginWrapper;
 import jd.PluginWrapper;
+import jd.controlling.AccountController;
 import jd.controlling.accountchecker.AccountChecker;
 import jd.controlling.accountchecker.AccountChecker.AccountCheckJob;
-import jd.controlling.AccountController;
-import jd.controlling.IOEQ;
 import jd.gui.UserIO;
 import jd.gui.swing.jdgui.views.settings.panels.accountmanager.BuyAction;
 import jd.plugins.Account;
@@ -167,7 +166,7 @@ public class AccountDialog extends AbstractDialog<Integer> {
         // final HostPluginWrapper[] array = plugins.toArray(new
         // HostPluginWrapper[plugins.size()]);
 
-        hoster = new SearchComboBox<HostPluginWrapper>(plugins, IOEQ.TIMINGQUEUE) {
+        hoster = new SearchComboBox<HostPluginWrapper>(plugins) {
 
             @Override
             protected Icon getIconForValue(HostPluginWrapper value) {

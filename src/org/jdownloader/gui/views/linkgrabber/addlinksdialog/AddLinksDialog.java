@@ -12,6 +12,7 @@ import java.awt.event.MouseEvent;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Iterator;
 
 import javax.swing.BorderFactory;
 import javax.swing.Icon;
@@ -163,9 +164,9 @@ public class AddLinksDialog extends AbstractDialog<CrawlerJob> {
             }
 
         };
-
+        destination.setHelpText(_GUI._.AddLinksDialog_layoutDialogContent_help_destination());
         destination.setUnkownTextInputAllowed(true);
-        destination.setForegroundBad(null);
+        destination.setBadColor(null);
         destination.setSelectedItem(null);
         packagename = new SearchComboBox<String>() {
 
@@ -179,7 +180,7 @@ public class AddLinksDialog extends AbstractDialog<CrawlerJob> {
                 return value;
             }
         };
-        packagename.setForegroundBad(null);
+        packagename.setBadColor(null);
         packageHistory = config.getPackageNameHistory();
         if (packageHistory == null) {
             packageHistory = new ArrayList<String>();
@@ -194,8 +195,12 @@ public class AddLinksDialog extends AbstractDialog<CrawlerJob> {
             history = new ArrayList<String>();
         }
         history.add(0, org.appwork.storage.config.JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder());
-        downloadDestinationHistory = Lists.unique(history);
-        Collections.sort(downloadDestinationHistory);
+        downloadDestinationHistory = history;
+        for (Iterator<String> it = downloadDestinationHistory.iterator(); it.hasNext();) {
+            String path = it.next();
+            if (!validateFolder(path)) it.remove();
+        }
+
         destination.setList(downloadDestinationHistory);
         String latest = config.getLatestDownloadDestinationFolder();
         if (latest == null || !config.isUseLastDownloadDestinationAsDefault()) {
@@ -269,12 +274,12 @@ public class AddLinksDialog extends AbstractDialog<CrawlerJob> {
         updateExtractionOptions();
         String newText = ClipboardHandler.getClipboard().getCurrentClipboardLinks();
         if (config.isAddLinksPreParserEnabled()) {
-            input.setText(list(HTMLParser.getHttpLinks(newText)));
+            if (newText != null) input.setText(list(HTMLParser.getHttpLinks(newText)));
 
             DragAndDropDelegater dnd = new DragAndDropDelegater(input);
             input.setTransferHandler(dnd);
         } else {
-            input.setText(newText);
+            if (newText != null) input.setText(newText);
         }
         validateForm();
         return p;
@@ -300,29 +305,32 @@ public class AddLinksDialog extends AbstractDialog<CrawlerJob> {
         String[] links = jd.parser.html.HTMLParser.getHttpLinks(input.getText());
         if (links.length == 0) {
             errorLabel.setText(_GUI._.AddLinksDialog_validateForm_input_missing());
-            input.setBadgeIcon(NewTheme.getInstance().getIcon("error", 12));
+            input.setBadgeIcon(NewTheme.getInstance().getIcon("warning", 26));
             input.setToolTipText(_GUI._.AddLinksDialog_validateForm_input_missing());
             okButton.setEnabled(false);
             confirmOptions.setEnabled(false);
 
         } else {
             input.setToolTipText(null);
-            input.setBadgeIcon(NewTheme.getInstance().getIcon("ok", 14));
+            input.setBadgeIcon(null);
         }
         if (!validateFolder(destination.getText())) {
             if (errorLabel.getText().length() == 0) errorLabel.setText(_GUI._.AddLinksDialog_validateForm_folder_invalid_missing());
-            destination.setBadgeIcon(NewTheme.getInstance().getIcon("error", 12));
+            destination.setBadgeIcon(NewTheme.getInstance().getIcon("warning", 16));
             okButton.setEnabled(false);
             destination.setToolTipText(_GUI._.AddLinksDialog_validateForm_folder_invalid_missing());
             confirmOptions.setEnabled(false);
+            destination.setForeground(new Color(LookAndFeelController.getInstance().getLAFOptions().getErrorForeground()));
         } else {
             destination.setToolTipText(null);
-            destination.setBadgeIcon(NewTheme.getInstance().getIcon("ok", 14));
+            destination.setBadgeIcon(null);
+            destination.setForeground(null);
         }
 
     }
 
     private boolean validateFolder(String text) {
+        if (text == null) return false;
         File file = new File(text);
         return file.getParentFile() != null && file.getParentFile().exists();
     }
