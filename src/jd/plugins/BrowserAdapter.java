@@ -41,6 +41,10 @@ public class BrowserAdapter {
                         dl.connect(br);
                         break;
                     } catch (PluginException e2) {
+                        try {
+                            dl.getConnection().disconnect();
+                        } catch (Throwable e22) {
+                        }
                         continue;
                     }
                 }
@@ -72,6 +76,10 @@ public class BrowserAdapter {
                         dl.connect(br);
                         break;
                     } catch (PluginException e2) {
+                        try {
+                            dl.getConnection().disconnect();
+                        } catch (Throwable e22) {
+                        }
                         continue;
                     }
                 }
@@ -102,6 +110,10 @@ public class BrowserAdapter {
                         dl.connect(br);
                         break;
                     } catch (PluginException e2) {
+                        try {
+                            dl.getConnection().disconnect();
+                        } catch (Throwable e22) {
+                        }
                         continue;
                     }
                 }
@@ -132,6 +144,10 @@ public class BrowserAdapter {
                         dl.connect(br);
                         break;
                     } catch (PluginException e2) {
+                        try {
+                            dl.getConnection().disconnect();
+                        } catch (Throwable e22) {
+                        }
                         continue;
                     }
                 }
@@ -163,6 +179,10 @@ public class BrowserAdapter {
                         dl.connect(br);
                         break;
                     } catch (PluginException e2) {
+                        try {
+                            dl.getConnection().disconnect();
+                        } catch (Throwable e22) {
+                        }
                         continue;
                     }
                 }
@@ -194,6 +214,10 @@ public class BrowserAdapter {
                         dl.connect(br);
                         break;
                     } catch (PluginException e2) {
+                        try {
+                            dl.getConnection().disconnect();
+                        } catch (Throwable e22) {
+                        }
                         continue;
                     }
                 }
