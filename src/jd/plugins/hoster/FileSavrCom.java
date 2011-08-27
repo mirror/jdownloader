@@ -21,11 +21,11 @@ import java.io.IOException;
 import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filesavr.com" }, urls = { "http://[\\w\\.]*?filesavr\\.com/[A-Za-z0-9]+(_\\d+)?" }, flags = { 0 })
 public class FileSavrCom extends PluginForHost {
@@ -44,7 +44,7 @@ public class FileSavrCom extends PluginForHost {
         this.setBrowserExclusive();
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("Sorry, File not found\\!")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("class=\"file-name-text\">(.*?)</div>").getMatch(0);
+        String filename = br.getRegex("class=\"file\\-name\\-text\">(.*?)</div>").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setName(filename.trim());
         return AvailableStatus.TRUE;

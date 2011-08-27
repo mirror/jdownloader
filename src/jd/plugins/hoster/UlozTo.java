@@ -26,11 +26,11 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
@@ -80,11 +80,11 @@ public class UlozTo extends PluginForHost {
         if (br.containsHTML("(multipart/form-data|Chybka 404 - požadovaná stránka nebyla nalezena<br>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex(Pattern.compile("\\&t=(.*?)\"")).getMatch(0);
         if (filename == null) filename = br.getRegex(Pattern.compile("cptm=;Pe/\\d+/(.*?)\\?b")).getMatch(0);
-        String filesize = br.getRegex(Pattern.compile("style=\"top:-55px;\"><div>\\d+:\\d+ \\| (.*?)</div></div>")).getMatch(0);
+        String filesize = br.getRegex(Pattern.compile("style=\"top:\\-55px;\"><div>\\d+:\\d+ \\| (.*?)</div></div>")).getMatch(0);
         if (filesize == null) {
-            filesize = br.getRegex("class=\"info_velikost\" style=\"top:-55px;\"><div>(.*?)</div></div>").getMatch(0);
+            filesize = br.getRegex("<span>Velikost:</span> <span class=\"green\">(.*?)</span>").getMatch(0);
             if (filesize == null) {
-                filesize = br.getRegex("class=\"info_velikost\" style=\"top:-55px;\">[\t\n\r ]+<div>[\t\n\r ]+\\d{2}:\\d{2} \\| (.*?)</div>").getMatch(0);
+                filesize = br.getRegex("class=\"info_velikost\" style=\"top:\\-55px;\">[\t\n\r ]+<div>[\t\n\r ]+\\d{2}:\\d{2}(:\\d{2})? \\| (.*?)</div>").getMatch(1);
             }
         }
         if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

@@ -19,6 +19,7 @@ package jd.plugins.hoster;
 import java.io.File;
 import java.io.IOException;
 import java.util.Locale;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.PluginWrapper;
 import jd.http.RandomUserAgent;
@@ -55,7 +56,8 @@ public class FShareVn extends PluginForHost {
         link.setUrlDownload(link.getDownloadURL().replace("mega.1280.com", "fshare.vn"));
     }
 
-    private static final String SERVERERROR = "Tài nguyên bạn yêu cầu không tìm thấy";
+    private static final String  SERVERERROR = "Tài nguyên bạn yêu cầu không tìm thấy";
+    private static AtomicInteger maxPrem     = new AtomicInteger(1);
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
@@ -114,6 +116,8 @@ public class FShareVn extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
+        /* reset maxPrem workaround on every fetchaccount info */
+        maxPrem.set(1);
         try {
             login(account);
         } catch (PluginException e) {
@@ -124,13 +128,21 @@ public class FShareVn extends PluginForHost {
         String validUntil = br.getRegex("Hạn dùng:<strong style=\"color:#95330f\">(\\d+\\-\\d+\\-\\d+)</strong>").getMatch(0);
         if (validUntil != null) {
             ai.setValidUntil(TimeFormatter.getMilliSeconds(validUntil, "MM-dd-yyyy", Locale.ENGLISH));
+            try {
+                maxPrem.set(20);
+                account.setMaxSimultanDownloads(-1);
+            } catch (final Throwable e) {
+            }
+            ai.setStatus("Premium User");
         } else {
-            logger.info("expireDate regex Broken or account invalid!");
-            ai.setExpired(true);
-            return ai;
+            try {
+                maxPrem.set(1);
+                account.setMaxSimultanDownloads(1);
+            } catch (final Throwable e) {
+            }
+            ai.setStatus("Registered (free) User");
         }
         account.setValid(true);
-        ai.setStatus("Premium User");
         return ai;
     }
 
@@ -156,7 +168,8 @@ public class FShareVn extends PluginForHost {
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return -1;
+        /* workaround for free/premium issue on stable 09581 */
+        return maxPrem.get();
     }
 
     @Override

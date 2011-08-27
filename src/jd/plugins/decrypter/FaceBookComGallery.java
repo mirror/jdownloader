@@ -37,7 +37,7 @@ import jd.plugins.hoster.FaceBookComVideos;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "facebook.com" }, urls = { "http(s)?://(www\\.)?facebook\\.com/(#\\!/)?media/set/\\?set=a\\.\\d+\\.\\d+\\.\\d+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "facebook.com" }, urls = { "http(s)?://(www\\.)?(on\\.fb\\.me/[A-Za-z0-9]+\\+?|facebook\\.com/(#\\!/)?media/set/\\?set=a\\.\\d+\\.\\d+\\.\\d+)" }, flags = { 0 })
 public class FaceBookComGallery extends PluginForDecrypt {
 
     public FaceBookComGallery(PluginWrapper wrapper) {
@@ -52,61 +52,72 @@ public class FaceBookComGallery extends PluginForDecrypt {
         synchronized (LOCK) {
             ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
             String parameter = param.toString().replace("#!/", "");
-            br.setCookie(FACEBOOKMAINPAGE, "locale", "en_GB");
-            final PluginForHost facebookPlugin = JDUtilities.getPluginForHost("facebook.com");
-            Account aa = AccountController.getInstance().getValidAccount(facebookPlugin);
-            if (aa == null) {
-                String username = UserIO.getInstance().requestInputDialog("Enter Loginname for facebook.com :");
-                if (username == null) throw new DecrypterException(JDL.L("plugins.decrypt.facebookcomgallery.nousername", "Username not entered!"));
-                String password = UserIO.getInstance().requestInputDialog("Enter password for facebook.com :");
-                if (password == null) throw new DecrypterException(JDL.L("plugins.decrypt.facebookcomgallery.nopassword", "Password not entered!"));
-                aa = new Account(username, password);
-            }
-            try {
-                ((FaceBookComVideos) facebookPlugin).login(aa, false, this.br);
-            } catch (final PluginException e) {
-                aa.setEnabled(false);
-                aa.setValid(false);
-                throw new DecrypterException(JDL.L("plugins.decrypt.facebookcomgallery.invalidaccount", "Account is invalid!"));
-            }
-            // Account is valid, let's just add it
-            AccountController.getInstance().addAccount(facebookPlugin, aa);
-            br.getPage(parameter);
-            String fpName = br.getRegex("<title>(.*?)</title>").getMatch(0);
-            boolean doExtended = false;
-            String[] links = br.getRegex("\\&amp;src=(http\\\\u00253A.*?)\\&amp;theater\\\\\"").getColumn(0);
-            if (links == null || links.length == 0) {
-                links = br.getRegex("ajaxify=\\\\\"http:\\\\/\\\\/www\\.facebook\\.com\\\\/photo\\.php\\?fbid=(\\d+)\\&amp;").getColumn(0);
-                doExtended = true;
-            }
-            if (links == null || links.length == 0) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
-            }
-            if (doExtended) {
-                progress.setRange(links.length);
-                String setID = new Regex(parameter, "facebook\\.com/media/set/\\?set=(.+)").getMatch(0);
-                for (String fbid : links) {
-                    br.getPage("http://www.facebook.com/photo.php?fbid=" + fbid + "&set=" + setID + "&type=1");
-                    String finallink = br.getRegex("\"Weiter\"><img src=\"(http://.*?)\"").getMatch(0);
-                    if (finallink == null) finallink = br.getRegex("\"(http://a\\d+\\.sphotos\\.ak\\.fbcdn\\.net/photos\\-.*?)\"").getMatch(0);
-                    if (finallink == null) {
-                        logger.warning("Decrypter broken for link: " + parameter);
-                        return null;
-                    }
-                    decryptedLinks.add(createDownloadlink("directhttp://" + finallink));
-                    progress.increase(1);
+            br.setFollowRedirects(false);
+            if (parameter.contains("on.fb.me/")) {
+                br.getPage(parameter);
+                String finallink = br.getRedirectLocation();
+                if (finallink == null) {
+                    logger.warning("Decrypter broken for link: " + parameter);
+                    return null;
                 }
+                decryptedLinks.add(createDownloadlink(finallink));
             } else {
-                for (String directlink : links) {
-                    directlink = Encoding.htmlDecode(((FaceBookComVideos) facebookPlugin).decodeUnicode(directlink));
-                    decryptedLinks.add(createDownloadlink("directhttp://" + directlink));
+                br.setCookie(FACEBOOKMAINPAGE, "locale", "en_GB");
+                final PluginForHost facebookPlugin = JDUtilities.getPluginForHost("facebook.com");
+                Account aa = AccountController.getInstance().getValidAccount(facebookPlugin);
+                if (aa == null) {
+                    String username = UserIO.getInstance().requestInputDialog("Enter Loginname for facebook.com :");
+                    if (username == null) throw new DecrypterException(JDL.L("plugins.decrypt.facebookcomgallery.nousername", "Username not entered!"));
+                    String password = UserIO.getInstance().requestInputDialog("Enter password for facebook.com :");
+                    if (password == null) throw new DecrypterException(JDL.L("plugins.decrypt.facebookcomgallery.nopassword", "Password not entered!"));
+                    aa = new Account(username, password);
                 }
-            }
-            if (fpName != null) {
-                FilePackage fp = FilePackage.getInstance();
-                fp.setName(fpName.trim());
-                fp.addLinks(decryptedLinks);
+                try {
+                    ((FaceBookComVideos) facebookPlugin).login(aa, false, this.br);
+                } catch (final PluginException e) {
+                    aa.setEnabled(false);
+                    aa.setValid(false);
+                    throw new DecrypterException(JDL.L("plugins.decrypt.facebookcomgallery.invalidaccount", "Account is invalid!"));
+                }
+                // Account is valid, let's just add it
+                AccountController.getInstance().addAccount(facebookPlugin, aa);
+                br.getPage(parameter);
+                String fpName = br.getRegex("<title>(.*?)</title>").getMatch(0);
+                boolean doExtended = false;
+                String[] links = br.getRegex("\\&amp;src=(http\\\\u00253A.*?)\\&amp;theater\\\\\"").getColumn(0);
+                if (links == null || links.length == 0) {
+                    links = br.getRegex("ajaxify=\\\\\"http:\\\\/\\\\/www\\.facebook\\.com\\\\/photo\\.php\\?fbid=(\\d+)\\&amp;").getColumn(0);
+                    doExtended = true;
+                }
+                if (links == null || links.length == 0) {
+                    logger.warning("Decrypter broken for link: " + parameter);
+                    return null;
+                }
+                if (doExtended) {
+                    progress.setRange(links.length);
+                    String setID = new Regex(parameter, "facebook\\.com/media/set/\\?set=(.+)").getMatch(0);
+                    for (String fbid : links) {
+                        br.getPage("http://www.facebook.com/photo.php?fbid=" + fbid + "&set=" + setID + "&type=1");
+                        String finallink = br.getRegex("\"Weiter\"><img src=\"(http://.*?)\"").getMatch(0);
+                        if (finallink == null) finallink = br.getRegex("\"(http://a\\d+\\.sphotos\\.ak\\.fbcdn\\.net/photos\\-.*?)\"").getMatch(0);
+                        if (finallink == null) {
+                            logger.warning("Decrypter broken for link: " + parameter);
+                            return null;
+                        }
+                        decryptedLinks.add(createDownloadlink("directhttp://" + finallink));
+                        progress.increase(1);
+                    }
+                } else {
+                    for (String directlink : links) {
+                        directlink = Encoding.htmlDecode(((FaceBookComVideos) facebookPlugin).decodeUnicode(directlink));
+                        decryptedLinks.add(createDownloadlink("directhttp://" + directlink));
+                    }
+                }
+                if (fpName != null) {
+                    FilePackage fp = FilePackage.getInstance();
+                    fp.setName(fpName.trim());
+                    fp.addLinks(decryptedLinks);
+                }
             }
             return decryptedLinks;
         }

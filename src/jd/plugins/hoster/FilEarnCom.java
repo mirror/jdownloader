@@ -124,6 +124,7 @@ public class FilEarnCom extends PluginForHost {
             // wait -= passedTime;
             // sleep(wait * 1000, downloadLink);
             rc.setCode(c);
+            if (br.containsHTML(TOOMANYSIMLUTANDOWNLOADS)) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Too many simultan downloads", 5 * 60 * 1000l);
             if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/|>The Captcha you submited was incorrect)")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             dllink = br.getRedirectLocation();
             if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
