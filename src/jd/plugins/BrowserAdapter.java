@@ -28,6 +28,10 @@ public class BrowserAdapter {
         try {
             dl.connect(br);
         } catch (PluginException e) {
+            try {
+                dl.getConnection().disconnect();
+            } catch (Throwable e2) {
+            }
             if (e.getValue() == DownloadInterface.ERROR_REDIRECTED) {
 
                 int maxRedirects = 10;
@@ -55,6 +59,10 @@ public class BrowserAdapter {
         try {
             dl.connect(br);
         } catch (PluginException e) {
+            try {
+                dl.getConnection().disconnect();
+            } catch (Throwable e2) {
+            }
             if (e.getValue() == DownloadInterface.ERROR_REDIRECTED) {
 
                 int maxRedirects = 10;
@@ -81,6 +89,10 @@ public class BrowserAdapter {
         try {
             dl.connect(br);
         } catch (PluginException e) {
+            try {
+                dl.getConnection().disconnect();
+            } catch (Throwable e2) {
+            }
             if (e.getValue() == DownloadInterface.ERROR_REDIRECTED) {
 
                 int maxRedirects = 10;
@@ -107,6 +119,10 @@ public class BrowserAdapter {
         try {
             dl.connect(br);
         } catch (PluginException e) {
+            try {
+                dl.getConnection().disconnect();
+            } catch (Throwable e2) {
+            }
             if (e.getValue() == DownloadInterface.ERROR_REDIRECTED) {
 
                 int maxRedirects = 10;
@@ -134,6 +150,10 @@ public class BrowserAdapter {
         try {
             dl.connect(br);
         } catch (PluginException e) {
+            try {
+                dl.getConnection().disconnect();
+            } catch (Throwable e2) {
+            }
             if (e.getValue() == DownloadInterface.ERROR_REDIRECTED) {
 
                 int maxRedirects = 10;
@@ -161,6 +181,10 @@ public class BrowserAdapter {
         try {
             dl.connect(br);
         } catch (PluginException e) {
+            try {
+                dl.getConnection().disconnect();
+            } catch (Throwable e2) {
+            }
             if (e.getValue() == DownloadInterface.ERROR_REDIRECTED) {
 
                 int maxRedirects = 10;

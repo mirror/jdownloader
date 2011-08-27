@@ -17,11 +17,11 @@ import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.TransferStatus;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.download.DownloadInterface;
 
 import org.appwork.utils.Regex;
@@ -214,7 +214,7 @@ public class FastDebridcom extends PluginForHost implements JDPremInterface {
                 String pw = Encoding.urlEncode(acc.getPass());
                 String url = Encoding.urlEncode(link.getDownloadURL());
                 genlink = br.getPage("https://www.fast-debrid.com/tool.php?pseudo=" + user + "&password=" + pw + "&link=" + url + "&view=1&viewlink=1");
-                if (!genlink.startsWith("http://")) {
+                if (!genlink.startsWith("http://") && !genlink.startsWith("/?hostp")) {
                     logger.severe("FastDebrid(Error): " + genlink);
                     if (genlink.contains("_limit")) {
                         /* limit reached for this host */
@@ -238,6 +238,9 @@ public class FastDebridcom extends PluginForHost implements JDPremInterface {
                     String msg = "(" + link.getLinkStatus().getRetryCount() + 1 + "/" + getMaxRetries() + ")";
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Retry in few secs" + msg, 10 * 1000l);
                 }
+                /* workaround for invalid domain name */
+                genlink = genlink.replaceFirst("http://\\.", "http://");
+                if (!genlink.startsWith("http://")) genlink = "http://tiger2.fast-debrid.com" + genlink;
                 dl = jd.plugins.BrowserAdapter.openDownload(br, link, genlink, true, 0);
                 if (dl.getConnection().getResponseCode() == 404) {
                     /* file offline */
