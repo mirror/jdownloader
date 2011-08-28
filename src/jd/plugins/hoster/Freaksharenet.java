@@ -25,6 +25,7 @@ import jd.config.ConfigEntry;
 import jd.http.Browser;
 import jd.http.RandomUserAgent;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
@@ -48,6 +49,7 @@ public class Freaksharenet extends PluginForHost {
     private static final String WAIT1              = "WAIT1";
     private static int          MAXPREMDLS         = -1;
     private static final String MAXDLSLIMITMESSAGE = "Sorry, you cant download more then";
+    private static final String LIMITREACHED       = "Your Traffic is used up for today";
 
     public Freaksharenet(final PluginWrapper wrapper) {
         super(wrapper);
@@ -209,10 +211,10 @@ public class Freaksharenet extends PluginForHost {
     }
 
     public void handleFreeErrors() throws PluginException {
-        if (br.containsHTML("Sorry, you cant download more then 50 files at time.")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1001); }
-        if (br.containsHTML("your Traffic is used up for today")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1001); }
-        if (br.containsHTML("You can Download only 1 File in")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1001); }
-        if (br.containsHTML("No Downloadserver\\. Please try again")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "No Downloadserver. Please try again later", 15 * 60 * 1000l); }
+        if (br.containsHTML("Sorry, you cant download more then 50 files at time")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1000l);
+        if (br.containsHTML("You can Download only 1 File in")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1000l);
+        if (br.containsHTML("No Downloadserver\\. Please try again")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "No Downloadserver. Please try again later", 15 * 60 * 1000l);
+        if (br.containsHTML(LIMITREACHED)) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 2 * 60 * 60 * 1000l);
     }
 
     @Override
@@ -287,15 +289,21 @@ public class Freaksharenet extends PluginForHost {
         /*
          * set english language in phpsession
          */
-        br.getPage("http://freakshare.com/?language=US");
+        br.getPage("http://freakshare.com/index.php?language=EN");
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("We are back soon")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE); }
-        if (br.containsHTML("(Sorry but this File is not avaible|Sorry, this Download doesnt exist anymore)")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-        if (br.containsHTML("No Downloadserver\\. Please try again")) { return AvailableStatus.UNCHECKABLE; }
-        final String filename = br.getRegex("\"box_heading\" style=\"text-align:center;\">(.*?)- .*?</h1>").getMatch(0);
-        if (filename == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        if (br.containsHTML("We are back soon")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+        if (br.containsHTML("(Sorry but this File is not avaible|Sorry, this Download doesnt exist anymore)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("No Downloadserver\\. Please try again")) return AvailableStatus.UNCHECKABLE;
+        if (br.containsHTML(LIMITREACHED)) {
+            String nameFromLink = new Regex(downloadLink.getDownloadURL(), "freakshare\\.com/files/[a-z0-9]+/(.*?)\\.html").getMatch(0);
+            if (nameFromLink != null) downloadLink.setName(Encoding.htmlDecode(nameFromLink));
+            downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.freaksharecom.limitreached", "Limit reached: No full check possible at the moment!"));
+            return AvailableStatus.TRUE;
+        }
+        final String filename = br.getRegex("\"box_heading\" style=\"text\\-align:center;\">(.*?)\\- .*?</h1>").getMatch(0);
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(Encoding.htmlDecode(filename.trim()));
-        final String filesize = br.getRegex("\"box_heading\" style=\"text-align:center;\">.*?- (.*?)</h1>").getMatch(0);
+        final String filesize = br.getRegex("\"box_heading\" style=\"text\\-align:center;\">.*?\\- (.*?)</h1>").getMatch(0);
         if (filesize != null) {
             downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
         }

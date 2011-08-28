@@ -24,18 +24,18 @@ import java.util.Map;
 import jd.PluginWrapper;
 import jd.http.Cookie;
 import jd.http.Cookies;
+import jd.http.RandomUserAgent;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
-import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -51,8 +51,9 @@ public class CZShareCom extends PluginForHost {
         this.enablePremium("http://czshare.com/create_user.php");
     }
 
-    private static final Object LOCK     = new Object();
-    private static final String MAINPAGE = "http://czshare.com/";
+    private static final Object LOCK        = new Object();
+    private static final String MAINPAGE    = "http://czshare.com/";
+    private static final String CAPTCHATEXT = "captcha\\.php";
 
     public void correctDownloadLink(DownloadLink link) {
         Regex linkInfo = new Regex(link.getDownloadURL(), "czshare\\.com/download_file\\.php\\?id=(\\d+)\\&code=([A-Za-z0-9_]+)");
@@ -71,20 +72,18 @@ public class CZShareCom extends PluginForHost {
         if (freeLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.getPage("http://czshare.com" + Encoding.htmlDecode(freeLink));
         handleErrors();
-        Form down = br.getForm(1); // the 0-th is the login (usr/pwd) form,
-        // the 1-st one is the free one
-        String captchaUrl = br.getRegex("action=\"free\\.php\" method=\"post\">[\t\n\r ]+<img src=\"(.*?)\"").getMatch(0);
-        if (captchaUrl == null) captchaUrl = br.getRegex("\"(captcha\\.php\\?ticket=.*?\\&id=\\d+)\"").getMatch(0);
-        if (down == null || captchaUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        down.remove(null);
-        captchaUrl = "http://czshare.com/" + captchaUrl;
-        String code = getCaptchaCode(captchaUrl, downloadLink);
-        down.put("captchastring", code);
-        br.submitForm(down);
-        if (br.containsHTML("Chyba 6 / Error 6")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000);
-        if (br.containsHTML("Nesouhlasi kontrolni kod")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        String file = br.getRegex("name=\"file\" value=\"(.*?)\"").getMatch(0);
+        String size = br.getRegex("name=\"size\" value=\"(\\d+)\"").getMatch(0);
+        String server = br.getRegex("name=\"server\" value=\"(.*?)\"").getMatch(0);
+        if (!br.containsHTML(CAPTCHATEXT) || file == null || size == null || server == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        String code = getCaptchaCode("http://czshare.com/captcha.php", downloadLink);
+        br.postPage("http://czshare.com/download.php", "id=" + new Regex(downloadLink.getDownloadURL(), "czshare\\.com/(\\d+)/.*?").getMatch(0) + "&file=" + file + "&size=" + size + "&server=" + server + "&captchastring2=" + Encoding.urlEncode(code) + "&freedown=Ov%C4%9B%C5%99it+a+st%C3%A1hnout");
         String dllink = br.getRedirectLocation();
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink == null) {
+            if (br.containsHTML("Chyba 6 / Error 6")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000);
+            if (br.containsHTML(">Zadaný ověřovací kód nesouhlasí") || br.containsHTML(CAPTCHATEXT)) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
@@ -192,6 +191,7 @@ public class CZShareCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setCustomCharset("utf-8");
         br.setFollowRedirects(true);
+        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
         br.getPage(downloadLink.getDownloadURL());
         if (br.getURL().contains("/error.php?co=4") || br.containsHTML("Omluvte, prosím, výpadek databáze\\. Na opravě pracujeme")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = Encoding.htmlDecode(br.getRegex("<div class=\"left\\-col\">[\t\n\r ]+<h1>(.*?)<span>\\&nbsp;</span></h1>").getMatch(0));
