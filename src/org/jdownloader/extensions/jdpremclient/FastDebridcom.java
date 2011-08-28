@@ -1,6 +1,8 @@
 package org.jdownloader.extensions.jdpremclient;
 
 import java.awt.event.ActionEvent;
+import java.io.IOException;
+import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Locale;
@@ -17,11 +19,11 @@ import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.TransferStatus;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.download.DownloadInterface;
 
 import org.appwork.utils.Regex;
@@ -213,8 +215,47 @@ public class FastDebridcom extends PluginForHost implements JDPremInterface {
                 String user = Encoding.urlEncode(acc.getUser());
                 String pw = Encoding.urlEncode(acc.getPass());
                 String url = Encoding.urlEncode(link.getDownloadURL());
-                genlink = br.getPage("https://www.fast-debrid.com/tool.php?pseudo=" + user + "&password=" + pw + "&link=" + url + "&view=1&viewlink=1");
-                if (!genlink.startsWith("http://") && !genlink.startsWith("/?hostp")) {
+                /*
+                 * Removing old method because a lot of the link this API
+                 * returns are corrupted; - the API isn't updated by
+                 * fast-debrid, but we can count on the new method to always be
+                 * updated
+                 * 
+                 * genlink =
+                 * br.getPage("https://www.fast-debrid.com/tool.php?pseudo=" +
+                 * user + "&password=" + pw + "&view=1&viewlink=1" + "&link=" +
+                 * url);
+                 */
+
+                // Check if the cookies were already loaded
+                String cookie_fast = null;
+                String cookie_sessid = null;
+                if (cookie_fast == null || cookie_sessid == null) {
+                    cookie_fast = fastLogin(user, pw, "fast");
+                    cookie_sessid = fastLogin(user, pw, "sessid");
+                }
+
+                // Setting cookie values
+                br.setCookie("https://www.fast-debrid.com", "fast", cookie_fast);
+                br.setCookie("https://www.fast-debrid.com", "PHPSESSID", cookie_sessid);
+
+                /*
+                 * Getting the link via a new method, that is better because: it
+                 * returns valid links for all hosts; mimics the way their
+                 * firefox plugin downloads, and therefore we can count on this
+                 * API to always be up to date links gotten by this method allow
+                 * for more connections to be made
+                 */
+                String page_source;
+                page_source = br.getPage("https://www.fast-debrid.com/plugin.php?link=" + url);
+
+                // Getting just the link from HTML
+                page_source = page_source.split("http")[2];
+                page_source = page_source.split("\"")[0];
+                page_source = "http" + page_source;
+                genlink = page_source;
+
+                if (!genlink.startsWith("http://")) {
                     logger.severe("FastDebrid(Error): " + genlink);
                     if (genlink.contains("_limit")) {
                         /* limit reached for this host */
@@ -231,16 +272,14 @@ public class FastDebridcom extends PluginForHost implements JDPremInterface {
                         synchronized (LOCK) {
                             premiumHosts.remove(link.getHost());
                         }
-                        /* reset retrycounter */
+                        /* reset retry counter */
                         link.getLinkStatus().setRetryCount(0);
                         return false;
                     }
                     String msg = "(" + link.getLinkStatus().getRetryCount() + 1 + "/" + getMaxRetries() + ")";
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Retry in few secs" + msg, 10 * 1000l);
                 }
-                /* workaround for invalid domain name */
-                genlink = genlink.replaceFirst("http://\\.", "http://");
-                if (!genlink.startsWith("http://")) genlink = "http://tiger2.fast-debrid.com" + genlink;
+
                 dl = jd.plugins.BrowserAdapter.openDownload(br, link, genlink, true, 0);
                 if (dl.getConnection().getResponseCode() == 404) {
                     /* file offline */
@@ -265,6 +304,28 @@ public class FastDebridcom extends PluginForHost implements JDPremInterface {
             br.setFollowRedirects(dofollow);
         }
         return true;
+    }
+
+    private String fastLogin(String user, String pw, String caller) throws IOException {
+        String retVal = null;
+        String cookie_fast = null;
+        String cookie_sessid = null;
+
+        // Logging in
+        String postData = "pseudo=" + URLEncoder.encode(user, "UTF-8") + "&password=" + URLEncoder.encode(pw, "UTF-8");
+        br.postPageRaw("https://www.fast-debrid.com/index.php", postData);
+
+        // Getting cookies
+        cookie_fast = br.getCookie("www.fast-debrid.com", "fast");
+        cookie_sessid = br.getCookie("www.fast-debrid.com", "PHPSESSID");
+
+        if (caller == "fast") {
+            retVal = cookie_fast;
+        } else if (caller == "sessid") {
+            retVal = cookie_sessid;
+        }
+
+        return retVal;
     }
 
     @Override
@@ -326,7 +387,7 @@ public class FastDebridcom extends PluginForHost implements JDPremInterface {
                 }
                 String type = accDetails.get("type");
                 if ("platinium".equals(type) || "premium".equals(type)) {
-                    /* only platinium and premium support */
+                    /* only platinum and premium support */
                     synchronized (LOCK) {
                         premiumHosts.clear();
                         if (hosts != null) {
@@ -355,7 +416,7 @@ public class FastDebridcom extends PluginForHost implements JDPremInterface {
                         account.setValid(true);
                         ac.setValidUntil(System.currentTimeMillis() + (Long.parseLong(daysLeft) * 1000 * 60 * 60 * 24));
                     } else {
-                        /* no daysleft available?! */
+                        /* no days left available?! */
                         account.setValid(false);
                     }
                 } else {
