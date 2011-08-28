@@ -127,10 +127,9 @@ public class ImageHosterDecrypter extends PluginForDecrypt {
             finallink = br.getRegex("pointer;\" alt=\"\" id=\"image\" src=\"(http://.*?)\"").getMatch(0);
             if (finallink == null) finallink = br.getRegex("\"(http://ist\\d+\\-\\d+\\.filesor\\.com/pimpandhost\\.com/.*?)\"").getMatch(0);
         } else if (parameter.contains("flickr.com/")) {
-            // Thread.sleep(2 * 1000l);
+            br.getPage(parameter + "/sizes/l/in/photostream/");
             Regex regex1 = br.getRegex("<div class=\"spaceball\" style=\"height:\\d+px; width: \\d+px;\"></div>[\t\n\r ]+<img src=\"(http://.*?)\"");
             Regex regex2 = br.getRegex("\"(http://farm\\d+\\.static\\.flickr\\.com/\\d+/.*?)\"");
-            br.getPage(parameter + "/sizes/l/in/photostream/");
             finallink = regex1.getMatch(0);
             if (finallink == null) {
                 finallink = regex2.getMatch(0);

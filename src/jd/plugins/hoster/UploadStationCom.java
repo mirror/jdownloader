@@ -44,11 +44,8 @@ import org.appwork.utils.formatter.TimeFormatter;
 public class UploadStationCom extends PluginForHost {
 
     private static AtomicInteger maxDls             = new AtomicInteger(-1);
-
     private static final String  FILEOFFLINE        = "(<h1>File not available</h1>|<b>The file could not be found\\. Please check the download link)";
-
     public static String         agent              = RandomUserAgent.generate();
-
     private boolean              isRegistered       = false;
     private static long          LAST_FREE_DOWNLOAD = 0l;
 
@@ -156,7 +153,7 @@ public class UploadStationCom extends PluginForHost {
         }
         account.setValid(true);
         ai.setUnlimitedTraffic();
-        final String expire = br.getRegex("Expiry date: (\\d+\\-\\d+\\-\\d+)").getMatch(0);
+        String expire = br.getRegex("Expiry date: (\\d+\\-\\d+\\-\\d+|Lifetime)").getMatch(0);
         if (expire == null) {
             // ai.setExpired(true);
             isRegistered = true;
@@ -172,8 +169,12 @@ public class UploadStationCom extends PluginForHost {
                 account.setMaxSimultanDownloads(-1);
             } catch (final Throwable noin09581Stable) {
             }
-            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy-MM-dd", null));
-            ai.setStatus("Premium User");
+            if (expire.equals("Lifetime")) {
+                ai.setStatus("Lifetime Premium User");
+            } else {
+                ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy-MM-dd", null));
+                ai.setStatus("Premium User");
+            }
         }
         return ai;
     }
@@ -389,8 +390,7 @@ public class UploadStationCom extends PluginForHost {
         br.postPage("http://uploadstation.com/login.php", "loginUserName=" + Encoding.urlEncode(account.getUser()) + "&loginUserPassword=" + Encoding.urlEncode(account.getPass()) + "&autoLogin=on&recaptcha_response_field=&recaptcha_challenge_field=&recaptcha_shortencode_field=&loginFormSubmit=Login");
         if (br.getCookie("http://uploadstation.com/", "cookie") == null) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE); }
         br.getPage("http://uploadstation.com/dashboard.php");
-        final String expire = br.getRegex("Expiry date: (\\d+\\-\\d+\\-\\d+)").getMatch(0);
-        if (expire == null) {
+        if (!br.containsHTML("Expiry date: ")) {
             // ai.setExpired(true);
             isRegistered = true;
             try {

@@ -43,11 +43,17 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
         }
         if (decryptList) {
             br.getPage(parameter);
+            System.out.print(br.toString());
             String fpName = br.getRegex("<title>(.*?) on SoundCloud \\- Create, record and share your sounds for free</title>").getMatch(0);
-            String[] links = br.getRegex("<h3><a href=\"(/.*?)\"").getColumn(0);
+            String[] links = br.getRegex("\"(http://soundcloud\\.com/[A-Za-z0-9\\- _%/]+)\" property=\"og:song\"").getColumn(0);
             if (links == null || links.length == 0) {
                 links = br.getRegex("class=\"info\"><span>\\d+\\.</span>[\t\n\r ]+<a href=\"(/.*?)\"").getColumn(0);
-                if (links == null || links.length == 0) links = br.getRegex("class=\"action\\-overlay\\-inner\"><a href=\"(/.*?)\"").getColumn(0);
+                if (links == null || links.length == 0) {
+                    links = br.getRegex("class=\"action\\-overlay\\-inner\"><a href=\"(/.*?)\"").getColumn(0);
+                    if (links == null || links.length == 0) {
+                        links = br.getRegex("<h3><a href=\"(/.*?)\"").getColumn(0);
+                    }
+                }
             }
             if (links == null || links.length == 0) {
                 logger.warning("Decrypter broken for link: " + parameter);

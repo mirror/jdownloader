@@ -98,7 +98,7 @@ public class ChoMikujPl extends PluginForDecrypt {
         }
         logger.info("Found " + pageCount + " pages. Starting to decrypt them now.");
         // Add 1 so we have all pages
-        pageCount++;
+        if (pageCount != 1) pageCount++;
         progress.setRange(pageCount);
         // Alle Seiten decrypten
         for (int i = 0; i < pageCount; ++i) {
@@ -107,8 +107,19 @@ public class ChoMikujPl extends PluginForDecrypt {
             prepareBrowser(parameter, br);
             br.postPage(parameter, postThatData);
             // Every full page has 30 links (pictures)
-            String[] fileIds = br.getRegex("class=\"fileItemProp getFile\" onclick=\"return ch\\.Download\\.dnFile\\((\\d+)\\);\"").getColumn(0);
-            if (fileIds == null || fileIds.length == 0) fileIds = br.getRegex("class=\"FileName\" onclick=\"return ch\\.Download\\.dnFile\\((.*?)\\);\"").getColumn(0);
+            boolean filenameIncluded = true;
+            // [\t\n\r ]+</td>[\t\n\r ]+<td>[\t\n\r ]+<table
+            // class=\"fInfoTable\" cellpadding=\"0\" cellspacing=\"3\">[\t\n\r
+            // ]+<tbody><tr>[\t\n\r ]+<td><div
+            // class=\"fInfoDiv\">(.*?)</div></td>
+            String[][] fileIds = br.getRegex("class=\"FileName\" onclick=\"return ch\\.Download\\.dnFile\\((.*?)\\);\"><b>(.{1,300})</b>(.{1,300})</a>").getMatches();
+            if (fileIds == null || fileIds.length == 0) {
+                filenameIncluded = false;
+                fileIds = br.getRegex("class=\"FileName\" onclick=\"return ch\\.Download\\.dnFile\\((.*?)\\);\"").getMatches();
+                if (fileIds == null || fileIds.length == 0) {
+                    fileIds = br.getRegex("class=\"fileItemProp getFile\" onclick=\"return ch\\.Download\\.dnFile\\((\\d+)\\);\"").getMatches();
+                }
+            }
             if (fileIds == null || fileIds.length == 0) {
                 // If the last page only contains a file or fileS the regexes
                 // don't work but the decrypter isn't broken so the user should
@@ -121,16 +132,22 @@ public class ChoMikujPl extends PluginForDecrypt {
                 return null;
             }
 
-            for (String id : fileIds) {
-                String finalLink = String.format("&id=%s&gallerylink=%s&", id, param.toString().replace("chomikuj.pl", "60423fhrzisweguikipo9re"));
+            for (String[] id : fileIds) {
+                String finalLink = String.format("&id=%s&gallerylink=%s&", id[0], param.toString().replace("chomikuj.pl", "60423fhrzisweguikipo9re"));
                 DownloadLink dl = createDownloadlink(finalLink);
-                dl.setName(String.valueOf(new Random().nextInt(1000000)));
+                if (filenameIncluded) {
+                    dl.setName(id[1].trim() + id[2].trim());
+                    // dl.setDownloadSize(SizeFormatter.getSize(id[3]));
+                } else {
+                    dl.setName(String.valueOf(new Random().nextInt(1000000)));
+                }
                 if (saveLink != null && savePost != null && password != null) {
                     dl.setProperty("savedlink", saveLink);
                     dl.setProperty("savedpost", savePost);
                     // Not needed yet but might me useful for the future
                     dl.setProperty("password", password);
                 }
+                // dl.setAvailable(true);
                 decryptedLinks.add(dl);
             }
             String[][] allFolders = br.getRegex("class=\"folders\" cellspacing=\"6\" cellpadding=\"0\" border=\"0\">[\t\n\r ]+<tr>[\t\n\r ]+<td><a href=\"(.*?)\" onclick=\"return Ts\\(\\'\\d+\\'\\)\">(.*?)</span>").getMatches();

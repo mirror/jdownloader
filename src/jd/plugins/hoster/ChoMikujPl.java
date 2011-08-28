@@ -32,8 +32,6 @@ import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
 //This plugin gets all its links from a decrypter!
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "chomikuj.pl" }, urls = { "\\&id=.*?\\&gallerylink=.*?60423fhrzisweguikipo9re.*?\\&" }, flags = { 2 })
 public class ChoMikujPl extends PluginForHost {
@@ -139,12 +137,7 @@ public class ChoMikujPl extends PluginForHost {
         }
         if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
         account.setValid(true);
-        String availabletraffic = br.getRegex("<span id=\"ctl00_lblQuotaLeft\">(.*?)</span>").getMatch(0);
-        if (availabletraffic != null) {
-            ai.setTrafficLeft(SizeFormatter.getSize(availabletraffic.replace(",", ".")));
-        } else {
-            ai.setUnlimitedTraffic();
-        }
+        ai.setUnlimitedTraffic();
         ai.setStatus("Premium User");
         return ai;
     }
