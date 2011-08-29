@@ -2,7 +2,6 @@ package org.jdownloader.extensions.jdpremclient;
 
 import java.awt.event.ActionEvent;
 import java.io.IOException;
-import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Locale;
@@ -215,6 +214,7 @@ public class FastDebridcom extends PluginForHost implements JDPremInterface {
                 String user = Encoding.urlEncode(acc.getUser());
                 String pw = Encoding.urlEncode(acc.getPass());
                 String url = Encoding.urlEncode(link.getDownloadURL());
+                fastLogin(user, pw);
                 /*
                  * Removing old method because a lot of the link this API
                  * returns are corrupted; - the API isn't updated by
@@ -226,18 +226,6 @@ public class FastDebridcom extends PluginForHost implements JDPremInterface {
                  * user + "&password=" + pw + "&view=1&viewlink=1" + "&link=" +
                  * url);
                  */
-
-                // Check if the cookies were already loaded
-                String cookie_fast = null;
-                String cookie_sessid = null;
-                if (cookie_fast == null || cookie_sessid == null) {
-                    cookie_fast = fastLogin(user, pw, "fast");
-                    cookie_sessid = fastLogin(user, pw, "sessid");
-                }
-
-                // Setting cookie values
-                br.setCookie("https://www.fast-debrid.com", "fast", cookie_fast);
-                br.setCookie("https://www.fast-debrid.com", "PHPSESSID", cookie_sessid);
 
                 /*
                  * Getting the link via a new method, that is better because: it
@@ -306,26 +294,9 @@ public class FastDebridcom extends PluginForHost implements JDPremInterface {
         return true;
     }
 
-    private String fastLogin(String user, String pw, String caller) throws IOException {
-        String retVal = null;
-        String cookie_fast = null;
-        String cookie_sessid = null;
-
-        // Logging in
-        String postData = "pseudo=" + URLEncoder.encode(user, "UTF-8") + "&password=" + URLEncoder.encode(pw, "UTF-8");
+    private void fastLogin(String user, String pw) throws IOException {
+        String postData = "pseudo=" + user + "&password=" + pw;
         br.postPageRaw("https://www.fast-debrid.com/index.php", postData);
-
-        // Getting cookies
-        cookie_fast = br.getCookie("www.fast-debrid.com", "fast");
-        cookie_sessid = br.getCookie("www.fast-debrid.com", "PHPSESSID");
-
-        if (caller == "fast") {
-            retVal = cookie_fast;
-        } else if (caller == "sessid") {
-            retVal = cookie_sessid;
-        }
-
-        return retVal;
     }
 
     @Override

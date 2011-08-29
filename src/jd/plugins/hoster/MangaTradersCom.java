@@ -39,10 +39,10 @@ public class MangaTradersCom extends PluginForHost {
         this.enablePremium("http://www.mangatraders.com/register/");
     }
 
-    private boolean weAreAlreadyLoggedIn = false;
-    private static final String COOKIENAME = "SMFCookie232";
-    private static final String ACCESSBLOCK = "<p>You have attempted to download this file within the last 10 seconds.</p>";
-    private static final String FILEOFFLINE = ">Download Manager Error - Invalid Fileid";
+    private boolean             weAreAlreadyLoggedIn = false;
+    private static final String COOKIENAME           = "SMFCookie232";
+    private static final String ACCESSBLOCK          = "<p>You have attempted to download this file within the last 10 seconds.</p>";
+    private static final String FILEOFFLINE          = ">Download Manager Error - Invalid Fileid";
 
     @Override
     public String getAGBLink() {
@@ -104,8 +104,9 @@ public class MangaTradersCom extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException {
-        checkLinks(new DownloadLink[] { downloadLink });
-        if (!downloadLink.isAvailabilityStatusChecked()) {
+        if (checkLinks(new DownloadLink[] { downloadLink }) == false) {
+            downloadLink.setAvailableStatus(AvailableStatus.UNCHECKABLE);
+        } else if (!downloadLink.isAvailabilityStatusChecked()) {
             downloadLink.setAvailableStatus(AvailableStatus.UNCHECKABLE);
         }
         return downloadLink.getAvailableStatus();
@@ -118,7 +119,7 @@ public class MangaTradersCom extends PluginForHost {
             Account aa = AccountController.getInstance().getValidAccount(this);
             if (aa == null || !aa.isValid()) {
                 logger.info("The user didn't enter account data even if they're needed to check the links for this host.");
-                throw new PluginException(LinkStatus.ERROR_FATAL, "Linkcheck does only work if an account is entered");
+                return false;
             }
             login(aa);
             for (DownloadLink dl : urls) {
