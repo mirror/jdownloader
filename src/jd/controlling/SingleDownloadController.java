@@ -33,6 +33,7 @@ import jd.gui.UserIO;
 import jd.gui.swing.SwingGui;
 import jd.gui.swing.components.Balloon;
 import jd.http.Browser;
+import jd.http.BrowserSettingsThread;
 import jd.nutils.Formatter;
 import jd.nutils.io.JDIO;
 import jd.plugins.Account;

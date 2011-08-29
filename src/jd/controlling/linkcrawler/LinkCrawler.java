@@ -27,11 +27,15 @@ public class LinkCrawler {
 
     private static ArrayList<DecryptPluginWrapper> pDecrypts;
     private static ArrayList<HostPluginWrapper>    pHosts;
-    private static PluginForHost                   directHTTP      = null;
-    private ArrayList<CrawledLinkInfo>             crawledLinks    = new ArrayList<CrawledLinkInfo>();
-    public AtomicInteger                           crawler         = new AtomicInteger(0);
-    private HashSet<String>                        duplicateFinder = new HashSet<String>();
-    private static ThreadPoolExecutor              threadPool      = null;
+    private static PluginForHost                   directHTTP              = null;
+    private ArrayList<CrawledLinkInfo>             crawledLinks            = new ArrayList<CrawledLinkInfo>();
+    private AtomicInteger                          crawledLinksCounter     = new AtomicInteger(0);
+    public AtomicInteger                           crawler                 = new AtomicInteger(0);
+    private HashSet<String>                        duplicateFinder         = new HashSet<String>();
+    private LinkCrawlerFinalLinkHandler            finalLinkHandler        = null;
+    private LinkCrawlerFinalLinkHandler            defaultFinalLinkHandler = null;
+    private static ThreadPoolExecutor              threadPool              = null;
+
     static {
         int maxThreads = Math.max(JsonConfig.create(LinkCrawlerConfig.class).getMaxThreads(), 1);
         int keepAlive = Math.max(JsonConfig.create(LinkCrawlerConfig.class).getThreadKeepAlive(), 100);
@@ -82,6 +86,8 @@ public class LinkCrawler {
     }
 
     public LinkCrawler() {
+        defaultFinalLinkHandler = defaultFinalLinkHandlerFactory();
+        setFinalLinkHandler(defaultFinalLinkHandler);
     }
 
     public void crawlNormal(String text) {
@@ -90,16 +96,86 @@ public class LinkCrawler {
 
     public void crawlNormal(String text, String url) {
         String[] possibleLinks = HTMLParser.getHttpLinks(text, url);
-        if (possibleLinks == null || possibleLinks.length == 0) return;
-        ArrayList<CrawledLinkInfo> possibleCryptedLinks = new ArrayList<CrawledLinkInfo>(possibleLinks.length);
-        for (String possibleLink : possibleLinks) {
+        crawlNormal(possibleLinks);
+    }
+
+    public void crawlNormal(String[] links) {
+        if (links == null || links.length == 0) return;
+        ArrayList<CrawledLinkInfo> possibleCryptedLinks = new ArrayList<CrawledLinkInfo>(links.length);
+        for (String possibleLink : links) {
             possibleCryptedLinks.add(new CrawledLinkInfo(possibleLink));
         }
         distribute(possibleCryptedLinks);
     }
 
+    public void enqueueNormal(String text, String url) {
+        String[] possibleLinks = HTMLParser.getHttpLinks(text, url);
+        if (possibleLinks == null || possibleLinks.length == 0) return;
+        final ArrayList<CrawledLinkInfo> possibleCryptedLinks = new ArrayList<CrawledLinkInfo>(possibleLinks.length);
+        for (String possibleLink : possibleLinks) {
+            possibleCryptedLinks.add(new CrawledLinkInfo(possibleLink));
+        }
+        if (insideDecrypterPlugin()) {
+            /*
+             * direct decrypt this link because we are already inside a
+             * LinkCrawlerThread and this avoids deadlocks on plugin waiting for
+             * linkcrawler results
+             */
+            distribute(possibleCryptedLinks);
+            return;
+        } else {
+            /*
+             * enqueue this cryptedLink for decrypting
+             */
+            crawler.incrementAndGet();
+            threadPool.execute(new LinkCrawlerRunnable(LinkCrawler.this) {
+                public void run() {
+                    try {
+                        distribute(possibleCryptedLinks);
+                    } finally {
+                        checkFinishNotify();
+                    }
+                }
+            });
+            return;
+        }
+    }
+
+    public void enqueueDeep(String text, String url) {
+        final String[] possibleLinks = HTMLParser.getHttpLinks(text, url);
+        if (possibleLinks == null || possibleLinks.length == 0) return;
+        if (insideDecrypterPlugin()) {
+            /*
+             * direct decrypt this link because we are already inside a
+             * LinkCrawlerThread and this avoids deadlocks on plugin waiting for
+             * linkcrawler results
+             */
+            crawlDeep(possibleLinks);
+            return;
+        } else {
+            /*
+             * enqueue this cryptedLink for decrypting
+             */
+            crawler.incrementAndGet();
+            threadPool.execute(new LinkCrawlerRunnable(LinkCrawler.this) {
+                public void run() {
+                    try {
+                        crawlDeep(possibleLinks);
+                    } finally {
+                        checkFinishNotify();
+                    }
+                }
+            });
+            return;
+        }
+    }
+
+    public void crawlDeep(String text, String url) {
+        crawlDeep(HTMLParser.getHttpLinks(text, url));
+    }
+
     public void crawlDeep(String text) {
-        crawlDeep(HTMLParser.getHttpLinks(text, null));
+        crawlDeep(text, null);
     }
 
     public void crawlDeep(String[] links) {
@@ -392,10 +468,36 @@ public class LinkCrawler {
     }
 
     protected void handleFinalLink(CrawledLinkInfo link) {
-        if (link == null) return;
-        synchronized (crawledLinks) {
-            crawledLinks.add(link);
-        }
+        crawledLinksCounter.incrementAndGet();
+        finalLinkHandler.handleFinalLink(link);
     }
 
+    public int crawledLinksFound() {
+        return crawledLinksCounter.get();
+    }
+
+    public LinkCrawlerFinalLinkHandler getDefaultFinalLinkHandler() {
+        return defaultFinalLinkHandler;
+    }
+
+    protected LinkCrawlerFinalLinkHandler defaultFinalLinkHandlerFactory() {
+        return new LinkCrawlerFinalLinkHandler() {
+
+            public void handleFinalLink(CrawledLinkInfo link) {
+                if (link == null) return;
+                synchronized (crawledLinks) {
+                    crawledLinks.add(link);
+                }
+            }
+        };
+    }
+
+    public void setFinalLinkHandler(LinkCrawlerFinalLinkHandler handler) {
+        if (handler == null) throw new IllegalArgumentException("handler is null");
+        this.finalLinkHandler = handler;
+    }
+
+    public LinkCrawlerFinalLinkHandler getFinalLinkHandler() {
+        return this.finalLinkHandler;
+    }
 }

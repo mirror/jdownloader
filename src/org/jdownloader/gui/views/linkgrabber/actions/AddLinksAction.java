@@ -2,14 +2,11 @@ package org.jdownloader.gui.views.linkgrabber.actions;
 
 import java.awt.event.ActionEvent;
 
-import jd.controlling.linkchecker.LinkChecker;
-import jd.controlling.linkcrawler.CrawledLinkInfo;
+import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcrawler.LinkCrawler;
-import jd.plugins.DownloadLink;
 
 import org.appwork.utils.swing.dialog.Dialog;
-import org.appwork.utils.swing.dialog.DialogCanceledException;
-import org.appwork.utils.swing.dialog.DialogClosedException;
+import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.linkgrabber.addlinksdialog.AddLinksDialog;
@@ -24,38 +21,18 @@ public class AddLinksAction extends AppAction {
     }
 
     public void actionPerformed(ActionEvent e) {
-
-        new Thread("Crawljob") {
-            public void run() {
-                try {
-
-                    AddLinksDialog dialog = new AddLinksDialog();
-                    CrawlerJob crawljob = Dialog.getInstance().showDialog(dialog);
-                    System.out.println(crawljob);
-                    LinkCrawler lc = new LinkCrawler() {
-                        protected void handleFinalLink(CrawledLinkInfo link) {
-                            super.handleFinalLink(link);
-                            System.out.println(link);
-                            LinkChecker.getInstance().check(new DownloadLink[] { link.getDownloadLink() }, false);
-                        }
-
-                    };
-                    if (crawljob.isDeepAnalyse()) {
-                        lc.crawlDeep(crawljob.getText());
-
-                    } else {
-                        lc.crawlNormal(crawljob.getText());
-                    }
+        try {
+            AddLinksDialog dialog = new AddLinksDialog();
+            final CrawlerJob crawljob = Dialog.getInstance().showDialog(dialog);
+            new Thread("AddLinksDialog") {
+                public void run() {
+                    LinkCrawler lc = LinkCollector.getInstance().addCrawlerJob(crawljob);
                     lc.waitForCrawling();
-                    System.out.println(lc.getCrawledLinks().size());
-                } catch (DialogClosedException e1) {
-                    e1.printStackTrace();
-                } catch (DialogCanceledException e1) {
-                    e1.printStackTrace();
+                    System.out.println("JOB DONE: " + lc.crawledLinksFound());
                 }
-            }
-        }.start();
-
+            }.start();
+        } catch (DialogNoAnswerException e1) {
+        }
     }
 
 }

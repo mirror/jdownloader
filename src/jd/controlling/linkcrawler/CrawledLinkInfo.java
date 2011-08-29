@@ -6,7 +6,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 
-public class CrawledLinkInfo implements AbstractPackageChildrenNode<CrawledPackageInfo> {
+public class CrawledLinkInfo implements AbstractPackageChildrenNode<CrawledPackageInfo>, CheckableLink {
 
     private CrawledPackageInfo parent  = null;
     private PluginForDecrypt   dPlugin = null;

@@ -3,8 +3,8 @@ package org.jdownloader.gui.views.downloads.context;
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 
+import jd.controlling.IOEQ;
 import jd.controlling.linkchecker.LinkChecker;
-import jd.controlling.linkchecker.LinkChecker.LinkCheckJob;
 import jd.gui.swing.jdgui.interfaces.ContextMenuAction;
 import jd.plugins.DownloadLink;
 
@@ -33,20 +33,14 @@ public class CheckStatusAction extends ContextMenuAction {
     }
 
     public void actionPerformed(ActionEvent e) {
-        final LinkCheckJob job = LinkChecker.getInstance().check(links.toArray(new DownloadLink[links.size()]), true);
-        new Thread() {
+        IOEQ.add(new Runnable() {
 
-            /*
-             * (non-Javadoc)
-             * 
-             * @see java.lang.Thread#run()
-             */
-            @Override
             public void run() {
-                System.out.println("job is done: " + job.waitChecked());
+                final LinkChecker<DownloadLink> lc = new LinkChecker<DownloadLink>(true);
+                lc.check(links);
             }
 
-        }.start();
+        }, true);
     }
 
     @Override

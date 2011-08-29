@@ -1,14 +1,17 @@
 package jd.controlling.linkchecker;
 
+import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
+import jd.controlling.linkcrawler.CheckableLink;
 import jd.http.Browser;
+import jd.http.BrowserSettingsThread;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.PluginForHost;
@@ -16,124 +19,102 @@ import jd.plugins.PluginForHost;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.logging.Log;
 
-public class LinkChecker {
+public class LinkChecker<E extends CheckableLink> {
 
-    public class LinkCheckJob {
+    /* static variables */
+    private static AtomicInteger                                                    linkCheckerThread = new AtomicInteger(0);
+    private final static int                                                        maxThreads;
+    private final static int                                                        keepAlive;
+    private static HashMap<String, Thread>                                          checkThreads      = new HashMap<String, Thread>();
+    private static HashMap<String, ArrayList<LinkChecker<? extends CheckableLink>>> linkChecker       = new HashMap<String, ArrayList<LinkChecker<? extends CheckableLink>>>();
+    private static final Object                                                     LOCK              = new Object();
 
-        private DownloadLink[]                            links        = null;
-        private HashMap<String, LinkedList<DownloadLink>> linksHostMap = null;
-        private boolean                                   forceRecheck;
+    /* local variables for this LinkChecker */
+    private AtomicLong                                                              linksRequested    = new AtomicLong(0);
+    private AtomicLong                                                              linksDone         = new AtomicLong(0);
+    private HashMap<String, LinkedList<E>>                                          links2Check       = new HashMap<String, LinkedList<E>>();
+    private boolean                                                                 forceRecheck      = false;
+    private LinkCheckerHandler<E>                                                   handler           = null;
+    private static int                                                              SPLITSIZE         = 80;
 
-        private LinkCheckJob(DownloadLink[] links, boolean forceRecheck) {
-            this.links = links;
-            this.forceRecheck = forceRecheck;
-            linksHostMap = new HashMap<String, LinkedList<DownloadLink>>();
-            for (DownloadLink link : links) {
-                String host = link.getHost();
-
-                if ("ftp".equalsIgnoreCase(host) || "DirectHTTP".equalsIgnoreCase(host) || "http links".equalsIgnoreCase(host)) {
-                    /* direct and ftp links are divided by their hostname */
-                    String specialHost = Browser.getHost(link.getDownloadURL());
-                    if (specialHost != null) host = specialHost;
-                }
-                LinkedList<DownloadLink> map = linksHostMap.get(host);
-                if (map == null) {
-                    map = new LinkedList<DownloadLink>();
-                    linksHostMap.put(host, map);
-                }
-                map.add(link);
-            }
-        }
-
-        public boolean isChecked() {
-            synchronized (this) {
-                return this.linksHostMap.isEmpty();
-            }
-        }
-
-        public DownloadLink[] getLinks() {
-            return links.clone();
-        }
-
-        public void abort() {
-            synchronized (this) {
-                this.linksHostMap.clear();
-                this.notify();
-            }
-        }
-
-        public boolean waitChecked() {
-            while (true) {
-                synchronized (LinkCheckJob.this) {
-                    if (this.linksHostMap.isEmpty()) break;
-                    try {
-                        LinkCheckJob.this.wait();
-                    } catch (InterruptedException e) {
-                        break;
-                    }
-                }
-            }
-            return isChecked();
-        }
-
-    }
-
-    private static LinkChecker INSTANCE = new LinkChecker();
-
-    public static LinkChecker getInstance() {
-        return INSTANCE;
-    }
-
-    private HashMap<String, Thread>                   checkThreads  = new HashMap<String, Thread>();
-    private HashMap<String, LinkedList<LinkCheckJob>> jobs          = new HashMap<String, LinkedList<LinkCheckJob>>();
-
-    private AtomicLong                                jobsRequested = new AtomicLong(0);
-    private AtomicLong                                jobsDone      = new AtomicLong(0);
-    private int                                       maxThreads    = 1;
-    private int                                       keepAlive     = 100;
-
-    private LinkChecker() {
+    static {
         maxThreads = Math.max(JsonConfig.create(LinkCheckerConfig.class).getMaxThreads(), 1);
-        keepAlive = Math.max(JsonConfig.create(LinkCheckerConfig.class).getThreadKeepAlive(), 100);
+        // keepAlive =
+        // Math.max(JsonConfig.create(LinkCheckerConfig.class).getThreadKeepAlive(),
+        // 100);
+        keepAlive = 2000;
     }
 
-    /**
-     * create an new LinkCheckJob for the provided downloadlinks
-     * 
-     * @param links
-     *            the links we want to check for availablestatus
-     * @param forceReCheck
-     *            reset the availablestatus of all provided downloadlinks
-     * @return
-     */
-    public LinkCheckJob check(DownloadLink[] links, boolean forceReCheck) {
-        if (links == null) throw new NullPointerException("no links?!");
-        LinkCheckJob job = null;
-        synchronized (LinkChecker.this) {
-            job = new LinkCheckJob(links, forceReCheck);
-            jobsRequested.incrementAndGet();
-            /* enqueue and start this job in joblist for each existing hoster */
-            Set<Entry<String, LinkedList<DownloadLink>>> sets = job.linksHostMap.entrySet();
-            for (Entry<String, LinkedList<DownloadLink>> set : sets) {
-                String host = set.getKey();
-                LinkedList<LinkCheckJob> hostJobs = jobs.get(host);
-                if (hostJobs == null) {
-                    hostJobs = new LinkedList<LinkCheckJob>();
-                    jobs.put(host, hostJobs);
-                }
-                hostJobs.add(job);
-                /* get thread to check this hoster */
-                Thread thread = checkThreads.get(host);
-                if (thread == null || !thread.isAlive()) {
-                    startNewThreads();
-                } else {
-                    synchronized (thread) {
-                        thread.notify();
-                    }
-                }
+    public LinkChecker() {
+        this(false);
+    }
+
+    public LinkChecker(boolean forceRecheck) {
+        this.forceRecheck = forceRecheck;
+    }
+
+    public boolean isForceRecheck() {
+        return forceRecheck;
+    }
+
+    public void setLinkCheckHandler(LinkCheckerHandler<E> handler) {
+        this.handler = handler;
+    }
+
+    public LinkCheckerHandler<E> getLinkCheckHandler() {
+        return handler;
+    }
+
+    @SuppressWarnings("unchecked")
+    protected void linkChecked(CheckableLink link) {
+        if (link == null) return;
+        linksDone.incrementAndGet();
+        LinkCheckerHandler<E> h = handler;
+        if (h != null) h.linkCheckDone((E) link);
+    }
+
+    public void check(List<E> links) {
+        if (links == null) throw new IllegalArgumentException("links is null?");
+        for (E link : links) {
+            check(link);
+        }
+    }
+
+    public void check(E link) {
+        if (link == null || link.getDownloadLink() == null) throw new IllegalArgumentException("links is null?");
+        DownloadLink dlLink = link.getDownloadLink();
+        /* get Host of the link */
+        String host = dlLink.getHost();
+        if ("ftp".equalsIgnoreCase(host) || "DirectHTTP".equalsIgnoreCase(host) || "http links".equalsIgnoreCase(host)) {
+            /* direct and ftp links are divided by their hostname */
+            String specialHost = Browser.getHost(dlLink.getDownloadURL());
+            if (specialHost != null) host = specialHost;
+        }
+        synchronized (this) {
+            /* add link to list of link2Check */
+            LinkedList<E> map = links2Check.get(host);
+            if (map == null) {
+                map = new LinkedList<E>();
+                links2Check.put(host, map);
+            }
+            map.add(link);
+            linksRequested.incrementAndGet();
+        }
+        synchronized (LOCK) {
+            ArrayList<LinkChecker<? extends CheckableLink>> checker = linkChecker.get(host);
+            if (checker == null) {
+                checker = new ArrayList<LinkChecker<? extends CheckableLink>>();
+                checker.add(this);
+                linkChecker.put(host, checker);
+            } else if (!checker.contains(this)) {
+                checker.add(this);
+            }
+            /* notify linkcheckThread or try to start new one */
+            Thread thread = checkThreads.get(host);
+            if (thread == null || !thread.isAlive()) {
+                startNewThreads();
             }
         }
-        return job;
     }
 
     /**
@@ -142,115 +123,161 @@ public class LinkChecker {
      * @return
      */
     public boolean isRunning() {
-        return this.jobsRequested.get() != this.jobsDone.get();
+        return linksRequested.get() != linksDone.get();
+    }
+
+    public long checksRequested() {
+        return linksRequested.get();
+    }
+
+    public long checksDone() {
+        return linksDone.get();
+    }
+
+    /* wait till all requested links are done */
+    public boolean waitForChecked() {
+        while (isRunning()) {
+            synchronized (this) {
+                try {
+                    this.wait(1000);
+                } catch (InterruptedException e) {
+                    return false;
+                }
+            }
+        }
+        return isRunning() == false;
     }
 
     /* start a new linkCheckThread for the given host */
-    private void startNewThread(final String threadHost) {
-        synchronized (LinkChecker.this) {
+    private static void startNewThread(final String threadHost) {
+        synchronized (LOCK) {
             if (checkThreads.size() >= maxThreads) return;
-            final Thread newThread = new Thread(new Runnable() {
+            final BrowserSettingsThread newThread = new BrowserSettingsThread(new Runnable() {
 
                 public void run() {
                     int stopDelay = 1;
                     PluginForHost plg = null;
                     Browser br = new Browser();
                     while (true) {
-                        LinkedList<LinkCheckJob> currentJobList = new LinkedList<LinkCheckJob>();
+                        /*
+                         * map to hold the current checkable links and their
+                         * linkchecker in this round
+                         */
+                        HashMap<CheckableLink, ArrayList<LinkChecker<? extends CheckableLink>>> round = new HashMap<CheckableLink, ArrayList<LinkChecker<? extends CheckableLink>>>();
                         try {
-                            HashSet<DownloadLink> linksToCheck = new HashSet<DownloadLink>();
-                            synchronized (LinkChecker.this) {
-                                /* fetch new jobs for this checker */
-                                LinkedList<LinkCheckJob> nextJobs = jobs.get(threadHost);
-                                if (nextJobs != null && nextJobs.size() > 0) {
-                                    /* reset stopDelay */
-                                    // System.out.println("got new jobs");
-                                    stopDelay = 1;
-                                    currentJobList.addAll(nextJobs);
-                                    for (LinkCheckJob nextJob : nextJobs) {
-                                        /* add links from jobs */
-                                        synchronized (nextJob) {
-                                            LinkedList<DownloadLink> jobLinks = nextJob.linksHostMap.get(threadHost);
-                                            if (jobLinks != null) {
-                                                for (DownloadLink link : jobLinks) {
-                                                    if (nextJob.forceRecheck) link.setAvailableStatus(AvailableStatus.UNCHECKED);
-                                                    linksToCheck.add(link);
+                            synchronized (LOCK) {
+                                ArrayList<LinkChecker<? extends CheckableLink>> map = linkChecker.get(threadHost);
+                                if (map != null) {
+                                    for (LinkChecker<? extends CheckableLink> lc : map) {
+                                        synchronized (lc) {
+                                            LinkedList<? extends CheckableLink> map2 = lc.links2Check.get(threadHost);
+                                            if (map2 != null) {
+                                                for (CheckableLink link : map2) {
+                                                    ArrayList<LinkChecker<? extends CheckableLink>> map3 = round.get(link);
+                                                    if (map3 == null) {
+                                                        map3 = new ArrayList<LinkChecker<? extends CheckableLink>>();
+                                                        map3.add(lc);
+                                                        round.put(link, map3);
+                                                    } else {
+                                                        map3.add(lc);
+                                                    }
+                                                    if (lc.isForceRecheck()) {
+                                                        /*
+                                                         * linkChecker instance
+                                                         * is set to
+                                                         * forceRecheck
+                                                         */
+                                                        link.getDownloadLink().setAvailableStatus(AvailableStatus.UNCHECKED);
+                                                    }
                                                 }
+                                                /*
+                                                 * just clear the map to allow
+                                                 * fast adding of new links to
+                                                 * the given linkChecker
+                                                 * instance
+                                                 */
+                                                map2.clear();
                                             }
                                         }
                                     }
+                                    /*
+                                     * remove threadHost from static list to
+                                     * remove unwanted references
+                                     */
+                                    linkChecker.remove(threadHost);
                                 }
-                                /*
-                                 * remove the fetched jobs from todo list
-                                 */
-                                jobs.remove(threadHost);
                             }
-                            if (!linksToCheck.isEmpty()) {
-                                System.out.println(linksToCheck.size());
-                                DownloadLink linksList[] = new DownloadLink[linksToCheck.size()];
-                                Iterator<DownloadLink> it = linksToCheck.iterator();
-                                int i = 0;
-                                while (it.hasNext()) {
-                                    linksList[i++] = it.next();
-                                }
-                                /* now we check the links */
-                                if (plg == null) {
-                                    /* create plugin if not done yet */
-                                    plg = linksList[0].getDefaultPlugin().getWrapper().getNewPluginInstance();
-                                    plg.setBrowser(br);
-                                    plg.init();
-                                }
-                                boolean ret = false;
-                                try {
-                                    ret = plg.checkLinks(linksList);
-                                } catch (final Throwable e) {
-                                    Log.exception(e);
-                                }
-                                if (!ret) {
+                            /* build map to get CheckableLink from DownloadLink */
+                            HashMap<DownloadLink, CheckableLink> dlLink2checkLink = new HashMap<DownloadLink, CheckableLink>();
+                            ArrayList<DownloadLink> links2Check = new ArrayList<DownloadLink>();
+                            for (CheckableLink check : round.keySet()) {
+                                dlLink2checkLink.put(check.getDownloadLink(), check);
+                                links2Check.add(check.getDownloadLink());
+                            }
+                            int N = links2Check.size();
+                            for (int i = 0; i < N; i += SPLITSIZE) {
+                                List<DownloadLink> checks = links2Check.subList(i, Math.min(N, i + SPLITSIZE));
+                                if (checks.size() > 0) {
+                                    stopDelay = 1;
+                                    DownloadLink linksList[] = checks.toArray(new DownloadLink[checks.size()]);
+                                    /* now we check the links */
+                                    if (plg == null) {
+                                        /* create plugin if not done yet */
+                                        plg = linksList[0].getDefaultPlugin().getWrapper().getNewPluginInstance();
+                                        plg.setBrowser(br);
+                                        plg.init();
+                                    }
+                                    try {
+                                        /* try mass link check */
+                                        plg.checkLinks(linksList);
+                                    } catch (final Throwable e) {
+                                        Log.exception(e);
+                                    }
                                     for (DownloadLink link : linksList) {
+                                        /*
+                                         * this will check the link, if not
+                                         * already checked
+                                         */
                                         link.getAvailableStatus(plg);
+                                        /*
+                                         * notify all listener of this checkable
+                                         * link
+                                         */
+                                        CheckableLink checkable = dlLink2checkLink.get(link);
+                                        ArrayList<LinkChecker<? extends CheckableLink>> listeners = round.get(checkable);
+                                        for (LinkChecker<? extends CheckableLink> listener : listeners) {
+                                            listener.linkChecked(checkable);
+                                        }
                                     }
                                 }
                             }
                         } catch (Throwable e) {
                             Log.exception(e);
-                        } finally {
-                            for (LinkCheckJob nextJob : currentJobList) {
-                                synchronized (nextJob) {
-                                    nextJob.linksHostMap.remove(threadHost);
-                                    if (nextJob.linksHostMap.isEmpty()) {
-                                        /* job is finished */
-                                        jobsDone.incrementAndGet();
-                                    }
-                                    nextJob.notify();
-                                }
-                            }
-                            currentJobList.clear();
                         }
-                        synchronized (LinkChecker.this) {
-                            LinkedList<LinkCheckJob> stopCheck = jobs.get(threadHost);
+                        try {
+                            Thread.sleep(keepAlive);
+                        } catch (InterruptedException e) {
+                            Log.exception(e);
+                            synchronized (LOCK) {
+                                checkThreads.remove(threadHost);
+                                return;
+                            }
+                        }
+                        synchronized (LOCK) {
+                            ArrayList<LinkChecker<? extends CheckableLink>> stopCheck = linkChecker.get(threadHost);
                             if (stopCheck == null || stopCheck.size() == 0) {
                                 stopDelay--;
-                                // System.out.println("only " +
-                                // stopDelay + " left to stop");
                                 if (stopDelay < 0) {
-                                    // System.out.println("thread died");
                                     checkThreads.remove(threadHost);
                                     startNewThreads();
                                     return;
                                 }
                             }
                         }
-                        synchronized (this) {
-                            try {
-                                this.wait(keepAlive);
-                            } catch (InterruptedException e) {
-                            }
-                        }
                     }
                 }
             });
-            newThread.setName("LinkChecker: " + threadHost);
+            newThread.setName("LinkChecker: " + linkCheckerThread.incrementAndGet() + ":" + threadHost);
             newThread.setDaemon(true);
             checkThreads.put(threadHost, newThread);
             newThread.start();
@@ -258,10 +285,10 @@ public class LinkChecker {
     }
 
     /* start new linkCheckThreads until max is reached or no left to start */
-    private void startNewThreads() {
-        synchronized (LinkChecker.this) {
-            Set<Entry<String, LinkedList<LinkCheckJob>>> sets = jobs.entrySet();
-            for (Entry<String, LinkedList<LinkCheckJob>> set : sets) {
+    private static void startNewThreads() {
+        synchronized (LOCK) {
+            Set<Entry<String, ArrayList<LinkChecker<? extends CheckableLink>>>> sets = linkChecker.entrySet();
+            for (Entry<String, ArrayList<LinkChecker<? extends CheckableLink>>> set : sets) {
                 String host = set.getKey();
                 Thread thread = checkThreads.get(host);
                 if (thread == null || !thread.isAlive()) {

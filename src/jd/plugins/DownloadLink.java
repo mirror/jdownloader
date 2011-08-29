@@ -37,6 +37,7 @@ import jd.config.Property;
 import jd.controlling.DownloadController;
 import jd.controlling.JDLogger;
 import jd.controlling.SingleDownloadController;
+import jd.controlling.linkcrawler.CheckableLink;
 import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
 import jd.http.Browser;
 import jd.nutils.io.JDIO;
@@ -56,7 +57,7 @@ import org.jdownloader.settings.GeneralSettings;
  * 
  * @author astaldo
  */
-public class DownloadLink extends Property implements Serializable, Comparable<DownloadLink>, PackageLinkNode, AbstractPackageChildrenNode<FilePackage> {
+public class DownloadLink extends Property implements Serializable, Comparable<DownloadLink>, PackageLinkNode, AbstractPackageChildrenNode<FilePackage>, CheckableLink {
 
     private static final AtomicLong DownloadLinkIDCounter = new AtomicLong(0);
 
@@ -1100,6 +1101,10 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
             this.filePackage.remove(this);
         }
         this.filePackage = (FilePackage) parent;
+    }
+
+    public DownloadLink getDownloadLink() {
+        return this;
     }
 
 }
