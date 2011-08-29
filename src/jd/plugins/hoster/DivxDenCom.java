@@ -31,7 +31,7 @@ import jd.plugins.DownloadLink.AvailableStatus;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "divxden.com" }, urls = { "http://(www\\.)?(divxden|vidxden)\\.com/(embed-)?[a-z0-9]{12}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "divxden.com" }, urls = { "http://(www\\.)?(divxden|vidxden)\\.com/(embed\\-)?[a-z0-9]{12}" }, flags = { 0 })
 public class DivxDenCom extends PluginForHost {
 
     public DivxDenCom(PluginWrapper wrapper) {
@@ -112,7 +112,7 @@ public class DivxDenCom extends PluginForHost {
     public void doFree(DownloadLink downloadLink) throws Exception, PluginException {
         if (brbefore.contains(INMAINTENANCE)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server is in maintenance mode, try again later.");
         boolean resumable = true;
-        int maxchunks = -5;
+        int maxchunks = -2;
         // If the filesize regex above doesn't match you can copy this part into
         // the available status (and delete it here)
         Form[] allForms = br.getForms();

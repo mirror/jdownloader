@@ -20,6 +20,7 @@ import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
@@ -58,14 +59,11 @@ public class FileFlyerCom extends PluginForHost {
         String name = br.getRegex(Pattern.compile("id=\"ItemsList_ctl00_file\" title=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0);
         if (name == null) name = br.getRegex(Pattern.compile("id=\"ItemsList_ctl00_img\" title=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0);
         if (br.containsHTML(ONLY4PREMIUM)) downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.FileFlyerCom.errors.Only4Premium", "Only downloadable for premium users"));
-        if (br.containsHTML("(class=\"handlink\">Expired</a>|class=\"handlink\">Removed</a>|>To report a bug ,press this link</a>)")) {
-            return AvailableStatus.FALSE;
-        } else {
-            if (name == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            downloadLink.setName(name.trim());
-            downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
-            return AvailableStatus.TRUE;
-        }
+        if (br.containsHTML("(class=\"handlink\">Expired</a>|class=\"handlink\">Removed</a>|>To report a bug ,press this link</a>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (name == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        downloadLink.setName(name.trim());
+        downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
+        return AvailableStatus.TRUE;
     }
 
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
@@ -91,7 +89,6 @@ public class FileFlyerCom extends PluginForHost {
                 account.setValid(false);
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
-            System.out.print(br.toString());
             linkurl = br.getRegex(Pattern.compile("<a id=\"ItemsList_ctl00_img\".*href=\"(.*)\">")).getMatch(0);
             if (linkurl == null) linkurl = br.getRegex(Pattern.compile("\"(http://ds\\d+\\.fileflyer\\.com/d/[a-z0-9-]+/.*?)\"")).getMatch(0);
             if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -102,7 +99,7 @@ public class FileFlyerCom extends PluginForHost {
         if (br.containsHTML("access to the service may be unavailable for a while")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "No free slots available", 30 * 60 * 1000l);
         linkurl = Encoding.htmlDecode(linkurl);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, linkurl, true, 0);
-        if (dl.getConnection().getContentType() == null || (!dl.getConnection().getContentType().contains("octet") && !dl.getConnection().isContentDisposition())) {
+        if (dl.getConnection().getContentType() == null || (!new Regex(dl.getConnection().getContentType(), ".*?(octet|compressed).*?").matches() && !dl.getConnection().isContentDisposition())) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
