@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
 
 import javax.swing.ImageIcon;
 
@@ -14,6 +15,8 @@ import jd.controlling.AccountController;
 import jd.controlling.JDPluginLogger;
 import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.http.Browser;
+import jd.http.Cookie;
+import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
@@ -108,7 +111,8 @@ public class FastDebridcom extends PluginForHost implements JDPremInterface {
         }
         if (proxyused = true) {
             /* failed, now try normal */
-            proxyused = false;
+            // errmalt: disable fast-debrid account disabling
+            // proxyused = false;
             resetFavIcon();
         }
         plugin.handle(downloadLink, account);
@@ -195,6 +199,7 @@ public class FastDebridcom extends PluginForHost implements JDPremInterface {
             if (genlink != null) {
                 /* try saved link first */
                 try {
+                    fastLogin(acc);
                     dl = jd.plugins.BrowserAdapter.openDownload(br, link, genlink, true, 0);
                     if (dl.getConnection().isContentDisposition()) {
                         savedLinkValid = true;
@@ -211,10 +216,8 @@ public class FastDebridcom extends PluginForHost implements JDPremInterface {
                 }
             }
             if (savedLinkValid == false) {
-                String user = Encoding.urlEncode(acc.getUser());
-                String pw = Encoding.urlEncode(acc.getPass());
                 String url = Encoding.urlEncode(link.getDownloadURL());
-                fastLogin(user, pw);
+                fastLogin(acc);
                 /*
                  * Removing old method because a lot of the link this API
                  * returns are corrupted; - the API isn't updated by
@@ -234,16 +237,12 @@ public class FastDebridcom extends PluginForHost implements JDPremInterface {
                  * API to always be up to date links gotten by this method allow
                  * for more connections to be made
                  */
-                String page_source;
-                page_source = br.getPage("https://www.fast-debrid.com/plugin.php?link=" + url);
 
+                br.getPage("https://www.fast-debrid.com/plugin.php?link=" + url);
+                genlink = br.getRegex("iframe src.*?\"(http.*?hostp.*?)\"").getMatch(0);
                 // Getting just the link from HTML
-                page_source = page_source.split("http")[2];
-                page_source = page_source.split("\"")[0];
-                page_source = "http" + page_source;
-                genlink = page_source;
 
-                if (!genlink.startsWith("http://")) {
+                if (genlink == null || !genlink.startsWith("http://")) {
                     logger.severe("FastDebrid(Error): " + genlink);
                     if (genlink.contains("_limit")) {
                         /* limit reached for this host */
@@ -294,9 +293,29 @@ public class FastDebridcom extends PluginForHost implements JDPremInterface {
         return true;
     }
 
-    private void fastLogin(String user, String pw) throws IOException {
-        String postData = "pseudo=" + user + "&password=" + pw;
-        br.postPageRaw("https://www.fast-debrid.com/index.php", postData);
+    private void fastLogin(Account acc) throws IOException {
+        synchronized (acc) {
+            HashMap<String, String> cookies = acc.getGenericProperty("cookies", (HashMap<String, String>) null);
+            if (cookies != null && !cookies.isEmpty()) {
+                for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
+                    final String key = cookieEntry.getKey();
+                    final String value = cookieEntry.getValue();
+                    br.setCookie("fast-debrid.com", key, value);
+                }
+                return;
+            }
+            acc.setProperty("cookies", null);
+            String user = Encoding.urlEncode(acc.getUser());
+            String pw = Encoding.urlEncode(acc.getPass());
+            String postData = "pseudo=" + user + "&password=" + pw;
+            br.postPageRaw("https://www.fast-debrid.com/index.php", postData);
+            cookies = new HashMap<String, String>();
+            final Cookies cYT = br.getCookies("fast-debrid.com");
+            for (final Cookie c : cYT.getCookies()) {
+                cookies.put(c.getKey(), c.getValue());
+            }
+            acc.setProperty("cookies", cookies);
+        }
     }
 
     @Override
@@ -339,15 +358,18 @@ public class FastDebridcom extends PluginForHost implements JDPremInterface {
             String pass = Encoding.urlEncode(account.getPass());
             String page = null;
             String hosts = null;
-            try {
-                page = br.getPage("https://www.fast-debrid.com/api_account.php?login=" + username + "&pw=" + pass);
-                hosts = br.getPage("https://www.fast-debrid.com/listhost.php");
-            } catch (Exception e) {
-                account.setTempDisabled(true);
-                account.setValid(true);
-                resetAvailablePremium();
-                ac.setStatus("FastDebrid Server Error, temp disabled" + restartReq);
-                return ac;
+            synchronized (account) {
+                try {
+                    page = br.getPage("https://www.fast-debrid.com/api_account.php?login=" + username + "&pw=" + pass);
+                    hosts = br.getPage("https://www.fast-debrid.com/listhost.php");
+                } catch (Exception e) {
+                    account.setTempDisabled(true);
+                    account.setValid(true);
+                    account.setProperty("cookies", null);
+                    resetAvailablePremium();
+                    ac.setStatus("FastDebrid Server Error, temp disabled" + restartReq);
+                    return ac;
+                }
             }
             /* parse api response in easy2handle hashmap */
             String info[][] = new Regex(page, "<([^<>]*?)>([^<]*?)</.*?>").getMatches();
