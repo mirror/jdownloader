@@ -38,7 +38,6 @@ import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fileserve.com" }, urls = { "http://(www\\.)?fileserve\\.com/file/[a-zA-Z0-9]+" }, flags = { 2 })
@@ -62,21 +61,20 @@ public class FileServeCom extends PluginForHost {
             final StringBuilder sb = new StringBuilder();
             while (true) {
                 sb.delete(0, sb.capacity());
-                sb.append("submit=Check+Urls&urls=");
                 links.clear();
                 while (true) {
                     /*
-                     * we test 100 links at once - its tested with 500 links,
+                     * we test 50 links at once - its tested with 500 links,
                      * probably we could test even more at the same time...
                      */
-                    if (index == urls.length || links.size() > 100) {
+                    if (index == urls.length || links.size() >= 50) {
                         break;
                     }
                     links.add(urls[index]);
                     index++;
                 }
-                this.br.getPage("http://fileserve.com/link-checker.php");
                 int c = 0;
+                sb.append("shortens=");
                 for (final DownloadLink dl : links) {
                     /*
                      * append fake filename, because api will not report
@@ -85,42 +83,31 @@ public class FileServeCom extends PluginForHost {
                     if (c > 0) {
                         sb.append("%0D%0A");
                     }
-                    sb.append(Encoding.urlEncode(dl.getDownloadURL()));
+                    sb.append(Encoding.urlEncode(getID(dl)));
                     c++;
                 }
-                this.br.postPage("http://jd.fileserve.com/link-checker.php", sb.toString());
+                this.br.postPage("http://app.fileserve.com/api/linkchecker/", sb.toString());
                 for (final DownloadLink dl : links) {
-                    final String fileid = new Regex(dl.getDownloadURL(), this.FILEIDREGEX).getMatch(0);
-                    if (fileid == null) {
-                        logger.warning("Fileserve availablecheck is broken!");
-                        return false;
-                    }
-                    final String regexForThisLink = "(<td>http://fileserve\\.com/file/" + fileid + "([\r\n\t]+)?</td>[\r\n\t ]+<td>.*?</td>[\r\n\t ]+<td>.*?</td>[\r\n\t ]+<td>(Available|Not available)(\\&nbsp;)?(<img|</td>))";
+                    final String fileid = getID(dl);
+                    final String regexForThisLink = "\"" + fileid + "\"\\:\\{(.*?)\\}";
                     final String theData = this.br.getRegex(regexForThisLink).getMatch(0);
                     if (theData == null) {
                         logger.warning("Fileserve availablecheck is broken!");
                         return false;
                     }
-                    final Regex linkinformation = new Regex(theData, "<td>http://fileserve\\.com/file/" + fileid + "([\r\n\t]+)?</td>[\r\n\t ]+<td>(.*?)</td>[\r\n\t ]+<td>(.*?)</td>[\r\n\t ]+<td>(Available|Not available)(\\&nbsp;)?(<img|</td>)");
-                    final String status = linkinformation.getMatch(3);
-                    String filename = linkinformation.getMatch(1);
-                    String filesize = linkinformation.getMatch(2);
+                    final String status = new Regex(theData, "status\":\"(.*?)\"").getMatch(0);
+                    String filename = new Regex(theData, "filename\":\"(.*?)\"").getMatch(0);
+                    String filesize = new Regex(theData, "filesize\":\"(\\d+)\"").getMatch(0);
                     if (filename == null || filesize == null) {
                         logger.warning("Fileserve availablecheck is broken!");
                         dl.setAvailable(false);
-                    } else if (!status.equals("Available") || filename.equals("--") || filesize.equals("--")) {
+                    } else if (!status.equals("available") || filename.equals("--") || filesize.equals("--")) {
                         filename = fileid;
                         dl.setAvailable(false);
                     } else {
                         dl.setAvailable(true);
-                    }
-                    dl.setName(filename);
-                    if (filesize != null) {
-                        if (filesize.contains(",") && filesize.contains(".")) {
-                            /* workaround for 1.000,00 MB bug */
-                            filesize = filesize.replaceFirst("\\.", "");
-                        }
-                        dl.setDownloadSize(SizeFormatter.getSize(filesize));
+                        dl.setName(filename);
+                        dl.setDownloadSize(Long.parseLong(filesize));
                     }
                 }
                 if (index == urls.length) {
@@ -137,8 +124,11 @@ public class FileServeCom extends PluginForHost {
     public void correctDownloadLink(final DownloadLink link) {
         // All links should look the same to get no problems with regexing them
         // later
-        final String fileId = new Regex(link.getDownloadURL(), this.FILEIDREGEX).getMatch(0);
-        link.setUrlDownload("http://fileserve.com/file/" + fileId);
+        link.setUrlDownload("http://fileserve.com/file/" + getID(link));
+    }
+
+    private String getID(final DownloadLink link) {
+        return new Regex(link.getDownloadURL(), this.FILEIDREGEX).getMatch(0);
     }
 
     public void doFree(final DownloadLink downloadLink, boolean direct) throws Exception, PluginException {
@@ -263,35 +253,20 @@ public class FileServeCom extends PluginForHost {
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
         try {
-            login(br, account);
+            loginAPI(br, account);
         } catch (PluginException e) {
             account.setValid(false);
+            if (account.getAccountInfo() != null) {
+                return account.getAccountInfo();
+            } else {
+                return ai;
+            }
+        }
+        if (account.getAccountInfo() != null) {
+            return account.getAccountInfo();
+        } else {
             return ai;
         }
-        String expire = br.getRegex("Premium Until<\\/h4><\\/th>.*?<td><h5>(.*?)<\\/h5").getMatch(0);
-        String type = br.getRegex("Account Type<\\/h4><\\/td> <td><h5 class\\=\\\"inline\\\">(.*?) <\\/h5").getMatch(0);
-        account.setValid(true);
-        if (type != null) ai.setStatus(type);
-        if (!"Premium".equals(type)) {
-            try {
-                account.setMaxSimultanDownloads(1);
-            } catch (final Throwable e) {
-                /* not available in 0.9xxx */
-            }
-            account.setProperty("type", "free");
-            account.setValid(false);
-        } else {
-            if (expire == null) {
-                ai.setExpired(true);
-                account.setValid(false);
-                return ai;
-            } else {
-                ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy zzz", null));
-                ai.setStatus("Premium User");
-                return ai;
-            }
-        }
-        return ai;
     }
 
     @Override
@@ -360,15 +335,15 @@ public class FileServeCom extends PluginForHost {
 
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         this.requestFileInformation(link);
-        this.login(br, account);
+        this.loginAPI(br, account);
+        String username = account.getUser();
+        String password = account.getPass();
+        String basic = "Basic " + Encoding.Base64Encode(username + ":" + password);
+        this.setBrowserExclusive();
         br.setFollowRedirects(false);
+        br.getHeaders().put("Authorization", basic);
         br.getPage(link.getDownloadURL());
         String dllink = br.getRedirectLocation();
-        if (dllink == null) {
-            /* seems to be no direct download */
-            br.postPage(link.getDownloadURL(), "download=premium");
-            dllink = br.getRedirectLocation();
-        }
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.setFollowRedirects(true);
         this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, link, dllink, true, 0);
@@ -394,34 +369,49 @@ public class FileServeCom extends PluginForHost {
         this.dl.startDownload();
     }
 
-    private void login(final Browser useBr, final Account account) throws Exception {
+    private Browser loginAPI(final Browser useBr, final Account account) throws IOException, PluginException {
         Browser br = useBr;
         if (br == null) br = new Browser();
         this.setBrowserExclusive();
-        br.getPage(COOKIE_HOST + "/index.php");
-        Form loginform = br.getForm(1);
-        if (loginform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String username = account.getUser();
         String password = account.getPass();
-        // if (username != null && username.length() > 20) {
-        // username = username.substring(0, 20);
-        // }
-        // if (password != null && password.length() > 20) {
-        // password = password.substring(0, 20);
-        // }
-        loginform.put("loginUserName", Encoding.urlEncode(username));
-        loginform.put("loginUserPassword", Encoding.urlEncode(password));
-        br.submitForm(loginform);
-        br.getPage(COOKIE_HOST + "/dashboard.php");
-        if (!br.containsHTML("Login Name")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-        if (br.getCookie(COOKIE_HOST, "cookie") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        br.postPage("http://app.fileserve.com/api/login/", "username=" + Encoding.urlEncode(username) + "&password=" + Encoding.urlEncode(password) + "&submit=Submit+Query");
+        String type = br.getRegex("type\":\"(.*?)\"").getMatch(0);
+        AccountInfo ai = account.getAccountInfo();
+        if (ai == null) ai = new AccountInfo();
+        account.setAccountInfo(ai);
+        if (!"premium".equalsIgnoreCase(type)) {
+            String error_code = br.getRegex("error_code\":(\\d+)").getMatch(0);
+            if ("110".equals(error_code)) {
+                String error = br.getRegex("error_message\":\"(.*?)\"").getMatch(0);
+                if (error != null) {
+                    ai.setStatus(error);
+                }
+            }
+            if ("free".equalsIgnoreCase(type)) {
+                ai.setStatus("Free accounts are not supported!");
+            }
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        }
+        String expire = br.getRegex("expireTime\":\"(.*?)\"").getMatch(0);
+        if (expire != null) {
+            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy-MM-dd HH:mm:ss", null));
+            if (ai.isExpired()) {
+                ai.setStatus("Expired");
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
+        }
+        account.setValid(true);
+        ai.setStatus("Premium");
+        return br;
     }
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.br.getHeaders().put("User-Agent", agent);
-        this.checkLinks(new DownloadLink[] { link });
-        if (!link.isAvailabilityStatusChecked()) {
+        if (this.checkLinks(new DownloadLink[] { link }) == false) {
+            link.setAvailableStatus(AvailableStatus.UNCHECKABLE);
+        } else if (!link.isAvailabilityStatusChecked()) {
             link.setAvailableStatus(AvailableStatus.UNCHECKABLE);
         } else if (!link.isAvailable()) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         return link.getAvailableStatus();

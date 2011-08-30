@@ -20,6 +20,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
+import jd.event.ControlEvent;
+import jd.event.ControlListener;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -39,10 +41,11 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wupload.com" }, urls = { "http://[\\w\\.]*?wupload\\..*?/.*?file/([0-9]+(/.+)?|[a-z0-9]+/[0-9]+(/.+)?)" }, flags = { 2 })
-public class WUploadCom extends PluginForHost {
+public class WUploadCom extends PluginForHost implements ControlListener {
 
     private static final Object LOCK               = new Object();
-
+    private static final Object LOCK2              = new Object();
+    private static boolean      initDone           = false;
     private static long         LAST_FREE_DOWNLOAD = 0l;
 
     private static String       geoDomain          = null;
@@ -50,6 +53,18 @@ public class WUploadCom extends PluginForHost {
     public WUploadCom(final PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.wupload.com/premium");
+        synchronized (LOCK2) {
+            if (!initDone) {
+                initDone = true;
+                new Thread(new Runnable() {
+
+                    public void run() {
+                        JDUtilities.getController().addControlListener(WUploadCom.this);
+                    }
+
+                }).start();
+            }
+        }
     }
 
     @Override
@@ -452,6 +467,13 @@ public class WUploadCom extends PluginForHost {
 
     @Override
     public void resetPluginGlobals() {
+    }
+
+    public void controlEvent(ControlEvent event) {
+        if (event.getID() == 3) {
+            /* workaround for old stable to get notified about a reconnect */
+            LAST_FREE_DOWNLOAD = 0;
+        }
     }
 
 }

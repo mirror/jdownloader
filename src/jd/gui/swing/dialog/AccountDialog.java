@@ -131,6 +131,7 @@ public class AccountDialog extends AbstractDialog<Integer> {
     private final PluginForHost               plugin;
 
     private Account                           defaultAccount;
+    private static String                     EMPTYPW = "                 ";
 
     private AccountDialog(final PluginForHost plugin, Account acc) {
         super(UserIO.NO_ICON, _GUI._.jd_gui_swing_components_AccountDialog_title(), null, null, null);
@@ -148,10 +149,12 @@ public class AccountDialog extends AbstractDialog<Integer> {
     }
 
     public String getPassword() {
+        if (EMPTYPW.equals(new String(this.pass.getPassword()))) return null;
         return new String(this.pass.getPassword());
     }
 
     public String getUsername() {
+        if (_GUI._.jd_gui_swing_components_AccountDialog_help_username().equals(this.name.getText())) return null;
         return this.name.getText();
     }
 
@@ -228,7 +231,7 @@ public class AccountDialog extends AbstractDialog<Integer> {
 
             public void onHelpNotifyHidden(JComponent c) {
             }
-        }, "                 ");
+        }, EMPTYPW);
         if (defaultAccount != null) {
             name.setText(defaultAccount.getUser());
         }
