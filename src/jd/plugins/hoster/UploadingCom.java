@@ -51,6 +51,7 @@ public class UploadingCom extends PluginForHost {
     private static final String CODEREGEX       = "uploading\\.com/files/get/(\\w+)";
     private static final Object LOCK            = new Object();
     private static final String MAINPAGE        = "http://uploading.com/";
+    private boolean             loginCaptcha    = false;
 
     public UploadingCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -123,6 +124,31 @@ public class UploadingCom extends PluginForHost {
                 }
                 br.getPage(MAINPAGE);
                 br.postPage("http://uploading.com/general/login_form/?JsHttpRequest=" + System.currentTimeMillis() + "-xml", "email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&remember=on");
+                if (br.containsHTML("captcha\":\"") && loginCaptcha) {
+                    String captchaID = br.getRegex("captcha\":\"(.*?)\"").getMatch(0);
+                    String cf = "http://uploading.com/general/captcha/" + captchaID + "/?ts=" + System.currentTimeMillis();
+                    DownloadLink dummyLink = new DownloadLink(null, "Account", "uploading.com", "http://uploading.com", true);
+                    String c = getCaptchaCode(cf, dummyLink);
+                    br.postPage("http://uploading.com/general/login_form/?JsHttpRequest=" + System.currentTimeMillis() + "-xml", "email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&remember=on&captcha=" + Encoding.urlEncode(c));
+                }
+                if (br.containsHTML("captcha\":\"")) {
+                    AccountInfo ai = account.getAccountInfo();
+                    if (ai == null) {
+                        ai = new AccountInfo();
+                        account.setAccountInfo(ai);
+                    }
+                    ai.setStatus("Logout/Login in Browser please!");
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+                if (br.containsHTML("Please enter correct")) {
+                    AccountInfo ai = account.getAccountInfo();
+                    if (ai == null) {
+                        ai = new AccountInfo();
+                        account.setAccountInfo(ai);
+                    }
+                    ai.setStatus("Please enter correct e-mail and password!");
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
                 if (br.getCookie(MAINPAGE, "remembered_user") != null) {
                     /* change language to english */
                     br.postPage("http://uploading.com/general/select_language/?JsHttpRequest=" + System.currentTimeMillis() + "-xml", "language=1");
@@ -152,10 +178,16 @@ public class UploadingCom extends PluginForHost {
         this.setBrowserExclusive();
         synchronized (LOCK) {
             try {
+                loginCaptcha = true;
                 login(account, true);
             } catch (PluginException e) {
                 account.setValid(false);
+                if (account.getAccountInfo() != null) {
+                    ai = account.getAccountInfo();
+                }
                 return ai;
+            } finally {
+                loginCaptcha = false;
             }
             if (!isPremium(account, true)) {
                 account.setValid(true);

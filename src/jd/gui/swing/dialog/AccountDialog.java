@@ -173,11 +173,13 @@ public class AccountDialog extends AbstractDialog<Integer> {
 
             @Override
             protected Icon getIconForValue(HostPluginWrapper value) {
+                if (value == null) return null;
                 return value.getIconScaled();
             }
 
             @Override
             protected String getTextForValue(HostPluginWrapper value) {
+                if (value == null) return "";
                 return value.getHost();
             }
         };
