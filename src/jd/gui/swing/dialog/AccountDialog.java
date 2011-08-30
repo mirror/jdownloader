@@ -149,6 +149,7 @@ public class AccountDialog extends AbstractDialog<Integer> {
     }
 
     public String getPassword() {
+        if (this.pass == null) return null;
         if (EMPTYPW.equals(new String(this.pass.getPassword()))) return null;
         return new String(this.pass.getPassword());
     }
@@ -218,9 +219,11 @@ public class AccountDialog extends AbstractDialog<Integer> {
         HelpNotifier.register(name, new HelpNotifierCallbackListener() {
 
             public void onHelpNotifyShown(JComponent c) {
+                checkOK();
             }
 
             public void onHelpNotifyHidden(JComponent c) {
+                checkOK();
             }
         }, _GUI._.jd_gui_swing_components_AccountDialog_help_username());
 
@@ -229,16 +232,23 @@ public class AccountDialog extends AbstractDialog<Integer> {
         HelpNotifier.register(pass, new HelpNotifierCallbackListener() {
 
             public void onHelpNotifyShown(JComponent c) {
+                checkOK();
             }
 
             public void onHelpNotifyHidden(JComponent c) {
+                checkOK();
             }
         }, EMPTYPW);
         if (defaultAccount != null) {
             name.setText(defaultAccount.getUser());
         }
-
+        checkOK();
         return panel;
+    }
+
+    private void checkOK() {
+        boolean ok = getPassword() != null || getUsername() != null;
+        this.okButton.setEnabled(ok);
     }
 
     @Override
