@@ -39,7 +39,7 @@ public class RpdshrCmFldr extends PluginForDecrypt {
         String parameter = param.toString();
         String id = new Regex(parameter, "https?://[\\w\\.]*?rapidshare\\.com/users/([A-Z0-9]+)(\\&pw=.+)?").getMatch(0);
         if (id == null) id = new Regex(parameter, "https?://[\\w\\.]*?rapidshare\\.com/#!linklist\\|([A-Z0-9]+)").getMatch(0);
-        String page = br.getPage("http://rapidshare.com/cgi-bin/rsapi.cgi?sub=viewlinklist_v1&linklist=" + id + "&cbf=RSAPIDispatcher&cbid=1");
+        String page = br.getPage("http://rapidshare.com/cgi-bin/rsapi.cgi?sub=viewlinklist&linklist=" + id + "&cbf=RSAPIDispatcher&cbid=1");
         page = page.replaceAll("\\\\\"", "\"");
         String links[][] = new Regex(page, "\"(\\d+)\",\"(\\d+)\",\"(\\d+)\",\"(.*?)\",\"(\\d+)\"").getMatches();
         for (String[] link : links) {
