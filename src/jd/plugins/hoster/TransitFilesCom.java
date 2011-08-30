@@ -103,7 +103,7 @@ public class TransitFilesCom extends PluginForHost {
         // if (littleWaittime != null) littleWait =
         // Integer.parseInt(littleWaittime);
         // sleep(littleWait * 1001l, downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

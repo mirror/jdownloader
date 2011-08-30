@@ -163,7 +163,8 @@ public class DivxDenCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        // 7 * 2 = Max connections at all
+        return 7;
     }
 
     public String handlePassword(String passCode, Form pwform, DownloadLink thelink) throws IOException, PluginException {

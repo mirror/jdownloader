@@ -126,7 +126,7 @@ public class FileFlyerCom extends PluginForHost {
         br.setFollowRedirects(true);
         linkurl = Encoding.htmlDecode(linkurl);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, linkurl, true, 0);
-        if (dl.getConnection().getContentType() == null || (!dl.getConnection().getContentType().contains("octet") && !dl.getConnection().isContentDisposition())) {
+        if (dl.getConnection().getContentType() == null || (!new Regex(dl.getConnection().getContentType(), ".*?(octet|compressed).*?").matches() && !dl.getConnection().isContentDisposition())) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

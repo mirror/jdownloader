@@ -25,11 +25,11 @@ import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
@@ -94,6 +94,7 @@ public class LoadTo extends PluginForHost {
         URLConnectionAdapter con = dl.getConnection();
         /* Überprüfung auf serverprobleme, nach 6 versuchen geben wir auf */
         if (con.getContentType().contains("html")) {
+            if (dl.getConnection().getResponseCode() == 200) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             int count = downloadLink.getIntegerProperty("error", 0);
             count++;
             downloadLink.setProperty("error", count);
