@@ -57,7 +57,7 @@ import org.jdownloader.settings.GeneralSettings;
  * 
  * @author astaldo
  */
-public class DownloadLink extends Property implements Serializable, Comparable<DownloadLink>, PackageLinkNode, AbstractPackageChildrenNode<FilePackage>, CheckableLink {
+public class DownloadLink extends Property implements Serializable, Comparable<DownloadLink>, AbstractPackageChildrenNode<FilePackage>, CheckableLink {
 
     private static final AtomicLong DownloadLinkIDCounter = new AtomicLong(0);
 

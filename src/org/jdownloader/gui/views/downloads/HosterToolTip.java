@@ -5,18 +5,18 @@ import javax.swing.JTextField;
 import javax.swing.JToolTip;
 import javax.swing.plaf.ComponentUI;
 
-import jd.plugins.PackageLinkNode;
+import jd.controlling.packagecontroller.AbstractNode;
 import net.miginfocom.swing.MigLayout;
 
 public class HosterToolTip extends JToolTip {
-    private PackageLinkNode obj;
-    private JPanel          panel;
+    private AbstractNode obj;
+    private JPanel       panel;
 
-    public PackageLinkNode getObj() {
+    public AbstractNode getObj() {
         return obj;
     }
 
-    public void setObj(PackageLinkNode obj) {
+    public void setObj(AbstractNode obj) {
         this.obj = obj;
     }
 

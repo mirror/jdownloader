@@ -10,25 +10,29 @@ import javax.swing.JPopupMenu;
 import javax.swing.JSeparator;
 import javax.swing.ListSelectionModel;
 
+import jd.controlling.packagecontroller.AbstractNode;
+import jd.controlling.packagecontroller.PackageControllerTableModel;
+import jd.controlling.packagecontroller.PackageControllerTableModel.TOGGLEMODE;
 import jd.gui.swing.jdgui.BasicJDTable;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.plugins.PackageLinkNode;
 
 import org.appwork.swing.exttable.DropHighlighter;
 import org.appwork.swing.exttable.ExtColumn;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.downloads.columns.FileColumn;
 import org.jdownloader.gui.views.downloads.context.RatedMenuController;
-import org.jdownloader.gui.views.linkgrabber.LinkTableModel;
-import org.jdownloader.gui.views.linkgrabber.LinkTableModel.TOGGLEMODE;
 import org.jdownloader.images.NewTheme;
 
-public abstract class LinkTable extends BasicJDTable<PackageLinkNode> {
+public abstract class LinkTable extends BasicJDTable<AbstractNode> {
 
-    protected LinkTableModel tableModel;
+    /**
+     * 
+     */
+    private static final long             serialVersionUID = -4691993525525519421L;
+    protected PackageControllerTableModel tableModel;
 
-    public LinkTable(LinkTableModel tableModel) {
+    public LinkTable(PackageControllerTableModel tableModel) {
         super(tableModel);
         this.tableModel = tableModel;
         this.setShowVerticalLines(false);
@@ -39,8 +43,8 @@ public abstract class LinkTable extends BasicJDTable<PackageLinkNode> {
 
     public ArrayList<FilePackage> getSelectedFilePackages() {
         final ArrayList<FilePackage> ret = new ArrayList<FilePackage>();
-        final ArrayList<PackageLinkNode> selected = this.getExtTableModel().getSelectedObjects();
-        for (final PackageLinkNode node : selected) {
+        final ArrayList<AbstractNode> selected = this.getExtTableModel().getSelectedObjects();
+        for (final AbstractNode node : selected) {
             if (node instanceof FilePackage) {
                 ret.add((FilePackage) node);
             }
@@ -50,8 +54,8 @@ public abstract class LinkTable extends BasicJDTable<PackageLinkNode> {
 
     public ArrayList<DownloadLink> getSelectedDownloadLinks() {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        final ArrayList<PackageLinkNode> selected = this.getExtTableModel().getSelectedObjects();
-        for (final PackageLinkNode node : selected) {
+        final ArrayList<AbstractNode> selected = this.getExtTableModel().getSelectedObjects();
+        for (final AbstractNode node : selected) {
             if (node instanceof DownloadLink) {
                 ret.add((DownloadLink) node);
             }
@@ -60,9 +64,9 @@ public abstract class LinkTable extends BasicJDTable<PackageLinkNode> {
     }
 
     @Override
-    protected void onSingleClick(MouseEvent e, final PackageLinkNode obj) {
+    protected void onSingleClick(MouseEvent e, final AbstractNode obj) {
         if (obj instanceof FilePackage) {
-            final ExtColumn<PackageLinkNode> column = this.getExtColumnAtPoint(e.getPoint());
+            final ExtColumn<AbstractNode> column = this.getExtColumnAtPoint(e.getPoint());
 
             if (FileColumn.class == column.getClass()) {
                 Rectangle bounds = column.getBounds();
@@ -94,9 +98,9 @@ public abstract class LinkTable extends BasicJDTable<PackageLinkNode> {
         tableModel.refreshModel();
     }
 
-    protected ArrayList<DownloadLink> getAllDownloadLinks(ArrayList<PackageLinkNode> selectedObjects) {
+    protected ArrayList<DownloadLink> getAllDownloadLinks(ArrayList<AbstractNode> selectedObjects) {
         final ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
-        for (final PackageLinkNode node : selectedObjects) {
+        for (final AbstractNode node : selectedObjects) {
             if (node instanceof DownloadLink) {
                 if (!links.contains(node)) links.add((DownloadLink) node);
             } else {
@@ -113,12 +117,12 @@ public abstract class LinkTable extends BasicJDTable<PackageLinkNode> {
     }
 
     @Override
-    protected JPopupMenu onContextMenu(final JPopupMenu popup, final PackageLinkNode contextObject, final ArrayList<PackageLinkNode> selection, ExtColumn<PackageLinkNode> column) {
+    protected JPopupMenu onContextMenu(final JPopupMenu popup, final AbstractNode contextObject, final ArrayList<AbstractNode> selection, ExtColumn<AbstractNode> column) {
         /* split selection into downloadlinks and filepackages */
         final ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
         final ArrayList<FilePackage> fps = new ArrayList<FilePackage>();
         if (selection != null) {
-            for (final PackageLinkNode node : selection) {
+            for (final AbstractNode node : selection) {
                 if (node instanceof DownloadLink) {
                     if (!links.contains(node)) links.add((DownloadLink) node);
                 } else {
@@ -149,6 +153,6 @@ public abstract class LinkTable extends BasicJDTable<PackageLinkNode> {
         return popup;
     }
 
-    abstract protected RatedMenuController createMenuItems(PackageLinkNode obj, int col, ArrayList<DownloadLink> alllinks, ArrayList<FilePackage> sfp);
+    abstract protected RatedMenuController createMenuItems(AbstractNode obj, int col, ArrayList<DownloadLink> alllinks, ArrayList<FilePackage> sfp);
 
 }

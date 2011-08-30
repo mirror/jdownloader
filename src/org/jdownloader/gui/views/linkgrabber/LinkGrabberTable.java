@@ -5,13 +5,13 @@ import java.awt.event.MouseEvent;
 import java.io.File;
 import java.util.ArrayList;
 
+import jd.controlling.packagecontroller.AbstractNode;
 import jd.event.ControlEvent;
 import jd.gui.swing.jdgui.actions.ActionController;
 import jd.gui.swing.jdgui.actions.ToolBarAction;
 import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.plugins.PackageLinkNode;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.Application;
@@ -51,12 +51,12 @@ public class LinkGrabberTable extends LinkTable {
     }
 
     @Override
-    protected void onDoubleClick(final MouseEvent e, final PackageLinkNode obj) {
+    protected void onDoubleClick(final MouseEvent e, final AbstractNode obj) {
 
     }
 
     @Override
-    protected boolean onShortcutDelete(final ArrayList<PackageLinkNode> selectedObjects, final KeyEvent evt, final boolean direct) {
+    protected boolean onShortcutDelete(final ArrayList<AbstractNode> selectedObjects, final KeyEvent evt, final boolean direct) {
         new DeleteAction(getAllDownloadLinks(selectedObjects), direct).actionPerformed(null);
         return true;
     }
@@ -71,7 +71,7 @@ public class LinkGrabberTable extends LinkTable {
      * @return
      */
     @Override
-    protected RatedMenuController createMenuItems(PackageLinkNode obj, int col, ArrayList<DownloadLink> alllinks, ArrayList<FilePackage> sfp) {
+    protected RatedMenuController createMenuItems(AbstractNode obj, int col, ArrayList<DownloadLink> alllinks, ArrayList<FilePackage> sfp) {
 
         final RatedMenuController ret = new RatedMenuController();
 

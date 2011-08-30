@@ -5,9 +5,9 @@ import javax.swing.ImageIcon;
 import javax.swing.JComponent;
 import javax.swing.JToolTip;
 
+import jd.controlling.packagecontroller.AbstractNode;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.plugins.PackageLinkNode;
 import jd.plugins.PluginForHost;
 
 import org.appwork.app.gui.MigPanel;
@@ -17,7 +17,7 @@ import org.appwork.utils.swing.renderer.RendererMigPanel;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.downloads.HosterToolTip;
 
-public class HosterColumn extends ExtColumn<PackageLinkNode> {
+public class HosterColumn extends ExtColumn<AbstractNode> {
 
     private int           maxIcons = 10;
     private MigPanel      panel;
@@ -63,12 +63,12 @@ public class HosterColumn extends ExtColumn<PackageLinkNode> {
     }
 
     @Override
-    public boolean isEditable(PackageLinkNode obj) {
+    public boolean isEditable(AbstractNode obj) {
         return false;
     }
 
     @Override
-    public boolean isEnabled(PackageLinkNode obj) {
+    public boolean isEnabled(AbstractNode obj) {
         return obj.isEnabled();
     }
 
@@ -77,12 +77,12 @@ public class HosterColumn extends ExtColumn<PackageLinkNode> {
     }
 
     @Override
-    public boolean isSortable(PackageLinkNode obj) {
+    public boolean isSortable(AbstractNode obj) {
         return false;
     }
 
     @Override
-    public void setValue(Object value, PackageLinkNode object) {
+    public void setValue(Object value, AbstractNode object) {
 
     }
 
@@ -97,7 +97,7 @@ public class HosterColumn extends ExtColumn<PackageLinkNode> {
     // return 150;
     // }
 
-    public JToolTip createToolTip(final PackageLinkNode obj) {
+    public JToolTip createToolTip(final AbstractNode obj) {
         if (obj instanceof DownloadLink) {
             tip.setExtText(((DownloadLink) obj).getHost());
             return tip;
@@ -109,7 +109,7 @@ public class HosterColumn extends ExtColumn<PackageLinkNode> {
 
     }
 
-    public void configureRendererComponent(PackageLinkNode value, boolean isSelected, boolean hasFocus, int row, int column) {
+    public void configureRendererComponent(AbstractNode value, boolean isSelected, boolean hasFocus, int row, int column) {
         if (value instanceof FilePackage) {
             int i = 0;
             for (PluginForHost link : ((FilePackage) value).getFilePackageInfo().getIcons()) {
@@ -133,12 +133,12 @@ public class HosterColumn extends ExtColumn<PackageLinkNode> {
     }
 
     @Override
-    public JComponent getEditorComponent(PackageLinkNode value, boolean isSelected, int row, int column) {
+    public JComponent getEditorComponent(AbstractNode value, boolean isSelected, int row, int column) {
         return null;
     }
 
     @Override
-    public JComponent getRendererComponent(PackageLinkNode value, boolean isSelected, boolean hasFocus, int row, int column) {
+    public JComponent getRendererComponent(AbstractNode value, boolean isSelected, boolean hasFocus, int row, int column) {
         return panel;
     }
 
@@ -156,7 +156,7 @@ public class HosterColumn extends ExtColumn<PackageLinkNode> {
     }
 
     @Override
-    public void configureEditorComponent(PackageLinkNode value, boolean isSelected, int row, int column) {
+    public void configureEditorComponent(AbstractNode value, boolean isSelected, int row, int column) {
     }
 
 }

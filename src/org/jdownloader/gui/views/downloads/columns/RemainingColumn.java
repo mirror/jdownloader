@@ -1,11 +1,13 @@
 package org.jdownloader.gui.views.downloads.columns;
 
-import jd.plugins.PackageLinkNode;
+import jd.controlling.packagecontroller.AbstractNode;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 
 import org.appwork.swing.exttable.columns.ExtFileSizeColumn;
 import org.jdownloader.gui.translate._GUI;
 
-public class RemainingColumn extends ExtFileSizeColumn<PackageLinkNode> {
+public class RemainingColumn extends ExtFileSizeColumn<AbstractNode> {
 
     /**
      * 
@@ -36,9 +38,13 @@ public class RemainingColumn extends ExtFileSizeColumn<PackageLinkNode> {
     }
 
     @Override
-    protected long getBytes(PackageLinkNode o2) {
-
-        return o2.getRemainingKB();
+    protected long getBytes(AbstractNode o2) {
+        if (o2 instanceof DownloadLink) {
+            return ((DownloadLink) o2).getRemainingKB();
+        } else if (o2 instanceof FilePackage) {
+            return ((FilePackage) o2).getRemainingKB();
+        } else
+            return -1l;
 
     }
 
@@ -48,7 +54,7 @@ public class RemainingColumn extends ExtFileSizeColumn<PackageLinkNode> {
     }
 
     @Override
-    public boolean isEnabled(PackageLinkNode obj) {
+    public boolean isEnabled(AbstractNode obj) {
         return obj.isEnabled();
     }
 

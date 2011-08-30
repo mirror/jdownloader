@@ -1,15 +1,15 @@
 package org.jdownloader.gui.views.downloads.columns;
 
+import jd.controlling.packagecontroller.AbstractNode;
 import jd.controlling.proxy.ProxyController;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
-import jd.plugins.PackageLinkNode;
 
 import org.appwork.swing.exttable.columns.ExtProgressColumn;
 import org.jdownloader.gui.translate._GUI;
 
-public class ProgressColumn extends ExtProgressColumn<jd.plugins.PackageLinkNode> {
+public class ProgressColumn extends ExtProgressColumn<AbstractNode> {
 
     /**
      * 
@@ -21,7 +21,7 @@ public class ProgressColumn extends ExtProgressColumn<jd.plugins.PackageLinkNode
     }
 
     @Override
-    public boolean isEnabled(PackageLinkNode obj) {
+    public boolean isEnabled(AbstractNode obj) {
         return obj.isEnabled();
     }
 
@@ -41,7 +41,7 @@ public class ProgressColumn extends ExtProgressColumn<jd.plugins.PackageLinkNode
     }
 
     @Override
-    protected String getString(PackageLinkNode value) {
+    protected String getString(AbstractNode value) {
         if (value instanceof FilePackage) {
             FilePackage fp = (FilePackage) value;
 
@@ -67,7 +67,7 @@ public class ProgressColumn extends ExtProgressColumn<jd.plugins.PackageLinkNode
     }
 
     @Override
-    protected long getMax(PackageLinkNode value) {
+    protected long getMax(AbstractNode value) {
         if (value instanceof FilePackage) {
             FilePackage fp = (FilePackage) value;
             if (fp.isFinished()) {
@@ -101,7 +101,7 @@ public class ProgressColumn extends ExtProgressColumn<jd.plugins.PackageLinkNode
     }
 
     @Override
-    protected long getValue(PackageLinkNode value) {
+    protected long getValue(AbstractNode value) {
         if (value instanceof FilePackage) {
             FilePackage fp = (FilePackage) value;
             if (fp.isFinished()) {

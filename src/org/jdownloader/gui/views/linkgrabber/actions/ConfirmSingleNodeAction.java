@@ -4,7 +4,7 @@ import java.awt.event.ActionEvent;
 
 import javax.swing.AbstractAction;
 
-import jd.plugins.PackageLinkNode;
+import jd.controlling.packagecontroller.AbstractNode;
 
 import org.appwork.utils.logging.Log;
 import org.jdownloader.gui.translate._GUI;
@@ -12,13 +12,13 @@ import org.jdownloader.images.NewTheme;
 
 public class ConfirmSingleNodeAction extends AbstractAction {
 
-    private PackageLinkNode value;
+    private AbstractNode value;
 
-    public PackageLinkNode getValue() {
+    public AbstractNode getValue() {
         return value;
     }
 
-    public void setValue(PackageLinkNode value) {
+    public void setValue(AbstractNode value) {
         this.value = value;
     }
 

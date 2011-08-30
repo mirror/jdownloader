@@ -2,17 +2,17 @@ package org.jdownloader.gui.views.downloads.columns;
 
 import javax.swing.Icon;
 
+import jd.controlling.packagecontroller.AbstractNode;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
-import jd.plugins.PackageLinkNode;
 import jd.plugins.PluginProgress;
 
 import org.appwork.swing.exttable.columns.ExtTextColumn;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 
-public class TaskColumn extends ExtTextColumn<jd.plugins.PackageLinkNode> {
+public class TaskColumn extends ExtTextColumn<AbstractNode> {
 
     /**
      * 
@@ -35,7 +35,7 @@ public class TaskColumn extends ExtTextColumn<jd.plugins.PackageLinkNode> {
     // }
 
     @Override
-    public boolean isEnabled(PackageLinkNode obj) {
+    public boolean isEnabled(AbstractNode obj) {
         return obj.isEnabled();
     }
 
@@ -44,7 +44,7 @@ public class TaskColumn extends ExtTextColumn<jd.plugins.PackageLinkNode> {
     }
 
     @Override
-    protected Icon getIcon(PackageLinkNode value) {
+    protected Icon getIcon(AbstractNode value) {
         if (value instanceof DownloadLink) {
             LinkStatus ls = ((DownloadLink) value).getLinkStatus();
 
@@ -66,7 +66,7 @@ public class TaskColumn extends ExtTextColumn<jd.plugins.PackageLinkNode> {
     }
 
     @Override
-    public String getStringValue(PackageLinkNode value) {
+    public String getStringValue(AbstractNode value) {
         if (value instanceof DownloadLink) {
             return ((DownloadLink) value).getLinkStatus().getStatusString();
 

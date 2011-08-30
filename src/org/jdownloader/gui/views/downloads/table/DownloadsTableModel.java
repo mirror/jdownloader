@@ -5,8 +5,10 @@ import java.util.ArrayList;
 import javax.swing.Icon;
 
 import jd.controlling.DownloadController;
+import jd.controlling.packagecontroller.AbstractNode;
+import jd.controlling.packagecontroller.PackageControllerTableModel;
+import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.plugins.PackageLinkNode;
 
 import org.appwork.swing.exttable.ExtColumn;
 import org.appwork.swing.exttable.ExtTableModel;
@@ -25,16 +27,15 @@ import org.jdownloader.gui.views.downloads.columns.SizeColumn;
 import org.jdownloader.gui.views.downloads.columns.SpeedColumn;
 import org.jdownloader.gui.views.downloads.columns.StopSignColumn;
 import org.jdownloader.gui.views.downloads.columns.TaskColumn;
-import org.jdownloader.gui.views.linkgrabber.LinkTableModel;
 
-public class DownloadsTableModel extends LinkTableModel {
+public class DownloadsTableModel extends PackageControllerTableModel<FilePackage, DownloadLink> {
 
     private static final long   serialVersionUID   = -198189279671615981L;
 
     private static final String SORT_DOWNLOADORDER = "DOWNLOAD";
 
     public DownloadsTableModel() {
-        super("downloadstable3");
+        super(DownloadController.getInstance(), "downloadstable3");
 
     }
 
@@ -68,7 +69,7 @@ public class DownloadsTableModel extends LinkTableModel {
         this.addColumn(new StopSignColumn());
 
         // reset sort
-        //
+
         try {
             getStorage().put(ExtTableModel.SORT_ORDER_ID_KEY, (String) null);
             getStorage().put(ExtTableModel.SORTCOLUMN_KEY, (String) null);
@@ -88,7 +89,7 @@ public class DownloadsTableModel extends LinkTableModel {
     // /**
     // * @return
     // */
-    protected ExtColumn<PackageLinkNode> getDefaultSortColumn() {
+    protected ExtColumn<AbstractNode> getDefaultSortColumn() {
         return null;
     }
 
@@ -114,7 +115,7 @@ public class DownloadsTableModel extends LinkTableModel {
      * ArrayList
      */
     @Override
-    public ArrayList<PackageLinkNode> sort(final ArrayList<PackageLinkNode> data, ExtColumn<PackageLinkNode> column) {
+    public ArrayList<AbstractNode> sort(final ArrayList<AbstractNode> data, ExtColumn<AbstractNode> column) {
         if (column == null || column.getSortOrderIdentifier() == SORT_DOWNLOADORDER) {
             this.sortColumn = null;
             try {
@@ -123,28 +124,29 @@ public class DownloadsTableModel extends LinkTableModel {
             } catch (final Exception e) {
                 Log.exception(e);
             }
+            ArrayList<AbstractNode> packages = null;
             final boolean readL = DownloadController.getInstance().readLock();
             try {
                 /* get all packages from controller */
-                ArrayList<PackageLinkNode> packages = new ArrayList<PackageLinkNode>(DownloadController.getInstance().size());
+                packages = new ArrayList<AbstractNode>(DownloadController.getInstance().size());
                 packages.addAll(DownloadController.getInstance().getPackages());
-                ArrayList<PackageLinkNode> newData = new ArrayList<PackageLinkNode>(Math.max(data.size(), packages.size()));
-                for (PackageLinkNode node : packages) {
-                    newData.add(node);
-                    if (!((FilePackage) node).isExpanded()) continue;
-                    ArrayList<PackageLinkNode> files = null;
-                    synchronized (node) {
-                        files = new ArrayList<PackageLinkNode>(((FilePackage) node).getChildren());
-                    }
-                    newData.addAll(files);
-                }
-                return newData;
             } finally {
                 DownloadController.getInstance().readUnlock(readL);
             }
+            ArrayList<AbstractNode> newData = new ArrayList<AbstractNode>(Math.max(data.size(), packages.size()));
+            for (AbstractNode node : packages) {
+                newData.add(node);
+                if (!((FilePackage) node).isExpanded()) continue;
+                ArrayList<AbstractNode> files = null;
+                synchronized (node) {
+                    files = new ArrayList<AbstractNode>(((FilePackage) node).getChildren());
+                }
+                newData.addAll(files);
+            }
+            return newData;
+
         } else {
             return super.sort(data, column);
         }
     }
-
 }

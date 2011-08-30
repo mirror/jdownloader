@@ -43,7 +43,7 @@ import org.jdownloader.translate._JDT;
  * 
  * @author JD-Team
  */
-public class FilePackage extends Property implements Serializable, PackageLinkNode, AbstractPackageNode<DownloadLink, FilePackage> {
+public class FilePackage extends Property implements Serializable, AbstractPackageNode<DownloadLink, FilePackage> {
 
     private static final AtomicLong      FilePackageIDCounter = new AtomicLong(0);
 

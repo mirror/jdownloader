@@ -22,6 +22,7 @@ import javax.swing.JTable;
 import javax.swing.KeyStroke;
 import javax.swing.Timer;
 
+import jd.controlling.packagecontroller.AbstractNode;
 import jd.event.ControlEvent;
 import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.actions.ActionController;
@@ -29,7 +30,6 @@ import jd.gui.swing.jdgui.actions.ToolBarAction;
 import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.plugins.PackageLinkNode;
 import jd.utils.JDUtilities;
 
 import org.appwork.storage.config.JsonConfig;
@@ -95,7 +95,7 @@ public class DownloadsTable extends LinkTable {
     }
 
     @Override
-    protected void onSelectionChanged(ArrayList<PackageLinkNode> selected) {
+    protected void onSelectionChanged(ArrayList<AbstractNode> selected) {
         if (selected == null || selected.size() == 0) {
             // disable move buttons
             moveDownAction.setEnabled(false);
@@ -245,13 +245,13 @@ public class DownloadsTable extends LinkTable {
     }
 
     @Override
-    protected void onDoubleClick(final MouseEvent e, final PackageLinkNode obj) {
+    protected void onDoubleClick(final MouseEvent e, final AbstractNode obj) {
 
         new EditLinkOrPackageAction(this, obj).actionPerformed(null);
     }
 
     @Override
-    protected JPopupMenu onContextMenu(JPopupMenu popup, final PackageLinkNode contextObject, final ArrayList<PackageLinkNode> selection, ExtColumn<PackageLinkNode> column) {
+    protected JPopupMenu onContextMenu(JPopupMenu popup, final AbstractNode contextObject, final ArrayList<AbstractNode> selection, ExtColumn<AbstractNode> column) {
         /* split selection into downloadlinks and filepackages */
         popup = super.onContextMenu(popup, contextObject, selection, column);
         popup.add(new JSeparator());
@@ -260,7 +260,7 @@ public class DownloadsTable extends LinkTable {
     }
 
     @Override
-    protected boolean onShortcutDelete(final ArrayList<PackageLinkNode> selectedObjects, final KeyEvent evt, final boolean direct) {
+    protected boolean onShortcutDelete(final ArrayList<AbstractNode> selectedObjects, final KeyEvent evt, final boolean direct) {
         new DeleteAction(getAllDownloadLinks(selectedObjects), direct).actionPerformed(null);
         return true;
     }
@@ -275,7 +275,7 @@ public class DownloadsTable extends LinkTable {
      * @return
      */
     @Override
-    protected RatedMenuController createMenuItems(PackageLinkNode obj, int col, ArrayList<DownloadLink> alllinks, ArrayList<FilePackage> sfp) {
+    protected RatedMenuController createMenuItems(AbstractNode obj, int col, ArrayList<DownloadLink> alllinks, ArrayList<FilePackage> sfp) {
         final RatedMenuController ret = new RatedMenuController();
 
         ret.add(new RatedMenuItem(new StopsignAction(obj), 0));
@@ -359,7 +359,7 @@ public class DownloadsTable extends LinkTable {
         boolean ret = super.editCellAt(row, column, e);
         if (ret) {
 
-            PackageLinkNode object = getExtTableModel().getObjectbyRow(row);
+            AbstractNode object = getExtTableModel().getObjectbyRow(row);
             if (object instanceof FilePackage) {
                 String title = _GUI._.DownloadsTable_editCellAt_filepackage_title();
                 String msg = _GUI._.DownloadsTable_editCellAt_filepackage_msg();
@@ -373,7 +373,7 @@ public class DownloadsTable extends LinkTable {
     }
 
     @Override
-    protected void onHeaderSortClick(final MouseEvent e1, final ExtColumn<PackageLinkNode> oldSortColumn, String oldSortId) {
+    protected void onHeaderSortClick(final MouseEvent e1, final ExtColumn<AbstractNode> oldSortColumn, String oldSortId) {
 
         // own thread to
         new Timer(100, new ActionListener() {
@@ -423,7 +423,7 @@ public class DownloadsTable extends LinkTable {
         Composite comp = g2.getComposite();
         final Rectangle visibleRect = this.getVisibleRect();
         Rectangle first;
-        ExtColumn<PackageLinkNode> sortColumn = getExtTableModel().getSortColumn();
+        ExtColumn<AbstractNode> sortColumn = getExtTableModel().getSortColumn();
         if (sortColumn == null) return;
         int index = sortColumn.getIndex();
 

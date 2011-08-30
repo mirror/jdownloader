@@ -9,6 +9,9 @@ import javax.swing.JScrollPane;
 import javax.swing.ScrollPaneConstants;
 import javax.swing.plaf.ScrollPaneUI;
 
+import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcollector.LinkCollectorEvent;
+import jd.controlling.linkcollector.LinkCollectorListener;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.gui.swing.laf.LookAndFeelController;
 import net.miginfocom.swing.MigLayout;
@@ -21,7 +24,7 @@ import org.jdownloader.gui.views.linkgrabber.actions.ClearAction;
 import org.jdownloader.gui.views.linkgrabber.actions.ConfirmAllAction;
 import org.jdownloader.gui.views.linkgrabber.actions.ConfirmOptionsAction;
 
-public class LinkGrabberPanel extends SwitchPanel {
+public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListener {
     private LinkGrabberTableModel tableModel;
     private LinkGrabberTable      table;
     private JScrollPane           tableScrollPane;
@@ -89,10 +92,25 @@ public class LinkGrabberPanel extends SwitchPanel {
 
     @Override
     protected void onShow() {
+        table.recreateModel();
+        LinkCollector.getInstance().addListener(this);
     }
 
     @Override
     protected void onHide() {
+        LinkCollector.getInstance().removeListener(this);
+    }
+
+    public void onLinkCollectorEvent(LinkCollectorEvent event) {
+        switch (event.getType()) {
+        case REFRESH_STRUCTURE:
+        case REMOVE_CONTENT:
+            table.recreateModel();
+            break;
+        case REFRESH_DATA:
+            table.refreshModel();
+            break;
+        }
     }
 
 }

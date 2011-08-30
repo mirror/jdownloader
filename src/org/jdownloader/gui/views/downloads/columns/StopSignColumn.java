@@ -7,14 +7,14 @@ import javax.swing.JTable;
 import javax.swing.table.JTableHeader;
 
 import jd.controlling.DownloadWatchDog;
-import jd.plugins.PackageLinkNode;
+import jd.controlling.packagecontroller.AbstractNode;
 
 import org.appwork.swing.exttable.ExtTableHeaderRenderer;
 import org.appwork.swing.exttable.columns.ExtTextColumn;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 
-public class StopSignColumn extends ExtTextColumn<jd.plugins.PackageLinkNode> {
+public class StopSignColumn extends ExtTextColumn<AbstractNode> {
 
     public ExtTableHeaderRenderer getHeaderRenderer(final JTableHeader jTableHeader) {
 
@@ -56,13 +56,13 @@ public class StopSignColumn extends ExtTextColumn<jd.plugins.PackageLinkNode> {
     }
 
     @Override
-    protected Icon getIcon(PackageLinkNode value) {
+    protected Icon getIcon(AbstractNode value) {
         if (DownloadWatchDog.getInstance().isStopMark(value)) { return NewTheme.I().getIcon("stopsign", 16); }
         return null;
     }
 
     @Override
-    protected String getTooltipText(PackageLinkNode obj) {
+    protected String getTooltipText(AbstractNode obj) {
         if (DownloadWatchDog.getInstance().isStopMark(obj)) { return _GUI._.jd_gui_swing_jdgui_views_downloadview_TableRenderer_stopmark(); }
         return null;
     }
@@ -78,7 +78,7 @@ public class StopSignColumn extends ExtTextColumn<jd.plugins.PackageLinkNode> {
     // }
 
     @Override
-    public boolean isEnabled(PackageLinkNode obj) {
+    public boolean isEnabled(AbstractNode obj) {
         return obj.isEnabled();
     }
 
@@ -93,7 +93,7 @@ public class StopSignColumn extends ExtTextColumn<jd.plugins.PackageLinkNode> {
     }
 
     @Override
-    public String getStringValue(PackageLinkNode value) {
+    public String getStringValue(AbstractNode value) {
 
         return "";
     }

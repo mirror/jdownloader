@@ -1,13 +1,15 @@
 package org.jdownloader.gui.views.downloads.columns;
 
+import jd.controlling.linkcrawler.CrawledLinkInfo;
+import jd.controlling.linkcrawler.CrawledPackageInfo;
+import jd.controlling.packagecontroller.AbstractNode;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.plugins.PackageLinkNode;
 
 import org.appwork.swing.exttable.columns.ExtFileSizeColumn;
 import org.jdownloader.gui.translate._GUI;
 
-public class SizeColumn extends ExtFileSizeColumn<PackageLinkNode> {
+public class SizeColumn extends ExtFileSizeColumn<AbstractNode> {
 
     /**
      * 
@@ -40,16 +42,20 @@ public class SizeColumn extends ExtFileSizeColumn<PackageLinkNode> {
     // }
 
     @Override
-    protected long getBytes(PackageLinkNode o2) {
+    protected long getBytes(AbstractNode o2) {
+        if (o2 instanceof CrawledPackageInfo) {
+            return 0;
+        } else if (o2 instanceof CrawledLinkInfo) { return ((CrawledLinkInfo) o2).getSize(); }
         if (o2 instanceof DownloadLink) {
             return ((DownloadLink) o2).getDownloadSize();
-        } else {
+        } else if (o2 instanceof FilePackage) {
             return ((FilePackage) o2).getTotalEstimatedPackageSize();
-        }
+        } else
+            return -1;
     }
 
     @Override
-    public boolean isEnabled(PackageLinkNode obj) {
+    public boolean isEnabled(AbstractNode obj) {
         return obj.isEnabled();
     }
 

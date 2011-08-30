@@ -8,8 +8,8 @@ import javax.swing.ImageIcon;
 import javax.swing.JTable;
 import javax.swing.table.JTableHeader;
 
+import jd.controlling.packagecontroller.AbstractNode;
 import jd.plugins.DownloadLink;
-import jd.plugins.PackageLinkNode;
 
 import org.appwork.swing.exttable.ExtColumn;
 import org.appwork.swing.exttable.ExtDefaultRowSorter;
@@ -18,7 +18,7 @@ import org.appwork.swing.exttable.columns.ExtIconColumn;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 
-public class PriorityColumn extends ExtIconColumn<PackageLinkNode> {
+public class PriorityColumn extends ExtIconColumn<AbstractNode> {
 
     /**
      * 
@@ -64,12 +64,12 @@ public class PriorityColumn extends ExtIconColumn<PackageLinkNode> {
         strPriority2 = _GUI._.gui_treetable_tooltip_priority2();
         strPriority3 = _GUI._.gui_treetable_tooltip_priority3();
 
-        this.setRowSorter(new ExtDefaultRowSorter<PackageLinkNode>() {
+        this.setRowSorter(new ExtDefaultRowSorter<AbstractNode>() {
             /**
              * sorts the icon by hashcode
              */
             @Override
-            public int compare(final PackageLinkNode o1, final PackageLinkNode o2) {
+            public int compare(final AbstractNode o1, final AbstractNode o2) {
                 int p1 = getPriority(o1);
                 int p2 = getPriority(o2);
                 if (p1 == p2) { return 0; }
@@ -119,7 +119,7 @@ public class PriorityColumn extends ExtIconColumn<PackageLinkNode> {
         return 30;
     }
 
-    protected int getPriority(PackageLinkNode value) {
+    protected int getPriority(AbstractNode value) {
         if (value instanceof DownloadLink) {
             switch (((DownloadLink) value).getPriority()) {
             case 0:
@@ -139,7 +139,7 @@ public class PriorityColumn extends ExtIconColumn<PackageLinkNode> {
     }
 
     @Override
-    protected Icon getIcon(PackageLinkNode value) {
+    protected Icon getIcon(AbstractNode value) {
         switch (getPriority(value)) {
         case 0:
         default:
@@ -155,7 +155,7 @@ public class PriorityColumn extends ExtIconColumn<PackageLinkNode> {
         }
     }
 
-    protected String getTooltipText(PackageLinkNode value) {
+    protected String getTooltipText(AbstractNode value) {
         switch (getPriority(value)) {
         case 0:
         default:
@@ -172,7 +172,7 @@ public class PriorityColumn extends ExtIconColumn<PackageLinkNode> {
     }
 
     @Override
-    public boolean isEnabled(PackageLinkNode obj) {
+    public boolean isEnabled(AbstractNode obj) {
         return obj.isEnabled();
     }
 

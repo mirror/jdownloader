@@ -39,14 +39,6 @@ import org.appwork.utils.Exceptions;
 import org.appwork.utils.event.Eventsender;
 import org.appwork.utils.event.queue.QueueAction;
 
-class DownloadControllerBroadcaster extends Eventsender<DownloadControllerListener, DownloadControllerEvent> {
-
-    @Override
-    protected void fireEvent(final DownloadControllerListener listener, final DownloadControllerEvent event) {
-        listener.onDownloadControllerEvent(event);
-    }
-}
-
 public class DownloadController extends PackageController<FilePackage, DownloadLink> {
 
     public static enum MOVE {
@@ -60,10 +52,16 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
         DOWN
     }
 
-    private transient DownloadControllerBroadcaster broadcaster = new DownloadControllerBroadcaster();
+    private transient Eventsender<DownloadControllerListener, DownloadControllerEvent> broadcaster = new Eventsender<DownloadControllerListener, DownloadControllerEvent>() {
 
-    private DelayedRunnable                         asyncSaving = null;
-    private static DownloadController               INSTANCE    = new DownloadController();
+                                                                                                       @Override
+                                                                                                       protected void fireEvent(final DownloadControllerListener listener, final DownloadControllerEvent event) {
+                                                                                                           listener.onDownloadControllerEvent(event);
+                                                                                                       };
+                                                                                                   };
+
+    private DelayedRunnable                                                            asyncSaving = null;
+    private static DownloadController                                                  INSTANCE    = new DownloadController();
 
     /**
      * darf erst nachdem der JDController init wurde, aufgerufen werden

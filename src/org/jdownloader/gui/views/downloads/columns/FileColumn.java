@@ -5,15 +5,16 @@ import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.border.Border;
 
+import jd.controlling.packagecontroller.AbstractNode;
+import jd.controlling.packagecontroller.AbstractPackageNode;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.plugins.PackageLinkNode;
 
 import org.appwork.swing.exttable.columns.ExtTextColumn;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 
-public class FileColumn extends ExtTextColumn<PackageLinkNode> {
+public class FileColumn extends ExtTextColumn<AbstractNode> {
 
     private Border    leftGapBorder;
     private ImageIcon iconPackageOpen;
@@ -32,12 +33,12 @@ public class FileColumn extends ExtTextColumn<PackageLinkNode> {
     }
 
     @Override
-    public boolean isEnabled(PackageLinkNode obj) {
+    public boolean isEnabled(AbstractNode obj) {
         return obj.isEnabled();
     }
 
     @Override
-    public boolean isSortable(PackageLinkNode obj) {
+    public boolean isSortable(AbstractNode obj) {
         return true;
     }
 
@@ -48,12 +49,12 @@ public class FileColumn extends ExtTextColumn<PackageLinkNode> {
     }
 
     @Override
-    public boolean isEditable(PackageLinkNode obj) {
+    public boolean isEditable(AbstractNode obj) {
         return false;
     }
 
     @Override
-    protected void setStringValue(String value, PackageLinkNode object) {
+    protected void setStringValue(String value, AbstractNode object) {
         if (object instanceof FilePackage) {
             ((FilePackage) object).setName(value);
         } else {
@@ -62,31 +63,27 @@ public class FileColumn extends ExtTextColumn<PackageLinkNode> {
     }
 
     @Override
-    protected Icon getIcon(PackageLinkNode value) {
-        if (value instanceof FilePackage) {
-
-            return (((FilePackage) value).isExpanded() ? iconPackageOpen : iconPackageClosed);
-        } else {
-            return (((DownloadLink) value).getIcon());
-
-        }
+    protected Icon getIcon(AbstractNode value) {
+        if (value instanceof AbstractPackageNode) {
+            return (((AbstractPackageNode<?, ?>) value).isExpanded() ? iconPackageOpen : iconPackageClosed);
+        } else if (value instanceof DownloadLink) { return (((DownloadLink) value).getIcon()); }
+        return null;
     }
 
-    public void configureRendererComponent(PackageLinkNode value, boolean isSelected, boolean hasFocus, int row, int column) {
+    public void configureRendererComponent(AbstractNode value, boolean isSelected, boolean hasFocus, int row, int column) {
         super.configureRendererComponent(value, isSelected, hasFocus, row, column);
-        if (value instanceof FilePackage) {
+        if (value instanceof AbstractPackageNode) {
             renderer.setBorder(null);
         } else {
             renderer.setBorder(leftGapBorder);
-
         }
 
     }
 
     @Override
-    public void configureEditorComponent(PackageLinkNode value, boolean isSelected, int row, int column) {
+    public void configureEditorComponent(AbstractNode value, boolean isSelected, int row, int column) {
         super.configureEditorComponent(value, isSelected, row, column);
-        if (value instanceof FilePackage) {
+        if (value instanceof AbstractPackageNode) {
             editor.setBorder(null);
         } else {
             editor.setBorder(leftGapBorder);
@@ -99,14 +96,8 @@ public class FileColumn extends ExtTextColumn<PackageLinkNode> {
     }
 
     @Override
-    public final String getStringValue(PackageLinkNode value) {
-        if (value instanceof FilePackage) {
-            FilePackage fp = (FilePackage) value;
-            return fp.getName();
-        } else {
-            DownloadLink dLink = (DownloadLink) value;
-            return dLink.getName();
-        }
+    public final String getStringValue(AbstractNode value) {
+        return value.getName();
     }
 
 }

@@ -3,17 +3,17 @@ package org.jdownloader.gui.views.downloads.columns;
 import javax.swing.Icon;
 import javax.swing.SwingConstants;
 
+import jd.controlling.packagecontroller.AbstractNode;
 import jd.nutils.Formatter;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
-import jd.plugins.PackageLinkNode;
 
 import org.appwork.swing.exttable.columns.ExtTextColumn;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.translate._JDT;
 
-public class ETAColumn extends ExtTextColumn<jd.plugins.PackageLinkNode> {
+public class ETAColumn extends ExtTextColumn<AbstractNode> {
 
     /**
      * 
@@ -30,7 +30,7 @@ public class ETAColumn extends ExtTextColumn<jd.plugins.PackageLinkNode> {
     }
 
     @Override
-    public boolean isEnabled(PackageLinkNode obj) {
+    public boolean isEnabled(AbstractNode obj) {
         return obj.isEnabled();
     }
 
@@ -50,13 +50,13 @@ public class ETAColumn extends ExtTextColumn<jd.plugins.PackageLinkNode> {
     }
 
     @Override
-    protected Icon getIcon(PackageLinkNode value) {
+    protected Icon getIcon(AbstractNode value) {
 
         return null;
     }
 
     @Override
-    public String getStringValue(PackageLinkNode value) {
+    public String getStringValue(AbstractNode value) {
         if (value instanceof DownloadLink) {
             if (((DownloadLink) value).getLinkStatus().hasStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS)) {
                 long speed = ((DownloadLink) value).getDownloadSpeed();

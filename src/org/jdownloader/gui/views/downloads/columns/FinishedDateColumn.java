@@ -4,12 +4,12 @@ import java.util.Date;
 
 import javax.swing.SwingConstants;
 
-import jd.plugins.PackageLinkNode;
+import jd.controlling.packagecontroller.AbstractNode;
 
 import org.appwork.swing.exttable.columns.ExtDateColumn;
 import org.jdownloader.gui.translate._GUI;
 
-public class FinishedDateColumn extends ExtDateColumn<PackageLinkNode> {
+public class FinishedDateColumn extends ExtDateColumn<AbstractNode> {
 
     /**
      * 
@@ -22,7 +22,7 @@ public class FinishedDateColumn extends ExtDateColumn<PackageLinkNode> {
     }
 
     @Override
-    protected String getBadDateText(PackageLinkNode value) {
+    protected String getBadDateText(AbstractNode value) {
         return "";
     }
 
@@ -52,12 +52,12 @@ public class FinishedDateColumn extends ExtDateColumn<PackageLinkNode> {
     // }
 
     @Override
-    public boolean isEnabled(PackageLinkNode obj) {
+    public boolean isEnabled(AbstractNode obj) {
         return obj.isEnabled();
     }
 
     @Override
-    protected Date getDate(PackageLinkNode node, Date date) {
+    protected Date getDate(AbstractNode node, Date date) {
 
         if (node.getFinishedDate() <= 0) return null;
         date.setTime(node.getFinishedDate());

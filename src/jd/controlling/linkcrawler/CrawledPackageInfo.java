@@ -10,6 +10,7 @@ public class CrawledPackageInfo implements AbstractPackageNode<CrawledLinkInfo, 
 
     private ArrayList<CrawledLinkInfo>                             children   = new ArrayList<CrawledLinkInfo>();
     private PackageController<CrawledPackageInfo, CrawledLinkInfo> controller = null;
+    private boolean                                                expanded   = true;
 
     public PackageController<CrawledPackageInfo, CrawledLinkInfo> getControlledBy() {
 
@@ -25,6 +26,30 @@ public class CrawledPackageInfo implements AbstractPackageNode<CrawledLinkInfo, 
     }
 
     public void notifyChanges() {
+    }
+
+    public boolean isExpanded() {
+        return expanded;
+    }
+
+    public void setExpanded(boolean b) {
+        this.expanded = b;
+    }
+
+    public String getName() {
+        return null;
+    }
+
+    public boolean isEnabled() {
+        return false;
+    }
+
+    public long getCreated() {
+        return 0;
+    }
+
+    public long getFinishedDate() {
+        return 0;
     }
 
 }

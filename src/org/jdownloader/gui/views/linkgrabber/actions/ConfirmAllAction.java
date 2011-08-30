@@ -4,15 +4,15 @@ import java.awt.event.ActionEvent;
 
 import javax.swing.AbstractAction;
 
-import jd.plugins.PackageLinkNode;
+import jd.controlling.packagecontroller.AbstractNode;
 
 import org.appwork.utils.logging.Log;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 
 public class ConfirmAllAction extends AbstractAction {
-    private PackageLinkNode value;
-    private boolean         force;
+    private AbstractNode value;
+    private boolean      force;
 
     public ConfirmAllAction(boolean force) {
         putValue(SMALL_ICON, force ? NewTheme.I().getIcon("media-playback-start_forced", 16) : NewTheme.I().getIcon("media-playback-start", 16));

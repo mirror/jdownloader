@@ -3,10 +3,10 @@ package org.jdownloader.gui.views.downloads.context;
 import java.awt.event.ActionEvent;
 import java.io.File;
 
+import jd.controlling.packagecontroller.AbstractNode;
 import jd.gui.swing.jdgui.interfaces.ContextMenuAction;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.plugins.PackageLinkNode;
 
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
@@ -19,9 +19,9 @@ import org.jdownloader.images.NewTheme;
 
 public class EditLinkOrPackageAction extends ContextMenuAction {
 
-    private PackageLinkNode contextObject;
+    private AbstractNode contextObject;
 
-    public EditLinkOrPackageAction(DownloadsTable downloadsTable, PackageLinkNode contextObject) {
+    public EditLinkOrPackageAction(DownloadsTable downloadsTable, AbstractNode contextObject) {
         super();
 
         this.contextObject = contextObject;

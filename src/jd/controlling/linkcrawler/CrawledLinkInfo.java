@@ -6,10 +6,28 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 
+import org.jdownloader.gui.views.linkgrabber.addlinksdialog.CrawlerJob;
+
 public class CrawledLinkInfo implements AbstractPackageChildrenNode<CrawledPackageInfo>, CheckableLink {
 
-    private CrawledPackageInfo parent  = null;
-    private PluginForDecrypt   dPlugin = null;
+    private CrawledPackageInfo parent    = null;
+    private PluginForDecrypt   dPlugin   = null;
+    private CrawlerJob         sourceJob = null;
+
+    /**
+     * @return the sourceJob
+     */
+    public CrawlerJob getSourceJob() {
+        return sourceJob;
+    }
+
+    /**
+     * @param sourceJob
+     *            the sourceJob to set
+     */
+    public void setSourceJob(CrawlerJob sourceJob) {
+        this.sourceJob = sourceJob;
+    }
 
     /**
      * @return the dPlugin
@@ -107,5 +125,17 @@ public class CrawledLinkInfo implements AbstractPackageChildrenNode<CrawledPacka
 
     public void setParentNode(CrawledPackageInfo parent) {
         this.parent = parent;
+    }
+
+    public boolean isEnabled() {
+        return false;
+    }
+
+    public long getCreated() {
+        return 0;
+    }
+
+    public long getFinishedDate() {
+        return 0;
     }
 }

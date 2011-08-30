@@ -12,4 +12,8 @@ public interface AbstractPackageNode<V extends AbstractPackageChildrenNode<E>, E
 
     void notifyChanges();
 
+    boolean isExpanded();
+
+    void setExpanded(boolean b);
+
 }

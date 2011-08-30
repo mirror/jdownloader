@@ -1,26 +1,26 @@
 package org.jdownloader.gui.views.downloads.columns;
 
 import jd.controlling.SingleDownloadController;
+import jd.controlling.packagecontroller.AbstractNode;
 import jd.plugins.DownloadLink;
-import jd.plugins.PackageLinkNode;
 import jd.plugins.download.DownloadInterface;
 
 import org.appwork.swing.exttable.columns.ExtTextColumn;
 import org.jdownloader.gui.translate._GUI;
 
-public class ConnectionColumn extends ExtTextColumn<jd.plugins.PackageLinkNode> {
+public class ConnectionColumn extends ExtTextColumn<AbstractNode> {
 
     public ConnectionColumn() {
         super(_GUI._.ConnectionColumn_ConnectionColumn());
     }
 
     @Override
-    protected String getTooltipText(PackageLinkNode obj) {
+    protected String getTooltipText(AbstractNode obj) {
         return super.getTooltipText(obj);
     }
 
     @Override
-    public boolean isEnabled(PackageLinkNode obj) {
+    public boolean isEnabled(AbstractNode obj) {
         return obj.isEnabled();
     }
 
@@ -44,7 +44,7 @@ public class ConnectionColumn extends ExtTextColumn<jd.plugins.PackageLinkNode> 
     }
 
     @Override
-    public String getStringValue(PackageLinkNode value) {
+    public String getStringValue(AbstractNode value) {
         if (value instanceof DownloadLink) {
             SingleDownloadController dlc = ((DownloadLink) value).getDownloadLinkController();
             if (dlc != null) {

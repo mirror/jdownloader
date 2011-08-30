@@ -1,20 +1,20 @@
 package org.jdownloader.gui.views.downloads.columns;
 
+import jd.controlling.packagecontroller.AbstractNode;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.plugins.PackageLinkNode;
 
 import org.appwork.swing.exttable.columns.ExtTextAreaColumn;
 import org.jdownloader.gui.translate._GUI;
 
-public class CommentColumn extends ExtTextAreaColumn<PackageLinkNode> {
+public class CommentColumn extends ExtTextAreaColumn<AbstractNode> {
 
     public CommentColumn() {
         super(_GUI._.CommentColumn_CommentColumn_());
     }
 
     @Override
-    public boolean isEditable(PackageLinkNode obj) {
+    public boolean isEditable(AbstractNode obj) {
         return true;
     }
 
@@ -23,7 +23,7 @@ public class CommentColumn extends ExtTextAreaColumn<PackageLinkNode> {
     }
 
     @Override
-    protected void setStringValue(String value, PackageLinkNode object) {
+    protected void setStringValue(String value, AbstractNode object) {
         if (object instanceof FilePackage) {
             ((FilePackage) object).setComment(value);
         } else {
@@ -38,7 +38,7 @@ public class CommentColumn extends ExtTextAreaColumn<PackageLinkNode> {
     }
 
     @Override
-    public String getStringValue(PackageLinkNode value) {
+    public String getStringValue(AbstractNode value) {
         if (value instanceof FilePackage) {
             return ((FilePackage) value).getComment();
         } else {

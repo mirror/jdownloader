@@ -5,7 +5,7 @@ import java.util.ArrayList;
 
 import javax.swing.AbstractAction;
 
-import jd.plugins.PackageLinkNode;
+import jd.controlling.packagecontroller.AbstractNode;
 
 import org.appwork.utils.logging.Log;
 import org.jdownloader.gui.translate._GUI;
@@ -13,10 +13,10 @@ import org.jdownloader.images.NewTheme;
 
 public class ConfirmAction extends AbstractAction {
 
-    private ArrayList<PackageLinkNode> values;
-    private boolean                    force;
+    private ArrayList<AbstractNode> values;
+    private boolean                 force;
 
-    public ConfirmAction(boolean force, ArrayList<PackageLinkNode> arrayList) {
+    public ConfirmAction(boolean force, ArrayList<AbstractNode> arrayList) {
         putValue(SMALL_ICON, force ? NewTheme.I().getIcon("media-playback-start_forced", 16) : NewTheme.I().getIcon("media-playback-start", 16));
 
         putValue(NAME, force ? _GUI._.ConfirmAction_ConfirmAction_forced() : _GUI._.ConfirmAction_ConfirmAction_());
