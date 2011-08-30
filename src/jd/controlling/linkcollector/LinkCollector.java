@@ -52,12 +52,14 @@ public class LinkCollector extends PackageController<CrawledPackageInfo, Crawled
         if (doLinkCheck) {
             lc.setFinalLinkHandler(new LinkCrawlerFinalLinkHandler() {
                 public void handleFinalLink(CrawledLinkInfo link) {
+
                     linkChecker.check(link);
                 }
             });
         } else {
             lc.setFinalLinkHandler(new LinkCrawlerFinalLinkHandler() {
                 public void handleFinalLink(CrawledLinkInfo link) {
+
                     testAdd(link);
                 }
             });

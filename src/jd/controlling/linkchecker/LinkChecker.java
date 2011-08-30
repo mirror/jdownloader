@@ -21,28 +21,31 @@ import org.appwork.utils.logging.Log;
 
 public class LinkChecker<E extends CheckableLink> {
 
+    private static final String HTTP_LINKS_HOST = "http links";
+    private static final String DIRECT_HTTP_HOST = "DirectHTTP";
+    private static final String FTP_HOST = "ftp";
     /* static variables */
-    private static AtomicInteger                                                    linkCheckerThread = new AtomicInteger(0);
-    private final static int                                                        maxThreads;
-    private final static int                                                        keepAlive;
-    private static HashMap<String, Thread>                                          checkThreads      = new HashMap<String, Thread>();
-    private static HashMap<String, ArrayList<LinkChecker<? extends CheckableLink>>> linkChecker       = new HashMap<String, ArrayList<LinkChecker<? extends CheckableLink>>>();
-    private static final Object                                                     LOCK              = new Object();
+    private static AtomicInteger                                                    LINKCHECKER_THREAD_NUM = new AtomicInteger(0);
+    private final static int                                                        MAX_THREADS;
+    private final static int                                                        KEEP_ALIVE;
+    private static HashMap<String, Thread>                                          CHECK_THREADS          = new HashMap<String, Thread>();
+    private static HashMap<String, ArrayList<LinkChecker<? extends CheckableLink>>> LINKCHECKER            = new HashMap<String, ArrayList<LinkChecker<? extends CheckableLink>>>();
+    private static final Object                                                     LOCK                   = new Object();
 
     /* local variables for this LinkChecker */
-    private AtomicLong                                                              linksRequested    = new AtomicLong(0);
-    private AtomicLong                                                              linksDone         = new AtomicLong(0);
-    private HashMap<String, LinkedList<E>>                                          links2Check       = new HashMap<String, LinkedList<E>>();
-    private boolean                                                                 forceRecheck      = false;
-    private LinkCheckerHandler<E>                                                   handler           = null;
-    private static int                                                              SPLITSIZE         = 80;
+    private AtomicLong                                                              linksRequested         = new AtomicLong(0);
+    private AtomicLong                                                              linksDone              = new AtomicLong(0);
+    private HashMap<String, LinkedList<E>>                                          links2Check            = new HashMap<String, LinkedList<E>>();
+    private boolean                                                                 forceRecheck           = false;
+    private LinkCheckerHandler<E>                                                   handler                = null;
+    private static int                                                              SPLITSIZE              = 80;
 
     static {
-        maxThreads = Math.max(JsonConfig.create(LinkCheckerConfig.class).getMaxThreads(), 1);
+        MAX_THREADS = Math.max(JsonConfig.create(LinkCheckerConfig.class).getMaxThreads(), 1);
         // keepAlive =
         // Math.max(JsonConfig.create(LinkCheckerConfig.class).getThreadKeepAlive(),
         // 100);
-        keepAlive = 2000;
+        KEEP_ALIVE = 2000;
     }
 
     public LinkChecker() {
@@ -85,7 +88,7 @@ public class LinkChecker<E extends CheckableLink> {
         DownloadLink dlLink = link.getDownloadLink();
         /* get Host of the link */
         String host = dlLink.getHost();
-        if ("ftp".equalsIgnoreCase(host) || "DirectHTTP".equalsIgnoreCase(host) || "http links".equalsIgnoreCase(host)) {
+        if (LinkChecker.FTP_HOST.equalsIgnoreCase(host) || LinkChecker.DIRECT_HTTP_HOST.equalsIgnoreCase(host) || LinkChecker.HTTP_LINKS_HOST.equalsIgnoreCase(host)) {
             /* direct and ftp links are divided by their hostname */
             String specialHost = Browser.getHost(dlLink.getDownloadURL());
             if (specialHost != null) host = specialHost;
@@ -101,16 +104,16 @@ public class LinkChecker<E extends CheckableLink> {
             linksRequested.incrementAndGet();
         }
         synchronized (LOCK) {
-            ArrayList<LinkChecker<? extends CheckableLink>> checker = linkChecker.get(host);
+            ArrayList<LinkChecker<? extends CheckableLink>> checker = LINKCHECKER.get(host);
             if (checker == null) {
                 checker = new ArrayList<LinkChecker<? extends CheckableLink>>();
                 checker.add(this);
-                linkChecker.put(host, checker);
+                LINKCHECKER.put(host, checker);
             } else if (!checker.contains(this)) {
                 checker.add(this);
             }
             /* notify linkcheckThread or try to start new one */
-            Thread thread = checkThreads.get(host);
+            Thread thread = CHECK_THREADS.get(host);
             if (thread == null || !thread.isAlive()) {
                 startNewThreads();
             }
@@ -151,7 +154,7 @@ public class LinkChecker<E extends CheckableLink> {
     /* start a new linkCheckThread for the given host */
     private static void startNewThread(final String threadHost) {
         synchronized (LOCK) {
-            if (checkThreads.size() >= maxThreads) return;
+            if (CHECK_THREADS.size() >= MAX_THREADS) return;
             final BrowserSettingsThread newThread = new BrowserSettingsThread(new Runnable() {
 
                 public void run() {
@@ -166,7 +169,7 @@ public class LinkChecker<E extends CheckableLink> {
                         HashMap<CheckableLink, ArrayList<LinkChecker<? extends CheckableLink>>> round = new HashMap<CheckableLink, ArrayList<LinkChecker<? extends CheckableLink>>>();
                         try {
                             synchronized (LOCK) {
-                                ArrayList<LinkChecker<? extends CheckableLink>> map = linkChecker.get(threadHost);
+                                ArrayList<LinkChecker<? extends CheckableLink>> map = LINKCHECKER.get(threadHost);
                                 if (map != null) {
                                     for (LinkChecker<? extends CheckableLink> lc : map) {
                                         synchronized (lc) {
@@ -204,7 +207,7 @@ public class LinkChecker<E extends CheckableLink> {
                                      * remove threadHost from static list to
                                      * remove unwanted references
                                      */
-                                    linkChecker.remove(threadHost);
+                                    LINKCHECKER.remove(threadHost);
                                 }
                             }
                             /* build map to get CheckableLink from DownloadLink */
@@ -214,9 +217,9 @@ public class LinkChecker<E extends CheckableLink> {
                                 dlLink2checkLink.put(check.getDownloadLink(), check);
                                 links2Check.add(check.getDownloadLink());
                             }
-                            int N = links2Check.size();
-                            for (int i = 0; i < N; i += SPLITSIZE) {
-                                List<DownloadLink> checks = links2Check.subList(i, Math.min(N, i + SPLITSIZE));
+                            int n = links2Check.size();
+                            for (int i = 0; i < n; i += SPLITSIZE) {
+                                List<DownloadLink> checks = links2Check.subList(i, Math.min(n, i + SPLITSIZE));
                                 if (checks.size() > 0) {
                                     stopDelay = 1;
                                     DownloadLink linksList[] = checks.toArray(new DownloadLink[checks.size()]);
@@ -255,20 +258,20 @@ public class LinkChecker<E extends CheckableLink> {
                             Log.exception(e);
                         }
                         try {
-                            Thread.sleep(keepAlive);
+                            Thread.sleep(KEEP_ALIVE);
                         } catch (InterruptedException e) {
                             Log.exception(e);
                             synchronized (LOCK) {
-                                checkThreads.remove(threadHost);
+                                CHECK_THREADS.remove(threadHost);
                                 return;
                             }
                         }
                         synchronized (LOCK) {
-                            ArrayList<LinkChecker<? extends CheckableLink>> stopCheck = linkChecker.get(threadHost);
+                            ArrayList<LinkChecker<? extends CheckableLink>> stopCheck = LINKCHECKER.get(threadHost);
                             if (stopCheck == null || stopCheck.size() == 0) {
                                 stopDelay--;
                                 if (stopDelay < 0) {
-                                    checkThreads.remove(threadHost);
+                                    CHECK_THREADS.remove(threadHost);
                                     startNewThreads();
                                     return;
                                 }
@@ -277,9 +280,9 @@ public class LinkChecker<E extends CheckableLink> {
                     }
                 }
             });
-            newThread.setName("LinkChecker: " + linkCheckerThread.incrementAndGet() + ":" + threadHost);
+            newThread.setName("LinkChecker: " + LINKCHECKER_THREAD_NUM.incrementAndGet() + ":" + threadHost);
             newThread.setDaemon(true);
-            checkThreads.put(threadHost, newThread);
+            CHECK_THREADS.put(threadHost, newThread);
             newThread.start();
         }
     }
@@ -287,13 +290,13 @@ public class LinkChecker<E extends CheckableLink> {
     /* start new linkCheckThreads until max is reached or no left to start */
     private static void startNewThreads() {
         synchronized (LOCK) {
-            Set<Entry<String, ArrayList<LinkChecker<? extends CheckableLink>>>> sets = linkChecker.entrySet();
+            Set<Entry<String, ArrayList<LinkChecker<? extends CheckableLink>>>> sets = LINKCHECKER.entrySet();
             for (Entry<String, ArrayList<LinkChecker<? extends CheckableLink>>> set : sets) {
                 String host = set.getKey();
-                Thread thread = checkThreads.get(host);
+                Thread thread = CHECK_THREADS.get(host);
                 if (thread == null || !thread.isAlive()) {
-                    checkThreads.remove(host);
-                    if (checkThreads.size() < maxThreads) {
+                    CHECK_THREADS.remove(host);
+                    if (CHECK_THREADS.size() < MAX_THREADS) {
                         startNewThread(host);
                     } else {
                         break;
