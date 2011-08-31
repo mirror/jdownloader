@@ -167,7 +167,7 @@ public class WUploadCom extends PluginForHost implements ControlListener {
             downloadLink.setProperty("pass", null);
             throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.errors.wrongpassword", "Password wrong"));
         }
-        if (br.containsHTML("(An Error Occurred|>404 Not Found<)")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.wupload.servererror", "Server error"), 20 * 60 * 1000l); }
+        if (br.containsHTML("((?i)An Error Occurred(?-i)|>404 Not Found<)")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.wupload.servererror", "Server error"), 20 * 60 * 1000l); }
         if (br.containsHTML("This file is available for premium users only\\.")) { throw new PluginException(LinkStatus.ERROR_FATAL, "Premium only file. Buy Premium Account"); }
         if (br.containsHTML("(You can not access this page directly\\. Please use the|>website to start your download</a>|<p>If the problem persists, clear your cookies and try again\\.</p>)")) {
             logger.warning(br.toString());
