@@ -63,8 +63,8 @@ public class MyVideo extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
-        AvailableStatus status = requestFileInformation(downloadLink);
-        if (status == AvailableStatus.UNCHECKABLE) throw new PluginException(LinkStatus.ERROR_FATAL, "Wait for next available JDownloader version");
+        final AvailableStatus status = requestFileInformation(downloadLink);
+        if (status == AvailableStatus.UNCHECKABLE) { throw new PluginException(LinkStatus.ERROR_FATAL, "Wait for next available JDownloader version"); }
         if (CLIPURL.startsWith("rtmp")) {
             dl = new RTMPDownload(this, downloadLink, CLIPURL);
             final jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
@@ -82,6 +82,15 @@ public class MyVideo extends PluginForHost {
 
             ((RTMPDownload) dl).startDownload();
 
+        } else if (CLIPURL.startsWith("http")) {
+            br.getHeaders().put("Referer", SWFURL);
+            br.getHeaders().put("x-flash-version", "10,3,183,7");
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, CLIPURL + CLIPPATH, true, 1);
+            if (dl.getConnection().getContentType().contains("html")) {
+                br.followConnection();
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            dl.startDownload();
         } else {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -134,9 +143,12 @@ public class MyVideo extends PluginForHost {
         }
         CLIPURL = new Regex(result, "connectionurl=\'(.*?)\'").getMatch(0);
         CLIPPATH = new Regex(result, "source=\'(.*?)\'").getMatch(0);
-        if (CLIPURL == null || CLIPPATH == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        if (CLIPURL.equals("") || CLIPPATH == null) {
+            CLIPURL = new Regex(result, "path=\'(.*?)\'").getMatch(0);
+        }
+        if (CLIPURL == null || CLIPPATH.equals("")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         String ext = new Regex(CLIPPATH, "(\\.\\w{3})$").getMatch(0);
-        if (!CLIPPATH.matches("(\\w+):(\\w+)/(\\w+)/(\\d+)") && ext != null) {
+        if (!CLIPPATH.matches("(\\w+):(\\w+)/(\\w+)/(\\d+)") && ext != null && !CLIPURL.startsWith("http")) {
             CLIPPATH = CLIPPATH.replace(ext, "");
             if (ext.startsWith(".")) {
                 CLIPPATH = ext.replace(".", "") + ":" + CLIPPATH;
