@@ -1,5 +1,7 @@
 package org.jdownloader.gui.views.downloads.columns;
 
+import java.awt.Point;
+
 import javax.swing.Box;
 import javax.swing.ImageIcon;
 import javax.swing.JComponent;
@@ -10,6 +12,8 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForHost;
 
 import org.appwork.app.gui.MigPanel;
+import org.appwork.swing.components.tooltips.ExtTooltip;
+import org.appwork.swing.components.tooltips.IconLabelToolTip;
 import org.appwork.swing.exttable.ExtColumn;
 import org.appwork.utils.swing.renderer.RenderLabel;
 import org.appwork.utils.swing.renderer.RendererMigPanel;
@@ -21,12 +25,12 @@ public class HosterColumn extends ExtColumn<AbstractNode> {
     private int           maxIcons = 10;
     private MigPanel      panel;
     private RenderLabel[] labels;
-    private HosterToolTip tooltip;
 
     public HosterColumn() {
         super(_GUI._.HosterColumn_HosterColumn(), null);
         panel = new RendererMigPanel("ins 0 5 0 5", "[]", "[grow,fill]");
         labels = new RenderLabel[maxIcons];
+
         // panel.add(Box.createGlue(), "pushx,growx");
         for (int i = 0; i < maxIcons; i++) {
             labels[i] = new RenderLabel() {
@@ -47,7 +51,7 @@ public class HosterColumn extends ExtColumn<AbstractNode> {
 
         }
         panel.add(Box.createGlue(), "pushx,growx");
-        tooltip = new HosterToolTip();
+
         resetRenderer();
     }
 
@@ -128,6 +132,16 @@ public class HosterColumn extends ExtColumn<AbstractNode> {
             }
 
         }
+
+    }
+
+    @Override
+    public ExtTooltip createToolTip(Point position, AbstractNode obj) {
+
+        if (obj instanceof DownloadLink) {
+            return new IconLabelToolTip(((DownloadLink) obj).getHost(), ((DownloadLink) obj).getHosterIcon(true));
+        } else if (obj instanceof FilePackage) { return new HosterToolTip((FilePackage) obj); }
+        return null;
 
     }
 
