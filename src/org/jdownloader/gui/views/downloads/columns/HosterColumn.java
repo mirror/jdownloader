@@ -3,7 +3,6 @@ package org.jdownloader.gui.views.downloads.columns;
 import javax.swing.Box;
 import javax.swing.ImageIcon;
 import javax.swing.JComponent;
-import javax.swing.JToolTip;
 
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.plugins.DownloadLink;
@@ -97,17 +96,17 @@ public class HosterColumn extends ExtColumn<AbstractNode> {
     // return 150;
     // }
 
-    public JToolTip createToolTip(final AbstractNode obj) {
-        if (obj instanceof DownloadLink) {
-            tip.setExtText(((DownloadLink) obj).getHost());
-            return tip;
-        } else if (obj instanceof FilePackage) {
-            tooltip.setObj(obj);
-            return tooltip;
-        }
-        return null;
-
-    }
+    // public JToolTip createToolTip(final AbstractNode obj) {
+    // if (obj instanceof DownloadLink) {
+    // tip.setExtText(((DownloadLink) obj).getHost());
+    // return tip;
+    // } else if (obj instanceof FilePackage) {
+    // tooltip.setObj(obj);
+    // return tooltip;
+    // }
+    // return null;
+    //
+    // }
 
     public void configureRendererComponent(AbstractNode value, boolean isSelected, boolean hasFocus, int row, int column) {
         if (value instanceof FilePackage) {

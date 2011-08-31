@@ -9,14 +9,45 @@ import org.appwork.swing.components.circlebar.ImagePainter;
 
 public class IconedProcessIndicator extends CircledProgressBar {
 
+    private boolean      active;
+    private ImagePainter activeValuePainter;
+    private ImagePainter activeNonValuePainter;
+    private ImagePainter valuePainter;
+    private ImagePainter nonValuePainter;
+
     public IconedProcessIndicator(ImageIcon icon) {
         super();
-        ImagePainter value = getPainer(icon, 1.0f);
-        this.setValueClipPainter(value);
-        value.setBackground(Color.WHITE);
-        value.setForeground(Color.GRAY);
-        this.setNonvalueClipPainter(getPainer(icon, 0.5f));
+        valuePainter = getPainer(icon, 1.0f);
 
+        valuePainter.setBackground(Color.WHITE);
+        valuePainter.setForeground(Color.GRAY);
+        nonValuePainter = getPainer(icon, 0.5f);
+        activeValuePainter = getPainer(icon, 1.0f);
+        activeValuePainter.setBackground(Color.WHITE);
+        activeValuePainter.setForeground(Color.GREEN);
+
+        activeNonValuePainter = getPainer(icon, 0.5f);
+        activeNonValuePainter.setBackground(Color.LIGHT_GRAY);
+        activeNonValuePainter.setForeground(Color.GREEN);
+        setActive(false);
+    }
+
+    public void setIndeterminate(final boolean newValue) {
+        super.setIndeterminate(newValue);
+        setActive(newValue);
+    }
+
+    private void setActive(boolean newValue) {
+        active = newValue;
+
+        if (active) {
+            this.setValueClipPainter(activeValuePainter);
+            this.setNonvalueClipPainter(activeNonValuePainter);
+
+        } else {
+            this.setValueClipPainter(valuePainter);
+            this.setNonvalueClipPainter(nonValuePainter);
+        }
     }
 
     private ImagePainter getPainer(ImageIcon icon, float f) {

@@ -101,16 +101,23 @@ public class StatusBarImpl extends JPanel {
         reconnectIndicator = new IconedProcessIndicator(NewTheme.I().getIcon("reconnect", 16));
         reconnectIndicator.setIndeterminate(true);
 
-        reconnectIndicator.setToolTipText("<html><img src=\"" + NewTheme.I().getImageUrl("reconnect") + "\"></img>Waiting for new IP - Reconnect in progress</html>");
+        // reconnectIndicator.setToolTipText("<html><img src=\"" +
+        // NewTheme.I().getImageUrl("reconnect") +
+        // "\"></img>Waiting for new IP - Reconnect in progress</html>");
 
         linkGrabberIndicator = new IconedProcessIndicator(NewTheme.I().getIcon("linkgrabber", 16));
         linkGrabberIndicator.setIndeterminate(true);
-        linkGrabberIndicator.setToolTipText("<html><img src=\"" + NewTheme.I().getImageUrl("linkgrabber") + "\"></img>Crawling for Downloads</html>");
+        // linkGrabberIndicator.setToolTipText("<html><img src=\"" +
+        // NewTheme.I().getImageUrl("linkgrabber") +
+        // "\"></img>Crawling for Downloads</html>");
 
         extractIndicator = new IconedProcessIndicator(NewTheme.I().getIcon("archive", 16));
         extractIndicator.setValue(85);
 
-        extractIndicator.setToolTipText("<html><img src=\"" + NewTheme.I().getImageUrl("archive") + "\"></img>Extracting Archives: 85%</html>");
+        // extractIndicator.setToolTipText("<html><img src=\"" +
+        // NewTheme.I().getImageUrl("archive") +
+        // "\"></img>Extracting Archives: 85%</html>");
+
         add(Box.createHorizontalGlue());
         add(reconnectIndicator, "height 22!,width 22!");
         add(linkGrabberIndicator, "height 22!,width 22!");
