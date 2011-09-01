@@ -92,8 +92,9 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
 
     @Override
     protected void onShow() {
-        table.recreateModel();
+        tableModel.recreateModel();
         LinkCollector.getInstance().addListener(this);
+
     }
 
     @Override
@@ -105,10 +106,10 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
         switch (event.getType()) {
         case REFRESH_STRUCTURE:
         case REMOVE_CONTENT:
-            table.recreateModel();
+            tableModel.recreateModel();
             break;
         case REFRESH_DATA:
-            table.refreshModel();
+            tableModel.refreshModel();
             break;
         }
     }

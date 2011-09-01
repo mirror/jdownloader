@@ -2,15 +2,12 @@ package jd.controlling.packagecontroller;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.concurrent.atomic.AtomicLong;
-
-import jd.controlling.IOEQ;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.swing.exttable.ExtColumn;
 import org.appwork.swing.exttable.ExtTableModel;
-import org.appwork.utils.event.queue.Queue.QueuePriority;
-import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.swing.EDTRunner;
 
@@ -26,13 +23,20 @@ public abstract class PackageControllerTableModel<E extends AbstractPackageNode<
         BOTTOM
     }
 
-    private DelayedRunnable         asyncRefresh;
-    private PackageController<E, V> pc;
+    private DelayedRunnable                          asyncRefresh;
+    private PackageController<E, V>                  pc;
+    private DelayedRunnable                          asyncRecreate = null;
+
+    private final static ScheduledThreadPoolExecutor queue         = new ScheduledThreadPoolExecutor(1);
+    static {
+        queue.setKeepAliveTime(10000, TimeUnit.MILLISECONDS);
+        queue.allowCoreThreadTimeOut(true);
+    }
 
     public PackageControllerTableModel(PackageController<E, V> pc, String id) {
         super(id);
         this.pc = pc;
-        asyncRefresh = new DelayedRunnable(IOEQ.TIMINGQUEUE, 150l, 250l) {
+        asyncRefresh = new DelayedRunnable(queue, 150l, 250l) {
             @Override
             public void delayedrun() {
                 new EDTRunner() {
@@ -43,27 +47,19 @@ public abstract class PackageControllerTableModel<E extends AbstractPackageNode<
                     }
                 };
             }
-
         };
-    }
-
-    private AtomicLong tableChangesDone = new AtomicLong(0);
-    private AtomicLong tableChangesReq  = new AtomicLong(0);
-
-    public void recreateModel() {
-        tableChangesReq.incrementAndGet();
-        IOEQ.add(new Runnable() {
-
-            public void run() {
-                if (tableChangesDone.incrementAndGet() != tableChangesReq.get()) {
-                    System.out.println("skip tableMod_recreate");
-                    return;
-                }
+        asyncRecreate = new DelayedRunnable(queue, 300l, 1000l) {
+            @Override
+            public void delayedrun() {
                 final ArrayList<AbstractNode> newtableData = refreshSort(tableData);
                 _fireTableStructureChanged(newtableData, false);
             }
+        };
 
-        }, true);
+    }
+
+    public void recreateModel() {
+        asyncRecreate.run();
     }
 
     public void refreshModel() {
@@ -71,21 +67,8 @@ public abstract class PackageControllerTableModel<E extends AbstractPackageNode<
     }
 
     public void toggleFilePackageExpand(final E fp2, final TOGGLEMODE mode) {
-        tableChangesReq.incrementAndGet();
-        IOEQ.getQueue().addAsynch(new QueueAction<Void, RuntimeException>() {
-
-            @Override
-            protected boolean allowAsync() {
-                return true;
-            }
-
-            @Override
-            public QueuePriority getQueuePrio() {
-                return QueuePriority.HIGH;
-            }
-
-            @Override
-            protected Void run() throws RuntimeException {
+        queue.execute(new Runnable() {
+            public void run() {
                 final boolean cur = !fp2.isExpanded();
                 boolean doToggle = true;
                 switch (mode) {
@@ -119,15 +102,10 @@ public abstract class PackageControllerTableModel<E extends AbstractPackageNode<
                         pc.readUnlock(readL);
                     }
                 }
-                if (tableChangesDone.incrementAndGet() != tableChangesReq.get()) {
-                    System.out.println("skip tableMod_toggle");
-                    return null;
-                }
-                final ArrayList<AbstractNode> newtableData = refreshSort(tableData);
-                _fireTableStructureChanged(newtableData, false);
-                return null;
-            }
+                asyncRecreate.delayedrun();
+            };
         });
+
     }
 
     /*

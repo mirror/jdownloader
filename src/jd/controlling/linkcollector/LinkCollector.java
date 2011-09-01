@@ -38,6 +38,10 @@ public class LinkCollector extends PackageController<CrawledPackageInfo, Crawled
         linkChecker.setLinkCheckHandler(this);
     }
 
+    public boolean isRunning() {
+        return linkChecker.isRunning();
+    }
+
     public void addListener(final LinkCollectorListener l) {
         broadcaster.addListener(l);
     }
@@ -105,6 +109,14 @@ public class LinkCollector extends PackageController<CrawledPackageInfo, Crawled
         ArrayList<CrawledLinkInfo> add = new ArrayList<CrawledLinkInfo>(1);
         add.add(link);
         LinkCollector.this.addmoveChildren(dummy, add, -1);
+    }
+
+    public void linkCheckStarted() {
+        broadcaster.fireEvent(new LinkCollectorEvent(LinkCollector.this, LinkCollectorEvent.TYPE.COLLECTOR_START));
+    }
+
+    public void linkCheckStopped() {
+        broadcaster.fireEvent(new LinkCollectorEvent(LinkCollector.this, LinkCollectorEvent.TYPE.COLLECTOR_STOP));
     }
 
 }

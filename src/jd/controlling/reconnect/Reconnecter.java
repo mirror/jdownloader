@@ -44,8 +44,8 @@ import org.jdownloader.translate._JDT;
 public final class Reconnecter implements StateMachineInterface {
     public static final String         RECONNECT_SUCCESS_COUNTER        = "RECONNECT_SUCCESS_COUNTER";
     public static final String         RECONNECT_FAILED_COUNTER         = "RECONNECT_FAILED_COUNTER";
-    private static final State         IDLE                             = new State("IDLE");
-    private static final State         RECONNECT_RUNNING                = new State("RECONNECT_RUNNING");
+    public static final State          IDLE                             = new State("IDLE");
+    public static final State          RECONNECT_RUNNING                = new State("RECONNECT_RUNNING");
     // private static final State RECONNECT_REQUESTED = new
     // State("RECONNECT_REQUESTED");
 

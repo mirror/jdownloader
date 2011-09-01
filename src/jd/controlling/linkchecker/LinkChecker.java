@@ -21,9 +21,9 @@ import org.appwork.utils.logging.Log;
 
 public class LinkChecker<E extends CheckableLink> {
 
-    private static final String HTTP_LINKS_HOST = "http links";
-    private static final String DIRECT_HTTP_HOST = "DirectHTTP";
-    private static final String FTP_HOST = "ftp";
+    private static final String                                                     HTTP_LINKS_HOST        = "http links";
+    private static final String                                                     DIRECT_HTTP_HOST       = "DirectHTTP";
+    private static final String                                                     FTP_HOST               = "ftp";
     /* static variables */
     private static AtomicInteger                                                    LINKCHECKER_THREAD_NUM = new AtomicInteger(0);
     private final static int                                                        MAX_THREADS;
@@ -42,10 +42,7 @@ public class LinkChecker<E extends CheckableLink> {
 
     static {
         MAX_THREADS = Math.max(JsonConfig.create(LinkCheckerConfig.class).getMaxThreads(), 1);
-        // keepAlive =
-        // Math.max(JsonConfig.create(LinkCheckerConfig.class).getThreadKeepAlive(),
-        // 100);
-        KEEP_ALIVE = 2000;
+        KEEP_ALIVE = Math.max(JsonConfig.create(LinkCheckerConfig.class).getThreadKeepAlive(), 100);
     }
 
     public LinkChecker() {
@@ -71,9 +68,12 @@ public class LinkChecker<E extends CheckableLink> {
     @SuppressWarnings("unchecked")
     protected void linkChecked(CheckableLink link) {
         if (link == null) return;
-        linksDone.incrementAndGet();
+        boolean stopped = linksDone.incrementAndGet() == linksRequested.get();
         LinkCheckerHandler<E> h = handler;
-        if (h != null) h.linkCheckDone((E) link);
+        if (h != null) {
+            h.linkCheckDone((E) link);
+            if (stopped) h.linkCheckStopped();
+        }
     }
 
     public void check(List<E> links) {
@@ -93,6 +93,7 @@ public class LinkChecker<E extends CheckableLink> {
             String specialHost = Browser.getHost(dlLink.getDownloadURL());
             if (specialHost != null) host = specialHost;
         }
+        boolean started = false;
         synchronized (this) {
             /* add link to list of link2Check */
             LinkedList<E> map = links2Check.get(host);
@@ -101,7 +102,12 @@ public class LinkChecker<E extends CheckableLink> {
                 links2Check.put(host, map);
             }
             map.add(link);
+            if (linksRequested.get() == linksDone.get()) started = true;
             linksRequested.incrementAndGet();
+        }
+        LinkCheckerHandler<E> h = handler;
+        if (h != null && started) {
+            h.linkCheckStarted();
         }
         synchronized (LOCK) {
             ArrayList<LinkChecker<? extends CheckableLink>> checker = LINKCHECKER.get(host);

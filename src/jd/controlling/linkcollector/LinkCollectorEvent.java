@@ -17,6 +17,8 @@ public class LinkCollectorEvent extends SimpleEvent<LinkCollector, Object, LinkC
     }
 
     public static enum TYPE {
+        COLLECTOR_START,
+        COLLECTOR_STOP,
         REFRESH_DATA,
         REFRESH_STRUCTURE,
         REMOVE_CONTENT

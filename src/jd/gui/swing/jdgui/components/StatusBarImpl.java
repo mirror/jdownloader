@@ -22,11 +22,18 @@ import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.JPanel;
 
+import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcollector.LinkCollectorEvent;
+import jd.controlling.linkcollector.LinkCollectorListener;
+import jd.controlling.reconnect.Reconnecter;
 import jd.gui.swing.jdgui.components.modules.ModuleStatus;
 import jd.gui.swing.jdgui.components.premiumbar.PremiumStatus;
 import jd.gui.swing.laf.LookAndFeelController;
 import net.miginfocom.swing.MigLayout;
 
+import org.appwork.controlling.StateEvent;
+import org.appwork.controlling.StateEventListener;
+import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.images.NewTheme;
 
 public class StatusBarImpl extends JPanel {
@@ -99,20 +106,70 @@ public class StatusBarImpl extends JPanel {
         add(new ModuleStatus());
 
         reconnectIndicator = new IconedProcessIndicator(NewTheme.I().getIcon("reconnect", 16));
-        reconnectIndicator.setIndeterminate(true);
+        boolean running = Reconnecter.getInstance().isReconnectInProgress();
+        reconnectIndicator.setIndeterminate(running);
+        reconnectIndicator.setEnabled(running);
+        Reconnecter.getInstance().getStateMachine().addListener(new StateEventListener() {
+
+            public void onStateChange(StateEvent event) {
+                boolean r = false;
+                if (event.getNewState() == Reconnecter.RECONNECT_RUNNING) {
+                    r = true;
+                }
+                final boolean running = r;
+                new EDTRunner() {
+                    @Override
+                    protected void runInEDT() {
+                        reconnectIndicator.setEnabled(running);
+                        reconnectIndicator.setIndeterminate(running);
+                    }
+                };
+            }
+
+            public void onStateUpdate(StateEvent event) {
+            }
+
+        });
 
         // reconnectIndicator.setToolTipText("<html><img src=\"" +
         // NewTheme.I().getImageUrl("reconnect") +
         // "\"></img>Waiting for new IP - Reconnect in progress</html>");
 
         linkGrabberIndicator = new IconedProcessIndicator(NewTheme.I().getIcon("linkgrabber", 16));
-        linkGrabberIndicator.setIndeterminate(true);
+        running = LinkCollector.getInstance().isRunning();
+        linkGrabberIndicator.setIndeterminate(running);
+        linkGrabberIndicator.setEnabled(running);
+        LinkCollector.getInstance().addListener(new LinkCollectorListener() {
+
+            public void onLinkCollectorEvent(LinkCollectorEvent event) {
+                switch (event.getType()) {
+                case COLLECTOR_START:
+                    new EDTRunner() {
+                        @Override
+                        protected void runInEDT() {
+                            linkGrabberIndicator.setEnabled(true);
+                            linkGrabberIndicator.setIndeterminate(true);
+                        }
+                    };
+                    break;
+                case COLLECTOR_STOP:
+                    new EDTRunner() {
+                        @Override
+                        protected void runInEDT() {
+                            linkGrabberIndicator.setEnabled(false);
+                            linkGrabberIndicator.setIndeterminate(false);
+                        }
+                    };
+                    break;
+                }
+            }
+        });
         // linkGrabberIndicator.setToolTipText("<html><img src=\"" +
         // NewTheme.I().getImageUrl("linkgrabber") +
         // "\"></img>Crawling for Downloads</html>");
 
         extractIndicator = new IconedProcessIndicator(NewTheme.I().getIcon("archive", 16));
-        extractIndicator.setValue(85);
+        extractIndicator.setEnabled(false);
 
         // extractIndicator.setToolTipText("<html><img src=\"" +
         // NewTheme.I().getImageUrl("archive") +
@@ -124,7 +181,6 @@ public class StatusBarImpl extends JPanel {
         add(extractIndicator, "height 22!,width 22!");
 
     }
-
     // private void colorizeSpinnerSpeed() {
     // /* färbt den spinner ein, falls speedbegrenzung aktiv */
     // if (spMaxSpeed.getValue() > 0) {
