@@ -8,7 +8,6 @@ import javax.swing.JScrollPane;
 import jd.controlling.DownloadController;
 import jd.controlling.DownloadControllerEvent;
 import jd.controlling.DownloadControllerListener;
-import jd.controlling.IOEQ;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import net.miginfocom.swing.MigLayout;
 
@@ -41,13 +40,13 @@ public class DownloadsPanel extends SwitchPanel implements DownloadControllerLis
 
     @Override
     protected void onShow() {
-        table.recreateModel();
+        tableModel.recreateModel();
         synchronized (this) {
             if (timer != null) timer.cancel(false);
-            timer = IOEQ.TIMINGQUEUE.scheduleWithFixedDelay(new Runnable() {
+            timer = tableModel.getThreadPool().scheduleWithFixedDelay(new Runnable() {
 
                 public void run() {
-                    table.refreshModel();
+                    tableModel.refreshModel();
                 }
 
             }, 250, 1000, TimeUnit.MILLISECONDS);
@@ -70,10 +69,10 @@ public class DownloadsPanel extends SwitchPanel implements DownloadControllerLis
         switch (event.getType()) {
         case REFRESH_STRUCTURE:
         case REMOVE_CONTENT:
-            table.recreateModel();
+            tableModel.recreateModel();
             break;
         case REFRESH_DATA:
-            table.refreshModel();
+            tableModel.refreshModel();
             break;
         }
     }

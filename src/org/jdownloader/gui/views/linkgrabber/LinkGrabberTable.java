@@ -5,6 +5,8 @@ import java.awt.event.MouseEvent;
 import java.io.File;
 import java.util.ArrayList;
 
+import jd.controlling.linkcrawler.CrawledLinkInfo;
+import jd.controlling.linkcrawler.CrawledPackageInfo;
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.event.ControlEvent;
 import jd.gui.swing.jdgui.actions.ActionController;
@@ -16,7 +18,7 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.Application;
 import org.appwork.utils.os.CrossSystem;
-import org.jdownloader.gui.views.components.linktable.LinkTable;
+import org.jdownloader.gui.views.components.packagetable.PackageControllerTable;
 import org.jdownloader.gui.views.downloads.context.CheckStatusAction;
 import org.jdownloader.gui.views.downloads.context.CopyPasswordAction;
 import org.jdownloader.gui.views.downloads.context.CopyURLAction;
@@ -40,10 +42,9 @@ import org.jdownloader.gui.views.downloads.context.ResumeAction;
 import org.jdownloader.gui.views.downloads.context.SetPasswordAction;
 import org.jdownloader.gui.views.downloads.context.StopsignAction;
 
-public class LinkGrabberTable extends LinkTable {
+public class LinkGrabberTable extends PackageControllerTable<CrawledPackageInfo, CrawledLinkInfo> {
 
-    private static final long     serialVersionUID = 8843600834248098174L;
-    private LinkGrabberTableModel tableModel       = null;
+    private static final long serialVersionUID = 8843600834248098174L;
 
     public LinkGrabberTable(final LinkGrabberTableModel tableModel) {
         super(tableModel);
@@ -57,7 +58,8 @@ public class LinkGrabberTable extends LinkTable {
 
     @Override
     protected boolean onShortcutDelete(final ArrayList<AbstractNode> selectedObjects, final KeyEvent evt, final boolean direct) {
-        new DeleteAction(getAllDownloadLinks(selectedObjects), direct).actionPerformed(null);
+        // new DeleteAction(getAllDownloadLinks(selectedObjects),
+        // direct).actionPerformed(null);
         return true;
     }
 
@@ -70,7 +72,7 @@ public class LinkGrabberTable extends LinkTable {
      * @param sfp
      * @return
      */
-    @Override
+
     protected RatedMenuController createMenuItems(AbstractNode obj, int col, ArrayList<DownloadLink> alllinks, ArrayList<FilePackage> sfp) {
 
         final RatedMenuController ret = new RatedMenuController();

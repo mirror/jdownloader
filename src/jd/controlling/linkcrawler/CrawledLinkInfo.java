@@ -10,9 +10,26 @@ import org.jdownloader.gui.views.linkgrabber.addlinksdialog.CrawlerJob;
 
 public class CrawledLinkInfo implements AbstractPackageChildrenNode<CrawledPackageInfo>, CheckableLink {
 
-    private CrawledPackageInfo parent    = null;
-    private PluginForDecrypt   dPlugin   = null;
-    private CrawlerJob         sourceJob = null;
+    private CrawledPackageInfo parent      = null;
+    private PluginForDecrypt   dPlugin     = null;
+    private CrawlerJob         sourceJob   = null;
+    private long               created     = -1;
+    private boolean            isDupeAllow = false;
+
+    /**
+     * @return the isDupeAllow
+     */
+    public boolean isDupeAllow() {
+        return isDupeAllow;
+    }
+
+    /**
+     * @param isDupeAllow
+     *            the isDupeAllow to set
+     */
+    public void setDupeAllow(boolean isDupeAllow) {
+        this.isDupeAllow = isDupeAllow;
+    }
 
     /**
      * @return the sourceJob
@@ -132,7 +149,11 @@ public class CrawledLinkInfo implements AbstractPackageChildrenNode<CrawledPacka
     }
 
     public long getCreated() {
-        return 0;
+        return created;
+    }
+
+    protected void setCreated(long created) {
+        this.created = created;
     }
 
     public long getFinishedDate() {

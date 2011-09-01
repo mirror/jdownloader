@@ -30,9 +30,9 @@ import javax.swing.ImageIcon;
 import jd.HostPluginWrapper;
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
-import jd.controlling.DownloadController;
 import jd.controlling.FavIconController;
 import jd.controlling.FavIconRequestor;
+import jd.controlling.IOPermission;
 import jd.controlling.JDLogger;
 import jd.controlling.JDPluginLogger;
 import jd.controlling.SingleDownloadController;
@@ -62,6 +62,8 @@ import org.jdownloader.translate._JDT;
  * @author astaldo
  */
 public abstract class PluginForHost extends Plugin implements FavIconRequestor {
+
+    private IOPermission ioPermission = null;
 
     public PluginForHost(final PluginWrapper wrapper) {
         super(wrapper);
@@ -121,7 +123,6 @@ public abstract class PluginForHost extends Plugin implements FavIconRequestor {
     protected String getCaptchaCode(final String method, final File file, final int flag, final DownloadLink link, final String defaultValue, final String explain) throws PluginException {
         final LinkStatus linkStatus = link.getLinkStatus();
         final String status = linkStatus.getStatusText();
-        final DownloadController downloadController = DownloadController.getInstance();
         try {
             linkStatus.addStatus(LinkStatus.WAITING_USERIO);
             linkStatus.setStatusText(_JDT._.gui_downloadview_statustext_jac());
@@ -131,16 +132,15 @@ public abstract class PluginForHost extends Plugin implements FavIconRequestor {
             } catch (Exception e) {
                 e.printStackTrace();
             }
-            downloadController.fireDataUpdate(link);
-
-            final String cc = new CaptchaController(this.getInitTime(), getHost(), method, file, defaultValue, explain).getCode(flag);
+            link.requestGuiUpdate();
+            final String cc = new CaptchaController(ioPermission, getHost(), method, file, defaultValue, explain).getCode(flag);
             if (cc == null) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             return cc;
         } finally {
             linkStatus.removeStatus(LinkStatus.WAITING_USERIO);
             linkStatus.setStatusText(status);
             linkStatus.setStatusIcon(null);
-            downloadController.fireDataUpdate(link);
+            link.requestGuiUpdate();
         }
     }
 
@@ -900,6 +900,21 @@ public abstract class PluginForHost extends Plugin implements FavIconRequestor {
     /* if this function needs a browser, it must create an instance on its own */
     public boolean rewriteHost(DownloadLink link) {
         return false;
+    }
+
+    /**
+     * @param ioPermission
+     *            the ioPermission to set
+     */
+    public void setIOPermission(IOPermission ioPermission) {
+        this.ioPermission = ioPermission;
+    }
+
+    /**
+     * @return the ioPermission
+     */
+    public IOPermission getIOPermission() {
+        return ioPermission;
     }
 
 }

@@ -1,16 +1,25 @@
 package org.jdownloader.gui.views.linkgrabber;
 
+import java.util.ArrayList;
+
+import javax.swing.Icon;
+
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcrawler.CrawledLinkInfo;
 import jd.controlling.linkcrawler.CrawledPackageInfo;
-import jd.controlling.packagecontroller.PackageControllerTableModel;
+import jd.controlling.packagecontroller.AbstractNode;
 
+import org.appwork.swing.exttable.ExtColumn;
+import org.appwork.swing.exttable.ExtTableModel;
+import org.appwork.utils.logging.Log;
+import org.jdownloader.gui.views.components.packagetable.PackageControllerTableModel;
 import org.jdownloader.gui.views.downloads.columns.FileColumn;
 import org.jdownloader.gui.views.downloads.columns.SizeColumn;
 
 public class LinkGrabberTableModel extends PackageControllerTableModel<CrawledPackageInfo, CrawledLinkInfo> {
 
-    private static final long serialVersionUID = -198189279671615981L;
+    private static final long   serialVersionUID      = -198189279671615981L;
+    private static final String SORT_LINKGRABBERORDER = "LINKGRABBER";
 
     public LinkGrabberTableModel() {
         super(LinkCollector.getInstance(), "LinkGrabberTableModel");
@@ -171,15 +180,71 @@ public class LinkGrabberTableModel extends PackageControllerTableModel<CrawledPa
      * we want to return to default sort after each start
      */
     protected boolean isSortStateSaverEnabled() {
-        return true;
+        return false;
     }
 
     // /**
     // * @return
     // */
-    // protected ExtColumn<PackageLinkNode> getDefaultSortColumn() {
-    // downloadOrder.setSortOrderIdentifier(ExtColumn.SORT_DESC);
-    // return downloadOrder;
-    // }
+    protected ExtColumn<AbstractNode> getDefaultSortColumn() {
+        return null;
+    }
+
+    @Override
+    public String getNextSortIdentifier(String sortOrderIdentifier) {
+        if (sortOrderIdentifier == null || sortOrderIdentifier.equals(ExtColumn.SORT_ASC)) {
+            return ExtColumn.SORT_DESC;
+        } else if (sortOrderIdentifier.equals(ExtColumn.SORT_DESC)) {
+            return SORT_LINKGRABBERORDER;
+        } else {
+            return ExtColumn.SORT_ASC;
+        }
+    }
+
+    public Icon getSortIcon(String sortOrderIdentifier) {
+        if (SORT_LINKGRABBERORDER.equals(sortOrderIdentifier)) { return null; }
+        return super.getSortIcon(sortOrderIdentifier);
+    }
+
+    /*
+     * we override sort to have a better sorting of packages/files, to keep
+     * their structure alive,data is only used to specify the size of the new
+     * ArrayList
+     */
+    @Override
+    public ArrayList<AbstractNode> sort(final ArrayList<AbstractNode> data, ExtColumn<AbstractNode> column) {
+        if (column == null || column.getSortOrderIdentifier() == SORT_LINKGRABBERORDER) {
+            this.sortColumn = null;
+            try {
+                getStorage().put(ExtTableModel.SORT_ORDER_ID_KEY, (String) null);
+                getStorage().put(ExtTableModel.SORTCOLUMN_KEY, (String) null);
+            } catch (final Exception e) {
+                Log.exception(e);
+            }
+            ArrayList<AbstractNode> packages = null;
+            final boolean readL = pc.readLock();
+            try {
+                /* get all packages from controller */
+                packages = new ArrayList<AbstractNode>(pc.size());
+                packages.addAll(pc.getPackages());
+            } finally {
+                pc.readUnlock(readL);
+            }
+            ArrayList<AbstractNode> newData = new ArrayList<AbstractNode>(Math.max(data.size(), packages.size()));
+            for (AbstractNode node : packages) {
+                newData.add(node);
+                if (!((CrawledPackageInfo) node).isExpanded()) continue;
+                ArrayList<AbstractNode> files = null;
+                synchronized (node) {
+                    files = new ArrayList<AbstractNode>(((CrawledPackageInfo) node).getChildren());
+                }
+                newData.addAll(files);
+            }
+            return newData;
+
+        } else {
+            return super.sort(data, column);
+        }
+    }
 
 }

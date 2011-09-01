@@ -6,13 +6,13 @@ import javax.swing.Icon;
 
 import jd.controlling.DownloadController;
 import jd.controlling.packagecontroller.AbstractNode;
-import jd.controlling.packagecontroller.PackageControllerTableModel;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
 import org.appwork.swing.exttable.ExtColumn;
 import org.appwork.swing.exttable.ExtTableModel;
 import org.appwork.utils.logging.Log;
+import org.jdownloader.gui.views.components.packagetable.PackageControllerTableModel;
 import org.jdownloader.gui.views.downloads.columns.AddedDateColumn;
 import org.jdownloader.gui.views.downloads.columns.ConnectionColumn;
 import org.jdownloader.gui.views.downloads.columns.ETAColumn;
@@ -125,13 +125,13 @@ public class DownloadsTableModel extends PackageControllerTableModel<FilePackage
                 Log.exception(e);
             }
             ArrayList<AbstractNode> packages = null;
-            final boolean readL = DownloadController.getInstance().readLock();
+            final boolean readL = pc.readLock();
             try {
                 /* get all packages from controller */
-                packages = new ArrayList<AbstractNode>(DownloadController.getInstance().size());
-                packages.addAll(DownloadController.getInstance().getPackages());
+                packages = new ArrayList<AbstractNode>(pc.size());
+                packages.addAll(pc.getPackages());
             } finally {
-                DownloadController.getInstance().readUnlock(readL);
+                pc.readUnlock(readL);
             }
             ArrayList<AbstractNode> newData = new ArrayList<AbstractNode>(Math.max(data.size(), packages.size()));
             for (AbstractNode node : packages) {

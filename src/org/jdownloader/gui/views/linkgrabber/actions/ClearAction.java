@@ -2,6 +2,8 @@ package org.jdownloader.gui.views.linkgrabber.actions;
 
 import java.awt.event.ActionEvent;
 
+import jd.controlling.linkcollector.LinkCollector;
+
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
@@ -19,6 +21,7 @@ public class ClearAction extends AppAction {
 
         try {
             Dialog.getInstance().showConfirmDialog(0, _GUI._.ClearAction_actionPerformed_(), _GUI._.ClearAction_actionPerformed_msg(), null, _GUI._.literally_yes(), _GUI._.literall_no());
+            LinkCollector.getInstance().clear();
         } catch (DialogClosedException e1) {
             e1.printStackTrace();
         } catch (DialogCanceledException e1) {

@@ -1,18 +1,22 @@
 package jd.controlling.linkcollector;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
+import jd.controlling.IOEQ;
 import jd.controlling.linkchecker.LinkChecker;
 import jd.controlling.linkchecker.LinkCheckerHandler;
 import jd.controlling.linkcrawler.CrawledLinkInfo;
 import jd.controlling.linkcrawler.CrawledPackageInfo;
 import jd.controlling.linkcrawler.LinkCrawler;
-import jd.controlling.linkcrawler.LinkCrawlerFinalLinkHandler;
+import jd.controlling.linkcrawler.LinkCrawlerHandler;
 import jd.controlling.packagecontroller.PackageController;
 
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.event.Eventsender;
+import org.appwork.utils.event.queue.QueueAction;
 import org.jdownloader.gui.views.linkgrabber.addlinksdialog.CrawlerJob;
 
 public class LinkCollector extends PackageController<CrawledPackageInfo, CrawledLinkInfo> implements LinkCheckerHandler<CrawledLinkInfo> {
@@ -26,8 +30,18 @@ public class LinkCollector extends PackageController<CrawledPackageInfo, Crawled
                                                                                          };
 
     private static LinkCollector                                             INSTANCE    = new LinkCollector();
-    private CrawledPackageInfo                                               dummy       = new CrawledPackageInfo();
     private LinkChecker<CrawledLinkInfo>                                     linkChecker = null;
+    private AtomicInteger                                                    collStarts  = new AtomicInteger(0);
+    private AtomicInteger                                                    collStops   = new AtomicInteger(0);
+
+    private class dupeCheck {
+        int counter = 1;
+    }
+
+    /**
+     * NOTE: only access this inside the IOEQ
+     */
+    private HashMap<String, dupeCheck> dupeMap = new HashMap<String, dupeCheck>();
 
     public static LinkCollector getInstance() {
         return INSTANCE;
@@ -39,7 +53,7 @@ public class LinkCollector extends PackageController<CrawledPackageInfo, Crawled
     }
 
     public boolean isRunning() {
-        return linkChecker.isRunning();
+        return collStarts.get() > collStops.get();
     }
 
     public void addListener(final LinkCollectorListener l) {
@@ -52,6 +66,16 @@ public class LinkCollector extends PackageController<CrawledPackageInfo, Crawled
 
     @Override
     protected void _controllerParentlessLinks(List<CrawledLinkInfo> links) {
+        for (CrawledLinkInfo link : links) {
+            /* update dupeMap */
+            dupeCheck dupes = dupeMap.get(link.getURL());
+            if (dupes != null) {
+                dupes.counter--;
+                if (dupes.counter <= 0) {
+                    dupeMap.remove(link.getURL());
+                }
+            }
+        }
         broadcaster.fireEvent(new LinkCollectorEvent(LinkCollector.this, LinkCollectorEvent.TYPE.REMOVE_CONTENT, links));
     }
 
@@ -74,17 +98,33 @@ public class LinkCollector extends PackageController<CrawledPackageInfo, Crawled
         if (job == null) throw new IllegalArgumentException("job is null");
         LinkCrawler lc = new LinkCrawler();
         if (JsonConfig.create(LinkCollectorConfig.class).getDoLinkCheck()) {
-            lc.setFinalLinkHandler(new LinkCrawlerFinalLinkHandler() {
+            lc.setHandler(new LinkCrawlerHandler() {
                 public void handleFinalLink(CrawledLinkInfo link) {
                     link.setSourceJob(job);
                     linkChecker.check(link);
                 }
+
+                public void linkCrawlerStarted() {
+                    checkRunningState(true);
+                }
+
+                public void linkCrawlerStopped() {
+                    checkRunningState(false);
+                }
             });
         } else {
-            lc.setFinalLinkHandler(new LinkCrawlerFinalLinkHandler() {
+            lc.setHandler(new LinkCrawlerHandler() {
                 public void handleFinalLink(CrawledLinkInfo link) {
                     link.setSourceJob(job);
-                    testAdd(link);
+                    addCrawledLink(link);
+                }
+
+                public void linkCrawlerStarted() {
+                    checkRunningState(true);
+                }
+
+                public void linkCrawlerStopped() {
+                    checkRunningState(false);
                 }
             });
         }
@@ -102,21 +142,118 @@ public class LinkCollector extends PackageController<CrawledPackageInfo, Crawled
     }
 
     public void linkCheckDone(CrawledLinkInfo link) {
-        testAdd(link);
-    }
-
-    private void testAdd(CrawledLinkInfo link) {
-        ArrayList<CrawledLinkInfo> add = new ArrayList<CrawledLinkInfo>(1);
-        add.add(link);
-        LinkCollector.this.addmoveChildren(dummy, add, -1);
+        addCrawledLink(link);
     }
 
     public void linkCheckStarted() {
-        broadcaster.fireEvent(new LinkCollectorEvent(LinkCollector.this, LinkCollectorEvent.TYPE.COLLECTOR_START));
+        checkRunningState(true);
     }
 
     public void linkCheckStopped() {
-        broadcaster.fireEvent(new LinkCollectorEvent(LinkCollector.this, LinkCollectorEvent.TYPE.COLLECTOR_STOP));
+        checkRunningState(false);
+    }
+
+    private void addCrawledLink(final CrawledLinkInfo link) {
+        if (link.getParentNode() != null) {
+
+        } else {
+            /* try to find good matching package or create new one */
+            final String packageName = LinknameCleaner.cleanFileName(link.getName());
+            IOEQ.getQueue().add(new QueueAction<Void, RuntimeException>() {
+
+                @Override
+                protected Void run() throws RuntimeException {
+                    /* update dupeCheck map */
+                    if (!link.isDupeAllow() && dupeMap.containsKey(link.getURL())) {
+                        System.out.println("dupe detected:" + link.getURL());
+                        return null;
+                    } else {
+                        dupeCheck dupes = dupeMap.get(link.getURL());
+                        if (dupes == null) {
+                            dupes = new dupeCheck();
+                            /* counter is already 1 here */
+                            dupeMap.put(link.getURL(), dupes);
+                        } else {
+                            /* increase counter */
+                            dupes.counter++;
+                        }
+                    }
+                    String name = packageName;
+                    int bestMatch = 0;
+                    CrawledPackageInfo bestPackage = null;
+                    boolean readL = readLock();
+                    try {
+                        for (CrawledPackageInfo pkg : packages) {
+                            int sim = LinknameCleaner.comparepackages(pkg.getAutoPackageName(), name);
+                            if (sim > bestMatch) {
+                                bestMatch = sim;
+                                bestPackage = pkg;
+                            }
+                        }
+                    } finally {
+                        readUnlock(readL);
+                    }
+                    if (bestMatch < 99 || bestPackage == null) {
+                        /* create new Package */
+                        bestPackage = new CrawledPackageInfo();
+                    } else {
+                        /* rename existing one */
+                        name = getSimString(bestPackage.getAutoPackageName(), name);
+                    }
+                    bestPackage.setAutoPackageName(name);
+                    /* add link to LinkCollector */
+                    List<CrawledLinkInfo> add = new ArrayList<CrawledLinkInfo>(1);
+                    add.add(link);
+                    LinkCollector.this.addmoveChildren(bestPackage, add, -1);
+                    return null;
+                }
+            });
+        }
+    }
+
+    private String getSimString(String a, String b) {
+        String aa = a.toLowerCase();
+        String bb = b.toLowerCase();
+        StringBuilder ret = new StringBuilder();
+        for (int i = 0; i < Math.min(aa.length(), bb.length()); i++) {
+            if (aa.charAt(i) == bb.charAt(i)) {
+                ret.append(a.charAt(i));
+            }
+        }
+        return ret.toString();
+    }
+
+    public void clear() {
+        IOEQ.getQueue().add(new QueueAction<Void, RuntimeException>() {
+
+            @Override
+            protected Void run() throws RuntimeException {
+                ArrayList<CrawledPackageInfo> clearList = null;
+                writeLock();
+                try {
+                    clearList = new ArrayList<CrawledPackageInfo>(packages);
+                } finally {
+                    writeUnlock();
+                }
+                for (CrawledPackageInfo pkg : clearList) {
+                    LinkCollector.this.removePackage(pkg);
+                }
+                return null;
+            }
+        });
+    }
+
+    private void checkRunningState(boolean start) {
+        if (start) {
+            this.collStarts.incrementAndGet();
+        } else {
+            this.collStops.incrementAndGet();
+        }
+        if (this.collStarts.get() == this.collStops.get()) {
+            broadcaster.fireEvent(new LinkCollectorEvent(LinkCollector.this, LinkCollectorEvent.TYPE.COLLECTOR_STOP));
+        } else {
+            broadcaster.fireEvent(new LinkCollectorEvent(LinkCollector.this, LinkCollectorEvent.TYPE.COLLECTOR_START));
+        }
     }
 
 }

@@ -110,9 +110,6 @@ public class StatusColumn extends JDTableColumn {
                     statuspanel.setText(_GUI._.gui_linkgrabber_packageonlineall(), null);
                 }
             }
-            if (fp.hasCustomIcon()) {
-                statuspanel.setIcon(-1, fp.getCustomIcon(), null, fp.getCustomIconText());
-            }
             statuspanel.clearIcons(counter);
         } else if (value instanceof DownloadLink) {
             dLink = (DownloadLink) value;

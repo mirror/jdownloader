@@ -13,6 +13,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.DecryptPluginWrapper;
 import jd.HostPluginWrapper;
+import jd.controlling.IOPermission;
 import jd.http.Browser;
 import jd.parser.html.HTMLParser;
 import jd.plugins.DownloadLink;
@@ -23,18 +24,22 @@ import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Regex;
 import org.appwork.utils.logging.Log;
 
-public class LinkCrawler {
+public class LinkCrawler implements IOPermission {
 
     private static ArrayList<DecryptPluginWrapper> pDecrypts;
     private static ArrayList<HostPluginWrapper>    pHosts;
     private static PluginForHost                   directHTTP              = null;
     private ArrayList<CrawledLinkInfo>             crawledLinks            = new ArrayList<CrawledLinkInfo>();
     private AtomicInteger                          crawledLinksCounter     = new AtomicInteger(0);
-    public AtomicInteger                           crawler                 = new AtomicInteger(0);
+    private AtomicInteger                          crawler                 = new AtomicInteger(0);
     private HashSet<String>                        duplicateFinder         = new HashSet<String>();
-    private LinkCrawlerFinalLinkHandler            finalLinkHandler        = null;
-    private LinkCrawlerFinalLinkHandler            defaultFinalLinkHandler = null;
+    private LinkCrawlerHandler                     handler                 = null;
+    private LinkCrawlerHandler                     defaultFinalLinkHandler = null;
+    private long                                   createdDate             = -1;
     private static ThreadPoolExecutor              threadPool              = null;
+
+    private HashSet<String>                        captchaBlockedHoster    = new HashSet<String>();
+    private boolean                                captchaBlockedAll       = false;
 
     static {
         int maxThreads = Math.max(JsonConfig.create(LinkCrawlerConfig.class).getMaxThreads(), 1);
@@ -86,8 +91,9 @@ public class LinkCrawler {
     }
 
     public LinkCrawler() {
-        defaultFinalLinkHandler = defaultFinalLinkHandlerFactory();
-        setFinalLinkHandler(defaultFinalLinkHandler);
+        defaultFinalLinkHandler = defaulHandlerFactory();
+        setHandler(defaultFinalLinkHandler);
+        this.createdDate = System.currentTimeMillis();
     }
 
     public void crawlNormal(String text) {
@@ -127,7 +133,7 @@ public class LinkCrawler {
             /*
              * enqueue this cryptedLink for decrypting
              */
-            crawler.incrementAndGet();
+            checkStartNotify();
             threadPool.execute(new LinkCrawlerRunnable(LinkCrawler.this) {
                 public void run() {
                     try {
@@ -156,7 +162,7 @@ public class LinkCrawler {
             /*
              * enqueue this cryptedLink for decrypting
              */
-            crawler.incrementAndGet();
+            checkStartNotify();
             threadPool.execute(new LinkCrawlerRunnable(LinkCrawler.this) {
                 public void run() {
                     try {
@@ -191,7 +197,7 @@ public class LinkCrawler {
                 /*
                  * enqueue this cryptedLink for decrypting
                  */
-                crawler.incrementAndGet();
+                checkStartNotify();
                 threadPool.execute(new LinkCrawlerRunnable(LinkCrawler.this) {
                     public void run() {
                         try {
@@ -218,21 +224,37 @@ public class LinkCrawler {
      * cleanup DuplicateFinder
      */
     private void checkFinishNotify() {
-        if (crawler.decrementAndGet() == 0) {
-            synchronized (crawler) {
-                crawler.notifyAll();
-            }
-            /*
-             * all tasks are done , we can now cleanup our duplicateFinder
-             */
-            synchronized (duplicateFinder) {
-                duplicateFinder.clear();
+        boolean stopped = false;
+        synchronized (this) {
+            if (crawler.decrementAndGet() == 0) {
+                synchronized (crawler) {
+                    crawler.notifyAll();
+                }
+                /*
+                 * all tasks are done , we can now cleanup our duplicateFinder
+                 */
+                synchronized (duplicateFinder) {
+                    duplicateFinder.clear();
+                }
+                stopped = true;
             }
         }
+        if (stopped) handler.linkCrawlerStopped();
+    }
+
+    private void checkStartNotify() {
+        boolean started = false;
+        synchronized (this) {
+            if (crawler.get() == 0) {
+                started = true;
+            }
+            crawler.incrementAndGet();
+        }
+        if (started) handler.linkCrawlerStarted();
     }
 
     protected void crawlDeeper(String url) {
-        crawler.incrementAndGet();
+        checkStartNotify();
         try {
             Browser br = new Browser();
             try {
@@ -272,7 +294,7 @@ public class LinkCrawler {
     }
 
     protected void distribute(ArrayList<CrawledLinkInfo> possibleCryptedLinks) {
-        crawler.incrementAndGet();
+        checkStartNotify();
         try {
             if (possibleCryptedLinks == null || possibleCryptedLinks.size() == 0) return;
             mainloop: for (final CrawledLinkInfo possibleCryptedLink : possibleCryptedLinks) {
@@ -318,7 +340,7 @@ public class LinkCrawler {
                                              * enqueue this cryptedLink for
                                              * decrypting
                                              */
-                                            crawler.incrementAndGet();
+                                            checkStartNotify();
                                             threadPool.execute(new LinkCrawlerRunnable(LinkCrawler.this) {
                                                 public void run() {
                                                     try {
@@ -420,11 +442,12 @@ public class LinkCrawler {
     }
 
     protected void crawl(CrawledLinkInfo cryptedLink) {
-        crawler.incrementAndGet();
+        checkStartNotify();
         try {
             if (cryptedLink == null || cryptedLink.getdPlugin() == null || cryptedLink.getCryptedLink() == null) return;
             /* we have to create new plugin instance here */
             PluginForDecrypt plg = cryptedLink.getdPlugin().getWrapper().getNewPluginInstance();
+            plg.setIOPermission(this);
             plg.setBrowser(new Browser());
             /* now we run the plugin and let it find some links */
             LinkCrawlerThread lct = null;
@@ -468,20 +491,26 @@ public class LinkCrawler {
     }
 
     protected void handleFinalLink(CrawledLinkInfo link) {
+        link.setCreated(createdDate);
+        if (link.getDownloadLink() != null && link.getDownloadLink().getBooleanProperty("ALLOW_DUPE", false)) {
+            /* forward dupeAllow info from DownloadLink to CrawledLinkInfo */
+            link.getDownloadLink().getProperties().remove("ALLOW_DUPE");
+            link.setDupeAllow(true);
+        }
         crawledLinksCounter.incrementAndGet();
-        finalLinkHandler.handleFinalLink(link);
+        handler.handleFinalLink(link);
     }
 
     public int crawledLinksFound() {
         return crawledLinksCounter.get();
     }
 
-    public LinkCrawlerFinalLinkHandler getDefaultFinalLinkHandler() {
+    public LinkCrawlerHandler getDefaultHandler() {
         return defaultFinalLinkHandler;
     }
 
-    protected LinkCrawlerFinalLinkHandler defaultFinalLinkHandlerFactory() {
-        return new LinkCrawlerFinalLinkHandler() {
+    protected LinkCrawlerHandler defaulHandlerFactory() {
+        return new LinkCrawlerHandler() {
 
             public void handleFinalLink(CrawledLinkInfo link) {
                 if (link == null) return;
@@ -489,15 +518,45 @@ public class LinkCrawler {
                     crawledLinks.add(link);
                 }
             }
+
+            public void linkCrawlerStarted() {
+            }
+
+            public void linkCrawlerStopped() {
+            }
         };
     }
 
-    public void setFinalLinkHandler(LinkCrawlerFinalLinkHandler handler) {
+    public void setHandler(LinkCrawlerHandler handler) {
         if (handler == null) throw new IllegalArgumentException("handler is null");
-        this.finalLinkHandler = handler;
+        this.handler = handler;
     }
 
-    public LinkCrawlerFinalLinkHandler getFinalLinkHandler() {
-        return this.finalLinkHandler;
+    public LinkCrawlerHandler getHandler() {
+        return this.handler;
+    }
+
+    public synchronized boolean isCaptchaAllowed(String hoster) {
+        if (captchaBlockedAll) return false;
+        return !captchaBlockedHoster.contains(hoster);
+    }
+
+    public synchronized void setCaptchaAllowed(String hoster, CAPTCHA mode) {
+        switch (mode) {
+        case OK:
+            if (hoster != null) {
+                captchaBlockedHoster.remove(hoster);
+            } else {
+                captchaBlockedHoster.clear();
+                captchaBlockedAll = false;
+            }
+            break;
+        case BLOCKALL:
+            captchaBlockedAll = true;
+            break;
+        case BLOCKHOSTER:
+            captchaBlockedHoster.add(hoster);
+            break;
+        }
     }
 }

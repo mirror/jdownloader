@@ -91,8 +91,6 @@ public class PackageCustomizerExtension extends AbstractExtension<PackageCustomi
             fp.add(link);
             link.setPriority(setting.getDLPriority());
 
-            fp.setCustomIcon(getIcon(16), String.format(customIconText, setting.getRegex()));
-
             setting.incMatchCount();
         } else {
             ctrl.attachToPackagesSecondStageInternal(link);

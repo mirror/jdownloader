@@ -472,45 +472,6 @@ public class LinkGrabberFilePackage extends Property implements LinkGrabberFileP
     }
 
     /**
-     * @return the customIcon
-     * @see #customIcon
-     * @see #setCustomIcon(ImageIcon, String)
-     */
-    public ImageIcon getCustomIcon() {
-        return customIcon;
-    }
-
-    /**
-     * @return the customIconText
-     * @see #customIconText
-     * @see #setCustomIcon(ImageIcon, String)
-     */
-    public String getCustomIconText() {
-        return customIconText;
-    }
-
-    /**
-     * @param customIcon
-     *            the customIcon to set
-     * @param customIconText
-     *            the customIconText to set
-     * @see #customIcon
-     * @see #getCustomIcon()
-     */
-    public void setCustomIcon(ImageIcon customIcon, String customIconText) {
-        this.customIcon = customIcon;
-        this.customIconText = customIconText;
-    }
-
-    /**
-     * @return is a custom icon set?
-     * @see #setCustomIcon(ImageIcon, String)
-     */
-    public boolean hasCustomIcon() {
-        return this.customIcon != null && this.customIconText != null;
-    }
-
-    /**
      * Cheks if this package contains splitted archives. if yes, this methods
      * tries to check whether the archive iscomplete.
      * 

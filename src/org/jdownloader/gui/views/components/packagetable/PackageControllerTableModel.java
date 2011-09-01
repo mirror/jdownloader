@@ -1,9 +1,14 @@
-package jd.controlling.packagecontroller;
+package org.jdownloader.gui.views.components.packagetable;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+
+import jd.controlling.packagecontroller.AbstractNode;
+import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
+import jd.controlling.packagecontroller.AbstractPackageNode;
+import jd.controlling.packagecontroller.PackageController;
 
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.swing.exttable.ExtColumn;
@@ -23,18 +28,16 @@ public abstract class PackageControllerTableModel<E extends AbstractPackageNode<
         BOTTOM
     }
 
-    private DelayedRunnable                          asyncRefresh;
-    private PackageController<E, V>                  pc;
-    private DelayedRunnable                          asyncRecreate = null;
+    private DelayedRunnable             asyncRefresh;
+    protected PackageController<E, V>   pc;
+    private DelayedRunnable             asyncRecreate = null;
 
-    private final static ScheduledThreadPoolExecutor queue         = new ScheduledThreadPoolExecutor(1);
-    static {
-        queue.setKeepAliveTime(10000, TimeUnit.MILLISECONDS);
-        queue.allowCoreThreadTimeOut(true);
-    }
+    private ScheduledThreadPoolExecutor queue         = new ScheduledThreadPoolExecutor(1);
 
     public PackageControllerTableModel(PackageController<E, V> pc, String id) {
         super(id);
+        queue.setKeepAliveTime(10000, TimeUnit.MILLISECONDS);
+        queue.allowCoreThreadTimeOut(true);
         this.pc = pc;
         asyncRefresh = new DelayedRunnable(queue, 150l, 250l) {
             @Override
@@ -58,6 +61,10 @@ public abstract class PackageControllerTableModel<E extends AbstractPackageNode<
 
     }
 
+    public ScheduledThreadPoolExecutor getThreadPool() {
+        return queue;
+    }
+
     public void recreateModel() {
         asyncRecreate.run();
     }
@@ -66,7 +73,7 @@ public abstract class PackageControllerTableModel<E extends AbstractPackageNode<
         asyncRefresh.run();
     }
 
-    public void toggleFilePackageExpand(final E fp2, final TOGGLEMODE mode) {
+    public void toggleFilePackageExpand(final AbstractPackageNode fp2, final TOGGLEMODE mode) {
         queue.execute(new Runnable() {
             public void run() {
                 final boolean cur = !fp2.isExpanded();
@@ -85,7 +92,7 @@ public abstract class PackageControllerTableModel<E extends AbstractPackageNode<
                 if (mode != TOGGLEMODE.CURRENT) {
                     final boolean readL = pc.readLock();
                     try {
-                        for (E fp : pc.packages) {
+                        for (E fp : pc.getPackages()) {
 
                             if (doToggle) {
                                 fp.setExpanded(cur);
@@ -135,7 +142,7 @@ public abstract class PackageControllerTableModel<E extends AbstractPackageNode<
         try {
             /* get all packages from controller */
             packages = new ArrayList<AbstractNode>(pc.size());
-            packages.addAll(pc.packages);
+            packages.addAll(pc.getPackages());
         } finally {
             pc.readUnlock(readL);
         }

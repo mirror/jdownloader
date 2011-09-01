@@ -5,6 +5,8 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
+import jd.controlling.IOPermission;
+import jd.controlling.IOPermission.CAPTCHA;
 import jd.gui.UserIO;
 import jd.gui.swing.dialog.CaptchaDialog;
 
@@ -31,11 +33,13 @@ public class CaptchaDialogQueueEntry extends QueueAction<String, RuntimeExceptio
     private final CaptchaController captchaController;
     private final int               flag;
     private final String            def;
-    private String                  resp = null;
+    private String                  resp         = null;
     private CaptchaDialog           dialog;
+    private IOPermission            ioPermission = null;
 
     public CaptchaDialogQueueEntry(CaptchaController captchaController, int flag, String def) {
         this.captchaController = captchaController;
+        this.ioPermission = captchaController.getIOPermission();
         this.flag = flag;
         this.def = def;
         this.ID = IDCounter.incrementAndGet();
@@ -68,9 +72,10 @@ public class CaptchaDialogQueueEntry extends QueueAction<String, RuntimeExceptio
     }
 
     private String viaGUI() {
+        if (ioPermission != null && ioPermission.isCaptchaAllowed(getHost())) { return null; }
         UserIO.setCountdownTime(SubConfiguration.getConfig("JAC").getIntegerProperty(Configuration.JAC_SHOW_TIMEOUT, 20));
         try {
-            this.dialog = new CaptchaDialog(flag | Dialog.LOGIC_COUNTDOWN, captchaController.getHost(), captchaController.getCaptchafile(), def, captchaController.getExplain());
+            this.dialog = new CaptchaDialog(flag | Dialog.LOGIC_COUNTDOWN, getHost(), captchaController.getCaptchafile(), def, captchaController.getExplain());
             return Dialog.getInstance().showDialog(dialog);
         } catch (DialogNoAnswerException e) {
             if (resp == null) {
@@ -86,11 +91,15 @@ public class CaptchaDialogQueueEntry extends QueueAction<String, RuntimeExceptio
                             JSonStorage.getPlainStorage("CaptchaController").put("lastCancelOption", 0);
                             break;
                         case 1:
-                            CaptchaDialogQueue.getInstance().blockByHost(captchaController.getHost());
+                            if (ioPermission != null) {
+                                ioPermission.setCaptchaAllowed(getHost(), CAPTCHA.BLOCKHOSTER);
+                            }
                             JSonStorage.getPlainStorage("CaptchaController").put("lastCancelOption", 1);
                             break;
                         case 2:
-                            CaptchaDialogQueue.getInstance().blockAll();
+                            if (ioPermission != null) {
+                                ioPermission.setCaptchaAllowed(null, CAPTCHA.BLOCKALL);
+                            }
                             JSonStorage.getPlainStorage("CaptchaController").put("lastCancelOption", 2);
                             break;
                         }
@@ -108,8 +117,8 @@ public class CaptchaDialogQueueEntry extends QueueAction<String, RuntimeExceptio
         return null;
     }
 
-    public long getInitTime() {
-        return this.captchaController.getInitTime();
+    public IOPermission getIOPermission() {
+        return ioPermission;
     }
 
 }

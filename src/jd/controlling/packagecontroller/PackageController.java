@@ -315,4 +315,8 @@ public abstract class PackageController<E extends AbstractPackageNode<V, E>, V e
     public void writeUnlock() {
         this.writeLock.unlock();
     }
+
+    public LinkedList<E> getPackages() {
+        return packages;
+    }
 }

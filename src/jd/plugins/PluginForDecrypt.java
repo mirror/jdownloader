@@ -20,12 +20,12 @@ import java.awt.Color;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.logging.Level;
 
 import jd.DecryptPluginWrapper;
 import jd.PluginWrapper;
 import jd.captcha.easy.load.LoadImage;
+import jd.controlling.IOPermission;
 import jd.controlling.JDLogger;
 import jd.controlling.JDPluginLogger;
 import jd.controlling.ProgressController;
@@ -45,16 +45,23 @@ import org.jdownloader.translate._JDT;
  * @author astaldo
  */
 public abstract class PluginForDecrypt extends Plugin {
+
+    private IOPermission ioPermission = null;
+
     /**
-     * timestamp when user last used the "do not show further captchas" option
-     * after canceling a captcha dialog
+     * @return the ioPermission
      */
-    private static long                  ALL_BLOCK;
+    public IOPermission getIOPermission() {
+        return ioPermission;
+    }
+
     /**
-     * Store the timestamps when user decided to choose the
-     * "do not show further captchas of this host" after canceling a captcha
+     * @param ioPermission
+     *            the ioPermission to set
      */
-    private static HashMap<String, Long> HOST_BLOCK_MAP = new HashMap<String, Long>();
+    public void setIOPermission(IOPermission ioPermission) {
+        this.ioPermission = ioPermission;
+    }
 
     public PluginForDecrypt(PluginWrapper wrapper) {
         super(wrapper);
@@ -256,8 +263,12 @@ public abstract class PluginForDecrypt extends Plugin {
      */
     protected String getCaptchaCode(String method, File file, int flag, CryptedLink link, String defaultValue, String explain) throws DecrypterException {
         if (link.getProgressController() != null) link.getProgressController().setStatusText(_JDT._.gui_linkgrabber_waitinguserio2(method));
-        String cc = new CaptchaController(this.getInitTime(), getHost(), method, file, defaultValue, explain).getCode(flag);
-        if (link.getProgressController() != null) link.getProgressController().setStatusText(null);
+        String cc = null;
+        try {
+            cc = new CaptchaController(ioPermission, getHost(), method, file, defaultValue, explain).getCode(flag);
+        } finally {
+            if (link.getProgressController() != null) link.getProgressController().setStatusText(null);
+        }
         if (cc == null) throw new DecrypterException(DecrypterException.CAPTCHA);
         return cc;
     }
@@ -309,47 +320,6 @@ public abstract class PluginForDecrypt extends Plugin {
      */
     protected String getInitials() {
         return null;
-    }
-
-    /**
-     * aborts all decrypters for host which have been started until now
-     * 
-     * @param host
-     */
-    public static void abortQueuedByHost(String host) {
-        synchronized (HOST_BLOCK_MAP) {
-            HOST_BLOCK_MAP.put(host, System.currentTimeMillis());
-        }
-    }
-
-    /**
-     * Aborts all decrypter which have been initiated until now
-     */
-    public static void abortQueued() {
-        synchronized (HOST_BLOCK_MAP) {
-            ALL_BLOCK = System.currentTimeMillis();
-        }
-    }
-
-    /**
-     * checks if host decrypter has been aborted before initTime
-     * 
-     * @param initTime
-     * @param host
-     * @return
-     */
-    public static boolean isAborted(long initTime, String host) {
-        synchronized (HOST_BLOCK_MAP) {
-            // block dialog, because the rquest is older than the block
-            if (initTime < ALL_BLOCK) return true;
-            // bolc host request, becasue the requesting plugin is older than
-            // the
-            // block
-            Long hostBlockTime = HOST_BLOCK_MAP.get(host);
-
-            if (hostBlockTime != null && initTime < hostBlockTime) return true;
-            return false;
-        }
     }
 
 }

@@ -124,7 +124,7 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
 
     private JDMenuBar       menuBar;
 
-    private StatusBarImpl       statusBar;
+    private StatusBarImpl   statusBar;
     private MainTabbedPane  mainTabbedPane;
     private DownloadsView   downloadView;
 

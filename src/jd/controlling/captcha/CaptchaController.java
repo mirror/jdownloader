@@ -28,6 +28,7 @@ import jd.captcha.LetterComperator;
 import jd.captcha.pixelgrid.Captcha;
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
+import jd.controlling.IOPermission;
 import jd.gui.UserIO;
 
 public class CaptchaController {
@@ -41,18 +42,19 @@ public class CaptchaController {
     private final String               suggest;
     private final String               host;
 
-    private final long                 initTime;
     private CaptchaDialogQueueEntry    dialog         = null;
     private String                     response       = null;
 
-    public CaptchaController(long initTime, final String host, final String method, final File file, final String suggest, final String explain) {
+    private IOPermission               ioPermission   = null;
+
+    public CaptchaController(IOPermission ioPermission, final String host, final String method, final File file, final String suggest, final String explain) {
         this.id = captchaCounter.getAndIncrement();
         this.host = host;
         this.methodname = method;
         this.captchafile = file;
         this.explain = explain;
         this.suggest = suggest;
-        this.initTime = initTime;
+        this.ioPermission = ioPermission;
     }
 
     public int getId() {
@@ -77,10 +79,6 @@ public class CaptchaController {
 
     public String getHost() {
         return host;
-    }
-
-    public long getInitTime() {
-        return initTime;
     }
 
     /**
@@ -145,6 +143,10 @@ public class CaptchaController {
             CaptchaEventSender.getInstance().fireEvent(new CaptchaFinishEvent(this));
         }
         return response;
+    }
+
+    public IOPermission getIOPermission() {
+        return ioPermission;
     }
 
 }
