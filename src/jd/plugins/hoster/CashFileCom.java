@@ -402,9 +402,12 @@ public class CashFileCom extends PluginForHost {
         if (dllink == null) {
             dllink = new Regex(BRBEFORE, "dotted #bbb;padding.*?<a href=\"(.*?)\"").getMatch(0);
             if (dllink == null) {
-                dllink = new Regex(BRBEFORE, "This (direct link|download link) will be available for your IP.*?href=\"(http.*?)\"").getMatch(1);
+                dllink = new Regex(BRBEFORE, "\"(http://serv\\d+\\.cash\\-file\\.com/files/.*?)\"").getMatch(0);
                 if (dllink == null) {
                     dllink = new Regex(BRBEFORE, "Download: <a href=\"(.*?)\"").getMatch(0);
+                    if (dllink == null) {
+                        dllink = new Regex(BRBEFORE, "/images/filesave\\.png\" border=0 >\\&nbsp;<b>&nbsp;<a href=\"(http://.*?)\"").getMatch(0);
+                    }
                 }
             }
         }

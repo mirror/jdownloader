@@ -56,7 +56,7 @@ public class UploadStationCom extends PluginForHost {
 
     @Override
     public boolean checkLinks(final DownloadLink[] urls) {
-        // Works nearly 100% like the fileserve.com linkcheck
+        // Works nearly 100% like the fileserve.com & filejungle.com linkcheck
         if (urls == null || urls.length == 0) { return false; }
         try {
             final Browser checkbr = new Browser();
