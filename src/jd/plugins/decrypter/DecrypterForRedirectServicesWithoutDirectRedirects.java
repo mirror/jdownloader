@@ -221,7 +221,7 @@ public class DecrypterForRedirectServicesWithoutDirectRedirects extends PluginFo
             final String cipher = new Regex(parameter, "#:{1,}(.*?)$").getMatch(-1);
             if (cipher == null) { return null; }
             final long timeStamp = System.currentTimeMillis();
-            br.postPage("http://trailerzone.info/go.html" + cipher, "timestamp=" + timeStamp + "&link=&redir=Weiter+zum+Link");
+            br.postPage("http://trailerzone.info/go.html" + cipher, "timestamp=" + timeStamp + "&link=&redir=Weiter+zum+Download");
             try {
                 final ExtBrowser eb = new ExtBrowser();
                 eb.setBrowserEnviroment(new BasicBrowserEnviroment(new String[] { ".*" }, new String[] { ".*trailerzone.info.*" }) {
@@ -254,8 +254,12 @@ public class DecrypterForRedirectServicesWithoutDirectRedirects extends PluginFo
             finallink = br.getRegex("onClick=.*?\\('(http:.*?)'").getMatch(0);
         } else if (parameter.contains("official.fm/")) {
             finalfilename = br.getRegex("<meta property=\"og:title\" content=\"(.*?)\"/>").getMatch(0);
-            if (finalfilename == null) finalfilename = br.getRegex("<title>(.*?) on Official\\.fm</title>").getMatch(0);
-            if (finalfilename != null) finalfilename = Encoding.htmlDecode(finalfilename.trim()) + ".mp3";
+            if (finalfilename == null) {
+                finalfilename = br.getRegex("<title>(.*?) on Official\\.fm</title>").getMatch(0);
+            }
+            if (finalfilename != null) {
+                finalfilename = Encoding.htmlDecode(finalfilename.trim()) + ".mp3";
+            }
             br.setFollowRedirects(true);
             br.getPage(parameter + ".xspf?ll_header=yes");
             finallink = br.getRegex("\"(http://cdn\\.official\\.fm/mp3s/\\d+/\\d+\\.mp3)").getMatch(0);
@@ -523,10 +527,16 @@ public class DecrypterForRedirectServicesWithoutDirectRedirects extends PluginFo
             finallink = br.getRegex("\"refresh\" content=\"\\d+; url=(.*?)\"").getMatch(0);
         } else if (parameter.contains("trackstash.com/")) {
             finallink = br.getRegex("\"media\": \\{\"path\": \"(http://.*?)\"").getMatch(0);
-            if (finallink == null) finallink = br.getRegex("\"(http://(www\\.)?trackstash\\.com/sites/default/files/tracks/.*?)\"").getMatch(0);
+            if (finallink == null) {
+                finallink = br.getRegex("\"(http://(www\\.)?trackstash\\.com/sites/default/files/tracks/.*?)\"").getMatch(0);
+            }
             finalfilename = br.getRegex(",\"nid\": \"\\d+\",\"title\": \"(.*?)\"").getMatch(0);
-            if (finalfilename == null) finalfilename = br.getRegex("<title>TRACKSTASH\\.COM \\- BETA \\| (.*?)</title>").getMatch(0);
-            if (finalfilename != null) finalfilename = finalfilename.trim() + ".mp3";
+            if (finalfilename == null) {
+                finalfilename = br.getRegex("<title>TRACKSTASH\\.COM \\- BETA \\| (.*?)</title>").getMatch(0);
+            }
+            if (finalfilename != null) {
+                finalfilename = finalfilename.trim() + ".mp3";
+            }
             if (finallink != null) {
                 br.getPage(finallink);
                 finallink = br.getRedirectLocation();
@@ -534,10 +544,14 @@ public class DecrypterForRedirectServicesWithoutDirectRedirects extends PluginFo
             dh = true;
         } else if (parameter.contains("lnk.co/")) {
             finallink = br.getRedirectLocation();
-            if (finallink == null) finallink = br.getRegex("<iframe src =\"(.*?)\"").getMatch(0);
+            if (finallink == null) {
+                finallink = br.getRegex("<iframe src =\"(.*?)\"").getMatch(0);
+            }
         } else if (parameter.contains("freeonsmash.com/")) {
             finallink = br.getRegex("<meta http\\-equiv=\"Refresh\" content=\"\\d+; URL=(.*?)\"").getMatch(0);
-            if (finallink == null) finallink = br.getRegex("<input id=\\'bounce\\-page\\-url\\' type=\\'text\\' value=\\'(.*?)\\'").getMatch(0);
+            if (finallink == null) {
+                finallink = br.getRegex("<input id=\\'bounce\\-page\\-url\\' type=\\'text\\' value=\\'(.*?)\\'").getMatch(0);
+            }
         } else if (parameter.contains("damasgate.com/redirector")) {
             finallink = br.getRegex("align=\"center\"><a href=\"(.*?)\"").getMatch(0);
         } else if (parameter.contains("egfire.net/")) {
@@ -547,7 +561,9 @@ public class DecrypterForRedirectServicesWithoutDirectRedirects extends PluginFo
             br.getPage("http://www.trancearoundtheworld.com/player/play.php?id=" + new Regex(parameter, "trancearoundtheworld\\.com/tatw/(\\d+)").getMatch(0));
             finallink = br.getRegex("so\\.addVariable\\(\"url\", \"(.*?)\"").getMatch(0);
             finalfilename = br.getRegex("so\\.addVariable\\(\"name\", \"(.*?)\"").getMatch(0);
-            if (finalfilename != null) finalfilename = finalfilename.trim() + ".mp3";
+            if (finalfilename != null) {
+                finalfilename = finalfilename.trim() + ".mp3";
+            }
             dh = true;
         }
         if (finallink == null) {
