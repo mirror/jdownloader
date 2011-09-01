@@ -145,7 +145,7 @@ public class AddLinksDialog extends AbstractDialog<CrawlerJob> {
     public JComponent layoutDialogContent() {
 
         MigPanel p = new MigPanel("ins 4,wrap 2", "[][grow,fill]", "[fill,grow][][][]");
-        p.setBadgesEnabled(true);
+
         destination = new SearchComboBox<String>() {
 
             @Override
@@ -305,7 +305,7 @@ public class AddLinksDialog extends AbstractDialog<CrawlerJob> {
         String[] links = jd.parser.html.HTMLParser.getHttpLinks(input.getText());
         if (links.length == 0) {
             errorLabel.setText(_GUI._.AddLinksDialog_validateForm_input_missing());
-            input.setBadgeIcon(NewTheme.getInstance().getIcon("warning", 26));
+
             input.setToolTipText(_GUI._.AddLinksDialog_validateForm_input_missing());
             okButton.setEnabled(false);
             confirmOptions.setEnabled(false);
@@ -316,14 +316,14 @@ public class AddLinksDialog extends AbstractDialog<CrawlerJob> {
         }
         if (!validateFolder(destination.getText())) {
             if (errorLabel.getText().length() == 0) errorLabel.setText(_GUI._.AddLinksDialog_validateForm_folder_invalid_missing());
-            destination.setBadgeIcon(NewTheme.getInstance().getIcon("warning", 16));
+
             okButton.setEnabled(false);
             destination.setToolTipText(_GUI._.AddLinksDialog_validateForm_folder_invalid_missing());
             confirmOptions.setEnabled(false);
             destination.setForeground(new Color(LookAndFeelController.getInstance().getLAFOptions().getErrorForeground()));
         } else {
             destination.setToolTipText(null);
-            destination.setBadgeIcon(null);
+
             destination.setForeground(null);
         }
 
