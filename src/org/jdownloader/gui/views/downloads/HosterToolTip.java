@@ -1,6 +1,7 @@
 package org.jdownloader.gui.views.downloads;
 
 import java.awt.Color;
+import java.util.HashSet;
 
 import javax.swing.JLabel;
 
@@ -16,13 +17,15 @@ public class HosterToolTip extends ExtTooltip {
         super();
 
         this.panel = new TooltipPanel("ins 3,wrap 1", "[grow,fill]", "[grow,fill]");
-
+        HashSet<String> dupeFilter = new HashSet<String>();
         for (PluginForHost link : obj.getFilePackageInfo().getIcons()) {
 
-            JLabel lbl;
-            panel.add(lbl = new JLabel(link.getHost(), link.getHosterIconScaled(), JLabel.LEADING));
-            SwingUtils.setOpaque(lbl, false);
-            lbl.setForeground(new Color(this.getConfig().getForegroundColor()));
+            if (dupeFilter.add(link.getHost())) {
+                JLabel lbl;
+                panel.add(lbl = new JLabel(link.getHost(), link.getHosterIconScaled(), JLabel.LEADING));
+                SwingUtils.setOpaque(lbl, false);
+                lbl.setForeground(new Color(this.getConfig().getForegroundColor()));
+            }
         }
         this.panel.setOpaque(false);
         add(panel);

@@ -34,6 +34,7 @@ import net.miginfocom.swing.MigLayout;
 import org.appwork.controlling.StateEvent;
 import org.appwork.controlling.StateEventListener;
 import org.appwork.utils.swing.EDTRunner;
+import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 
 public class StatusBarImpl extends JPanel {
@@ -106,6 +107,7 @@ public class StatusBarImpl extends JPanel {
         add(new ModuleStatus());
 
         reconnectIndicator = new IconedProcessIndicator(NewTheme.I().getIcon("reconnect", 16));
+        reconnectIndicator.setTitle(_GUI._.StatusBarImpl_initGUI_reconnect());
         boolean running = Reconnecter.getInstance().isReconnectInProgress();
         reconnectIndicator.setIndeterminate(running);
         reconnectIndicator.setEnabled(running);
@@ -136,7 +138,9 @@ public class StatusBarImpl extends JPanel {
         // "\"></img>Waiting for new IP - Reconnect in progress</html>");
 
         linkGrabberIndicator = new IconedProcessIndicator(NewTheme.I().getIcon("linkgrabber", 16));
+        linkGrabberIndicator.setTitle(_GUI._.StatusBarImpl_initGUI_linkgrabber());
         running = LinkCollector.getInstance().isRunning();
+        linkGrabberIndicator.setDescription(_GUI._.StatusBarImpl_initGUI_linkgrabber_desc_inactive());
         linkGrabberIndicator.setIndeterminate(running);
         linkGrabberIndicator.setEnabled(running);
         LinkCollector.getInstance().addListener(new LinkCollectorListener() {
@@ -149,6 +153,7 @@ public class StatusBarImpl extends JPanel {
                         protected void runInEDT() {
                             linkGrabberIndicator.setEnabled(true);
                             linkGrabberIndicator.setIndeterminate(true);
+                            linkGrabberIndicator.setDescription(_GUI._.StatusBarImpl_initGUI_linkgrabber_desc());
                         }
                     };
                     break;
@@ -158,6 +163,7 @@ public class StatusBarImpl extends JPanel {
                         protected void runInEDT() {
                             linkGrabberIndicator.setEnabled(false);
                             linkGrabberIndicator.setIndeterminate(false);
+                            linkGrabberIndicator.setDescription(_GUI._.StatusBarImpl_initGUI_linkgrabber_desc_inactive());
                         }
                     };
                     break;
@@ -170,7 +176,7 @@ public class StatusBarImpl extends JPanel {
 
         extractIndicator = new IconedProcessIndicator(NewTheme.I().getIcon("archive", 16));
         extractIndicator.setEnabled(false);
-
+        extractIndicator.setTitle(_GUI._.StatusBarImpl_initGUI_extract());
         // extractIndicator.setToolTipText("<html><img src=\"" +
         // NewTheme.I().getImageUrl("archive") +
         // "\"></img>Extracting Archives: 85%</html>");

@@ -32,6 +32,7 @@ import jd.utils.JDHexUtils;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.storage.config.JsonConfig;
+import org.appwork.swing.components.tooltips.ExtTooltip;
 import org.appwork.utils.Application;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.os.CrossSystem;
@@ -244,6 +245,8 @@ public class LookAndFeelController {
     private void postSetup(String className) {
         int fontSize = config.getFontScaleFactor();
         String fontName = config.getFontName();
+
+        ExtTooltip.createConfig(ExtTooltip.DEFAULT).setForegroundColor(getLAFOptions().getTooltipForegroundColor());
         if (isSynthetica()) {
             try {
                 if ("default".equalsIgnoreCase(fontName)) fontName = de.javasoft.plaf.synthetica.SyntheticaLookAndFeel.getFontName();
@@ -251,6 +254,7 @@ public class LookAndFeelController {
             } catch (final Throwable e) {
                 Log.exception(e);
             }
+
         } else if (isSubstance()) {
             try {
                 final JDSubstanceFontPolicy fp = new JDSubstanceFontPolicy(org.pushingpixels.substance.api.SubstanceLookAndFeel.getFontPolicy().getFontSet("substance", null), fontName, fontSize);

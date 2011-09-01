@@ -360,27 +360,29 @@ public class AddLinksDialog extends AbstractDialog<CrawlerJob> {
 
                     @Override
                     protected void runInEDT() {
-                        try {
-                            SimpleTextBallon d = new SimpleTextBallon(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.AddLinksDialog_AddLinksDialog_(), _GUI._.AddLinksDialog_layoutDialogContent_description(), NewTheme.I().getIcon("linkgrabber", 32)) {
-                                public boolean doExpandToBottom(boolean b) {
-                                    return false;
-                                }
+                        if (input.isShowing()) {
+                            try {
+                                SimpleTextBallon d = new SimpleTextBallon(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.AddLinksDialog_AddLinksDialog_(), _GUI._.AddLinksDialog_layoutDialogContent_description(), NewTheme.I().getIcon("linkgrabber", 32)) {
+                                    public boolean doExpandToBottom(boolean b) {
+                                        return false;
+                                    }
 
-                                public boolean doExpandToRight(boolean b) {
+                                    public boolean doExpandToRight(boolean b) {
 
-                                    return true;
-                                }
-                            };
+                                        return true;
+                                    }
+                                };
 
-                            d.setDesiredLocation(new Point(input.getLocationOnScreen().x + input.getWidth() / 2, input.getLocationOnScreen().y + 10));
+                                d.setDesiredLocation(new Point(input.getLocationOnScreen().x + input.getWidth() / 2, input.getLocationOnScreen().y + 10));
 
-                            Dialog.getInstance().showDialog(d);
-                        } catch (DialogClosedException e) {
-                            e.printStackTrace();
-                        } catch (DialogCanceledException e) {
-                            e.printStackTrace();
-                        } catch (OffScreenException e) {
-                            e.printStackTrace();
+                                Dialog.getInstance().showDialog(d);
+                            } catch (DialogClosedException e) {
+                                e.printStackTrace();
+                            } catch (DialogCanceledException e) {
+                                e.printStackTrace();
+                            } catch (OffScreenException e) {
+                                e.printStackTrace();
+                            }
                         }
                     }
                 };

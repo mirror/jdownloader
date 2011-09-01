@@ -2329,4 +2329,19 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Creating Folder failed" })
     String AddLinksDialog_actionPerformed_mkdir_failed();
 
+    @Default(lngs = { "en" }, values = { "Reconnect Activity" })
+    String StatusBarImpl_initGUI_reconnect();
+
+    @Default(lngs = { "en" }, values = { "Linkgrabber Activity" })
+    String StatusBarImpl_initGUI_linkgrabber();
+
+    @Default(lngs = { "en" }, values = { "Extraction Activity" })
+    String StatusBarImpl_initGUI_extract();
+
+    @Default(lngs = { "en" }, values = { "JDownloader is crawling links for you. Open Linkgrabber to see the results." })
+    String StatusBarImpl_initGUI_linkgrabber_desc();
+
+    @Default(lngs = { "en" }, values = { " - idle - " })
+    String StatusBarImpl_initGUI_linkgrabber_desc_inactive();
+
 }

@@ -5,6 +5,7 @@
   "popupBorderInsets" : [ 0,2,4,2],
   "panelHeaderLineColor": -4144960,
   "panelHeaderLineForegroundColor" : 0,
-  "errorForeground": 16711680
+  "errorForeground": 16711680,
+  "tooltipForegroundColor": 16121087
   
 }
