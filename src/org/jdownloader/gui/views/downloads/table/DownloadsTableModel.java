@@ -14,6 +14,7 @@ import org.appwork.swing.exttable.ExtTableModel;
 import org.appwork.utils.logging.Log;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTableModel;
 import org.jdownloader.gui.views.downloads.columns.AddedDateColumn;
+import org.jdownloader.gui.views.downloads.columns.AvailabilityColumn;
 import org.jdownloader.gui.views.downloads.columns.ConnectionColumn;
 import org.jdownloader.gui.views.downloads.columns.ETAColumn;
 import org.jdownloader.gui.views.downloads.columns.FileColumn;
@@ -67,7 +68,7 @@ public class DownloadsTableModel extends PackageControllerTableModel<FilePackage
 
         this.addColumn(new PriorityColumn());
         this.addColumn(new StopSignColumn());
-
+        this.addColumn(new AvailabilityColumn());
         // reset sort
 
         try {

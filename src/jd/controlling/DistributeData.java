@@ -28,7 +28,6 @@ import jd.parser.html.HTMLParser;
 import jd.plugins.DownloadLink;
 
 import org.appwork.utils.Regex;
-import org.appwork.utils.logging.Log;
 
 /**
  * Diese Klasse läuft in einem Thread und verteilt den Inhalt der Zwischenablage
@@ -126,49 +125,6 @@ public class DistributeData extends Thread {
             }
         }
         return ret;
-    }
-
-    /* DO NOT REMOVE THIS! i will remove it myself! */
-    @SuppressWarnings("unused")
-    private boolean checkdecrypted(final ArrayList<HostPluginWrapper> pHostAll, final ArrayList<DownloadLink> links, final DownloadLink decrypted) {
-        if (decrypted.getDownloadURL() == null || LinkGrabberController.isFiltered(decrypted)) return true;
-        boolean gothost = false;
-        for (final HostPluginWrapper pHost : pHostAll) {
-            try {
-                if (pHost.canHandle(decrypted.getDownloadURL())) {
-                    final ArrayList<DownloadLink> dLinks = pHost.getPlugin().getDownloadLinks(decrypted.getDownloadURL(), decrypted.getFilePackage());
-                    /*
-                     * we created new downloadLinks here, so remove the source
-                     * link from filepackage
-                     */
-                    decrypted.getFilePackage().remove(decrypted);
-                    gothost = true;
-                    final int dLinksSize = dLinks.size();
-                    DownloadLink dl = null;
-                    for (int c = 0; c < dLinksSize; c++) {
-                        dl = dLinks.get(c);
-                        dl.addSourcePluginPasswordList(decrypted.getSourcePluginPasswordList());
-                        dl.setSourcePluginComment(decrypted.getSourcePluginComment());
-                        dl.setName(decrypted.getName());
-                        dl.forceFileName(decrypted.getForcedFileName());
-                        dl.setFinalFileName(decrypted.getFinalFileName());
-                        dl.setBrowserUrl(decrypted.getBrowserUrl());
-                        if (decrypted.isAvailabilityStatusChecked()) {
-                            dl.setAvailable(decrypted.isAvailable());
-                        }
-                        dl.setProperties(decrypted.getProperties());
-                        dl.getLinkStatus().setStatusText(decrypted.getLinkStatus().getStatusString());
-                        dl.setDownloadSize(decrypted.getDownloadSize());
-                        dl.setSubdirectory(decrypted);
-                    }
-                    links.addAll(dLinks);
-                    break;
-                }
-            } catch (Exception e) {
-                Log.L.severe("Decrypter/Search Fehler: " + e.getMessage());
-            }
-        }
-        return gothost;
     }
 
     @Override

@@ -21,6 +21,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
@@ -210,8 +211,11 @@ public class Serverhandler implements Handler {
                 config = SubConfiguration.getConfig(request.getParameters().get("sub").toUpperCase());
             }
 
-            for (final Entry<String, Object> next : config.getProperties().entrySet()) {
-                element.setAttribute(next.getKey(), next.getValue() + "");
+            HashMap<String, Object> props = null;
+            if ((props = config.getProperties()) != null) {
+                for (final Entry<String, Object> next : props.entrySet()) {
+                    element.setAttribute(next.getKey(), next.getValue() + "");
+                }
             }
 
             response.addContent(xml);

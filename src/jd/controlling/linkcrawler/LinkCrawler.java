@@ -13,10 +13,12 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.DecryptPluginWrapper;
 import jd.HostPluginWrapper;
+import jd.config.Property;
 import jd.controlling.IOPermission;
 import jd.http.Browser;
 import jd.parser.html.HTMLParser;
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 
@@ -256,6 +258,10 @@ public class LinkCrawler implements IOPermission {
     protected void crawlDeeper(String url) {
         checkStartNotify();
         try {
+            synchronized (duplicateFinder) {
+                /* did we already crawlDeeper this url */
+                if (!duplicateFinder.add(url)) { return; }
+            }
             Browser br = new Browser();
             try {
                 new URL(url);
@@ -299,11 +305,6 @@ public class LinkCrawler implements IOPermission {
             if (possibleCryptedLinks == null || possibleCryptedLinks.size() == 0) return;
             mainloop: for (final CrawledLinkInfo possibleCryptedLink : possibleCryptedLinks) {
                 String url = possibleCryptedLink.getURL();
-                synchronized (duplicateFinder) {
-                    if (!duplicateFinder.add(url)) {
-                        continue mainloop;
-                    }
-                }
                 if (url == null) continue;
                 /* first we will walk through all available decrypter plugins */
                 for (final DecryptPluginWrapper pDecrypt : pDecrypts) {
@@ -320,7 +321,7 @@ public class LinkCrawler implements IOPermission {
                                              * lets forward important infos
                                              */
                                             HashMap<String, Object> props = possibleCryptedLink.getCryptedLink().getProperties();
-                                            if (props != null) {
+                                            if (props != null && !props.isEmpty()) {
                                                 decryptThis.getCryptedLink().setProperties(new HashMap<String, Object>(props));
                                             }
                                             decryptThis.getCryptedLink().setDecrypterPassword(possibleCryptedLink.getCryptedLink().getDecrypterPassword());
@@ -366,8 +367,11 @@ public class LinkCrawler implements IOPermission {
                         try {
                             PluginForHost plg = pHost.getPlugin();
                             if (plg != null) {
-                                /* TODO: package handling, info forwarding */
-                                ArrayList<DownloadLink> hosterLinks = plg.getDownloadLinks(url, null);
+                                FilePackage sourcePackage = null;
+                                if (possibleCryptedLink.getDownloadLink() != null) {
+                                    sourcePackage = possibleCryptedLink.getDownloadLink().getFilePackage();
+                                }
+                                ArrayList<DownloadLink> hosterLinks = plg.getDownloadLinks(url, sourcePackage);
                                 if (hosterLinks != null) {
                                     forwardDownloadLinkInfos(possibleCryptedLink.getDownloadLink(), hosterLinks);
                                     for (DownloadLink hosterLink : hosterLinks) {
@@ -387,8 +391,11 @@ public class LinkCrawler implements IOPermission {
                     url = url.replaceFirst("https://", "httpsviajd://");
                     if (directHTTP.canHandle(url)) {
                         try {
-                            /* TODO: package handling, info forwarding */
-                            ArrayList<DownloadLink> httpLinks = directHTTP.getDownloadLinks(url, null);
+                            FilePackage sourcePackage = null;
+                            if (possibleCryptedLink.getDownloadLink() != null) {
+                                sourcePackage = possibleCryptedLink.getDownloadLink().getFilePackage();
+                            }
+                            ArrayList<DownloadLink> httpLinks = directHTTP.getDownloadLinks(url, sourcePackage);
                             if (httpLinks != null) {
                                 forwardDownloadLinkInfos(possibleCryptedLink.getDownloadLink(), httpLinks);
                                 for (DownloadLink hosterLink : httpLinks) {
@@ -408,7 +415,7 @@ public class LinkCrawler implements IOPermission {
 
     protected void forwardDownloadLinkInfos(DownloadLink source, List<DownloadLink> dests) {
         if (source == null || dests == null || dests.size() == 0) return;
-        source.getFilePackage().remove(source);
+        // source.getFilePackage().remove(source);
         for (DownloadLink dl : dests) {
             dl.addSourcePluginPasswordList(source.getSourcePluginPasswordList());
             dl.setSourcePluginComment(source.getSourcePluginComment());
@@ -419,8 +426,9 @@ public class LinkCrawler implements IOPermission {
             if (source.isAvailabilityStatusChecked()) {
                 dl.setAvailable(source.isAvailable());
             }
-            if (!source.getProperties().isEmpty()) {
-                dl.setProperties(new HashMap<String, Object>(source.getProperties()));
+            HashMap<String, Object> props = source.getProperties();
+            if (props != null && !props.isEmpty()) {
+                dl.setProperties(new HashMap<String, Object>(props));
             }
             dl.getLinkStatus().setStatusText(source.getLinkStatus().getStatusString());
             dl.setDownloadSize(source.getDownloadSize());
@@ -444,6 +452,10 @@ public class LinkCrawler implements IOPermission {
     protected void crawl(CrawledLinkInfo cryptedLink) {
         checkStartNotify();
         try {
+            synchronized (duplicateFinder) {
+                /* did we already decrypt this crypted link? */
+                if (!duplicateFinder.add(cryptedLink.getURL())) { return; }
+            }
             if (cryptedLink == null || cryptedLink.getdPlugin() == null || cryptedLink.getCryptedLink() == null) return;
             /* we have to create new plugin instance here */
             PluginForDecrypt plg = cryptedLink.getdPlugin().getWrapper().getNewPluginInstance();
@@ -494,8 +506,14 @@ public class LinkCrawler implements IOPermission {
         link.setCreated(createdDate);
         if (link.getDownloadLink() != null && link.getDownloadLink().getBooleanProperty("ALLOW_DUPE", false)) {
             /* forward dupeAllow info from DownloadLink to CrawledLinkInfo */
-            link.getDownloadLink().getProperties().remove("ALLOW_DUPE");
+            link.getDownloadLink().setProperty("ALLOW_DUPE", Property.NULL);
             link.setDupeAllow(true);
+        }
+        if (link.isDupeAllow() == false) {
+            /* check if we already handled this url */
+            synchronized (duplicateFinder) {
+                if (!duplicateFinder.add(link.getURL())) { return; }
+            }
         }
         crawledLinksCounter.incrementAndGet();
         handler.handleFinalLink(link);

@@ -2,29 +2,35 @@ package jd.controlling.linkcrawler;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.controlling.packagecontroller.AbstractPackageNode;
 import jd.controlling.packagecontroller.PackageController;
 
 public class CrawledPackageInfo implements AbstractPackageNode<CrawledLinkInfo, CrawledPackageInfo> {
 
-    private static AtomicInteger                                   packageCounter  = new AtomicInteger(0);
-    private ArrayList<CrawledLinkInfo>                             children        = new ArrayList<CrawledLinkInfo>();
-    private PackageController<CrawledPackageInfo, CrawledLinkInfo> controller      = null;
-    private boolean                                                expanded        = true;
-    private String                                                 autoPackageName = null;
-    private final int                                              ID;
+    private ArrayList<CrawledLinkInfo>                             children         = new ArrayList<CrawledLinkInfo>();
+    private PackageController<CrawledPackageInfo, CrawledLinkInfo> controller       = null;
+    private boolean                                                expanded         = true;
+    private String                                                 autoPackageName  = null;
+    private boolean                                                allowAutoPackage = true;
 
     /**
-     * @return the iD
+     * @return the allowAutoPackage
      */
-    public int getID() {
-        return ID;
+    public boolean isAllowAutoPackage() {
+        return allowAutoPackage;
+    }
+
+    /**
+     * @param allowAutoPackage
+     *            the allowAutoPackage to set
+     */
+    public void setAllowAutoPackage(boolean allowAutoPackage) {
+        this.allowAutoPackage = allowAutoPackage;
     }
 
     public CrawledPackageInfo() {
-        ID = packageCounter.incrementAndGet();
+
     }
 
     /**
@@ -43,9 +49,17 @@ public class CrawledPackageInfo implements AbstractPackageNode<CrawledLinkInfo, 
     }
 
     private String customName = null;
+    private long   created    = -1;
+
+    /**
+     * @param created
+     *            the created to set
+     */
+    public void setCreated(long created) {
+        this.created = created;
+    }
 
     public PackageController<CrawledPackageInfo, CrawledLinkInfo> getControlledBy() {
-
         return controller;
     }
 
@@ -78,7 +92,7 @@ public class CrawledPackageInfo implements AbstractPackageNode<CrawledLinkInfo, 
     }
 
     public long getCreated() {
-        return 0;
+        return created;
     }
 
     public long getFinishedDate() {

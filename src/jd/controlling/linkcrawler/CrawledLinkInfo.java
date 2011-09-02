@@ -1,5 +1,7 @@
 package jd.controlling.linkcrawler;
 
+import javax.swing.ImageIcon;
+
 import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
@@ -119,6 +121,26 @@ public class CrawledLinkInfo implements AbstractPackageChildrenNode<CrawledPacka
     public String getName() {
         if (dlLink != null) return dlLink.getName();
         return "DUMMY";
+    }
+
+    public ImageIcon getHosterIcon(boolean scaled) {
+        if (dlLink != null) return dlLink.getHosterIcon(scaled);
+        return null;
+    }
+
+    public String getHost() {
+        if (dlLink != null) return dlLink.getHost();
+        return null;
+    }
+
+    public ImageIcon getIcon() {
+        if (dlLink != null) return dlLink.getIcon();
+        return null;
+    }
+
+    public int getPriority() {
+        if (dlLink != null) return dlLink.getPriority();
+        return 0;
     }
 
     public String getURL() {

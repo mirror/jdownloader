@@ -545,6 +545,7 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
      */
     private void onErrorFileNotFound(DownloadLink downloadLink, PluginForHost plugin) {
         logger.severe("File not found :" + downloadLink.getDownloadURL());
+        downloadLink.setAvailable(false);
         downloadLink.setEnabled(false);
     }
 

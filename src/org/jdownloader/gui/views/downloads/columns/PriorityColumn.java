@@ -1,13 +1,13 @@
 package org.jdownloader.gui.views.downloads.columns;
 
 import java.awt.Component;
-import java.util.Date;
 
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JTable;
 import javax.swing.table.JTableHeader;
 
+import jd.controlling.linkcrawler.CrawledLinkInfo;
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.plugins.DownloadLink;
 
@@ -93,10 +93,6 @@ public class PriorityColumn extends ExtIconColumn<AbstractNode> {
         return false;
     }
 
-    public static void main(String[] args) {
-        System.out.println(new Date());
-    }
-
     public boolean isPaintWidthLockIcon() {
         return false;
     }
@@ -120,8 +116,14 @@ public class PriorityColumn extends ExtIconColumn<AbstractNode> {
     }
 
     protected int getPriority(AbstractNode value) {
+        Integer p = null;
         if (value instanceof DownloadLink) {
-            switch (((DownloadLink) value).getPriority()) {
+            p = ((DownloadLink) value).getPriority();
+        } else if (value instanceof CrawledLinkInfo) {
+            p = ((CrawledLinkInfo) value).getPriority();
+        }
+        if (p != null) {
+            switch (p) {
             case 0:
             default:
                 return 0;

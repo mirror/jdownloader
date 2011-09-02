@@ -160,6 +160,5 @@ public abstract class PackageControllerTableModel<E extends AbstractPackageNode<
             newData.addAll(files);
         }
         return newData;
-
     }
 }

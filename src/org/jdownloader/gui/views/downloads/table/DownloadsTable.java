@@ -1,11 +1,5 @@
 package org.jdownloader.gui.views.downloads.table;
 
-import java.awt.AlphaComposite;
-import java.awt.Color;
-import java.awt.Composite;
-import java.awt.Graphics;
-import java.awt.Graphics2D;
-import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
@@ -33,7 +27,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.utils.JDUtilities;
 
-import org.appwork.storage.config.JsonConfig;
 import org.appwork.swing.exttable.ExtColumn;
 import org.appwork.utils.Application;
 import org.appwork.utils.os.CrossSystem;
@@ -70,13 +63,10 @@ import org.jdownloader.gui.views.downloads.context.ResumeAction;
 import org.jdownloader.gui.views.downloads.context.SetPasswordAction;
 import org.jdownloader.gui.views.downloads.context.StopsignAction;
 import org.jdownloader.images.NewTheme;
-import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 
 public class DownloadsTable extends PackageControllerTable<FilePackage, DownloadLink> {
 
     private static final long serialVersionUID = 8843600834248098174L;
-
-    private Color             sortNotifyColor;
 
     public DownloadsTable(final DownloadsTableModel tableModel) {
         super(tableModel);
@@ -87,9 +77,6 @@ public class DownloadsTable extends PackageControllerTable<FilePackage, Download
             this.setDropMode(DropMode.ON_OR_INSERT_ROWS);
         }
 
-        if (JsonConfig.create(GraphicalUserInterfaceSettings.class).isSortColumnHighlightEnabled()) {
-            sortNotifyColor = Color.ORANGE;
-        }
         initActions();
         onSelectionChanged(null);
         setAutoResizeMode(JTable.AUTO_RESIZE_LAST_COLUMN);
@@ -476,38 +463,6 @@ public class DownloadsTable extends PackageControllerTable<FilePackage, Download
 
             }
         }).start();
-
-    }
-
-    public boolean isDownloadOrder() {
-        return getExtTableModel().getSortColumn() == null;
-    }
-
-    @Override
-    public void paintComponent(Graphics g) {
-        super.paintComponent(g);
-
-        Graphics2D g2 = (Graphics2D) g;
-        Composite comp = g2.getComposite();
-        final Rectangle visibleRect = this.getVisibleRect();
-        Rectangle first;
-        ExtColumn<AbstractNode> sortColumn = getExtTableModel().getSortColumn();
-        if (sortColumn == null) return;
-        int index = sortColumn.getIndex();
-
-        if (index < 0) return;
-
-        if (sortNotifyColor != null) {
-
-            first = this.getCellRect(0, index, true);
-
-            g2.setColor(Color.ORANGE);
-
-            g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.1f));
-            g2.fillRect(visibleRect.x + first.x, visibleRect.y, visibleRect.x + getExtTableModel().getSortColumn().getWidth(), visibleRect.y + visibleRect.height);
-        }
-        if (isDownloadOrder()) return;
-        g2.setComposite(comp);
 
     }
 

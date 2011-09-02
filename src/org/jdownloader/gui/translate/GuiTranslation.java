@@ -2032,6 +2032,9 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Download Control" })
     String StopSignColumn_StopSignColumn();
 
+    @Default(lngs = { "en" }, values = { "Availability" })
+    String AvailabilityColumn_AvailabilityColumn();
+
     @Default(lngs = { "en" }, values = { "Progress" })
     String ProgressColumn_ProgressColumn();
 

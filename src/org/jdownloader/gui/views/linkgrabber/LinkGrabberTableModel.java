@@ -13,7 +13,12 @@ import org.appwork.swing.exttable.ExtColumn;
 import org.appwork.swing.exttable.ExtTableModel;
 import org.appwork.utils.logging.Log;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTableModel;
+import org.jdownloader.gui.views.downloads.columns.AddedDateColumn;
+import org.jdownloader.gui.views.downloads.columns.AvailabilityColumn;
+import org.jdownloader.gui.views.downloads.columns.CommentColumn;
 import org.jdownloader.gui.views.downloads.columns.FileColumn;
+import org.jdownloader.gui.views.downloads.columns.HosterColumn;
+import org.jdownloader.gui.views.downloads.columns.PriorityColumn;
 import org.jdownloader.gui.views.downloads.columns.SizeColumn;
 
 public class LinkGrabberTableModel extends PackageControllerTableModel<CrawledPackageInfo, CrawledLinkInfo> {
@@ -23,7 +28,6 @@ public class LinkGrabberTableModel extends PackageControllerTableModel<CrawledPa
 
     public LinkGrabberTableModel() {
         super(LinkCollector.getInstance(), "LinkGrabberTableModel");
-
     }
 
     @Override
@@ -169,11 +173,11 @@ public class LinkGrabberTableModel extends PackageControllerTableModel<CrawledPa
         //
         // });
         this.addColumn(new SizeColumn());
-        // this.addColumn(new HosterColumn());
-        // this.addColumn(new AddedDateColumn());
-        // this.addColumn(new PriorityColumn());
-        // this.addColumn(new StopSignColumn());
-
+        this.addColumn(new HosterColumn());
+        this.addColumn(new AvailabilityColumn());
+        this.addColumn(new AddedDateColumn());
+        this.addColumn(new PriorityColumn());
+        this.addColumn(new CommentColumn());
     }
 
     /**

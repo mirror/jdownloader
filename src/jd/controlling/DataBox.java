@@ -16,6 +16,7 @@
 
 package jd.controlling;
 
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map.Entry;
 
@@ -28,15 +29,18 @@ public class DataBox extends Property {
     private static final long serialVersionUID = 5147254150196577471L;
 
     public Entry<String, Object> getEntry(int id) {
-        for (final Iterator<Entry<String, Object>> it = this.getProperties().entrySet().iterator(); it.hasNext();) {
-            if (id < 0) return null;
+        HashMap<String, Object> props = this.getProperties();
+        if (props != null) {
+            for (final Iterator<Entry<String, Object>> it = props.entrySet().iterator(); it.hasNext();) {
+                if (id < 0) return null;
 
-            if (id == 0) {
-                return it.next();
-            } else {
-                it.next();
+                if (id == 0) {
+                    return it.next();
+                } else {
+                    it.next();
+                }
+                id--;
             }
-            id--;
         }
         return null;
     }

@@ -39,7 +39,10 @@ public class SubConfiguration extends Property implements Serializable {
         this.name = name;
         final Object props = JDUtilities.getDatabaseConnector().getData(name);
         if (props != null && props instanceof HashMap) {
-            this.setProperties((HashMap<String, Object>) props);
+            HashMap<String, Object> tmp = (HashMap<String, Object>) props;
+            /* we save memory by NOT using an empty hashmap */
+            if (tmp.isEmpty()) tmp = null;
+            this.setProperties(tmp);
         } else {
             if (props != null) {
                 valid = false;
@@ -50,7 +53,12 @@ public class SubConfiguration extends Property implements Serializable {
 
     public void save() {
         if (valid) {
-            JDUtilities.getDatabaseConnector().saveConfiguration(name, this.getProperties());
+            HashMap<String, Object> props = this.getProperties();
+            if (props == null) {
+                /* saving null might cause issues */
+                props = new HashMap<String, Object>();
+            }
+            JDUtilities.getDatabaseConnector().saveConfiguration(name, props);
             changes = false;
         }
     }

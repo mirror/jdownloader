@@ -58,11 +58,8 @@ public class AddedDateColumn extends ExtDateColumn<AbstractNode> {
 
     @Override
     protected Date getDate(AbstractNode node, Date date) {
-
         if (node.getCreated() <= 0) return null;
-
         date.setTime(node.getCreated());
-
         return date;
     }
 }

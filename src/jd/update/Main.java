@@ -144,8 +144,14 @@ public class Main {
             log.append("Update JDownloader  at " + JDUtilities.getResourceFile(".") + "\r\n");
             log.append(JSonWrapper.get("WEBUPDATE").getProperties() + "\r\n");
             System.out.println(JSonWrapper.get("WEBUPDATE").getProperties() + "\r\n");
-            System.out.println(SubConfiguration.getConfig("PACKAGEMANAGER").getProperties() + "\r\n");
-            log.append(SubConfiguration.getConfig("PACKAGEMANAGER").getProperties() + "\r\n");
+            SubConfiguration pProp = SubConfiguration.getConfig("PACKAGEMANAGER");
+            if (pProp.getProperties() != null) {
+                System.out.println(pProp.getProperties() + "\r\n");
+                log.append(pProp.getProperties() + "\r\n");
+            } else {
+                System.out.println("no packagemanager properties\r\n");
+                log.append("no packagemanager properties\r\n");
+            }
 
             if (!GUILESS) initGUI();
 

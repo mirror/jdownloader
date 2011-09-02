@@ -626,7 +626,10 @@ public abstract class PluginForHost extends Plugin implements FavIconRequestor {
     // @Override DO NEVER USE OVERRIDE ON THIS METHOD BEFORE NEXT STABLE UPDATE.
     public Object getInfoGenerator(Account account) {
         AccountInfo ai = account.getAccountInfo();
-        if (ai == null || ai.getProperties().size() == 0) return null;
+        HashMap<String, Object> props = null;
+        if (ai == null) return null;
+        props = ai.getProperties();
+        if (props == null || props.size() == 0) return null;
         KeyValueInfoGenerator ret = new KeyValueInfoGenerator(_JDT._.pluginforhost_infogenerator_title(account.getUser(), account.getHoster()));
         for (Entry<String, Object> es : ai.getProperties().entrySet()) {
             String key = es.getKey();

@@ -1,5 +1,6 @@
 package org.jdownloader.gui.views.downloads.columns;
 
+import jd.controlling.linkcrawler.CrawledLinkInfo;
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
@@ -24,10 +25,18 @@ public class CommentColumn extends ExtTextAreaColumn<AbstractNode> {
 
     @Override
     protected void setStringValue(String value, AbstractNode object) {
+        DownloadLink dl = null;
+        if (object instanceof DownloadLink) {
+            dl = (DownloadLink) object;
+        } else if (object instanceof CrawledLinkInfo) {
+            dl = ((CrawledLinkInfo) object).getDownloadLink();
+        }
+        if (dl != null) {
+            dl.setSourcePluginComment(value);
+            return;
+        }
         if (object instanceof FilePackage) {
             ((FilePackage) object).setComment(value);
-        } else {
-            ((DownloadLink) object).setSourcePluginComment(value);
         }
     }
 
@@ -38,11 +47,15 @@ public class CommentColumn extends ExtTextAreaColumn<AbstractNode> {
     }
 
     @Override
-    public String getStringValue(AbstractNode value) {
-        if (value instanceof FilePackage) {
-            return ((FilePackage) value).getComment();
-        } else {
-            return ((DownloadLink) value).getSourcePluginComment();
+    public String getStringValue(AbstractNode object) {
+        DownloadLink dl = null;
+        if (object instanceof DownloadLink) {
+            dl = (DownloadLink) object;
+        } else if (object instanceof CrawledLinkInfo) {
+            dl = ((CrawledLinkInfo) object).getDownloadLink();
         }
+        if (dl != null) { return dl.getSourcePluginComment(); }
+        if (object instanceof FilePackage) { return ((FilePackage) object).getComment(); }
+        return null;
     }
 }

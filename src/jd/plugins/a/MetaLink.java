@@ -23,6 +23,7 @@ import jd.PluginWrapper;
 import jd.nutils.io.JDIO;
 import jd.plugins.ContainerStatus;
 import jd.plugins.DownloadLink;
+import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginsC;
 import jd.utils.JDUtilities;
 
@@ -36,7 +37,9 @@ public class MetaLink extends PluginsC {
     public ContainerStatus callDecryption(File lc) {
         ContainerStatus cs = new ContainerStatus(lc);
         String linkContent = JDIO.readFileToString(lc);
-        jd.plugins.decrypter.MtLnk decrypter = (jd.plugins.decrypter.MtLnk) JDUtilities.getPluginForDecrypt("metalinker.org");
+        PluginForDecrypt plugin = JDUtilities.getPluginForDecrypt("metalinker.org");
+        /* load plugin first, then we can include it */
+        jd.plugins.decrypter.MtLnk decrypter = (jd.plugins.decrypter.MtLnk) plugin;
         if (decrypter == null) {
             cs.setStatus(ContainerStatus.STATUS_FAILED);
             return cs;

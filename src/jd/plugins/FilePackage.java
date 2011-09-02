@@ -26,9 +26,9 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicLong;
 
 import jd.config.Property;
+import jd.controlling.UniqueID;
 import jd.controlling.packagecontroller.AbstractPackageNode;
 import jd.controlling.packagecontroller.PackageController;
 import jd.gui.swing.jdgui.views.downloads.DownloadTable;
@@ -45,18 +45,16 @@ import org.jdownloader.translate._JDT;
  */
 public class FilePackage extends Property implements Serializable, AbstractPackageNode<DownloadLink, FilePackage> {
 
-    private static final AtomicLong      FilePackageIDCounter = new AtomicLong(0);
+    private static final long            serialVersionUID = -8859842964299890820L;
 
-    private static final long            serialVersionUID     = -8859842964299890820L;
-
-    private static final long            UPDATE_INTERVAL      = 2000;
+    private static final long            UPDATE_INTERVAL  = 2000;
 
     private String                       comment;
 
     private String                       downloadDirectory;
 
     private ArrayList<DownloadLink>      downloadLinkList;
-    private transient static FilePackage FP                   = null;
+    private transient static FilePackage FP               = null;
 
     static {
         FP = new FilePackage() {
@@ -72,6 +70,11 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
 
             @Override
             public void setControlledBy(PackageController<FilePackage, DownloadLink> controller) {
+            }
+
+            @Override
+            public UniqueID getUniqueID() {
+                return null;
             }
         };
         FP.setName(_JDT._.controller_packages_defaultname());
@@ -161,8 +164,16 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
     private transient boolean                                      isExpanded           = false;
 
     private transient PackageController<FilePackage, DownloadLink> controlledby         = null;
-    private transient long                                         uniqueID             = -1;
-    private transient FilePackageInfo                              fpInfo               = null;
+    private transient UniqueID                                     uniqueID             = null;
+
+    /**
+     * @return the uniqueID
+     */
+    public UniqueID getUniqueID() {
+        return uniqueID;
+    }
+
+    private transient FilePackageInfo fpInfo = null;
 
     /*
      * (non-Javadoc)
@@ -171,7 +182,7 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
      */
     @Override
     public int hashCode() {
-        return (int) (uniqueID ^ (uniqueID >>> 32));
+        return uniqueID.hashCode();
     }
 
     /*
@@ -201,7 +212,7 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
      * downloadDirectory
      */
     private FilePackage() {
-        uniqueID = FilePackageIDCounter.incrementAndGet();
+        uniqueID = new UniqueID();
         downloadDirectory = org.appwork.storage.config.JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder();
         created = System.currentTimeMillis();
         /* till refactoring is complete */
@@ -221,7 +232,7 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
         /* deserialize object and then fill other stuff(transient..) */
         stream.defaultReadObject();
         isExpanded = getBooleanProperty(DownloadTable.PROPERTY_EXPANDED, false);
-        uniqueID = FilePackageIDCounter.incrementAndGet();
+        uniqueID = new UniqueID();
     }
 
     /*
@@ -706,7 +717,7 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
         return true;
     }
 
-    private ArrayList<String> passwordList = new ArrayList<String>();
+    private ArrayList<String> passwordList = null;
 
     public void setPasswordList(ArrayList<String> passwordList) {
         this.passwordList = passwordList;

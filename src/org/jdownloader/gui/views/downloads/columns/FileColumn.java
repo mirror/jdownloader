@@ -5,6 +5,7 @@ import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.border.Border;
 
+import jd.controlling.linkcrawler.CrawledLinkInfo;
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.controlling.packagecontroller.AbstractPackageNode;
 import jd.plugins.DownloadLink;
@@ -66,7 +67,9 @@ public class FileColumn extends ExtTextColumn<AbstractNode> {
     protected Icon getIcon(AbstractNode value) {
         if (value instanceof AbstractPackageNode) {
             return (((AbstractPackageNode<?, ?>) value).isExpanded() ? iconPackageOpen : iconPackageClosed);
-        } else if (value instanceof DownloadLink) { return (((DownloadLink) value).getIcon()); }
+        } else if (value instanceof DownloadLink) {
+            return (((DownloadLink) value).getIcon());
+        } else if (value instanceof CrawledLinkInfo) { return (((CrawledLinkInfo) value).getIcon()); }
         return null;
     }
 

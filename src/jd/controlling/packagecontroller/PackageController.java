@@ -279,6 +279,26 @@ public abstract class PackageController<E extends AbstractPackageNode<V, E>, V e
         }
     }
 
+    public void clear() {
+        IOEQ.getQueue().add(new QueueAction<Void, RuntimeException>() {
+
+            @Override
+            protected Void run() throws RuntimeException {
+                ArrayList<E> clearList = null;
+                writeLock();
+                try {
+                    clearList = new ArrayList<E>(packages);
+                } finally {
+                    writeUnlock();
+                }
+                for (E pkg : clearList) {
+                    removePackage(pkg);
+                }
+                return null;
+            }
+        });
+    }
+
     abstract protected void _controllerParentlessLinks(final List<V> links);
 
     abstract protected void _controllerPackageNodeRemoved(E pkg);

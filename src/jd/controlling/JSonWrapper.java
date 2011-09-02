@@ -74,10 +74,9 @@ public class JSonWrapper extends Property implements DefaultEventListener<Storag
      * @param ret
      */
     private static void convert(String string, JSonWrapper ret) {
-
         SubConfiguration subConfig = SubConfiguration.getConfig(string);
         HashMap<String, Object> props = subConfig.getProperties();
-        if (props.size() > 0) {
+        if (props != null && props.size() > 0) {
             Entry<String, Object> next;
             for (Iterator<Entry<String, Object>> it = props.entrySet().iterator(); it.hasNext();) {
                 next = it.next();

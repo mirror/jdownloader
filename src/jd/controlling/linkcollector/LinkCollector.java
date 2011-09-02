@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.controlling.IOEQ;
+import jd.controlling.UniqueID;
 import jd.controlling.linkchecker.LinkChecker;
 import jd.controlling.linkchecker.LinkCheckerHandler;
 import jd.controlling.linkcrawler.CrawledLinkInfo;
@@ -39,9 +40,11 @@ public class LinkCollector extends PackageController<CrawledPackageInfo, Crawled
     }
 
     /**
-     * NOTE: only access this inside the IOEQ
+     * NOTE: only access these fields inside the IOEQ
      */
-    private HashMap<String, dupeCheck> dupeMap = new HashMap<String, dupeCheck>();
+    private HashMap<String, dupeCheck>            dupeMap           = new HashMap<String, dupeCheck>();
+    private HashMap<UniqueID, CrawledPackageInfo> packageMap        = new HashMap<UniqueID, CrawledPackageInfo>();
+    private HashMap<CrawledPackageInfo, UniqueID> packageMapReverse = new HashMap<CrawledPackageInfo, UniqueID>();
 
     public static LinkCollector getInstance() {
         return INSTANCE;
@@ -81,6 +84,9 @@ public class LinkCollector extends PackageController<CrawledPackageInfo, Crawled
 
     @Override
     protected void _controllerPackageNodeRemoved(CrawledPackageInfo pkg) {
+        /* update packageMap */
+        UniqueID id = packageMapReverse.remove(pkg);
+        if (id != null) packageMap.remove(id);
         broadcaster.fireEvent(new LinkCollectorEvent(LinkCollector.this, LinkCollectorEvent.TYPE.REMOVE_CONTENT, pkg));
     }
 
@@ -153,9 +159,54 @@ public class LinkCollector extends PackageController<CrawledPackageInfo, Crawled
         checkRunningState(false);
     }
 
-    private void addCrawledLink(final CrawledLinkInfo link) {
-        if (link.getParentNode() != null) {
+    /**
+     * NOTE: use only inside the IOEQ
+     */
+    private boolean dupeCheck(CrawledLinkInfo link) {
+        if (!link.isDupeAllow() && dupeMap.containsKey(link.getURL())) {
+            return false;
+        } else {
+            dupeCheck dupes = dupeMap.get(link.getURL());
+            if (dupes == null) {
+                dupes = new dupeCheck();
+                /* counter is already 1 here */
+                dupeMap.put(link.getURL(), dupes);
+            } else {
+                /* increase counter */
+                dupes.counter++;
+            }
+        }
+        return true;
+    }
 
+    private void addCrawledLink(final CrawledLinkInfo link) {
+        final UniqueID wanted = link.getDownloadLink().getFilePackage().getUniqueID();
+        if (wanted != null) {
+            /* custom package was set, try to find it or create new one */
+            IOEQ.getQueue().add(new QueueAction<Void, RuntimeException>() {
+                @Override
+                protected Void run() throws RuntimeException {
+                    /* update dupeCheck map */
+                    if (dupeCheck(link) == false) return null;
+                    CrawledPackageInfo match = packageMap.get(wanted);
+                    if (match == null) {
+                        match = new CrawledPackageInfo();
+                        match.setAllowAutoPackage(false);
+                        packageMap.put(wanted, match);
+                        packageMapReverse.put(match, wanted);
+                        /*
+                         * forward name from FilePackage Instance to
+                         * CrawledPackageInfo
+                         */
+                        match.setAutoPackageName(link.getDownloadLink().getFilePackage().getName());
+                        match.setCreated(link.getCreated());
+                    }
+                    List<CrawledLinkInfo> add = new ArrayList<CrawledLinkInfo>(1);
+                    add.add(link);
+                    LinkCollector.this.addmoveChildren(match, add, -1);
+                    return null;
+                }
+            });
         } else {
             /* try to find good matching package or create new one */
             final String packageName = LinknameCleaner.cleanFileName(link.getName());
@@ -164,26 +215,14 @@ public class LinkCollector extends PackageController<CrawledPackageInfo, Crawled
                 @Override
                 protected Void run() throws RuntimeException {
                     /* update dupeCheck map */
-                    if (!link.isDupeAllow() && dupeMap.containsKey(link.getURL())) {
-                        System.out.println("dupe detected:" + link.getURL());
-                        return null;
-                    } else {
-                        dupeCheck dupes = dupeMap.get(link.getURL());
-                        if (dupes == null) {
-                            dupes = new dupeCheck();
-                            /* counter is already 1 here */
-                            dupeMap.put(link.getURL(), dupes);
-                        } else {
-                            /* increase counter */
-                            dupes.counter++;
-                        }
-                    }
+                    if (dupeCheck(link) == false) return null;
                     String name = packageName;
                     int bestMatch = 0;
                     CrawledPackageInfo bestPackage = null;
                     boolean readL = readLock();
                     try {
                         for (CrawledPackageInfo pkg : packages) {
+                            if (pkg.isAllowAutoPackage() == false) continue;
                             int sim = LinknameCleaner.comparepackages(pkg.getAutoPackageName(), name);
                             if (sim > bestMatch) {
                                 bestMatch = sim;
@@ -196,6 +235,7 @@ public class LinkCollector extends PackageController<CrawledPackageInfo, Crawled
                     if (bestMatch < 99 || bestPackage == null) {
                         /* create new Package */
                         bestPackage = new CrawledPackageInfo();
+                        bestPackage.setCreated(link.getCreated());
                     } else {
                         /* rename existing one */
                         name = getSimString(bestPackage.getAutoPackageName(), name);
@@ -214,33 +254,14 @@ public class LinkCollector extends PackageController<CrawledPackageInfo, Crawled
     private String getSimString(String a, String b) {
         String aa = a.toLowerCase();
         String bb = b.toLowerCase();
-        StringBuilder ret = new StringBuilder();
-        for (int i = 0; i < Math.min(aa.length(), bb.length()); i++) {
+        int maxL = Math.min(aa.length(), bb.length());
+        StringBuilder ret = new StringBuilder(maxL);
+        for (int i = 0; i < maxL; i++) {
             if (aa.charAt(i) == bb.charAt(i)) {
                 ret.append(a.charAt(i));
             }
         }
         return ret.toString();
-    }
-
-    public void clear() {
-        IOEQ.getQueue().add(new QueueAction<Void, RuntimeException>() {
-
-            @Override
-            protected Void run() throws RuntimeException {
-                ArrayList<CrawledPackageInfo> clearList = null;
-                writeLock();
-                try {
-                    clearList = new ArrayList<CrawledPackageInfo>(packages);
-                } finally {
-                    writeUnlock();
-                }
-                for (CrawledPackageInfo pkg : clearList) {
-                    LinkCollector.this.removePackage(pkg);
-                }
-                return null;
-            }
-        });
     }
 
     private void checkRunningState(boolean start) {

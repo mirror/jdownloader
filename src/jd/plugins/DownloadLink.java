@@ -27,7 +27,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
@@ -37,6 +36,7 @@ import jd.config.Property;
 import jd.controlling.DownloadController;
 import jd.controlling.JDLogger;
 import jd.controlling.SingleDownloadController;
+import jd.controlling.UniqueID;
 import jd.controlling.linkcrawler.CheckableLink;
 import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
 import jd.http.Browser;
@@ -58,8 +58,6 @@ import org.jdownloader.settings.GeneralSettings;
  * @author astaldo
  */
 public class DownloadLink extends Property implements Serializable, Comparable<DownloadLink>, AbstractPackageChildrenNode<FilePackage>, CheckableLink {
-
-    private static final AtomicLong DownloadLinkIDCounter = new AtomicLong(0);
 
     public static enum AvailableStatus {
         UNCHECKED,
@@ -176,7 +174,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
 
     private long                               finishedDate             = -1l;
 
-    private transient long                     uniqueID                 = -1;
+    private transient UniqueID                 uniqueID                 = null;
 
     /**
      * Erzeugt einen neuen DownloadLink
@@ -193,7 +191,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      *            Markiert diesen DownloadLink als aktiviert oder deaktiviert
      */
     public DownloadLink(PluginForHost plugin, String name, String host, String urlDownload, boolean isEnabled) {
-        uniqueID = DownloadLinkIDCounter.incrementAndGet();
+        uniqueID = new UniqueID();
         this.defaultplugin = plugin;
         priority = 0;
         setName(name);
@@ -235,7 +233,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     private void readObject(ObjectInputStream stream) throws IOException, ClassNotFoundException {
         /* deserialize object and then fill other stuff(transient..) */
         stream.defaultReadObject();
-        uniqueID = DownloadLinkIDCounter.incrementAndGet();
+        uniqueID = new UniqueID();
     }
 
     public DownloadLink addSourcePluginPassword(String sourcePluginPassword) {
@@ -568,6 +566,15 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
 
     public AvailableStatus getAvailableStatus() {
         return getAvailableStatus(null);
+    }
+
+    /**
+     * this function does not initiate any available check!
+     * 
+     * @return
+     */
+    public AvailableStatus getAvailableStatusInfo() {
+        return availableStatus;
     }
 
     public AvailableStatus getAvailableStatus(PluginForHost plgToUse) {

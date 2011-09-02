@@ -25,6 +25,7 @@ public class AppleTrailer extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.getPage(parameter.toString());
         String title = br.getRegex("var trailerTitle = '(.*?)';").getMatch(0);
+        if (title == null) title = br.getRegex("name=\"omni_page\" content=\"(.*?)\"").getMatch(0);
         String[] hits = br.getRegex("class=\"hd\".*?href=\"((http://.*?apple[^<>]*?|/[^<>]*?)_h?\\d+p\\.mov)\"").getColumn(0);
         if (hits.length == 0) {
             /* custom trailer page */
@@ -39,7 +40,7 @@ public class AppleTrailer extends PluginForDecrypt {
         hits = br.getRegex("class=\"hd\".*?href=\"((http://.*?apple[^<>]*?|/[^<>]*?)_h?\\d+p\\.mov)\"").getColumn(0);
         if (hits.length == 0) return decryptedLinks;
         FilePackage fp = FilePackage.getInstance();
-        if (title != null) fp.setName(title.trim() + " Trailers");
+        if (title != null) fp.setName(title.trim());
         for (String hit : hits) {
             /* correct url */
             String url = hit.replaceFirst("movies\\.", "www.");

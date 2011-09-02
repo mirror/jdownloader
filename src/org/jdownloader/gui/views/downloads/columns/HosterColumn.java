@@ -6,6 +6,7 @@ import javax.swing.Box;
 import javax.swing.ImageIcon;
 import javax.swing.JComponent;
 
+import jd.controlling.linkcrawler.CrawledLinkInfo;
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
@@ -22,9 +23,13 @@ import org.jdownloader.gui.views.downloads.HosterToolTip;
 
 public class HosterColumn extends ExtColumn<AbstractNode> {
 
-    private int           maxIcons = 10;
-    private MigPanel      panel;
-    private RenderLabel[] labels;
+    /**
+     * 
+     */
+    private static final long serialVersionUID = 1L;
+    private int               maxIcons         = 10;
+    private MigPanel          panel;
+    private RenderLabel[]     labels;
 
     public HosterColumn() {
         super(_GUI._.HosterColumn_HosterColumn(), null);
@@ -35,6 +40,12 @@ public class HosterColumn extends ExtColumn<AbstractNode> {
         for (int i = 0; i < maxIcons; i++) {
             labels[i] = new RenderLabel() {
 
+                /**
+                 * 
+                 */
+                private static final long serialVersionUID = 1L;
+
+                @SuppressWarnings("deprecation")
                 @Override
                 public void show(boolean b) {
                     if (b) {
@@ -130,19 +141,23 @@ public class HosterColumn extends ExtColumn<AbstractNode> {
                 labels[0].setVisible(true);
                 labels[0].setIcon(icon);
             }
-
+        } else if (value instanceof CrawledLinkInfo) {
+            ImageIcon icon = ((CrawledLinkInfo) value).getHosterIcon(true);
+            if (icon != null) {
+                labels[0].setVisible(true);
+                labels[0].setIcon(icon);
+            }
         }
-
     }
 
     @Override
     public ExtTooltip createToolTip(Point position, AbstractNode obj) {
-
         if (obj instanceof DownloadLink) {
             return new IconLabelToolTip(((DownloadLink) obj).getHost(), ((DownloadLink) obj).getHosterIcon(true));
+        } else if (obj instanceof CrawledLinkInfo) {
+            return new IconLabelToolTip(((CrawledLinkInfo) obj).getHost(), ((CrawledLinkInfo) obj).getHosterIcon(true));
         } else if (obj instanceof FilePackage) { return new HosterToolTip((FilePackage) obj); }
         return null;
-
     }
 
     @Override

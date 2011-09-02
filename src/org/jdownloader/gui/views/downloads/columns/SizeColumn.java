@@ -45,8 +45,9 @@ public class SizeColumn extends ExtFileSizeColumn<AbstractNode> {
     protected long getBytes(AbstractNode o2) {
         if (o2 instanceof CrawledPackageInfo) {
             return 0;
-        } else if (o2 instanceof CrawledLinkInfo) { return ((CrawledLinkInfo) o2).getSize(); }
-        if (o2 instanceof DownloadLink) {
+        } else if (o2 instanceof CrawledLinkInfo) {
+            return ((CrawledLinkInfo) o2).getSize();
+        } else if (o2 instanceof DownloadLink) {
             return ((DownloadLink) o2).getDownloadSize();
         } else if (o2 instanceof FilePackage) {
             return ((FilePackage) o2).getTotalEstimatedPackageSize();

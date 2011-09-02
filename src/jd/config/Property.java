@@ -16,6 +16,8 @@
 
 package jd.config;
 
+import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.io.Serializable;
 import java.util.HashMap;
 
@@ -41,14 +43,21 @@ public class Property implements Serializable {
      */
     public static final Object       NULL             = new Object();
 
-    private HashMap<String, Object>  properties;
-    private HashMap<String, Integer> propertiesHashes;
+    private HashMap<String, Object>  properties       = null;
+    private HashMap<String, Integer> propertiesHashes = null;
 
     protected transient boolean      changes          = false;
 
     public Property() {
-        properties = new HashMap<String, Object>();
-        propertiesHashes = new HashMap<String, Integer>();
+    }
+
+    private void readObject(ObjectInputStream stream) throws IOException, ClassNotFoundException {
+        /* deserialize object and then fill other stuff(transient..) */
+        stream.defaultReadObject();
+        if (properties != null && properties.isEmpty()) {
+            properties = null;
+            propertiesHashes = null;
+        }
     }
 
     /**
@@ -163,21 +172,14 @@ public class Property implements Serializable {
         return properties;
     }
 
-    /**
-     * 
-     * @return
-     */
-    private HashMap<String, Object> getPropertiesNotNull() {
-        if (properties == null) {
-            properties = new HashMap<String, Object>();
-        }
-        return properties;
-    }
-
     public void copyTo(Property dest) {
         if (dest != null && dest != this) {
-            dest.properties.putAll(this.properties);
-            dest.propertiesHashes.putAll(this.propertiesHashes);
+            if (properties != null) {
+                dest.properties.putAll(this.properties);
+            }
+            if (propertiesHashes != null) {
+                dest.propertiesHashes.putAll(this.propertiesHashes);
+            }
         }
     }
 
@@ -189,12 +191,8 @@ public class Property implements Serializable {
      */
     @Deprecated
     public Object getProperty(final String key) {
-        // if (properties == null) {
-        // properties = new HashMap<String, Object>();
-        // }
-        //
-        // return properties.get(key);
-        return getPropertiesNotNull().get(key);
+        if (properties == null) return null;
+        return properties.get(key);
     }
 
     /**
@@ -205,12 +203,9 @@ public class Property implements Serializable {
      * @return value
      */
     public Object getProperty(final String key, final Object def) {
-        // if (properties == null) {
-        // properties = new HashMap<String, Object>();
-        // }
-        // if (properties.get(key) == null) {
         if (getProperty(key) == null) {
-            setProperty(key, def);
+            /* FIXME: WHY THE HELL DO WE PUT DEFAULTS INTO HASHMAP?!?!? */
+            // setProperty(key, def);
             return def;
         }
         return properties.get(key);
@@ -238,6 +233,7 @@ public class Property implements Serializable {
     }
 
     public boolean hasProperty(final String key) {
+        if (properties == null) return false;
         return properties.containsKey(key);
     }
 
@@ -259,10 +255,9 @@ public class Property implements Serializable {
      */
     @SuppressWarnings("unchecked")
     public void setProperty(final String key, final Object value) {
-
         final JDController controller = JDUtilities.getController();
         if (value == NULL) {
-            if (properties.containsKey(key)) {
+            if (properties != null && properties.containsKey(key)) {
                 properties.remove(key);
                 propertiesHashes.remove(key);
                 controller.fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_JDPROPERTY_CHANGED, key));
@@ -326,7 +321,8 @@ public class Property implements Serializable {
     // @Override
     @Override
     public String toString() {
-        return (properties.size() == 0) ? "" : "Property: " + properties;
+        if (properties != null) return (properties.size() == 0) ? "" : "Property: " + properties;
+        return "no properties set";
     }
 
 }

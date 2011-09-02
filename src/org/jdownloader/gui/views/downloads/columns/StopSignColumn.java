@@ -3,6 +3,7 @@ package org.jdownloader.gui.views.downloads.columns;
 import java.awt.Component;
 
 import javax.swing.Icon;
+import javax.swing.ImageIcon;
 import javax.swing.JTable;
 import javax.swing.table.JTableHeader;
 
@@ -15,6 +16,8 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 
 public class StopSignColumn extends ExtTextColumn<AbstractNode> {
+
+    private ImageIcon icon;
 
     public ExtTableHeaderRenderer getHeaderRenderer(final JTableHeader jTableHeader) {
 
@@ -43,7 +46,7 @@ public class StopSignColumn extends ExtTextColumn<AbstractNode> {
 
     public StopSignColumn() {
         super(_GUI._.StopSignColumn_StopSignColumn());
-
+        icon = NewTheme.I().getIcon("stopsign", 16);
     }
 
     @Override
@@ -57,7 +60,7 @@ public class StopSignColumn extends ExtTextColumn<AbstractNode> {
 
     @Override
     protected Icon getIcon(AbstractNode value) {
-        if (DownloadWatchDog.getInstance().isStopMark(value)) { return NewTheme.I().getIcon("stopsign", 16); }
+        if (DownloadWatchDog.getInstance().isStopMark(value)) { return icon; }
         return null;
     }
 
@@ -94,7 +97,6 @@ public class StopSignColumn extends ExtTextColumn<AbstractNode> {
 
     @Override
     public String getStringValue(AbstractNode value) {
-
         return "";
     }
 

@@ -31,7 +31,7 @@ public class DownloadsTableTransferHandler extends TransferHandler {
 
     @Override
     public boolean canImport(TransferSupport support) {
-        if (!table.isDownloadOrder()) { return false; }
+        if (!table.isOriginalOrder()) { return false; }
         if (support.isDrop()) {
             /* we want to drop something */
             JTable.DropLocation dl = (JTable.DropLocation) support.getDropLocation();

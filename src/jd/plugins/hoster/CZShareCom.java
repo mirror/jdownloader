@@ -41,7 +41,7 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "czshare.com" }, urls = { "http://(www\\.)?czshare\\.com/((files/)?\\d+/[A-Za-z0-9_]+/.{1}|download_file\\.php\\?id=\\d+\\&code=[A-Za-z0-9_]+)" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "czshare.com" }, urls = { "http://(www\\.)?czshare\\.com/((files/)?\\d+/[A-Za-z0-9_\\.]+(/.{1})?|download_file\\.php\\?id=\\d+\\&code=[A-Za-z0-9_]+)" }, flags = { 2 })
 public class CZShareCom extends PluginForHost {
 
     private final static int SIMULTANEOUS_PREMIUM = -1;

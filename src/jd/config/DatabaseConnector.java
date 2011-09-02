@@ -348,7 +348,8 @@ public class DatabaseConnector implements Serializable {
                 rs = statement.executeQuery("SELECT * FROM config");
                 while (rs.next()) {
                     final SubConfiguration conf = SubConfiguration.getConfig(rs.getString(1));
-                    if (conf.getProperties().size() > 0) {
+                    HashMap<String, Object> props = conf.getProperties();
+                    if (props != null && props.size() > 0) {
                         ret.add(conf);
                     }
                 }
