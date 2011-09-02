@@ -232,6 +232,9 @@ public class DecrypterForRedirectServicesWithoutDirectRedirects extends PluginFo
                 });
                 eb.eval(br);
                 finallink = eb.getRegex("><iframe src=\"(.*?)\"").getMatch(0);
+                if (!finallink.matches("http://.*?/.*?")) {
+                    finallink = null;
+                }
             } catch (final ExtBrowserException e) {
             }
         } else if (parameter.contains("imagetwist.com/")) {

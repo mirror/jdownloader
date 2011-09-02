@@ -996,7 +996,7 @@ public class LnkCrptWs extends PluginForDecrypt {
         /* we have to open the normal page for weblinks */
         if (br.containsHTML("BlueHeadLine.*?>(Weblinks)<")) {
             br.getPage("http://linkcrypt.ws/dir/" + containerId);
-            // logger.info("ContainerID is null, trying webdecryption...");
+             logger.info("ContainerID is null, trying webdecryption...");
             final Form[] forms = br.getForms();
             progress.setRange(forms.length - 8);
             for (final Form form : forms) {
