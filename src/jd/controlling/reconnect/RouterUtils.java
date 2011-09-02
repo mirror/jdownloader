@@ -231,18 +231,28 @@ public class RouterUtils {
 
     private static boolean checkPort(String host, int port) {
         Socket sock = null;
+        URLConnectionAdapter con = null;
         try {
-
             sock = new Socket(host, port);
             sock.setSoTimeout(200);
-
-            // some isps or DNS server redirect in case of no server found
             Browser br = new Browser();
+            br.setConnectTimeout(2000);
+            br.setReadTimeout(1000);
             br.setFollowRedirects(false);
-            URLConnectionAdapter con = br.openGetConnection("http://" + host);
+            if (port == 443) {
+                /* 443 is https */
+                con = br.openGetConnection("https://" + host + ":443");
+            } else {
+                String portS = "";
+                if (port != 80) {
+                    portS = ":" + port;
+                }
+                /* fallback to normal http */
+                con = br.openGetConnection("http://" + host + portS);
+            }
             String redirect = br.getRedirectLocation();
             String domain = Browser.getHost(redirect);
-            con.disconnect();
+            // some isps or DNS server redirect in case of no server found
             if ("t-online.de".equals(domain)) return false;
             if ("opendns.com".equals(domain)) return false;
             return true;
@@ -250,6 +260,10 @@ public class RouterUtils {
         } finally {
             try {
                 sock.close();
+            } catch (Throwable e) {
+            }
+            try {
+                con.disconnect();
             } catch (Throwable e) {
             }
         }
