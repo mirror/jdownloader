@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
+import jd.gui.UserIO;
 import jd.http.Browser;
 import jd.http.RandomUserAgent;
 import jd.nutils.encoding.Encoding;
@@ -29,12 +30,12 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -44,6 +45,7 @@ import org.appwork.utils.formatter.TimeFormatter;
 public class FileServeCom extends PluginForHost {
 
     public String               FILEIDREGEX = "fileserve\\.com/file/([a-zA-Z0-9]+)(http:.*)?";
+    private boolean             showDialog  = false;
     public static String        agent       = RandomUserAgent.generate();
     private static final String COOKIE_HOST = "http://www.fileserve.com";
 
@@ -253,6 +255,7 @@ public class FileServeCom extends PluginForHost {
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
         try {
+            showDialog = true;
             loginAPI(br, account);
         } catch (PluginException e) {
             account.setValid(false);
@@ -261,6 +264,8 @@ public class FileServeCom extends PluginForHost {
             } else {
                 return ai;
             }
+        } finally {
+            showDialog = false;
         }
         if (account.getAccountInfo() != null) {
             return account.getAccountInfo();
@@ -373,13 +378,19 @@ public class FileServeCom extends PluginForHost {
         Browser br = useBr;
         if (br == null) br = new Browser();
         this.setBrowserExclusive();
-        String username = account.getUser();
-        String password = account.getPass();
-        br.postPage("http://app.fileserve.com/api/login/", "username=" + Encoding.urlEncode(username) + "&password=" + Encoding.urlEncode(password) + "&submit=Submit+Query");
-        String type = br.getRegex("type\":\"(.*?)\"").getMatch(0);
         AccountInfo ai = account.getAccountInfo();
         if (ai == null) ai = new AccountInfo();
         account.setAccountInfo(ai);
+        String username = Encoding.urlEncode(account.getUser());
+        String password = Encoding.urlEncode(account.getPass());
+        if (username.contains("%") || password.contains("%")) {
+            ai.setStatus("Please change your password! Special chars are NOT allowed!");
+            if (showDialog) UserIO.getInstance().requestMessageDialog(0, "Please change your password! Special chars are NOT allowed!", "Only letters, number, hyphens (-), or underscores (_).\r\nThis is a Fileserve API Limitation!");
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        }
+        br.postPage("http://app.fileserve.com/api/login/", "username=" + username + "&password=" + password + "&submit=Submit+Query");
+        String type = br.getRegex("type\":\"(.*?)\"").getMatch(0);
+
         if (!"premium".equalsIgnoreCase(type)) {
             String error_code = br.getRegex("error_code\":(\\d+)").getMatch(0);
             if ("110".equals(error_code)) {
@@ -401,6 +412,7 @@ public class FileServeCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
         }
+        ai.setUnlimitedTraffic();
         account.setValid(true);
         ai.setStatus("Premium");
         return br;
