@@ -12,21 +12,22 @@ import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.ListCellRenderer;
 
+import jd.controlling.reconnect.ReconnectConfig;
 import jd.controlling.reconnect.ReconnectPluginController;
 import jd.controlling.reconnect.RouterPlugin;
 import jd.gui.swing.jdgui.views.settings.components.SettingsComponent;
 import jd.gui.swing.jdgui.views.settings.components.StateUpdateListener;
 
 import org.appwork.app.gui.MigPanel;
-import org.appwork.storage.StorageEvent;
-import org.appwork.storage.StorageKeyAddedEvent;
-import org.appwork.storage.StorageValueChangeEvent;
-import org.appwork.utils.event.DefaultEventListener;
+import org.appwork.storage.config.ConfigEventListener;
+import org.appwork.storage.config.ConfigInterface;
+import org.appwork.storage.config.JsonConfig;
+import org.appwork.storage.config.KeyHandler;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.translate._JDT;
 
-public class ReconnectManager extends MigPanel implements SettingsComponent, ActionListener, DefaultEventListener<StorageEvent<?>> {
+public class ReconnectManager extends MigPanel implements SettingsComponent, ActionListener, ConfigEventListener {
     private static final long serialVersionUID = 1L;
     private JComboBox         combobox;
     private JButton           autoButton;
@@ -37,24 +38,8 @@ public class ReconnectManager extends MigPanel implements SettingsComponent, Act
         initComponents();
         layoutComponents();
         fill();
-        ReconnectPluginController.getInstance().getStorage().getEventSender().addListener(this);
-    }
+        JsonConfig.create(ReconnectConfig.class).getStorageHandler().getEventSender().addListener(this);
 
-    public void onEvent(final StorageEvent<?> event) {
-        boolean b = false;
-        if (event instanceof StorageValueChangeEvent<?>) {
-            final StorageValueChangeEvent<?> changeEvent = (StorageValueChangeEvent<?>) event;
-            if (changeEvent.getKey().equals(ReconnectPluginController.PRO_ACTIVEPLUGIN)) {
-                b = true;
-            }
-        } else if (event instanceof StorageKeyAddedEvent<?>) {
-            final StorageKeyAddedEvent<?> changeEvent = (StorageKeyAddedEvent<?>) event;
-            if (changeEvent.getKey().equals(ReconnectPluginController.PRO_ACTIVEPLUGIN)) {
-                b = true;
-            }
-        }
-        if (b == false) return;
-        setView(((RouterPlugin) combobox.getSelectedItem()).getGUI());
     }
 
     public void actionPerformed(final ActionEvent e) {
@@ -124,6 +109,15 @@ public class ReconnectManager extends MigPanel implements SettingsComponent, Act
 
     public String getConstraints() {
         return "wmin 10,height 60:n:n,pushy,growy";
+    }
+
+    public void onConfigValidatorError(ConfigInterface config, Throwable validateException, KeyHandler methodHandler) {
+    }
+
+    public void onConfigValueModified(ConfigInterface config, String key, Object newValue) {
+        if (ReconnectConfig.ACTIVE_PLUGIN_ID.equalsIgnoreCase(key)) {
+            setView(((RouterPlugin) combobox.getSelectedItem()).getGUI());
+        }
     }
 
 }

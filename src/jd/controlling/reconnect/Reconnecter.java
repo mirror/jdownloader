@@ -32,18 +32,11 @@ import jd.utils.JDUtilities;
 import org.appwork.controlling.State;
 import org.appwork.controlling.StateMachine;
 import org.appwork.controlling.StateMachineInterface;
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.Storage;
-import org.appwork.storage.StorageEvent;
-import org.appwork.storage.StorageKeyAddedEvent;
-import org.appwork.storage.StorageValueChangeEvent;
-import org.appwork.utils.event.DefaultEventListener;
-import org.appwork.utils.event.DefaultEventSender;
+import org.appwork.storage.config.JsonConfig;
 import org.jdownloader.translate._JDT;
 
 public final class Reconnecter implements StateMachineInterface {
-    public static final String         RECONNECT_SUCCESS_COUNTER        = "RECONNECT_SUCCESS_COUNTER";
-    public static final String         RECONNECT_FAILED_COUNTER         = "RECONNECT_FAILED_COUNTER";
+
     public static final State          IDLE                             = new State("IDLE");
     public static final State          RECONNECT_RUNNING                = new State("RECONNECT_RUNNING");
     // private static final State RECONNECT_REQUESTED = new
@@ -165,26 +158,30 @@ public final class Reconnecter implements StateMachineInterface {
         return Reconnecter.getInstance().forceReconnect();
     }
 
-    private final DefaultEventSender<ReconnecterEvent> eventSender;
-    private final StateMachine                         statemachine;
+    private final ReconnectEventSender eventSender;
+    private final StateMachine         statemachine;
 
-    private final Storage                              storage;
+    private final ReconnectConfig      storage;
 
     private Reconnecter() {
-        this.eventSender = new DefaultEventSender<ReconnecterEvent>();
+        this.eventSender = new ReconnectEventSender();
         this.statemachine = new StateMachine(this, Reconnecter.IDLE, Reconnecter.IDLE);
-        this.storage = JSonStorage.getPlainStorage("RECONNECT");
-        // propagate
-        this.storage.getEventSender().addListener(new DefaultEventListener<StorageEvent<?>>() {
+        this.storage = JsonConfig.create(ReconnectConfig.class);
+        // // propagate
+        // this.storage.getEventSender().addListener(new
+        // DefaultEventListener<StorageEvent<?>>() {
+        //
+        // public void onEvent(final StorageEvent<?> event) {
+        // // TODO Auto-generated method stub
+        // if (event instanceof StorageValueChangeEvent<?> || event instanceof
+        // StorageKeyAddedEvent<?>) {
+        // Reconnecter.this.eventSender.fireEvent(new
+        // ReconnecterEvent(ReconnecterEvent.SETTINGS_CHANGED, event));
+        // }
+        // }
+        //
+        // });
 
-            public void onEvent(final StorageEvent<?> event) {
-                // TODO Auto-generated method stub
-                if (event instanceof StorageValueChangeEvent<?> || event instanceof StorageKeyAddedEvent<?>) {
-                    Reconnecter.this.eventSender.fireEvent(new ReconnecterEvent(ReconnecterEvent.SETTINGS_CHANGED, event));
-                }
-            }
-
-        });
     }
 
     /**
@@ -195,14 +192,14 @@ public final class Reconnecter implements StateMachineInterface {
      */
     public boolean doReconnect() {
         if (!this.statemachine.isStartState()) { return false; }
-        this.eventSender.fireEvent(new ReconnecterEvent(ReconnecterEvent.BEFORE));
 
+        this.eventSender.fireEvent(new ReconnecterEvent(ReconnecterEvent.Type.BEFORE));
         Reconnecter.LOG.info("Try to reconnect...");
         this.statemachine.setStatus(Reconnecter.RECONNECT_RUNNING);
         DownloadWatchDog.getInstance().abortAllSingleDownloadControllers();
 
         int retry;
-        int maxretries = JDUtilities.getConfiguration().getIntegerProperty(Configuration.PARAM_RETRIES, 5);
+        int maxretries = JsonConfig.create(ReconnectConfig.class).getMaxReconnectRetryNum();
         boolean ret = false;
         retry = 0;
         if (maxretries < 0) {
@@ -236,20 +233,37 @@ public final class Reconnecter implements StateMachineInterface {
             progress.doFinalize(1000);
         }
 
-        this.eventSender.fireEvent(new ReconnecterEvent(ReconnecterEvent.AFTER, ret));
+        this.eventSender.fireEvent(new ReconnecterEvent(ReconnecterEvent.Type.AFTER, ret));
 
         this.statemachine.setStatus(Reconnecter.IDLE);
         if (!ret) {
-            this.storage.increase(Reconnecter.RECONNECT_FAILED_COUNTER);
-            this.storage.increase(Reconnecter.RECONNECT_FAILED_COUNTER_GLOBAL);
-            this.storage.put(Reconnecter.RECONNECT_SUCCESS_COUNTER, 0);
+            counterFailed(+1);
+            counterGlobalFailed(+1);
+            storage.setSuccessCounter(0);
 
         } else {
-            this.storage.increase(Reconnecter.RECONNECT_SUCCESS_COUNTER);
-            this.storage.increase(Reconnecter.RECONNECT_SUCCESS_COUNTER_GLOBAL);
-            this.storage.put(Reconnecter.RECONNECT_FAILED_COUNTER, 0);
+
+            counterSuccess(+1);
+            counterGlobalSuccess(+1);
+            storage.setFailedCounter(0);
         }
         return ret;
+    }
+
+    private void counterGlobalSuccess(int i) {
+        storage.setGlobalSuccessCounter(storage.getGlobalSuccessCounter() + i);
+    }
+
+    private void counterSuccess(int i) {
+        storage.setSuccessCounter(storage.getSuccessCounter() + i);
+    }
+
+    private void counterGlobalFailed(int i) {
+        storage.setGlobalFailedCounter(storage.getGlobalFailedCounter() + i);
+    }
+
+    private void counterFailed(int i) {
+        storage.setFailedCounter(storage.getFailedCounter() + i);
     }
 
     /**
@@ -264,16 +278,12 @@ public final class Reconnecter implements StateMachineInterface {
         return ret;
     }
 
-    public DefaultEventSender<ReconnecterEvent> getEventSender() {
+    public ReconnectEventSender getEventSender() {
         return this.eventSender;
     }
 
     public StateMachine getStateMachine() {
         return this.statemachine;
-    }
-
-    public Storage getStorage() {
-        return this.storage;
     }
 
     /**
@@ -330,7 +340,7 @@ public final class Reconnecter implements StateMachineInterface {
             final ProgressController progress = new ProgressController(_JDT._.jd_controlling_reconnect_Reconnector_progress_failed(), 100, "reconnect_warning");
             progress.doFinalize(10000l);
 
-            final long counter = this.storage.get(Reconnecter.RECONNECT_FAILED_COUNTER, 0);
+            final long counter = this.storage.getFailedCounter();
 
             if (counter > 5) {
                 /*

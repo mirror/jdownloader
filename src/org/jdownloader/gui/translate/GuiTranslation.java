@@ -2347,4 +2347,16 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { " - idle - " })
     String StatusBarImpl_initGUI_linkgrabber_desc_inactive();
 
+    @Default(lngs = { "en" }, values = { "Continue" })
+    String literally_continue();
+
+    @Default(lngs = { "en" }, values = { "Warning" })
+    String literall_warning();
+
+    @Default(lngs = { "en" }, values = { "Error" })
+    String literall_error();
+
+    @Default(lngs = { "en" }, values = { "Edit" })
+    String literally_edit();
+
 }

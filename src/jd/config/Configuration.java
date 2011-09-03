@@ -64,15 +64,20 @@ public class Configuration extends SubConfiguration implements Serializable {
 
     public static final String PARAM_FINISHED_DOWNLOADS_ACTION        = "FINISHED_DOWNLOADS_ACTION";
 
-    public static final String PARAM_GLOBAL_IP_CHECK_SITE             = "GLOBAL_IP_CHECK_SITE3";
+    // public static final String PARAM_GLOBAL_IP_CHECK_SITE =
+    // "GLOBAL_IP_CHECK_SITE3";
 
-    public static final String PARAM_GLOBAL_IP_DISABLE                = "GLOBAL_IP_DISABLE2";
+    // public static final String PARAM_GLOBAL_IP_DISABLE =
+    // "GLOBAL_IP_DISABLE2";
 
-    public static final String PARAM_GLOBAL_IP_BALANCE                = "GLOBAL_IP_BALANCE3";
+    // public static final String PARAM_GLOBAL_IP_BALANCE =
+    // "GLOBAL_IP_BALANCE3";
 
-    public static final String PARAM_GLOBAL_IP_MASK                   = "PARAM_GLOBAL_IP_MASK2";
+    // public static final String PARAM_GLOBAL_IP_MASK =
+    // "PARAM_GLOBAL_IP_MASK2";
 
-    public static final String PARAM_GLOBAL_IP_PATTERN                = "GLOBAL_IP_PATTERN3";
+    // public static final String PARAM_GLOBAL_IP_PATTERN =
+    // "GLOBAL_IP_PATTERN3";
 
     public static final String PARAM_HTTPSEND_IP                      = "HTTPSEND_IP";
 
@@ -102,11 +107,13 @@ public class Configuration extends SubConfiguration implements Serializable {
 
     public static final String NAME                                   = "jdownloaderconfig";
 
-    public static final String PARAM_IPCHECKWAITTIME                  = "RECONNECT_IPCHECKWAITTIME2";
+    // public static final String PARAM_IPCHECKWAITTIME =
+    // "RECONNECT_IPCHECKWAITTIME2";
 
-    public static final String PARAM_RETRIES                          = "RECONNECT_RETRIES2";
+    // public static final String PARAM_RETRIES = "RECONNECT_RETRIES2";
 
-    public static final String PARAM_WAITFORIPCHANGE                  = "RECONNECT_WAITFORIPCHANGE2";
+    // public static final String PARAM_WAITFORIPCHANGE =
+    // "RECONNECT_WAITFORIPCHANGE2";
 
     /**
      * Konstruktor für ein Configuration Object

@@ -51,6 +51,7 @@ import javax.swing.event.HyperlinkListener;
 import jd.controlling.JDLogger;
 import jd.controlling.reconnect.Reconnecter;
 import jd.controlling.reconnect.ReconnecterEvent;
+import jd.controlling.reconnect.ReconnecterListener;
 import jd.gui.UserIO;
 import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.SwingGui;
@@ -65,7 +66,6 @@ import net.miginfocom.swing.MigLayout;
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
 import org.appwork.utils.Regex;
-import org.appwork.utils.event.DefaultEventListener;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.extensions.AbstractExtension;
@@ -1066,29 +1066,29 @@ public class ChatExtension extends AbstractExtension<ChatConfig> {
         ChatExtension.COMMANDS.add("/mode ");
         ChatExtension.COMMANDS.add("/join ");
         configPanel = new ChatConfigPanel(this, getSettings());
-        Reconnecter.getInstance().getEventSender().addListener(new DefaultEventListener<ReconnecterEvent>() {
 
-            public void onEvent(final ReconnecterEvent event) {
-                // ignore events if gui is not active
-                if (ChatExtension.this.textArea == null) { return; }
-                if (event.getEventID() == ReconnecterEvent.AFTER) {
-                    if (SwingGui.getInstance().getMainFrame().isActive() && !ChatExtension.this.nickaway) {
-                        ChatExtension.this.initIRC();
-                    } else {
-                        ChatExtension.this.addToText(null, ChatExtension.STYLE_ERROR, "You got disconnected because of a reconnect. <a href='intern:reconnect|reconnect'><b>[RECONNECT NOW]</b></a>");
-                    }
-                } else if (event.getEventID() == ReconnecterEvent.BEFORE) {
-                    // sendMessage(CHANNEL, "/me is reconnecting...");
-                    if (ChatExtension.this.conn != null && ChatExtension.this.conn.isConnected()) {
-                        ChatExtension.this.addToText(null, ChatExtension.STYLE_SYSTEM_MESSAGE, "closing connection due to requested reconnect.");
-                        ChatExtension.this.conn.doPart(getCurrentChannel(), "reconnecting...");
-                        ChatExtension.this.conn.close();
-                        ChatExtension.this.conn = null;
-                    }
-                }
+        Reconnecter.getInstance().getEventSender().addListener(new ReconnecterListener() {
 
+            public void onReconnectSettingsUpdated(ReconnecterEvent event) {
             }
 
+            public void onBeforeReconnect(ReconnecterEvent event) {
+                // sendMessage(CHANNEL, "/me is reconnecting...");
+                if (ChatExtension.this.conn != null && ChatExtension.this.conn.isConnected()) {
+                    ChatExtension.this.addToText(null, ChatExtension.STYLE_SYSTEM_MESSAGE, "closing connection due to requested reconnect.");
+                    ChatExtension.this.conn.doPart(getCurrentChannel(), "reconnecting...");
+                    ChatExtension.this.conn.close();
+                    ChatExtension.this.conn = null;
+                }
+            }
+
+            public void onAfterReconnect(ReconnecterEvent event) {
+                if (SwingGui.getInstance().getMainFrame().isActive() && !ChatExtension.this.nickaway) {
+                    ChatExtension.this.initIRC();
+                } else {
+                    ChatExtension.this.addToText(null, ChatExtension.STYLE_ERROR, "You got disconnected because of a reconnect. <a href='intern:reconnect|reconnect'><b>[RECONNECT NOW]</b></a>");
+                }
+            }
         });
 
         this.initGUI();

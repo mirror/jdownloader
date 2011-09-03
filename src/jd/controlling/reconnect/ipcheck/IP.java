@@ -2,12 +2,13 @@ package jd.controlling.reconnect.ipcheck;
 
 import java.util.regex.Pattern;
 
-import jd.config.Configuration;
 import jd.controlling.JDLogger;
-import jd.controlling.JSonWrapper;
+import jd.controlling.reconnect.ReconnectConfig;
+
+import org.appwork.storage.config.JsonConfig;
 
 public class IP {
-    private static final String IP_PATTERN = "\\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?).){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\b";
+    public static final String IP_PATTERN = "\\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?).){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\b";
 
     /**
      * validates the adress, and returns an IP instance or throws an exception
@@ -47,10 +48,6 @@ public class IP {
 
     }
 
-    public static String getIPPattern() {
-        return JSonWrapper.get("DOWNLOAD").getStringProperty(Configuration.PARAM_GLOBAL_IP_MASK, IP.IP_PATTERN);
-    }
-
     /**
      * Überprüft ob eine IP gültig ist. das verwendete Pattern kann in der
      * config editiert werden.
@@ -61,7 +58,7 @@ public class IP {
     public static boolean validateIP(final String ip) {
         if (ip == null) { return false; }
         try {
-            return Pattern.compile(IP.getIPPattern()).matcher(ip.trim()).matches();
+            return Pattern.compile(JsonConfig.create(ReconnectConfig.class).getGlobalIPCheckPattern()).matcher(ip.trim()).matches();
         } catch (final Exception e) {
             JDLogger.getLogger().severe("Could not validate IP! " + e);
         }

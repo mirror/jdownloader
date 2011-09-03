@@ -16,8 +16,6 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map.Entry;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -29,7 +27,6 @@ import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JPanel;
-import javax.swing.JTextField;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.xml.parsers.DocumentBuilder;
@@ -52,6 +49,8 @@ import jd.gui.UserIO;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
+import org.appwork.storage.config.JsonConfig;
+import org.appwork.swing.components.ExtTextField;
 import org.appwork.utils.Regex;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.swing.EDTRunner;
@@ -62,6 +61,7 @@ import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.appwork.utils.swing.dialog.ProgressDialog;
 import org.appwork.utils.swing.dialog.ProgressDialog.ProgressGetter;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.settings.advanced.AdvancedConfigManager;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -76,17 +76,21 @@ public class UPNPRouterPlugin extends RouterPlugin implements ActionListener, IP
     private static final String           CANCHECKIP = "cancheckip";
 
     private JButton                       find;
-    private JTextField                    serviceTypeTxt;
-    private JTextField                    controlURLTxt;
+    private ExtTextField                  serviceTypeTxt;
+    private ExtTextField                  controlURLTxt;
     private JLabel                        wanType;
     private JButton                       auto;
     protected ArrayList<UpnpRouterDevice> devices;
 
     private ImageIcon                     icon;
 
+    private UPUPReconnectSettings         settings;
+
     public UPNPRouterPlugin() {
         super();
         icon = NewTheme.I().getIcon("upnp", 16);
+        settings = JsonConfig.create(UPUPReconnectSettings.class);
+        AdvancedConfigManager.getInstance().register(settings);
     }
 
     public void actionPerformed(final ActionEvent e) {
@@ -106,7 +110,9 @@ public class UPNPRouterPlugin extends RouterPlugin implements ActionListener, IP
                 public void run() throws Exception {
                     try {
                         UPNPRouterPlugin.this.devices = UPNPRouterPlugin.this.scanDevices();
-
+                        if (devices.size() == 0) {
+                            UserIO.getInstance().requestMessageDialog("Could not find any UPNP Devices. Try Live Header Reconnect instead!");
+                        }
                     } catch (final IOException e) {
                         UserIO.getInstance().requestMessageDialog("Could not find any UPNP Devices. Try Live Header Reconnect instead!");
                     }
@@ -141,7 +147,11 @@ public class UPNPRouterPlugin extends RouterPlugin implements ActionListener, IP
                 public void run() throws Exception {
                     try {
                         final ArrayList<UpnpRouterDevice> devices = UPNPRouterPlugin.this.scanDevices();
-                        if (devices.size() == 0) return;
+                        if (devices.size() == 0) {
+                            UserIO.getInstance().requestMessageDialog("Could not find any UPNP Devices. Try Live Header Reconnect instead!");
+
+                            return;
+                        }
                         if (Thread.currentThread().isInterrupted()) { return; }
                         final int ret = UserIO.getInstance().requestComboDialog(UserIO.NO_COUNTDOWN, JDL.L("jd.controlling.reconnect.plugins.upnp.UPNPRouterPlugin.actionPerformed.wizard.title", "UPNP Router Wizard"), JDL.L("jd.controlling.reconnect.plugins.upnp.UPNPRouterPlugin.actionPerformed.wizard.find.message", "Scanning all network interfaces"), devices.toArray(new HashMap[] {}), 0, null, null, null, new DefaultListCellRenderer() {
 
@@ -279,11 +289,12 @@ public class UPNPRouterPlugin extends RouterPlugin implements ActionListener, IP
 
                     // UPNPRouterPlugin.this.getStorage().put(UPNPRouterPlugin.TRIED_AUTOFIND,
                     // true);
-                    if (UPNPRouterPlugin.this.getStorage().get(UpnpRouterDevice.CONTROLURL, null) != null) {
+
+                    if (settings.getControlURL() != null) {
 
                         final ImageIcon icon = NewTheme.I().getIcon("true", 32);
 
-                        final ConfirmDialog d = new ConfirmDialog(Dialog.BUTTONS_HIDE_CANCEL, T._.jd_controlling_reconnect_plugins_upnp_UPNPRouterPlugin_autoFind_successdialog_title(), T._.jd_controlling_reconnect_plugins_upnp_UPNPRouterPlugin_autoFind_successdialog_message(UPNPRouterPlugin.this.getStorage().get(UpnpRouterDevice.FRIENDLYNAME, null)), icon, null, null);
+                        final ConfirmDialog d = new ConfirmDialog(Dialog.BUTTONS_HIDE_CANCEL, T._.jd_controlling_reconnect_plugins_upnp_UPNPRouterPlugin_autoFind_successdialog_title(), T._.jd_controlling_reconnect_plugins_upnp_UPNPRouterPlugin_autoFind_successdialog_message(settings.getFriendlyName()), icon, null, null);
 
                         d.setPreferredSize(new Dimension(500, 150));
                         Dialog.getInstance().showDialog(d);
@@ -307,7 +318,7 @@ public class UPNPRouterPlugin extends RouterPlugin implements ActionListener, IP
     public IP getExternalIP() throws IPCheckException {
         String ipxml;
         try {
-            ipxml = this.runCommand(this.getStorage().get(UpnpRouterDevice.SERVICETYPE, ""), this.getStorage().get(UpnpRouterDevice.CONTROLURL, ""), "GetExternalIPAddress");
+            ipxml = this.runCommand(settings.getServiceType(), settings.getControlURL(), "GetExternalIPAddress");
         } catch (final Exception e) {
             this.setCanCheckIP(false);
 
@@ -332,20 +343,24 @@ public class UPNPRouterPlugin extends RouterPlugin implements ActionListener, IP
     @Override
     public JComponent getGUI() {
         final JPanel p = new JPanel(new MigLayout("ins 0,wrap 3", "[][][grow,fill]", "[]"));
-        this.find = new JButton("Find Routers");
+        this.find = new JButton(T._.literally_choose_router());
         this.find.addActionListener(this);
-        this.auto = new JButton("Setup Wizard");
+        this.auto = new JButton(T._.auto());
         this.auto.addActionListener(this);
-        this.serviceTypeTxt = new JTextField();
-        this.controlURLTxt = new JTextField();
+        this.serviceTypeTxt = new ExtTextField();
+        this.controlURLTxt = new ExtTextField();
+
+        serviceTypeTxt.setHelpText(T._.servicetype_help());
+        controlURLTxt.setHelpText(T._.controlURLTxt_help());
+
         this.wanType = new JLabel();
         p.add(this.auto, "aligny top,gapright 15,sg buttons");
-        p.add(new JLabel("Router"), "");
+        p.add(new JLabel(T._.literally_router()), "");
         p.add(this.wanType, "spanx");
         p.add(this.find, "aligny top,gapright 15,newline,sg buttons");
-        p.add(new JLabel("Service Type"), "");
+        p.add(new JLabel(T._.literally_service_type()), "");
         p.add(this.serviceTypeTxt);
-        p.add(new JLabel("Control URL"), "newline,skip");
+        p.add(new JLabel(T._.literally_control_url()), "newline,skip");
         p.add(this.controlURLTxt);
 
         p.add(Box.createGlue(), "pushy,growy");
@@ -368,7 +383,7 @@ public class UPNPRouterPlugin extends RouterPlugin implements ActionListener, IP
             }
 
             private void update() {
-                UPNPRouterPlugin.this.getStorage().put(UpnpRouterDevice.SERVICETYPE, UPNPRouterPlugin.this.serviceTypeTxt.getText());
+                settings.setServiceType(UPNPRouterPlugin.this.serviceTypeTxt.getText());
                 UPNPRouterPlugin.this.setCanCheckIP(true);
             }
 
@@ -391,7 +406,7 @@ public class UPNPRouterPlugin extends RouterPlugin implements ActionListener, IP
             }
 
             private void update() {
-                UPNPRouterPlugin.this.getStorage().put(UpnpRouterDevice.CONTROLURL, UPNPRouterPlugin.this.controlURLTxt.getText());
+                settings.setControlURL(UPNPRouterPlugin.this.controlURLTxt.getText());
                 UPNPRouterPlugin.this.setCanCheckIP(true);
             }
 
@@ -432,7 +447,7 @@ public class UPNPRouterPlugin extends RouterPlugin implements ActionListener, IP
     }
 
     public boolean isIPCheckEnabled() {
-        return this.getStorage().get(UPNPRouterPlugin.CANCHECKIP, true);
+        return settings.isIPCheckEnabled();
     }
 
     @Override
@@ -444,11 +459,11 @@ public class UPNPRouterPlugin extends RouterPlugin implements ActionListener, IP
     protected void performReconnect() throws ReconnectException, InterruptedException {
         try {
             if (Thread.currentThread().isInterrupted()) throw new InterruptedException();
-            this.runCommand(this.getStorage().get(UpnpRouterDevice.SERVICETYPE, ""), this.getStorage().get(UpnpRouterDevice.CONTROLURL, ""), "ForceTermination");
+            this.runCommand(settings.getServiceType(), settings.getControlURL(), "ForceTermination");
             if (Thread.currentThread().isInterrupted()) throw new InterruptedException();
             Thread.sleep(2000);
             if (Thread.currentThread().isInterrupted()) throw new InterruptedException();
-            this.runCommand(this.getStorage().get(UpnpRouterDevice.SERVICETYPE, ""), this.getStorage().get(UpnpRouterDevice.CONTROLURL, ""), "RequestConnection");
+            this.runCommand(settings.getServiceType(), settings.getControlURL(), "RequestConnection");
         } catch (InterruptedException e) {
             throw e;
         } catch (final Throwable e) {
@@ -673,18 +688,26 @@ public class UPNPRouterPlugin extends RouterPlugin implements ActionListener, IP
     }
 
     public void setCanCheckIP(final boolean b) {
-        this.getStorage().put(UPNPRouterPlugin.CANCHECKIP, b);
+        settings.setIPCheckEnabled(b);
+
     }
 
     private void setDevice(final UpnpRouterDevice upnpRouterDevice) {
         if (upnpRouterDevice == null) {
-            this.getStorage().clear();
+            settings.setControlURL(null);
+            settings.setFriendlyName(null);
+            settings.setIPCheckEnabled(false);
+            settings.setServiceType(null);
+            settings.setWANService(null);
         } else {
             JDLogger.getLogger().info(upnpRouterDevice + "");
-            for (final Iterator<Entry<String, String>> it = upnpRouterDevice.entrySet().iterator(); it.hasNext();) {
-                final Entry<String, String> next = it.next();
-                this.getStorage().put(next.getKey(), next.getValue());
-            }
+
+            settings.setControlURL(upnpRouterDevice.get(UpnpRouterDevice.CONTROLURL));
+            settings.setFriendlyName(upnpRouterDevice.get(UpnpRouterDevice.FRIENDLYNAME));
+
+            settings.setServiceType(upnpRouterDevice.get(UpnpRouterDevice.FRIENDLYNAME));
+            settings.setWANService(upnpRouterDevice.get(UpnpRouterDevice.WANSERVICE));
+
             this.setCanCheckIP(true);
 
             this.updateGUI();
@@ -699,15 +722,15 @@ public class UPNPRouterPlugin extends RouterPlugin implements ActionListener, IP
 
                 if (UPNPRouterPlugin.this.wanType != null) {
                     try {
-                        UPNPRouterPlugin.this.wanType.setText(UPNPRouterPlugin.this.getStorage().get(UpnpRouterDevice.FRIENDLYNAME, "") + " (" + UPNPRouterPlugin.this.getStorage().get(UpnpRouterDevice.WANSERVICE, "") + ")");
+                        UPNPRouterPlugin.this.wanType.setText(settings.getFriendlyName() + (settings.getWANService().length() > 0 ? " (" + settings.getWANService() + ")" : ""));
                     } catch (final Throwable e) {
                     }
                     try {
-                        UPNPRouterPlugin.this.serviceTypeTxt.setText(UPNPRouterPlugin.this.getStorage().get(UpnpRouterDevice.SERVICETYPE, ""));
+                        UPNPRouterPlugin.this.serviceTypeTxt.setText(settings.getServiceType());
                     } catch (final Throwable e) {
                     }
                     try {
-                        UPNPRouterPlugin.this.controlURLTxt.setText(UPNPRouterPlugin.this.getStorage().get(UpnpRouterDevice.CONTROLURL, ""));
+                        UPNPRouterPlugin.this.controlURLTxt.setText(settings.getControlURL());
                     } catch (final Throwable e) {
                     }
                     // final String ipcheckEnabled =

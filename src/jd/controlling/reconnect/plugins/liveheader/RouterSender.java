@@ -3,9 +3,7 @@ package jd.controlling.reconnect.plugins.liveheader;
 import java.awt.Component;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
-import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -17,30 +15,26 @@ import java.net.URLEncoder;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
-import java.util.Map.Entry;
-import java.util.regex.Pattern;
 
-import javax.imageio.ImageIO;
 import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 
-import jd.controlling.FavIconController;
 import jd.controlling.reconnect.ReconnectPluginController;
 import jd.controlling.reconnect.RouterUtils;
 import jd.controlling.reconnect.plugins.upnp.UPNPRouterPlugin;
 import jd.controlling.reconnect.plugins.upnp.UpnpRouterDevice;
 import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.storage.JSonStorage;
-import org.appwork.storage.Storage;
+import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Hash;
+import org.appwork.utils.Lists;
+import org.appwork.utils.event.ProcessCallBack;
 import org.appwork.utils.swing.dialog.ContainerDialog;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
@@ -50,14 +44,9 @@ import org.appwork.utils.swing.dialog.ProgressDialog.ProgressGetter;
 import org.jdownloader.images.NewTheme;
 
 public class RouterSender {
-    private static final RouterSender INSTANCE           = new RouterSender();
-    private static final String       ROUTER_COL_SERVICE = "http://update3.jdownloader.org:44444";
+    private static final String ROUTER_COL_SERVICE = "http://update3.jdownloader.org/recoll";
 
-    public static RouterSender getInstance() {
-        return RouterSender.INSTANCE;
-    }
-
-    private static String getManufactor(String mc) {
+    static String getManufactor(String mc) {
         if (mc == null) { return null; }
         // do not use IO.readFile to save mem
         mc = mc.substring(0, 6);
@@ -96,7 +85,7 @@ public class RouterSender {
     }
 
     public static void main(final String[] args) throws Exception {
-        final String mc = RouterUtils.getMacAddress("192.168.0.1");
+        final String mc = RouterUtils.getMacAddress("192.168.2.1");
         System.out.println(mc + " => " + RouterSender.getManufactor(mc));
     }
 
@@ -142,10 +131,10 @@ public class RouterSender {
     private int                         sslFrameTagCount;
 
     private String                      sslFavIconHash;
-    private final Storage               storage;
+    private final RouterSenderSettings  storage;
 
-    private RouterSender() {
-        this.storage = JSonStorage.getPlainStorage("ROUTERSENDER");
+    public RouterSender() {
+        this.storage = JsonConfig.create(RouterSenderSettings.class);
     }
 
     private Component addHelpButton(final String name, final String tooltip, final String dialog) {
@@ -189,7 +178,7 @@ public class RouterSender {
 
     }
 
-    private void collectData() throws Exception {
+    public void collectData() throws Exception {
 
         UpnpRouterDevice myDevice = this.getUPNPDevice(this.getPlugin().getRouterIP());
 
@@ -290,83 +279,6 @@ public class RouterSender {
 
         final String userName = this.txtUser.getText();
         final String password = this.txtPass.getText();
-
-        this.script = this.trim(this.getPlugin().getScript());
-        if (userName != null && userName.length() > 2) {
-            this.script = Pattern.compile(Pattern.quote(userName), Pattern.CASE_INSENSITIVE).matcher(this.script).replaceAll("%%%user%%%");
-        }
-        if (password != null && password.length() > 2) {
-            this.script = Pattern.compile(Pattern.quote(password), Pattern.CASE_INSENSITIVE).matcher(this.script).replaceAll("%%%pass%%%");
-        }
-
-        final Browser br = new Browser();
-        try {
-            this.sslResponse = br.getPage("https://" + this.routerIP);
-
-            this.sslTitle = br.getRegex("<title>(.*?)</title>").getMatch(0);
-            this.sslPTagsCount = br.toString().split("<p>").length;
-            this.sslFrameTagCount = br.toString().split("<frame").length;
-            // get favicon and build hash
-            try {
-                final BufferedImage image = FavIconController.getInstance().downloadFavIcon(this.routerIP);
-                final File imageFile = JDUtilities.getResourceFile("tmp/routerfav.png", true);
-                imageFile.delete();
-                imageFile.deleteOnExit();
-                ImageIO.write(image, "png", imageFile);
-                this.sslFavIconHash = Hash.getMD5(imageFile);
-            } catch (final Exception e) {
-                e.printStackTrace();
-            }
-
-        } catch (final Throwable e) {
-
-            this.sslException = e.getClass().getSimpleName() + ": " + e.getMessage();
-        }
-
-        URLConnectionAdapter con = br.getHttpConnection();
-        if (con != null) {
-            this.sslResponseCode = con.getResponseCode();
-            this.sslResponseHeaders = new HashMap<String, String>();
-
-            for (final Entry<String, List<String>> next : con.getHeaderFields().entrySet()) {
-                for (final String value : next.getValue()) {
-                    this.sslResponseHeaders.put(next.getKey().toLowerCase(), value);
-                }
-            }
-        }
-
-        try {
-            this.response = br.getPage("http://" + this.routerIP);
-
-            this.title = br.getRegex("<title>(.*?)</title>").getMatch(0);
-            this.pTagsCount = br.toString().split("<p>").length;
-            this.frameTagCount = br.toString().split("<frame").length;
-            // get favicon and build hash
-            try {
-                final BufferedImage image = FavIconController.getInstance().downloadFavIcon(this.routerIP);
-                final File imageFile = JDUtilities.getResourceFile("tmp/routerfav.png", true);
-                imageFile.delete();
-                imageFile.deleteOnExit();
-                ImageIO.write(image, "png", imageFile);
-                this.favIconHash = Hash.getMD5(imageFile);
-            } catch (final Exception e) {
-                e.printStackTrace();
-            }
-        } catch (final IOException e) {
-            this.exception = e.getClass().getSimpleName() + ": " + e.getMessage();
-            e.printStackTrace();
-        }
-
-        con = br.getHttpConnection();
-        if (con != null) {
-            this.responseCode = con.getResponseCode();
-            this.responseHeaders = new HashMap<String, String>();
-            for (final Entry<String, List<String>> next : con.getHeaderFields().entrySet()) {
-                for (final String value : next.getValue()) {
-                    this.responseHeaders.put(next.getKey().toLowerCase(), value);
-                }
-            }
-        }
 
     }
 
@@ -516,10 +428,12 @@ public class RouterSender {
     public boolean isRequested() {
         // we use md5 of script. if user changes script, he should be able to
         // send it again
-        return this.storage.get(Hash.getMD5(this.getPlugin().getScript()), false);
+        ArrayList<String> list = storage.getSentScriptIds();
+        return list.contains(Hash.getMD5(this.getPlugin().getScript()));
+
     }
 
-    public void run() throws Exception {
+    public void run(ProcessCallBack processCallBack) throws Exception {
 
         final Browser br = new Browser();
         // is services available. throws exception if server is down
@@ -584,7 +498,10 @@ public class RouterSender {
      * @param b
      */
     public void setRequested(final boolean b) {
-        this.storage.put(Hash.getMD5(this.getPlugin().getScript()), b);
+        ArrayList<String> list = storage.getSentScriptIds();
+        list.add(Hash.getMD5(this.getPlugin().getScript()));
+        storage.setSentScriptIds(Lists.unique(list));
+
     }
 
     public void setResponse(final String response) {

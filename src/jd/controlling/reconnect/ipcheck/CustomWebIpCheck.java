@@ -4,9 +4,10 @@ import java.net.URL;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import jd.config.Configuration;
-import jd.controlling.JSonWrapper;
+import jd.controlling.reconnect.ReconnectConfig;
 import jd.http.Browser;
+
+import org.appwork.storage.config.JsonConfig;
 
 /**
  * Allows the user to define his own ip check rules.
@@ -36,9 +37,9 @@ public class CustomWebIpCheck implements IPCheckProvider {
      */
     public IP getExternalIP() throws IPCheckException {
 
-        final String site = JSonWrapper.get("DOWNLOAD").getStringProperty(Configuration.PARAM_GLOBAL_IP_CHECK_SITE, "Please enter Website for IPCheck here");
-        final String patt = JSonWrapper.get("DOWNLOAD").getStringProperty(Configuration.PARAM_GLOBAL_IP_PATTERN, "Please enter Regex for IPCheck here");
-
+        final String site = JsonConfig.create(ReconnectConfig.class).getGlobalIPCheckUrl();
+        final String patt = JsonConfig.create(ReconnectConfig.class).getGlobalIPCheckPattern();
+        ;
         try {
             /* check for valid website */
             new URL(site);

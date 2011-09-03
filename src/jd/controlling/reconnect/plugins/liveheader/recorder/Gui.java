@@ -33,15 +33,18 @@ import javax.swing.WindowConstants;
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.controlling.JDLogger;
+import jd.controlling.reconnect.ReconnectConfig;
 import jd.controlling.reconnect.ReconnectPluginController;
 import jd.controlling.reconnect.ipcheck.IPController;
 import jd.controlling.reconnect.plugins.liveheader.LiveHeaderReconnect;
+import jd.controlling.reconnect.plugins.liveheader.LiveHeaderReconnectSettings;
 import jd.controlling.reconnect.plugins.liveheader.translate.T;
 import jd.gui.UserIO;
 import jd.nutils.JDFlags;
 import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
 
+import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Regex;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.dialog.AbstractDialog;
@@ -272,15 +275,15 @@ public class Gui extends AbstractDialog<Object> {
                 this.user = new Regex(ReconnectRecorder.AUTH, "(.+?):").getMatch(0);
                 this.pass = new Regex(ReconnectRecorder.AUTH, ".+?:(.+)").getMatch(0);
 
-                ((LiveHeaderReconnect) ReconnectPluginController.getInstance().getPluginByID(LiveHeaderReconnect.ID)).setUser(this.user);
-                ((LiveHeaderReconnect) ReconnectPluginController.getInstance().getPluginByID(LiveHeaderReconnect.ID)).setPassword(this.pass);
+                JsonConfig.create(LiveHeaderReconnectSettings.class).setUserName(this.user);
+                JsonConfig.create(LiveHeaderReconnectSettings.class).setPassword(this.pass);
             }
             // TODO
             // btnCancel.setText(JDL.L("gui.btn_close", "Close"));
 
-            ((LiveHeaderReconnect) ReconnectPluginController.getInstance().getPluginByID(LiveHeaderReconnect.ID)).setRouterIP(this.routerip.getText().trim());
-            ((LiveHeaderReconnect) ReconnectPluginController.getInstance().getPluginByID(LiveHeaderReconnect.ID)).setScript(this.methode);
-            ((LiveHeaderReconnect) ReconnectPluginController.getInstance().getPluginByID(LiveHeaderReconnect.ID)).setRouterName("Reconnect Recorder Method");
+            JsonConfig.create(LiveHeaderReconnectSettings.class).setRouterIP(this.routerip.getText().trim());
+            JsonConfig.create(LiveHeaderReconnectSettings.class).setScript(this.methode);
+            JsonConfig.create(LiveHeaderReconnectSettings.class).setRouterName("Reconnect Recorder Method");
 
             ReconnectPluginController.getInstance().setActivePlugin(LiveHeaderReconnect.ID);
             if (Gui.RECONNECT_DURATION <= 2000) {
@@ -296,9 +299,9 @@ public class Gui extends AbstractDialog<Object> {
                 ab = 5;
             }
 
-            JDUtilities.getConfiguration().setProperty(Configuration.PARAM_IPCHECKWAITTIME, aa);
-            JDUtilities.getConfiguration().setProperty(Configuration.PARAM_IPCHECKWAITTIME, ab);
-            JDUtilities.getConfiguration().save();
+            JsonConfig.create(ReconnectConfig.class).setSecondsToWaitForIPChange(aa);
+            JsonConfig.create(ReconnectConfig.class).setSecondsBeforeFirstIPCheck(ab);
+
             this.saved = true;
             this.dispose();
         }

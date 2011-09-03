@@ -8,19 +8,18 @@ import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.SwingConstants;
 
-import jd.config.Configuration;
 import jd.controlling.JDLogger;
-import jd.controlling.JSonWrapper;
 import jd.controlling.ProgressController;
+import jd.controlling.reconnect.ReconnectConfig;
 import jd.controlling.reconnect.Reconnecter;
 import jd.controlling.reconnect.ipcheck.IP;
 import jd.controlling.reconnect.ipcheck.IPController;
 import jd.gui.swing.jdgui.views.settings.components.SettingsComponent;
 import jd.gui.swing.jdgui.views.settings.components.StateUpdateListener;
 import jd.nutils.Formatter;
-import jd.utils.JDUtilities;
 
 import org.appwork.app.gui.MigPanel;
+import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.images.NewTheme;
@@ -155,15 +154,16 @@ public class ReconnectTester extends MigPanel implements SettingsComponent, Acti
             }
         };
         timer.start();
-        final int retries = JDUtilities.getConfiguration().getIntegerProperty(Configuration.PARAM_RETRIES, 5);
+        final ReconnectConfig config = JsonConfig.create(ReconnectConfig.class);
+        final int retries = config.getMaxReconnectRetryNum();
         progress.setStatus(30);
         new Thread() {
             @Override
             public void run() {
                 try {
-                    JDUtilities.getConfiguration().setProperty(Configuration.PARAM_RETRIES, 0);
+                    config.setMaxReconnectRetryNum(0);
                     if (Reconnecter.getInstance().forceReconnect()) {
-                        if (JSonWrapper.get("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) {
+                        if (config.isIPCheckGloballyDisabled()) {
                             progress.setStatusText(_JDT._.gui_warning_reconnectunknown());
                         } else {
                             progress.setStatusText(_JDT._.gui_warning_reconnectSuccess());
@@ -172,7 +172,7 @@ public class ReconnectTester extends MigPanel implements SettingsComponent, Acti
 
                             @Override
                             protected void runInEDT() {
-                                if (JSonWrapper.get("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) {
+                                if (config.isIPCheckGloballyDisabled()) {
                                     lblStatusMessage.setText(_JDT._.gui_warning_reconnectunknown());
                                 } else {
                                     lblStatusMessage.setText(_JDT._.gui_warning_reconnectSuccess());
@@ -180,7 +180,7 @@ public class ReconnectTester extends MigPanel implements SettingsComponent, Acti
                                 lblSuccessIcon.setIcon(NewTheme.I().getIcon("true", 32));
                                 lblSuccessIcon.setEnabled(true);
                                 lblStatusMessage.setEnabled(true);
-                                if (JSonWrapper.get("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) {
+                                if (config.isIPCheckGloballyDisabled()) {
                                     lblCurrentIP.setText("?");
                                 } else {
                                     lblCurrentIP.setText(IPController.getInstance().fetchIP().toString());
@@ -198,7 +198,7 @@ public class ReconnectTester extends MigPanel implements SettingsComponent, Acti
                                 lblStatusMessage.setText(_JDT._.gui_warning_reconnectFailed());
                                 lblSuccessIcon.setIcon(NewTheme.I().getIcon("false", 32));
                                 lblSuccessIcon.setEnabled(true);
-                                if (JSonWrapper.get("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) {
+                                if (config.isIPCheckGloballyDisabled()) {
                                     lblCurrentIP.setText("?");
                                 } else {
                                     lblCurrentIP.setText(IPController.getInstance().fetchIP().toString());
@@ -210,7 +210,8 @@ public class ReconnectTester extends MigPanel implements SettingsComponent, Acti
                     timer.interrupt();
                     progress.setStatus(100);
                     progress.doFinalize(5000);
-                    JDUtilities.getConfiguration().setProperty(Configuration.PARAM_RETRIES, retries);
+                    config.setMaxReconnectRetryNum(retries);
+
                 } finally {
                     new EDTRunner() {
 

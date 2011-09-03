@@ -21,7 +21,6 @@ import javax.swing.AbstractAction;
 import jd.config.Configuration;
 import jd.controlling.CodeVerifier;
 import jd.controlling.JDLogger;
-import jd.controlling.JSonWrapper;
 import jd.controlling.reconnect.ipcheck.IPController;
 import jd.controlling.reconnect.plugins.batch.ExternBatchReconnectPlugin;
 import jd.controlling.reconnect.plugins.extern.ExternReconnectPlugin;
@@ -32,8 +31,8 @@ import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 import org.appwork.storage.JSonStorage;
-import org.appwork.storage.Storage;
 import org.appwork.storage.TypeRef;
+import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
 import org.appwork.utils.logging.Log;
@@ -48,8 +47,6 @@ import org.jdownloader.images.NewTheme;
 public class ReconnectPluginController {
     private static final String                    JD_CONTROLLING_RECONNECT_PLUGINS = "jd/controlling/reconnect/plugins/";
 
-    public static final String                     PRO_ACTIVEPLUGIN                 = "ACTIVEPLUGIN2";
-
     private static final ReconnectPluginController INSTANCE                         = new ReconnectPluginController();
 
     public static ReconnectPluginController getInstance() {
@@ -58,19 +55,18 @@ public class ReconnectPluginController {
 
     private ArrayList<RouterPlugin> plugins;
 
-    private final Storage           storage;
+    private final ReconnectConfig   storage;
 
     protected static final Logger   LOG = JDLogger.getLogger();
 
     private ReconnectPluginController() {
-        this.storage = JSonStorage.getStorage("ReconnectPluginController");
+        this.storage = JsonConfig.create(ReconnectConfig.class);
 
         this.scan();
     }
 
     public void autoFind() {
         // first try all plugins that have an automode
-        this.storage.put("AUTOFIND", true);
 
         final ConfirmDialog cDialog = new ConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, JDL.L("jd.controlling.reconnect.ReconnectPluginController.autoFind.title", "Reconnect Wizard"), JDL.L("jd.controlling.reconnect.ReconnectPluginController.autoFind.message", "This wizard will help yout to find the correct reconnection settings for your internet connection.\r\nYou can start this wizard at any later time from the file->settings->reconection panel.\r\n\r\nContinue now?"), null, null, null);
         cDialog.setLeftActions(new AbstractAction(JDL.L("jd.controlling.reconnect.ReconnectPluginController.autoFind.more", " ... read more")) {
@@ -267,13 +263,17 @@ public class ReconnectPluginController {
         final int waittime = this.getWaittimeBeforeFirstIPCheck();
         // make sure that we have the current ip
         System.out.println("IP Before=" + IPController.getInstance().getIP());
-        plg.doReconnect();
+        try {
+            plg.doReconnect();
 
-        ReconnectPluginController.LOG.finer("Initial Waittime: " + waittime + " seconds");
+            ReconnectPluginController.LOG.finer("Initial Waittime: " + waittime + " seconds");
 
-        Thread.sleep(waittime * 1000);
+            Thread.sleep(waittime * 1000);
 
-        return IPController.getInstance().validate(this.getWaitForIPTime(), this.getIpCheckInterval());
+            return IPController.getInstance().validate(this.getWaitForIPTime(), this.getIpCheckInterval());
+        } finally {
+            System.out.println("IP AFTER=" + IPController.getInstance().getIP());
+        }
 
     }
 
@@ -284,15 +284,15 @@ public class ReconnectPluginController {
      */
     public RouterPlugin getActivePlugin() {
         // convert only once
-        String id = this.storage.get(ReconnectPluginController.PRO_ACTIVEPLUGIN, null);
+        String id = storage.getActivePluginID();
         if (id == null) {
             id = this.convertFromOldSystem();
-            this.storage.put(ReconnectPluginController.PRO_ACTIVEPLUGIN, id);
+            this.storage.setActivePluginID(id);
         }
         RouterPlugin active = ReconnectPluginController.getInstance().getPluginByID(id);
         if (active == null) {
             active = DummyRouterPlugin.getInstance();
-            this.storage.put(ReconnectPluginController.PRO_ACTIVEPLUGIN, active.getID());
+            this.storage.setActivePluginID(active.getID());
         }
         return active;
     }
@@ -303,7 +303,7 @@ public class ReconnectPluginController {
      * @return
      */
     private int getIpCheckInterval() {
-        if (!JSonWrapper.get("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) {
+        if (!storage.isIPCheckGloballyDisabled()) {
             // use own ipcheck if possible
             if (this.getActivePlugin().getIPCheckProvider() != null) { return this.getActivePlugin().getIPCheckProvider().getIpCheckInterval(); }
             return 5;
@@ -332,25 +332,17 @@ public class ReconnectPluginController {
         return this.plugins;
     }
 
-    /**
-     * returns the Storagemodel
-     * 
-     * @return
-     */
-    public Storage getStorage() {
-        return this.storage;
-    }
-
     private int getWaitForIPTime() {
-        return JDUtilities.getConfiguration().getIntegerProperty(Configuration.PARAM_WAITFORIPCHANGE, 30);
+        return storage.getSecondsToWaitForIPChange();
     }
 
     private int getWaittimeBeforeFirstIPCheck() {
-        if (!JSonWrapper.get("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) {
+
+        if (!storage.isIPCheckGloballyDisabled()) {
 
             // use own ipcheck if possible
             if (this.getActivePlugin().getIPCheckProvider() != null) { return this.getActivePlugin().getWaittimeBeforeFirstIPCheck(); }
-            return JDUtilities.getConfiguration().getIntegerProperty(Configuration.PARAM_IPCHECKWAITTIME, 5);
+            return storage.getSecondsBeforeFirstIPCheck();
 
         }
         // ip check disabled
@@ -474,7 +466,7 @@ public class ReconnectPluginController {
      * @param selectedItem
      */
     public void setActivePlugin(final RouterPlugin selectedItem) {
-        this.storage.put(ReconnectPluginController.PRO_ACTIVEPLUGIN, selectedItem.getID());
+        this.storage.setActivePluginID(selectedItem.getID());
     }
 
     /**

@@ -41,6 +41,8 @@ import org.appwork.utils.Regex;
 
 public class RouterUtils {
 
+    private static final String PATTERN_WIN_ARP = "..?[:\\-]..?[:\\-]..?[:\\-]..?[:\\-]..?[:\\-]..?";
+
     private static class WebServerChecker implements JDRunnable {
 
         private final String host;
@@ -161,9 +163,12 @@ public class RouterUtils {
 
     private static String callArpTool(final String ipAddress) throws IOException, InterruptedException {
 
-        if (OSDetector.isWindows()) { return RouterUtils.callArpToolWindows(ipAddress); }
+        if (OSDetector.isWindows()) {
+            return RouterUtils.callArpToolWindows(ipAddress);
+        } else {
 
-        return RouterUtils.callArpToolDefault(ipAddress);
+            return RouterUtils.callArpToolDefault(ipAddress);
+        }
     }
 
     private static String callArpToolDefault(final String ipAddress) throws IOException, InterruptedException {
@@ -213,7 +218,7 @@ public class RouterUtils {
         final String[] parts = JDUtilities.runCommand("arp", new String[] { "-a" }, null, 10).split(System.getProperty("line.separator"));
         pb.directory();
         for (final String part : parts) {
-            if (part.indexOf(ipAddress) > -1) { return part; }
+            if (part.indexOf(ipAddress) > -1 && new Regex(part, PATTERN_WIN_ARP).matches()) { return part; }
         }
         return null;
     }
@@ -432,7 +437,7 @@ public class RouterUtils {
     public static String getMacAddress(final InetAddress hostAddress) throws IOException, InterruptedException {
         final String resultLine = RouterUtils.callArpTool(hostAddress.getHostAddress());
         if (resultLine == null) { return null; }
-        String rd = new Regex(resultLine, "..?[:\\-]..?[:\\-]..?[:\\-]..?[:\\-]..?[:\\-]..?").getMatch(-1).replaceAll("-", ":");
+        String rd = new Regex(resultLine, RouterUtils.PATTERN_WIN_ARP).getMatch(-1).replaceAll("-", ":");
         if (rd == null) { return null; }
         rd = rd.replaceAll("\\s", "0");
         final String[] d = rd.split("[:\\-]");

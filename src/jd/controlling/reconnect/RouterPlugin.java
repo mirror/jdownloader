@@ -5,26 +5,21 @@ import java.util.logging.Logger;
 import javax.swing.ImageIcon;
 import javax.swing.JComponent;
 
-import jd.config.Configuration;
 import jd.controlling.JDLogger;
 import jd.controlling.reconnect.ipcheck.IPCheckProvider;
-import jd.utils.JDUtilities;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.Storage;
+import org.appwork.storage.config.JsonConfig;
 
 public abstract class RouterPlugin {
 
     protected static final Logger LOG             = JDLogger.getLogger();
-
-    private final Storage         storage;
 
     private long                  lastDuration;
 
     private IPCheckProvider       ipCheckProvider = null;
 
     public RouterPlugin() {
-        this.storage = JSonStorage.getPlainStorage(this.getID());
+
     }
 
     /**
@@ -81,22 +76,13 @@ public abstract class RouterPlugin {
     public abstract String getName();
 
     /**
-     * Returns the storage INstance for this plugin
-     * 
-     * @return
-     */
-    public Storage getStorage() {
-        return this.storage;
-    }
-
-    /**
      * override this method to set a special waittime. For example, if the check
      * is local through the users router, we do not have to wait long.<br>
      * By default, this method returns the settings form advanced reconnect
      * panel
      */
     public int getWaittimeBeforeFirstIPCheck() {
-        return JDUtilities.getConfiguration().getIntegerProperty(Configuration.PARAM_IPCHECKWAITTIME, 5);
+        return JsonConfig.create(ReconnectConfig.class).getSecondsBeforeFirstIPCheck();
     }
 
     /**

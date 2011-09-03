@@ -22,6 +22,8 @@ import jd.gui.swing.components.ComboBrowseFile;
 import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.Storage;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.TextComponentChangeListener;
@@ -53,6 +55,7 @@ public class ExternBatchReconnectPlugin extends RouterPlugin implements ActionLi
     public ExternBatchReconnectPlugin() {
         super();
         icon = NewTheme.I().getIcon("batch", 16);
+
     }
 
     public void actionPerformed(final ActionEvent e) {
@@ -61,6 +64,10 @@ public class ExternBatchReconnectPlugin extends RouterPlugin implements ActionLi
 
     private String getBatchText() {
         return this.getStorage().get(ExternBatchReconnectPlugin.BATCH_TEXT, SubConfiguration.getConfig("BATCHRECONNECT").getStringProperty("BATCH_TEXT", ""));
+    }
+
+    private Storage getStorage() {
+        return JSonStorage.getPlainStorage(this.getID());
     }
 
     private String getExecuteIn() {

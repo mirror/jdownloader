@@ -2,10 +2,11 @@ package jd.controlling.reconnect.ipcheck;
 
 import java.util.ArrayList;
 
-import jd.config.Configuration;
 import jd.controlling.JDLogger;
-import jd.controlling.JSonWrapper;
+import jd.controlling.reconnect.ReconnectConfig;
 import jd.controlling.reconnect.ReconnectPluginController;
+
+import org.appwork.storage.config.JsonConfig;
 
 public class IPController extends ArrayList<IPConnectionState> {
     /**
@@ -135,7 +136,8 @@ public class IPController extends ArrayList<IPConnectionState> {
     private IPCheckProvider getIPCheckProvider() {
         IPCheckProvider p = ReconnectPluginController.getInstance().getActivePlugin().getIPCheckProvider();
         if (p == null || this.badProviders.contains(p)) {
-            if (JSonWrapper.get("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_BALANCE, true)) {
+
+            if (!JsonConfig.create(ReconnectConfig.class).isCustomIPCheckEnabled()) {
                 p = BalancedWebIPCheck.getInstance();
             } else {
                 p = CustomWebIpCheck.getInstance();
@@ -175,7 +177,7 @@ public class IPController extends ArrayList<IPConnectionState> {
      */
     public boolean validate() {
         if (!this.invalidated) { return true; }
-        if (JSonWrapper.get("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) {
+        if (JsonConfig.create(ReconnectConfig.class).isIPCheckGloballyDisabled()) {
             // IP check disabled. each validate request is successful
             return !(this.invalidated = false);
         }
@@ -200,7 +202,7 @@ public class IPController extends ArrayList<IPConnectionState> {
             System.out.println(1);
             return true;
         }
-        if (JSonWrapper.get("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) {
+        if (JsonConfig.create(ReconnectConfig.class).isIPCheckGloballyDisabled()) {
             Thread.sleep(waitForIPTime);
             // IP check disabled. each validate request is successful
             return !(this.invalidated = false);

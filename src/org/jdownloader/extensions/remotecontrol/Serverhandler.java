@@ -38,10 +38,10 @@ import jd.controlling.DownloadController;
 import jd.controlling.DownloadWatchDog;
 import jd.controlling.JDController;
 import jd.controlling.JDLogger;
-import jd.controlling.JSonWrapper;
 import jd.controlling.LinkGrabberController;
 import jd.controlling.captcha.CaptchaDialogQueue;
 import jd.controlling.captcha.CaptchaDialogQueueEntry;
+import jd.controlling.reconnect.ReconnectConfig;
 import jd.controlling.reconnect.Reconnecter;
 import jd.controlling.reconnect.ipcheck.IPController;
 import jd.gui.swing.jdgui.views.linkgrabber.LinkGrabberPanel;
@@ -222,7 +222,7 @@ public class Serverhandler implements Handler {
         } else if (requestUrl.equals("/get/ip")) {
             // Get IP
 
-            if (JSonWrapper.get("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) {
+            if (JsonConfig.create(ReconnectConfig.class).isIPCheckGloballyDisabled()) {
                 response.addContent("IPCheck disabled");
             } else {
                 response.addContent(IPController.getInstance().getIP());

@@ -25,6 +25,8 @@ import jd.gui.swing.components.ComboBrowseFile;
 import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.Storage;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.TextComponentChangeListener;
@@ -61,6 +63,10 @@ public class ExternReconnectPlugin extends RouterPlugin implements ActionListene
     @Override
     public ImageIcon getIcon16() {
         return icon;
+    }
+
+    private Storage getStorage() {
+        return JSonStorage.getPlainStorage(this.getID());
     }
 
     public void actionPerformed(final ActionEvent e) {

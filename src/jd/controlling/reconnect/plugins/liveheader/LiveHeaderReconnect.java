@@ -1,12 +1,9 @@
 package jd.controlling.reconnect.plugins.liveheader;
 
-import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.IOException;
-import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -21,21 +18,15 @@ import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
-import javax.swing.JPasswordField;
-import javax.swing.JTextField;
 import javax.swing.event.DocumentEvent;
 
-import jd.config.Configuration;
 import jd.controlling.JDController;
 import jd.controlling.JDLogger;
-import jd.controlling.JSonWrapper;
-import jd.controlling.ProgressController;
+import jd.controlling.reconnect.ReconnectConfig;
 import jd.controlling.reconnect.ReconnectException;
 import jd.controlling.reconnect.ReconnectPluginController;
 import jd.controlling.reconnect.ReconnectWizardProgress;
-import jd.controlling.reconnect.Reconnecter;
 import jd.controlling.reconnect.RouterPlugin;
-import jd.controlling.reconnect.RouterUtils;
 import jd.controlling.reconnect.plugins.liveheader.recorder.Gui;
 import jd.controlling.reconnect.plugins.liveheader.translate.T;
 import jd.event.ControlEvent;
@@ -51,33 +42,29 @@ import jd.nutils.io.JDIO;
 import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
 
-import org.appwork.storage.StorageEvent;
-import org.appwork.storage.StorageKeyAddedEvent;
-import org.appwork.storage.StorageValueChangeEvent;
+import org.appwork.storage.config.ConfigEventListener;
+import org.appwork.storage.config.ConfigInterface;
+import org.appwork.storage.config.JsonConfig;
+import org.appwork.storage.config.KeyHandler;
+import org.appwork.swing.components.ExtPasswordField;
+import org.appwork.swing.components.ExtTextField;
 import org.appwork.utils.Regex;
-import org.appwork.utils.event.DefaultEventListener;
-import org.appwork.utils.logging.Log;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.appwork.utils.swing.EDTRunner;
+import org.appwork.utils.swing.SwingUtils;
 import org.appwork.utils.swing.TextComponentChangeListener;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.appwork.utils.swing.dialog.InputDialog;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.settings.advanced.AdvancedConfigManager;
 import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-public class LiveHeaderReconnect extends RouterPlugin implements ActionListener, ControlListener {
-
-    private static final String PASSWORD   = "PASSWORD";
-    private static final String ROUTERIP   = "ROUTERIP";
-    private static final String USER       = "USER";
-    private static final String ROUTERNAME = "ROUTERNAME";
-
-    private static final String SCRIPT     = "SCRIPT";
+public class LiveHeaderReconnect extends RouterPlugin implements ControlListener, ConfigEventListener {
 
     @SuppressWarnings("unchecked")
     public static ArrayList<String[]> getLHScripts() {
@@ -94,25 +81,24 @@ public class LiveHeaderReconnect extends RouterPlugin implements ActionListener,
 
     private HashMap<String, String> variables;
     private HashMap<String, String> headerProperties;
-    private JButton                 btnAuto;
-    private JButton                 btnRecord;
-    private JButton                 btnFindIP;
-    private JTextField              txtUser;
-    private JPasswordField          txtPassword;
 
-    private JTextField              txtIP;
-    private JButton                 btnEditScript;
+    private ExtTextField            txtUser;
+    private ExtPasswordField        txtPassword;
+
+    private ExtTextField            txtIP;
 
     @Override
     public ImageIcon getIcon16() {
         return icon;
     }
 
-    private JTextField            txtName;
-    private ImageIcon             icon;
+    private ExtTextField                txtName;
+    private ImageIcon                   icon;
+    protected boolean                   dosession = true;
+    private LiveHeaderReconnectSettings settings;
 
-    protected static final Logger LOG = JDLogger.getLogger();
-    public static final String    ID  = "httpliveheader";
+    protected static final Logger       LOG       = JDLogger.getLogger();
+    public static final String          ID        = "httpliveheader";
 
     /**
      * DO NOT REMOVE THIS OR REPLACE BY Regex.getLines()
@@ -130,71 +116,11 @@ public class LiveHeaderReconnect extends RouterPlugin implements ActionListener,
         // only listen to system to autosend script
         JDController.getInstance().addControlListener(this);
         // Send routerscript if there were 3 successful recoinnects in a row
-        Reconnecter.getInstance().getStorage().getEventSender().addListener(new DefaultEventListener<StorageEvent<?>>() {
+        JsonConfig.create(ReconnectConfig.class).getStorageHandler().getEventSender().addListener(this);
+        settings = JsonConfig.create(LiveHeaderReconnectSettings.class);
+        settings.getStorageHandler().getEventSender().addListener(this);
+        AdvancedConfigManager.getInstance().register(JsonConfig.create(LiveHeaderReconnectSettings.class));
 
-            private boolean dosession = true;
-
-            @SuppressWarnings("unchecked")
-            public void onEvent(final StorageEvent<?> event) {
-                try {
-                    if (ReconnectPluginController.getInstance().getActivePlugin() instanceof LiveHeaderReconnect && this.dosession && !RouterSender.getInstance().isRequested()) {
-                        boolean b = false;
-                        if (event instanceof StorageValueChangeEvent && ((StorageValueChangeEvent<?>) event).getKey().equalsIgnoreCase(Reconnecter.RECONNECT_SUCCESS_COUNTER) && ((StorageValueChangeEvent<Long>) event).getNewValue() > 2) {
-                            b = true;
-                        } else if (event instanceof StorageKeyAddedEvent && ((StorageKeyAddedEvent<?>) event).getKey().equalsIgnoreCase(Reconnecter.RECONNECT_SUCCESS_COUNTER) && ((StorageKeyAddedEvent<Long>) event).getNewValue() > 2) {
-                            b = true;
-                        }
-                        if (b) {
-                            RouterSender.getInstance().setRequested(true);
-                            new Thread() {
-                                public void run() {
-                                    try {
-                                        RouterSender.getInstance().run();
-
-                                    } catch (final Exception e) {
-                                        e.printStackTrace();
-                                        Dialog.getInstance().showErrorDialog(e.getMessage());
-
-                                        RouterSender.getInstance().setRequested(false);
-                                        // do not ask in this session again
-                                        dosession = false;
-                                    }
-                                }
-                            }.start();
-                        }
-                    }
-                } catch (final Throwable e) {
-                    Log.exception(e);
-                }
-            }
-
-        });
-
-    }
-
-    public void actionPerformed(final ActionEvent e) {
-        if (e.getSource() == this.btnAuto) {
-
-            new Thread() {
-                public void run() {
-                    try {
-                        RouterSender.getInstance().run();
-
-                    } catch (final Exception e) {
-
-                        Dialog.getInstance().showErrorDialog(e.getMessage());
-
-                    }
-                }
-            }.start();
-
-        } else if (e.getSource() == this.btnEditScript) {
-            this.editScript();
-        } else if (e.getSource() == this.btnFindIP) {
-            this.findIP();
-        } else if (e.getSource() == this.btnRecord) {
-            this.routerRecord();
-        }
     }
 
     @Override
@@ -360,9 +286,9 @@ public class LiveHeaderReconnect extends RouterPlugin implements ActionListener,
 
     }
 
-    private void editScript() {
+    void editScript() {
 
-        final InputDialog dialog = new InputDialog(Dialog.STYLE_LARGE | Dialog.STYLE_HIDE_ICON, "Script Editor", "Please enter a Liveheader script below.", this.getScript(), null, T._.jd_controlling_reconnect_plugins_liveheader_LiveHeaderReconnect_actionPerformed_save(), null);
+        final InputDialog dialog = new InputDialog(Dialog.STYLE_LARGE | Dialog.STYLE_HIDE_ICON, "Script Editor", "Please enter a Liveheader script below.", settings.getScript(), null, T._.jd_controlling_reconnect_plugins_liveheader_LiveHeaderReconnect_actionPerformed_save(), null);
         dialog.setPreferredSize(new Dimension(700, 400));
         // CLR Import
         dialog.setLeftActions(new AbstractAction("Browser Scripts") {
@@ -383,7 +309,7 @@ public class LiveHeaderReconnect extends RouterPlugin implements ActionListener,
                         }
 
                         dialog.setDefaultMessage(data[2]);
-                        LiveHeaderReconnect.this.setRouterName(data[0] + " - " + data[1]);
+                        settings.setRouterName(data[0] + " - " + data[1]);
 
                     }
                 } catch (DialogClosedException e1) {
@@ -407,7 +333,7 @@ public class LiveHeaderReconnect extends RouterPlugin implements ActionListener,
 
                     final String[] ret = CLRConverter.createLiveHeader(clr);
                     if (ret != null) {
-                        LiveHeaderReconnect.this.setRouterName(ret[0]);
+                        settings.setRouterName(ret[0]);
                         dialog.setDefaultMessage(ret[1]);
                     }
                 } catch (DialogClosedException e1) {
@@ -422,7 +348,7 @@ public class LiveHeaderReconnect extends RouterPlugin implements ActionListener,
         try {
             newScript = Dialog.getInstance().showDialog(dialog);
             if (newScript != null) {
-                this.setScript(newScript);
+                settings.setScript(newScript);
             }
         } catch (DialogClosedException e1) {
             e1.printStackTrace();
@@ -432,98 +358,68 @@ public class LiveHeaderReconnect extends RouterPlugin implements ActionListener,
 
     }
 
-    private void findIP() {
-        new EDTRunner() {
-
-            @Override
-            public void runInEDT() {
-                final ProgressController progress = new ProgressController(100, T._.gui_config_routeripfinder_featchIP(), (ImageIcon) null);
-
-                LiveHeaderReconnect.this.txtIP.setText(T._.gui_config_routeripfinder_featchIP());
-
-                progress.setStatus(80);
-                final InetAddress ia = RouterUtils.getAddress(true);
-                if (ia != null) {
-
-                    LiveHeaderReconnect.this.setRouterIP(ia.getHostAddress());
-                }
-                LiveHeaderReconnect.this.updateGUI();
-                progress.setStatus(100);
-                if (ia != null) {
-                    progress.setStatusText(T._.gui_config_routeripfinder_ready(ia.getHostAddress()));
-                    progress.doFinalize(3000);
-                } else {
-                    progress.setStatusText(T._.gui_config_routeripfinder_notfound());
-                    progress.doFinalize(3000);
-                    progress.setColor(Color.RED);
-                }
-
-            }
-
-        };
-
-    }
-
     @Override
     public JComponent getGUI() {
         final JPanel p = new JPanel(new MigLayout("ins 0,wrap 3", "[][][grow,fill]", "[]"));
-        this.btnAuto = new JButton("Send Router Settings");
-        this.btnAuto.addActionListener(this);
+        JButton btnAuto = new JButton(new AutoDetectAction());
 
         // auto search is not ready yet
         // this.btnAuto.setEnabled(false);
-        this.btnRecord = new JButton("Record Wizard");
-        this.btnRecord.addActionListener(this);
-        this.btnFindIP = new JButton("Find Router IP");
-        this.btnFindIP.addActionListener(this);
-        this.btnEditScript = new JButton("Edit Script");
-        this.btnEditScript.addActionListener(this);
-        this.txtUser = new JTextField();
+        JButton btnRecord = new JButton(new ReconnectRecorderAction(this));
+
+        JButton btnFindIP = new JButton(new GetIPAction(this));
+
+        JButton btnEditScript = new JButton(new EditScriptAction(this));
+
+        this.txtUser = new ExtTextField();
+        txtUser.setHelpText(T._.LiveHeaderReconnect_getGUI_help_user());
         new TextComponentChangeListener(this.txtUser) {
             @Override
             protected void onChanged(final DocumentEvent e) {
-                LiveHeaderReconnect.this.setUser(LiveHeaderReconnect.this.txtUser.getText());
+                settings.setUserName(LiveHeaderReconnect.this.txtUser.getText());
             }
         };
-        this.txtPassword = new JPasswordField();
-
-        new TextComponentChangeListener(this.txtPassword) {
-            @Override
-            protected void onChanged(final DocumentEvent e) {
-                LiveHeaderReconnect.this.setPassword(new String(LiveHeaderReconnect.this.txtPassword.getPassword()));
+        this.txtPassword = new ExtPasswordField() {
+            protected void onChanged() {
+                settings.setPassword(new String(LiveHeaderReconnect.this.txtPassword.getPassword()));
             }
         };
-        this.txtIP = new JTextField();
+        txtPassword.setHelpText(T._.LiveHeaderReconnect_getGUI_help_password());
+        this.txtIP = new ExtTextField();
+        txtIP.setHelpText(T._.LiveHeaderReconnect_getGUI_help_ip());
         new TextComponentChangeListener(this.txtIP) {
             @Override
             protected void onChanged(final DocumentEvent e) {
-                LiveHeaderReconnect.this.setRouterIP(LiveHeaderReconnect.this.txtIP.getText());
+                settings.setRouterIP(LiveHeaderReconnect.this.txtIP.getText());
             }
         };
-        this.txtName = new JTextField();
+        this.txtName = new ExtTextField();
+        txtName.setEditable(false);
+        txtName.setBorder(null);
+        SwingUtils.setOpaque(txtName, false);
         new TextComponentChangeListener(this.txtName) {
             @Override
             protected void onChanged(final DocumentEvent e) {
-                LiveHeaderReconnect.this.setRouterName(LiveHeaderReconnect.this.txtName.getText());
+                settings.setRouterName(LiveHeaderReconnect.this.txtName.getText());
             }
         };
         //
 
-        p.add(this.btnAuto, "sg buttons,aligny top,newline,gapright 15");
+        p.add(btnAuto, "sg buttons,aligny top,newline,gapright 15");
 
-        p.add(new JLabel("Name"), "");
+        p.add(new JLabel(T._.literally_router_model()), "");
         p.add(this.txtName, "spanx");
         //
-        p.add(this.btnRecord, "sg buttons,aligny top,newline");
-        p.add(new JLabel("IP"), "");
+        p.add(btnFindIP, "sg buttons,aligny top,newline");
+        p.add(new JLabel(T._.literally_router_ip()), "");
         p.add(this.txtIP, "spanx");
         //
-        p.add(this.btnFindIP, "sg buttons,aligny top,newline");
-        p.add(new JLabel("User"), "");
+        p.add(btnRecord, "sg buttons,aligny top,newline");
+        p.add(new JLabel(T._.literally_username()), "");
         p.add(this.txtUser, "spanx");
         //
-        p.add(this.btnEditScript, "sg buttons,aligny top,newline");
-        p.add(new JLabel("Password"), "");
+        p.add(btnEditScript, "sg buttons,aligny top,newline");
+        p.add(new JLabel(T._.literally_password()), "");
         p.add(this.txtPassword, "spanx");
         //
 
@@ -576,35 +472,6 @@ public class LiveHeaderReconnect extends RouterPlugin implements ActionListener,
         return "LiveHeader";
     }
 
-    public String getPassword() {
-        // convert to new storagesys
-        return this.getStorage().get(LiveHeaderReconnect.PASSWORD, JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_HTTPSEND_PASS));
-    }
-
-    public String getRouterIP() {
-        // convert to new storagesys
-        return this.getStorage().get(LiveHeaderReconnect.ROUTERIP, JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_HTTPSEND_IP));
-    }
-
-    /**
-     * returns the routername
-     * 
-     * @return
-     */
-    public String getRouterName() {
-        return this.getStorage().get(LiveHeaderReconnect.ROUTERNAME, "Unknown");
-    }
-
-    public String getScript() {
-        // convert to new storagesys
-        return this.getStorage().get(LiveHeaderReconnect.SCRIPT, JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_HTTPSEND_REQUESTS));
-    }
-
-    public String getUser() {
-        // convert to new storagesys
-        return this.getStorage().get(LiveHeaderReconnect.USER, JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_HTTPSEND_USER));
-    }
-
     private void getVariables(final String patStr, final String[] keys, final Browser br) {
         LiveHeaderReconnect.LOG.info("GetVariables");
         if (br == null) { return; }
@@ -643,11 +510,11 @@ public class LiveHeaderReconnect extends RouterPlugin implements ActionListener,
     protected void performReconnect() throws ReconnectException, InterruptedException {
         String script;
 
-        script = this.getScript();
+        script = settings.getScript();
 
-        final String user = this.getUser();
-        final String pass = this.getPassword();
-        final String ip = this.getRouterIP();
+        final String user = settings.getUserName();
+        final String pass = settings.getPassword();
+        final String ip = settings.getRouterIP();
 
         if (script == null || script.length() == 0) {
 
@@ -885,16 +752,17 @@ public class LiveHeaderReconnect extends RouterPlugin implements ActionListener,
 
     }
 
-    private void routerRecord() {
-        if (JSonWrapper.get("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) {
+    public void routerRecord() {
+
+        if (JsonConfig.create(ReconnectConfig.class).isIPCheckGloballyDisabled()) {
             UserIO.getInstance().requestMessageDialog(UserIO.ICON_WARNING, T._.jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_title(), T._.jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_message());
         } else {
             new Thread() {
                 @Override
                 public void run() {
                     final String text = LiveHeaderReconnect.this.txtIP.getText().toString();
-                    if (text == null || text.trim().equals("")) {
-                        LiveHeaderReconnect.this.findIP();
+                    if (text == null || !LiveHeaderDetectionWizard.isValidRouterIP(text)) {
+                        new GetIPAction(LiveHeaderReconnect.this).actionPerformed(null);
                     }
 
                     new GuiRunnable<Object>() {
@@ -902,20 +770,20 @@ public class LiveHeaderReconnect extends RouterPlugin implements ActionListener,
                         @Override
                         public Object runSave() {
 
-                            final Gui jd = new Gui(LiveHeaderReconnect.this.getRouterIP());
+                            final Gui jd = new Gui(settings.getRouterIP());
                             try {
                                 Dialog.getInstance().showDialog(jd);
                                 if (jd.saved) {
-                                    LiveHeaderReconnect.this.setRouterIP(jd.ip);
+                                    settings.setRouterIP(jd.ip);
 
                                     if (jd.user != null) {
-                                        LiveHeaderReconnect.this.setUser(jd.user);
+                                        settings.setUserName(jd.user);
                                     }
                                     if (jd.pass != null) {
-                                        LiveHeaderReconnect.this.setPassword(jd.pass);
+                                        settings.setPassword(jd.pass);
 
                                     }
-                                    LiveHeaderReconnect.this.setScript(jd.methode);
+                                    settings.setScript(jd.methode);
                                     setName("Router Recorder Custom Script");
 
                                 }
@@ -938,65 +806,40 @@ public class LiveHeaderReconnect extends RouterPlugin implements ActionListener,
     @Override
     public int runDetectionWizard(ReconnectWizardProgress progress) throws InterruptedException {
         final LiveHeaderDetectionWizard wizard = new LiveHeaderDetectionWizard(progress);
-        int ret = wizard.runOnlineScan();
-        if (ret < 0) {
-            ret = wizard.runOfflineScan();
-        }
-        if (ret < 0) {
-            // TODO
-            // ret = wizard.runRouterRecorder();
-        }
-        return ret;
+        // int ret = wizard.runOnlineScan();
+        // if (ret < 0) {
+        // ret = wizard.runOfflineScan();
+        // }
+        // if (ret < 0) {
+        // // TODO
+        // // ret = wizard.runRouterRecorder();
+        // }
+        return 0;
     }
 
-    public void setPassword(final String pass) {
-        this.getStorage().put(LiveHeaderReconnect.PASSWORD, pass);
-        this.updateGUI();
-    }
-
-    public void setRouterIP(final String hostAddress) {
-        this.getStorage().put(LiveHeaderReconnect.ROUTERIP, hostAddress);
-        this.updateGUI();
-    }
-
-    public void setRouterName(final String string) {
-        this.getStorage().put(LiveHeaderReconnect.ROUTERNAME, string);
-        this.updateGUI();
-    }
-
-    public void setScript(final String newScript) {
-        this.getStorage().put(LiveHeaderReconnect.SCRIPT, newScript);
-        this.updateGUI();
-    }
-
-    public void setUser(final String user) {
-        this.getStorage().put(LiveHeaderReconnect.USER, user);
-        this.updateGUI();
-    }
-
-    private void updateGUI() {
+    void updateGUI() {
         new EDTRunner() {
             protected void runInEDT() {
                 try {
-                    LiveHeaderReconnect.this.txtName.setText(LiveHeaderReconnect.this.getRouterName());
+                    LiveHeaderReconnect.this.txtName.setText(settings.getRouterName());
                 } catch (final Throwable e) {
                     // throws an Throwable if the caller
                     // is a changelistener of this field's document
                 }
                 try {
-                    LiveHeaderReconnect.this.txtIP.setText(LiveHeaderReconnect.this.getRouterIP());
+                    LiveHeaderReconnect.this.txtIP.setText(settings.getRouterIP());
                 } catch (final Throwable e) {
                     // throws an Throwable if the caller
                     // is a changelistener of this field's document
                 }
                 try {
-                    LiveHeaderReconnect.this.txtPassword.setText(LiveHeaderReconnect.this.getPassword());
+                    LiveHeaderReconnect.this.txtPassword.setPassword(settings.getPassword().toCharArray());
                 } catch (final Throwable e) {
                     // throws an Throwable if the caller
                     // is a changelistener of this field's document
                 }
                 try {
-                    LiveHeaderReconnect.this.txtUser.setText(LiveHeaderReconnect.this.getUser());
+                    LiveHeaderReconnect.this.txtUser.setText(settings.getUserName());
                 } catch (final Throwable e) {
                     // throws an Throwable if the caller
                     // is a changelistener of this field's document
@@ -1005,6 +848,23 @@ public class LiveHeaderReconnect extends RouterPlugin implements ActionListener,
             }
 
         };
+
+    }
+
+    public void onConfigValidatorError(ConfigInterface config, Throwable validateException, KeyHandler methodHandler) {
+    }
+
+    public void onConfigValueModified(ConfigInterface config, String key, Object newValue) {
+        if (config == settings) {
+            updateGUI();
+        } else {
+            if (dosession && ReconnectPluginController.getInstance().getActivePlugin() == this) {
+                if (JsonConfig.create(ReconnectConfig.class).getSuccessCounter() > 3) {
+                    new RouterSendAction(this).actionPerformed(null);
+                    dosession = false;
+                }
+            }
+        }
 
     }
 }

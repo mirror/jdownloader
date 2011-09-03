@@ -30,7 +30,6 @@ import jd.controlling.JDController;
 import jd.controlling.LinkGrabberController;
 import jd.controlling.ProgressController;
 import jd.controlling.reconnect.Reconnecter;
-import jd.controlling.reconnect.ReconnecterEvent;
 import jd.event.ControlEvent;
 import jd.event.ControlIDListener;
 import jd.gui.UserIF;
@@ -47,12 +46,10 @@ import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 import jd.utils.WebUpdate;
 
-import org.appwork.storage.StorageValueChangeEvent;
 import org.appwork.storage.config.ConfigEventListener;
 import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.KeyHandler;
-import org.appwork.utils.event.DefaultEventListener;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.settings.GeneralSettings;
@@ -353,28 +350,32 @@ public class ActionController {
 
             @Override
             public void initAction() {
-                Reconnecter.getInstance().getEventSender().addListener(new DefaultEventListener<ReconnecterEvent>() {
-                    // TODO: test
-                    public void onEvent(final ReconnecterEvent event) {
-                        if (event.getEventID() == ReconnecterEvent.SETTINGS_CHANGED) {
-                            final StorageValueChangeEvent<?> storageEvent = (StorageValueChangeEvent<?>) event.getParameter();
-                            if (storageEvent.getKey() == Reconnecter.RECONNECT_FAILED_COUNTER) {
-
-                                if (((Number) storageEvent.getNewValue()).longValue() > 5) {
-                                    setIcon("reconnect_warning");
-                                    setToolTipText(_GUI._.gui_menu_action_reconnect_notconfigured_tooltip());
-                                    ActionController.getToolBarAction("toolbar.quickconfig.reconnecttoggle").setToolTipText(_GUI._.gui_menu_action_reconnect_notconfigured_tooltip());
-                                } else {
-                                    setToolTipText(_GUI._.gui_menu_action_reconnectman_desc());
-                                    setIcon("reconnect");
-                                    ActionController.getToolBarAction("toolbar.quickconfig.reconnecttoggle").setToolTipText(_GUI._.gui_menu_action_reconnectauto_desc());
-                                }
-                            }
-
-                        }
-                    }
-
-                });
+                // ] Reconnecter.getInstance().getEventSender().addListener(new
+                // DefaultEventListener<ReconnecterEvent>() {
+                // // TODO: test
+                // public void onEvent(final ReconnecterEvent event) {
+                // if (event.getEventID() == ReconnecterEvent.SETTINGS_CHANGED)
+                // {
+                // final StorageValueChangeEvent<?> storageEvent =
+                // (StorageValueChangeEvent<?>) event.getParameter();
+                // if (storageEvent.getKey() ==
+                // Reconnecter.RECONNECT_FAILED_COUNTER) {
+                //
+                // if (((Number) storageEvent.getNewValue()).longValue() > 5) {
+                // setIcon("reconnect_warning");
+                // setToolTipText(_GUI._.gui_menu_action_reconnect_notconfigured_tooltip());
+                // ActionController.getToolBarAction("toolbar.quickconfig.reconnecttoggle").setToolTipText(_GUI._.gui_menu_action_reconnect_notconfigured_tooltip());
+                // } else {
+                // setToolTipText(_GUI._.gui_menu_action_reconnectman_desc());
+                // setIcon("reconnect");
+                // ActionController.getToolBarAction("toolbar.quickconfig.reconnecttoggle").setToolTipText(_GUI._.gui_menu_action_reconnectauto_desc());
+                // }
+                // }
+                //
+                // }
+                // }
+                //
+                // });
 
             }
 
