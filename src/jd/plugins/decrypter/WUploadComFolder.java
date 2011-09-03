@@ -26,7 +26,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wupload.com" }, urls = { "http://(www\\.)?wupload\\.com/folder/[0-9a-z]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wupload.com" }, urls = { "http://(www\\.)?wupload\\.(com|de)/folder/[0-9a-z]+" }, flags = { 0 })
 public class WUploadComFolder extends PluginForDecrypt {
 
     public WUploadComFolder(PluginWrapper wrapper) {
@@ -36,6 +36,8 @@ public class WUploadComFolder extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
+        // It can happen that domain changes (.com->.de)
+        br.setFollowRedirects(true);
         br.setCookie("http://www.wupload.com", "lang", "en");
         br.getPage(parameter);
         if (br.containsHTML("(>Error 9001|>The requested folder do not exist or was deleted by the owner|>If you want, you can contact the owner of the referring site to tell him about this mistake|>No links to show<)")) return decryptedLinks;
