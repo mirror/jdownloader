@@ -383,7 +383,7 @@ public class FileServeCom extends PluginForHost {
         account.setAccountInfo(ai);
         String username = Encoding.urlEncode(account.getUser());
         String password = Encoding.urlEncode(account.getPass());
-        if (username.contains("%") || password.contains("%")) {
+        if ((username != null && username.contains("%")) || (password != null && password.contains("%"))) {
             ai.setStatus("Please change your password! Special chars are NOT allowed!");
             if (showDialog) UserIO.getInstance().requestMessageDialog(0, "Please change your password! Special chars are NOT allowed!", "Only letters, number, hyphens (-), or underscores (_).\r\nThis is a Fileserve API Limitation!");
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
