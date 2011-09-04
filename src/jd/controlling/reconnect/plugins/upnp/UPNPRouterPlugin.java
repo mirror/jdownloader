@@ -705,7 +705,7 @@ public class UPNPRouterPlugin extends RouterPlugin implements ActionListener, IP
             settings.setControlURL(upnpRouterDevice.get(UpnpRouterDevice.CONTROLURL));
             settings.setFriendlyName(upnpRouterDevice.get(UpnpRouterDevice.FRIENDLYNAME));
 
-            settings.setServiceType(upnpRouterDevice.get(UpnpRouterDevice.FRIENDLYNAME));
+            settings.setServiceType(upnpRouterDevice.get(UpnpRouterDevice.SERVICETYPE));
             settings.setWANService(upnpRouterDevice.get(UpnpRouterDevice.WANSERVICE));
 
             this.setCanCheckIP(true);
