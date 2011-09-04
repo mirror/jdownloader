@@ -27,14 +27,14 @@ import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "scribd.com" }, urls = { "http://[\\w\\.]*?scribd\\.com/doc/\\d+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "scribd.com" }, urls = { "http://(www\\.)?scribd\\.com/doc/\\d+" }, flags = { 2 })
 public class ScribdCom extends PluginForHost {
 
     public ScribdCom(PluginWrapper wrapper) {
@@ -43,11 +43,11 @@ public class ScribdCom extends PluginForHost {
         setConfigElements();
     }
 
-    private static final String   formats = "formats";
+    private static final String   formats    = "formats";
 
     /** The list of server values displayed to the user */
     private static final String[] allFormats;
-
+    private static final String   NODOWNLOAD = "This file can't be downloaded!";
     static {
         allFormats = new String[] { "PDF", "TXT" };
     }
@@ -110,7 +110,7 @@ public class ScribdCom extends PluginForHost {
         login(account);
         br.setFollowRedirects(false);
         String fileExt = getConfiguredServer();
-        String fileId = new Regex(parameter.getDownloadURL(), "scribd.com/doc/(\\d+)/").getMatch(0);
+        String fileId = new Regex(parameter.getDownloadURL(), "scribd\\.com/doc/(\\d+)/").getMatch(0);
         if (fileId == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         Browser xmlbrowser = br.cloneBrowser();
         xmlbrowser.getHeaders().put("X-Requested-With", "XMLHttpRequest");
@@ -165,10 +165,18 @@ public class ScribdCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        // TODO:Try to find a way to download documents without an account!
-        // (which would also allow you to download documents that aren't
-        // available for download)
-        throw new PluginException(LinkStatus.ERROR_FATAL, "Download only works with account!");
+        // Pretend we're using an iphone^^
+        br.getHeaders().put("User-Agent", "Apple-iPhone3C1/801.293");
+        final String fID = new Regex(downloadLink.getDownloadURL(), "scribd\\.com/doc/(\\d+)/").getMatch(0);
+        br.getPage("http://www.scribd.com/mobile/documents/" + fID);
+        if (br.containsHTML(">\\[not available on mobile\\]<")) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.scribdcom.nodownload", NODOWNLOAD));
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, "http://www.scribd.com/mobile/documents/" + fID + "/download?commit=Download+Now&secret_password=", true, 0);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            if (br.containsHTML(">Can\\'t download that document")) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.scribdcom.nodownload", NODOWNLOAD));
+        }
+        downloadLink.setFinalFileName(downloadLink.getName() + ".pdf");
+        dl.startDownload();
     }
 
     @Override
