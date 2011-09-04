@@ -31,17 +31,17 @@ import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "czshare.com" }, urls = { "http://(www\\.)?czshare\\.com/((files/)?\\d+/[A-Za-z0-9_\\.]+(/.{1})?|download_file\\.php\\?id=\\d+\\&code=[A-Za-z0-9_]+)" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "czshare.com" }, urls = { "http://(www\\.)?(czshare\\.com/((files/)?\\d+/[A-Za-z0-9_\\.]+(/.{1})?|download_file\\.php\\?id=\\d+\\&code=[A-Za-z0-9]+)|www\\d+\\.czshare\\.com/profi\\.php\\?id=\\d+\\&kod=[A-Za-z0-9]+)" }, flags = { 2 })
 public class CZShareCom extends PluginForHost {
 
     private final static int SIMULTANEOUS_PREMIUM = -1;
@@ -56,9 +56,14 @@ public class CZShareCom extends PluginForHost {
     private static final String CAPTCHATEXT = "captcha\\.php";
 
     public void correctDownloadLink(DownloadLink link) {
-        Regex linkInfo = new Regex(link.getDownloadURL(), "czshare\\.com/download_file\\.php\\?id=(\\d+)\\&code=([A-Za-z0-9_]+)");
-        if (linkInfo == null || linkInfo.getMatch(0) == null && linkInfo.getMatch(1) == null) linkInfo = new Regex(link.getDownloadURL(), "czshare\\.com/(\\d+)/([A-Za-z0-9_]+)/");
-        if (linkInfo != null && linkInfo.getMatch(0) != null && linkInfo.getMatch(1) != null) link.setUrlDownload("http://czshare.com/" + linkInfo.getMatch(0) + "/" + linkInfo.getMatch(1) + "/x");
+        Regex linkInfo = new Regex(link.getDownloadURL(), "czshare\\.com/download_file\\.php\\?id=(\\d+)\\&code=([A-Za-z0-9]+)");
+        if (linkInfo.getMatch(0) == null && linkInfo.getMatch(1) == null) {
+            linkInfo = new Regex(link.getDownloadURL(), "czshare\\.com/(\\d+)/([A-Za-z0-9_]+)/");
+            if (linkInfo.getMatch(0) == null && linkInfo.getMatch(1) == null) {
+                linkInfo = new Regex(link.getDownloadURL(), ".*?czshare\\.com/profi\\.php\\?id=(\\d+)\\&kod=([A-Za-z0-9]+)");
+            }
+        }
+        if (linkInfo.getMatch(0) != null && linkInfo.getMatch(1) != null) link.setUrlDownload("http://czshare.com/" + linkInfo.getMatch(0) + "/" + linkInfo.getMatch(1) + "/x");
     }
 
     @Override

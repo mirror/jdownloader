@@ -44,6 +44,7 @@ public class ChoMikujPl extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        br.setFollowRedirects(false);
         String parameter = param.toString();
         // The message used on errors in this plugin
         String error = "Error while decrypting link: " + parameter;
@@ -53,6 +54,17 @@ public class ChoMikujPl extends PluginForDecrypt {
         String saveLink = null;
         String password = null;
         br.getPage(parameter);
+        // // Check if the link directly wants to access a specified page of the
+        // gallery, if so, remove it to avoid problems
+        String checkPage = new Regex(parameter, "chomikuj\\.pl/.*?(,\\d+)$").getMatch(0);
+        if (checkPage != null) {
+            br.getPage(parameter.replace(checkPage, ""));
+            if (br.getRedirectLocation() == null) {
+                parameter = parameter.replace(checkPage, "");
+            } else {
+                br.getPage(parameter);
+            }
+        }
         String fpName = br.getRegex("<title>(.*?) \\- .*? \\- Chomikuj\\.pl.*?</title>").getMatch(0);
         if (fpName == null) {
             fpName = br.getRegex("class=\"T_selected\">(.*?)</span>").getMatch(0);
@@ -97,11 +109,9 @@ public class ChoMikujPl extends PluginForDecrypt {
             return null;
         }
         logger.info("Found " + pageCount + " pages. Starting to decrypt them now.");
-        // Add 1 so we have all pages
-        if (pageCount != 1) pageCount++;
         progress.setRange(pageCount);
         // Alle Seiten decrypten
-        for (int i = 0; i < pageCount; ++i) {
+        for (int i = 0; i <= pageCount; ++i) {
             logger.info("Decrypting page " + i + " of link: " + parameter);
             String postThatData = postdata.replace("%jdownloaderpage%", Integer.toString(i));
             prepareBrowser(parameter, br);

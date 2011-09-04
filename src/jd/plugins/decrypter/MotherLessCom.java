@@ -29,7 +29,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "motherless.com" }, urls = { "http://(www\\.)?(members\\.)?motherless\\.com/((?!movies|thumbs|uploads|gi/)\\w).+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "motherless.com" }, urls = { "http://(www\\.)?(members\\.)?motherless\\.com/((?!movies|thumbs|uploads|gi/)g/[A-Za-z0-9\\-_]+/[A-Z0-9]+|[A-Z0-9]+)" }, flags = { 0 })
 public class MotherLessCom extends PluginForDecrypt {
 
     public MotherLessCom(PluginWrapper wrapper) {
@@ -40,28 +40,30 @@ public class MotherLessCom extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String fpName = parameter.getStringProperty("package");
         br.setFollowRedirects(true);
-        br.getPage(parameter.toString());
+        String param = parameter.toString().replaceAll("motherless\\.com/g/[A-Za-z0-9_\\-]+/", "motherless.com/");
+        br.getPage(param);
         if (br.containsHTML("Not Available") || br.containsHTML("not found") || br.containsHTML("You will be redirected to")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
         // Common bug: It can happen that the texts that we use to differ
         // between the kinds of links change so the decrypter breaks down,
         // always check that first!
         if (br.containsHTML("The member uploaded this image for subscribers only")) {
-            DownloadLink dl = createDownloadlink(parameter.toString().replace("motherless", "premiummotherlesspictures"));
-            dl.setProperty("kind", "picture");
+            DownloadLink dl = createDownloadlink(param.replace("motherless", "premiummotherlesspictures"));
+            dl.setProperty("dltype", "image");
+            dl.setProperty("onlyregistered", "true");
             decryptedLinks.add(dl);
             return decryptedLinks;
         } else if (br.containsHTML("The member uploaded this video for subscribers only")) {
-            DownloadLink dl = createDownloadlink(parameter.toString().replace("motherless.com/", "motherlessvideos.com/"));
-            dl.setProperty("kind", "video");
+            DownloadLink dl = createDownloadlink(param.replace("motherless.com/", "motherlessvideos.com/"));
+            dl.setProperty("dltype", "video");
+            dl.setProperty("onlyregistered", "true");
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
         if (br.containsHTML("player\\.swf")) {
-            String parm = parameter.toString();
-            DownloadLink dlink = createDownloadlink(parm.replace("motherless.com/", "motherlessvideos.com/"));
+            DownloadLink dlink = createDownloadlink(param.replace("motherless.com/", "motherlessvideos.com/"));
             dlink.setProperty("dltype", "video");
-            dlink.setBrowserUrl(parm);
-            dlink.setName(new Regex(parm, "motherless\\.com/(.+)").getMatch(0));
+            dlink.setBrowserUrl(param);
+            dlink.setName(new Regex(param, "motherless\\.com/(.+)").getMatch(0));
             decryptedLinks.add(dlink);
         } else if (!br.containsHTML("<strong>Uploaded</strong>")) {
             ArrayList<String> pages = new ArrayList<String>();
@@ -75,7 +77,7 @@ public class MotherLessCom extends PluginForDecrypt {
             logger.info("Found " + pages.size() + " pages, decrypting now...");
             progress.setRange(pages.size());
             for (String getthepage : pages) {
-                if (!getthepage.equals("currentPage")) br.getPage(parameter.toString() + "?page=" + getthepage);
+                if (!getthepage.equals("currentPage")) br.getPage(param + "?page=" + getthepage);
                 fpName = br.getRegex("<title>MOTHERLESS\\.COM \\- Go Ahead She Isn\\'t Looking\\! :  (.*?)</title>").getMatch(0);
                 if (fpName == null) {
                     fpName = br.getRegex("<div class=\"member\\-bio\\-username\">.*?\\'s Gallery \\&bull; (.*?)</div>").getMatch(0);
@@ -102,13 +104,13 @@ public class MotherLessCom extends PluginForDecrypt {
                     }
                 }
                 if ((picturelinks == null || picturelinks.length == 0) && (videolinks == null || videolinks.length == 0)) {
-                    logger.warning("Decrypter failed for link: " + parameter);
+                    logger.warning("Decrypter failed for link: " + param);
                     return null;
                 }
                 progress.increase(1);
             }
         } else {
-            DownloadLink fina = createDownloadlink(parameter.toString().replace("motherless.com/", "motherlesspictures.com/"));
+            DownloadLink fina = createDownloadlink(param.replace("motherless.com/", "motherlesspictures.com/"));
             fina.setProperty("dltype", "image");
             decryptedLinks.add(fina);
         }
