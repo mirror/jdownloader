@@ -26,7 +26,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wupload.com" }, urls = { "http://(www\\.)?wupload\\.(com|de)/folder/[0-9a-z]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wupload.com" }, urls = { "http://[\\w\\.]*?wupload\\..*?/folder/[0-9a-z]+" }, flags = { 0 })
 public class WUploadComFolder extends PluginForDecrypt {
 
     public WUploadComFolder(PluginWrapper wrapper) {
