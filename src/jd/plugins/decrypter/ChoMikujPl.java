@@ -32,6 +32,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "chomikuj.pl" }, urls = { "http://(www\\.)?chomikuj\\.pl/.+" }, flags = { 0 })
 public class ChoMikujPl extends PluginForDecrypt {
 
@@ -118,11 +120,7 @@ public class ChoMikujPl extends PluginForDecrypt {
             br.postPage(parameter, postThatData);
             // Every full page has 30 links (pictures)
             boolean filenameIncluded = true;
-            // [\t\n\r ]+</td>[\t\n\r ]+<td>[\t\n\r ]+<table
-            // class=\"fInfoTable\" cellpadding=\"0\" cellspacing=\"3\">[\t\n\r
-            // ]+<tbody><tr>[\t\n\r ]+<td><div
-            // class=\"fInfoDiv\">(.*?)</div></td>
-            String[][] fileIds = br.getRegex("class=\"FileName\" onclick=\"return ch\\.Download\\.dnFile\\((.*?)\\);\"><b>(.{1,300})</b>(.{1,300})</a>").getMatches();
+            String[][] fileIds = br.getRegex("class=\"FileName\" onclick=\"return ch\\.Download\\.dnFile\\((.*?)\\);\"><b>(.{1,300})</b>(.{1,300})</a>[\t\n\r ]+</td>[\t\n\r ]+<td>[\t\n\r ]+<table cellpadding=\"0\" cellspacing=\"3\" class=\"fInfoTable\">[\t\n\r ]+<tr>[\t\n\r ]+<td><div class=\"fInfoDiv\">(.{1,20})</div></td>").getMatches();
             if (fileIds == null || fileIds.length == 0) {
                 filenameIncluded = false;
                 fileIds = br.getRegex("class=\"FileName\" onclick=\"return ch\\.Download\\.dnFile\\((.*?)\\);\"").getMatches();
@@ -147,7 +145,8 @@ public class ChoMikujPl extends PluginForDecrypt {
                 DownloadLink dl = createDownloadlink(finalLink);
                 if (filenameIncluded) {
                     dl.setName(id[1].trim() + id[2].trim());
-                    // dl.setDownloadSize(SizeFormatter.getSize(id[3]));
+                    dl.setDownloadSize(SizeFormatter.getSize(id[3]));
+                    dl.setAvailable(true);
                 } else {
                     dl.setName(String.valueOf(new Random().nextInt(1000000)));
                 }
@@ -157,7 +156,6 @@ public class ChoMikujPl extends PluginForDecrypt {
                     // Not needed yet but might me useful for the future
                     dl.setProperty("password", password);
                 }
-                // dl.setAvailable(true);
                 decryptedLinks.add(dl);
             }
             String[][] allFolders = br.getRegex("class=\"folders\" cellspacing=\"6\" cellpadding=\"0\" border=\"0\">[\t\n\r ]+<tr>[\t\n\r ]+<td><a href=\"(.*?)\" onclick=\"return Ts\\(\\'\\d+\\'\\)\">(.*?)</span>").getMatches();
@@ -188,7 +186,7 @@ public class ChoMikujPl extends PluginForDecrypt {
             String pagePiece = br2.getRegex("class=\"navigation\"><table id=\"ctl00_CT_FW_FV_NavTop_NavTable\" border=\"0\">(.*?)</table></div>").getMatch(0);
             if (pagePiece == null) {
                 logger.info("pagePiece is null so we should only have one page for this link...");
-                pageCount = 1;
+                pageCount = 0;
                 break;
             }
             String[] lolpages = null;

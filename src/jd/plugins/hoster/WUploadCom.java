@@ -40,7 +40,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wupload.com" }, urls = { "http://(www\\.)?wupload\\.(com|de|mx)/.*?file/([0-9]+(/.+)?|[a-z0-9]+/[0-9]+(/.+)?)" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wupload.com" }, urls = { "http://(www\\.)?wupload\\.[a-z0-9]{1,4}/.*?file/([0-9]+(/.+)?|[a-z0-9]+/[0-9]+(/.+)?)" }, flags = { 2 })
 public class WUploadCom extends PluginForHost implements ControlListener {
 
     private static final Object LOCK               = new Object();
