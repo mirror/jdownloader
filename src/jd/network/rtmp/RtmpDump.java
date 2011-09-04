@@ -153,7 +153,9 @@ public class RtmpDump extends RTMPDownload {
                 int sizeCalulateBuffer = 0;
                 float progressFloat = 0;
                 while ((line = br.readLine()) != null) {
-                    error = line;
+                    if (!line.equals("")) {
+                        error = line;
+                    }
                     if (!new Regex(line, "^[0-9]").matches()) {
                         if (line.contains("length")) {
                             final String size = new Regex(line, ".*?(\\d.+)").getMatch(0);
@@ -197,7 +199,7 @@ public class RtmpDump extends RTMPDownload {
                     }
                     // autoresuming when FMS sends NetStatus.Play.Stop and
                     // progress less than 100%
-                    if (progressFloat < 99.9) {
+                    if (progressFloat < 99.8) {
                         System.out.println("Versuch Nr.: " + downloadLink.getLinkStatus().getRetryCount() + " ::: " + plugin.getMaxRetries());
                         if (downloadLink.getLinkStatus().getRetryCount() >= plugin.getMaxRetries()) {
                             downloadLink.getLinkStatus().setRetryCount(0);
