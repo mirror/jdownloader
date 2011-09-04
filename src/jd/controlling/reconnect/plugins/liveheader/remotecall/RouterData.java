@@ -10,7 +10,7 @@ public class RouterData implements Storable {
     private String                  script;
 
     private String                  routerName;
-    private int                     successCount;
+    private int                     priorityIndicator;
     private String                  mac;
 
     private String                  manufactor;
@@ -25,7 +25,34 @@ public class RouterData implements Storable {
     private String                  favIconHash;
 
     private String                  exception;
+    private int                     commitDupe;
 
+    public int getCommitDupe() {
+        return commitDupe;
+    }
+
+    public void setCommitDupe(int commitDupe) {
+        this.commitDupe = commitDupe;
+    }
+
+    public int getSuccess() {
+        return success;
+    }
+
+    public void setSuccess(int success) {
+        this.success = success;
+    }
+
+    public int getFailed() {
+        return failed;
+    }
+
+    public void setFailed(int failed) {
+        this.failed = failed;
+    }
+
+    private int                     success;
+    private int                     failed;
     private String                  firmware;
     private String                  sslException;
     private String                  sslFavIconHash;
@@ -139,8 +166,8 @@ public class RouterData implements Storable {
         return this.sslTitle;
     }
 
-    public int getSuccessCount() {
-        return this.successCount;
+    public int getPriorityIndicator() {
+        return this.priorityIndicator;
     }
 
     public String getTitle() {
@@ -239,8 +266,8 @@ public class RouterData implements Storable {
         this.sslTitle = sslTitle;
     }
 
-    public void setSuccessCount(final int successCount) {
-        this.successCount = successCount;
+    public void setPriorityIndicator(final int successCount) {
+        this.priorityIndicator = successCount;
     }
 
     public void setTitle(final String title) {

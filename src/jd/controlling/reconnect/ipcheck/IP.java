@@ -1,9 +1,12 @@
 package jd.controlling.reconnect.ipcheck;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.regex.Pattern;
 
 import jd.controlling.JDLogger;
 import jd.controlling.reconnect.ReconnectConfig;
+import jd.controlling.reconnect.RouterUtils;
 
 import org.appwork.storage.config.JsonConfig;
 
@@ -86,6 +89,42 @@ public class IP {
 
     public String toString() {
         return this.ip != null ? this.ip : "unknown";
+    }
+
+    public static boolean isValidRouterIP(String gatewayIP) {
+        boolean localip = isLocalIP(gatewayIP);
+        if (!localip) {
+            try {
+                localip = isLocalIP(InetAddress.getByName(gatewayIP).getHostAddress());
+            } catch (UnknownHostException e) {
+    
+            }
+        }
+        if (!localip) return false;
+        return RouterUtils.checkPort(gatewayIP);
+    }
+
+    public static boolean isLocalIP(String ip) {
+    
+        if (ip == null) return false;
+        if (ip.matches("^\\d+\\.\\d+\\.\\d+\\.\\d+$")) {
+            final String parts[] = ip.split("\\.");
+            if (parts.length == 4) {
+                /* filter private networks */
+                final int n1 = Integer.parseInt(parts[0]);
+                final int n2 = Integer.parseInt(parts[1]);
+                // final int n3 = Integer.parseInt(parts[2]);
+                // final int n4 = Integer.parseInt(parts[3]);
+                /* 10.0.0.0-10.255.255.255 */
+                if (n1 == 10) { return true; }
+                /* 192.168.0.0 - 192.168.255.255 */
+                if (n1 == 192 && n2 == 168) { return true; }
+                /* 172.16.0.0 - 172.31.255.255 */
+                if (n1 == 172 && n2 >= 16 && n2 <= 31) { return true; }
+    
+            }
+        }
+        return false;
     }
 
 }

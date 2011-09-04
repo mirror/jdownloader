@@ -2,7 +2,6 @@ package jd.controlling.reconnect.ipcheck;
 
 import java.util.ArrayList;
 
-import jd.controlling.JDLogger;
 import jd.controlling.reconnect.ReconnectConfig;
 import jd.controlling.reconnect.ReconnectPluginController;
 
@@ -95,7 +94,7 @@ public class IPController extends ArrayList<IPConnectionState> {
                 // IP check provider is bad.
                 this.badProviders.add(icp);
             } catch (final IPCheckException e) {
-                JDLogger.getLogger().info(e.getMessage());
+                // JDLogger.getLogger().info(e.getMessage());
                 newIP = new IPConnectionState(e);
                 break;
             }
@@ -109,7 +108,7 @@ public class IPController extends ArrayList<IPConnectionState> {
      * 
      * @return
      */
-    private synchronized IPConnectionState getCurrentLog() {
+    public synchronized IPConnectionState getCurrentLog() {
         if (this.latestConnectionState == null) {
             this.fetchIP();
         }
@@ -179,9 +178,17 @@ public class IPController extends ArrayList<IPConnectionState> {
         if (!this.invalidated) { return true; }
         if (JsonConfig.create(ReconnectConfig.class).isIPCheckGloballyDisabled()) {
             // IP check disabled. each validate request is successful
-            return !(this.invalidated = false);
+            this.invalidated = false;
+            return true;
         }
-        return !(this.invalidated = !this.changedIP());
+        if (this.changedIP()) {
+            invalidated = false;
+            return true;
+        } else {
+            invalidated = true;
+            return false;
+        }
+
     }
 
     /**
@@ -205,12 +212,14 @@ public class IPController extends ArrayList<IPConnectionState> {
         if (JsonConfig.create(ReconnectConfig.class).isIPCheckGloballyDisabled()) {
             Thread.sleep(waitForIPTime);
             // IP check disabled. each validate request is successful
-            return !(this.invalidated = false);
+            this.invalidated = false;
+            return true;
         }
         final long endTime = System.currentTimeMillis() + waitForIPTime * 1000;
         while (System.currentTimeMillis() < endTime) {
             /* ip change detected then we can stop */
-            if (!(this.invalidated = !this.changedIP())) {
+            if (this.changedIP()) {
+                invalidated = false;
                 System.out.println(2);
                 return true;
             }
@@ -219,7 +228,8 @@ public class IPController extends ArrayList<IPConnectionState> {
                     throw this.latestConnectionState.getCause();
                 } catch (final ForbiddenIPException e) {
                     // forbidden IP.. no need to wait
-                    return !(this.invalidated = true);
+                    this.invalidated = true;
+                    return false;
 
                 } catch (final Throwable e) {
                     // nothing

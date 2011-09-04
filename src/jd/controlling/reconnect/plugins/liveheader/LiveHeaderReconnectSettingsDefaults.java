@@ -1,6 +1,7 @@
 package jd.controlling.reconnect.plugins.liveheader;
 
 import jd.config.Configuration;
+import jd.controlling.reconnect.plugins.liveheader.remotecall.RouterData;
 import jd.utils.JDUtilities;
 
 import org.appwork.storage.config.StorageHandler;
@@ -39,11 +40,11 @@ public class LiveHeaderReconnectSettingsDefaults implements LiveHeaderReconnectS
     public void setRouterIP(String str) {
     }
 
-    public String getRouterName() {
-        return "Unknown";
+    public void setRouterData(RouterData routerData) {
     }
 
-    public void setRouterName(String str) {
+    public RouterData getRouterData() {
+        return new RouterData();
     }
 
 }

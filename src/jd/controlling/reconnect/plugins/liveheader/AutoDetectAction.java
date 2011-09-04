@@ -10,6 +10,7 @@ import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.appwork.utils.swing.dialog.ProgressDialog;
 import org.jdownloader.extensions.antireconnect.translate.T;
+import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 
 public class AutoDetectAction extends AbstractAction {
@@ -36,6 +37,21 @@ public class AutoDetectAction extends AbstractAction {
                         progress = percent;
                     }
 
+                    public void showMessage(String autodetection_success) {
+                        Dialog.getInstance().showMessageDialog(autodetection_success);
+                    }
+
+                    public void showWarning(String message) {
+
+                        try {
+                            Dialog.getInstance().showConfirmDialog(Dialog.BUTTONS_HIDE_CANCEL, _GUI._.literally_warning(), message, NewTheme.I().getIcon("warning", 32), null, null);
+                        } catch (DialogClosedException e) {
+                            e.printStackTrace();
+                        } catch (DialogCanceledException e) {
+                            e.printStackTrace();
+                        }
+                    }
+
                 });
             }
 
@@ -55,6 +71,8 @@ public class AutoDetectAction extends AbstractAction {
             e1.printStackTrace();
         } catch (DialogCanceledException e1) {
             e1.printStackTrace();
+        } finally {
+            System.out.println("CLOSED");
         }
     }
 

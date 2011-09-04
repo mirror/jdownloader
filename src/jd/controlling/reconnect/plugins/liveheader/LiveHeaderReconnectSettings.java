@@ -1,5 +1,7 @@
 package jd.controlling.reconnect.plugins.liveheader;
 
+import jd.controlling.reconnect.plugins.liveheader.remotecall.RouterData;
+
 import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.annotations.DefaultFactory;
 import org.jdownloader.settings.annotations.AboutConfig;
@@ -26,9 +28,8 @@ public interface LiveHeaderReconnectSettings extends ConfigInterface {
 
     void setRouterIP(String str);
 
-    @AboutConfig
-    String getRouterName();
+    void setRouterData(RouterData routerData);
 
-    void setRouterName(String str);
+    RouterData getRouterData();
 
 }

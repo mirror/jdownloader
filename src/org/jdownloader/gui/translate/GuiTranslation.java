@@ -2351,7 +2351,7 @@ public interface GuiTranslation extends TranslateInterface {
     String literally_continue();
 
     @Default(lngs = { "en" }, values = { "Warning" })
-    String literall_warning();
+    String literally_warning();
 
     @Default(lngs = { "en" }, values = { "Error" })
     String literall_error();

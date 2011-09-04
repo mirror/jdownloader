@@ -20,30 +20,33 @@ public class BalancedWebIPCheck implements IPCheckProvider {
         return BalancedWebIPCheck.INSTANCE;
     }
 
+    private static final ArrayList<String>  SERVICES = new ArrayList<String>();
+    static {
+        SERVICES.add("http://ipcheck3.jdownloader.org");
+        SERVICES.add("http://ipcheck2.jdownloader.org");
+        SERVICES.add("http://ipcheck1.jdownloader.org");
+        SERVICES.add("http://ipcheck0.jdownloader.org");
+    }
     /**
      * All registered ip check urls
      */
-    private final ArrayList<String>         services;
+    private final ArrayList<String>         servicesInUse;
 
     private final Browser                   br;
-
-    private int                             index    = 0;
 
     private final Pattern                   pattern;
 
     private static final BalancedWebIPCheck INSTANCE = new BalancedWebIPCheck();
     private final Object                    LOCK     = new Object();
 
+    private boolean                         checkOnlyOnce;
+
     private BalancedWebIPCheck() {
 
-        this.services = new ArrayList<String>();
-
-        this.services.add("http://ipcheck3.jdownloader.org");
-        this.services.add("http://ipcheck2.jdownloader.org");
-        this.services.add("http://ipcheck1.jdownloader.org");
-        this.services.add("http://ipcheck0.jdownloader.org");
+        this.servicesInUse = new ArrayList<String>();
+        setOnlyUseWorkingServices(false);
         this.pattern = Pattern.compile("(\\d+\\.\\d+\\.\\d+\\.\\d+)");
-        Collections.shuffle(this.services);
+        Collections.shuffle(this.servicesInUse);
         this.br = new Browser();
         this.br.setConnectTimeout(15000);
         this.br.setReadTimeout(15000);
@@ -57,11 +60,11 @@ public class BalancedWebIPCheck implements IPCheckProvider {
      */
     public IP getExternalIP() throws IPCheckException {
         synchronized (this.LOCK) {
-
-            for (int i = 0; i < this.services.size(); i++) {
+            System.out.println("CHECK");
+            for (int i = 0; i < (checkOnlyOnce ? 1 : this.servicesInUse.size()); i++) {
                 try {
-                    this.index = (this.index + 1) % this.services.size();
-                    final String service = this.services.get(this.index);
+
+                    final String service = this.servicesInUse.get(i);
                     /* call website and check for ip */
                     final Matcher matcher = this.pattern.matcher(this.br.getPage(service));
                     if (matcher.find()) {
@@ -83,6 +86,40 @@ public class BalancedWebIPCheck implements IPCheckProvider {
      */
     public int getIpCheckInterval() {
         return 5;
+    }
+
+    public void setOnlyUseWorkingServices(boolean b) {
+        synchronized (this.LOCK) {
+            checkOnlyOnce = b;
+            if (b) {
+                servicesInUse.clear();
+                for (int i = 0; i < SERVICES.size(); i++) {
+                    try {
+
+                        final String service = SERVICES.get(i);
+                        /* call website and check for ip */
+                        final Matcher matcher = this.pattern.matcher(this.br.getPage(service));
+                        if (matcher.find()) {
+                            if (matcher.groupCount() > 0) {
+                                servicesInUse.add(service);
+                            }
+                        }
+                    } catch (final Throwable e2) {
+                        JDLogger.getLogger().info(e2.getMessage());
+
+                    }
+                }
+                if (servicesInUse.size() == 0) {
+                    servicesInUse.clear();
+                    servicesInUse.addAll(SERVICES);
+                    throw new IllegalStateException("No Services are Working. reverted to all");
+                }
+            } else {
+                servicesInUse.clear();
+                servicesInUse.addAll(SERVICES);
+            }
+
+        }
     }
 
 }

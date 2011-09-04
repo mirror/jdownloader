@@ -1,7 +1,8 @@
 package jd.controlling.reconnect.plugins.liveheader;
 
 import java.awt.Dimension;
-import java.awt.event.ActionEvent;
+import java.awt.event.FocusEvent;
+import java.awt.event.FocusListener;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -12,13 +13,11 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import javax.swing.AbstractAction;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
-import javax.swing.event.DocumentEvent;
 
 import jd.controlling.JDController;
 import jd.controlling.JDLogger;
@@ -27,6 +26,7 @@ import jd.controlling.reconnect.ReconnectException;
 import jd.controlling.reconnect.ReconnectPluginController;
 import jd.controlling.reconnect.ReconnectWizardProgress;
 import jd.controlling.reconnect.RouterPlugin;
+import jd.controlling.reconnect.ipcheck.IP;
 import jd.controlling.reconnect.plugins.liveheader.recorder.Gui;
 import jd.controlling.reconnect.plugins.liveheader.translate.T;
 import jd.event.ControlEvent;
@@ -52,7 +52,6 @@ import org.appwork.utils.Regex;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.SwingUtils;
-import org.appwork.utils.swing.TextComponentChangeListener;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
@@ -159,7 +158,7 @@ public class LiveHeaderReconnect extends RouterPlugin implements ControlListener
         // }
     }
 
-    private Browser doRequest(String request, final Browser br, final boolean ishttps, final boolean israw) {
+    private Browser doRequest(LHProcessFeedback feedback, String request, final Browser br, final boolean ishttps, final boolean israw) throws ReconnectException {
         try {
             final String requestType;
             final String path;
@@ -275,11 +274,17 @@ public class LiveHeaderReconnect extends RouterPlugin implements ControlListener
                 }
                 return br;
             } catch (final IOException e) {
+
+                if (feedback != null) feedback.onRequestExceptionOccured(e, request);
                 LiveHeaderReconnect.LOG.severe("IO Error: " + e.getLocalizedMessage());
                 JDLogger.exception(e);
                 return null;
             }
         } catch (final Exception e) {
+            if (e instanceof ReconnectFailedException) {
+                // feedbakc callbacks may throw these
+                throw (ReconnectException) e;
+            }
             JDLogger.exception(e);
             return null;
         }
@@ -291,59 +296,65 @@ public class LiveHeaderReconnect extends RouterPlugin implements ControlListener
         final InputDialog dialog = new InputDialog(Dialog.STYLE_LARGE | Dialog.STYLE_HIDE_ICON, "Script Editor", "Please enter a Liveheader script below.", settings.getScript(), null, T._.jd_controlling_reconnect_plugins_liveheader_LiveHeaderReconnect_actionPerformed_save(), null);
         dialog.setPreferredSize(new Dimension(700, 400));
         // CLR Import
-        dialog.setLeftActions(new AbstractAction("Browser Scripts") {
+        // dialog.setLeftActions(new AbstractAction("Browser Scripts") {
+        //
+        // private static final long serialVersionUID = 1L;
+        //
+        // public void actionPerformed(final ActionEvent e) {
+        //
+        // final ImportRouterDialog importDialog = new
+        // ImportRouterDialog(LiveHeaderReconnect.getLHScripts());
+        // try {
+        // Dialog.getInstance().showDialog(importDialog);
+        // final String[] data = importDialog.getResult();
+        //
+        // if (data != null) {
+        //
+        // if (data[2].toLowerCase().indexOf("curl") >= 0) {
+        // UserIO.getInstance().requestMessageDialog(T._.gui_config_liveHeader_warning_noCURLConvert());
+        // }
+        //
+        // dialog.setDefaultMessage(data[2]);
+        // settings.setRouterName(data[0] + " - " + data[1]);
+        //
+        // }
+        // } catch (DialogClosedException e1) {
+        // e1.printStackTrace();
+        // } catch (DialogCanceledException e1) {
+        // e1.printStackTrace();
+        // }
+        //
+        // }
+        // }
+        // , new AbstractAction("Import CLR Script") {
+        //
+        // private static final long serialVersionUID = 1L;
+        //
+        // public void actionPerformed(final ActionEvent e) {
+        //
+        // final InputDialog clrDialog = new InputDialog(Dialog.STYLE_LARGE |
+        // Dialog.STYLE_HIDE_ICON, "CLR Import",
+        // "Please enter a Liveheader script below.", "", null, null, null);
+        // clrDialog.setPreferredSize(new Dimension(500, 400));
+        // try {
+        // final String clr = Dialog.getInstance().showDialog(clrDialog);
+        // if (clr == null) { return; }
+        //
+        // final String[] ret = CLRConverter.createLiveHeader(clr);
+        // if (ret != null) {
+        // settings.setRouterName(ret[0]);
+        // dialog.setDefaultMessage(ret[1]);
+        // }
+        // } catch (DialogClosedException e1) {
+        // e1.printStackTrace();
+        // } catch (DialogCanceledException e1) {
+        // e1.printStackTrace();
+        // }
+        //
+        // }
+        // }
 
-            private static final long serialVersionUID = 1L;
-
-            public void actionPerformed(final ActionEvent e) {
-
-                final ImportRouterDialog importDialog = new ImportRouterDialog(LiveHeaderReconnect.getLHScripts());
-                try {
-                    Dialog.getInstance().showDialog(importDialog);
-                    final String[] data = importDialog.getResult();
-
-                    if (data != null) {
-
-                        if (data[2].toLowerCase().indexOf("curl") >= 0) {
-                            UserIO.getInstance().requestMessageDialog(T._.gui_config_liveHeader_warning_noCURLConvert());
-                        }
-
-                        dialog.setDefaultMessage(data[2]);
-                        settings.setRouterName(data[0] + " - " + data[1]);
-
-                    }
-                } catch (DialogClosedException e1) {
-                    e1.printStackTrace();
-                } catch (DialogCanceledException e1) {
-                    e1.printStackTrace();
-                }
-
-            }
-        }, new AbstractAction("Import CLR Script") {
-
-            private static final long serialVersionUID = 1L;
-
-            public void actionPerformed(final ActionEvent e) {
-
-                final InputDialog clrDialog = new InputDialog(Dialog.STYLE_LARGE | Dialog.STYLE_HIDE_ICON, "CLR Import", "Please enter a Liveheader script below.", "", null, null, null);
-                clrDialog.setPreferredSize(new Dimension(500, 400));
-                try {
-                    final String clr = Dialog.getInstance().showDialog(clrDialog);
-                    if (clr == null) { return; }
-
-                    final String[] ret = CLRConverter.createLiveHeader(clr);
-                    if (ret != null) {
-                        settings.setRouterName(ret[0]);
-                        dialog.setDefaultMessage(ret[1]);
-                    }
-                } catch (DialogClosedException e1) {
-                    e1.printStackTrace();
-                } catch (DialogCanceledException e1) {
-                    e1.printStackTrace();
-                }
-
-            }
-        });
+        // );
         String newScript;
         try {
             newScript = Dialog.getInstance().showDialog(dialog);
@@ -373,12 +384,16 @@ public class LiveHeaderReconnect extends RouterPlugin implements ControlListener
 
         this.txtUser = new ExtTextField();
         txtUser.setHelpText(T._.LiveHeaderReconnect_getGUI_help_user());
-        new TextComponentChangeListener(this.txtUser) {
-            @Override
-            protected void onChanged(final DocumentEvent e) {
+        txtUser.addFocusListener(new FocusListener() {
+
+            public void focusLost(FocusEvent e) {
                 settings.setUserName(LiveHeaderReconnect.this.txtUser.getText());
             }
-        };
+
+            public void focusGained(FocusEvent e) {
+            }
+        });
+
         this.txtPassword = new ExtPasswordField() {
             protected void onChanged() {
                 settings.setPassword(new String(LiveHeaderReconnect.this.txtPassword.getPassword()));
@@ -387,22 +402,22 @@ public class LiveHeaderReconnect extends RouterPlugin implements ControlListener
         txtPassword.setHelpText(T._.LiveHeaderReconnect_getGUI_help_password());
         this.txtIP = new ExtTextField();
         txtIP.setHelpText(T._.LiveHeaderReconnect_getGUI_help_ip());
-        new TextComponentChangeListener(this.txtIP) {
-            @Override
-            protected void onChanged(final DocumentEvent e) {
+
+        txtIP.addFocusListener(new FocusListener() {
+
+            public void focusLost(FocusEvent e) {
                 settings.setRouterIP(LiveHeaderReconnect.this.txtIP.getText());
             }
-        };
+
+            public void focusGained(FocusEvent e) {
+            }
+        });
+
         this.txtName = new ExtTextField();
         txtName.setEditable(false);
         txtName.setBorder(null);
         SwingUtils.setOpaque(txtName, false);
-        new TextComponentChangeListener(this.txtName) {
-            @Override
-            protected void onChanged(final DocumentEvent e) {
-                settings.setRouterName(LiveHeaderReconnect.this.txtName.getText());
-            }
-        };
+
         //
 
         p.add(btnAuto, "sg buttons,aligny top,newline,gapright 15");
@@ -472,7 +487,7 @@ public class LiveHeaderReconnect extends RouterPlugin implements ControlListener
         return "LiveHeader";
     }
 
-    private void getVariables(final String patStr, final String[] keys, final Browser br) {
+    private void getVariables(LHProcessFeedback feedback, final String patStr, final String[] keys, final Browser br) throws ReconnectFailedException {
         LiveHeaderReconnect.LOG.info("GetVariables");
         if (br == null) { return; }
         // patStr="<title>(.*?)</title>";
@@ -485,10 +500,13 @@ public class LiveHeaderReconnect extends RouterPlugin implements ControlListener
         if (matcher.find() && matcher.groupCount() > 0) {
             for (int i = 0; i < keys.length && i < matcher.groupCount(); i++) {
                 this.variables.put(keys[i], matcher.group(i + 1));
+
                 LiveHeaderReconnect.LOG.info("Set Variable: " + keys[i] + " = " + matcher.group(i + 1));
             }
+            if (feedback != null) feedback.onVariablesUpdated(variables);
         } else {
             LiveHeaderReconnect.LOG.severe("Regular Expression without matches: " + patStr);
+            if (feedback != null) feedback.onVariableParserFailed(patStr, br.getRequest());
         }
     }
 
@@ -511,31 +529,39 @@ public class LiveHeaderReconnect extends RouterPlugin implements ControlListener
         String script;
 
         script = settings.getScript();
-
+        System.out.println("H");
         final String user = settings.getUserName();
         final String pass = settings.getPassword();
         final String ip = settings.getRouterIP();
 
+        invoke(null, script, user, pass, ip);
+
+    }
+
+    public void invoke(LHProcessFeedback feedback, String script, final String user, final String pass, final String ip) throws ReconnectException, InterruptedException {
         if (script == null || script.length() == 0) {
 
             LiveHeaderReconnect.LOG.severe("No LiveHeader Script found");
-            throw new ReconnectException("No LiveHeader Script found");
+
+        }
+        if (script.toLowerCase().contains("%%%routerip%%%") && !IP.isValidRouterIP(ip)) { throw new ReconnectException(ip + " is no valid routerIP");
+
         }
 
         // script = script.replaceAll("\\<", "&lt;");
         // script = script.replaceAll("\\>", "&gt;");
-        script = script.replaceAll("\\[\\[\\[", "<");
-        script = script.replaceAll("\\]\\]\\]", ">");
-        script = script.replaceAll("<REQUEST(.*?)>", "<REQUEST$1><![CDATA[");
-        script = script.replaceAll("</REQUEST>", "]]></REQUEST>");
-        script = script.replaceAll("<RESPONSE(.*?)>", "<RESPONSE$1><![CDATA[");
-        script = script.replaceAll("</RESPONSE.*>", "]]></RESPONSE>");
+        script = prepareScript(script);
         final Document xmlScript;
         this.variables = new HashMap<String, String>();
         this.variables.put("user", user);
         this.variables.put("pass", pass);
+        this.variables.put("username", user);
+        this.variables.put("password", pass);
         this.variables.put("basicauth", Encoding.Base64Encode(user + ":" + pass));
+        this.variables.put("auth", Encoding.Base64Encode(user + ":" + pass));
         this.variables.put("routerip", ip);
+        this.variables.put("ip", ip);
+        this.variables.put("host", ip);
         this.headerProperties = new HashMap<String, String>();
 
         Browser br = new Browser();
@@ -583,6 +609,8 @@ public class LiveHeaderReconnect extends RouterPlugin implements ControlListener
                 for (int toDoStep = 0; toDoStep < toDosLength; toDoStep++) {
                     final Node toDo = toDos.item(toDoStep);
                     if (Thread.currentThread().isInterrupted()) throw new InterruptedException();
+
+                    if (feedback != null) feedback.onNewStep(toDo.getNodeName(), toDo);
                     if (toDo.getNodeName().equalsIgnoreCase("DEFINE")) {
 
                         final NamedNodeMap attributes = toDo.getAttributes();
@@ -630,6 +658,7 @@ public class LiveHeaderReconnect extends RouterPlugin implements ControlListener
                         }
 
                         LiveHeaderReconnect.LOG.finer("Variables set: " + this.variables);
+                        if (feedback != null) feedback.onVariablesUpdated(variables);
                     }
 
                     if (toDo.getNodeName().equalsIgnoreCase("PARSE")) {
@@ -645,8 +674,10 @@ public class LiveHeaderReconnect extends RouterPlugin implements ControlListener
                                     found = found.trim();
                                     LiveHeaderReconnect.LOG.finer("Parse: Varname=" + varname + " Pattern=" + pattern + "->" + found);
                                     this.variables.put(varname, found);
+                                    if (feedback != null) feedback.onVariablesUpdated(variables);
                                 } else {
                                     LiveHeaderReconnect.LOG.finer("Parse: Varname=" + varname + " Pattern=" + pattern + "->NOT FOUND!");
+                                    if (feedback != null) feedback.onVariableParserFailed(pattern, br.getRequest());
                                 }
                             }
                         }
@@ -670,9 +701,12 @@ public class LiveHeaderReconnect extends RouterPlugin implements ControlListener
                         }
                         Browser retbr = null;
                         try {
-                            retbr = this.doRequest(toDo.getChildNodes().item(0).getNodeValue().trim(), br, ishttps, israw);
+                            retbr = this.doRequest(feedback, toDo.getChildNodes().item(0).getNodeValue().trim(), br, ishttps, israw);
                         } catch (final Exception e2) {
+                            if (e2 instanceof ReconnectFailedException) { throw e2; }
+
                             retbr = null;
+
                         }
                         try {
                             /* DDoS Schutz */
@@ -681,7 +715,9 @@ public class LiveHeaderReconnect extends RouterPlugin implements ControlListener
                         }
                         if (retbr == null || !retbr.getHttpConnection().isOK()) {
                             LiveHeaderReconnect.LOG.severe("Request error!");
+                            if (feedback != null) feedback.onRequesterror(retbr.getRequest());
                         } else {
+                            if (feedback != null) feedback.onRequestOK(retbr.getRequest());
                             br = retbr;
                         }
 
@@ -704,7 +740,7 @@ public class LiveHeaderReconnect extends RouterPlugin implements ControlListener
                         }
 
                         final String[] keys = attributes.getNamedItem("keys").getNodeValue().split("\\;");
-                        this.getVariables(toDo.getChildNodes().item(0).getNodeValue().trim(), keys, br);
+                        this.getVariables(feedback, toDo.getChildNodes().item(0).getNodeValue().trim(), keys, br);
 
                     }
                     if (toDo.getNodeName().equalsIgnoreCase("WAIT")) {
@@ -743,13 +779,24 @@ public class LiveHeaderReconnect extends RouterPlugin implements ControlListener
             }
         } catch (final InterruptedException e) {
             throw e;
+        } catch (final ReconnectException e) {
+            throw e;
         } catch (final Exception e) {
             JDLogger.exception(e);
 
             LiveHeaderReconnect.LOG.severe(e.getCause() + " : " + e.getMessage());
             throw new ReconnectException(e);
         }
+    }
 
+    public static String prepareScript(String script) {
+        script = script.replaceAll("\\[\\[\\[", "<");
+        script = script.replaceAll("\\]\\]\\]", ">");
+        script = script.replaceAll("<REQUEST(.*?)>", "<REQUEST$1><![CDATA[");
+        script = script.replaceAll("</REQUEST>", "]]></REQUEST>");
+        script = script.replaceAll("<RESPONSE(.*?)>", "<RESPONSE$1><![CDATA[");
+        script = script.replaceAll("</RESPONSE.*>", "]]></RESPONSE>");
+        return script;
     }
 
     public void routerRecord() {
@@ -761,7 +808,7 @@ public class LiveHeaderReconnect extends RouterPlugin implements ControlListener
                 @Override
                 public void run() {
                     final String text = LiveHeaderReconnect.this.txtIP.getText().toString();
-                    if (text == null || !LiveHeaderDetectionWizard.isValidRouterIP(text)) {
+                    if (text == null || !IP.isValidRouterIP(text)) {
                         new GetIPAction(LiveHeaderReconnect.this).actionPerformed(null);
                     }
 
@@ -821,7 +868,15 @@ public class LiveHeaderReconnect extends RouterPlugin implements ControlListener
         new EDTRunner() {
             protected void runInEDT() {
                 try {
-                    LiveHeaderReconnect.this.txtName.setText(settings.getRouterName());
+                    String str = "";
+                    if (settings.getRouterData().getRouterName() != null) str += settings.getRouterData().getRouterName();
+                    str = str.trim();
+
+                    if (settings.getRouterData().getManufactor() != null && settings.getRouterData().getManufactor().length() > 0) {
+                        if (str.length() > 0) str += " - ";
+                        str += settings.getRouterData().getManufactor();
+                    }
+                    LiveHeaderReconnect.this.txtName.setText(str);
                 } catch (final Throwable e) {
                     // throws an Throwable if the caller
                     // is a changelistener of this field's document
@@ -856,6 +911,7 @@ public class LiveHeaderReconnect extends RouterPlugin implements ControlListener
 
     public void onConfigValueModified(ConfigInterface config, String key, Object newValue) {
         if (config == settings) {
+            System.out.println("Key: " + key + "=" + newValue);
             updateGUI();
         } else {
             if (dosession && ReconnectPluginController.getInstance().getActivePlugin() == this) {

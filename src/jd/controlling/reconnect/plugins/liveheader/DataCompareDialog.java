@@ -36,7 +36,7 @@ public class DataCompareDialog extends AbstractDialog<Object> {
     }
 
     public String getRouterName() {
-        return txtName.getName();
+        return txtName.getText();
     }
 
     public String getUsername() {
@@ -62,6 +62,7 @@ public class DataCompareDialog extends AbstractDialog<Object> {
     private JTextField txtPassword;
     private String     firmware;
     private JTextField txtIP;
+    private boolean    loginsOnly;
 
     public DataCompareDialog(String hostName, String firmware, String manufactor, String routerName, String username, String password) {
         super(0, T._.DataCompareDialog_DataCompareDialog_(), null, _GUI._.literally_continue(), null);
@@ -96,11 +97,12 @@ public class DataCompareDialog extends AbstractDialog<Object> {
         desc.setText(T._.DataCompareDialog_layoutDialogContent__desc());
         desc.setLabelMode(true);
         p.add(desc, "spanx");
-        p.add(header(NewTheme.I().getIcon("modem", ICONSIZE), T._.DataCompareDialog_layoutDialogContent_router(), T._.DataCompareDialog_layoutDialogContent_router_desc()), "spanx");
-        txtName = addField(p, T._.DataCompareDialog_layoutDialogContent_name(), routerName, T._.DataCompareDialog_layoutDialogContent_name_help(), null);
-        txtManufactor = addField(p, T._.DataCompareDialog_layoutDialogContent_manufactorName(), manufactor, T._.DataCompareDialog_layoutDialogContent_manufactorName_help(), null);
-        txtFirmware = addField(p, T._.DataCompareDialog_layoutDialogContent_firmware(), firmware, T._.DataCompareDialog_layoutDialogContent_firmware_help(), null);
-
+        if (!loginsOnly) {
+            p.add(header(NewTheme.I().getIcon("modem", ICONSIZE), T._.DataCompareDialog_layoutDialogContent_router(), T._.DataCompareDialog_layoutDialogContent_router_desc()), "spanx");
+            txtName = addField(p, T._.DataCompareDialog_layoutDialogContent_name(), routerName, T._.DataCompareDialog_layoutDialogContent_name_help(), null);
+            txtManufactor = addField(p, T._.DataCompareDialog_layoutDialogContent_manufactorName(), manufactor, T._.DataCompareDialog_layoutDialogContent_manufactorName_help(), null);
+            txtFirmware = addField(p, T._.DataCompareDialog_layoutDialogContent_firmware(), firmware, T._.DataCompareDialog_layoutDialogContent_firmware_help(), null);
+        }
         p.add(header(NewTheme.I().getIcon("basicauth", ICONSIZE), T._.DataCompareDialog_layoutDialogContent_webinterface(), T._.DataCompareDialog_layoutDialogContent_webinterface_desc()), "spanx");
         txtIP = addField(p, T._.DataCompareDialog_layoutDialogContent_ip(), hostName, T._.DataCompareDialog_layoutDialogContent_ip_help(), btnWebinterface);
 
@@ -139,5 +141,9 @@ public class DataCompareDialog extends AbstractDialog<Object> {
             ret.add(txt, "spanx,pushx,growx,newline,gapleft " + (icon.getIconWidth() + 8));
         }
         return ret;
+    }
+
+    public void setLoginsOnly(boolean b) {
+        loginsOnly = b;
     }
 }

@@ -211,4 +211,19 @@ public interface LiveheaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Service not available. Please try again later." })
     String LiveHeaderDetectionWizard_runOnlineScan_notalive();
 
+    @Default(lngs = { "en" }, values = { "Autodetection of Reconnect Settings needs to enable the IP Check Feature. Continue?" })
+    String ipcheck();
+
+    @Default(lngs = { "en" }, values = { "IP Check has been disabled now. We recommend to enabled global IP Checks. Otherwise your reconnects may fail." })
+    String ipcheckreverted();
+
+    @Default(lngs = { "en" }, values = { "It seems that your Router requires logins to perform a reconnect. \r\nPlease enter the Router's webinterface username and password." })
+    String logins_required();
+
+    @Default(lngs = { "en" }, values = { "JDownloader set up your Reconnect Settings successfully. Getting a new IP takes %s1." })
+    String autodetection_success(String time);
+
+    @Default(lngs = { "en" }, values = { "Ups! JDownloader could not find working Reconnect Settings. \r\nPlease make sure that you have a dynamic IP and try again with different Inputs." })
+    String autodetection_failed();
+
 }
