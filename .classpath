@@ -91,6 +91,5 @@
 	<classpathentry combineaccessrules="false" kind="src" path="/JDUpdater"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/UpdateClient"/>
 	<classpathentry kind="lib" path="ressourcen/libs_ext/mqtt.jar"/>
-	<classpathentry kind="lib" path="C:/workspace/RecollServer/libs/mongo-2.6.5.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
