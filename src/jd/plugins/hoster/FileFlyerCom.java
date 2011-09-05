@@ -20,7 +20,6 @@ import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
@@ -66,6 +65,7 @@ public class FileFlyerCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    @SuppressWarnings("deprecation")
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         requestFileInformation(downloadLink);
         br.setDebug(true);
@@ -99,7 +99,7 @@ public class FileFlyerCom extends PluginForHost {
         if (br.containsHTML("access to the service may be unavailable for a while")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "No free slots available", 30 * 60 * 1000l);
         linkurl = Encoding.htmlDecode(linkurl);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, linkurl, true, 0);
-        if (dl.getConnection().getContentType() == null || (!new Regex(dl.getConnection().getContentType(), ".*?(octet|compressed).*?").matches() && !dl.getConnection().isContentDisposition())) {
+        if (dl.getConnection().getContentType() == null || (dl.getConnection().getContentType().contains("html")) && dl.getConnection().getContentLength() < downloadLink.getDownloadSize() - 10) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -115,6 +115,7 @@ public class FileFlyerCom extends PluginForHost {
         }
     }
 
+    @SuppressWarnings("deprecation")
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         if (br.containsHTML(ONLY4PREMIUM)) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.FileFlyerCom.errors.Only4Premium", "Only downloadable for premium users"));
@@ -126,7 +127,7 @@ public class FileFlyerCom extends PluginForHost {
         br.setFollowRedirects(true);
         linkurl = Encoding.htmlDecode(linkurl);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, linkurl, true, 0);
-        if (dl.getConnection().getContentType() == null || (!new Regex(dl.getConnection().getContentType(), ".*?(octet|compressed).*?").matches() && !dl.getConnection().isContentDisposition())) {
+        if (dl.getConnection().getContentType() == null || (dl.getConnection().getContentType().contains("html")) && dl.getConnection().getContentLength() < downloadLink.getDownloadSize() - 10) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
