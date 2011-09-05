@@ -36,8 +36,10 @@ import jd.controlling.JDLogger;
 import jd.controlling.reconnect.ReconnectConfig;
 import jd.controlling.reconnect.ReconnectPluginController;
 import jd.controlling.reconnect.ipcheck.IPController;
+import jd.controlling.reconnect.plugins.liveheader.DataCompareDialog;
 import jd.controlling.reconnect.plugins.liveheader.LiveHeaderReconnect;
 import jd.controlling.reconnect.plugins.liveheader.LiveHeaderReconnectSettings;
+import jd.controlling.reconnect.plugins.liveheader.remotecall.RouterData;
 import jd.controlling.reconnect.plugins.liveheader.translate.T;
 import jd.gui.UserIO;
 import jd.nutils.JDFlags;
@@ -283,14 +285,30 @@ public class Gui extends AbstractDialog<Object> {
 
             JsonConfig.create(LiveHeaderReconnectSettings.class).setRouterIP(this.routerip.getText().trim());
             JsonConfig.create(LiveHeaderReconnectSettings.class).setScript(this.methode);
-            JsonConfig.create(LiveHeaderReconnectSettings.class).setRouterName("Reconnect Recorder Method");
+
+            DataCompareDialog dcd = new DataCompareDialog(routerip.getText().trim(), null, null, null, null, null);
+
+            RouterData rd = new RouterData();
+
+            try {
+                dcd.setNoLogins(true);
+                Dialog.getInstance().showDialog(dcd);
+                rd.setRouterName(rd.getRouterName());
+                rd.setFirmware(rd.getFirmware());
+                rd.setManufactor(rd.getManufactor());
+            } catch (DialogClosedException e) {
+                e.printStackTrace();
+            } catch (DialogCanceledException e) {
+                e.printStackTrace();
+            }
+            JsonConfig.create(LiveHeaderReconnectSettings.class).setRouterData(rd);
 
             ReconnectPluginController.getInstance().setActivePlugin(LiveHeaderReconnect.ID);
             if (Gui.RECONNECT_DURATION <= 2000) {
                 Gui.RECONNECT_DURATION = 2000;
                 /* minimum von 2 seks */
             }
-            int aa = (int) (Gui.RECONNECT_DURATION / 1000 * 2);
+            int aa = (int) (Gui.RECONNECT_DURATION / 1000 * 10);
             if (aa < 30) {
                 aa = 30;
             }

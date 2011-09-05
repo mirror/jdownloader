@@ -704,4 +704,7 @@ public interface JdownloaderTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Look And Feel" })
     String gui_settings__gui_title();
+
+    @Default(lngs = { "en" }, values = { "Reconnect failed: Could not disconnect in %s1" })
+    String reconnectinvoker_disconnect_failed(String string);
 }

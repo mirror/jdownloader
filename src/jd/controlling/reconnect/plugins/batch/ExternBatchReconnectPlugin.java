@@ -15,6 +15,7 @@ import javax.swing.event.DocumentEvent;
 
 import jd.config.SubConfiguration;
 import jd.controlling.reconnect.ReconnectException;
+import jd.controlling.reconnect.ReconnectInvoker;
 import jd.controlling.reconnect.RouterPlugin;
 import jd.controlling.reconnect.plugins.batch.translate.T;
 import jd.gui.UserIO;
@@ -52,9 +53,48 @@ public class ExternBatchReconnectPlugin extends RouterPlugin implements ActionLi
 
     private ImageIcon           icon;
 
+    private ReconnectInvoker    invoker;
+
     public ExternBatchReconnectPlugin() {
         super();
         icon = NewTheme.I().getIcon("batch", 16);
+        invoker = new ReconnectInvoker() {
+
+            @Override
+            public void run() throws ReconnectException {
+                final int waitForReturn = getWaitForReturn();
+                final String executeIn = getExecuteIn();
+
+                String command = getTerminalCommand();
+                if (command != null) {
+                    final String[] cmds = command.split("\\ ");
+                    final int cmdsLength1 = cmds.length - 1;
+                    command = cmds[0];
+                    for (int i = 0; i < cmdsLength1; i++) {
+                        cmds[i] = cmds[i + 1];
+                    }
+
+                    final String batch = getBatchText();
+
+                    final String[] lines = org.appwork.utils.Regex.getLines(batch);
+                    RouterPlugin.LOG.info("Using Batch-Mode: using " + command + " as interpreter! (default: windows(cmd.exe) linux&mac(/bin/bash) )");
+                    for (final String element : lines) {
+                        cmds[cmdsLength1] = element;
+                        /*
+                         * if we have multiple lines, wait for each line to
+                         * finish until starting the next one
+                         */
+                        RouterPlugin.LOG.finer("Execute Batchline: " + JDUtilities.runCommand(command, cmds, executeIn, lines.length >= 2 ? waitForReturn : -1));
+                    }
+                }
+            }
+
+            @Override
+            protected void testRun() throws ReconnectException, InterruptedException {
+                run();
+            }
+
+        };
 
     }
 
@@ -145,40 +185,6 @@ public class ExternBatchReconnectPlugin extends RouterPlugin implements ActionLi
 
     }
 
-    @Override
-    public boolean isReconnectionEnabled() {
-        return true;
-    }
-
-    @Override
-    protected void performReconnect() throws ReconnectException {
-        final int waitForReturn = this.getWaitForReturn();
-        final String executeIn = this.getExecuteIn();
-
-        String command = this.getTerminalCommand();
-        if (command != null) {
-            final String[] cmds = command.split("\\ ");
-            final int cmdsLength1 = cmds.length - 1;
-            command = cmds[0];
-            for (int i = 0; i < cmdsLength1; i++) {
-                cmds[i] = cmds[i + 1];
-            }
-
-            final String batch = this.getBatchText();
-
-            final String[] lines = org.appwork.utils.Regex.getLines(batch);
-            RouterPlugin.LOG.info("Using Batch-Mode: using " + command + " as interpreter! (default: windows(cmd.exe) linux&mac(/bin/bash) )");
-            for (final String element : lines) {
-                cmds[cmdsLength1] = element;
-                /*
-                 * if we have multiple lines, wait for each line to finish until
-                 * starting the next one
-                 */
-                RouterPlugin.LOG.finer("Execute Batchline: " + JDUtilities.runCommand(command, cmds, executeIn, lines.length >= 2 ? waitForReturn : -1));
-            }
-        }
-    }
-
     private void setBatchText(final String text) {
         this.getStorage().put(ExternBatchReconnectPlugin.BATCH_TEXT, text);
         this.updateGUI();
@@ -224,6 +230,11 @@ public class ExternBatchReconnectPlugin extends RouterPlugin implements ActionLi
     @Override
     public ImageIcon getIcon16() {
         return icon;
+    }
+
+    @Override
+    public ReconnectInvoker getReconnectInvoker() {
+        return invoker;
     }
 
 }

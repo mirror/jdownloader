@@ -16,8 +16,9 @@ import javax.imageio.ImageIO;
 
 import jd.controlling.FavIconController;
 import jd.controlling.reconnect.ReconnectConfig;
+import jd.controlling.reconnect.ReconnectException;
 import jd.controlling.reconnect.ReconnectPluginController;
-import jd.controlling.reconnect.ReconnectWizardProgress;
+import jd.controlling.reconnect.ReconnectResult;
 import jd.controlling.reconnect.RouterUtils;
 import jd.controlling.reconnect.ipcheck.IP;
 import jd.controlling.reconnect.plugins.liveheader.remotecall.RecollInterface;
@@ -33,7 +34,6 @@ import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Hash;
 import org.appwork.utils.Regex;
 import org.appwork.utils.event.ProcessCallBack;
-import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
@@ -46,8 +46,6 @@ public class LiveHeaderDetectionWizard {
     // "update3.jdownloader.org/recoll";
     // "192.168.2.250/ces";
     private static final String     UPDATE3_JDOWNLOADER_ORG_RECOLL = "update3.jdownloader.org/recoll";
-
-    private ReconnectWizardProgress progress;
 
     private String                  mac;
 
@@ -95,8 +93,7 @@ public class LiveHeaderDetectionWizard {
 
     private RecollInterface         recoll;
 
-    public LiveHeaderDetectionWizard(ReconnectWizardProgress progress) {
-        this.progress = progress;
+    public LiveHeaderDetectionWizard() {
 
         recoll = new RemoteClient(LiveHeaderDetectionWizard.UPDATE3_JDOWNLOADER_ORG_RECOLL).getFactory().newInstance(RecollInterface.class);
     }
@@ -167,7 +164,7 @@ public class LiveHeaderDetectionWizard {
     // }
     // String man = this.txtManufactor.getText().trim();
     // String name = this.txtName.getText().trim();
-    // ArrayList<TestScript> tests = this.scanOfflineRouters(name.length() > 0 ?
+    // ArrayList<RouterData> tests = this.scanOfflineRouters(name.length() > 0 ?
     // ".*" + name.toLowerCase().replaceAll("\\W", ".*?") + ".*" : null,
     // man.toLowerCase().length() > 0 ? ".*" +
     // man.toLowerCase().replaceAll("\\W", ".*?") + ".*" : null);
@@ -195,7 +192,7 @@ public class LiveHeaderDetectionWizard {
     //
     // }
 
-    private int runTests(ArrayList<TestScript> tests, ProcessCallBack processCallBack) throws InterruptedException, DialogClosedException, DialogCanceledException {
+    private ArrayList<ReconnectResult> runTests(ArrayList<RouterData> tests, ProcessCallBack processCallBack) throws InterruptedException, DialogClosedException, DialogCanceledException {
 
         boolean pre = JsonConfig.create(ReconnectConfig.class).isIPCheckGloballyDisabled();
         try {
@@ -206,16 +203,12 @@ public class LiveHeaderDetectionWizard {
 
             }
 
-            ArrayList<TestScript> bestMatches = filterBestMatches(tests);
-            int duration = testList(bestMatches, processCallBack);
-            if (duration >= 0) { return duration; }
+            ArrayList<RouterData> bestMatches = filterBestMatches(tests);
+            ArrayList<ReconnectResult> ret = testList(bestMatches, processCallBack);
+            if (ret != null && ret.size() > 0) { return ret; }
             // test all if best matches did not succeed
-            int ret = testList(tests, processCallBack);
-            if (ret <= 0) {
+            ret = testList(tests, processCallBack);
 
-                processCallBack.showWarning(T._.autodetection_failed());
-
-            }
             return ret;
         } finally {
 
@@ -227,10 +220,10 @@ public class LiveHeaderDetectionWizard {
 
     }
 
-    private ArrayList<TestScript> filterBestMatches(ArrayList<TestScript> tests) {
-        ArrayList<TestScript> ret = new ArrayList<TestScript>();
-        for (Iterator<TestScript> it = tests.iterator(); it.hasNext();) {
-            TestScript next = it.next();
+    private ArrayList<RouterData> filterBestMatches(ArrayList<RouterData> tests) {
+        ArrayList<RouterData> ret = new ArrayList<RouterData>();
+        for (Iterator<RouterData> it = tests.iterator(); it.hasNext();) {
+            RouterData next = it.next();
             if (isTopMatch(next)) {
                 ret.add(next);
                 it.remove();
@@ -259,10 +252,10 @@ public class LiveHeaderDetectionWizard {
         return r.toString();
     }
 
-    private boolean isTopMatch(TestScript next) {
+    private boolean isTopMatch(RouterData rd) {
         // many matches with this script
-        if (next.getRouterData().getPriorityIndicator() > 3) return true;
-        RouterData rd = next.getRouterData();
+        if (rd.getPriorityIndicator() > 3) return true;
+
         if (!matches(firmware, rd.getFirmware())) return false;
         if (!matches(routerName, rd.getRouterName())) return false;
         if (!matches(manufactor, rd.getManufactor())) return false;
@@ -283,13 +276,13 @@ public class LiveHeaderDetectionWizard {
         return true;
     }
 
-    public int testList(ArrayList<TestScript> tests, ProcessCallBack processCallBack) throws InterruptedException, DialogClosedException, DialogCanceledException {
+    public ArrayList<ReconnectResult> testList(ArrayList<RouterData> tests, ProcessCallBack processCallBack) throws InterruptedException, DialogClosedException, DialogCanceledException {
         int fastestTime = -1;
-        TestScript fastestScript = null;
+        RouterData fastestScript = null;
 
         if (username.trim().length() < 2 || password.trim().length() < 2) {
             for (int i = 0; i < tests.size(); i++) {
-                String sc = tests.get(i).getRouterData().getScript().toLowerCase(Locale.ENGLISH);
+                String sc = tests.get(i).getScript().toLowerCase(Locale.ENGLISH);
                 if (sc.contains("%%%username%%%") || sc.contains("%%%user%%%") || sc.contains("%%%pass%%%") || sc.contains("%%%password%%%")) {
                     // TODO
                     DataCompareDialog dcd = new DataCompareDialog(gatewayAdressHost, firmware, manufactor, routerName, JsonConfig.create(LiveHeaderReconnectSettings.class).getUserName(), JsonConfig.create(LiveHeaderReconnectSettings.class).getPassword());
@@ -302,81 +295,66 @@ public class LiveHeaderDetectionWizard {
                 }
             }
         }
+        ArrayList<ReconnectResult> ret = new ArrayList<ReconnectResult>();
 
         for (int i = 0; i < tests.size(); i++) {
 
-            TestScript test = tests.get(i);
-            processCallBack.setStatusString(T._.jd_controlling_reconnect_plugins_liveheader_LiveHeaderDetectionWizard_runTests((i + 1), tests.size(), test.getRouterData().getManufactor() + " - " + test.getRouterData().getRouterName()));
-            String sc = tests.get(i).getRouterData().getScript().toLowerCase(Locale.ENGLISH);
+            RouterData test = tests.get(i);
+            processCallBack.setStatusString(getPlugin(), T._.jd_controlling_reconnect_plugins_liveheader_LiveHeaderDetectionWizard_runTests((i + 1), tests.size(), test.getManufactor() + " - " + test.getRouterName()));
+            String sc = tests.get(i).getScript().toLowerCase(Locale.ENGLISH);
 
             if ((username.trim().length() < 2 && (sc.contains("%%%username%%%") || sc.contains("%%%user%%%"))) || (password.trim().length() < 2 && (sc.contains("%%%pass%%%") || sc.contains("%%%password%%%")))) {
                 // script requires data which is not available
                 continue;
                 // System.out.println("WILL FAIL");
             }
-            int rounds = 3;
-            if (test.run(getPlugin())) {
-                int durationComplete = test.getTestDuration();
-                int durationOffline = test.getOfflineDuration();
-                Log.L.info("Success: " + durationComplete + " now lets repeat this " + rounds + " times");
-                // several truns for successfull. we want to repeat this!
-                for (int round = 1; round < rounds; round++) {
 
-                    test.setTestDuration(-1);
-                    test.setOfflineDuration(-1);
-                    if (test.run(getPlugin())) {
-                        durationComplete = Math.max(durationComplete, test.getTestDuration());
+            ReconnectResult res;
+            try {
+                res = new LiveHeaderInvoker(test.getScript(), username, password, gatewayAdressHost).validate();
 
-                        durationOffline = Math.min(durationOffline, test.getOfflineDuration());
-                        Log.L.info("# " + round + " success: " + durationComplete);
-                    } else {
-                        // extra long if reconnect failed.
-
-                        Log.L.info("# " + round + " failed: " + durationComplete);
-                    }
-                    // return first Script found
-
+                if (res != null) {
+                    ret.add(res);
                 }
-
-                test.setTestDuration(durationComplete);
-                test.setOfflineDuration(durationOffline);
-                System.out.println("Succeedtime: " + durationComplete + " offline after: " + durationOffline);
-                if (durationComplete < fastestTime || fastestTime < 0) {
-                    fastestScript = test;
-                    fastestTime = test.getTestDuration();
-                }
-
+            } catch (ReconnectException e) {
+                Log.exception(e);
             }
-            processCallBack.setProgress(Math.min(99, (i + 1) * 100 / tests.size()));
+            processCallBack.setProgress(getPlugin(), Math.min(99, (i + 1) * 100 / tests.size()));
         }
-        JsonConfig.create(ReconnectConfig.class).setGlobalFailedCounter(0);
-        JsonConfig.create(ReconnectConfig.class).setFailedCounter(0);
-        JsonConfig.create(ReconnectConfig.class).setGlobalSuccessCounter(0);
-        JsonConfig.create(ReconnectConfig.class).setSuccessCounter(0);
-        if (fastestScript != null) {
-            JsonConfig.create(LiveHeaderReconnectSettings.class).setRouterIP(fastestScript.getRouterIP());
-            JsonConfig.create(LiveHeaderReconnectSettings.class).setRouterData(fastestScript.getRouterData());
-            JsonConfig.create(LiveHeaderReconnectSettings.class).setUserName(fastestScript.getUsername());
-            JsonConfig.create(LiveHeaderReconnectSettings.class).setPassword(fastestScript.getPassword());
-            JsonConfig.create(LiveHeaderReconnectSettings.class).setScript(fastestScript.getRouterData().getScript());
-            JsonConfig.create(ReconnectConfig.class).setSecondsBeforeFirstIPCheck((int) Math.min(5, fastestScript.getOfflineDuration() + 1000));
-            JsonConfig.create(ReconnectConfig.class).setSecondsToWaitForIPChange(Math.max(fastestScript.getTestDuration() * 4, 30));
-            processCallBack.setProgress(99);
-            processCallBack.showMessage(T._.autodetection_success(TimeFormatter.formatMilliSeconds(fastestScript.getTestDuration(), 0)));
-            return fastestTime;
-        }
-        return -1;
+        // JsonConfig.create(ReconnectConfig.class).setGlobalFailedCounter(0);
+        // JsonConfig.create(ReconnectConfig.class).setFailedCounter(0);
+        // JsonConfig.create(ReconnectConfig.class).setGlobalSuccessCounter(0);
+        // JsonConfig.create(ReconnectConfig.class).setSuccessCounter(0);
+        // if (fastestScript != null) {
+        // JsonConfig.create(LiveHeaderReconnectSettings.class).setRouterIP(fastestScript.getRouterIP());
+        // JsonConfig.create(LiveHeaderReconnectSettings.class).setRouterData(fastestScript);
+        // JsonConfig.create(LiveHeaderReconnectSettings.class).setUserName(fastestScript.getUsername());
+        // JsonConfig.create(LiveHeaderReconnectSettings.class).setPassword(fastestScript.getPassword());
+        // JsonConfig.create(LiveHeaderReconnectSettings.class).setScript(fastestScript.getScript());
+        // JsonConfig.create(ReconnectConfig.class).setSecondsBeforeFirstIPCheck((int)
+        // Math.min(5, fastestScript.getOfflineDuration() + 1000));
+        // JsonConfig.create(ReconnectConfig.class).setSecondsToWaitForIPChange(Math.max(fastestScript.getTestDuration()
+        // * 4, 30));
+        // processCallBack.setProgress(99);
+        // processCallBack.showMessage(T._.autodetection_success(TimeFormatter.formatMilliSeconds(fastestScript.getTestDuration(),
+        // 0)));
+        // return fastestTime;
+        // }
+        return ret;
     }
 
-    public int runOnlineScan(ProcessCallBack processCallBack) {
+    public ArrayList<ReconnectResult> runOnlineScan(ProcessCallBack processCallBack) {
         try {
             try {
                 recoll.isAlive();
             } catch (Throwable e) {
-                Dialog.getInstance().showErrorDialog(T._.LiveHeaderDetectionWizard_runOnlineScan_notalive());
-                return -1;
+
+                processCallBack.showDialog(getPlugin(), _GUI._.literally_warning(), T._.LiveHeaderDetectionWizard_runOnlineScan_notalive(), NewTheme.I().getIcon("warning", 32));
+
+                return null;
             }
-            processCallBack.setStatusString(T._.LiveHeaderDetectionWizard_runOnlineScan_collect());
+
+            processCallBack.setStatusString(getPlugin(), T._.LiveHeaderDetectionWizard_runOnlineScan_collect());
             collectInfo();
             specialCollectInfo();
             while (true) {
@@ -395,16 +373,17 @@ public class LiveHeaderDetectionWizard {
             }
             scanRemoteInfo();
             specials();
-            ArrayList<TestScript> list = downloadTestScripts();
+            ArrayList<RouterData> list = downloadRouterDatasByAutoDetectValues();
 
             return runTests(list, processCallBack);
 
         } catch (Exception e) {
-            e.printStackTrace();
-            Dialog.getInstance().showExceptionDialog(_GUI._.literall_error(), e.getMessage(), e);
+            Log.exception(e);
+            processCallBack.showDialog(getPlugin(), _GUI._.literall_error(), T._.LiveHeaderDetectionWizard_runOnlineScan_notalive(), NewTheme.I().getIcon("error", 32));
+
         }
 
-        return -1;
+        return null;
     }
 
     private void specialCollectInfo() {
@@ -525,13 +504,7 @@ public class LiveHeaderDetectionWizard {
         }
     }
 
-    private ArrayList<TestScript> downloadTestScripts() {
-        ArrayList<TestScript> ret = new ArrayList<TestScript>();
-        ret = downloadTestScriptsByAutoDetectValues();
-        return ret;
-    }
-
-    private ArrayList<TestScript> downloadTestScriptsByAutoDetectValues() {
+    private ArrayList<RouterData> downloadRouterDatasByAutoDetectValues() {
 
         RouterData rd = getRouterData();
         // debug
@@ -540,7 +513,7 @@ public class LiveHeaderDetectionWizard {
 
         final ArrayList<RouterData> unique = toUnique(scripts);
 
-        return convert(unique);
+        return unique;
 
     }
 
@@ -609,17 +582,6 @@ public class LiveHeaderDetectionWizard {
         search.setSslTitle(sslTitle);
         search.setTitle(title);
         return search;
-    }
-
-    private ArrayList<TestScript> convert(ArrayList<RouterData> scripts) {
-
-        ArrayList<TestScript> ret = new ArrayList<TestScript>(scripts.size());
-        for (RouterData dat : scripts) {
-            TestScript s = new TestScript(getPlugin(), dat, gatewayAdressHost, username, password);
-
-            ret.add(s);
-        }
-        return ret;
     }
 
     private void userConfirm() throws DialogClosedException, DialogCanceledException {
@@ -717,8 +679,7 @@ public class LiveHeaderDetectionWizard {
 
         }
     }
-
-    // private ArrayList<TestScript> scanOfflineRouters(final String name, final
+    // private ArrayList<RouterData> scanOfflineRouters(final String name, final
     // String manufactor) throws InterruptedException {
     // progress.setStatusMessage("Scan available Scripts");
     // final ArrayList<String[]> scripts = LiveHeaderReconnect.getLHScripts();
@@ -739,9 +700,9 @@ public class LiveHeaderDetectionWizard {
     // }
     // filtered.add(script);
     // }
-    // ArrayList<TestScript> ret = new ArrayList<TestScript>();
+    // ArrayList<RouterData> ret = new ArrayList<RouterData>();
     // for (final String[] script : filtered) {
-    // TestScript test = new TestScript(script[0], script[1]);
+    // RouterData test = new RouterData(script[0], script[1]);
     // ret.add(test);
     //
     // test.setRouterIP(this.txtIP.getText());

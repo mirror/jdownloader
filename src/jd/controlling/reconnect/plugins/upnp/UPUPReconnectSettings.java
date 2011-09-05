@@ -11,9 +11,9 @@ public interface UPUPReconnectSettings extends ConfigInterface {
     void setControlURL(String str);
 
     @AboutConfig
-    String getFriendlyName();
+    String getModelName();
 
-    void setFriendlyName(String name);
+    void setModelName(String name);
 
     @AboutConfig
     String getServiceType();

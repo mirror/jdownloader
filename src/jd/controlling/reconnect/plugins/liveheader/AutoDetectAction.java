@@ -3,6 +3,7 @@ package jd.controlling.reconnect.plugins.liveheader;
 import java.awt.event.ActionEvent;
 
 import javax.swing.AbstractAction;
+import javax.swing.ImageIcon;
 
 import org.appwork.utils.event.ProcessCallBack;
 import org.appwork.utils.swing.dialog.Dialog;
@@ -10,7 +11,6 @@ import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.appwork.utils.swing.dialog.ProgressDialog;
 import org.jdownloader.extensions.antireconnect.translate.T;
-import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 
 public class AutoDetectAction extends AbstractAction {
@@ -27,24 +27,19 @@ public class AutoDetectAction extends AbstractAction {
             private int    progress = -1;
 
             public void run() throws Exception {
-                new LiveHeaderDetectionWizard(null).runOnlineScan(new ProcessCallBack() {
+                new LiveHeaderDetectionWizard().runOnlineScan(new ProcessCallBack() {
 
-                    public void setStatusString(String string) {
+                    public void setStatusString(Object caller, String string) {
                         status = string;
                     }
 
-                    public void setProgress(int percent) {
+                    public void setProgress(Object caller, int percent) {
                         progress = percent;
                     }
 
-                    public void showMessage(String autodetection_success) {
-                        Dialog.getInstance().showMessageDialog(autodetection_success);
-                    }
-
-                    public void showWarning(String message) {
-
+                    public void showDialog(Object caller, String title, String message, ImageIcon icon) {
                         try {
-                            Dialog.getInstance().showConfirmDialog(Dialog.BUTTONS_HIDE_CANCEL, _GUI._.literally_warning(), message, NewTheme.I().getIcon("warning", 32), null, null);
+                            Dialog.getInstance().showConfirmDialog(Dialog.BUTTONS_HIDE_CANCEL, title, message, icon, null, null);
                         } catch (DialogClosedException e) {
                             e.printStackTrace();
                         } catch (DialogCanceledException e) {

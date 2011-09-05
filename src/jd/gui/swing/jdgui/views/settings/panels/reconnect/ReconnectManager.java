@@ -24,17 +24,15 @@ import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.KeyHandler;
 import org.appwork.utils.swing.EDTRunner;
-import org.jdownloader.images.NewTheme;
-import org.jdownloader.translate._JDT;
 
 public class ReconnectManager extends MigPanel implements SettingsComponent, ActionListener, ConfigEventListener {
     private static final long serialVersionUID = 1L;
     private JComboBox         combobox;
-    private JButton           autoButton;
+
     private MigPanel          card;
 
     public ReconnectManager() {
-        super("ins 0,wrap 2", "[grow,fill][]", "");
+        super("ins 0,wrap 3", "[grow,fill][]", "");
         initComponents();
         layoutComponents();
         fill();
@@ -44,16 +42,14 @@ public class ReconnectManager extends MigPanel implements SettingsComponent, Act
 
     public void actionPerformed(final ActionEvent e) {
 
-        if (e.getSource() == this.autoButton) {
-            ReconnectPluginController.getInstance().autoFind();
-        } else {
-            ReconnectPluginController.getInstance().setActivePlugin((RouterPlugin) this.combobox.getSelectedItem());
-        }
+        ReconnectPluginController.getInstance().setActivePlugin((RouterPlugin) this.combobox.getSelectedItem());
+
     }
 
     private void layoutComponents() {
-        this.add(this.combobox, "growx, pushx,height 20!");
-        this.add(this.autoButton, "height 20!");
+        this.add(this.combobox, "growx, pushx,height 24!");
+        this.add(new JButton(new AutoSetupAction()), "height 24!");
+        this.add(new JButton(new ReconnectTestAction()), "height 24!");
         this.combobox.addActionListener(this);
         add(card, "spanx,pushy,growy");
     }
@@ -96,8 +92,6 @@ public class ReconnectManager extends MigPanel implements SettingsComponent, Act
                 return ret;
             }
         });
-        this.autoButton = new JButton(_JDT._.reconnectmanager_wizard(), NewTheme.I().getIcon("wizard", 20));
-        this.autoButton.addActionListener(this);
 
         this.card = new MigPanel("ins 0", "[grow,fill]", "[grow,fill]");
 

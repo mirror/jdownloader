@@ -61,17 +61,12 @@ public class DummyRouterPlugin extends RouterPlugin {
     }
 
     @Override
-    public boolean isReconnectionEnabled() {
-        return false;
-    }
-
-    @Override
-    protected void performReconnect() throws ReconnectException {
-
-    }
-
-    @Override
     public ImageIcon getIcon16() {
         return icon;
+    }
+
+    @Override
+    public ReconnectInvoker getReconnectInvoker() {
+        return null;
     }
 }

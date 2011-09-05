@@ -18,10 +18,7 @@ package jd.gui.swing.jdgui.views.settings.panels;
 
 import javax.swing.ImageIcon;
 
-import jd.controlling.reconnect.ipcheck.IP;
-import jd.controlling.reconnect.ipcheck.IPController;
 import jd.gui.swing.jdgui.views.settings.panels.reconnect.ReconnectManager;
-import jd.gui.swing.jdgui.views.settings.panels.reconnect.ReconnectTester;
 
 import org.jdownloader.gui.settings.AbstractConfigPanel;
 import org.jdownloader.images.NewTheme;
@@ -30,7 +27,8 @@ import org.jdownloader.translate._JDT;
 public class ReconnectSettings extends AbstractConfigPanel {
 
     private static final long serialVersionUID = -7963763730328793139L;
-    private ReconnectTester   tester;
+
+    // private ReconnectTester tester;
 
     public String getTitle() {
         return _JDT._.gui_settings_reconnect_title();
@@ -41,9 +39,10 @@ public class ReconnectSettings extends AbstractConfigPanel {
         this.addHeader(_JDT._.gui_settings_reconnect_title_method(), NewTheme.I().getIcon("reconnect", 32));
 
         add(new ReconnectManager());
-        this.addHeader(_JDT._.gui_settings_reconnect_title_test(), NewTheme.I().getIcon("test", 32));
+        // this.addHeader(_JDT._.gui_settings_reconnect_title_test(),
+        // NewTheme.I().getIcon("test", 32));
 
-        add(tester = new ReconnectTester());
+        // add(tester = new ReconnectTester());
 
     }
 
@@ -58,13 +57,13 @@ public class ReconnectSettings extends AbstractConfigPanel {
 
     @Override
     public void updateContents() {
-        new Thread() {
-            @Override
-            public void run() {
-                final IP ip = IPController.getInstance().getIP();
-                tester.updateCurrentIP(ip);
-
-            }
-        }.start();
+        // new Thread() {
+        // @Override
+        // public void run() {
+        // final IP ip = IPController.getInstance().getIP();
+        // tester.updateCurrentIP(ip);
+        //
+        // }
+        // }.start();
     }
 }

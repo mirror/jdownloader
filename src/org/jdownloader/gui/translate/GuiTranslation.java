@@ -2359,4 +2359,37 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Edit" })
     String literally_edit();
 
+    @Default(lngs = { "en" }, values = { "Reconnect Wizard" })
+    String ReconnectPluginController_autoFind_();
+
+    @Default(lngs = { "en" }, values = { "This wizard will help you to find the correct reconnection settings for your internet connection.\r\nYou can start this wizard at any later time from the file->settings->reconection panel.\r\nThis Wizard will try to perform several Reconnects to optimize your settings.\r\n\r\nContinue now?" })
+    String ReconnectPluginController_autoFind_msg();
+
+    @Default(lngs = { "en" }, values = { "Read more..." })
+    String literally_read_more();
+
+    @Default(lngs = { "en" }, values = { "...testing %s1" })
+    String ReconnectPluginController_run_testing(String name);
+
+    @Default(lngs = { "en" }, values = { "JDownloader now tries to find the correct settings to perform a reconnect.\r\nThis might take a few minutes. Please be patient!" })
+    String ReconnectPluginController_autoFind_dialog_msg();
+
+    @Default(lngs = { "en" }, values = { "Test" })
+    String ReconnectTestAction();
+
+    @Default(lngs = { "en" }, values = { "Reconnect" })
+    String ReconnectDialog_ReconnectDialog_();
+
+    @Default(lngs = { "en" }, values = { "Duration: " })
+    String ReconnectDialog_layoutDialogContent_duration();
+
+    @Default(lngs = { "en" }, values = { "Old IP: " })
+    String ReconnectDialog_layoutDialogContent_old();
+
+    @Default(lngs = { "en" }, values = { "New IP: " })
+    String ReconnectDialog_layoutDialogContent_new();
+
+    @Default(lngs = { "en" }, values = { "Reconnect Plugin: %s1" })
+    String ReconnectDialog_layoutDialogContent_header(String name);
+
 }

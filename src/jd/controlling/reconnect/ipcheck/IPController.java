@@ -48,7 +48,7 @@ public class IPController extends ArrayList<IPConnectionState> {
         }
     }
 
-    public boolean changedIP() {
+    protected boolean changedIP() {
         if (this.invalidState == null || this.invalidState.isOffline()) { return false; }
         /* we dont have any previous states, we cannot check if ip changed */
         if (this.size() == 0) { return false; }
@@ -82,13 +82,14 @@ public class IPController extends ArrayList<IPConnectionState> {
      * 
      * @return
      */
-    public IP fetchIP() {
+    protected IP fetchIP() {
         IPConnectionState newIP = null;
         IPCheckProvider icp = null;
         while (true) {
             try {
                 icp = this.getIPCheckProvider();
                 newIP = new IPConnectionState(icp.getExternalIP());
+                System.out.println("IP: " + newIP.getExternalIp());
                 break;
             } catch (final InvalidProviderException e) {
                 // IP check provider is bad.
@@ -108,9 +109,9 @@ public class IPController extends ArrayList<IPConnectionState> {
      * 
      * @return
      */
-    public synchronized IPConnectionState getCurrentLog() {
+    public synchronized IPConnectionState getIpState() {
         if (this.latestConnectionState == null) {
-            this.fetchIP();
+            fetchIP();
         }
         return this.latestConnectionState;
     }
@@ -124,7 +125,7 @@ public class IPController extends ArrayList<IPConnectionState> {
      */
 
     public IP getIP() {
-        return this.getCurrentLog().getExternalIp();
+        return this.getIpState().getExternalIp();
     }
 
     /**
@@ -149,13 +150,13 @@ public class IPController extends ArrayList<IPConnectionState> {
      * Tells the IpController, that the current ip is "BAD". We need a new one<br>
      * 
      * @see #validate()
-     * @see #validate(int, int)
+     * @see #validateAndWait(int, int)
      */
     public void invalidate() {
         if (this.invalidated == true) { return; }
         System.err.println("Invalidated");
         this.invalidated = true;
-        this.invalidState = this.getCurrentLog();
+        this.invalidState = this.getIpState();
     }
 
     /**
@@ -170,7 +171,7 @@ public class IPController extends ArrayList<IPConnectionState> {
     /**
      * gets the latest connection state and validates if we have a new ip.<br>
      * 
-     * @see #validate(int, int) for more details.<br>
+     * @see #validateAndWait(int, int) for more details.<br>
      * 
      *      This method only does one single Check.
      */
@@ -204,11 +205,10 @@ public class IPController extends ArrayList<IPConnectionState> {
      * @return
      * @throws InterruptedException
      */
-    public boolean validate(final int waitForIPTime, final int ipCheckInterval) throws InterruptedException {
+    public boolean validateAndWait(final int waitForIPTime, final int ipCheckInterval) throws InterruptedException {
         if (!this.invalidated) {
-            System.out.println(1);
-            return true;
-        }
+
+        return true; }
         if (JsonConfig.create(ReconnectConfig.class).isIPCheckGloballyDisabled()) {
             Thread.sleep(waitForIPTime);
             // IP check disabled. each validate request is successful

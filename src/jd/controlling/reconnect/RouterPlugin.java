@@ -1,5 +1,6 @@
 package jd.controlling.reconnect;
 
+import java.util.ArrayList;
 import java.util.logging.Logger;
 
 import javax.swing.ImageIcon;
@@ -9,6 +10,7 @@ import jd.controlling.JDLogger;
 import jd.controlling.reconnect.ipcheck.IPCheckProvider;
 
 import org.appwork.storage.config.JsonConfig;
+import org.appwork.utils.event.ProcessCallBack;
 
 public abstract class RouterPlugin {
 
@@ -22,23 +24,15 @@ public abstract class RouterPlugin {
 
     }
 
-    /**
-     * Finds all settings for a complete reconnect without user interaction
-     * 
-     * @param progressGetter
-     * 
-     * @return
-     * @throws InterruptedException
-     */
-    public int runAutoDetection(ReconnectWizardProgress progressGetter) throws InterruptedException {
-        return -1;
-    }
+    //
+    // final public void doReconnect() throws ReconnectException,
+    // InterruptedException {
+    // final long start = System.currentTimeMillis();
+    // this.performReconnect();
+    // this.lastDuration = System.currentTimeMillis() - start;
+    // }
 
-    final public void doReconnect() throws ReconnectException, InterruptedException {
-        final long start = System.currentTimeMillis();
-        this.performReconnect();
-        this.lastDuration = System.currentTimeMillis() - start;
-    }
+    abstract public ReconnectInvoker getReconnectInvoker();
 
     /**
      * 
@@ -86,52 +80,16 @@ public abstract class RouterPlugin {
     }
 
     /**
-     * Returns if this plugin might be able to find a valid setup without any
-     * userinteraction
-     * 
-     * @return
-     */
-    public boolean hasAutoDetection() {
-        return false;
-    }
-
-    /**
-     * If the plugin has an interactive Settingsdetection wizard, this method
-     * has to return true;
-     * 
-     * @return
-     */
-    public boolean hasDetectionWizard() {
-        return false;
-    }
-
-    /**
-     * returns true, if this router implementation is able to perform a
-     * reconnect
-     * 
-     * @return
-     */
-    public abstract boolean isReconnectionEnabled();
-
-    /**
-     * performs all reconnect actions
-     * 
-     * @param progress
-     * @return
-     */
-    protected abstract void performReconnect() throws ReconnectException, InterruptedException;
-
-    /**
      * runs a detection wizard and
      * 
-     * @param progressGetter
+     * @param processCallBack
      * 
      * @return returns the time the reconnect took. returns -1 if the action has
      *         not been successful
      * @throws InterruptedException
      */
-    public int runDetectionWizard(ReconnectWizardProgress progressGetter) throws InterruptedException {
-        return -1;
+    public ArrayList<ReconnectResult> runDetectionWizard(ProcessCallBack processCallBack) throws InterruptedException {
+        return null;
     }
 
     public IPCheckProvider setIPCheckProvider(final IPCheckProvider p) {

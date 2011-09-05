@@ -121,7 +121,7 @@ public class ReconnectTester extends MigPanel implements SettingsComponent, Acti
         Log.L.info("Start Reconnect");
         this.lblStatusMessage.setText(_JDT._.gui_warning_reconnect_running());
         this.lblStatusMessage.setEnabled(true);
-        this.lblBeforeIP.setText(IPController.getInstance().fetchIP().toString());
+        this.lblBeforeIP.setText(IPController.getInstance().getIP().toString());
 
         this.lblBeforeIP.setEnabled(true);
         this.lblBeforeIpLabel.setEnabled(true);
@@ -183,7 +183,7 @@ public class ReconnectTester extends MigPanel implements SettingsComponent, Acti
                                 if (config.isIPCheckGloballyDisabled()) {
                                     lblCurrentIP.setText("?");
                                 } else {
-                                    lblCurrentIP.setText(IPController.getInstance().fetchIP().toString());
+                                    lblCurrentIP.setText(IPController.getInstance().getIP().toString());
                                 }
                             }
 
@@ -201,7 +201,7 @@ public class ReconnectTester extends MigPanel implements SettingsComponent, Acti
                                 if (config.isIPCheckGloballyDisabled()) {
                                     lblCurrentIP.setText("?");
                                 } else {
-                                    lblCurrentIP.setText(IPController.getInstance().fetchIP().toString());
+                                    lblCurrentIP.setText(IPController.getInstance().getIP().toString());
                                 }
                             }
 

@@ -7,13 +7,11 @@ import java.awt.event.ActionListener;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
 import java.io.StringReader;
 import java.net.DatagramPacket;
 import java.net.InetAddress;
 import java.net.MulticastSocket;
 import java.net.URL;
-import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.regex.Matcher;
@@ -35,13 +33,12 @@ import javax.xml.parsers.ParserConfigurationException;
 
 import jd.controlling.JDLogger;
 import jd.controlling.reconnect.ReconnectException;
-import jd.controlling.reconnect.ReconnectPluginController;
-import jd.controlling.reconnect.ReconnectWizardProgress;
+import jd.controlling.reconnect.ReconnectInvoker;
+import jd.controlling.reconnect.ReconnectResult;
 import jd.controlling.reconnect.RouterPlugin;
 import jd.controlling.reconnect.ipcheck.IP;
 import jd.controlling.reconnect.ipcheck.IPCheckException;
 import jd.controlling.reconnect.ipcheck.IPCheckProvider;
-import jd.controlling.reconnect.ipcheck.IPController;
 import jd.controlling.reconnect.ipcheck.InvalidIPRangeException;
 import jd.controlling.reconnect.ipcheck.InvalidProviderException;
 import jd.controlling.reconnect.plugins.upnp.translate.T;
@@ -52,9 +49,9 @@ import net.miginfocom.swing.MigLayout;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.swing.components.ExtTextField;
 import org.appwork.utils.Regex;
+import org.appwork.utils.event.ProcessCallBack;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.swing.EDTRunner;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
@@ -125,11 +122,13 @@ public class UPNPRouterPlugin extends RouterPlugin implements ActionListener, IP
                 Dialog.getInstance().showDialog(dialog);
                 if (this.devices != null && this.devices.size() > 0) {
 
-                    this.autoFind();
+                    runDetectionWizard(null);
                 }
             } catch (DialogClosedException e1) {
                 e1.printStackTrace();
             } catch (DialogCanceledException e1) {
+                e1.printStackTrace();
+            } catch (InterruptedException e1) {
                 e1.printStackTrace();
             }
 
@@ -159,7 +158,7 @@ public class UPNPRouterPlugin extends RouterPlugin implements ActionListener, IP
 
                             @Override
                             public Component getListCellRendererComponent(final JList list, final Object value, final int index, final boolean isSelected, final boolean cellHasFocus) {
-                                final JLabel label = (JLabel) super.getListCellRendererComponent(list, ((UpnpRouterDevice) value).getFriendlyname() + "(" + ((UpnpRouterDevice) value).getWanservice() + ")", index, isSelected, cellHasFocus);
+                                final JLabel label = (JLabel) super.getListCellRendererComponent(list, ((UpnpRouterDevice) value).getModelname() + "(" + ((UpnpRouterDevice) value).getWanservice() + ")", index, isSelected, cellHasFocus);
 
                                 return label;
                             }
@@ -193,132 +192,37 @@ public class UPNPRouterPlugin extends RouterPlugin implements ActionListener, IP
      * @throws InterruptedException
      */
     @Override
-    public int runAutoDetection(ReconnectWizardProgress progress) throws InterruptedException {
+    public ArrayList<ReconnectResult> runDetectionWizard(ProcessCallBack processCallBack) throws InterruptedException {
 
-        final long start = System.currentTimeMillis();
-
-        try {
-            this.devices = this.scanDevices();
-
-            for (final UpnpRouterDevice device : this.devices) {
-                if (Thread.currentThread().isInterrupted()) throw new InterruptedException();
-                try {
-                    UPNPRouterPlugin.this.setDevice(device);
-                    IPController.getInstance().invalidate();
-                    if (ReconnectPluginController.getInstance().doReconnect(UPNPRouterPlugin.this)) { return (int) (System.currentTimeMillis() - start); }
-
-                } catch (final Exception e) {
-                    e.printStackTrace();
-                }
-
-                UPNPRouterPlugin.this.setDevice(null);
-                return -1;
+        ArrayList<ReconnectResult> ret = new ArrayList<ReconnectResult>();
+        if (devices == null) {
+            try {
+                this.devices = this.scanDevices();
+            } catch (IOException e1) {
+                Log.exception(e1);
+                return null;
             }
-        } catch (final IOException e1) {
-            e1.printStackTrace();
         }
-        return -1;
-    }
+        for (final UpnpRouterDevice device : this.devices) {
+            if (Thread.currentThread().isInterrupted()) throw new InterruptedException();
 
-    private void autoFind() {
-        // this thread is required because of the fucked up eventsender in
-        // JDController. It can be removed as soon as we implemented a
-        // nocnblocking one there
-
-        Log.L.info("Find UPNP Routers START");
-        new Thread("UPNPFinder") {
-            public void run() {
-                try {
-
-                    // final ProgressGetter progressGetter, final int
-                    // flags,
-                    // final String title, final String message, final
-                    // ImageIcon
-                    // icon
-                    final ProgressDialog dialog = new ProgressDialog(new ProgressGetter() {
-
-                        private UpnpRouterDevice device;
-                        private int              progress;
-
-                        public int getProgress() {
-                            return this.progress;
-                        }
-
-                        public String getString() {
-                            return this.device != null ? this.device.getFriendlyname() : "";
-                        }
-
-                        public void run() throws Exception {
-                            // used for progresscontroll only
-                            int steps = 0;
-                            final int maxSteps = UPNPRouterPlugin.this.devices.size();
-
-                            for (final UpnpRouterDevice device : UPNPRouterPlugin.this.devices) {
-                                steps++;
-
-                                this.progress = -1;
-                                try {
-                                    UPNPRouterPlugin.this.setDevice(device);
-                                    IPController.getInstance().invalidate();
-                                    if (ReconnectPluginController.getInstance().doReconnect(UPNPRouterPlugin.this)) {
-                                        this.progress = 100;
-                                        return;
-                                    }
-                                    this.progress = steps * 100 / maxSteps;
-                                } catch (final Exception e) {
-                                    e.printStackTrace();
-                                }
-                                this.progress = steps * 100 / maxSteps;
-                                if (this.progress < 100) {
-                                    Thread.sleep(2000);
-                                }
-
-                                this.device = null;
-                                UPNPRouterPlugin.this.setDevice(null);
-                            }
-
-                        }
-
-                    }, 0, JDL.L("jd.controlling.reconnect.plugins.upnp.UPNPRouterPlugin.actionPerformed.wizard.title", "UPNP Router Wizard"), JDL.L("jd.controlling.reconnect.plugins.upnp.UPNPRouterPlugin.actionPerformed.wizard.test.message", "Testing each network devices for reconnect and IP change features."), null);
-                    dialog.setPreferredSize(new Dimension(500, 150));
-                    Dialog.getInstance().showDialog(dialog);
-
-                    // test is done here. if we found a successful
-                    // device, it
-                    // is already set
-
-                    // UPNPRouterPlugin.this.getStorage().put(UPNPRouterPlugin.TRIED_AUTOFIND,
-                    // true);
-
-                    if (settings.getControlURL() != null) {
-
-                        final ImageIcon icon = NewTheme.I().getIcon("true", 32);
-
-                        final ConfirmDialog d = new ConfirmDialog(Dialog.BUTTONS_HIDE_CANCEL, T._.jd_controlling_reconnect_plugins_upnp_UPNPRouterPlugin_autoFind_successdialog_title(), T._.jd_controlling_reconnect_plugins_upnp_UPNPRouterPlugin_autoFind_successdialog_message(settings.getFriendlyName()), icon, null, null);
-
-                        d.setPreferredSize(new Dimension(500, 150));
-                        Dialog.getInstance().showDialog(d);
-                        ReconnectPluginController.getInstance().setActivePlugin(UPNPRouterPlugin.this);
-                    } else {
-                        final ImageIcon icon = NewTheme.I().getIcon("false", 32);
-
-                        final ConfirmDialog d = new ConfirmDialog(Dialog.BUTTONS_HIDE_CANCEL, T._.jd_controlling_reconnect_plugins_upnp_UPNPRouterPlugin_autoFind_faileddialog_title(), T._.jd_controlling_reconnect_plugins_upnp_UPNPRouterPlugin_autoFind_faileddialog_message(), icon, null, null);
-                        d.setPreferredSize(new Dimension(500, 150));
-                        Dialog.getInstance().showDialog(d);
-                    }
-
-                } catch (final Exception e) {
-                    e.printStackTrace();
-                }
+            ReconnectResult res;
+            try {
+                res = new UPNPReconnectInvoker(device.getServiceType(), device.getControlURL()).validate();
+                if (res != null) ret.add(res);
+            } catch (ReconnectException e) {
+                e.printStackTrace();
             }
-        }.start();
 
+        }
+
+        return ret;
     }
 
     public IP getExternalIP() throws IPCheckException {
         String ipxml;
         try {
-            ipxml = this.runCommand(settings.getServiceType(), settings.getControlURL(), "GetExternalIPAddress");
+            ipxml = UPNPReconnectInvoker.runCommand(settings.getServiceType(), settings.getControlURL(), "GetExternalIPAddress");
         } catch (final Exception e) {
             this.setCanCheckIP(false);
 
@@ -440,83 +344,8 @@ public class UPNPRouterPlugin extends RouterPlugin implements ActionListener, IP
         return 0;
     }
 
-    @Override
-    public boolean hasAutoDetection() {
-        // UPNP settings might be found without user interaktion
-        return true;
-    }
-
     public boolean isIPCheckEnabled() {
         return settings.isIPCheckEnabled();
-    }
-
-    @Override
-    public boolean isReconnectionEnabled() {
-        return true;
-    }
-
-    @Override
-    protected void performReconnect() throws ReconnectException, InterruptedException {
-        try {
-            if (Thread.currentThread().isInterrupted()) throw new InterruptedException();
-            this.runCommand(settings.getServiceType(), settings.getControlURL(), "ForceTermination");
-            if (Thread.currentThread().isInterrupted()) throw new InterruptedException();
-            Thread.sleep(2000);
-            if (Thread.currentThread().isInterrupted()) throw new InterruptedException();
-            this.runCommand(settings.getServiceType(), settings.getControlURL(), "RequestConnection");
-        } catch (InterruptedException e) {
-            throw e;
-        } catch (final Throwable e) {
-            throw new ReconnectException(e);
-        }
-
-    }
-
-    private String runCommand(final String serviceType, final String controlUrl, final String command) throws IOException {
-        final String data = "<?xml version='1.0' encoding='utf-8'?> <s:Envelope s:encodingStyle='http://schemas.xmlsoap.org/soap/encoding/' xmlns:s='http://schemas.xmlsoap.org/soap/envelope/'> <s:Body> <u:" + command + " xmlns:u='" + serviceType + "' /> </s:Body> </s:Envelope>";
-        // this works for fritz box.
-        // old code did NOT work:
-
-        /*
-         * 
-         * final String data = "<?xml version=\"1.0\"?>\n" +
-         * "<s:Envelope xmlns:s=\"http://schemas.xmlsoap.org/soap/envelope/\" s:encodingStyle=\"http://schemas.xmlsoap.org/soap/encoding/\">\n"
-         * + " <s:Body>\n  <m:" + command + " xmlns:m=\"" + serviceType +
-         * "\"></m:" + command + ">\n </s:Body>\n</s:Envelope>"; try { final URL
-         * url = new URL(controlUrl); final URLConnection conn =
-         * url.openConnection(); conn.setDoOutput(true);
-         * conn.addRequestProperty("Content-Type",
-         * "text/xml; charset=\"utf-8\""); conn.addRequestProperty("SOAPAction",
-         * serviceType + "#" + command + "\"");
-         */
-        final URL url = new URL(controlUrl);
-        final URLConnection conn = url.openConnection();
-        conn.setDoOutput(true);
-        conn.addRequestProperty("Content-Type", "text/xml; charset=\"utf-8\"");
-        conn.addRequestProperty("SOAPAction", serviceType + "#" + command);
-        OutputStreamWriter wr = null;
-        BufferedReader rd = null;
-        try {
-            wr = new OutputStreamWriter(conn.getOutputStream());
-            wr.write(data);
-            wr.flush();
-            rd = new BufferedReader(new InputStreamReader(conn.getInputStream()));
-            String xmlstr = "";
-            String nextln;
-            while ((nextln = rd.readLine()) != null) {
-                xmlstr += nextln.trim();
-            }
-            return xmlstr;
-
-        } finally {
-            if (wr != null) {
-                wr.close();
-            }
-            if (rd != null) {
-                rd.close();
-            }
-        }
-
     }
 
     public ArrayList<UpnpRouterDevice> scanDevices() throws IOException {
@@ -594,9 +423,9 @@ public class UPNPRouterPlugin extends RouterPlugin implements ActionListener, IP
                     }
 
                     // .put(UPNPRouterPlugin.URLBASE, urlbase);
-                    // ############## friendlyname ##############
+                    // ############## Modelname ##############
                     Element el = null;
-                    String friendlyname = null;
+                    String friendname = null;
                     String modelname = null;
                     String manufactor = null;
                     NodeList nodes = document.getElementsByTagName("devicetype");
@@ -606,22 +435,22 @@ public class UPNPRouterPlugin extends RouterPlugin implements ActionListener, IP
                             final NodeList nodes2 = nodes.item(i).getParentNode().getChildNodes();
                             for (int j = 0; j < nodes2.getLength(); j++) {
                                 if (nodes2.item(j).getNodeName().matches(UpnpRouterDevice.FRIENDLYNAME)) {
-                                    friendlyname = nodes2.item(j).getTextContent();
+                                    friendname = nodes2.item(j).getTextContent();
                                     // no sure why we do not use break here
-                                    // device.put(UPNPRouterPlugin.FRIENDLYNAME,
-                                    // friendlyname);
+                                    // device.put(UPNPRouterPlugin.ModelNAME,
+                                    // Modelname);
                                 }
                                 if (nodes2.item(j).getNodeName().matches(UpnpRouterDevice.MODELNAME)) {
                                     modelname = nodes2.item(j).getTextContent();
                                     // no sure why we do not use break here
-                                    // device.put(UPNPRouterPlugin.FRIENDLYNAME,
-                                    // friendlyname);
+                                    // device.put(UPNPRouterPlugin.ModelNAME,
+                                    // Modelname);
                                 }
                                 if (nodes2.item(j).getNodeName().matches(UpnpRouterDevice.MANUFACTOR)) {
                                     manufactor = nodes2.item(j).getTextContent();
                                     // no sure why we do not use break here
-                                    // device.put(UPNPRouterPlugin.FRIENDLYNAME,
-                                    // friendlyname);
+                                    // device.put(UPNPRouterPlugin.ModelNAME,
+                                    // Modelname);
                                 }
 
                             }
@@ -636,7 +465,7 @@ public class UPNPRouterPlugin extends RouterPlugin implements ActionListener, IP
                             /* add device to found list */
                             final UpnpRouterDevice device = new UpnpRouterDevice();
                             device.setUrlBase(urlbase);
-                            device.setFriendlyname(friendlyname);
+                            device.setModelname(friendname);
                             device.setModelname(modelname);
                             device.setManufactor(manufactor);
                             device.setLocation(location);
@@ -695,18 +524,18 @@ public class UPNPRouterPlugin extends RouterPlugin implements ActionListener, IP
     private void setDevice(final UpnpRouterDevice upnpRouterDevice) {
         if (upnpRouterDevice == null) {
             settings.setControlURL(null);
-            settings.setFriendlyName(null);
+            settings.setModelName(null);
             settings.setIPCheckEnabled(false);
             settings.setServiceType(null);
             settings.setWANService(null);
         } else {
             JDLogger.getLogger().info(upnpRouterDevice + "");
 
-            settings.setControlURL(upnpRouterDevice.get(UpnpRouterDevice.CONTROLURL));
-            settings.setFriendlyName(upnpRouterDevice.get(UpnpRouterDevice.FRIENDLYNAME));
+            settings.setControlURL(upnpRouterDevice.getControlURL());
+            settings.setModelName(upnpRouterDevice.getModelname());
 
-            settings.setServiceType(upnpRouterDevice.get(UpnpRouterDevice.SERVICETYPE));
-            settings.setWANService(upnpRouterDevice.get(UpnpRouterDevice.WANSERVICE));
+            settings.setServiceType(upnpRouterDevice.getServiceType());
+            settings.setWANService(upnpRouterDevice.getWanservice());
 
             this.setCanCheckIP(true);
 
@@ -722,7 +551,7 @@ public class UPNPRouterPlugin extends RouterPlugin implements ActionListener, IP
 
                 if (UPNPRouterPlugin.this.wanType != null) {
                     try {
-                        UPNPRouterPlugin.this.wanType.setText(settings.getFriendlyName() + (settings.getWANService().length() > 0 ? " (" + settings.getWANService() + ")" : ""));
+                        UPNPRouterPlugin.this.wanType.setText(settings.getModelName() + (settings.getWANService().length() > 0 ? " (" + settings.getWANService() + ")" : ""));
                     } catch (final Throwable e) {
                     }
                     try {
@@ -744,5 +573,10 @@ public class UPNPRouterPlugin extends RouterPlugin implements ActionListener, IP
             }
 
         };
+    }
+
+    @Override
+    public ReconnectInvoker getReconnectInvoker() {
+        return new UPNPReconnectInvoker(settings.getServiceType(), settings.getControlURL());
     }
 }
