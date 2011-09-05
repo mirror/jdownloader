@@ -21,13 +21,12 @@ import java.io.IOException;
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
-import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ge.tt" }, urls = { "http://(www\\.)?api\\.ge\\.tt/\\d/[A-Za-z0-9]+/.+" }, flags = { 0 })
@@ -51,21 +50,21 @@ public class GeTt extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(false);
-        br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("No htmlCode read")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        DLLINK = br.getRedirectLocation();
+        br.getPage("http://ge.tt");
+        Browser brc = br.cloneBrowser();
+        brc.getPage(downloadLink.getDownloadURL());
+        if (brc.containsHTML("No htmlCode read")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        DLLINK = brc.getRedirectLocation();
         if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         if (DLLINK.contains(LIMITREACHED)) {
             downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.gett.trafficlimit", LIMITREACHEDUSERTEXT));
             return AvailableStatus.TRUE;
         }
-        DLLINK = Encoding.htmlDecode(DLLINK);
-        Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
-        br2.setFollowRedirects(true);
+        brc.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
-            con = br2.openGetConnection(DLLINK);
+            con = brc.openGetConnection(DLLINK);
             if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
                 downloadLink.setFinalFileName(getFileNameFromHeader(con));
