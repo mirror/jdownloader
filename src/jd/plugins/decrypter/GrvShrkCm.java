@@ -37,13 +37,14 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "grooveshark.com" }, urls = { "http://(listen\\.)?grooveshark\\.com/(#/)?.+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "grooveshark.com" }, urls = { "http://(listen\\.)?grooveshark\\.com/(#/)?((album|artist|playlist|user)/.*?/\\d+(/music/favorites)?|popular)" }, flags = { 0 })
 public class GrvShrkCm extends PluginForDecrypt {
 
-    private static final String LISTEN = "http://grooveshark.com/";
-    private static final String USERID = UUID.randomUUID().toString().toUpperCase();
-    private String              userID;
-    private String              userName;
+    private static final String     LISTEN = "http://grooveshark.com/";
+    private static final String     USERID = UUID.randomUUID().toString().toUpperCase();
+    private String                  userID;
+    private String                  userName;
+    private ArrayList<DownloadLink> decryptedLinks;
 
     public GrvShrkCm(final PluginWrapper wrapper) {
         super(wrapper);
@@ -59,11 +60,135 @@ public class GrvShrkCm extends PluginForDecrypt {
         return res;
     }
 
-    private ArrayList<DownloadLink> decryptFavourites(final String parameter, final ProgressController progress) throws IOException {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+    @Override
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
+        String parameter = param.toString();
+        parameter = parameter.replaceAll("\\?src=\\d+", "");
+        if (parameter.contains("search/song") || parameter.endsWith("similar")) {
+            logger.warning("Link format is not supported: " + parameter);
+            return null;
+        }
+        /* single */
+        if (parameter.contains("/s/")) {
+            parameter = parameter.replaceFirst("grooveshark\\.com", "grooveshark.viajd");
+            parameter = parameter.replace("#/", "");
+            final DownloadLink dlLink = createDownloadlink(parameter);
+            dlLink.setProperty("type", "single");
+            decryptedLinks.add(dlLink);
+            return decryptedLinks;
+        }
+        if (parameter.contains("http://listen.")) {
+            parameter = parameter.replace("listen.", "");
+        }
+        if (!parameter.contains("/#/")) {
+            parameter = parameter.replaceFirst(LISTEN, LISTEN + "#/");
+        }
+
+        br.getPage(parameter);
+        /* favourites */
+        if (new Regex(parameter, LISTEN + "#/user/.*?/\\d+/music/favorites").matches()) {
+            getFavourites(parameter, progress);
+        }
+
+        /* playlists */
+        if (new Regex(parameter, LISTEN + "#/playlist/.*?/\\d+").matches()) {
+            getPlaylists(parameter, progress);
+        }
+
+        /* album/artist/popular */
+        if (new Regex(parameter, LISTEN + "#/((album|artist)/.*?/\\d+|popular)").matches()) {
+            getAlbum(parameter, progress);
+        }
+
+        if (decryptedLinks.size() == 0) {
+            logger.warning("Decrypter out of date for link: " + parameter);
+            return null;
+        }
+        return decryptedLinks;
+    }
+
+    private void getAlbum(final String parameter, final ProgressController progress) throws IOException {
+        decryptedLinks = new ArrayList<DownloadLink>();
+        final String country = br.getRegex(Pattern.compile("\"country(.*?)}", Pattern.UNICODE_CASE)).getMatch(-1);
+        final HashMap<String, String> titleContent = new HashMap<String, String>();
+        if (parameter.contains("artist") || parameter.contains("album") || parameter.contains("popular")) {
+            final String ID = parameter.substring(parameter.lastIndexOf("/") + 1);
+            String method = new Regex(parameter, "#/(.*?)/").getMatch(0);
+            if (method == null) {
+                method = "popular";
+            }
+            final String parameterMethod = method;
+            method = method.equals("artist") ? method + "GetSongsEx" : method + "GetSongs";
+            final String rawPost = getPostParameterString(parameter, method, country);
+            Boolean type = false;
+            String t1 = null;
+            for (int i = 1; i <= 2; i++) {
+                String rawPostTrue;
+                if (parameterMethod.equals("album")) {
+                    rawPostTrue = rawPost + "\"parameters\":{\"" + parameterMethod + "ID\":\"" + ID + "\",\"isVerified\":" + type.toString() + ",\"offset\":0}}";
+                } else if (parameterMethod.equals("artist")) {
+                    rawPostTrue = rawPost + "\"parameters\":{\"" + parameterMethod + "ID\":\"" + ID + "\",\"isVerifiedOrPopular\":true}}";
+                } else {
+                    rawPostTrue = rawPost + "\"parameters\":{\"type\":\"daily\"}}";
+                    i = 2;
+                }
+                br.getHeaders().put("Content-Type", "application/json");
+                br.postPageRaw(LISTEN + "more.php?" + method, rawPostTrue);
+                if (type) {
+                    // Regex broken?
+                    if (t1 == null || t1.length() == 0) {
+                        break;
+                    }
+                    t1 = t1 + "," + br.getRegex("(result|Songs|songs)\":\\[(.*?)\\]\\}?").getMatch(1);
+                    break;
+                }
+                t1 = br.getRegex("(result|Songs|songs)\":\\[(.*?)(\\]\\}|\\],)").getMatch(1);
+                type = true;
+            }
+            if (t1 != null && t1.length() > 0) {
+                t1 = decodeUnicode(t1.replace("#", "-").replace("},{", "}#{"));
+                final String[] t2 = t1.split("#");
+                progress.setRange(t2.length);
+                for (final String t3 : t2) {
+                    final String[] line = t3.replace("null", "\"null\"").replace("\",\"", "\"#\"").replaceAll("\\{|\\}", "").split("#");
+                    for (final String t4 : line) {
+                        final String[] finalline = t4.replace("\":\"", "\"#\"").replace("\"", "").split("#");
+                        if (finalline.length < 2) {
+                            continue;
+                        }
+                        titleContent.put(finalline[0], finalline[1]);
+                    }
+                    final DownloadLink dlLink = createDownloadlink("http://grooveshark.viajd/song/" + titleContent.get("SongID"));
+                    for (final Entry<String, String> next : titleContent.entrySet()) {
+                        dlLink.setProperty(next.getKey(), next.getValue());
+                    }
+                    final String filename = dlLink.getProperty("ArtistName", "UnknownArtist") + " - " + dlLink.getProperty("AlbumName", "UnkownAlbum") + " - " + dlLink.getProperty("Name", "UnknownSong") + ".mp3";
+                    dlLink.setName(decodeUnicode(filename.trim()));
+                    try {
+                        dlLink.setDownloadSize(Integer.parseInt(dlLink.getStringProperty("EstimateDuration")) * (128 / 8) * 1024);
+                    } catch (final Exception e) {
+                    }
+                    final String ArtistName = titleContent.get("ArtistName");
+                    final String AlbumName = titleContent.get("AlbumName");
+                    String fpName = ArtistName + "_" + AlbumName;
+                    if (method.contains("popular")) {
+                        fpName = "Grooveshark daily popular";
+                    }
+                    final FilePackage fp = FilePackage.getInstance();
+                    fp.setName(fpName.trim());
+                    fp.add(dlLink);
+                    decryptedLinks.add(dlLink);
+                    progress.increase(1);
+                    // we do no linkcheck.. so this should be fast
+                }
+            }
+        }
+    }
+
+    private void getFavourites(final String parameter, final ProgressController progress) throws IOException {
+        decryptedLinks = new ArrayList<DownloadLink>();
         userID = new Regex(parameter, "grooveshark.com/#/user/.*?/(\\d+)/").getMatch(0);
         userName = new Regex(parameter, "grooveshark.com/#/user/(.*?)/(\\d+)/").getMatch(0);
-        br.getPage(parameter);
         final String country = br.getRegex(Pattern.compile("\"country(.*?)}", Pattern.UNICODE_CASE)).getMatch(-1);
         final String method = "getFavorites";
         final String paramString = getPostParameterString(LISTEN, method, country) + "\"parameters\":{\"userID\":" + userID + ",\"ofWhat\":\"Songs\"}}";
@@ -94,121 +219,10 @@ public class GrvShrkCm extends PluginForDecrypt {
             fp.add(dlLink);
         }
         progress.doFinalize();
-
-        return decryptedLinks;
     }
 
-    @Override
-    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
-        parameter = parameter.replaceAll("\\?src=\\d+", "");
-        if (parameter.contains("search/song") || parameter.endsWith("similar")) {
-            logger.warning("Link format is not supported: " + parameter);
-            return null;
-        }
-        /* single */
-        if (parameter.contains("/s/")) {
-            parameter = parameter.replaceFirst("grooveshark\\.com", "grooveshark.viajd");
-            parameter = parameter.replace("#/", "");
-            final DownloadLink dlLink = createDownloadlink(parameter);
-            dlLink.setProperty("type", "single");
-            decryptedLinks.add(dlLink);
-            return decryptedLinks;
-        }
-        if (parameter.contains("http://listen.")) {
-            parameter = parameter.replace("listen.", "");
-        }
-        if (!parameter.contains("/#/")) {
-            parameter = parameter.replaceFirst(LISTEN, LISTEN + "#/");
-        }
-        /* favourites */
-        if (new Regex(parameter, LISTEN + "#/user/.*?/\\d+/music/favorites").matches()) { return decryptFavourites(parameter, progress); }
-        /* playlists */
-        if (new Regex(parameter, LISTEN + "#/playlist/.*?/\\d+").matches()) { return decryptPlaylists(parameter, progress); }
-        /* album/artist/popular */
-        br.getPage(parameter);
-        final String country = br.getRegex(Pattern.compile("\"country(.*?)}", Pattern.UNICODE_CASE)).getMatch(-1);
-        final HashMap<String, String> titleContent = new HashMap<String, String>();
-        if (parameter.contains("artist") || parameter.contains("album") || parameter.contains("popular")) {
-            final String ID = parameter.substring(parameter.lastIndexOf("/") + 1);
-            String method = new Regex(parameter, "#/(.*?)/").getMatch(0);
-            if (method == null) {
-                method = "popular";
-            }
-            final String parameterMethod = method;
-            method = method.equals("artist") ? method + "GetSongsEx" : method + "GetSongs";
-            final String rawPost = getPostParameterString(parameter, method, country);
-            Boolean type = true;
-            String t1 = null;
-            for (int i = 1; i <= 2; i++) {
-                String rawPostTrue;
-                if (parameterMethod.equals("artist") || parameterMethod.equals("album")) {
-                    rawPostTrue = rawPost + "\"parameters\":{\"" + parameterMethod + "ID\":\"" + ID + "\",\"isVerifiedOrPopular\":" + type.toString() + "}}";
-                } else {
-                    rawPostTrue = rawPost + "\"parameters\":{\"type\":\"daily\"}}";
-                    i = 2;
-                }
-                br.getHeaders().put("Content-Type", "application/json");
-                br.postPageRaw(LISTEN + "more.php?" + method, rawPostTrue);
-                if (!type) {
-                    if (t1.length() != 0) {
-                        t1 = t1.concat(",");
-                    }
-                    t1 = t1 + br.getRegex("result\":\\[(.*?)\\]\\}").getMatch(0);
-                    i = 2;
-                } else {
-                    t1 = br.getRegex("(result|Songs)\":\\[(.*?)\\]\\}").getMatch(1);
-                    type = false;
-                }
-            }
-            if (t1 == null) { return null; }
-            t1 = decodeUnicode(t1.replace("#", "-").replace("},{", "}#{"));
-            final String[] t2 = t1.split("#");
-            progress.setRange(t2.length);
-            for (final String t3 : t2) {
-                final String[] line = t3.replace("null", "\"null\"").replace("\",\"", "\"#\"").replaceAll("\\{|\\}", "").split("#");
-                for (final String t4 : line) {
-                    final String[] finalline = t4.replace("\":\"", "\"#\"").replace("\"", "").split("#");
-                    if (finalline.length < 2) {
-                        continue;
-                    }
-                    titleContent.put(finalline[0], finalline[1]);
-                }
-                final DownloadLink dlLink = createDownloadlink("http://grooveshark.viajd/song/" + titleContent.get("SongID"));
-                for (final Entry<String, String> next : titleContent.entrySet()) {
-                    dlLink.setProperty(next.getKey(), next.getValue());
-                }
-                final String filename = dlLink.getProperty("ArtistName", "UnknownArtist") + " - " + dlLink.getProperty("AlbumName", "UnkownAlbum") + " - " + dlLink.getProperty("Name", "UnknownSong") + ".mp3";
-                dlLink.setName(decodeUnicode(filename.trim()));
-                try {
-                    dlLink.setDownloadSize(Integer.parseInt(dlLink.getStringProperty("EstimateDuration")) * (128 / 8) * 1024);
-                } catch (final Exception e) {
-                }
-                final String ArtistName = titleContent.get("ArtistName");
-                final String AlbumName = titleContent.get("AlbumName");
-                String fpName = ArtistName + "_" + AlbumName;
-                if (method == "popular") {
-                    fpName = "Grooveshark daily popular";
-                }
-                final FilePackage fp = FilePackage.getInstance();
-                fp.setName(fpName.trim());
-                fp.add(dlLink);
-                decryptedLinks.add(dlLink);
-                progress.increase(1);
-                // we do no linkcheck.. so this should be fast
-            }
-        }
-        if (decryptedLinks.size() == 0) {
-            logger.warning("Decrypter out of date for link: " + parameter);
-            return null;
-        }
-        return decryptedLinks;
-    }
-
-    private ArrayList<DownloadLink> decryptPlaylists(final String parameter, final ProgressController progress) throws IOException {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        br.getPage(parameter);
+    private void getPlaylists(final String parameter, final ProgressController progress) throws IOException {
+        decryptedLinks = new ArrayList<DownloadLink>();
         final String playlistID = parameter.substring(parameter.lastIndexOf("/") + 1);
         final String country = br.getRegex(Pattern.compile("\"country(.*?)}", Pattern.UNICODE_CASE)).getMatch(-1);
         final String method = "playlistGetSongs";
@@ -221,10 +235,10 @@ public class GrvShrkCm extends PluginForDecrypt {
         br.getPage(parameter.replace("#/", ""));
         String title = br.getRegex("<title>(.*?)\\s\\|").getMatch(0);
         if (title == null) {
-            title = Encoding.htmlDecode(new Regex(parameter, LISTEN + "#/playlist/(.*?)/").getMatch(0));
+            title = new Regex(parameter, LISTEN + "#/playlist/(.*?)/").getMatch(0);
         }
         final FilePackage fp = FilePackage.getInstance();
-        fp.setName("GrooveShark Playlists - " + title);
+        fp.setName("GrooveShark Playlists - " + Encoding.htmlDecode(title));
         progress.increase(1);
         for (final String[] s : songs) {
             final HashMap<String, String> ret = new HashMap<String, String>();
@@ -245,7 +259,6 @@ public class GrvShrkCm extends PluginForDecrypt {
             fp.add(dlLink);
         }
         progress.doFinalize();
-        return decryptedLinks;
     }
 
     private String getPostParameterString(final String parameter, final String method, final String country) throws IOException {
