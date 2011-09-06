@@ -3,6 +3,7 @@ package jd.controlling.reconnect.plugins.liveheader;
 import java.awt.Dimension;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.logging.Logger;
 
@@ -21,6 +22,7 @@ import jd.controlling.reconnect.ReconnectResult;
 import jd.controlling.reconnect.RouterPlugin;
 import jd.controlling.reconnect.ipcheck.IP;
 import jd.controlling.reconnect.plugins.liveheader.recorder.Gui;
+import jd.controlling.reconnect.plugins.liveheader.remotecall.RouterData;
 import jd.controlling.reconnect.plugins.liveheader.translate.T;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
@@ -325,7 +327,12 @@ public class LiveHeaderReconnect extends RouterPlugin implements ControlListener
 
     public ArrayList<ReconnectResult> runDetectionWizard(ProcessCallBack processCallBack) throws InterruptedException {
         final LiveHeaderDetectionWizard wizard = new LiveHeaderDetectionWizard();
-        return wizard.runOnlineScan(processCallBack);
+        try {
+            return wizard.runOnlineScan(processCallBack);
+        } catch (UnknownHostException e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
     void updateGUI() {
@@ -388,6 +395,22 @@ public class LiveHeaderReconnect extends RouterPlugin implements ControlListener
 
     }
 
+    public void setSetup(ReconnectResult reconnectResult) {
+
+        if (reconnectResult.getInvoker() instanceof LiveHeaderInvoker) {
+            LiveHeaderInvoker i = (LiveHeaderInvoker) reconnectResult.getInvoker();
+            RouterData rd = ((LiveHeaderReconnectResult) reconnectResult).getRouterData();
+            rd.setRouterName(i.getName());
+            settings.setRouterData(rd);
+            settings.setPassword(i.getPass());
+            settings.setUserName(i.getUser());
+            settings.setRouterIP(i.getIp());
+            settings.setScript(i.getScript());
+            updateGUI();
+
+        }
+    }
+
     @Override
     public ReconnectInvoker getReconnectInvoker() {
         String script;
@@ -398,7 +421,7 @@ public class LiveHeaderReconnect extends RouterPlugin implements ControlListener
         final String pass = settings.getPassword();
         final String ip = settings.getRouterIP();
 
-        return new LiveHeaderInvoker(script, user, pass, ip);
+        return new LiveHeaderInvoker(this, script, user, pass, ip, settings.getRouterData().getRouterName());
 
     }
 }

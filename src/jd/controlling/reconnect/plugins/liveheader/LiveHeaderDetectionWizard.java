@@ -38,6 +38,7 @@ import org.appwork.utils.logging.Log;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
+import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.remotecall.RemoteClient;
@@ -205,7 +206,7 @@ public class LiveHeaderDetectionWizard {
 
             ArrayList<RouterData> bestMatches = filterBestMatches(tests);
             ArrayList<ReconnectResult> ret = testList(bestMatches, processCallBack);
-            if (ret != null && ret.size() > 0) { return ret; }
+            if (ret != null && ret.size() > 0 && JsonConfig.create(LiveHeaderReconnectSettings.class).isAutoSearchBestMatchFilterEnabled()) { return ret; }
             // test all if best matches did not succeed
             ret = testList(tests, processCallBack);
 
@@ -221,10 +222,16 @@ public class LiveHeaderDetectionWizard {
     }
 
     private ArrayList<RouterData> filterBestMatches(ArrayList<RouterData> tests) {
+        int total = 0;
+        for (Iterator<RouterData> it = tests.iterator(); it.hasNext();) {
+            total += it.next().getPriorityIndicator();
+        }
+        float avg = total / (float) tests.size();
         ArrayList<RouterData> ret = new ArrayList<RouterData>();
         for (Iterator<RouterData> it = tests.iterator(); it.hasNext();) {
             RouterData next = it.next();
-            if (isTopMatch(next)) {
+
+            if (isTopMatch(next, avg)) {
                 ret.add(next);
                 it.remove();
             }
@@ -252,9 +259,9 @@ public class LiveHeaderDetectionWizard {
         return r.toString();
     }
 
-    private boolean isTopMatch(RouterData rd) {
+    private boolean isTopMatch(RouterData rd, float avg) {
         // many matches with this script
-        if (rd.getPriorityIndicator() > 3) return true;
+        if (rd.getPriorityIndicator() > avg * 2) return true;
 
         if (!matches(firmware, rd.getFirmware())) return false;
         if (!matches(routerName, rd.getRouterName())) return false;
@@ -277,8 +284,6 @@ public class LiveHeaderDetectionWizard {
     }
 
     public ArrayList<ReconnectResult> testList(ArrayList<RouterData> tests, ProcessCallBack processCallBack) throws InterruptedException, DialogClosedException, DialogCanceledException {
-        int fastestTime = -1;
-        RouterData fastestScript = null;
 
         if (username.trim().length() < 2 || password.trim().length() < 2) {
             for (int i = 0; i < tests.size(); i++) {
@@ -305,15 +310,18 @@ public class LiveHeaderDetectionWizard {
 
             if ((username.trim().length() < 2 && (sc.contains("%%%username%%%") || sc.contains("%%%user%%%"))) || (password.trim().length() < 2 && (sc.contains("%%%pass%%%") || sc.contains("%%%password%%%")))) {
                 // script requires data which is not available
+                processCallBack.setProgress(getPlugin(), Math.min(99, (i + 1) * 100 / tests.size()));
+                Thread.sleep(1000);
                 continue;
                 // System.out.println("WILL FAIL");
             }
 
             ReconnectResult res;
             try {
-                res = new LiveHeaderInvoker(test.getScript(), username, password, gatewayAdressHost).validate();
-
-                if (res != null) {
+                LiveHeaderInvoker inv = new LiveHeaderInvoker(getPlugin(), test.getScript(), username, password, gatewayAdressHost, routerName != null && routerName.trim().length() > 0 ? routerName : test.getRouterName());
+                res = inv.validate();
+                ((LiveHeaderReconnectResult) res).setRouterData(test);
+                if (res != null && res.isSuccess()) {
                     ret.add(res);
                 }
             } catch (ReconnectException e) {
@@ -343,16 +351,10 @@ public class LiveHeaderDetectionWizard {
         return ret;
     }
 
-    public ArrayList<ReconnectResult> runOnlineScan(ProcessCallBack processCallBack) {
+    public ArrayList<ReconnectResult> runOnlineScan(ProcessCallBack processCallBack) throws InterruptedException, UnknownHostException {
         try {
-            try {
-                recoll.isAlive();
-            } catch (Throwable e) {
 
-                processCallBack.showDialog(getPlugin(), _GUI._.literally_warning(), T._.LiveHeaderDetectionWizard_runOnlineScan_notalive(), NewTheme.I().getIcon("warning", 32));
-
-                return null;
-            }
+            recoll.isAlive();
 
             processCallBack.setStatusString(getPlugin(), T._.LiveHeaderDetectionWizard_runOnlineScan_collect());
             collectInfo();
@@ -376,17 +378,15 @@ public class LiveHeaderDetectionWizard {
             ArrayList<RouterData> list = downloadRouterDatasByAutoDetectValues();
 
             return runTests(list, processCallBack);
-
-        } catch (Exception e) {
-            Log.exception(e);
-            processCallBack.showDialog(getPlugin(), _GUI._.literall_error(), T._.LiveHeaderDetectionWizard_runOnlineScan_notalive(), NewTheme.I().getIcon("error", 32));
-
+        } catch (DialogNoAnswerException e) {
+            throw new InterruptedException();
+        } catch (InterruptedException e) {
+            throw e;
         }
 
-        return null;
     }
 
-    private void specialCollectInfo() {
+    private void specialCollectInfo() throws InterruptedException {
 
         // speedports
         if ("speedport.ip".equalsIgnoreCase(gatewayAdressHost)) {
@@ -403,7 +403,7 @@ public class LiveHeaderDetectionWizard {
             } catch (Exception e) {
                 e.printStackTrace();
             }
-
+            if (Thread.currentThread().isInterrupted()) throw new InterruptedException();
             // speedports
 
             // extract name from sourc
@@ -542,7 +542,7 @@ public class LiveHeaderDetectionWizard {
     }
 
     private static String prepScript(String script) {
-        script = script.toUpperCase(Locale.ENGLISH).replaceAll("[\r\n]+", "|").replaceAll("\\s+", "");
+        script = script.toUpperCase(Locale.ENGLISH).replaceAll("\\s+", "");
         // script = Pattern.compile("\\[\\[\\[(/?)hsrc\\]\\]\\]",
         // Pattern.CASE_INSENSITIVE).matcher(script).replaceAll("[[[$1HSRC]]]");
         // script = Pattern.compile("\\[\\[\\[(/?)request",
@@ -586,6 +586,7 @@ public class LiveHeaderDetectionWizard {
 
     private void userConfirm() throws DialogClosedException, DialogCanceledException {
         while (true) {
+            System.out.println("UserConfirm");
             DataCompareDialog dcd = new DataCompareDialog(gatewayAdressHost, firmware, manufactor, routerName, JsonConfig.create(LiveHeaderReconnectSettings.class).getUserName(), JsonConfig.create(LiveHeaderReconnectSettings.class).getPassword());
             Dialog.getInstance().showDialog(dcd);
             username = dcd.getUsername();
@@ -614,13 +615,11 @@ public class LiveHeaderDetectionWizard {
 
     private String           gatewayAdressIP;
 
-    private void collectInfo() throws UnknownHostException {
+    private void collectInfo() throws UnknownHostException, InterruptedException {
         final UPNPRouterPlugin upnp = (UPNPRouterPlugin) ReconnectPluginController.getInstance().getPluginByID(UPNPRouterPlugin.ID);
-        ArrayList<UpnpRouterDevice> devices = new ArrayList<UpnpRouterDevice>();
-        try {
-            devices = upnp.scanDevices();
-        } catch (final IOException e) {
-        }
+
+        ArrayList<UpnpRouterDevice> devices = upnp.getDevices();
+
         String gatewayIP = JsonConfig.create(LiveHeaderReconnectSettings.class).getRouterIP();
 
         if (!IP.isValidRouterIP(gatewayIP)) {
@@ -638,6 +637,8 @@ public class LiveHeaderDetectionWizard {
             mac = RouterUtils.getMacAddress(gatewayAdress).replace(":", "").toUpperCase(Locale.ENGLISH);
 
             manufactor = RouterSender.getManufactor(mac);
+        } catch (final InterruptedException e) {
+            throw e;
         } catch (final Exception e) {
             e.printStackTrace();
         }
@@ -679,40 +680,5 @@ public class LiveHeaderDetectionWizard {
 
         }
     }
-    // private ArrayList<RouterData> scanOfflineRouters(final String name, final
-    // String manufactor) throws InterruptedException {
-    // progress.setStatusMessage("Scan available Scripts");
-    // final ArrayList<String[]> scripts = LiveHeaderReconnect.getLHScripts();
-    // final ArrayList<String[]> filtered = new ArrayList<String[]>();
-    // String man, mod;
-    // for (final String[] script : scripts) {
-    // man = script[0].trim().toLowerCase();
-    // mod = script[1].trim().toLowerCase();
-    // if (name != null && name.trim().length() > 2) {
-    // if (!mod.matches(name)) {
-    // continue;
-    // }
-    // }
-    // if (manufactor != null && manufactor.trim().length() > 2) {
-    // if (!man.matches(manufactor)) {
-    // continue;
-    // }
-    // }
-    // filtered.add(script);
-    // }
-    // ArrayList<RouterData> ret = new ArrayList<RouterData>();
-    // for (final String[] script : filtered) {
-    // RouterData test = new RouterData(script[0], script[1]);
-    // ret.add(test);
-    //
-    // test.setRouterIP(this.txtIP.getText());
-    // test.setUser(this.txtUser.getText());
-    // test.setPassword(this.txtPass.getText());
-    // test.setScript(script[2]);
-    //
-    // }
-    //
-    // return ret;
-    // }
 
 }

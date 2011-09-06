@@ -7,12 +7,15 @@ import java.awt.event.ActionListener;
 
 import javax.swing.JComponent;
 import javax.swing.JLabel;
+import javax.swing.SwingConstants;
 import javax.swing.Timer;
 
 import jd.controlling.reconnect.ReconnectException;
 import jd.controlling.reconnect.ReconnectPluginController;
 import jd.controlling.reconnect.ReconnectResult;
+import jd.controlling.reconnect.ipcheck.IPConnectionState;
 import jd.controlling.reconnect.ipcheck.IPController;
+import jd.controlling.reconnect.ipcheck.event.IPControllListener;
 import jd.gui.swing.laf.LookAndFeelController;
 
 import org.appwork.app.gui.MigPanel;
@@ -28,7 +31,7 @@ import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 
-public class ReconnectDialog extends AbstractDialog<Object> {
+public class ReconnectDialog extends AbstractDialog<Object> implements IPControllListener {
 
     private CircledProgressBar progress;
     private JLabel             duration;
@@ -38,9 +41,10 @@ public class ReconnectDialog extends AbstractDialog<Object> {
     private Thread             recThread;
     private Timer              updateTimer;
     private long               startTime;
+    private JLabel             state;
 
     public ReconnectDialog() {
-        super(Dialog.BUTTONS_HIDE_OK, _GUI._.ReconnectDialog_ReconnectDialog_(), null, null, null);
+        super(Dialog.BUTTONS_HIDE_OK, _GUI._.ReconnectDialog_ReconnectDialog_(), null, null, _GUI._.literally_close());
     }
 
     @Override
@@ -72,19 +76,24 @@ public class ReconnectDialog extends AbstractDialog<Object> {
         ((ImagePainter) progress.getNonvalueClipPainter()).setBackground(Color.WHITE);
         ((ImagePainter) progress.getNonvalueClipPainter()).setForeground(Color.GREEN);
         p.add(progress, "height 40!,width 40!,spany 2");
-        p.add(header = new JLabel(), "spanx");
+        p.add(header = new JLabel(), "spanx 4");
         SwingUtils.toBold(header);
+        p.add(state = new JLabel(), "spanx,alignx right");
+        SwingUtils.toBold(header);
+        state.setHorizontalAlignment(SwingConstants.RIGHT);
+
         header.setText(_GUI._.ReconnectDialog_layoutDialogContent_header(ReconnectPluginController.getInstance().getActivePlugin().getName()));
         p.add(label(_GUI._.ReconnectDialog_layoutDialogContent_duration()));
 
         p.add(duration = new JLabel(), "width 50!");
 
         p.add(label(_GUI._.ReconnectDialog_layoutDialogContent_old()));
-        p.add(old = new JLabel(), "width 100!");
-
+        p.add(old = new JLabel(), "width 100!,alignx right");
+        state.setHorizontalAlignment(SwingConstants.RIGHT);
         p.add(new JLabel(NewTheme.I().getIcon("go-next", 18)));
-        p.add(label(_GUI._.ReconnectDialog_layoutDialogContent_new()));
+        p.add(label(_GUI._.ReconnectDialog_layoutDialogContent_currentip()));
         p.add(newIP = new JLabel(), "width 100!");
+        newIP.setHorizontalAlignment(SwingConstants.RIGHT);
         newIP.setText("???");
         //
         IPController.getInstance().invalidate();
@@ -123,6 +132,16 @@ public class ReconnectDialog extends AbstractDialog<Object> {
                         }
 
                     });
+                    progress.setIndeterminate(false);
+                    if (IPController.getInstance().isInvalidated()) {
+
+                        ((ImagePainter) progress.getNonvalueClipPainter()).setBackground(Color.GRAY);
+                        ((ImagePainter) progress.getNonvalueClipPainter()).setForeground(Color.RED);
+                        progress.setValue(0);
+                    } else {
+                        progress.setValue(100);
+                    }
+
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 } catch (ReconnectException e) {
@@ -147,12 +166,73 @@ public class ReconnectDialog extends AbstractDialog<Object> {
         updateTimer.setRepeats(true);
         updateTimer.start();
         recThread.start();
+        IPController.getInstance().getEventSender().addListener(this);
         return p;
+    }
+
+    @Override
+    public void dispose() {
+        super.dispose();
+        recThread.interrupt();
+        updateTimer.stop();
+        IPController.getInstance().getEventSender().removeListener(this);
     }
 
     private Component label(String lbl) {
         JLabel ret = new JLabel(lbl);
         ret.setEnabled(false);
         return ret;
+    }
+
+    public void onIPForbidden(final IPConnectionState parameter) {
+        new EDTRunner() {
+
+            @Override
+            protected void runInEDT() {
+                state.setText(_GUI._.ReconnectDialog_onIPForbidden_(parameter.getExternalIp().toString()));
+
+            }
+        };
+    }
+
+    public void onIPInvalidated(IPConnectionState parameter) {
+    }
+
+    public void onIPChanged(IPConnectionState parameter, IPConnectionState parameter2) {
+    }
+
+    public void onIPOffline() {
+        new EDTRunner() {
+
+            @Override
+            protected void runInEDT() {
+                state.setText(_GUI._.ReconnectDialog_onIPOffline_());
+
+            }
+        };
+    }
+
+    public void onIPValidated(IPConnectionState parameter, IPConnectionState parameter2) {
+        new EDTRunner() {
+
+            @Override
+            protected void runInEDT() {
+                state.setText(_GUI._.ReconnectDialog_onIPValidated_());
+            }
+        };
+    }
+
+    public void onIPOnline(IPConnectionState parameter) {
+        new EDTRunner() {
+
+            @Override
+            protected void runInEDT() {
+                state.setText(_GUI._.ReconnectDialog_onIPOnline_());
+            }
+        };
+
+    }
+
+    public void onIPStateChanged(IPConnectionState parameter, IPConnectionState parameter2) {
     }
 }

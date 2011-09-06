@@ -59,7 +59,8 @@ public class ReconnectManager extends MigPanel implements SettingsComponent, Act
             @Override
             protected void runInEDT() {
                 combobox.setModel(new DefaultComboBoxModel(ReconnectPluginController.getInstance().getPlugins().toArray(new RouterPlugin[] {})));
-                setView(((RouterPlugin) combobox.getSelectedItem()).getGUI());
+                combobox.setSelectedItem(ReconnectPluginController.getInstance().getActivePlugin());
+                setView(ReconnectPluginController.getInstance().getActivePlugin().getGUI());
             }
         };
 
@@ -110,7 +111,7 @@ public class ReconnectManager extends MigPanel implements SettingsComponent, Act
 
     public void onConfigValueModified(ConfigInterface config, String key, Object newValue) {
         if (ReconnectConfig.ACTIVE_PLUGIN_ID.equalsIgnoreCase(key)) {
-            setView(((RouterPlugin) combobox.getSelectedItem()).getGUI());
+            fill();
         }
     }
 

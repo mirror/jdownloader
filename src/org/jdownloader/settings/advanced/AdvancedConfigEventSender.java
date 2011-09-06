@@ -9,6 +9,7 @@ public class AdvancedConfigEventSender extends Eventsender<AdvancedConfigEventLi
         switch (event.getType()) {
         case UPDATED:
             listener.onAdvancedConfigUpdate();
+
         }
     }
 

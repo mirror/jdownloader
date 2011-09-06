@@ -61,7 +61,7 @@ public class ExternReconnectPlugin extends RouterPlugin implements ActionListene
     public ExternReconnectPlugin() {
         super();
         icon = NewTheme.I().getIcon("console", 16);
-        invoker = new ReconnectInvoker() {
+        invoker = new ReconnectInvoker(this) {
             @Override
             protected void testRun() throws ReconnectException, InterruptedException {
                 run();

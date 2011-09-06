@@ -19,6 +19,8 @@ public class RemoteClient extends RemoteCallClient {
     public RemoteClient(String host) {
         this.host = host;
         br = new Browser();
+        br.setConnectTimeout(5000);
+        br.setReadTimeout(5000);
     }
 
     @Override

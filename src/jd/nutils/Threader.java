@@ -101,26 +101,30 @@ public class Threader {
         this.hasDied = true;
     }
 
-    public void startAndWait() {
+    public void startAndWait() throws InterruptedException {
         this.hasStarted = true;
         for (Worker w : workerList) {
             w.start();
         }
 
         waitFlag = true;
-        synchronized (this) {
-            while (waitFlag) {
-                try {
-                    wait();
-                } catch (InterruptedException e) {
-                    for (Worker w : workerList) {
-                        w.interrupt();
+        try {
+            synchronized (this) {
+                while (waitFlag) {
+                    try {
+                        wait();
+                    } catch (InterruptedException e) {
+                        for (Worker w : workerList) {
+                            w.interrupt();
+                        }
+                        throw e;
+
                     }
-                    return;
                 }
             }
+        } finally {
+            this.hasDied = true;
         }
-        this.hasDied = true;
     }
 
     /**

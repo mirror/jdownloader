@@ -1,12 +1,20 @@
 package jd.controlling.reconnect;
 
+import java.util.ArrayList;
+
 import jd.controlling.reconnect.ipcheck.BalancedWebIPCheck;
 import jd.controlling.reconnect.ipcheck.IPController;
 
+import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.logging.Log;
 
 public abstract class ReconnectInvoker {
     private static final long OFFLINE_TIMEOUT = 30000;
+    private RouterPlugin      routerPlugin;
+
+    public ReconnectInvoker(RouterPlugin routerPlugin) {
+        this.routerPlugin = routerPlugin;
+    }
 
     public abstract void run() throws ReconnectException, InterruptedException;
 
@@ -17,6 +25,8 @@ public abstract class ReconnectInvoker {
     }
 
     public ReconnectResult validate(ReconnectResult ret) throws InterruptedException, ReconnectException {
+        ret.setInvoker(this);
+
         // Make sure that we are online
         while (IPController.getInstance().getIpState().isOffline()) {
 
@@ -52,7 +62,7 @@ public abstract class ReconnectInvoker {
                 if (!ipc.validate() && !ipc.getIpState().isOffline() && (System.currentTimeMillis() - ret.getStartTime()) > OFFLINE_TIMEOUT) {
                     // we are not offline after 30 seconds
                     Log.L.info("Disconnect failed. Still online after " + OFFLINE_TIMEOUT + " ms");
-                    return null;
+                    return ret;
                 }
             } while (!ipc.getIpState().isOffline() && ipc.isInvalidated());
             ret.setOfflineTime(System.currentTimeMillis());
@@ -97,10 +107,54 @@ public abstract class ReconnectInvoker {
         }
     }
 
+    public RouterPlugin getPlugin() {
+        return routerPlugin;
+    }
+
     protected ReconnectResult createReconnectResult() {
         return new ReconnectResult();
     }
 
     protected abstract void testRun() throws ReconnectException, InterruptedException;
 
+    public void doOptimization(ReconnectResult res) throws InterruptedException {
+        ArrayList<ReconnectResult> list = new ArrayList<ReconnectResult>();
+        list.add(res);
+        int failed = 0;
+        int success = 1;
+        long duration = res.getSuccessDuration();
+        long offlineDuration = res.getOfflineDuration();
+        long maxSuccessDuration = res.getSuccessDuration();
+        for (int i = 1; i < JsonConfig.create(ReconnectConfig.class).getOptimizationRounds(); i++) {
+            ReconnectResult r;
+            try {
+                r = validate();
+
+            } catch (ReconnectException e) {
+                e.printStackTrace();
+                r = createReconnectResult();
+            }
+            list.add(r);
+            if (!r.isSuccess()) {
+                failed++;
+            } else {
+                success++;
+                duration += r.getSuccessDuration();
+                offlineDuration = Math.min(offlineDuration, r.getOfflineDuration());
+                maxSuccessDuration = Math.max(maxSuccessDuration, r.getSuccessDuration());
+            }
+
+        }
+        duration /= success;
+        double successRate = success / (double) JsonConfig.create(ReconnectConfig.class).getOptimizationRounds();
+        // increase successduration if successrate is lower than 1.0 (100%)
+        res.setAverageSuccessDuration((long) (duration / successRate));
+
+        res.setMaxSuccessDuration(maxSuccessDuration * 4);
+
+    }
+
+    public String getName() {
+        return "Reconnect";
+    }
 }

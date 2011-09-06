@@ -58,7 +58,7 @@ public class ExternBatchReconnectPlugin extends RouterPlugin implements ActionLi
     public ExternBatchReconnectPlugin() {
         super();
         icon = NewTheme.I().getIcon("batch", 16);
-        invoker = new ReconnectInvoker() {
+        invoker = new ReconnectInvoker(this) {
 
             @Override
             public void run() throws ReconnectException {

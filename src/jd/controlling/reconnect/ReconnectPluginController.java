@@ -7,6 +7,8 @@ import java.io.IOException;
 import java.net.URL;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Enumeration;
 import java.util.jar.JarEntry;
 import java.util.jar.JarInputStream;
@@ -55,16 +57,29 @@ public class ReconnectPluginController {
     }
 
     public ArrayList<ReconnectResult> autoFind(ProcessCallBack feedback) throws InterruptedException {
-        // first try all plugins that have an automode
+
         ArrayList<ReconnectResult> res = new ArrayList<ReconnectResult>();
         for (final RouterPlugin plg : ReconnectPluginController.this.plugins) {
             if (Thread.currentThread().isInterrupted()) throw new InterruptedException();
 
             ArrayList<ReconnectResult> founds = plg.runDetectionWizard(feedback);
-            System.out.println(founds);
+
             if (founds != null) res.addAll(founds);
 
         }
+
+        // optimize
+        for (ReconnectResult found : res) {
+            found.optimize();
+        }
+
+        Collections.sort(res, new Comparator<ReconnectResult>() {
+
+            public int compare(ReconnectResult o1, ReconnectResult o2) {
+                return new Long(o1.getAverageSuccessDuration()).compareTo(new Long(o2.getAverageSuccessDuration()));
+            }
+        });
+
         return res;
     }
 
@@ -247,7 +262,8 @@ public class ReconnectPluginController {
 
                 if (url.getProtocol().equalsIgnoreCase("jar")) {
                     // // jarred addon (JAR)
-                    File jarFile = new File(new URL(url.toString().substring(4, url.toString().lastIndexOf('!'))).toURI());
+                    String path = url.getPath();
+                    File jarFile = new File(new URL(path.substring(0, path.lastIndexOf('!'))).toURI());
                     final JarInputStream jis = new JarInputStream(new FileInputStream(jarFile));
 
                     JarEntry e;
@@ -269,8 +285,8 @@ public class ReconnectPluginController {
                         }
                     }
                 } else {
-                    System.out.println(url);
-                    for (File dir : new File(url.toString().substring(6)).listFiles(new FileFilter() {
+
+                    for (File dir : new File(url.toURI()).listFiles(new FileFilter() {
 
                         public boolean accept(File pathname) {
                             return pathname.isDirectory();

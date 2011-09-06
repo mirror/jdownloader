@@ -41,8 +41,19 @@ public class ReconnectResult {
         this.successTime = successTime;
     }
 
-    private long offlineTime;
-    private long successTime;
+    private long             offlineTime;
+    private long             successTime;
+    private long             averageSuccessDuration;
+    private ReconnectInvoker invoker;
+    private long             maxSuccessDuration;
+
+    public long getMaxSuccessDuration() {
+        return maxSuccessDuration;
+    }
+
+    public void setMaxSuccessDuration(long maxSuccessDuration) {
+        this.maxSuccessDuration = maxSuccessDuration;
+    }
 
     public long getOfflineDuration() {
         return offlineTime - startTime;
@@ -51,4 +62,28 @@ public class ReconnectResult {
     public long getSuccessDuration() {
         return successTime - startTime;
     }
+
+    public long getAverageSuccessDuration() {
+        return averageSuccessDuration;
+    }
+
+    public void setAverageSuccessDuration(long averageSuccessDuration) {
+        this.averageSuccessDuration = averageSuccessDuration;
+    }
+
+    public void setInvoker(ReconnectInvoker reconnectInvoker) {
+        this.invoker = reconnectInvoker;
+    }
+
+    public ReconnectInvoker getInvoker() {
+        return invoker;
+    }
+
+    /**
+     * Optimization does reconnect loops to find best average timings
+     */
+    public void optimize() throws InterruptedException {
+        getInvoker().doOptimization(this);
+    }
+
 }

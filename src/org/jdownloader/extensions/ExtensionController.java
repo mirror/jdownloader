@@ -102,7 +102,7 @@ public class ExtensionController {
                     url = urls.nextElement();
                     if (url.getProtocol().equalsIgnoreCase("jar")) {
                         // jarred addon (JAR)
-                        File jarFile = new File(new URL(url.toString().substring(4, url.toString().lastIndexOf('!'))).toURI());
+                        File jarFile = new File(new URL(url.getPath().substring(4, url.toString().lastIndexOf('!'))).toURI());
                         final JarInputStream jis = new JarInputStream(new FileInputStream(jarFile));
                         JarEntry e;
 

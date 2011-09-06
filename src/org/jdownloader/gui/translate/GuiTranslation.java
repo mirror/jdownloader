@@ -2392,4 +2392,46 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Reconnect Plugin: %s1" })
     String ReconnectDialog_layoutDialogContent_header(String name);
 
+    @Default(lngs = { "en" }, values = { "Forbidden IP: %s1" })
+    String ReconnectDialog_onIPForbidden_(String externalIp);
+
+    @Default(lngs = { "en" }, values = { "Router is Offline" })
+    String ReconnectDialog_onIPOffline_();
+
+    @Default(lngs = { "en" }, values = { "Router is Online" })
+    String ReconnectDialog_onIPOnline_();
+
+    @Default(lngs = { "en" }, values = { "reconnect Successful" })
+    String ReconnectDialog_onIPValidated_();
+
+    @Default(lngs = { "en" }, values = { "Close" })
+    String literally_close();
+
+    @Default(lngs = { "en" }, values = { "-offline-" })
+    String literally_offline();
+
+    @Default(lngs = { "en" }, values = { "Current External IP" })
+    String ReconnectDialog_layoutDialogContent_currentip();
+
+    @Default(lngs = { "en" }, values = { "Auto Setup Reconnect" })
+    String AutoDetectAction_actionPerformed_d_title();
+
+    @Default(lngs = { "en" }, values = { "Please wait. JDownloader tries to find the correct settings for your internet connection. \r\nThis may take several minutes." })
+    String AutoDetectAction_actionPerformed_d_msg();
+
+    @Default(lngs = { "en" }, values = { "It seems that you are using a Direct Modem Connection to access the internet.\r\nReconnect for Modem Connections have to be set up manually.\r\n\r\nDo you use a Router or a Modem to connect to the internet?" })
+    String AutoSetupAction_actionPerformed_modem();
+
+    @Default(lngs = { "en" }, values = { "Modem/Dial-Up" })
+    String AutoSetupAction_actionPerformed_choose_modem();
+
+    @Default(lngs = { "en" }, values = { "I'm not sure!" })
+    String AutoSetupAction_actionPerformed_dont_know();
+
+    @Default(lngs = { "en" }, values = { "Router" })
+    String AutoSetupAction_actionPerformed_router();
+
+    @Default(lngs = { "en" }, values = { "Auto Setup only works for Router connections. \r\nPlease see the opened Site for Modem Reconnects." })
+    String AutoSetupAction_actionPerformed_noautoformodem();
+
 }

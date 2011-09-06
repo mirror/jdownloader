@@ -45,4 +45,23 @@ public interface UpnpTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Auto Setup" })
     String auto();
+
+    @Default(lngs = { "en" }, values = { "UPNP Router Reconnect" })
+    String UPNPReconnectInvoker_getName_();
+
+    @Default(lngs = { "en" }, values = { "Could not find any UPNP Devices. Try Live Header Reconnect instead!" })
+    String UPNPRouterPlugin_run_error();
+
+    @Default(lngs = { "en" }, values = { "UPNP Router Wizard" })
+    String UPNPRouterPlugin_run_wizard_title();
+
+    @Default(lngs = { "en" }, values = { "Scanning all network interfaces" })
+    String UPNPRouterPlugin_run_mesg();
+
+    @Default(lngs = { "en" }, values = { "Optimize: %s1" })
+    String AutoDetectAction_run_optimize(String name);
+
+    @Default(lngs = { "en" }, values = { "Found UPNP Devices, but could not perform a reconnect. \r\nTry Live Header Reconnect instead!" })
+    String AutoDetectAction_run_failed();
+
 }

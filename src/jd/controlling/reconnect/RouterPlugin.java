@@ -102,4 +102,7 @@ public abstract class RouterPlugin {
         return this.getName();
     }
 
+    public void setSetup(ReconnectResult reconnectResult) {
+    }
+
 }

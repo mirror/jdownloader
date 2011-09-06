@@ -47,4 +47,11 @@ public class LiveHeaderReconnectSettingsDefaults implements LiveHeaderReconnectS
         return new RouterData();
     }
 
+    public boolean isAutoSearchBestMatchFilterEnabled() {
+        return true;
+    }
+
+    public void setAutoSearchBestMatchFilterEnabled(boolean b) {
+    }
+
 }

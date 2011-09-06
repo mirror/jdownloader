@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.Socket;
+import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Enumeration;
@@ -28,6 +29,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import jd.controlling.JDLogger;
+import jd.controlling.reconnect.ipcheck.IP;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.Executer;
@@ -38,6 +40,7 @@ import jd.nutils.jobber.JDRunnable;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.Regex;
+import org.appwork.utils.os.CrossSystem;
 
 public class RouterUtils {
 
@@ -58,7 +61,7 @@ public class RouterUtils {
 
         public void go() throws Exception {
 
-            if (RouterUtils.checkPort(this.host) || checkPort(host)) {
+            if (RouterUtils.checkPort(this.host)) {
                 address = InetAddress.getByName(this.host);
             }
 
@@ -282,12 +285,17 @@ public class RouterUtils {
      *            if false, jd uses a cached value if available
      * 
      * @return
+     * @throws InterruptedException
      */
-    public synchronized static InetAddress getAddress(final boolean force) {
+    public synchronized static InetAddress getAddress(final boolean force) throws InterruptedException {
         if (!force && RouterUtils.ADDRESS_CACHE != null) { return RouterUtils.ADDRESS_CACHE; }
         InetAddress address = null;
         try {
-            address = RouterUtils.getIPFormNetStat();
+            try {
+                address = RouterUtils.getIPFormNetStat();
+            } catch (UnknownHostException e) {
+                e.printStackTrace();
+            }
             if (address != null) { return address; }
             address = RouterUtils.getIPFromRouteCommand();
             if (address != null) { return address; }
@@ -302,8 +310,9 @@ public class RouterUtils {
      * Chekcs a Host table
      * 
      * @return
+     * @throws InterruptedException
      */
-    public static InetAddress getIpFormHostTable() {
+    public static InetAddress getIpFormHostTable() throws InterruptedException {
         RouterUtils.updateHostTable();
         RouterUtils.ASYNCH_RETURN = null;
         final int size = RouterUtils.HOST_NAMES.size();
@@ -337,27 +346,27 @@ public class RouterUtils {
      * Calls netstat -nt to find the router's ip. returns null if nothing found
      * and the ip if found something;
      * http://jdownloader.net:8081/pastebin/1ab4eabb60df171d0d442f0c7fb875a0
+     * 
+     * @throws UnknownHostException
      */
-    public static InetAddress getIPFormNetStat() {
-        try {
-            final Pattern pat = Pattern.compile("^\\s*(?:0\\.0\\.0\\.0\\s*){1,2}((?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)).*");
-            final Executer exec = new Executer("netstat");
-            exec.addParameter("-rn");
-            exec.setWaitTimeout(5000);
-            exec.start();
-            exec.waitTimeout();
+    public static InetAddress getIPFormNetStat() throws UnknownHostException {
 
-            final String[] out = Regex.getLines(exec.getOutputStream());
-            for (final String string : out) {
-                final String m = new Regex(string, pat).getMatch(0);
-                if (m != null) {
-                    if (checkPort(m) || checkPort(m)) { return InetAddress.getByName(m); }
+        final Pattern pat = Pattern.compile("^\\s*(?:0\\.0\\.0\\.0\\s*){1,2}((?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)).*");
+        final Executer exec = new Executer("netstat");
+        exec.addParameter("-rn");
+        exec.setWaitTimeout(5000);
+        exec.start();
+        exec.waitTimeout();
 
-                }
+        final String[] out = Regex.getLines(exec.getOutputStream());
+        for (final String string : out) {
+            final String m = new Regex(string, pat).getMatch(0);
+            if (m != null && !"0.0.0.0".equals(m)) {
+                if (checkPort(m)) { return InetAddress.getByName(m); }
+
             }
-        } catch (final Exception e) {
-            JDLogger.exception(e);
         }
+
         return null;
     }
 
@@ -369,67 +378,67 @@ public class RouterUtils {
      */
     public static InetAddress getIPFromRouteCommand() {
         if (new File("/sbin/route").exists()) {
-            try {
-                if (OSDetector.isMac()) {
-                    /* TODO: needs to get checked by a mac user */
-                    final Executer exec = new Executer("/sbin/route");
-                    exec.addParameters(new String[] { "-n", "get", "default" });
-                    exec.setRunin("/");
-                    exec.setWaitTimeout(1000);
-                    exec.start();
-                    exec.waitTimeout();
-                    final String routingt = exec.getOutputStream() + " \r\n " + exec.getErrorStream();
-                    final Pattern pattern = Pattern.compile("gateway: (\\S*)", Pattern.CASE_INSENSITIVE);
-                    final Matcher matcher = pattern.matcher(routingt);
-                    while (matcher.find()) {
-                        final String hostname = matcher.group(1).trim();
-                        if (!hostname.matches("[\\s]*\\*[\\s]*")) {
-                            try {
-                                final InetAddress ia = InetAddress.getByName(hostname);
-                                /* first we try to connect to http */
-                                if (RouterUtils.checkPort(hostname)) { return ia; }
-                                /* then lets try https */
-                                if (RouterUtils.checkPort(hostname)) { return ia; }
-                            } catch (final Exception e) {
-                                JDLogger.exception(e);
-                            }
+
+            if (OSDetector.isMac()) {
+                /* TODO: needs to get checked by a mac user */
+                final Executer exec = new Executer("/sbin/route");
+                exec.addParameters(new String[] { "-n", "get", "default" });
+                exec.setRunin("/");
+                exec.setWaitTimeout(1000);
+                exec.start();
+                exec.waitTimeout();
+                final String routingt = exec.getOutputStream() + " \r\n " + exec.getErrorStream();
+                final Pattern pattern = Pattern.compile("gateway: (\\S*)", Pattern.CASE_INSENSITIVE);
+                final Matcher matcher = pattern.matcher(routingt);
+                while (matcher.find()) {
+                    final String hostname = matcher.group(1).trim();
+                    if (!hostname.matches("[\\s]*\\*[\\s]*")) {
+                        try {
+                            final InetAddress ia = InetAddress.getByName(hostname);
+                            /* first we try to connect to http */
+                            if (RouterUtils.checkPort(hostname)) { return ia; }
+                            /* then lets try https */
+                            if (RouterUtils.checkPort(hostname)) { return ia; }
+                        } catch (final Exception e) {
+                            JDLogger.exception(e);
                         }
-
                     }
-                } else {
-                    /*
-                     * we use route command to find gateway routes and test them
-                     * for port 80,443
-                     */
-                    final Executer exec = new Executer("/sbin/route");
-                    exec.addParameters(new String[] { "-n" });
-                    exec.setRunin("/");
-                    exec.setWaitTimeout(1000);
-                    exec.start();
-                    exec.waitTimeout();
-                    String routingt = exec.getOutputStream() + " \r\n " + exec.getErrorStream();
-                    routingt = routingt.replaceFirst(".*\n.*", "");
 
-                    final Pattern pattern = Pattern.compile("\\d+\\.\\d+\\.\\d+\\.\\d+.*?(\\d+\\.\\d+\\.\\d+\\.\\d+).*?G", Pattern.CASE_INSENSITIVE);
-                    final Matcher matcher = pattern.matcher(routingt);
-                    while (matcher.find()) {
-                        final String hostname = matcher.group(1).trim();
-                        if (!hostname.matches("[\\s]*\\*[\\s]*")) {
-                            try {
-                                final InetAddress ia = InetAddress.getByName(hostname);
-                                /* first we try to connect to http */
-                                if (RouterUtils.checkPort(hostname)) { return ia; }
-                                /* then lets try https */
-                                if (RouterUtils.checkPort(hostname)) { return ia; }
-                            } catch (final Exception e) {
-                                JDLogger.exception(e);
-                            }
-                        }
-
-                    }
                 }
-            } catch (final Exception e) {
+            } else {
+                /*
+                 * we use route command to find gateway routes and test them for
+                 * port 80,443
+                 */
+                final Executer exec = new Executer("/sbin/route");
+                exec.addParameters(new String[] { "-n" });
+                exec.setRunin("/");
+                exec.setWaitTimeout(1000);
+                exec.start();
+                exec.waitTimeout();
+                String routingt = exec.getOutputStream() + " \r\n " + exec.getErrorStream();
+                routingt = routingt.replaceFirst(".*\n.*", "");
+
+                final Pattern pattern = Pattern.compile("\\d+\\.\\d+\\.\\d+\\.\\d+.*?(\\d+\\.\\d+\\.\\d+\\.\\d+).*?G", Pattern.CASE_INSENSITIVE);
+                final Matcher matcher = pattern.matcher(routingt);
+                while (matcher.find()) {
+                    final String hostname = matcher.group(1).trim();
+                    if (!hostname.matches("[\\s]*\\*[\\s]*")) {
+                        try {
+                            final InetAddress ia = InetAddress.getByName(hostname);
+                            /* first we try to connect to http */
+                            if (RouterUtils.checkPort(hostname)) { return ia; }
+                            /* then lets try https */
+                            if (RouterUtils.checkPort(hostname)) { return ia; }
+
+                        } catch (final Exception e) {
+                            JDLogger.exception(e);
+                        }
+                    }
+
+                }
             }
+
         }
         return null;
     }
@@ -469,6 +478,50 @@ public class RouterUtils {
         return ret;
     }
 
+    public static void main(String[] args) throws SocketException {
+        System.out.println(isWindowsModemConnection());
+    }
+
+    /**
+     * This function tries to return of the internet connection is through a
+     * direct modem connection.Works only for windows. tested on win 7
+     * 
+     * @return
+     */
+    public static boolean isWindowsModemConnection() {
+        if (CrossSystem.isWindows()) {
+            // tested on win7
+
+            final Executer exec = new Executer("tracert ");
+            exec.addParameters(new String[] { "-d", "-h", "1", "-4", "-w", "500", "jdownloader.org" });
+            exec.setRunin("/");
+            exec.setWaitTimeout(5000);
+            exec.start();
+            exec.waitTimeout();
+            String routingt = exec.getOutputStream();
+            String[] lines = Regex.getLines(routingt.trim());
+            if (lines.length >= 2) {
+                for (int i = 1; i < lines.length; i++) {
+
+                    final Matcher matcher = Pattern.compile(IP.IP_PATTERN, Pattern.CASE_INSENSITIVE | Pattern.DOTALL).matcher(lines[i]);
+                    if (matcher.find()) {
+                        String firstRouteIP = matcher.group(0);
+                        if (IP.isLocalIP(firstRouteIP)) {
+                            return false;
+                        } else {
+                            return true;
+                        }
+
+                    }
+                }
+            }
+
+        } else {
+            throw new IllegalStateException("OS not supported");
+        }
+        return true;
+    }
+
     /**
      * Returns all InetAddresses of the local Network devices.
      * 
@@ -477,6 +530,7 @@ public class RouterUtils {
     public static ArrayList<InetAddress> getNetworkDeviceAdresses() {
         final ArrayList<InetAddress> ret = new ArrayList<InetAddress>();
         try {
+
             final Enumeration<NetworkInterface> e = NetworkInterface.getNetworkInterfaces();
 
             while (e.hasMoreElements()) {

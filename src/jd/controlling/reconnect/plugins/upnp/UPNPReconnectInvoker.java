@@ -9,12 +9,15 @@ import java.net.URLConnection;
 
 import jd.controlling.reconnect.ReconnectException;
 import jd.controlling.reconnect.ReconnectInvoker;
+import jd.controlling.reconnect.ReconnectResult;
+import jd.controlling.reconnect.plugins.upnp.translate.T;
 
 public class UPNPReconnectInvoker extends ReconnectInvoker {
 
     private String serviceType;
 
-    public UPNPReconnectInvoker(String serviceType2, String controlURL2) {
+    public UPNPReconnectInvoker(UPNPRouterPlugin upnpRouterPlugin, String serviceType2, String controlURL2) {
+        super(upnpRouterPlugin);
         this.serviceType = serviceType2;
         this.controlURL = controlURL2;
     }
@@ -84,20 +87,29 @@ public class UPNPReconnectInvoker extends ReconnectInvoker {
 
     private String controlURL;
 
+    public String getName() {
+        return T._.UPNPReconnectInvoker_getName_();
+    }
+
     @Override
     public void run() throws ReconnectException, InterruptedException {
         try {
             if (Thread.currentThread().isInterrupted()) throw new InterruptedException();
-            this.runCommand(serviceType, controlURL, "ForceTermination");
+            runCommand(serviceType, controlURL, "ForceTermination");
             if (Thread.currentThread().isInterrupted()) throw new InterruptedException();
             Thread.sleep(2000);
             if (Thread.currentThread().isInterrupted()) throw new InterruptedException();
-            this.runCommand(serviceType, controlURL, "RequestConnection");
+            runCommand(serviceType, controlURL, "RequestConnection");
         } catch (InterruptedException e) {
             throw e;
         } catch (final Throwable e) {
             throw new ReconnectException(e);
         }
+    }
+
+    @Override
+    protected ReconnectResult createReconnectResult() {
+        return new UPNPReconnectResult();
     }
 
     @Override

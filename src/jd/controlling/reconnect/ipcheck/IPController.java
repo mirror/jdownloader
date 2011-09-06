@@ -4,6 +4,8 @@ import java.util.ArrayList;
 
 import jd.controlling.reconnect.ReconnectConfig;
 import jd.controlling.reconnect.ReconnectPluginController;
+import jd.controlling.reconnect.ipcheck.event.IPControllEvent;
+import jd.controlling.reconnect.ipcheck.event.IPControllEventSender;
 
 import org.appwork.storage.config.JsonConfig;
 
@@ -29,8 +31,15 @@ public class IPController extends ArrayList<IPConnectionState> {
      */
     private final ArrayList<IPCheckProvider> badProviders = new ArrayList<IPCheckProvider>();
     private IPConnectionState                invalidState = null;
+    private IPControllEventSender            eventSender;
+
+    public IPControllEventSender getEventSender() {
+        return eventSender;
+    }
 
     private IPController() {
+
+        eventSender = new IPControllEventSender();
     }
 
     @Override
@@ -43,7 +52,11 @@ public class IPController extends ArrayList<IPConnectionState> {
                 if (entry.equalsLog(state)) { return false; }
             }
             /* new IPConnectionState reached */
+            IPConnectionState oldState = latestConnectionState;
             this.latestConnectionState = state;
+
+            eventSender.fireEvent(new IPControllEvent(IPControllEvent.Type.STATECHANGED, oldState, state));
+
             return super.add(state);
         }
     }
@@ -57,21 +70,31 @@ public class IPController extends ArrayList<IPConnectionState> {
             this.fetchIP();
             final IPConnectionState current = this.latestConnectionState;
             /* currently offline = no ip change */
-            if (current.isOffline()) { return false; }
+            if (current.isOffline()) {
+
+            return false; }
             for (int index = this.size() - 1; index >= 0; index--) {
                 if (this.get(index) == this.invalidState) {
                     /*
                      * we reached the element we began with, so check changed IP
                      * and then stop
                      */
-                    if (!this.invalidState.equalsLog(current)) { return true; }
+                    if (!this.invalidState.equalsLog(current)) {
+
+                        eventSender.fireEvent(new IPControllEvent(IPControllEvent.Type.IP_CHANGED, invalidState, current));
+                        return true;
+                    }
                     return false;
                 }
                 /*
                  * we found a state that was online and had different ip that
                  * new state, so ip changed
                  */
-                if (this.get(index).isOnline() && !this.get(index).equalsLog(current)) { return true; }
+                if (this.get(index).isOnline() && !this.get(index).equalsLog(current)) {
+                    eventSender.fireEvent(new IPControllEvent(IPControllEvent.Type.IP_CHANGED, invalidState, current));
+
+                    return true;
+                }
             }
         }
         return false;
@@ -100,7 +123,19 @@ public class IPController extends ArrayList<IPConnectionState> {
                 break;
             }
         }
-        this.add(newIP);
+
+        IPConnectionState old = latestConnectionState;
+        if (add(newIP)) {
+            if (latestConnectionState.isOffline()) {
+
+                eventSender.fireEvent(new IPControllEvent(IPControllEvent.Type.OFFLINE));
+
+            }
+            if ((old == null || old.isOffline()) && !newIP.isOffline()) {
+                eventSender.fireEvent(new IPControllEvent(IPControllEvent.Type.ONLINE, newIP));
+
+            }
+        }
         return this.latestConnectionState.getExternalIp();
     }
 
@@ -154,8 +189,7 @@ public class IPController extends ArrayList<IPConnectionState> {
      */
     public void invalidate() {
         if (this.invalidated == true) { return; }
-        System.err.println("Invalidated");
-        this.invalidated = true;
+        this.setInvalidated(true);
         this.invalidState = this.getIpState();
     }
 
@@ -179,17 +213,28 @@ public class IPController extends ArrayList<IPConnectionState> {
         if (!this.invalidated) { return true; }
         if (JsonConfig.create(ReconnectConfig.class).isIPCheckGloballyDisabled()) {
             // IP check disabled. each validate request is successful
-            this.invalidated = false;
+
+            setInvalidated(false);
             return true;
         }
         if (this.changedIP()) {
-            invalidated = false;
+            setInvalidated(false);
             return true;
         } else {
-            invalidated = true;
+            setInvalidated(true);
             return false;
         }
 
+    }
+
+    private void setInvalidated(boolean invalidated) {
+        if (invalidated == this.invalidated) return;
+        this.invalidated = invalidated;
+        if (invalidated) {
+            eventSender.fireEvent(new IPControllEvent(IPControllEvent.Type.INVALIDATED, getIpState()));
+        } else {
+            eventSender.fireEvent(new IPControllEvent(IPControllEvent.Type.VALIDATED, invalidState, getIpState()));
+        }
     }
 
     /**
@@ -212,14 +257,14 @@ public class IPController extends ArrayList<IPConnectionState> {
         if (JsonConfig.create(ReconnectConfig.class).isIPCheckGloballyDisabled()) {
             Thread.sleep(waitForIPTime);
             // IP check disabled. each validate request is successful
-            this.invalidated = false;
+            this.setInvalidated(false);
             return true;
         }
         final long endTime = System.currentTimeMillis() + waitForIPTime * 1000;
         while (System.currentTimeMillis() < endTime) {
             /* ip change detected then we can stop */
             if (this.changedIP()) {
-                invalidated = false;
+                setInvalidated(false);
                 System.out.println(2);
                 return true;
             }
@@ -227,8 +272,9 @@ public class IPController extends ArrayList<IPConnectionState> {
                 try {
                     throw this.latestConnectionState.getCause();
                 } catch (final ForbiddenIPException e) {
+                    eventSender.fireEvent(new IPControllEvent(IPControllEvent.Type.FORBIDDEN_IP, getIpState()));
                     // forbidden IP.. no need to wait
-                    this.invalidated = true;
+                    this.setInvalidated(true);
                     return false;
 
                 } catch (final Throwable e) {

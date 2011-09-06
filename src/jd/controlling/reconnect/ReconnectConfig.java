@@ -9,6 +9,7 @@ import org.appwork.storage.config.annotations.DefaultStringValue;
 import org.appwork.storage.config.annotations.Description;
 import org.appwork.storage.config.annotations.PlainStorage;
 import org.jdownloader.settings.annotations.AboutConfig;
+import org.jdownloader.settings.annotations.RangeValidatorMarker;
 
 @PlainStorage
 public interface ReconnectConfig extends ConfigInterface {
@@ -94,5 +95,13 @@ public interface ReconnectConfig extends ConfigInterface {
     int getIPCheckReadTimeout();
 
     void setIPCheckReadTimeout(int ms);
+
+    @AboutConfig
+    @DefaultIntValue(5)
+    @Description("Auto Reconnect Wizard performs a few reconnects for each successfull script to find the fastest one. The more rounds we use, the better the result will be, but the longer it will take.")
+    @RangeValidatorMarker(range = { 1, 20 })
+    int getOptimizationRounds();
+
+    void setOptimizationRounds(int num);
 
 }

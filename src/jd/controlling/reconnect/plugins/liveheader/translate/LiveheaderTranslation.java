@@ -226,4 +226,25 @@ public interface LiveheaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Ups! JDownloader could not find working Reconnect Settings. \r\nPlease make sure that you have a dynamic IP and try again with different Inputs." })
     String autodetection_failed();
 
+    @Default(lngs = { "en" }, values = { "LiveHeader: %s1" })
+    String LiveHeaderInvoker_getName_(String name);
+
+    @Default(lngs = { "en" }, values = { "Auto Setup" })
+    String AutoDetectAction_AutoDetectAction_();
+
+    @Default(lngs = { "en" }, values = { "Share your Reconnect Settings" })
+    String RouterSendAction_actionPerformed_();
+
+    @Default(lngs = { "en" }, values = { "JDownloader detected that you have successfully set up your reconnection settings.\r\nPlease follow this wizard and share your settings with others.\r\nThis will only take a few seconds." })
+    String RouterSendAction_actionPerformed_msg();
+
+    @Default(lngs = { "en" }, values = { "Optimizing..." })
+    String AutoDetectAction_run_optimize();
+
+    @Default(lngs = { "en" }, values = { "Optimizing  %s1" })
+    String AutoDetectAction_run_optimize(String name);
+
+    @Default(lngs = { "en" }, values = { "JDownloader could not find a working LiveHeader Reconnect Script. \r\nPlease make sure that you entered correct information, and that you have a dynamic IP connection." })
+    String AutoDetectAction_run_failed();
+
 }

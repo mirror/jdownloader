@@ -32,4 +32,9 @@ public interface LiveHeaderReconnectSettings extends ConfigInterface {
 
     RouterData getRouterData();
 
+    @AboutConfig
+    boolean isAutoSearchBestMatchFilterEnabled();
+
+    void setAutoSearchBestMatchFilterEnabled(boolean b);
+
 }

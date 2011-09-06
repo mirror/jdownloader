@@ -64,19 +64,4 @@ public interface AntireconnectTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Automaticly disables reconnect features of one ore more network conditions match." })
     String description();
 
-    @Default(lngs = { "en" }, values = { "Auto Setup" })
-    String AutoDetectAction_AutoDetectAction_();
-
-    @Default(lngs = { "en" }, values = { "Auto Setup Reconnect" })
-    String AutoDetectAction_actionPerformed_d_title();
-
-    @Default(lngs = { "en" }, values = { "Please wait. JDownloader tries to find the correct settings for your internet connection. This may take several minutes." })
-    String AutoDetectAction_actionPerformed_d_msg();
-
-    @Default(lngs = { "en" }, values = { "Share your Reconnect Settings" })
-    String RouterSendAction_actionPerformed_();
-
-    @Default(lngs = { "en" }, values = { "JDownloader detected that you have successfully set up your reconnection settings.\r\nPlease follow this wizard and share your settings with others.\r\nThis will only take a few seconds." })
-    String RouterSendAction_actionPerformed_msg();
-
 }

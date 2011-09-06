@@ -9,7 +9,9 @@ import java.util.regex.Pattern;
 import jd.controlling.JDLogger;
 import jd.controlling.reconnect.ReconnectException;
 import jd.controlling.reconnect.ReconnectInvoker;
+import jd.controlling.reconnect.ReconnectResult;
 import jd.controlling.reconnect.ipcheck.IP;
+import jd.controlling.reconnect.plugins.liveheader.translate.T;
 import jd.http.Browser;
 import jd.http.Request;
 import jd.http.RequestHeader;
@@ -27,11 +29,30 @@ import org.w3c.dom.NodeList;
 
 public class LiveHeaderInvoker extends ReconnectInvoker {
 
-    private String            script;
+    private String script;
+
+    public String getScript() {
+        return script;
+    }
+
+    public String getUser() {
+        return user;
+    }
+
+    public String getPass() {
+        return pass;
+    }
+
+    public String getIp() {
+        return ip;
+    }
+
     private String            user;
     private String            pass;
     private String            ip;
     private LHProcessFeedback feedback;
+    private String            orgScript;
+    private String            name;
 
     public LHProcessFeedback getFeedback() {
         return feedback;
@@ -41,8 +62,20 @@ public class LiveHeaderInvoker extends ReconnectInvoker {
         this.feedback = feedback;
     }
 
-    public LiveHeaderInvoker(String script, String user, String pass, String ip) {
-        this.script = script;
+    protected ReconnectResult createReconnectResult() {
+        return new LiveHeaderReconnectResult();
+    }
+
+    public String getName() {
+
+        return T._.LiveHeaderInvoker_getName_(name);
+    }
+
+    public LiveHeaderInvoker(LiveHeaderReconnect liveHeaderReconnect, String script, String user, String pass, String ip, String name) {
+        super(liveHeaderReconnect);
+        this.orgScript = script;
+        this.name = name;
+        this.script = prepareScript(script);
         this.user = user;
         this.pass = pass;
         this.ip = ip;
@@ -61,7 +94,7 @@ public class LiveHeaderInvoker extends ReconnectInvoker {
 
         // script = script.replaceAll("\\<", "&lt;");
         // script = script.replaceAll("\\>", "&gt;");
-        script = prepareScript(script);
+
         final Document xmlScript;
         this.variables = new HashMap<String, String>();
         this.variables.put("user", user);
