@@ -31,11 +31,11 @@ import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.parser.html.Form.MethodType;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -94,6 +94,7 @@ public class FilEarnCom extends PluginForHost {
             dllink = null;
         }
         if (dllink == null) {
+            if (br.containsHTML(">Only premium users can download more than 150 MB in a 3 hour interval.<")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "150MB in 3Hour limit reached", 1 * 60 * 60 * 1000l);
             if (br.containsHTML(TOOMANYSIMLUTANDOWNLOADS)) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Too many simultan downloads", 5 * 60 * 1000l);
             String jsCrap = br.getRegex("</span></code>[\t\n\r ]+<div>[\t\n\r ]+<script language=\"javascript\">[\t\n\r ]+function [A-Za-z0-9]+\\(iioo\\) \\{(.*?return .*?;)").getMatch(0);
             if (jsCrap == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -129,7 +130,7 @@ public class FilEarnCom extends PluginForHost {
             dllink = br.getRedirectLocation();
             if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        // More chunks are possible but i think they cause many servererrors
+        // More chunks are possible but i think they cause many server errors
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
