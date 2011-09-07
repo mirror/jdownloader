@@ -33,7 +33,13 @@ import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
 import org.appwork.utils.event.ProcessCallBack;
+import org.appwork.utils.event.ProcessCallBackAdapter;
+import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.logging.Log;
+import org.appwork.utils.swing.dialog.Dialog;
+import org.appwork.utils.swing.dialog.DialogNoAnswerException;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.images.NewTheme;
 
 public class ReconnectPluginController {
     private static final String                    JD_CONTROLLING_RECONNECT_PLUGINS = "jd/controlling/reconnect/plugins/";
@@ -56,31 +62,64 @@ public class ReconnectPluginController {
         this.scan();
     }
 
-    public ArrayList<ReconnectResult> autoFind(ProcessCallBack feedback) throws InterruptedException {
+    public ArrayList<ReconnectResult> autoFind(final ProcessCallBack feedback) throws InterruptedException {
 
-        ArrayList<ReconnectResult> res = new ArrayList<ReconnectResult>();
+        final ArrayList<ReconnectResult> scripts = new ArrayList<ReconnectResult>();
         for (final RouterPlugin plg : ReconnectPluginController.this.plugins) {
             if (Thread.currentThread().isInterrupted()) throw new InterruptedException();
+            try {
+                ArrayList<ReconnectResult> founds = plg.runDetectionWizard(feedback);
+                if (founds != null) scripts.addAll(founds);
 
-            ArrayList<ReconnectResult> founds = plg.runDetectionWizard(feedback);
+            } catch (Exception e) {
 
-            if (founds != null) res.addAll(founds);
+            }
 
         }
 
-        // optimize
-        for (ReconnectResult found : res) {
-            found.optimize();
+        if (JsonConfig.create(ReconnectConfig.class).getOptimizationRounds() > 1) {
+            int i = 1;
+            long bestTime = Long.MAX_VALUE;
+            long optiduration = 0;
+            for (ReconnectResult found : scripts) {
+
+                bestTime = Math.min(bestTime, found.getSuccessDuration());
+                optiduration += found.getSuccessDuration() * (JsonConfig.create(ReconnectConfig.class).getOptimizationRounds() - 1) * 1.5;
+            }
+            try {
+
+                Dialog.getInstance().showConfirmDialog(0, _GUI._.AutoDetectAction_actionPerformed_dooptimization_title(), _GUI._.AutoDetectAction_actionPerformed_dooptimization_msg(scripts.size(), TimeFormatter.formatMilliSeconds(optiduration, 0), TimeFormatter.formatMilliSeconds(bestTime, 0)), NewTheme.I().getIcon("ok", 32), _GUI._.AutoDetectAction_run_optimization(), _GUI._.AutoDetectAction_skip_optimization());
+                feedback.setProgress(this, 0);
+                for (int ii = 0; ii < scripts.size(); ii++) {
+                    ReconnectResult found = scripts.get(ii);
+                    feedback.setStatusString(this, _GUI._.AutoDetectAction_run_optimize(found.getInvoker().getName()));
+                    final int step = ii;
+                    found.optimize(new ProcessCallBackAdapter() {
+
+                        public void setProgress(Object caller, int percent) {
+                            feedback.setProgress(caller, (step) * (100 / scripts.size()) + percent / scripts.size());
+                        }
+
+                        public void setStatusString(Object caller, String string) {
+                            feedback.setStatusString(caller, _GUI._.AutoDetectAction_run_optimize(string));
+                        }
+
+                    });
+
+                }
+            } catch (DialogNoAnswerException e) {
+
+            }
         }
 
-        Collections.sort(res, new Comparator<ReconnectResult>() {
+        Collections.sort(scripts, new Comparator<ReconnectResult>() {
 
             public int compare(ReconnectResult o1, ReconnectResult o2) {
                 return new Long(o1.getAverageSuccessDuration()).compareTo(new Long(o2.getAverageSuccessDuration()));
             }
         });
 
-        return res;
+        return scripts;
     }
 
     /**

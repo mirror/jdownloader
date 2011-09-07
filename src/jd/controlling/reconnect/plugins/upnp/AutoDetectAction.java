@@ -8,17 +8,22 @@ import java.util.Comparator;
 import javax.swing.AbstractAction;
 import javax.swing.ImageIcon;
 
+import jd.controlling.reconnect.ReconnectConfig;
 import jd.controlling.reconnect.ReconnectResult;
 import jd.controlling.reconnect.RouterUtils;
 import jd.controlling.reconnect.plugins.liveheader.ReconnectFindDialog;
 import jd.controlling.reconnect.plugins.upnp.translate.T;
 
+import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.event.ProcessCallBack;
+import org.appwork.utils.event.ProcessCallBackAdapter;
+import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
+import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 
@@ -74,9 +79,7 @@ public class AutoDetectAction extends AbstractAction {
             @Override
             public void run() throws InterruptedException {
 
-                ArrayList<ReconnectResult> scripts;
-
-                scripts = plugin.runDetectionWizard(new ProcessCallBack() {
+                final ArrayList<ReconnectResult> scripts = plugin.runDetectionWizard(new ProcessCallBack() {
 
                     public void showDialog(Object caller, String title, String message, ImageIcon icon) {
                         try {
@@ -101,13 +104,41 @@ public class AutoDetectAction extends AbstractAction {
                 });
 
                 if (scripts != null && scripts.size() > 0) {
-                    int i = 1;
-                    for (ReconnectResult found : scripts) {
-                        setBarText(T._.AutoDetectAction_run_optimize(found.getInvoker().getName()));
-                        found.optimize();
-                        setBarProgress(i++ / scripts.size());
-                    }
 
+                    if (JsonConfig.create(ReconnectConfig.class).getOptimizationRounds() > 1) {
+
+                        long bestTime = Long.MAX_VALUE;
+                        long optiduration = 0;
+                        for (ReconnectResult found : scripts) {
+
+                            bestTime = Math.min(bestTime, found.getSuccessDuration());
+                            optiduration += found.getSuccessDuration() * (JsonConfig.create(ReconnectConfig.class).getOptimizationRounds() - 1) * 1.5;
+                        }
+                        try {
+
+                            Dialog.getInstance().showConfirmDialog(0, _GUI._.AutoDetectAction_actionPerformed_dooptimization_title(), _GUI._.AutoDetectAction_actionPerformed_dooptimization_msg(scripts.size(), TimeFormatter.formatMilliSeconds(optiduration, 0), TimeFormatter.formatMilliSeconds(bestTime, 0)), NewTheme.I().getIcon("ok", 32), _GUI._.AutoDetectAction_run_optimization(), _GUI._.AutoDetectAction_skip_optimization());
+                            setBarProgress(0);
+                            for (int ii = 0; ii < scripts.size(); ii++) {
+                                ReconnectResult found = scripts.get(ii);
+                                setBarText(_GUI._.AutoDetectAction_run_optimize(found.getInvoker().getName()));
+                                final int step = ii;
+                                found.optimize(new ProcessCallBackAdapter() {
+
+                                    public void setProgress(Object caller, int percent) {
+                                        setBarProgress((step) * (100 / (scripts.size())) + percent / (scripts.size()));
+                                    }
+
+                                    public void setStatusString(Object caller, String string) {
+                                        setBarText(_GUI._.AutoDetectAction_run_optimize(string));
+                                    }
+
+                                });
+
+                            }
+                        } catch (DialogNoAnswerException e) {
+
+                        }
+                    }
                     Collections.sort(scripts, new Comparator<ReconnectResult>() {
 
                         public int compare(ReconnectResult o1, ReconnectResult o2) {

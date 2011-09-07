@@ -62,7 +62,7 @@ public class IPController extends ArrayList<IPConnectionState> {
     }
 
     protected boolean changedIP() {
-        if (this.invalidState == null || this.invalidState.isOffline()) { return false; }
+        if (this.invalidState == null) { return false; }
         /* we dont have any previous states, we cannot check if ip changed */
         if (this.size() == 0) { return false; }
         synchronized (this.LOCK) {
@@ -73,6 +73,9 @@ public class IPController extends ArrayList<IPConnectionState> {
             if (current.isOffline()) {
 
             return false; }
+
+            // run back the statelog, until we reached the invalidState. Check
+            // all states on the way for a new ip
             for (int index = this.size() - 1; index >= 0; index--) {
                 if (this.get(index) == this.invalidState) {
                     /*
@@ -285,4 +288,16 @@ public class IPController extends ArrayList<IPConnectionState> {
         }
         return !this.isInvalidated();
     }
+
+    public void waitUntilWeAreOnline() throws InterruptedException {
+        // Make sure that we are online
+        while (IPController.getInstance().getIpState().isOffline()) {
+            IPController.getInstance().invalidate();
+
+            Thread.sleep(1000);
+
+            IPController.getInstance().validate();
+        }
+    }
+
 }

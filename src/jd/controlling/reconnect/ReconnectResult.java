@@ -1,5 +1,7 @@
 package jd.controlling.reconnect;
 
+import org.appwork.utils.event.ProcessCallBackAdapter;
+
 public class ReconnectResult {
     public ReconnectResult() {
 
@@ -81,9 +83,11 @@ public class ReconnectResult {
 
     /**
      * Optimization does reconnect loops to find best average timings
+     * 
+     * @param processCallBackAdapter
      */
-    public void optimize() throws InterruptedException {
-        getInvoker().doOptimization(this);
+    public void optimize(ProcessCallBackAdapter processCallBackAdapter) throws InterruptedException {
+        getInvoker().doOptimization(this, processCallBackAdapter);
     }
 
 }

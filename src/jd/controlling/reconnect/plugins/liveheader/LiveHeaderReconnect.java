@@ -3,7 +3,6 @@ package jd.controlling.reconnect.plugins.liveheader;
 import java.awt.Dimension;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
-import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.logging.Logger;
 
@@ -38,6 +37,7 @@ import org.appwork.storage.config.KeyHandler;
 import org.appwork.swing.components.ExtPasswordField;
 import org.appwork.swing.components.ExtTextField;
 import org.appwork.utils.event.ProcessCallBack;
+import org.appwork.utils.logging.Log;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.SwingUtils;
 import org.appwork.utils.swing.dialog.Dialog;
@@ -240,7 +240,7 @@ public class LiveHeaderReconnect extends RouterPlugin implements ControlListener
 
         //
 
-        p.add(btnAuto, "sg buttons,aligny top,newline,gapright 15");
+        p.add(btnAuto, "sg buttons,aligny top,gapright 15");
 
         p.add(new JLabel(T._.literally_router_model()), "");
         p.add(this.txtName, "spanx");
@@ -330,8 +330,8 @@ public class LiveHeaderReconnect extends RouterPlugin implements ControlListener
         final LiveHeaderDetectionWizard wizard = new LiveHeaderDetectionWizard();
         try {
             return wizard.runOnlineScan(processCallBack);
-        } catch (UnknownHostException e) {
-            e.printStackTrace();
+        } catch (Throwable e) {
+            Log.exception(e);
         }
         return null;
     }

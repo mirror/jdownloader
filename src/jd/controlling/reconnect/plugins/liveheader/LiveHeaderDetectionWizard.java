@@ -21,6 +21,7 @@ import jd.controlling.reconnect.ReconnectPluginController;
 import jd.controlling.reconnect.ReconnectResult;
 import jd.controlling.reconnect.RouterUtils;
 import jd.controlling.reconnect.ipcheck.IP;
+import jd.controlling.reconnect.ipcheck.IPController;
 import jd.controlling.reconnect.plugins.liveheader.remotecall.RecollInterface;
 import jd.controlling.reconnect.plugins.liveheader.remotecall.RouterData;
 import jd.controlling.reconnect.plugins.liveheader.translate.T;
@@ -328,7 +329,7 @@ public class LiveHeaderDetectionWizard {
                     processCallBack.setStatus(this, ret);
                     if (i < tests.size() - 1) {
 
-                        if (ret.size() == 1) Dialog.getInstance().showConfirmDialog(0, T._.LiveHeaderDetectionWizard_testList_firstSuccess_title(), T._.LiveHeaderDetectionWizard_testList_firstsuccess_msg(TimeFormatter.formatMilliSeconds(res.getSuccessDuration(), 0)), NewTheme.I().getIcon("ok", 32), T._.LiveHeaderDetectionWizard_testList_ok(), T._.LiveHeaderDetectionWizard_testList_use());
+                        if (ret.size() == 1) Dialog.getInstance().showConfirmDialog(0, _GUI._.LiveHeaderDetectionWizard_testList_firstSuccess_title(), _GUI._.LiveHeaderDetectionWizard_testList_firstsuccess_msg(TimeFormatter.formatMilliSeconds(res.getSuccessDuration(), 0)), NewTheme.I().getIcon("ok", 32), _GUI._.LiveHeaderDetectionWizard_testList_ok(), _GUI._.LiveHeaderDetectionWizard_testList_use());
                         return ret;
                     }
                 }
@@ -363,7 +364,9 @@ public class LiveHeaderDetectionWizard {
 
     public ArrayList<ReconnectResult> runOnlineScan(ProcessCallBack processCallBack) throws InterruptedException, UnknownHostException {
         try {
-
+            // wait until we are online
+            processCallBack.setStatusString(this, _GUI._.LiveaheaderDetection_wait_for_online());
+            IPController.getInstance().waitUntilWeAreOnline();
             recoll.isAlive();
 
             processCallBack.setStatusString(getPlugin(), T._.LiveHeaderDetectionWizard_runOnlineScan_collect());

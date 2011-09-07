@@ -2401,7 +2401,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Router is Online" })
     String ReconnectDialog_onIPOnline_();
 
-    @Default(lngs = { "en" }, values = { "reconnect Successful" })
+    @Default(lngs = { "en" }, values = { "Reconnect Successful" })
     String ReconnectDialog_onIPValidated_();
 
     @Default(lngs = { "en" }, values = { "Close" })
@@ -2445,5 +2445,38 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Stop Scanning, and use the best script found until now." })
     String ReconnectFindDialog_packed_interrupt_tooltip();
+
+    @Default(lngs = { "en" }, values = { "Optimize Reconnect - Do tests to improve timing ..." })
+    String AutoDetectAction_actionPerformed_dooptimization_title();
+
+    @Default(lngs = { "en" }, values = { "JDownloader found %s1 working Reconnect Script(s). \r\nTo improve Reconnect Timings, you should do some automatic tests runs. These tests would take about %s2. \r\nIf you skip this step, your current Reconnect Settings will need about %s3 to perform a successfull Reconnect." })
+    String AutoDetectAction_actionPerformed_dooptimization_msg(int scriptNum, String optiDuration, String bestDuration);
+
+    @Default(lngs = { "en" }, values = { "Continue" })
+    String AutoDetectAction_run_optimization();
+
+    @Default(lngs = { "en" }, values = { "Skip" })
+    String AutoDetectAction_skip_optimization();
+
+    @Default(lngs = { "en" }, values = { "Found successful Script" })
+    String LiveHeaderDetectionWizard_testList_firstSuccess_title();
+
+    @Default(lngs = { "en" }, values = { "JDownloader found a working Reconnect Script. \r\nGetting a new IP took %s1 with this Script. \r\nThere might be a faster one. Do you want JDownloader to continue scanning for faster scripts?" })
+    String LiveHeaderDetectionWizard_testList_firstsuccess_msg(String time);
+
+    @Default(lngs = { "en" }, values = { "Yes, please try it!" })
+    String LiveHeaderDetectionWizard_testList_ok();
+
+    @Default(lngs = { "en" }, values = { "No, stop search and use this script!" })
+    String LiveHeaderDetectionWizard_testList_use();
+
+    @Default(lngs = { "en" }, values = { "Optimizing..." })
+    String AutoDetectAction_run_optimize();
+
+    @Default(lngs = { "en" }, values = { "Optimizing  %s1" })
+    String AutoDetectAction_run_optimize(String name);
+
+    @Default(lngs = { "en" }, values = { "Offline - Waiting for a internet connection!" })
+    String LiveaheaderDetection_wait_for_online();
 
 }

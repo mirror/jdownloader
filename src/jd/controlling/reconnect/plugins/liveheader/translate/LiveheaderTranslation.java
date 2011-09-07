@@ -238,25 +238,7 @@ public interface LiveheaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "JDownloader detected that you have successfully set up your reconnection settings.\r\nPlease follow this wizard and share your settings with others.\r\nThis will only take a few seconds." })
     String RouterSendAction_actionPerformed_msg();
 
-    @Default(lngs = { "en" }, values = { "Optimizing..." })
-    String AutoDetectAction_run_optimize();
-
-    @Default(lngs = { "en" }, values = { "Optimizing  %s1" })
-    String AutoDetectAction_run_optimize(String name);
-
     @Default(lngs = { "en" }, values = { "JDownloader could not find a working LiveHeader Reconnect Script. \r\nPlease make sure that you entered correct information, and that you have a dynamic IP connection." })
     String AutoDetectAction_run_failed();
-
-    @Default(lngs = { "en" }, values = { "Found successful Script" })
-    String LiveHeaderDetectionWizard_testList_firstSuccess_title();
-
-    @Default(lngs = { "en" }, values = { "JDownloader found a working Reconnect Script. \r\nGetting a new IP took %s1 with this Script. \r\nThere might be a faster one. Do you want JDownloader to continue scanning for faster scripts?" })
-    String LiveHeaderDetectionWizard_testList_firstsuccess_msg(String time);
-
-    @Default(lngs = { "en" }, values = { "Yes, please try it!" })
-    String LiveHeaderDetectionWizard_testList_ok();
-
-    @Default(lngs = { "en" }, values = { "No, stop search and use this script!" })
-    String LiveHeaderDetectionWizard_testList_use();
 
 }

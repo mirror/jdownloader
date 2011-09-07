@@ -514,6 +514,8 @@ public class RouterUtils {
 
                     }
                 }
+            } else {
+                throw new IllegalStateException("Not available (Offline?) Exception");
             }
 
         } else {

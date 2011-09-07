@@ -27,7 +27,12 @@ import net.miginfocom.swing.MigLayout;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.swing.components.ExtTextField;
 import org.appwork.utils.event.ProcessCallBack;
+import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.swing.EDTRunner;
+import org.appwork.utils.swing.dialog.Dialog;
+import org.appwork.utils.swing.dialog.DialogCanceledException;
+import org.appwork.utils.swing.dialog.DialogClosedException;
+import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.advanced.AdvancedConfigManager;
 
@@ -62,15 +67,29 @@ public class UPNPRouterPlugin extends RouterPlugin implements IPCheckProvider {
 
         ArrayList<ReconnectResult> ret = new ArrayList<ReconnectResult>();
 
-        for (final UpnpRouterDevice device : getDevices()) {
+        for (int i = 0; i < getDevices().size(); i++) {
+            UpnpRouterDevice device = getDevices().get(i);
             if (Thread.currentThread().isInterrupted()) throw new InterruptedException();
 
             ReconnectResult res;
             try {
                 res = new UPNPReconnectInvoker(this, device.getServiceType(), device.getControlURL()).validate();
-                if (res != null && res.isSuccess()) ret.add(res);
+                if (res != null && res.isSuccess()) {
+                    ret.add(res);
+                    processCallBack.setStatus(this, ret);
+                    if (i < getDevices().size() - 1) {
+
+                        if (ret.size() == 1) Dialog.getInstance().showConfirmDialog(0, _GUI._.LiveHeaderDetectionWizard_testList_firstSuccess_title(), _GUI._.LiveHeaderDetectionWizard_testList_firstsuccess_msg(TimeFormatter.formatMilliSeconds(res.getSuccessDuration(), 0)), NewTheme.I().getIcon("ok", 32), _GUI._.LiveHeaderDetectionWizard_testList_ok(), _GUI._.LiveHeaderDetectionWizard_testList_use());
+                        return ret;
+                    }
+                }
+
             } catch (ReconnectException e) {
                 e.printStackTrace();
+            } catch (DialogClosedException e) {
+
+            } catch (DialogCanceledException e) {
+
             }
 
         }
@@ -114,7 +133,7 @@ public class UPNPRouterPlugin extends RouterPlugin implements IPCheckProvider {
 
     @Override
     public JComponent getGUI() {
-        final JPanel p = new JPanel(new MigLayout("ins 0 0 0 0,wrap 3,debug", "[][][grow,fill]", "[fill]"));
+        final JPanel p = new JPanel(new MigLayout("ins 0 0 0 0,wrap 3", "[][][grow,fill]", "[fill]"));
         JButton find = new JButton(new UPNPScannerAction(this));
         find.setHorizontalAlignment(SwingConstants.LEFT);
         JButton auto = new JButton(new AutoDetectAction(this));

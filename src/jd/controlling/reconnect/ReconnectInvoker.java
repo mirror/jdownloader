@@ -6,6 +6,7 @@ import jd.controlling.reconnect.ipcheck.BalancedWebIPCheck;
 import jd.controlling.reconnect.ipcheck.IPController;
 
 import org.appwork.storage.config.JsonConfig;
+import org.appwork.utils.event.ProcessCallBackAdapter;
 import org.appwork.utils.logging.Log;
 
 public abstract class ReconnectInvoker {
@@ -29,8 +30,9 @@ public abstract class ReconnectInvoker {
 
         // Make sure that we are online
         while (IPController.getInstance().getIpState().isOffline()) {
-
+            IPController.getInstance().invalidate();
             Thread.sleep(5000);
+
             IPController.getInstance().validate();
         }
         System.out.println("IP BEFORE=" + IPController.getInstance().getIP());
@@ -117,15 +119,16 @@ public abstract class ReconnectInvoker {
 
     protected abstract void testRun() throws ReconnectException, InterruptedException;
 
-    public void doOptimization(ReconnectResult res) throws InterruptedException {
+    public void doOptimization(ReconnectResult res, ProcessCallBackAdapter processCallBackAdapter) throws InterruptedException {
         ArrayList<ReconnectResult> list = new ArrayList<ReconnectResult>();
         list.add(res);
-        int failed = 0;
+        // int failed = 0;
         int success = 1;
         long duration = res.getSuccessDuration();
         long offlineDuration = res.getOfflineDuration();
         long maxSuccessDuration = res.getSuccessDuration();
         for (int i = 1; i < JsonConfig.create(ReconnectConfig.class).getOptimizationRounds(); i++) {
+            processCallBackAdapter.setProgress(this, (i * 100) / JsonConfig.create(ReconnectConfig.class).getOptimizationRounds());
             ReconnectResult r;
             try {
                 r = validate();
@@ -135,9 +138,8 @@ public abstract class ReconnectInvoker {
                 r = createReconnectResult();
             }
             list.add(r);
-            if (!r.isSuccess()) {
-                failed++;
-            } else {
+            if (r.isSuccess()) {
+
                 success++;
                 duration += r.getSuccessDuration();
                 offlineDuration = Math.min(offlineDuration, r.getOfflineDuration());

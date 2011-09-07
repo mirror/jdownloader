@@ -160,6 +160,7 @@ public abstract class ReconnectFindDialog extends AbstractDialog<Object> impleme
                     e.printStackTrace();
 
                 }
+
                 dispose();
             }
         };
