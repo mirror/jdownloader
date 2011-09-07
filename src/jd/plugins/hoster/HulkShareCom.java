@@ -27,6 +27,7 @@ import javax.script.ScriptEngineManager;
 
 import jd.PluginWrapper;
 import jd.controlling.JDLogger;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -146,11 +147,7 @@ public class HulkShareCom extends PluginForHost {
             downloadLink.setMD5Hash(md5hash);
         }
         br.setFollowRedirects(false);
-        dllink = getLink();
-        if (dllink == null && ".mp3".equals(downloadLink.getName().substring(downloadLink.getName().lastIndexOf(".")))) {
-            br.getPage("http://hulkshare.com/ap-" + new Regex(downloadLink.getDownloadURL(), "hulkshare\\.com/(.+)").getMatch(0) + ".mp3");
-            dllink = br.getRedirectLocation();
-        }
+        dllink = getLink(downloadLink);
         if (dllink == null) {
             Form DLForm = br.getFormbyProperty("name", "F1");
             if (DLForm == null) {
@@ -281,7 +278,7 @@ public class HulkShareCom extends PluginForHost {
                         logger.warning("Wrong captcha or wrong password!");
                         throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                     }
-                    dllink = getLink();
+                    dllink = getLink(downloadLink);
                 }
                 if (dllink == null) {
                     checkErrors(downloadLink);
@@ -317,7 +314,7 @@ public class HulkShareCom extends PluginForHost {
         dl.startDownload();
     }
 
-    private String getLink() throws Exception {
+    private String getLink(DownloadLink downloadLink) throws Exception {
         String dllink = br.getRegex("<div style=\"width: 300px; margin: 0 10px 15px; margin\\-top: 10px; float: left; text\\-align:justify;\">[\t\n\r ]+<div style=\"float: right; text\\-align:justify;\">[\t\n\r ]+<a href=\"(http://.*?)\"").getMatch(0);
         if (dllink == null) {
             dllink = br.getRegex("This direct link will be available for your IP.*?href=\"(http.*?)\"").getMatch(0);
@@ -329,11 +326,20 @@ public class HulkShareCom extends PluginForHost {
                         dllink = br.getRegex("\"(http://[0-9w]+\\.hulkshare\\.com/d/[a-z0-9]+/.*?)\"").getMatch(0);
                         if (dllink == null) {
                             dllink = br.getRegex("\"(http://[a-z0-9]+\\.hulkshare\\.com/hulkdl/[a-z0-9]+/.*?)\"").getMatch(0);
+                            if (dllink == null) {
+                                Browser br2 = br.cloneBrowser();
+                                br2.setFollowRedirects(false);
+                                br2.getPage("http://hulkshare.com/ap-" + new Regex(downloadLink.getDownloadURL(), "hulkshare\\.com/(.+)").getMatch(0) + ".mp3");
+                                dllink = br2.getRedirectLocation();
+                                if (dllink != null) {
+                                    if (!downloadLink.getName().endsWith(".mp3")) downloadLink.setFinalFileName(downloadLink.getName() + ".mp3");
+                                }
+                                if (dllink == null) {
+                                    String jsCrap = br.getRegex("style=\"width: 360px; height: 100px; margin: 0 10px; overflow: auto; float: left;\">[\t\n\r ]+<script language=\"JavaScript\">[\t\n\r ]+function [A-Za-z0-9]+\\(\\)[\t\n\r ]+\\{(.*?)window\\.").getMatch(0);
+                                    if (jsCrap != null) dllink = execJS(jsCrap);
+                                }
+                            }
                         }
-                    }
-                    if (dllink == null) {
-                        String jsCrap = br.getRegex("style=\"width: 360px; height: 100px; margin: 0 10px; overflow: auto; float: left;\">[\t\n\r ]+<script language=\"JavaScript\">[\t\n\r ]+function [A-Za-z0-9]+\\(\\)[\t\n\r ]+\\{(.*?)window\\.").getMatch(0);
-                        if (jsCrap != null) dllink = execJS(jsCrap);
                     }
                 }
             }

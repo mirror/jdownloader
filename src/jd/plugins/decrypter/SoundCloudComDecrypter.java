@@ -26,7 +26,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "soundcloud.com" }, urls = { "http://(www\\.)?soundcloud\\.com/.+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "soundcloud.com" }, urls = { "http://(www\\.)?soundcloud\\.com/[^\"\\'\\?]+" }, flags = { 0 })
 public class SoundCloudComDecrypter extends PluginForDecrypt {
 
     public SoundCloudComDecrypter(PluginWrapper wrapper) {
@@ -43,9 +43,8 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
         }
         if (decryptList) {
             br.getPage(parameter);
-            System.out.print(br.toString());
             String fpName = br.getRegex("<title>(.*?) on SoundCloud \\- Create, record and share your sounds for free</title>").getMatch(0);
-            String[] links = br.getRegex("\"(http://soundcloud\\.com/[A-Za-z0-9\\- _%/]+)\" property=\"og:song\"").getColumn(0);
+            String[] links = br.getRegex("\"(http://soundcloud\\.com/[^\"\\'<>]+)\" property=\"og:song\"").getColumn(0);
             if (links == null || links.length == 0) {
                 links = br.getRegex("class=\"info\"><span>\\d+\\.</span>[\t\n\r ]+<a href=\"(/.*?)\"").getColumn(0);
                 if (links == null || links.length == 0) {
@@ -55,12 +54,19 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
                     }
                 }
             }
-            if (links == null || links.length == 0) {
+            String[] playListLinks = br.getRegex("<li class=\"playlist\\-player \"><a href=\"(/[^\"\\'<>]+)(\\?size=large)?\"").getColumn(0);
+            if ((links == null || links.length == 0) && (playListLinks == null || playListLinks.length == 0)) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
-            for (String sclink : links)
-                decryptedLinks.add(createDownloadlink("http://soundclouddecrypted.com" + sclink));
+            if (links != null && links.length != 0) {
+                for (String sclink : links)
+                    decryptedLinks.add(createDownloadlink("http://soundclouddecrypted.com" + sclink));
+            }
+            if (playListLinks != null && playListLinks.length != 0) {
+                for (String sclink : playListLinks)
+                    decryptedLinks.add(createDownloadlink("http://soundclouddecrypted.com" + sclink));
+            }
             if (fpName != null) {
                 FilePackage fp = FilePackage.getInstance();
                 fp.setName(fpName.trim());

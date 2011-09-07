@@ -29,9 +29,9 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "flameupload.com", "kewlfile.com", "mirrorafile.com", "klurk.com", "uploadsharefiles.com", "lougyl.com", "maishare.com", "uploadground.com", "qooy.com", "share2many.com", "uploader.ro", "uploadmirrors.com", "indirdur.net", "nahraj.me", "megaupper.com", "mirrory.pl", "shrta.com", "1filesharing.com", "7ups.net", "mirrorzian.com", "mirrorfusion.com", "spreadmyfiles.com", "digzip.com" }, urls = { "http://(www\\.)?flameupload\\.(com|co)/files/[0-9A-Z]{8}", "http://[\\w\\.]*?kewlfile\\.com/dl/\\d+", "http://[\\w\\.]*?mirrorafile\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?klurk\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?uploadsharefiles\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?lougyl\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?maishare\\.com/files/[0-9A-Z]{8}",
-        "http://[\\w\\.]*?uploadground\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?qooy\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?share2many\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?uploader\\.ro/files/[0-9A-Z]{8}", "http://[\\w\\.]*?uploadmirrors\\.(com|org)/download/[0-9A-Z]{8}", "http://[\\w\\.]*?indirdur\\.net/files/[0-9A-Z]{8}", "http://[\\w\\.]*?nahraj\\.me/files/[0-9A-Z]{8}", "http://[\\w\\.]*?megaupper\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?mirrory\\.pl/files/[0-9A-Z]{8}", "http://[\\w\\.]*?shrta\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?1filesharing\\.com/(mirror|download)/[0-9A-Z]{8}", "http://[\\w\\.]*?7ups\\.net/files/[0-9A-Z]{8}", "http://[\\w\\.]*?mirrorzian\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?mirrorfusion\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?spreadmyfiles\\.com/files/[0-9A-Z]{8}", "http://(www\\.)?digzip\\.com/files/[0-9A-Z]{8}" }, flags = { 0,
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "flameupload.com", "kewlfile.com", "mirrorafile.com", "klurk.com", "uploadsharefiles.com", "lougyl.com", "maishare.com", "uploadground.com", "qooy.com", "share2many.com", "uploader.ro", "uploadmirrors.com", "indirdur.net", "nahraj.me", "megaupper.com", "mirrory.pl", "shrta.com", "1filesharing.com", "7ups.net", "mirrorzian.com", "mirrorfusion.com", "digzip.com", "needmirror.com" }, urls = { "http://(www\\.)?flameupload\\.(com|co)/files/[0-9A-Z]{8}", "http://[\\w\\.]*?kewlfile\\.com/dl/\\d+", "http://[\\w\\.]*?mirrorafile\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?klurk\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?uploadsharefiles\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?lougyl\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?maishare\\.com/files/[0-9A-Z]{8}",
+        "http://[\\w\\.]*?uploadground\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?qooy\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?share2many\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?uploader\\.ro/files/[0-9A-Z]{8}", "http://[\\w\\.]*?uploadmirrors\\.(com|org)/download/[0-9A-Z]{8}", "http://[\\w\\.]*?indirdur\\.net/files/[0-9A-Z]{8}", "http://[\\w\\.]*?nahraj\\.me/files/[0-9A-Z]{8}", "http://[\\w\\.]*?megaupper\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?mirrory\\.pl/files/[0-9A-Z]{8}", "http://[\\w\\.]*?shrta\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?1filesharing\\.com/(mirror|download)/[0-9A-Z]{8}", "http://[\\w\\.]*?7ups\\.net/files/[0-9A-Z]{8}", "http://[\\w\\.]*?mirrorzian\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?mirrorfusion\\.com/files/[0-9A-Z]{8}", "http://(www\\.)?digzip\\.com/files/[0-9A-Z]{8}", "http://(www\\.)?needmirror\\.com/files/[0-9A-Z]{8}" }, flags = { 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 })
 public class GeneralMultiuploadDecrypter extends PluginForDecrypt {
 
     public GeneralMultiuploadDecrypter(PluginWrapper wrapper) {
@@ -41,7 +41,7 @@ public class GeneralMultiuploadDecrypter extends PluginForDecrypt {
     // This decrypter should handle all sites using the qooy.com script!
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        br.setFollowRedirects(false);
+        br.setFollowRedirects(true);
         String parameter = param.toString();
         // Only uploadmirrors.com has those "/download/" links so we need to
         // correct them
@@ -65,6 +65,7 @@ public class GeneralMultiuploadDecrypter extends PluginForDecrypt {
             logger.info("The following link should be offline: " + parameter);
             throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
         }
+        br.setFollowRedirects(false);
         String[] redirectLinks = br.getRegex("(/(redirect|rd)/[0-9A-Z]+/[a-z0-9]+)").getColumn(0);
         if (redirectLinks == null || redirectLinks.length == 0) redirectLinks = br.getRegex("><a href=(.*?)target=").getColumn(0);
         if (redirectLinks == null || redirectLinks.length == 0) return null;
@@ -76,16 +77,17 @@ public class GeneralMultiuploadDecrypter extends PluginForDecrypt {
             String dllink = null;
             // Handling for links that need to be regexed or that need to be get
             // by redirect
+            System.out.print(brc.toString());
             if (singlelink.contains("/redirect/") || singlelink.contains("/rd/")) {
-                brc.getPage(host + singlelink);
+                brc.getPage(host.replace("www.", "") + singlelink);
                 dllink = brc.getRedirectLocation();
                 if (dllink == null) {
                     dllink = brc.getRegex("<frame name=\"main\" src=\"(.*?)\">").getMatch(0);
                     // For 1filesharing.com links
                     if (dllink == null) {
                         dllink = brc.getRegex("<iframe id=\"download\" src=\"(.*?)\"").getMatch(0);
-                        // For Spreadmyfiles.com links
-                        if (dllink == null) dllink = brc.getRegex("</iframe>[\n\t\r ]+<iframe style=\"border:0px\" src =\"(.*?)\"").getMatch(0);
+                        // For needmirror.com links
+                        if (dllink == null) dllink = brc.getRegex(">Please <a href=\"([^\"\\']+)\"").getMatch(0);
                     }
                 }
             } else {
@@ -94,10 +96,6 @@ public class GeneralMultiuploadDecrypter extends PluginForDecrypt {
             }
             progress.increase(1);
             if (dllink == null) continue;
-            if ("".matches(dllink)) {
-                logger.info("Found one broken link!");
-                continue;
-            }
             if (dllink.contains("flameupload")) {
                 logger.info("Recursion? " + param.toString() + "->" + dllink);
             }
