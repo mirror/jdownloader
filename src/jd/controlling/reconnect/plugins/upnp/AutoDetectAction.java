@@ -95,6 +95,9 @@ public class AutoDetectAction extends AbstractAction {
                     public void setProgress(Object caller, int percent) {
                         setBarProgress(percent);
                     }
+
+                    public void setStatus(Object caller, Object statusObject) {
+                    }
                 });
 
                 if (scripts != null && scripts.size() > 0) {

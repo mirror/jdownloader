@@ -707,4 +707,7 @@ public interface JdownloaderTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Reconnect failed: Could not disconnect in %s1" })
     String reconnectinvoker_disconnect_failed(String string);
+
+    @Default(lngs = { "en" }, values = { "Offline" })
+    String literally_offline();
 }

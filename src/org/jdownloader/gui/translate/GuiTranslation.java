@@ -2434,4 +2434,16 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Auto Setup only works for Router connections. \r\nPlease see the opened Site for Modem Reconnects." })
     String AutoSetupAction_actionPerformed_noautoformodem();
 
+    @Default(lngs = { "en" }, values = { "Reconnect failed. Please check your settings." })
+    String ReconnectDialog_layoutDialogContent_error();
+
+    @Default(lngs = { "en" }, values = { "Use found Script" })
+    String ReconnectFindDialog_ReconnectFindDialog_ok();
+
+    @Default(lngs = { "en" }, values = { "No working Script found so far." })
+    String ReconnectFindDialog_packed_no_found_script_tooltip();
+
+    @Default(lngs = { "en" }, values = { "Stop Scanning, and use the best script found until now." })
+    String ReconnectFindDialog_packed_interrupt_tooltip();
+
 }

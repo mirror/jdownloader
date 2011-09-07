@@ -12,6 +12,7 @@ import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.SwingConstants;
 
 import jd.controlling.JDController;
 import jd.controlling.JDLogger;
@@ -190,17 +191,17 @@ public class LiveHeaderReconnect extends RouterPlugin implements ControlListener
 
     @Override
     public JComponent getGUI() {
-        final JPanel p = new JPanel(new MigLayout("ins 0,wrap 3", "[][][grow,fill]", "[]"));
+        final JPanel p = new JPanel(new MigLayout("ins 0 0 0 0,wrap 3", "[][][grow,fill]", ""));
         JButton btnAuto = new JButton(new AutoDetectAction());
-
+        btnAuto.setHorizontalAlignment(SwingConstants.LEFT);
         // auto search is not ready yet
         // this.btnAuto.setEnabled(false);
         JButton btnRecord = new JButton(new ReconnectRecorderAction(this));
-
+        btnRecord.setHorizontalAlignment(SwingConstants.LEFT);
         JButton btnFindIP = new JButton(new GetIPAction(this));
-
+        btnFindIP.setHorizontalAlignment(SwingConstants.LEFT);
         JButton btnEditScript = new JButton(new EditScriptAction(this));
-
+        btnEditScript.setHorizontalAlignment(SwingConstants.LEFT);
         this.txtUser = new ExtTextField();
         txtUser.setHelpText(T._.LiveHeaderReconnect_getGUI_help_user());
         txtUser.addFocusListener(new FocusListener() {

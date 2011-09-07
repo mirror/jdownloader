@@ -93,6 +93,14 @@ public class AutoDetectAction extends AbstractAction {
                             }
                         }
 
+                        public void setStatus(Object caller, Object statusObject) {
+                            if (caller instanceof LiveHeaderDetectionWizard && statusObject instanceof ArrayList) {
+                                @SuppressWarnings("unchecked")
+                                ArrayList<LiveHeaderReconnectResult> foundScripts = (ArrayList<LiveHeaderReconnectResult>) statusObject;
+                                setInterruptEnabled(foundScripts);
+                            }
+                        }
+
                     });
 
                     if (scripts != null && scripts.size() > 0) {

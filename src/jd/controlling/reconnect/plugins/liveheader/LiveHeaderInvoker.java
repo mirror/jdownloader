@@ -32,7 +32,7 @@ public class LiveHeaderInvoker extends ReconnectInvoker {
     private String script;
 
     public String getScript() {
-        return script;
+        return orgScript;
     }
 
     public String getUser() {

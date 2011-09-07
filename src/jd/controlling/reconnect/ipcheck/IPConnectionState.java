@@ -1,5 +1,7 @@
 package jd.controlling.reconnect.ipcheck;
 
+import org.jdownloader.translate._JDT;
+
 /**
  * This class stores a single "Connection State". States are, for example:<br>
  * 
@@ -10,6 +12,13 @@ package jd.controlling.reconnect.ipcheck;
  * 
  */
 public class IPConnectionState {
+    public String toString() {
+        if (isOffline()) {
+            return _JDT._.literally_offline();
+        } else {
+            return ip.toString();
+        }
+    }
 
     private final IP               ip;
     private final IPCheckException cause;

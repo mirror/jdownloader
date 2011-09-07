@@ -105,7 +105,7 @@ public class ReconnectDialog extends AbstractDialog<Object> implements IPControl
 
                     @Override
                     protected void runInEDT() {
-                        old.setText(IPController.getInstance().getIP().toString());
+                        old.setText(IPController.getInstance().getIpState().toString());
                     }
                 };
                 try {
@@ -144,8 +144,12 @@ public class ReconnectDialog extends AbstractDialog<Object> implements IPControl
 
                 } catch (InterruptedException e) {
                     e.printStackTrace();
+                    dispose();
                 } catch (ReconnectException e) {
-                    e.printStackTrace();
+
+                    dispose();
+                    Dialog.getInstance().showErrorDialog(_GUI._.ReconnectDialog_layoutDialogContent_error());
+
                 }
 
             }

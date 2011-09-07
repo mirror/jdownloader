@@ -34,6 +34,7 @@ import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Hash;
 import org.appwork.utils.Regex;
 import org.appwork.utils.event.ProcessCallBack;
+import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
@@ -322,8 +323,17 @@ public class LiveHeaderDetectionWizard {
                 res = inv.validate();
                 ((LiveHeaderReconnectResult) res).setRouterData(test);
                 if (res != null && res.isSuccess()) {
+
                     ret.add(res);
+                    processCallBack.setStatus(this, ret);
+                    if (i < tests.size() - 1) {
+
+                        if (ret.size() == 1) Dialog.getInstance().showConfirmDialog(0, T._.LiveHeaderDetectionWizard_testList_firstSuccess_title(), T._.LiveHeaderDetectionWizard_testList_firstsuccess_msg(TimeFormatter.formatMilliSeconds(res.getSuccessDuration(), 0)), NewTheme.I().getIcon("ok", 32), T._.LiveHeaderDetectionWizard_testList_ok(), T._.LiveHeaderDetectionWizard_testList_use());
+                        return ret;
+                    }
                 }
+            } catch (DialogNoAnswerException e) {
+                break;
             } catch (ReconnectException e) {
                 Log.exception(e);
             }
