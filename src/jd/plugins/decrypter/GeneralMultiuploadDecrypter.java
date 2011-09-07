@@ -77,7 +77,6 @@ public class GeneralMultiuploadDecrypter extends PluginForDecrypt {
             String dllink = null;
             // Handling for links that need to be regexed or that need to be get
             // by redirect
-            System.out.print(brc.toString());
             if (singlelink.contains("/redirect/") || singlelink.contains("/rd/")) {
                 brc.getPage(host.replace("www.", "") + singlelink);
                 dllink = brc.getRedirectLocation();
