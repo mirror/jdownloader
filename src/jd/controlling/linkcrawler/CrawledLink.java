@@ -10,13 +10,13 @@ import jd.plugins.PluginForHost;
 
 import org.jdownloader.gui.views.linkgrabber.addlinksdialog.CrawlerJob;
 
-public class CrawledLinkInfo implements AbstractPackageChildrenNode<CrawledPackageInfo>, CheckableLink {
+public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>, CheckableLink {
 
-    private CrawledPackageInfo parent      = null;
-    private PluginForDecrypt   dPlugin     = null;
-    private CrawlerJob         sourceJob   = null;
-    private long               created     = -1;
-    private boolean            isDupeAllow = false;
+    private CrawledPackage   parent      = null;
+    private PluginForDecrypt dPlugin     = null;
+    private CrawlerJob       sourceJob   = null;
+    private long             created     = -1;
+    private boolean          isDupeAllow = false;
 
     /**
      * @return the isDupeAllow
@@ -102,18 +102,19 @@ public class CrawledLinkInfo implements AbstractPackageChildrenNode<CrawledPacka
         return cLink;
     }
 
-    private CryptedLink cLink = null;
+    private CryptedLink cLink      = null;
     private String      url;
+    private CrawledLink parentLink = null;
 
-    public CrawledLinkInfo(DownloadLink dlLink) {
+    public CrawledLink(DownloadLink dlLink) {
         this.dlLink = dlLink;
     }
 
-    public CrawledLinkInfo(CryptedLink cLink) {
+    public CrawledLink(CryptedLink cLink) {
         this.cLink = cLink;
     }
 
-    public CrawledLinkInfo(String url) {
+    public CrawledLink(String url) {
         if (url == null) return;
         this.url = new String(url);
     }
@@ -152,17 +153,22 @@ public class CrawledLinkInfo implements AbstractPackageChildrenNode<CrawledPacka
 
     @Override
     public String toString() {
-        if (url != null) return "URL:" + getURL();
-        if (dlLink != null) return "DLLink:" + getURL();
-        if (cLink != null) return "CLink:" + getURL();
-        return null;
+        CrawledLink parentL = parentLink;
+        StringBuilder sb = new StringBuilder();
+        if (parentL != null) {
+            sb.append(parentL.toString() + "-->");
+        }
+        if (url != null) sb.append("URL:" + getURL());
+        if (dlLink != null) sb.append("DLLink:" + getURL());
+        if (cLink != null) sb.append("CLink:" + getURL());
+        return sb.toString();
     }
 
-    public CrawledPackageInfo getParentNode() {
+    public CrawledPackage getParentNode() {
         return parent;
     }
 
-    public void setParentNode(CrawledPackageInfo parent) {
+    public void setParentNode(CrawledPackage parent) {
         this.parent = parent;
     }
 
@@ -181,4 +187,13 @@ public class CrawledLinkInfo implements AbstractPackageChildrenNode<CrawledPacka
     public long getFinishedDate() {
         return 0;
     }
+
+    public CrawledLink getParentLink() {
+        return parentLink;
+    }
+
+    public void setParentLink(CrawledLink parent) {
+        this.parentLink = parent;
+    }
+
 }

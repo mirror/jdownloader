@@ -10,6 +10,7 @@ import jd.controlling.reconnect.ReconnectConfig;
 import jd.http.Browser;
 
 import org.appwork.storage.config.JsonConfig;
+import org.appwork.utils.net.httpconnection.HTTPProxy;
 
 /**
  * balanced IP check uses the jdownloader ip check servers. This type of ip
@@ -51,6 +52,7 @@ public class BalancedWebIPCheck implements IPCheckProvider {
         this.pattern = Pattern.compile("(\\d+\\.\\d+\\.\\d+\\.\\d+)");
         Collections.shuffle(this.servicesInUse);
         this.br = new Browser();
+        this.br.setProxy(HTTPProxy.NONE);
         this.br.setConnectTimeout(JsonConfig.create(ReconnectConfig.class).getIPCheckConnectTimeout());
         this.br.setReadTimeout(JsonConfig.create(ReconnectConfig.class).getIPCheckReadTimeout());
     }

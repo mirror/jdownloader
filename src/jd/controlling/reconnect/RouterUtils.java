@@ -40,6 +40,7 @@ import jd.nutils.jobber.JDRunnable;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.Regex;
+import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.appwork.utils.os.CrossSystem;
 
 public class RouterUtils {
@@ -244,6 +245,7 @@ public class RouterUtils {
             sock = new Socket(host, port);
             sock.setSoTimeout(200);
             Browser br = new Browser();
+            br.setProxy(HTTPProxy.NONE);
             br.setConnectTimeout(2000);
             br.setReadTimeout(1000);
             br.setFollowRedirects(false);

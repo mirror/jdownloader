@@ -3,7 +3,7 @@ package org.jdownloader.gui.views.downloads.columns;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
 
-import jd.controlling.linkcrawler.CrawledLinkInfo;
+import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -46,8 +46,8 @@ public class AvailabilityColumn extends ExtTextColumn<AbstractNode> {
         if (value instanceof DownloadLink) {
             dl = (DownloadLink) value;
             status = dl.getAvailableStatusInfo();
-        } else if (value instanceof CrawledLinkInfo) {
-            CrawledLinkInfo cl = (CrawledLinkInfo) value;
+        } else if (value instanceof CrawledLink) {
+            CrawledLink cl = (CrawledLink) value;
             dl = cl.getDownloadLink();
             if (dl != null) {
                 status = dl.getAvailableStatusInfo();
@@ -76,8 +76,8 @@ public class AvailabilityColumn extends ExtTextColumn<AbstractNode> {
         if (value instanceof DownloadLink) {
             dl = (DownloadLink) value;
             status = dl.getAvailableStatusInfo();
-        } else if (value instanceof CrawledLinkInfo) {
-            CrawledLinkInfo cl = (CrawledLinkInfo) value;
+        } else if (value instanceof CrawledLink) {
+            CrawledLink cl = (CrawledLink) value;
             dl = cl.getDownloadLink();
             if (dl != null) {
                 status = dl.getAvailableStatusInfo();

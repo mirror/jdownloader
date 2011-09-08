@@ -1,7 +1,7 @@
 package org.jdownloader.gui.views.downloads.columns;
 
-import jd.controlling.linkcrawler.CrawledLinkInfo;
-import jd.controlling.linkcrawler.CrawledPackageInfo;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
@@ -43,10 +43,10 @@ public class SizeColumn extends ExtFileSizeColumn<AbstractNode> {
 
     @Override
     protected long getBytes(AbstractNode o2) {
-        if (o2 instanceof CrawledPackageInfo) {
+        if (o2 instanceof CrawledPackage) {
             return 0;
-        } else if (o2 instanceof CrawledLinkInfo) {
-            return ((CrawledLinkInfo) o2).getSize();
+        } else if (o2 instanceof CrawledLink) {
+            return ((CrawledLink) o2).getSize();
         } else if (o2 instanceof DownloadLink) {
             return ((DownloadLink) o2).getDownloadSize();
         } else if (o2 instanceof FilePackage) {

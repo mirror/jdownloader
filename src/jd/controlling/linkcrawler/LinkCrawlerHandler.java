@@ -6,6 +6,6 @@ public interface LinkCrawlerHandler {
 
     void linkCrawlerStopped();
 
-    void handleFinalLink(CrawledLinkInfo link);
+    void handleFinalLink(CrawledLink link);
 
 }

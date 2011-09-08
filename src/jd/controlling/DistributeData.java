@@ -21,7 +21,7 @@ import java.util.ArrayList;
 import jd.CPluginWrapper;
 import jd.DecryptPluginWrapper;
 import jd.HostPluginWrapper;
-import jd.controlling.linkcrawler.CrawledLinkInfo;
+import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.LinkCrawler;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.HTMLParser;
@@ -117,7 +117,7 @@ public class DistributeData extends Thread {
         lf.crawlNormal(data);
         lf.waitForCrawling();
         ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>(lf.getCrawledLinks().size());
-        for (final CrawledLinkInfo link : lf.getCrawledLinks()) {
+        for (final CrawledLink link : lf.getCrawledLinks()) {
             DownloadLink dl = link.getDownloadLink();
             if (dl != null) {
                 dl.addSourcePluginPasswordList(foundPasswords);

@@ -5,8 +5,8 @@ import java.util.ArrayList;
 import javax.swing.Icon;
 
 import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.linkcrawler.CrawledLinkInfo;
-import jd.controlling.linkcrawler.CrawledPackageInfo;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.packagecontroller.AbstractNode;
 
 import org.appwork.swing.exttable.ExtColumn;
@@ -21,7 +21,7 @@ import org.jdownloader.gui.views.downloads.columns.HosterColumn;
 import org.jdownloader.gui.views.downloads.columns.PriorityColumn;
 import org.jdownloader.gui.views.downloads.columns.SizeColumn;
 
-public class LinkGrabberTableModel extends PackageControllerTableModel<CrawledPackageInfo, CrawledLinkInfo> {
+public class LinkGrabberTableModel extends PackageControllerTableModel<CrawledPackage, CrawledLink> {
 
     private static final long   serialVersionUID      = -198189279671615981L;
     private static final String SORT_LINKGRABBERORDER = "LINKGRABBER";
@@ -237,10 +237,10 @@ public class LinkGrabberTableModel extends PackageControllerTableModel<CrawledPa
             ArrayList<AbstractNode> newData = new ArrayList<AbstractNode>(Math.max(data.size(), packages.size()));
             for (AbstractNode node : packages) {
                 newData.add(node);
-                if (!((CrawledPackageInfo) node).isExpanded()) continue;
+                if (!((CrawledPackage) node).isExpanded()) continue;
                 ArrayList<AbstractNode> files = null;
                 synchronized (node) {
-                    files = new ArrayList<AbstractNode>(((CrawledPackageInfo) node).getChildren());
+                    files = new ArrayList<AbstractNode>(((CrawledPackage) node).getChildren());
                 }
                 newData.addAll(files);
             }

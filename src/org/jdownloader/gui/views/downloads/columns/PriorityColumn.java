@@ -7,7 +7,7 @@ import javax.swing.ImageIcon;
 import javax.swing.JTable;
 import javax.swing.table.JTableHeader;
 
-import jd.controlling.linkcrawler.CrawledLinkInfo;
+import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.plugins.DownloadLink;
 
@@ -119,8 +119,8 @@ public class PriorityColumn extends ExtIconColumn<AbstractNode> {
         Integer p = null;
         if (value instanceof DownloadLink) {
             p = ((DownloadLink) value).getPriority();
-        } else if (value instanceof CrawledLinkInfo) {
-            p = ((CrawledLinkInfo) value).getPriority();
+        } else if (value instanceof CrawledLink) {
+            p = ((CrawledLink) value).getPriority();
         }
         if (p != null) {
             switch (p) {

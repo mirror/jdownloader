@@ -1,6 +1,6 @@
 package org.jdownloader.gui.views.downloads.columns;
 
-import jd.controlling.linkcrawler.CrawledLinkInfo;
+import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
@@ -28,8 +28,8 @@ public class CommentColumn extends ExtTextAreaColumn<AbstractNode> {
         DownloadLink dl = null;
         if (object instanceof DownloadLink) {
             dl = (DownloadLink) object;
-        } else if (object instanceof CrawledLinkInfo) {
-            dl = ((CrawledLinkInfo) object).getDownloadLink();
+        } else if (object instanceof CrawledLink) {
+            dl = ((CrawledLink) object).getDownloadLink();
         }
         if (dl != null) {
             dl.setSourcePluginComment(value);
@@ -51,8 +51,8 @@ public class CommentColumn extends ExtTextAreaColumn<AbstractNode> {
         DownloadLink dl = null;
         if (object instanceof DownloadLink) {
             dl = (DownloadLink) object;
-        } else if (object instanceof CrawledLinkInfo) {
-            dl = ((CrawledLinkInfo) object).getDownloadLink();
+        } else if (object instanceof CrawledLink) {
+            dl = ((CrawledLink) object).getDownloadLink();
         }
         if (dl != null) { return dl.getSourcePluginComment(); }
         if (object instanceof FilePackage) { return ((FilePackage) object).getComment(); }

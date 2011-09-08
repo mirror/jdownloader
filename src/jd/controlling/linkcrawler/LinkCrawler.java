@@ -31,7 +31,7 @@ public class LinkCrawler implements IOPermission {
     private static ArrayList<DecryptPluginWrapper> pDecrypts;
     private static ArrayList<HostPluginWrapper>    pHosts;
     private static PluginForHost                   directHTTP              = null;
-    private ArrayList<CrawledLinkInfo>             crawledLinks            = new ArrayList<CrawledLinkInfo>();
+    private ArrayList<CrawledLink>                 crawledLinks            = new ArrayList<CrawledLink>();
     private AtomicInteger                          crawledLinksCounter     = new AtomicInteger(0);
     private AtomicInteger                          crawler                 = new AtomicInteger(0);
     private HashSet<String>                        duplicateFinder         = new HashSet<String>();
@@ -109,9 +109,9 @@ public class LinkCrawler implements IOPermission {
 
     public void crawlNormal(String[] links) {
         if (links == null || links.length == 0) return;
-        ArrayList<CrawledLinkInfo> possibleCryptedLinks = new ArrayList<CrawledLinkInfo>(links.length);
+        ArrayList<CrawledLink> possibleCryptedLinks = new ArrayList<CrawledLink>(links.length);
         for (String possibleLink : links) {
-            possibleCryptedLinks.add(new CrawledLinkInfo(possibleLink));
+            possibleCryptedLinks.add(new CrawledLink(possibleLink));
         }
         distribute(possibleCryptedLinks);
     }
@@ -119,9 +119,9 @@ public class LinkCrawler implements IOPermission {
     public void enqueueNormal(String text, String url) {
         String[] possibleLinks = HTMLParser.getHttpLinks(text, url);
         if (possibleLinks == null || possibleLinks.length == 0) return;
-        final ArrayList<CrawledLinkInfo> possibleCryptedLinks = new ArrayList<CrawledLinkInfo>(possibleLinks.length);
+        final ArrayList<CrawledLink> possibleCryptedLinks = new ArrayList<CrawledLink>(possibleLinks.length);
         for (String possibleLink : possibleLinks) {
-            possibleCryptedLinks.add(new CrawledLinkInfo(possibleLink));
+            possibleCryptedLinks.add(new CrawledLink(possibleLink));
         }
         if (insideDecrypterPlugin()) {
             /*
@@ -275,8 +275,8 @@ public class LinkCrawler implements IOPermission {
                      * downloadable content, we use directhttp and distribute
                      * the url
                      */
-                    ArrayList<CrawledLinkInfo> links = new ArrayList<CrawledLinkInfo>();
-                    links.add(new CrawledLinkInfo("directhttp://" + url));
+                    ArrayList<CrawledLink> links = new ArrayList<CrawledLink>();
+                    links.add(new CrawledLink("directhttp://" + url));
                     distribute(links);
                 } else {
                     /* try to load the webpage and find links on it */
@@ -299,11 +299,11 @@ public class LinkCrawler implements IOPermission {
         }
     }
 
-    protected void distribute(ArrayList<CrawledLinkInfo> possibleCryptedLinks) {
+    protected void distribute(ArrayList<CrawledLink> possibleCryptedLinks) {
         checkStartNotify();
         try {
             if (possibleCryptedLinks == null || possibleCryptedLinks.size() == 0) return;
-            mainloop: for (final CrawledLinkInfo possibleCryptedLink : possibleCryptedLinks) {
+            mainloop: for (final CrawledLink possibleCryptedLink : possibleCryptedLinks) {
                 String url = possibleCryptedLink.getURL();
                 if (url == null) continue;
                 /* first we will walk through all available decrypter plugins */
@@ -312,9 +312,10 @@ public class LinkCrawler implements IOPermission {
                         try {
                             PluginForDecrypt plg = pDecrypt.getPlugin();
                             if (plg != null) {
-                                ArrayList<CrawledLinkInfo> allPossibleCryptedLinks = plg.getCrawlableLinks(url);
+                                ArrayList<CrawledLink> allPossibleCryptedLinks = plg.getCrawlableLinks(url);
                                 if (allPossibleCryptedLinks != null) {
-                                    for (final CrawledLinkInfo decryptThis : allPossibleCryptedLinks) {
+                                    for (final CrawledLink decryptThis : allPossibleCryptedLinks) {
+                                        decryptThis.setParentLink(possibleCryptedLink);
                                         if (possibleCryptedLink.getCryptedLink() != null) {
                                             /*
                                              * source contains CryptedLink, so
@@ -375,7 +376,9 @@ public class LinkCrawler implements IOPermission {
                                 if (hosterLinks != null) {
                                     forwardDownloadLinkInfos(possibleCryptedLink.getDownloadLink(), hosterLinks);
                                     for (DownloadLink hosterLink : hosterLinks) {
-                                        handleFinalLink(new CrawledLinkInfo(hosterLink));
+                                        CrawledLink link;
+                                        handleFinalLink(link = new CrawledLink(hosterLink));
+                                        link.setParentLink(possibleCryptedLink.getParentLink());
                                     }
                                 }
                             }
@@ -399,7 +402,9 @@ public class LinkCrawler implements IOPermission {
                             if (httpLinks != null) {
                                 forwardDownloadLinkInfos(possibleCryptedLink.getDownloadLink(), httpLinks);
                                 for (DownloadLink hosterLink : httpLinks) {
-                                    handleFinalLink(new CrawledLinkInfo(hosterLink));
+                                    CrawledLink link;
+                                    handleFinalLink(link = new CrawledLink(hosterLink));
+                                    link.setParentLink(possibleCryptedLink.getParentLink());
                                 }
                             }
                         } catch (Throwable e) {
@@ -449,7 +454,7 @@ public class LinkCrawler implements IOPermission {
         return crawler.get() == 0;
     }
 
-    protected void crawl(CrawledLinkInfo cryptedLink) {
+    protected void crawl(final CrawledLink cryptedLink) {
         checkStartNotify();
         try {
             synchronized (duplicateFinder) {
@@ -466,43 +471,69 @@ public class LinkCrawler implements IOPermission {
             if (Thread.currentThread() instanceof LinkCrawlerThread) {
                 lct = (LinkCrawlerThread) Thread.currentThread();
             }
-            ArrayList<DownloadLink> decryptedPossibleLinks = null;
             boolean lctb = false;
+            LinkCrawlerDistributer dist = null;
+            ArrayList<DownloadLink> decryptedPossibleLinks = null;
             try {
+                /*
+                 * set LinkCrawlerDistributer in case the plugin wants to add
+                 * links in realtime
+                 */
+                plg.setDistributer(dist = new LinkCrawlerDistributer() {
+
+                    public void distribute(DownloadLink... links) {
+                        if (links == null || links.length == 0) return;
+                        final ArrayList<CrawledLink> possibleCryptedLinks = new ArrayList<CrawledLink>(links.length);
+                        for (DownloadLink link : links) {
+                            /*
+                             * we set source url here to hide the original link
+                             * if needed
+                             */
+                            link.setBrowserUrl(cryptedLink.getURL());
+                            CrawledLink ret;
+                            possibleCryptedLinks.add(ret = new CrawledLink(link));
+                            ret.setParentLink(cryptedLink);
+                        }
+                        checkStartNotify();
+                        /* enqueue distributing of the links */
+                        threadPool.execute(new LinkCrawlerRunnable(LinkCrawler.this) {
+                            public void run() {
+                                try {
+                                    LinkCrawler.this.distribute(possibleCryptedLinks);
+                                } finally {
+                                    checkFinishNotify();
+                                }
+                            }
+                        });
+                    }
+                });
                 if (lct != null) {
                     /* mark thread to be used by decrypter plugin */
                     lctb = lct.isLinkCrawlerThreadUsedbyDecrypter();
                     lct.setLinkCrawlerThreadUsedbyDecrypter(true);
                 }
-                decryptedPossibleLinks = plg.decryptLink(cryptedLink.getCryptedLink());
+                decryptedPossibleLinks = plg.decryptLink(cryptedLink);
             } finally {
                 if (lct != null) {
                     /* reset thread to last known used state */
                     lct.setLinkCrawlerThreadUsedbyDecrypter(lctb);
                 }
+                /* remove distributer from plugin */
+                plg.setDistributer(null);
             }
-            if (decryptedPossibleLinks != null && decryptedPossibleLinks.size() > 0) {
-                ArrayList<CrawledLinkInfo> possibleCryptedLinks = new ArrayList<CrawledLinkInfo>(decryptedPossibleLinks.size());
-                for (DownloadLink decryptedLink : decryptedPossibleLinks) {
-                    /*
-                     * we set source url here to hide the original link if
-                     * needed
-                     */
-                    decryptedLink.setBrowserUrl(cryptedLink.getURL());
-                    possibleCryptedLinks.add(new CrawledLinkInfo(decryptedLink));
-                }
-                distribute(possibleCryptedLinks);
+            if (decryptedPossibleLinks != null) {
+                dist.distribute(decryptedPossibleLinks.toArray(new DownloadLink[decryptedPossibleLinks.size()]));
             }
         } finally {
             checkFinishNotify();
         }
     }
 
-    public ArrayList<CrawledLinkInfo> getCrawledLinks() {
+    public ArrayList<CrawledLink> getCrawledLinks() {
         return crawledLinks;
     }
 
-    protected void handleFinalLink(CrawledLinkInfo link) {
+    protected void handleFinalLink(CrawledLink link) {
         link.setCreated(createdDate);
         if (link.getDownloadLink() != null && link.getDownloadLink().getBooleanProperty("ALLOW_DUPE", false)) {
             /* forward dupeAllow info from DownloadLink to CrawledLinkInfo */
@@ -530,7 +561,7 @@ public class LinkCrawler implements IOPermission {
     protected LinkCrawlerHandler defaulHandlerFactory() {
         return new LinkCrawlerHandler() {
 
-            public void handleFinalLink(CrawledLinkInfo link) {
+            public void handleFinalLink(CrawledLink link) {
                 if (link == null) return;
                 synchronized (crawledLinks) {
                     crawledLinks.add(link);

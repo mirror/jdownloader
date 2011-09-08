@@ -21,7 +21,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
-import jd.gui.UserIO;
 import jd.http.Browser;
 import jd.http.RandomUserAgent;
 import jd.nutils.encoding.Encoding;
@@ -30,12 +29,12 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -383,11 +382,6 @@ public class FileServeCom extends PluginForHost {
         account.setAccountInfo(ai);
         String username = Encoding.urlEncode(account.getUser());
         String password = Encoding.urlEncode(account.getPass());
-        if ((username != null && username.contains("%")) || (password != null && password.contains("%"))) {
-            ai.setStatus("Please change your password! Special chars are NOT allowed!");
-            if (showDialog) UserIO.getInstance().requestMessageDialog(0, "Please change your password! Special chars are NOT allowed!", "Only letters, number, hyphens (-), or underscores (_).\r\nThis is a Fileserve API Limitation!");
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-        }
         br.postPage("http://app.fileserve.com/api/login/", "username=" + username + "&password=" + password + "&submit=Submit+Query");
         String type = br.getRegex("type\":\"(.*?)\"").getMatch(0);
 

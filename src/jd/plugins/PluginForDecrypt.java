@@ -30,7 +30,8 @@ import jd.controlling.JDLogger;
 import jd.controlling.JDPluginLogger;
 import jd.controlling.ProgressController;
 import jd.controlling.captcha.CaptchaController;
-import jd.controlling.linkcrawler.CrawledLinkInfo;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.LinkCrawlerDistributer;
 import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.http.Browser;
 import jd.nutils.Formatter;
@@ -46,7 +47,23 @@ import org.jdownloader.translate._JDT;
  */
 public abstract class PluginForDecrypt extends Plugin {
 
-    private IOPermission ioPermission = null;
+    private IOPermission           ioPermission = null;
+    private LinkCrawlerDistributer distributer  = null;
+
+    /**
+     * @return the distributer
+     */
+    public LinkCrawlerDistributer getDistributer() {
+        return distributer;
+    }
+
+    /**
+     * @param distributer
+     *            the distributer to set
+     */
+    public void setDistributer(LinkCrawlerDistributer distributer) {
+        this.distributer = distributer;
+    }
 
     /**
      * @return the ioPermission
@@ -128,14 +145,16 @@ public abstract class PluginForDecrypt extends Plugin {
      * 
      * @return Ein Vector mit Klartext-links
      */
-    public ArrayList<DownloadLink> decryptLink(CryptedLink cryptedLink) {
+    public ArrayList<DownloadLink> decryptLink(CrawledLink source) {
         ProgressController progress = null;
         int progressShow = 0;
         Color color = null;
         try {
+            CryptedLink cryptLink = source.getCryptedLink();
+            if (cryptLink == null) return null;
             progress = new ProgressController(_JDT._.jd_plugins_PluginForDecrypt_decrypting(getHost()), null);
             progress.setInitials(getInitials());
-            cryptedLink.setProgressController(progress);
+            cryptLink.setProgressController(progress);
             ArrayList<DownloadLink> tmpLinks = null;
             try {
                 /*
@@ -146,7 +165,7 @@ public abstract class PluginForDecrypt extends Plugin {
                 br.setVerbose(true);
                 br.setDebug(true);
                 /* now we let the decrypter do its magic */
-                tmpLinks = decryptIt(cryptedLink, progress);
+                tmpLinks = decryptIt(cryptLink, progress);
             } catch (DecrypterException e) {
                 /*
                  * we got a decrypter exception, clear log and note that
@@ -182,9 +201,8 @@ public abstract class PluginForDecrypt extends Plugin {
                 progress.setStatusText(_JDT._.jd_plugins_PluginForDecrypt_error_outOfDate(this.getHost()));
                 color = Color.RED;
                 progressShow = 15000;
-            }
-            if (tmpLinks == null) {
-                /* null as return value? lets forward the log */
+
+                /* lets forward the log */
                 if (logger instanceof JDPluginLogger) {
                     /* make sure we use the right logger */
                     ((JDPluginLogger) logger).logInto(JDLogger.getLogger());
@@ -204,6 +222,21 @@ public abstract class PluginForDecrypt extends Plugin {
             } catch (Throwable e) {
             }
         }
+    }
+
+    /**
+     * use this to process decrypted links while the decrypter itself is still
+     * running
+     * 
+     * NOTE: if you use this, please put it in try{}catch(Throwable) as this
+     * function is ONLY available in>09581
+     * 
+     * @param links
+     */
+    protected void distribute(DownloadLink... links) {
+        LinkCrawlerDistributer dist = distributer;
+        if (dist == null || links == null || links.length == 0) return;
+        dist.distribute(links);
     }
 
     protected String getCaptchaCode(String captchaAddress, CryptedLink param) throws IOException, DecrypterException {
@@ -273,17 +306,17 @@ public abstract class PluginForDecrypt extends Plugin {
         return cc;
     }
 
-    public ArrayList<CrawledLinkInfo> getCrawlableLinks(String data) {
+    public ArrayList<CrawledLink> getCrawlableLinks(String data) {
         /*
          * we dont need memory optimization here as downloadlink, crypted link
          * itself take care of this
          */
         String[] hits = new Regex(data, getSupportedLinks()).setMemoryOptimized(false).getColumn(-1);
-        ArrayList<CrawledLinkInfo> chits = null;
+        ArrayList<CrawledLink> chits = null;
         if (hits != null && hits.length > 0) {
-            chits = new ArrayList<CrawledLinkInfo>(hits.length);
+            chits = new ArrayList<CrawledLink>(hits.length);
         } else {
-            chits = new ArrayList<CrawledLinkInfo>();
+            chits = new ArrayList<CrawledLink>();
         }
         if (hits != null && hits.length > 0) {
             for (String hit : hits) {
@@ -298,8 +331,8 @@ public abstract class PluginForDecrypt extends Plugin {
                 }
                 file = file.trim();
 
-                CrawledLinkInfo cli;
-                chits.add(cli = new CrawledLinkInfo(new CryptedLink(file)));
+                CrawledLink cli;
+                chits.add(cli = new CrawledLink(new CryptedLink(file)));
                 cli.setdPlugin(this);
             }
         }

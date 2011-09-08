@@ -5,8 +5,8 @@ import java.awt.event.MouseEvent;
 import java.io.File;
 import java.util.ArrayList;
 
-import jd.controlling.linkcrawler.CrawledLinkInfo;
-import jd.controlling.linkcrawler.CrawledPackageInfo;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.event.ControlEvent;
 import jd.gui.swing.jdgui.actions.ActionController;
@@ -42,7 +42,7 @@ import org.jdownloader.gui.views.downloads.context.ResumeAction;
 import org.jdownloader.gui.views.downloads.context.SetPasswordAction;
 import org.jdownloader.gui.views.downloads.context.StopsignAction;
 
-public class LinkGrabberTable extends PackageControllerTable<CrawledPackageInfo, CrawledLinkInfo> {
+public class LinkGrabberTable extends PackageControllerTable<CrawledPackage, CrawledLink> {
 
     private static final long serialVersionUID = 8843600834248098174L;
 

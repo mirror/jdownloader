@@ -52,7 +52,7 @@ import org.appwork.utils.net.throttledconnection.ThrottledConnectionManager;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.translate._JDT;
 
-public class DownloadWatchDog implements DownloadControllerListener, StateMachineInterface, ShutdownVetoListener {
+public class DownloadWatchDog implements DownloadControllerListener, StateMachineInterface, ShutdownVetoListener, IOPermission {
 
     /*
      * inner class to provide everything thats needed in order to start a
@@ -866,6 +866,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
     private void activateSingleDownloadController(final DownloadControlInfo dci) {
         DownloadWatchDog.LOG.info("Start new Download: " + dci.link.getHost() + ":" + dci.link.getName() + ":" + dci.proxy);
         final SingleDownloadController download = new SingleDownloadController(dci.link, dci.account, dci.proxy);
+        download.setIOPermission(this);
         registerSingleDownloadController(download);
         download.getStateMonitor().executeOnceOnState(new Runnable() {
 
@@ -1224,5 +1225,12 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
     }
 
     public void onShutdownVeto(ArrayList<ShutdownVetoException> vetos) {
+    }
+
+    public boolean isCaptchaAllowed(String hoster) {
+        return true;
+    }
+
+    public void setCaptchaAllowed(String hoster, CAPTCHA mode) {
     }
 }

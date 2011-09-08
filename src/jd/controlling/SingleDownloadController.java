@@ -71,7 +71,7 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
     /**
      * Das Plugin, das den aktuellen Download steuert
      */
-    private PluginForHost                             currentPlugin;
+    private PluginForHost                             currentPlugin = null;
 
     private DownloadLink                              downloadLink;
 
@@ -92,6 +92,8 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
     private StateMachine                              stateMachine;
 
     private StateMonitor                              stateMonitor;
+
+    private IOPermission                              ioP           = null;
 
     public static final org.appwork.controlling.State IDLE_STATE    = new org.appwork.controlling.State("IDLE");
     public static final org.appwork.controlling.State RUNNING_STATE = new org.appwork.controlling.State("RUNNING");
@@ -165,10 +167,6 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
 
     private void fireControlEvent(int controlID, Object param) {
         JDUtilities.getController().fireControlEvent(controlID, param);
-    }
-
-    public PluginForHost getCurrentPlugin() {
-        return currentPlugin;
     }
 
     public DownloadLink getDownloadLink() {
@@ -680,7 +678,7 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
             /**
              * Das Plugin, das den aktuellen Download steuert
              */
-            PluginForHost plugin;
+
             linkStatus.setStatusText(null);
             linkStatus.setErrorMessage(null);
             linkStatus.resetWaitTime();
@@ -689,7 +687,8 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
              * instance here
              */
             downloadLink.setLivePlugin(downloadLink.getDefaultPlugin().getWrapper().getNewPluginInstance());
-            currentPlugin = plugin = downloadLink.getLivePlugin();
+            currentPlugin = downloadLink.getLivePlugin();
+            currentPlugin.setIOPermission(ioP);
             currentPlugin.setLogger(logger = new JDPluginLogger(downloadLink.getHost() + ":" + downloadLink.getName()));
             super.setLogger(logger);
             logger = currentPlugin.getLogger();
@@ -738,7 +737,6 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
                 }
                 /* move download log into global log */
                 logger.logInto(JDLogger.getLogger());
-                plugin.clean();
             }
             if (SwingGui.getInstance() != null) downloadLink.requestGuiUpdate();
         } finally {
@@ -749,12 +747,12 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
                 downloadLink.setDownloadLinkController(null);
                 downloadLink.setDownloadInstance(null);
                 if (currentPlugin != null) {
+                    currentPlugin.clean();
                     currentPlugin.setBrowser(null);
-                }
-                if (currentPlugin != null) {
                     /* clear log history for this download */
                     currentPlugin.getLogger().clear();
                 }
+                currentPlugin = null;
                 downloadLink.setLivePlugin(null);
                 if (proxyInfo != null) {
                     if (!proxyInfo.getProxy().getStatus().equals(HTTPProxy.STATUS.OK)) {
@@ -795,6 +793,10 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
     @Deprecated
     public StateMachine getStateMachine() {
         throw new UnsupportedOperationException("statemachine not accessible");
+    }
+
+    protected void setIOPermission(IOPermission ioP) {
+        this.ioP = ioP;
     }
 
 }

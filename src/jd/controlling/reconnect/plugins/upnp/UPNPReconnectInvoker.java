@@ -3,14 +3,16 @@ package jd.controlling.reconnect.plugins.upnp;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
 import java.net.URL;
-import java.net.URLConnection;
 
 import jd.controlling.reconnect.ReconnectException;
 import jd.controlling.reconnect.ReconnectInvoker;
 import jd.controlling.reconnect.ReconnectResult;
 import jd.controlling.reconnect.plugins.upnp.translate.T;
+
+import org.appwork.utils.net.httpconnection.HTTPConnection;
+import org.appwork.utils.net.httpconnection.HTTPConnection.RequestMethod;
+import org.appwork.utils.net.httpconnection.HTTPConnectionImpl;
 
 public class UPNPReconnectInvoker extends ReconnectInvoker {
 
@@ -40,30 +42,31 @@ public class UPNPReconnectInvoker extends ReconnectInvoker {
          * serviceType + "#" + command + "\"");
          */
         final URL url = new URL(controlUrl);
-        final URLConnection conn = url.openConnection();
-        conn.setDoOutput(true);
-        conn.addRequestProperty("Content-Type", "text/xml; charset=\"utf-8\"");
-        conn.addRequestProperty("SOAPAction", serviceType + "#" + command);
-        OutputStreamWriter wr = null;
+        HTTPConnection con = new HTTPConnectionImpl(url);
+        con.setRequestMethod(RequestMethod.POST);
+        con.setRequestProperty("Content-Type", "text/xml; charset=\"utf-8\"");
+        con.setRequestProperty("SOAPAction", serviceType + "#" + command);
+        byte datas[] = data.getBytes("UTF-8");
+        con.setRequestProperty("Content-Length", datas.length + "");
         BufferedReader rd = null;
         try {
-            wr = new OutputStreamWriter(conn.getOutputStream());
-            wr.write(data);
-            wr.flush();
-            rd = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+            con.getOutputStream().write(datas);
+            con.getOutputStream().flush();
+            rd = new BufferedReader(new InputStreamReader(con.getInputStream()));
             String xmlstr = "";
             String nextln;
             while ((nextln = rd.readLine()) != null) {
                 xmlstr += nextln.trim();
             }
             return xmlstr;
-
         } finally {
-            if (wr != null) {
-                wr.close();
-            }
-            if (rd != null) {
+            try {
                 rd.close();
+            } catch (final Throwable e) {
+            }
+            try {
+                con.disconnect();
+            } catch (final Throwable e) {
             }
         }
 
