@@ -57,6 +57,8 @@ import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.singleapp.AnotherInstanceRunningException;
 import org.appwork.utils.singleapp.InstanceMessageListener;
 import org.appwork.utils.singleapp.SingleAppInstance;
+import org.jdownloader.gui.uiserio.JDSwingUserIO;
+import org.jdownloader.gui.uiserio.NewUIO;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.translate._JDT;
 import org.jdownloader.update.JDUpdater;
@@ -71,6 +73,7 @@ public class Main {
         // do this call to keep the correct root in Application Cache
         Application.setApplication(".jd_home");
         Application.getRoot(Main.class);
+        NewUIO.setUserIO(new JDSwingUserIO());
     }
     private static Logger           LOG;
     private static boolean          instanceStarted            = false;

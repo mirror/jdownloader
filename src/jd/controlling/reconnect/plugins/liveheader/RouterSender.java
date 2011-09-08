@@ -10,41 +10,38 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
-import java.net.URLDecoder;
-import java.net.URLEncoder;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Locale;
 
 import javax.swing.JButton;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-import javax.swing.JTextField;
 
 import jd.controlling.reconnect.ReconnectPluginController;
 import jd.controlling.reconnect.RouterUtils;
+import jd.controlling.reconnect.ipcheck.IP;
+import jd.controlling.reconnect.ipcheck.IPController;
+import jd.controlling.reconnect.plugins.liveheader.remotecall.RecollInterface;
 import jd.controlling.reconnect.plugins.upnp.UPNPRouterPlugin;
 import jd.controlling.reconnect.plugins.upnp.UpnpRouterDevice;
-import jd.http.Browser;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
-import net.miginfocom.swing.MigLayout;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Hash;
 import org.appwork.utils.Lists;
 import org.appwork.utils.event.ProcessCallBack;
-import org.appwork.utils.swing.dialog.ContainerDialog;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.appwork.utils.swing.dialog.ProgressDialog;
 import org.appwork.utils.swing.dialog.ProgressDialog.ProgressGetter;
+import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.remotecall.RemoteClient;
 
 public class RouterSender {
-    private static final String ROUTER_COL_SERVICE = "http://update3.jdownloader.org/recoll";
 
     static String getManufactor(String mc) {
         if (mc == null) { return null; }
@@ -84,11 +81,6 @@ public class RouterSender {
         return null;
     }
 
-    public static void main(final String[] args) throws Exception {
-        final String mc = RouterUtils.getMacAddress("192.168.2.1");
-        System.out.println(mc + " => " + RouterSender.getManufactor(mc));
-    }
-
     private String                      routerIP;
     private String                      script;
     private String                      routerName;
@@ -105,12 +97,7 @@ public class RouterSender {
     private int                         frameTagCount;
 
     private String                      favIconHash;
-    private JTextField                  txtName;
-    private JTextField                  txtManufactor;
-    private JTextField                  txtUser;
-    private JTextField                  txtPass;
-    private JTextField                  txtIP;
-    private JTextField                  txtFirmware;
+
     private String                      firmware;
     private ArrayList<UpnpRouterDevice> devices;
     private String                      response;
@@ -132,9 +119,16 @@ public class RouterSender {
 
     private String                      sslFavIconHash;
     private final RouterSenderSettings  storage;
+    private RecollInterface             recoll;
+    private InetAddress                 gatewayAdress;
+    private String                      gatewayAdressHost;
+    private String                      gatewayAdressIP;
+    private UpnpRouterDevice            myUpnpDevice;
 
     public RouterSender() {
         this.storage = JsonConfig.create(RouterSenderSettings.class);
+        recoll = new RemoteClient(LiveHeaderDetectionWizard.UPDATE3_JDOWNLOADER_ORG_RECOLL).getFactory().newInstance(RecollInterface.class);
+
     }
 
     private Component addHelpButton(final String name, final String tooltip, final String dialog) {
@@ -180,105 +174,84 @@ public class RouterSender {
 
     public void collectData() throws Exception {
 
-        UpnpRouterDevice myDevice = this.getUPNPDevice(this.getPlugin().getRouterIP());
+        final UPNPRouterPlugin upnp = (UPNPRouterPlugin) ReconnectPluginController.getInstance().getPluginByID(UPNPRouterPlugin.ID);
 
+        ArrayList<UpnpRouterDevice> devices = upnp.getDevices();
+
+        String gatewayIP = JsonConfig.create(LiveHeaderReconnectSettings.class).getRouterIP();
+
+        if (!IP.isValidRouterIP(gatewayIP)) {
+            final InetAddress ia = RouterUtils.getAddress(true);
+            if (ia != null && IP.isValidRouterIP(ia.getHostAddress())) {
+                gatewayIP = ia.getHostName();
+            }
+        }
+        mac = null;
+        manufactor = null;
+        gatewayAdress = InetAddress.getByName(gatewayIP);
+        gatewayAdressHost = gatewayAdress.getHostName();
+        gatewayAdressIP = gatewayAdress.getHostAddress();
         try {
-            this.mac = RouterUtils.getMacAddress(this.getPlugin().getRouterIP());
-            this.manufactor = RouterSender.getManufactor(this.mac);
+            mac = RouterUtils.getMacAddress(gatewayAdress).replace(":", "").toUpperCase(Locale.ENGLISH);
+
+            manufactor = RouterSender.getManufactor(mac);
+        } catch (final InterruptedException e) {
+            throw e;
         } catch (final Exception e) {
             e.printStackTrace();
+        }
+        myUpnpDevice = null;
+        for (final UpnpRouterDevice d : devices) {
+            if (d.getHost() != null) {
+                try {
+                    if (gatewayAdress.equals(InetAddress.getByName(d.getHost()))) {
+                        myUpnpDevice = d;
+                        break;
+                    }
+                } catch (final UnknownHostException e) {
+                    // nothing
+                }
+            }
         }
         // Use upnp manufactor if given
-        if (myDevice != null && myDevice.getManufactor() != null) {
-            this.manufactor = myDevice.getManufactor();
+        if (myUpnpDevice != null && myUpnpDevice.getManufactor() != null) {
+            manufactor = myUpnpDevice.getManufactor();
         }
-        this.routerName = this.getPlugin().getRouterName();
-        if (myDevice != null) {
-            if (myDevice.getModelname() != null) {
-                this.routerName = myDevice.getModelname();
-            } else if (myDevice.getFriendlyname() != null) {
-                this.routerName = myDevice.getFriendlyname();
-            }
-
-        }
-
-        this.txtName = new JTextField(this.routerName);
-        this.txtManufactor = new JTextField(this.manufactor);
-        this.txtFirmware = new JTextField();
-        this.txtUser = new JTextField(this.getPlugin().getUser());
-        this.txtPass = new JTextField(this.getPlugin().getPassword());
-        this.txtIP = new JTextField(this.getPlugin().getRouterIP());
-
-        final JPanel p = new JPanel(new MigLayout("ins 5,wrap 3", "[][][grow,fill]", "[grow,fill]"));
-        p.add(new JLabel("Please enter your router information as far as possible."), "spanx");
-        p.add(new JLabel("We will not transfer username or password!"), "spanx");
-        p.add(new JLabel("Model Name"));
-        p.add(this.addHelpButton("Model Name", "...is written on your router", "Find the name of your router:\r\n  1. In your router's manual.\r\n  2. Written on your router device.\r\n  3. Or open the router's webinterface"));
-        p.add(this.txtName);
-
-        p.add(new JLabel("Manufactor"));
-        p.add(this.addHelpButton("Manufactor", "...if this field is empty, look at your router", "Find the manufactor of your router:\r\n  1. In your router's manual.\r\n  2. Written on your router device.\r\n  3. Or open the router's webinterface"));
-
-        p.add(this.txtManufactor);
-        p.add(new JLabel("Firmware"));
-        p.add(this.addHelpButton("Firmware", "...find it in your router's webinterface", "Find the firmware of your router:\r\nOpen your router's webinterface. You should find the firmware on the page or in the system informations page.\r\nIf you don't find it, just leave this field blank."));
-
-        p.add(this.txtFirmware);
-        // p.add(new JLabel("Firmware"));
-        // p.add(this.txtFirmware);
-
-        p.add(new JLabel("Webinterface IP"));
-        p.add(this.addHelpButton("Webinterface IP", "...can be found in the router's manual", "If this field is blank, consult your router's manual to find it's up or its host name.\r\nThe IP or hostname is the name, you have to use to connect to the router webinterface (http://HOSTNAME)"));
-
-        p.add(this.txtIP);
-
-        p.add(new JLabel("Webinterface User"));
-        p.add(this.addHelpButton("Webinterface User", "...will not be transfered.", "This value will not be sent to us. \r\nWe need this to make sure that your reconnect script does not contain sensitive data."));
-
-        p.add(this.txtUser);
-        p.add(new JLabel("Webinterface Password"));
-        p.add(this.addHelpButton("Webinterface Password", "...will not be transfered.", "This value will not be sent to us. \r\nWe need this to make sure that your reconnect script does not contain sensitive data."));
-
-        p.add(this.txtPass);
-        this.txtUser.setText(this.getPlugin().getUser());
-        this.txtPass.setText(this.getPlugin().getPassword());
-        this.txtName.setText(this.routerName);
-        this.txtIP.setText(this.getPlugin().getRouterIP());
-
-        final ContainerDialog routerInfo = new ContainerDialog(0, "Enter Router Information", p, null, "Continue", null);
-
-        if (!Dialog.isOK(Dialog.getInstance().showDialog(routerInfo))) { throw new Exception("User canceled"); }
-
-        this.firmware = this.txtFirmware.getText();
-        this.manufactor = this.txtManufactor.getText().trim();
-        this.routerName = this.txtName.getText().trim();
-        this.routerIP = this.txtIP.getText();
-
-        myDevice = this.getUPNPDevice(this.getPlugin().getRouterIP());
-        if (myDevice != null) {
-            String upnpName = myDevice.getModelname();
-            if (upnpName == null) {
-                upnpName = myDevice.getFriendlyname();
-            }
-
-            if (upnpName != null && !upnpName.trim().equalsIgnoreCase(this.routerName)) {
-                this.routerName = this.choose(this.routerName, upnpName.trim(), "model name");
-            }
-
-            if (myDevice.getManufactor() != null && !myDevice.getManufactor().trim().equalsIgnoreCase(this.manufactor)) {
-                this.manufactor = this.choose(this.manufactor, myDevice.getManufactor().trim(), "manufactor");
-            }
-        }
-
         try {
-            this.mac = RouterUtils.getMacAddress(this.routerIP);
+            routerName = JsonConfig.create(LiveHeaderReconnectSettings.class).getRouterData().getRouterName();
+        } catch (Exception e) {
+        }
+        if (routerName == null || routerName.trim().length() == 0 || "unknown".equalsIgnoreCase(routerName)) {
+            // try to convert domain to routername
+            if (!gatewayAdressHost.equals(gatewayAdressIP)) {
+                routerName = gatewayAdressHost;
+                int i = routerName.lastIndexOf(".");
+                if (i > 0) routerName = routerName.substring(0, i);
+            }
+        }
+        if (myUpnpDevice != null) {
+            if (myUpnpDevice.getModelname() != null) {
+                routerName = myUpnpDevice.getModelname();
+            } else if (myUpnpDevice.getFriendlyname() != null) {
+                routerName = myUpnpDevice.getFriendlyname();
+            }
 
-        } catch (final Exception e) {
-            e.printStackTrace();
         }
 
-        final String userName = this.txtUser.getText();
-        final String password = this.txtPass.getText();
+        //
+        //
+        // p.add(new JLabel("Webinterface User"));
+        // p.add(this.addHelpButton("Webinterface User",
+        // "...will not be transfered.",
+        // "This value will not be sent to us. \r\nWe need this to make sure that your reconnect script does not contain sensitive data."));
+        //
+        // p.add(this.txtUser);
+        // p.add(new JLabel("Webinterface Password"));
+        // p.add(this.addHelpButton("Webinterface Password",
+        // "...will not be transfered.",
+        // "This value will not be sent to us. \r\nWe need this to make sure that your reconnect script does not contain sensitive data."));
+
+        // p.add(this.txtPass);
 
     }
 
@@ -434,34 +407,29 @@ public class RouterSender {
     }
 
     public void run(ProcessCallBack processCallBack) throws Exception {
+        processCallBack.setStatusString(this, _GUI._.LiveaheaderDetection_wait_for_online());
+        IPController.getInstance().waitUntilWeAreOnline();
+        recoll.isAlive();
 
-        final Browser br = new Browser();
-        // is services available. throws exception if server is down
-        br.getPage(RouterSender.ROUTER_COL_SERVICE);
-
-        if (br.getRequest().getHttpConnection().getResponseCode() != 200) { throw new Exception("Service is currently not available. Please try again later"); }
-        final int ret = Dialog.getInstance().showConfirmDialog(0, "Router Sender", "We need your help to improve our reconnect database.\r\nPlease contribute to the 'JD Project' and send in our reconnect script.\r\nThis wizard will guide you through all required steps.", null, null, null);
-
-        if (!Dialog.isOK(ret)) {
-            Dialog.getInstance().showMessageDialog("You can send your reconnect script at any time by clicking the 'Send Button' in your reconnect settings panel");
-            return;
-
-        }
         this.collectData();
 
         final String dataString = JSonStorage.serializeToJson(this);
 
-        br.forceDebug(true);
-        final String data = URLEncoder.encode(dataString, "UTF-8");
-        URLDecoder.decode(data.trim(), "UTF-8");
-        br.postPage(RouterSender.ROUTER_COL_SERVICE, "action=add&data=" + data);
-        if (br.getRequest().getHttpConnection().getResponseCode() != 200) { throw new Exception("Service is currently not available. Please try again later"); }
-        if (br.getRegex(".*?exists.*?").matches()) {
-            Dialog.getInstance().showMessageDialog("We noticed, that your script already exists in our database.\r\nThanks anyway.");
-
-        } else {
-            Dialog.getInstance().showMessageDialog("Thank you!\r\nWe added your script to our router reconnect database.");
-        }
+        // br.forceDebug(true);
+        // final String data = URLEncoder.encode(dataString, "UTF-8");
+        // URLDecoder.decode(data.trim(), "UTF-8");
+        // br.postPage(RouterSender.ROUTER_COL_SERVICE, "action=add&data=" +
+        // data);
+        // if (br.getRequest().getHttpConnection().getResponseCode() != 200) {
+        // throw new
+        // Exception("Service is currently not available. Please try again later");
+        // }
+        // if (br.getRegex(".*?exists.*?").matches()) {
+        // Dialog.getInstance().showMessageDialog("We noticed, that your script already exists in our database.\r\nThanks anyway.");
+        //
+        // } else {
+        // Dialog.getInstance().showMessageDialog("Thank you!\r\nWe added your script to our router reconnect database.");
+        // }
     }
 
     public void setException(final String exception) {

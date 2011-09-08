@@ -3,8 +3,6 @@ package jd.gui.swing.jdgui.views.settings.panels.reconnect;
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 
-import javax.swing.AbstractAction;
-
 import jd.controlling.reconnect.ReconnectConfig;
 import jd.controlling.reconnect.ReconnectPluginController;
 import jd.controlling.reconnect.ReconnectResult;
@@ -16,6 +14,8 @@ import jd.controlling.reconnect.plugins.liveheader.ReconnectFindDialog;
 import jd.controlling.reconnect.plugins.liveheader.translate.T;
 
 import org.appwork.storage.config.JsonConfig;
+import org.appwork.swing.action.BasicAction;
+import org.appwork.swing.components.tooltips.BasicTooltipFactory;
 import org.appwork.utils.event.ProcessCallBackAdapter;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
@@ -24,12 +24,13 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.translate._JDT;
 
-public class AutoSetupAction extends AbstractAction {
-    private boolean modemChoose;
+public class AutoSetupAction extends BasicAction {
 
-    {
+    public AutoSetupAction() {
         putValue(NAME, _JDT._.reconnectmanager_wizard());
         putValue(SMALL_ICON, NewTheme.I().getIcon("wizard", 20));
+
+        this.setTooltipFactory(new BasicTooltipFactory(getName(), _GUI._.AutoSetupAction_tt(), NewTheme.I().getIcon("wizard", 32)));
 
     }
 

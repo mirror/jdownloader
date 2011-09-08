@@ -64,7 +64,7 @@ public class HosterColumn extends ExtColumn<AbstractNode> {
 
         }
         panel.add(Box.createGlue(), "pushx,growx");
-        rowSorter = new ExtDefaultRowSorter<AbstractNode>() {
+        setRowSorter(new ExtDefaultRowSorter<AbstractNode>() {
 
             /*
              * (non-Javadoc)
@@ -85,7 +85,7 @@ public class HosterColumn extends ExtColumn<AbstractNode> {
                 }
             }
 
-        };
+        });
 
         resetRenderer();
     }

@@ -3,7 +3,6 @@ package jd.controlling.reconnect.plugins.liveheader;
 import java.awt.event.ActionEvent;
 import java.net.InetAddress;
 
-import javax.swing.AbstractAction;
 import javax.swing.ImageIcon;
 
 import jd.controlling.ProgressController;
@@ -11,13 +10,17 @@ import jd.controlling.reconnect.RouterUtils;
 import jd.controlling.reconnect.plugins.liveheader.translate.T;
 
 import org.appwork.storage.config.JsonConfig;
+import org.appwork.swing.action.BasicAction;
+import org.appwork.swing.components.tooltips.BasicTooltipFactory;
+import org.appwork.swing.components.tooltips.TooltipFactory;
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.appwork.utils.swing.dialog.ProgressDialog;
 import org.jdownloader.images.NewTheme;
 
-public class GetIPAction extends AbstractAction {
+public class GetIPAction extends BasicAction {
 
     private LiveHeaderReconnect plugin;
 
@@ -25,6 +28,14 @@ public class GetIPAction extends AbstractAction {
         plugin = liveHeaderReconnect;
         putValue(NAME, T._.GetIPAction_GetIPAction_());
         putValue(SMALL_ICON, NewTheme.I().getIcon("defaultProxy", 18));
+
+    }
+
+    public TooltipFactory getTooltipFactory() {
+
+        String ip = JsonConfig.create(LiveHeaderReconnectSettings.class).getRouterIP();
+        String txt = StringUtils.isEmpty(ip) ? T._.GetIPAction_GetIPAction_tt() : T._.GetIPAction_getTooltipText_tt_2(ip);
+        return new BasicTooltipFactory(getName(), txt, NewTheme.I().getIcon("defaultProxy", 32));
     }
 
     public void actionPerformed(ActionEvent e) {

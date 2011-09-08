@@ -25,6 +25,7 @@ import jd.controlling.reconnect.plugins.upnp.translate.T;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.storage.config.JsonConfig;
+import org.appwork.swing.components.ExtButton;
 import org.appwork.swing.components.ExtTextField;
 import org.appwork.utils.event.ProcessCallBack;
 import org.appwork.utils.formatter.TimeFormatter;
@@ -133,10 +134,10 @@ public class UPNPRouterPlugin extends RouterPlugin implements IPCheckProvider {
 
     @Override
     public JComponent getGUI() {
-        final JPanel p = new JPanel(new MigLayout("ins 0 0 0 0,wrap 3", "[][][grow,fill]", "[fill]"));
-        JButton find = new JButton(new UPNPScannerAction(this));
+        final JPanel p = new JPanel(new MigLayout("ins 0 0 0 0,wrap 3,debug", "[][][grow,fill]", "[fill]"));
+        JButton find = new ExtButton(new UPNPScannerAction(this)).setTooltipsEnabled(true);
         find.setHorizontalAlignment(SwingConstants.LEFT);
-        JButton auto = new JButton(new AutoDetectAction(this));
+        JButton auto = new ExtButton(new AutoDetectUpnpAction(this)).setTooltipsEnabled(true);
         auto.setHorizontalAlignment(SwingConstants.LEFT);
         this.serviceTypeTxt = new ExtTextField() {
 

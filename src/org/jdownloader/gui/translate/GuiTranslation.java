@@ -1644,30 +1644,6 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Hoster %s1" })
     String jd_gui_swing_menu_HosterMenu(Object s1);
 
-    @Default(lngs = { "en" }, values = { "alt" })
-    String jd_gui_swing_ShortCuts_key_alt();
-
-    @Default(lngs = { "en" }, values = { "alt Gr" })
-    String jd_gui_swing_ShortCuts_key_altGr();
-
-    @Default(lngs = { "en" }, values = { "button1" })
-    String jd_gui_swing_ShortCuts_key_button1();
-
-    @Default(lngs = { "en" }, values = { "button2" })
-    String jd_gui_swing_ShortCuts_key_button2();
-
-    @Default(lngs = { "en" }, values = { "button3" })
-    String jd_gui_swing_ShortCuts_key_button3();
-
-    @Default(lngs = { "en" }, values = { "ctrl" })
-    String jd_gui_swing_ShortCuts_key_ctrl();
-
-    @Default(lngs = { "en" }, values = { "meta" })
-    String jd_gui_swing_ShortCuts_key_meta();
-
-    @Default(lngs = { "en" }, values = { "shift" })
-    String jd_gui_swing_ShortCuts_key_shift();
-
     @Default(lngs = { "en" }, values = { "Please confirm!" })
     String jd_gui_userio_defaulttitle_confirm();
 
@@ -2478,5 +2454,14 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Offline - Waiting for a internet connection!" })
     String LiveaheaderDetection_wait_for_online();
+
+    @Default(lngs = { "en" }, values = { "This Wizard will scan your Network configuration, and try to find Reconnect Scripts from our online Database.\r\nThis may take between a few seconds, and several minutes.\r\nOnly Dynamic IP DSL Connections via a Router can be autodetected." })
+    String AutoSetupAction_tt();
+
+    @Default(lngs = { "en" }, values = { "Current External IP: %s1\r\n\r\nClick here do a Reconnect and get a new External IP." })
+    String ReconnectTestAction_tt_(String ip);
+
+    @Default(lngs = { "en" }, values = { "Validating your Reconnect Script..." })
+    String LiveHeaderDetectionWizard_sendRouter_havetovalidate();
 
 }

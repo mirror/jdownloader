@@ -241,4 +241,28 @@ public interface LiveheaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "JDownloader could not find a working LiveHeader Reconnect Script. \r\nPlease make sure that you entered correct information, and that you have a dynamic IP connection." })
     String AutoDetectAction_run_failed();
 
+    @Default(lngs = { "en" }, values = { "Scans your Network and tries to find your Router's IP" })
+    String GetIPAction_GetIPAction_tt();
+
+    @Default(lngs = { "en" }, values = { "Current Router Ip Settings: %s1.Click here to scan your Network and validate this IP." })
+    String GetIPAction_getTooltipText_tt_2(String ip);
+
+    @Default(lngs = { "en" }, values = { "Enter an own Reconnect Script, or modify the existing one." })
+    String EditScriptAction_EditScriptAction_tt();
+
+    @Default(lngs = { "en" }, values = { "The Reconnect Recorder records all steps while \r\nyou perform a manual Reconnect by clicking the 'Reboot' or 'Disconnect-Connect' Button \r\nin your router's webinterface." })
+    String ReconnectRecorderAction_ReconnectRecorderAction_tt();
+
+    @Default(lngs = { "en" }, values = { "Logins will NOT be uploaded. Please enter them anyway. \r\nWe need them to remove any sensitive information form your reconnect settings before uploading.\r\nIf you don't know them, leave empty, or ask your Network Administrator." })
+    String LiveHeaderDetectionWizard_userConfirm_loginstext();
+
+    @Default(lngs = { "en" }, values = { "We noticed, that your script already exists in our database.\r\nThanks anyway." })
+    String LiveHeaderDetectionWizard_uploadData_sent_failed();
+
+    @Default(lngs = { "en" }, values = { "Thank you!\r\nWe added your script to our router reconnect database." })
+    String LiveHeaderDetectionWizard_uploadData_sent_ok();
+
+    @Default(lngs = { "en" }, values = { "Reconnect failed. You can only share working reconnect settings." })
+    String LiveHeaderDetectionWizard_sendRouter_reconnectFailed();
+
 }

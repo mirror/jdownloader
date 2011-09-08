@@ -2,56 +2,63 @@ package jd.controlling.reconnect.plugins.liveheader;
 
 import java.awt.event.ActionEvent;
 
-import javax.swing.AbstractAction;
-
-import org.appwork.utils.event.ProcessCallBack;
+import org.appwork.swing.action.BasicAction;
+import org.appwork.swing.components.tooltips.BasicTooltipFactory;
+import org.appwork.utils.event.ProcessCallBackAdapter;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.appwork.utils.swing.dialog.ProgressDialog;
+import org.appwork.utils.swing.dialog.ProgressDialog.ProgressGetter;
 import org.jdownloader.extensions.antireconnect.translate.T;
 import org.jdownloader.images.NewTheme;
 
-public class RouterSendAction extends AbstractAction {
+public class RouterSendAction extends BasicAction {
 
     public RouterSendAction(LiveHeaderReconnect liveHeaderReconnect) {
+        super(T._.RouterSendAction_RouterSendAction_());
+        putValue(SMALL_ICON, NewTheme.I().getIcon("upload", 18));
+        setTooltipFactory(new BasicTooltipFactory(getName(), T._.RouterSendAction_RouterSendAction_tt(), NewTheme.I().getIcon("upload", 32)));
+
     }
 
     public void actionPerformed(ActionEvent e) {
+        // while(JsonConfig.create(ReconnectConfig.class).getSuccessCounter()
 
-        ProgressDialog.ProgressGetter pg = new ProgressDialog.ProgressGetter() {
+        ProgressGetter pg = new ProgressDialog.ProgressGetter() {
 
-            private String status   = "";
-            private int    progress = -1;
+            private String text;
+            private int    progress;
 
             public void run() throws Exception {
-                final RouterSender rs = new RouterSender();
-                rs.setRequested(true);
-                rs.run(new ProcessCallBack() {
-
-                    public void setStatusString(String string) {
-                        status = string;
-                    }
-
-                    public void setProgress(int percent) {
+                new LiveHeaderDetectionWizard().sendRouter(new ProcessCallBackAdapter() {
+                    @Override
+                    public void setProgress(final Object caller, final int percent) {
                         progress = percent;
                     }
-                });
 
+                    @Override
+                    public void setStatus(final Object caller, final Object statusObject) {
+
+                    }
+
+                    @Override
+                    public void setStatusString(final Object caller, final String string) {
+                        text = string;
+                    }
+                });
             }
 
             public String getString() {
-                return status;
+                return text;
             }
 
             public int getProgress() {
                 return progress;
             }
         };
-
-        ProgressDialog d = new ProgressDialog(pg, Dialog.BUTTONS_HIDE_OK, T._.RouterSendAction_actionPerformed_(), T._.RouterSendAction_actionPerformed_msg(), NewTheme.I().getIcon("reconnect", 32), null, null);
         try {
-            Dialog.getInstance().showDialog(d);
+            Dialog.I().showDialog(new ProgressDialog(pg, 0, T._.RouterSendAction_actionPerformed_title(), T._.RouterSendAction_actionPerformed_msg(), NewTheme.I().getIcon("upload", 32), null, null));
         } catch (DialogClosedException e1) {
             e1.printStackTrace();
         } catch (DialogCanceledException e1) {

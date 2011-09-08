@@ -67,8 +67,27 @@ public class RouterData implements Storable {
     private HashMap<String, String> sslResponseHeaders;
     private String                  sslTitle;
     private String                  response;
+    private String                  tagFootprint;
 
-    private String                  routerHost;
+    public String getTagFootprint() {
+        return tagFootprint;
+    }
+
+    public void setTagFootprint(String tagFootprint) {
+        this.tagFootprint = tagFootprint;
+    }
+
+    public String getSslTagFootprint() {
+        return sslTagFootprint;
+    }
+
+    public void setSslTagFootprint(String sslTagFootprint) {
+        this.sslTagFootprint = sslTagFootprint;
+    }
+
+    private String sslTagFootprint;
+
+    private String routerHost;
 
     public RouterData() {
         this.createTime = System.currentTimeMillis();

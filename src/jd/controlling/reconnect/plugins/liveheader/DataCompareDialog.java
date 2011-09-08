@@ -20,7 +20,7 @@ import org.appwork.utils.swing.dialog.AbstractDialog;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 
-public class DataCompareDialog extends AbstractDialog<Object> {
+public class DataCompareDialog extends AbstractDialog<Object> implements DataCompareDialogInterface, GetLoginsInterface {
 
     private static final int ICONSIZE = 32;
     private String           hostName;
@@ -64,6 +64,7 @@ public class DataCompareDialog extends AbstractDialog<Object> {
     private JTextField txtIP;
     private boolean    loginsOnly;
     private boolean    noLogins;
+    private String     loginDesc;
 
     public DataCompareDialog(String hostName, String firmware, String manufactor, String routerName, String username, String password) {
         super(0, T._.DataCompareDialog_DataCompareDialog_(), null, _GUI._.literally_continue(), null);
@@ -73,6 +74,7 @@ public class DataCompareDialog extends AbstractDialog<Object> {
         this.routerName = routerName;
         this.username = username;
         this.password = password;
+        loginDesc = T._.DataCompareDialog_layoutDialogContent_webinterface_desc();
 
     }
 
@@ -105,7 +107,7 @@ public class DataCompareDialog extends AbstractDialog<Object> {
             txtFirmware = addField(p, T._.DataCompareDialog_layoutDialogContent_firmware(), firmware, T._.DataCompareDialog_layoutDialogContent_firmware_help(), null);
         }
         if (!noLogins) {
-            p.add(header(NewTheme.I().getIcon("basicauth", ICONSIZE), T._.DataCompareDialog_layoutDialogContent_webinterface(), T._.DataCompareDialog_layoutDialogContent_webinterface_desc()), "spanx");
+            p.add(header(NewTheme.I().getIcon("basicauth", ICONSIZE), T._.DataCompareDialog_layoutDialogContent_webinterface(), loginDesc), "spanx");
             txtIP = addField(p, T._.DataCompareDialog_layoutDialogContent_ip(), hostName, T._.DataCompareDialog_layoutDialogContent_ip_help(), btnWebinterface);
 
             txtUser = addField(p, T._.DataCompareDialog_layoutDialogContent_user(), username, T._.DataCompareDialog_layoutDialogContent_user_help(), null);
@@ -155,5 +157,9 @@ public class DataCompareDialog extends AbstractDialog<Object> {
 
     public boolean isNoLogins() {
         return noLogins;
+    }
+
+    public void setLoginsText(String loginDesc) {
+        this.loginDesc = loginDesc;
     }
 }

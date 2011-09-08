@@ -4,13 +4,14 @@ import java.awt.Component;
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 
-import javax.swing.AbstractAction;
 import javax.swing.DefaultListCellRenderer;
 import javax.swing.JLabel;
 import javax.swing.JList;
 
 import jd.controlling.reconnect.plugins.upnp.translate.T;
 
+import org.appwork.swing.action.BasicAction;
+import org.appwork.swing.components.tooltips.BasicTooltipFactory;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
@@ -18,7 +19,7 @@ import org.appwork.utils.swing.dialog.ProgressDialog;
 import org.appwork.utils.swing.dialog.ProgressDialog.ProgressGetter;
 import org.jdownloader.images.NewTheme;
 
-public class UPNPScannerAction extends AbstractAction {
+public class UPNPScannerAction extends BasicAction {
 
     private UPNPRouterPlugin plugin;
 
@@ -26,6 +27,7 @@ public class UPNPScannerAction extends AbstractAction {
         super(T._.literally_choose_router());
         this.plugin = upnpRouterPlugin;
         putValue(SMALL_ICON, NewTheme.I().getIcon("list", 18));
+        setTooltipFactory(new BasicTooltipFactory(getName(), T._.UPNPScannerAction_UPNPScannerAction_tt(), NewTheme.I().getIcon("list", 32)));
 
     }
 

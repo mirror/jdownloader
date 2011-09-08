@@ -45,11 +45,13 @@ public class ReconnectResult {
 
     private long             offlineTime;
     private long             successTime;
-    private long             averageSuccessDuration;
+    private long             averageSuccessDuration = -1;
     private ReconnectInvoker invoker;
-    private long             maxSuccessDuration;
+    private long             maxSuccessDuration     = -1;
 
     public long getMaxSuccessDuration() {
+        // in case there has not been an optimization
+        if (maxSuccessDuration < 0) return getSuccessDuration() * 10;
         return maxSuccessDuration;
     }
 
@@ -66,6 +68,8 @@ public class ReconnectResult {
     }
 
     public long getAverageSuccessDuration() {
+        // in case there has not been an optimization
+        if (averageSuccessDuration < 0) return getSuccessDuration();
         return averageSuccessDuration;
     }
 

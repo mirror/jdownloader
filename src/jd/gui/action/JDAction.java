@@ -28,9 +28,9 @@ import javax.swing.KeyStroke;
 
 import jd.config.Property;
 import jd.controlling.JDLogger;
-import jd.gui.swing.ShortCuts;
 
 import org.appwork.utils.Regex;
+import org.appwork.utils.Shortcuts;
 import org.jdownloader.images.NewTheme;
 
 /**
@@ -255,7 +255,7 @@ public abstract class JDAction extends AbstractAction {
 
     public String getShortCutString() {
         final Object value = getValue(Action.ACCELERATOR_KEY);
-        return (value == null) ? null : ShortCuts.getAcceleratorString((KeyStroke) getValue(Action.ACCELERATOR_KEY));
+        return (value == null) ? null : Shortcuts.getAcceleratorString((KeyStroke) getValue(Action.ACCELERATOR_KEY));
     }
 
     /**

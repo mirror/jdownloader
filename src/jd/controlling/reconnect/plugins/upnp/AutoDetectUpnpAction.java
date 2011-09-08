@@ -15,6 +15,8 @@ import jd.controlling.reconnect.plugins.liveheader.ReconnectFindDialog;
 import jd.controlling.reconnect.plugins.upnp.translate.T;
 
 import org.appwork.storage.config.JsonConfig;
+import org.appwork.swing.action.BasicAction;
+import org.appwork.swing.components.tooltips.BasicTooltipFactory;
 import org.appwork.utils.event.ProcessCallBack;
 import org.appwork.utils.event.ProcessCallBackAdapter;
 import org.appwork.utils.formatter.TimeFormatter;
@@ -27,15 +29,16 @@ import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 
-public class AutoDetectAction extends AbstractAction {
+public class AutoDetectUpnpAction extends BasicAction {
     private UPNPRouterPlugin plugin;
     private boolean          modemChoose;
 
-    public AutoDetectAction(UPNPRouterPlugin upnpRouterPlugin) {
+    public AutoDetectUpnpAction(UPNPRouterPlugin upnpRouterPlugin) {
         super();
         plugin = upnpRouterPlugin;
         putValue(NAME, T._.auto());
         putValue(SMALL_ICON, NewTheme.I().getIcon("wizard", 18));
+        setTooltipFactory(new BasicTooltipFactory(getName(), T._.AutoDetectUpnpAction_AutoDetectUpnpAction_(), NewTheme.I().getIcon("upnp", 32)));
     }
 
     public void actionPerformed(ActionEvent e) {

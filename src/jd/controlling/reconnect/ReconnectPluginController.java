@@ -77,7 +77,7 @@ public class ReconnectPluginController {
 
         }
 
-        if (JsonConfig.create(ReconnectConfig.class).getOptimizationRounds() > 1) {
+        if (JsonConfig.create(ReconnectConfig.class).getOptimizationRounds() > 1 && scripts.size() > 0) {
             int i = 1;
             long bestTime = Long.MAX_VALUE;
             long optiduration = 0;

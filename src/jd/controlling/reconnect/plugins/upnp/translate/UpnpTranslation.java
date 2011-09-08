@@ -43,7 +43,7 @@ public interface UpnpTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Choose Device" })
     String literally_choose_router();
 
-    @Default(lngs = { "en" }, values = { "Auto Setup" })
+    @Default(lngs = { "en" }, values = { "UPNP Auto Setup" })
     String auto();
 
     @Default(lngs = { "en" }, values = { "UPNP Router Reconnect" })
@@ -63,5 +63,11 @@ public interface UpnpTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Found UPNP Devices, but could not perform a reconnect. \r\nTry Live Header Reconnect instead!" })
     String AutoDetectAction_run_failed();
+
+    @Default(lngs = { "en" }, values = { "Tries to find all UPNP Reconnect Devices in your Network.\r\nMost FritzBox Routers can be reonnected this way." })
+    String AutoDetectUpnpAction_AutoDetectUpnpAction_();
+
+    @Default(lngs = { "en" }, values = { "Tries to find all UPNP Reconnect Devices in your Network, \r\nand lets you choose which one to use for Reconnet" })
+    String UPNPScannerAction_UPNPScannerAction_tt();
 
 }

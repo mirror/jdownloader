@@ -6,6 +6,7 @@ import java.awt.event.FocusListener;
 import java.util.ArrayList;
 import java.util.logging.Logger;
 
+import javax.swing.AbstractAction;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JComponent;
@@ -34,6 +35,7 @@ import org.appwork.storage.config.ConfigEventListener;
 import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.KeyHandler;
+import org.appwork.swing.components.ExtButton;
 import org.appwork.swing.components.ExtPasswordField;
 import org.appwork.swing.components.ExtTextField;
 import org.appwork.utils.event.ProcessCallBack;
@@ -192,16 +194,10 @@ public class LiveHeaderReconnect extends RouterPlugin implements ControlListener
     @Override
     public JComponent getGUI() {
         final JPanel p = new JPanel(new MigLayout("ins 0 0 0 0,wrap 3", "[][][grow,fill]", ""));
-        JButton btnAuto = new JButton(new AutoDetectAction());
-        btnAuto.setHorizontalAlignment(SwingConstants.LEFT);
+
         // auto search is not ready yet
         // this.btnAuto.setEnabled(false);
-        JButton btnRecord = new JButton(new ReconnectRecorderAction(this));
-        btnRecord.setHorizontalAlignment(SwingConstants.LEFT);
-        JButton btnFindIP = new JButton(new GetIPAction(this));
-        btnFindIP.setHorizontalAlignment(SwingConstants.LEFT);
-        JButton btnEditScript = new JButton(new EditScriptAction(this));
-        btnEditScript.setHorizontalAlignment(SwingConstants.LEFT);
+
         this.txtUser = new ExtTextField();
         txtUser.setHelpText(T._.LiveHeaderReconnect_getGUI_help_user());
         txtUser.addFocusListener(new FocusListener() {
@@ -240,20 +236,19 @@ public class LiveHeaderReconnect extends RouterPlugin implements ControlListener
 
         //
 
-        p.add(btnAuto, "sg buttons,aligny top,gapright 15");
-
+        p.add(createButton(new RouterSendAction(this)), "sg buttons,aligny top,newline");
         p.add(new JLabel(T._.literally_router_model()), "");
         p.add(this.txtName, "spanx");
         //
-        p.add(btnFindIP, "sg buttons,aligny top,newline");
+        p.add(createButton(new GetIPAction(this)), "sg buttons,aligny top,newline");
         p.add(new JLabel(T._.literally_router_ip()), "");
         p.add(this.txtIP, "spanx");
         //
-        p.add(btnRecord, "sg buttons,aligny top,newline");
+        p.add(createButton(new ReconnectRecorderAction(this)), "sg buttons,aligny top,newline");
         p.add(new JLabel(T._.literally_username()), "");
         p.add(this.txtUser, "spanx");
         //
-        p.add(btnEditScript, "sg buttons,aligny top,newline");
+        p.add(createButton(new EditScriptAction(this)), "sg buttons,aligny top,newline");
         p.add(new JLabel(T._.literally_password()), "");
         p.add(this.txtPassword, "spanx");
         //
@@ -263,6 +258,13 @@ public class LiveHeaderReconnect extends RouterPlugin implements ControlListener
         // p.add(Box.createGlue(), "pushy,growy");
         this.updateGUI();
         return p;
+    }
+
+    private JButton createButton(AbstractAction autoDetectAction) {
+        ExtButton ret = new ExtButton(autoDetectAction);
+        ret.setHorizontalAlignment(SwingConstants.LEFT);
+        ret.setTooltipsEnabled(true);
+        return ret;
     }
 
     @Override

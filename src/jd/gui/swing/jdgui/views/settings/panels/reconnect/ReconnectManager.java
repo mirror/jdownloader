@@ -5,7 +5,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
 import javax.swing.DefaultComboBoxModel;
-import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
@@ -23,6 +22,7 @@ import org.appwork.storage.config.ConfigEventListener;
 import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.KeyHandler;
+import org.appwork.swing.components.ExtButton;
 import org.appwork.utils.swing.EDTRunner;
 
 public class ReconnectManager extends MigPanel implements SettingsComponent, ActionListener, ConfigEventListener {
@@ -48,8 +48,8 @@ public class ReconnectManager extends MigPanel implements SettingsComponent, Act
 
     private void layoutComponents() {
         this.add(this.combobox, "growx, pushx,height 24!");
-        this.add(new JButton(new AutoSetupAction()), "height 24!");
-        this.add(new JButton(new ReconnectTestAction()), "height 24!");
+        this.add(new ExtButton(new AutoSetupAction()).setTooltipsEnabled(true), "height 24!");
+        this.add(new ExtButton(new ReconnectTestAction()).setTooltipsEnabled(true), "height 24!");
         this.combobox.addActionListener(this);
         add(card, "spanx,pushy,growy");
     }
