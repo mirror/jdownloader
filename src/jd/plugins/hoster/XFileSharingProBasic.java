@@ -441,7 +441,7 @@ public class XFileSharingProBasic extends PluginForHost {
         if (passCode == null) passCode = Plugin.getUserInput("Password?", thelink);
         pwform.put("password", passCode);
         logger.info("Put password \"" + passCode + "\" entered by user in the DLForm.");
-        return passCode;
+        return Encoding.urlEncode(passCode);
     }
 
     public String getDllink() {
@@ -479,7 +479,7 @@ public class XFileSharingProBasic extends PluginForHost {
         if (checkAll) {
             if (new Regex(BRBEFORE, PASSWORDTEXT).matches() || BRBEFORE.contains("Wrong password")) {
                 logger.warning("Wrong password, the entered password \"" + passCode + "\" is wrong, retrying...");
-                theLink.setProperty("pass", null);
+                theLink.setProperty("pass", Property.NULL);
                 throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
             }
             if (BRBEFORE.contains("Wrong captcha")) {

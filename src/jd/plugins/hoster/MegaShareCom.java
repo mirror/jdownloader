@@ -32,12 +32,12 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "megashare.com" }, urls = { "http://[\\w\\.]*?megashare\\.com/[0-9]+" }, flags = { 2 })
 public class MegaShareCom extends PluginForHost {
@@ -118,7 +118,6 @@ public class MegaShareCom extends PluginForHost {
         getForm(remove);
         if (DLFORM == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         DLFORM.put("wComp", "1");
-
         /* waittime */
         int wait = 10;
         if (reconnectWaittime != null) {
@@ -204,14 +203,14 @@ public class MegaShareCom extends PluginForHost {
         requestFileInformation(downloadLink);
         login(account);
         br.getPage(downloadLink.getDownloadURL());
-        br.postPage(br.getURL(), "PremDz.x=" + new Random().nextInt(10) + "&PremDz.y=" + new Random().nextInt(10) + "&PremDz=PREMIUM");
+        br.postPage(br.getURL(), "PremDz.x=" + new Random().nextInt(100) + "&PremDz.y=" + new Random().nextInt(100) + "&PremDz=PREMIUM");
         if (br.containsHTML("This File has been DELETED")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         final Form form = br.getFormbyProperty("name", "downloader");
         if (form == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         final String id = form.getVarsMap().get("id");
         final String timeDiff = form.getVarsMap().get("time_diff");
         if (id == null || timeDiff == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-        String post = "yesss.x=" + new Random().nextInt(10) + "&yesss.y=" + new Random().nextInt(10) + "&yesss=Download&id=" + id + "&time_diff=" + timeDiff + "&req_auth=n";
+        String post = "yesss.x=" + new Random().nextInt(100) + "&yesss.y=" + new Random().nextInt(100) + "&yesss=Download&id=" + id + "&time_diff=" + timeDiff + "&req_auth=n";
         String passCode = null;
         // This password handling is probably broken
         if (br.containsHTML("This file is password protected.")) {
@@ -256,7 +255,10 @@ public class MegaShareCom extends PluginForHost {
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("Not Found")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         final Form freeForm = br.getForm(1);
-        if (freeForm == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        String crap = br.getRegex("src=\"images/dwn\\-btn3\\.gif\" name=\"(.*?)\"").getMatch(0);
+        if (freeForm == null || crap == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        freeForm.put(Encoding.urlEncode(crap) + ".x", Integer.toString(new Random().nextInt(100)));
+        freeForm.put(Encoding.urlEncode(crap) + ".y", Integer.toString(new Random().nextInt(100)));
         br.submitForm(freeForm);
         if (br.containsHTML("This File has been DELETED")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         final String filename = br.getRegex("addthis_open\\(this, \\'\\', \\'http://(www\\.)?MegaShare\\.com\\d+\\', \\'(.*?)\\'\\)").getMatch(1);
