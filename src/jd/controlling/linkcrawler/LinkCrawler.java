@@ -376,9 +376,9 @@ public class LinkCrawler implements IOPermission {
                                 if (hosterLinks != null) {
                                     forwardDownloadLinkInfos(possibleCryptedLink.getDownloadLink(), hosterLinks);
                                     for (DownloadLink hosterLink : hosterLinks) {
-                                        CrawledLink link;
-                                        handleFinalLink(link = new CrawledLink(hosterLink));
+                                        CrawledLink link = new CrawledLink(hosterLink);
                                         link.setParentLink(possibleCryptedLink.getParentLink());
+                                        handleFinalLink(link);
                                     }
                                 }
                             }
@@ -402,9 +402,9 @@ public class LinkCrawler implements IOPermission {
                             if (httpLinks != null) {
                                 forwardDownloadLinkInfos(possibleCryptedLink.getDownloadLink(), httpLinks);
                                 for (DownloadLink hosterLink : httpLinks) {
-                                    CrawledLink link;
-                                    handleFinalLink(link = new CrawledLink(hosterLink));
+                                    CrawledLink link = new CrawledLink(hosterLink);
                                     link.setParentLink(possibleCryptedLink.getParentLink());
+                                    handleFinalLink(link);
                                 }
                             }
                         } catch (Throwable e) {
