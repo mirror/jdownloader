@@ -7,5 +7,9 @@ public interface RecollInterface {
 
     public boolean isAlive();
 
+    public void throwit(Exception e) throws Exception;
+
+    public String[] getRouterNames();
+
     public ArrayList<RouterData> findRouter(RouterData data);
 }

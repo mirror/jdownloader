@@ -1,8 +1,13 @@
 package jd.controlling.reconnect.plugins.liveheader;
 
 import java.awt.image.BufferedImage;
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
@@ -49,9 +54,11 @@ import org.jdownloader.remotecall.RemoteClient;
 
 public class LiveHeaderDetectionWizard {
     // "update3.jdownloader.org/recoll";
-    // "192.168.2.250/ces";
-    static final String             UPDATE3_JDOWNLOADER_ORG_RECOLL = "update3.jdownloader.org/recoll"; // "update3.jdownloader.org/recoll";
-
+    // ;
+    static String                   UPDATE3_JDOWNLOADER_ORG_RECOLL = "update3.jdownloader.org/recoll"; // "update3.jdownloader.org/recoll";
+    static {
+        UPDATE3_JDOWNLOADER_ORG_RECOLL = "192.168.2.250/ces";
+    }
     private String                  mac;
 
     private String                  manufactor;
@@ -105,6 +112,16 @@ public class LiveHeaderDetectionWizard {
     public LiveHeaderDetectionWizard() {
 
         recoll = new RemoteClient(LiveHeaderDetectionWizard.UPDATE3_JDOWNLOADER_ORG_RECOLL).getFactory().newInstance(RecollInterface.class);
+    }
+
+    public static void main(String[] args) {
+        RecollInterface r = new RemoteClient(LiveHeaderDetectionWizard.UPDATE3_JDOWNLOADER_ORG_RECOLL).getFactory().newInstance(RecollInterface.class);
+        try {
+            r.throwit(new NullPointerException("Affenbaum"));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
     }
 
     private LiveHeaderReconnect getPlugin() {
@@ -652,6 +669,44 @@ public class LiveHeaderDetectionWizard {
 
     private String           gatewayAdressIP;
 
+    static String getManufactor(String mc) {
+        if (mc == null) { return null; }
+        // do not use IO.readFile to save mem
+        mc = mc.substring(0, 6);
+        BufferedReader f = null;
+        InputStreamReader isr = null;
+        FileInputStream fis = null;
+        try {
+            f = new BufferedReader(isr = new InputStreamReader(fis = new FileInputStream(JDUtilities.getResourceFile("jd/router/manlist.txt")), "UTF8"));
+            String line;
+
+            while ((line = f.readLine()) != null) {
+                if (line.startsWith(mc)) { return line.substring(7); }
+            }
+
+        } catch (final UnsupportedEncodingException e) {
+            e.printStackTrace();
+        } catch (final FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (final IOException e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                f.close();
+            } catch (final Throwable e) {
+            }
+            try {
+                isr.close();
+            } catch (final Throwable e) {
+            }
+            try {
+                fis.close();
+            } catch (final Throwable e) {
+            }
+        }
+        return null;
+    }
+
     private void collectInfo() throws UnknownHostException, InterruptedException {
         final UPNPRouterPlugin upnp = (UPNPRouterPlugin) ReconnectPluginController.getInstance().getPluginByID(UPNPRouterPlugin.ID);
 
@@ -673,7 +728,7 @@ public class LiveHeaderDetectionWizard {
         try {
             mac = RouterUtils.getMacAddress(gatewayAdress).replace(":", "").toUpperCase(Locale.ENGLISH);
 
-            manufactor = RouterSender.getManufactor(mac);
+            manufactor = getManufactor(mac);
         } catch (final InterruptedException e) {
             throw e;
         } catch (final Exception e) {
@@ -726,7 +781,7 @@ public class LiveHeaderDetectionWizard {
             IPController.getInstance().waitUntilWeAreOnline();
             recoll.isAlive();
 
-            if (JsonConfig.create(ReconnectConfig.class).getSuccessCounter() < 3) {
+            if (JsonConfig.create(ReconnectConfig.class).getSuccessCounter() < 3 && false) {
                 // we have to validate the script first
 
                 processCallBack.setStatusString(this, _GUI._.LiveHeaderDetectionWizard_sendRouter_havetovalidate());

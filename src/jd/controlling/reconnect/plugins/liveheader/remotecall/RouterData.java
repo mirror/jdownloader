@@ -206,7 +206,12 @@ public class RouterData implements Storable {
     }
 
     public void setFirmware(final String firmware) {
-        this.firmware = firmware;
+        this.firmware = replace(firmware);
+    }
+
+    private String replace(String str) {
+        if (str == null) return null;
+        return str.replace("&nbsp;", " ");
     }
 
     public void setFrameTagCount(final int frameTagCount) {
@@ -218,7 +223,7 @@ public class RouterData implements Storable {
     }
 
     public void setManufactor(final String manufactor) {
-        this.manufactor = manufactor;
+        this.manufactor = replace(manufactor);
     }
 
     public void setpTagsCount(final int pTagsCount) {
@@ -246,7 +251,7 @@ public class RouterData implements Storable {
     }
 
     public void setRouterName(final String routerName) {
-        this.routerName = routerName;
+        this.routerName = replace(routerName);
     }
 
     public void setScript(final String script) {
@@ -282,7 +287,7 @@ public class RouterData implements Storable {
     }
 
     public void setSslTitle(final String sslTitle) {
-        this.sslTitle = sslTitle;
+        this.sslTitle = replace(sslTitle);
     }
 
     public void setPriorityIndicator(final int successCount) {
@@ -290,7 +295,7 @@ public class RouterData implements Storable {
     }
 
     public void setTitle(final String title) {
-        this.title = title;
+        this.title = replace(title);
     }
 
 }
