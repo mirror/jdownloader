@@ -320,13 +320,6 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
             percent = filePackage.getPercent();
             h.put("download_status_percent", f.format(percent));
 
-            if (filePackage.getLinksInProgress() > 0) {
-                value = filePackage.getLinksInProgress() + "/" + filePackage.size() + " " + T._.gui_treetable_packagestatus_links_active();
-            }
-            if (filePackage.getTotalDownloadSpeed() > 0) {
-                value = "[" + filePackage.getLinksInProgress() + "/" + filePackage.size() + "] ETA " + Formatter.formatSeconds(filePackage.getETA()) + " @ " + Formatter.formatReadable(filePackage.getTotalDownloadSpeed()) + "/s";
-            }
-
             h.put("package_id", Package_ID.toString());
             h.put("download_hoster", value);
             h.put("download_status_text", f.format(percent) + " % (" + Formatter.formatReadable(filePackage.getTotalKBLoaded()) + " / " + Formatter.formatReadable(filePackage.getTotalEstimatedPackageSize()) + ")");

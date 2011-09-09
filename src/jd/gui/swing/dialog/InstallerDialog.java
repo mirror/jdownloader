@@ -88,7 +88,19 @@ public class InstallerDialog extends AbstractDialog<Object> {
         if (dlFolder != null) {
             this.dlFolder = dlFolder;
         } else {
-            if (CrossSystem.isMac()) {
+            if (CrossSystem.isLinux()) {
+                String outdir = null;
+                try {
+                    outdir = JDUtilities.runCommand("xdg-user-dir", new String[] { "DOWNLOAD" }, null, 10).trim();
+                    if (!new File(outdir).isDirectory()) {
+                        outdir = null;
+                    }
+                } catch (Throwable e) {
+                    outdir = null;
+                }
+                if (outdir == null) outdir = System.getProperty("user.home");
+                this.dlFolder = new File(outdir);
+            } else if (CrossSystem.isMac()) {
                 this.dlFolder = new File(System.getProperty("user.home") + "/Downloads");
             } else if (CrossSystem.isWindows() && new File(System.getProperty("user.home") + "/Downloads").exists()) {
                 this.dlFolder = new File(System.getProperty("user.home") + "/Downloads");

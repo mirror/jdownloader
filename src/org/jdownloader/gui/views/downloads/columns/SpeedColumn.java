@@ -3,6 +3,7 @@ package org.jdownloader.gui.views.downloads.columns;
 import javax.swing.Icon;
 import javax.swing.SwingConstants;
 
+import jd.controlling.DownloadWatchDog;
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.nutils.Formatter;
 import jd.plugins.DownloadLink;
@@ -58,7 +59,6 @@ public class SpeedColumn extends ExtTextColumn<AbstractNode> {
 
     @Override
     public String getStringValue(AbstractNode value) {
-
         if (value instanceof DownloadLink) {
             if (((DownloadLink) value).getLinkStatus().hasStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS)) {
                 if (((DownloadLink) value).getDownloadSpeed() > 0) {
@@ -66,13 +66,11 @@ public class SpeedColumn extends ExtTextColumn<AbstractNode> {
                 } else {
                     return _JDT._.gui_download_create_connection();
                 }
-
             }
-
         } else if (value instanceof FilePackage) {
-
+            long speed = DownloadWatchDog.getInstance().getDownloadSpeedbyFilePackage((FilePackage) value);
+            if (speed >= 0) { return Formatter.formatReadable(speed) + "/s"; }
         }
         return null;
     }
-
 }

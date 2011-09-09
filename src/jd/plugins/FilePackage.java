@@ -395,30 +395,6 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
         return linksFailed;
     }
 
-    /**
-     * Gibt die Anzahl der fertiggestellten Links zurück
-     * 
-     * @return
-     */
-    public int getLinksFinished() {
-        if (System.currentTimeMillis() - updateTime > UPDATE_INTERVAL) {
-            updateCollectives();
-        }
-        return linksFinished;
-    }
-
-    /**
-     * Gibt zurück wieviele Links gerade in Bearbeitung sind
-     * 
-     * @return
-     */
-    public int getLinksInProgress() {
-        if (System.currentTimeMillis() - updateTime > UPDATE_INTERVAL) {
-            updateCollectives();
-        }
-        return linksInProgress;
-    }
-
     public boolean isFinished() {
         if (System.currentTimeMillis() - updateTime1 > UPDATE_INTERVAL) {
             updateTime1 = System.currentTimeMillis();
@@ -494,7 +470,6 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
         if (System.currentTimeMillis() - updateTime > UPDATE_INTERVAL) {
             updateCollectives();
         }
-
         return 100.0 * totalBytesLoaded_v2 / Math.max(1, Math.max(totalBytesLoaded_v2, totalEstimatedPackageSize_v2));
     }
 
@@ -511,28 +486,13 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
     }
 
     /**
-     * Gibt die aktuelle Downloadgeschwinigkeit des Pakets zurück
-     * 
-     * @return
-     */
-    public long getTotalDownloadSpeed() {
-        if (System.currentTimeMillis() - updateTime > UPDATE_INTERVAL) {
-            updateCollectives();
-        }
-
-        return totalDownloadSpeed_v2;
-    }
-
-    /**
      * Gibt die geschätzte Gesamtgröße des Pakets zurück
      * 
      * @return
      */
     public long getTotalEstimatedPackageSize() {
-        if (System.currentTimeMillis() - updateTime > UPDATE_INTERVAL) {
-            updateCollectives();
-        }
-        return Math.max(totalBytesLoaded_v2, totalEstimatedPackageSize_v2);
+        FilePackageInfo fpi = this.getFilePackageInfo();
+        return Math.max(totalBytesLoaded_v2, fpi.getSize());
     }
 
     /**
@@ -659,9 +619,7 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
 
     public void updateCollectives() {
         synchronized (downloadLinkList) {
-
             totalEstimatedPackageSize_v2 = 0;
-            totalDownloadSpeed_v2 = 0;
             linksFinished = 0;
             linksInProgress = 0;
             linksFailed = 0;
@@ -669,7 +627,6 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
             long avg = 0;
             DownloadLink next;
             int i = 0;
-
             for (Iterator<DownloadLink> it = downloadLinkList.iterator(); it.hasNext();) {
                 next = it.next();
 
@@ -690,8 +647,6 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
                         }
                     }
                 }
-
-                totalDownloadSpeed_v2 += next.getDownloadSpeed();
                 if (next.isEnabled()) {
                     totalBytesLoaded_v2 += next.getDownloadCurrent();
                 }
@@ -699,7 +654,6 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
                 if (next.getLinkStatus().isFinished()) {
                     linksFinished += 1;
                 }
-
                 if (next.getLinkStatus().isFailed() && next.isEnabled()) {
                     linksFailed++;
                 }
@@ -736,26 +690,6 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
         return lst.toArray(new String[] {});
     }
 
-    /**
-     * Returns a list of all hoster Strings in this package
-     * 
-     * @return
-     */
-    public ArrayList<String> getHosterList() {
-        ArrayList<String> ret = new ArrayList<String>();
-        Set<String> set = new HashSet<String>();
-
-        synchronized (this) {
-            for (DownloadLink element : downloadLinkList) {
-                if (!set.contains(element.getHost())) {
-                    set.add(element.getHost());
-                    ret.add(element.getHost());
-                }
-            }
-        }
-        return ret;
-    }
-
     public List<DownloadLink> getChildren() {
         return downloadLinkList;
     }
@@ -771,7 +705,7 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
     public void notifyChanges() {
         if (fpInfo != null) {
             synchronized (fpInfo) {
-                fpInfo.structureVersion++;
+                fpInfo.changeStructure();
             }
         }
     }

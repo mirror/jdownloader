@@ -25,9 +25,9 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 
-import jd.HostPluginWrapper;
 import jd.gui.swing.jdgui.views.settings.components.FolderChooser;
 import jd.plugins.FilePackage;
+import jd.plugins.PluginForHost;
 
 import org.appwork.app.gui.MigPanel;
 import org.appwork.utils.formatter.SizeFormatter;
@@ -187,18 +187,10 @@ public class PackagePropertiesDialog extends AbstractDialog<Object> {
         p.add(btRemove, "width 20!,height 20!");
 
         p.add(head(_GUI._.LinkPropertiesDialog_layoutDialogContent_size(SizeFormatter.formatBytes(pkg.getTotalEstimatedPackageSize())), NewTheme.I().getIcon("batch", 16)), "spanx,newline,skip");
-        for (String h : pkg.getHosterList()) {
 
-            for (HostPluginWrapper hw : HostPluginWrapper.getHostWrapper()) {
-                if (h.equalsIgnoreCase(hw.getHost())) {
-                    ImageIcon icon = hw.getIconUnscaled();
-                    ImageIcon ret = NewTheme.I().getScaledInstance(icon, 16);
-                    p.add(head(_GUI._.LinkPropertiesDialog_layoutDialogContent_hoster(h), ret), "spanx,newline,skip");
-
-                    break;
-                }
-            }
-
+        for (PluginForHost host : pkg.getFilePackageInfo().getIcons()) {
+            ImageIcon icon = host.getHosterIconScaled();
+            p.add(head(_GUI._.LinkPropertiesDialog_layoutDialogContent_hoster(host.getHost()), icon), "spanx,newline,skip");
         }
 
         return p;

@@ -120,10 +120,9 @@ public class Serverhandler implements Handler {
         xml.getFirstChild().appendChild(element);
         element.setAttribute("package_name", fp.getName());
         element.setAttribute("package_percent", this.f.format(fp.getPercent()));
-        element.setAttribute("package_linksinprogress", fp.getLinksInProgress() + "");
         element.setAttribute("package_linkstotal", fp.size() + "");
         element.setAttribute("package_ETA", Formatter.formatSeconds(fp.getETA()));
-        element.setAttribute("package_speed", Formatter.formatReadable(fp.getTotalDownloadSpeed()));
+        element.setAttribute("package_speed", Formatter.formatReadable(DownloadWatchDog.getInstance().getDownloadSpeedbyFilePackage(fp)));
         element.setAttribute("package_loaded", Formatter.formatReadable(fp.getTotalKBLoaded()));
         element.setAttribute("package_size", Formatter.formatReadable(fp.getTotalEstimatedPackageSize()));
         element.setAttribute("package_todo", Formatter.formatReadable(fp.getTotalEstimatedPackageSize() - fp.getTotalKBLoaded()));

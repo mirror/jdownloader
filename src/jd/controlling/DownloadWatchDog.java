@@ -677,6 +677,28 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         ProxyController.getInstance().resetTempUnavailWaittime(host, false);
     }
 
+    public long getDownloadSpeedbyFilePackage(FilePackage pkg) {
+        long speed = -1;
+        synchronized (DownloadControllers) {
+            for (SingleDownloadController con : DownloadControllers) {
+                if (con.getDownloadLink().getFilePackage() != pkg) continue;
+                speed += con.getDownloadLink().getDownloadSpeed();
+            }
+        }
+        return speed;
+    }
+
+    public int getDownloadsbyFilePackage(FilePackage pkg) {
+        int ret = 0;
+        synchronized (DownloadControllers) {
+            for (SingleDownloadController con : DownloadControllers) {
+                if (con.getDownloadLink().getFilePackage() != pkg) continue;
+                ret++;
+            }
+        }
+        return ret;
+    }
+
     /**
      * aborts all running SingleDownloadControllers, NOTE: DownloadWatchDog is
      * still running, new Downloads will can started after this call

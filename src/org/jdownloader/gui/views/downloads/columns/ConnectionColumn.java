@@ -1,10 +1,14 @@
 package org.jdownloader.gui.views.downloads.columns;
 
+import jd.controlling.DownloadWatchDog;
 import jd.controlling.SingleDownloadController;
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 import jd.plugins.download.DownloadInterface;
 
+import org.appwork.swing.exttable.ExtColumn;
+import org.appwork.swing.exttable.ExtDefaultRowSorter;
 import org.appwork.swing.exttable.columns.ExtTextColumn;
 import org.jdownloader.gui.translate._GUI;
 
@@ -12,6 +16,21 @@ public class ConnectionColumn extends ExtTextColumn<AbstractNode> {
 
     public ConnectionColumn() {
         super(_GUI._.ConnectionColumn_ConnectionColumn());
+        this.setRowSorter(new ExtDefaultRowSorter<AbstractNode>() {
+
+            @Override
+            public int compare(final AbstractNode o1, final AbstractNode o2) {
+                final long l1 = getDownloads(o1);
+                final long l2 = getDownloads(o2);
+                if (l1 == l2) { return 0; }
+                if (this.getSortOrderIdentifier() == ExtColumn.SORT_ASC) {
+                    return l1 > l2 ? -1 : 1;
+                } else {
+                    return l1 < l2 ? -1 : 1;
+                }
+            }
+
+        });
     }
 
     @Override
@@ -61,8 +80,19 @@ public class ConnectionColumn extends ExtTextColumn<AbstractNode> {
                 }
 
             }
-        }
+        } else if (value instanceof FilePackage) { return DownloadWatchDog.getInstance().getDownloadsbyFilePackage((FilePackage) value) + "/" + ((FilePackage) value).size(); }
         return null;
+    }
+
+    private int getDownloads(AbstractNode value) {
+        if (value instanceof DownloadLink) {
+            SingleDownloadController dlc = ((DownloadLink) value).getDownloadLinkController();
+            if (dlc != null) {
+                DownloadInterface dli = ((DownloadLink) value).getDownloadInstance();
+                if (dli != null) return 1;
+            }
+        } else if (value instanceof FilePackage) { return DownloadWatchDog.getInstance().getDownloadsbyFilePackage((FilePackage) value); }
+        return 0;
     }
 
 }
