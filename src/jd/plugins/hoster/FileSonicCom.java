@@ -16,6 +16,7 @@
 
 package jd.plugins.hoster;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 
@@ -27,15 +28,16 @@ import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
+import jd.parser.html.Form.MethodType;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -58,6 +60,7 @@ public class FileSonicCom extends PluginForHost implements ControlListener {
                 initDone = true;
                 new Thread(new Runnable() {
 
+                    @SuppressWarnings("deprecation")
                     public void run() {
                         JDUtilities.getController().addControlListener(FileSonicCom.this);
                     }
@@ -66,6 +69,8 @@ public class FileSonicCom extends PluginForHost implements ControlListener {
             }
         }
     }
+
+    private static final String RECAPTCHATEXT = "Recaptcha\\.create";
 
     @Override
     public String getAGBLink() {
@@ -381,10 +386,26 @@ public class FileSonicCom extends PluginForHost implements ControlListener {
                 if (tries++ >= 5) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Password Missing"); }
 
             }
-            if (ajax.containsHTML("Recaptcha\\.create")) {
+            if (ajax.containsHTML(RECAPTCHATEXT)) {
                 final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(ajax);
-                rc.handleAuto(this, downloadLink);
+                jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(ajax);
+                rc.findID();
+                Form rcForm = new Form();
+                rcForm.setMethod(MethodType.POST);
+                rcForm.setAction(freeDownloadLink);
+                rc.setForm(rcForm);
+                rc.load();
+                for (int i = 0; i <= 5; i++) {
+                    File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+                    String c = getCaptchaCode(cf, downloadLink);
+                    rc.setCode(c);
+                    if (ajax.containsHTML(RECAPTCHATEXT)) {
+                        rc.reload();
+                        continue;
+                    }
+                    break;
+                }
+                if (ajax.containsHTML(RECAPTCHATEXT)) { throw new PluginException(LinkStatus.ERROR_CAPTCHA); }
             }
 
             downloadUrl = ajax.getRegex(re).getMatch(0);

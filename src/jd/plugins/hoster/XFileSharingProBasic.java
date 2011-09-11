@@ -322,7 +322,7 @@ public class XFileSharingProBasic extends PluginForHost {
         }
         String space = br.getRegex(Pattern.compile("<td>Used space:</td>.*?<td.*?b>([0-9\\.]+) of [0-9\\.]+ (Mb|GB)</b>", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
         if (space != null) ai.setUsedSpace(space.trim() + " Mb");
-        String points = br.getRegex(Pattern.compile("<td>You have collected:</td.*?b>(.*?)premium points", Pattern.CASE_INSENSITIVE)).getMatch(0);
+        String points = br.getRegex(Pattern.compile("<td>You have collected:</td.*?b>([^<>\"\\']+)premium points", Pattern.CASE_INSENSITIVE)).getMatch(0);
         if (points != null) {
             // Who needs half points ? If we have a dot in the points, just
             // remove it
@@ -333,7 +333,7 @@ public class XFileSharingProBasic extends PluginForHost {
             ai.setPremiumPoints(Long.parseLong(points.trim()));
         }
         account.setValid(true);
-        String availabletraffic = new Regex(BRBEFORE, "Traffic available.*?:</TD><TD><b>(.*?)</b>").getMatch(0);
+        String availabletraffic = new Regex(BRBEFORE, "Traffic available.*?:</TD><TD><b>([^<>\"\\']+)</b>").getMatch(0);
         if (availabletraffic != null && !availabletraffic.contains("nlimited") && !availabletraffic.equals(" Mb")) {
             ai.setTrafficLeft(SizeFormatter.getSize(availabletraffic));
         } else {

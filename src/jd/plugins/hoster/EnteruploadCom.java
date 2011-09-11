@@ -30,11 +30,11 @@ import jd.parser.html.HTMLParser;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -50,8 +50,6 @@ public class EnteruploadCom extends PluginForHost {
 
     // XfileSharingProBasic Version 1.6 only doFree, dllink regexes changed
     private static final String COOKIE_HOST = "http://enterupload.com";
-    private static final String FREETEXT    = "title=\"Premium\">Premium<";
-    private static final String PREMIUMTEXT = "Premium-Account expire";
     public boolean              nopremium   = false;
 
     @Override
@@ -262,8 +260,8 @@ public class EnteruploadCom extends PluginForHost {
         br.submitForm(loginform);
         br.getPage(COOKIE_HOST + "/?op=my_account");
         if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-        if (!br.containsHTML("Premium-Account expire") && !br.containsHTML(FREETEXT)) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-        if (!br.containsHTML(PREMIUMTEXT)) nopremium = true;
+        if (!br.containsHTML(">Premium account expire") && !br.containsHTML("title=\"Premium\">Premium<")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        if (!br.containsHTML(">Premium account expire")) nopremium = true;
     }
 
     @Override
@@ -275,16 +273,8 @@ public class EnteruploadCom extends PluginForHost {
             account.setValid(false);
             return ai;
         }
-        String space = br.getRegex(Pattern.compile("<td>Used space:</td>.*?<td.*?b>(.*?)of", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
+        String space = br.getRegex(Pattern.compile(">Used space:<b>(.*?) of", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
         if (space != null) ai.setUsedSpace(space.trim() + " Mb");
-        String points = br.getRegex(Pattern.compile("<td>You have collected:</td.*?b>\\$([0-9,.]+)<", Pattern.CASE_INSENSITIVE)).getMatch(0);
-        if (points != null) {
-            // Who needs half points ? If we have a dot in the points, just
-            // remove it
-            points = points.replaceAll("\\.", "");
-            points = points.replaceAll(",", "");
-            ai.setAccountBalance(Long.parseLong(points.trim()));
-        }
         account.setValid(true);
         String availabletraffic = br.getRegex("Traffic available.*?:</TD><TD><b>(.*?)</b>").getMatch(0);
         if (availabletraffic != null) {
@@ -293,7 +283,7 @@ public class EnteruploadCom extends PluginForHost {
             ai.setUnlimitedTraffic();
         }
         if (!nopremium) {
-            String expire = br.getRegex("<td>Premium-Account expire:</td>.*?<td>(.*?)</td>").getMatch(0);
+            String expire = br.getRegex(">Premium account expire:<b>(.*?)</b>").getMatch(0);
             if (expire == null) {
                 ai.setExpired(true);
                 account.setValid(false);

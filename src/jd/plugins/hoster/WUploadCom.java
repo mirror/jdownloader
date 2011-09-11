@@ -16,6 +16,7 @@
 
 package jd.plugins.hoster;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 
@@ -26,6 +27,7 @@ import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
+import jd.parser.html.Form.MethodType;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -58,6 +60,7 @@ public class WUploadCom extends PluginForHost implements ControlListener {
                 initDone = true;
                 new Thread(new Runnable() {
 
+                    @SuppressWarnings("deprecation")
                     public void run() {
                         JDUtilities.getController().addControlListener(WUploadCom.this);
                     }
@@ -66,6 +69,8 @@ public class WUploadCom extends PluginForHost implements ControlListener {
             }
         }
     }
+
+    private static final String RECAPTCHATEXT = "Recaptcha\\.create";
 
     @Override
     public boolean checkLinks(final DownloadLink[] urls) {
@@ -328,7 +333,7 @@ public class WUploadCom extends PluginForHost implements ControlListener {
             // this.br.getRegex("downloadUrl = \"(http://.*?)\"").getMatch(0);
             // if (downloadUrl == null) { throw new
             // PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-            if (ajax.containsHTML("This file is available for premium users only.")) {
+            if (ajax.containsHTML("This file is available for premium users only\\.")) {
 
             throw new PluginException(LinkStatus.ERROR_FATAL, "Premium only file. Buy Premium Account"); }
             final String countDownDelay = ajax.getRegex("countDownDelay = (\\d+)").getMatch(0);
@@ -341,8 +346,8 @@ public class WUploadCom extends PluginForHost implements ControlListener {
 
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Long.parseLong(countDownDelay) * 1001l); }
                 this.sleep(Long.parseLong(countDownDelay) * 1000, downloadLink);
-                final String tm = ajax.getRegex("name='tm' value='(.*?)' />").getMatch(0);
-                final String tm_hash = ajax.getRegex("name='tm_hash' value='(.*?)' />").getMatch(0);
+                final String tm = ajax.getRegex("name=\\'tm\\' value=\\'(.*?)\\' />").getMatch(0);
+                final String tm_hash = ajax.getRegex("name=\\'tm_hash\\' value='(.*?)' />").getMatch(0);
                 final Form form = new Form();
                 form.setMethod(Form.MethodType.POST);
                 form.setAction(downloadLink.getDownloadURL() + "?start=1");
@@ -370,11 +375,26 @@ public class WUploadCom extends PluginForHost implements ControlListener {
                 if (tries++ >= 5) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Password Missing"); }
 
             }
-            if (ajax.containsHTML("Recaptcha\\.create")) {
+            if (ajax.containsHTML(RECAPTCHATEXT)) {
                 final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(ajax);
-                rc.handleAuto(this, downloadLink);
-                if (ajax.containsHTML("Recaptcha\\.create")) { throw new PluginException(LinkStatus.ERROR_CAPTCHA); }
+                jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(ajax);
+                rc.findID();
+                Form rcForm = new Form();
+                rcForm.setMethod(MethodType.POST);
+                rcForm.setAction(freeDownloadLink);
+                rc.setForm(rcForm);
+                rc.load();
+                for (int i = 0; i <= 5; i++) {
+                    File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+                    String c = getCaptchaCode(cf, downloadLink);
+                    rc.setCode(c);
+                    if (ajax.containsHTML(RECAPTCHATEXT)) {
+                        rc.reload();
+                        continue;
+                    }
+                    break;
+                }
+                if (ajax.containsHTML(RECAPTCHATEXT)) { throw new PluginException(LinkStatus.ERROR_CAPTCHA); }
             }
 
             downloadUrl = ajax.getRegex(re).getMatch(0);

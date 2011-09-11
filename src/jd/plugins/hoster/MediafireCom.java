@@ -20,6 +20,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.controlling.JDLogger;
@@ -35,12 +36,12 @@ import jd.parser.html.InputField;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -210,9 +211,16 @@ public class MediafireCom extends PluginForHost {
         if (usedspace != null) {
             ai.setUsedSpace(usedspace.trim());
         }
-        final String trafficleft = this.br.getRegex("Available Bandwidth </div> <div style=.*?<div style=\"font-size.*?\">(.*?)</div").getMatch(0);
+        String trafficleft = this.br.getRegex("Available Bandwidth </div> <div style=.*?<div style=\"font\\-size.*?\">(.*?)</div").getMatch(0);
         if (trafficleft != null) {
-            ai.setTrafficLeft(SizeFormatter.getSize(trafficleft.trim()));
+            trafficleft = trafficleft.trim();
+            if (Regex.matches(trafficleft, Pattern.compile("(tb|tbyte|terabyte|tib)", Pattern.CASE_INSENSITIVE))) {
+                String[] trafficleftArray = trafficleft.split(" ");
+                double trafficsize = Double.parseDouble(trafficleftArray[0]);
+                trafficsize *= 1024;
+                trafficleft = Double.toString(trafficsize) + " GB";
+            }
+            ai.setTrafficLeft(SizeFormatter.getSize(trafficleft));
         }
         ai.setStatus("Premium User");
         return ai;

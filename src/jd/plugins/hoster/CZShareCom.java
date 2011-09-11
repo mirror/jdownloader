@@ -104,7 +104,7 @@ public class CZShareCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        return 1;
     }
 
     @SuppressWarnings("unchecked")
