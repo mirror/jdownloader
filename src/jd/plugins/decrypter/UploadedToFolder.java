@@ -28,7 +28,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploaded.to" }, urls = { "http://(www\\.)?uploaded\\.to/folder/[a-z0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploaded.to" }, urls = { "http://(www\\.)?(uploaded|ul)\\.to/folder/[a-z0-9]+" }, flags = { 0 })
 public class UploadedToFolder extends PluginForDecrypt {
 
     public UploadedToFolder(PluginWrapper wrapper) {
