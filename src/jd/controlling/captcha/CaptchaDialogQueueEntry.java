@@ -72,7 +72,7 @@ public class CaptchaDialogQueueEntry extends QueueAction<String, RuntimeExceptio
     }
 
     private String viaGUI() {
-        if (ioPermission != null && ioPermission.isCaptchaAllowed(getHost())) { return null; }
+        if (ioPermission == null && ioPermission.isCaptchaAllowed(getHost())) { return null; }
         UserIO.setCountdownTime(SubConfiguration.getConfig("JAC").getIntegerProperty(Configuration.JAC_SHOW_TIMEOUT, 20));
         try {
             this.dialog = new CaptchaDialog(flag | Dialog.LOGIC_COUNTDOWN, getHost(), captchaController.getCaptchafile(), def, captchaController.getExplain());
