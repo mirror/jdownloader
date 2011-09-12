@@ -30,11 +30,11 @@ import jd.parser.html.HTMLParser;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -277,8 +277,8 @@ public class EnteruploadCom extends PluginForHost {
         String space = br.getRegex(Pattern.compile(">Used space:<b>(.*?) of", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
         if (space != null) ai.setUsedSpace(space.trim() + " Mb");
         account.setValid(true);
-        String availabletraffic = br.getRegex("Traffic available today:<b>(.*?) Mb</b>").getMatch(0);
-        if (availabletraffic != null && availabletraffic.trim().length() > 0) {
+        String availabletraffic = br.getRegex("Traffic available today:<b>(.*?)</b>").getMatch(0);
+        if (availabletraffic != null && !availabletraffic.contains("nlimited") && !availabletraffic.equals(" Mb")) {
             ai.setTrafficLeft(SizeFormatter.getSize(availabletraffic));
         } else {
             ai.setUnlimitedTraffic();
