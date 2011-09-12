@@ -36,6 +36,7 @@ import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.utils.JDUtilities;
 
+import org.appwork.remotecall.server.ParsingException;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Hash;
 import org.appwork.utils.Regex;
@@ -111,14 +112,27 @@ public class LiveHeaderDetectionWizard {
 
     public LiveHeaderDetectionWizard() {
 
-        recoll = new RemoteClient(LiveHeaderDetectionWizard.UPDATE3_JDOWNLOADER_ORG_RECOLL).getFactory().newInstance(RecollInterface.class);
+        try {
+            recoll = new RemoteClient(LiveHeaderDetectionWizard.UPDATE3_JDOWNLOADER_ORG_RECOLL).getFactory().newInstance(RecollInterface.class);
+        } catch (IllegalArgumentException e) {
+            throw new RuntimeException(e);
+        } catch (ParsingException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public static void main(String[] args) {
-        RecollInterface r = new RemoteClient(LiveHeaderDetectionWizard.UPDATE3_JDOWNLOADER_ORG_RECOLL).getFactory().newInstance(RecollInterface.class);
+
         try {
-            r.throwit(new NullPointerException("Affenbaum"));
-        } catch (Exception e) {
+            RecollInterface r = new RemoteClient(LiveHeaderDetectionWizard.UPDATE3_JDOWNLOADER_ORG_RECOLL).getFactory().newInstance(RecollInterface.class);
+
+            r.isAlive();
+
+        } catch (IllegalArgumentException e) {
+            e.printStackTrace();
+        } catch (ParsingException e) {
+            e.printStackTrace();
+        } catch (Throwable e) {
             e.printStackTrace();
         }
 
@@ -355,6 +369,8 @@ public class LiveHeaderDetectionWizard {
                         if (ret.size() == 1) NewUIO.I().showConfirmDialog(0, _GUI._.LiveHeaderDetectionWizard_testList_firstSuccess_title(), _GUI._.LiveHeaderDetectionWizard_testList_firstsuccess_msg(TimeFormatter.formatMilliSeconds(res.getSuccessDuration(), 0)), NewTheme.I().getIcon("ok", 32), _GUI._.LiveHeaderDetectionWizard_testList_ok(), _GUI._.LiveHeaderDetectionWizard_testList_use());
                         return ret;
                     }
+                } else {
+                    recoll.setNotWorking(test.getScriptID(), null);
                 }
             } catch (DialogNoAnswerException e) {
                 break;
@@ -390,9 +406,10 @@ public class LiveHeaderDetectionWizard {
             // wait until we are online
             processCallBack.setStatusString(this, _GUI._.LiveaheaderDetection_wait_for_online());
             IPController.getInstance().waitUntilWeAreOnline();
+            processCallBack.setStatusString(getPlugin(), T._.LiveHeaderDetectionWizard_runOnlineScan_collect());
+
             recoll.isAlive();
 
-            processCallBack.setStatusString(getPlugin(), T._.LiveHeaderDetectionWizard_runOnlineScan_collect());
             collectInfo();
             specialCollectInfo();
             while (true) {
@@ -560,7 +577,7 @@ public class LiveHeaderDetectionWizard {
         RouterData rd = getRouterData();
         // debug
         // rd.setMac(null);
-        ArrayList<RouterData> scripts = recoll.findRouter(rd);
+        ArrayList<RouterData> scripts = recoll.findRouter(rd, null);
 
         final ArrayList<RouterData> unique = toUnique(scripts);
 
@@ -781,7 +798,7 @@ public class LiveHeaderDetectionWizard {
             IPController.getInstance().waitUntilWeAreOnline();
             recoll.isAlive();
 
-            if (JsonConfig.create(ReconnectConfig.class).getSuccessCounter() < 3 && false) {
+            if (JsonConfig.create(ReconnectConfig.class).getSuccessCounter() < 3) {
                 // we have to validate the script first
 
                 processCallBack.setStatusString(this, _GUI._.LiveHeaderDetectionWizard_sendRouter_havetovalidate());
@@ -842,7 +859,7 @@ public class LiveHeaderDetectionWizard {
 
         RouterData rd = getRouterData();
         rd.setScript(JsonConfig.create(LiveHeaderReconnectSettings.class).getScript());
-        if (recoll.addRouter(rd)) {
+        if (recoll.addRouter(rd, null)) {
             NewUIO.I().showMessageDialog(T._.LiveHeaderDetectionWizard_uploadData_sent_ok());
         } else {
             NewUIO.I().showMessageDialog(T._.LiveHeaderDetectionWizard_uploadData_sent_failed());

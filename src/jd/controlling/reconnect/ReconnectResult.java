@@ -48,6 +48,7 @@ public class ReconnectResult {
     private long             averageSuccessDuration = -1;
     private ReconnectInvoker invoker;
     private long             maxSuccessDuration     = -1;
+    private long             maxOfflineDuration     = -1;
 
     public long getMaxSuccessDuration() {
         // in case there has not been an optimization
@@ -92,6 +93,15 @@ public class ReconnectResult {
      */
     public void optimize(ProcessCallBackAdapter processCallBackAdapter) throws InterruptedException {
         getInvoker().doOptimization(this, processCallBackAdapter);
+    }
+
+    public void setMaxOfflineDuration(long maxOfflineDuration) {
+        this.maxOfflineDuration = maxOfflineDuration;
+    }
+
+    public long getMaxOfflineDuration() {
+        if (maxOfflineDuration < 0) return getOfflineDuration() * 10;
+        return maxOfflineDuration;
     }
 
 }

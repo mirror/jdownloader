@@ -126,6 +126,7 @@ public abstract class ReconnectInvoker {
         int success = 1;
         long duration = res.getSuccessDuration();
         long offlineDuration = res.getOfflineDuration();
+        long maxOfflineDuration = res.getOfflineDuration();
         long maxSuccessDuration = res.getSuccessDuration();
         for (int i = 1; i < JsonConfig.create(ReconnectConfig.class).getOptimizationRounds(); i++) {
             processCallBackAdapter.setProgress(this, (i * 100) / JsonConfig.create(ReconnectConfig.class).getOptimizationRounds());
@@ -143,6 +144,7 @@ public abstract class ReconnectInvoker {
                 success++;
                 duration += r.getSuccessDuration();
                 offlineDuration = Math.min(offlineDuration, r.getOfflineDuration());
+                maxOfflineDuration = Math.max(maxOfflineDuration, r.getOfflineDuration());
                 maxSuccessDuration = Math.max(maxSuccessDuration, r.getSuccessDuration());
             }
 
@@ -151,8 +153,9 @@ public abstract class ReconnectInvoker {
         double successRate = success / (double) JsonConfig.create(ReconnectConfig.class).getOptimizationRounds();
         // increase successduration if successrate is lower than 1.0 (100%)
         res.setAverageSuccessDuration((long) (duration / successRate));
-
+        res.setMaxOfflineDuration(maxOfflineDuration * 2);
         res.setMaxSuccessDuration(maxSuccessDuration * 4);
+        res.setOfflineTime(offlineDuration);
 
     }
 

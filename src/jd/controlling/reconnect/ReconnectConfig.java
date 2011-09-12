@@ -42,10 +42,16 @@ public interface ReconnectConfig extends ConfigInterface {
     int getSuccessCounter();
 
     @AboutConfig
-    @DefaultIntValue(30)
+    @DefaultIntValue(300)
     int getSecondsToWaitForIPChange();
 
     void setSecondsToWaitForIPChange(int i);
+
+    @AboutConfig
+    @DefaultIntValue(60)
+    int getSecondsToWaitForOffline();
+
+    void setSecondsToWaitForOffline(int i);
 
     @AboutConfig
     @DefaultBooleanValue(false)

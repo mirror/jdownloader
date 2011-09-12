@@ -9,6 +9,7 @@ import jd.http.URLConnectionAdapter;
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.remotecall.client.RemoteCallClient;
 import org.appwork.remotecall.client.RemoteCallCommunicationException;
+import org.appwork.remotecall.server.Requestor;
 import org.appwork.remotecall.server.ServerInvokationException;
 
 public class RemoteClient extends RemoteCallClient {
@@ -34,7 +35,7 @@ public class RemoteClient extends RemoteCallClient {
                 return red;
             } else if (con.getResponseCode() == HTTPConstants.ResponseCode.SERVERERROR_INTERNAL.getCode()) {
                 // Exception
-                throw new ServerInvokationException(red, this.host);
+                throw new ServerInvokationException(red, new Requestor(serviceName, routine, serialise));
             } else {
                 throw new RemoteCallCommunicationException("Wrong ResponseCode " + con.getResponseCode());
             }
@@ -49,5 +50,4 @@ public class RemoteClient extends RemoteCallClient {
         }
 
     }
-
 }

@@ -46,6 +46,7 @@ import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.appwork.utils.swing.dialog.InputDialog;
+import org.jdownloader.gui.uiserio.NewUIO;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.advanced.AdvancedConfigManager;
 
@@ -390,7 +391,16 @@ public class LiveHeaderReconnect extends RouterPlugin implements ControlListener
         } else {
             if (dosession && ReconnectPluginController.getInstance().getActivePlugin() == this) {
                 if (JsonConfig.create(ReconnectConfig.class).getSuccessCounter() > 3) {
-                    new RouterSendAction(this).actionPerformed(null);
+
+                    try {
+                        NewUIO.I().showConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, T._.LiveHeaderReconnect_onConfigValueModified_ask_title(), T._.LiveHeaderReconnect_onConfigValueModified_ask_msg(), icon, null, null);
+                        new RouterSendAction(this).actionPerformed(null);
+                    } catch (DialogClosedException e) {
+                        e.printStackTrace();
+                    } catch (DialogCanceledException e) {
+                        e.printStackTrace();
+                    }
+
                     dosession = false;
                 }
             }
@@ -409,6 +419,9 @@ public class LiveHeaderReconnect extends RouterPlugin implements ControlListener
             settings.setUserName(i.getUser());
             settings.setRouterIP(i.getIp());
             settings.setScript(i.getScript());
+            JsonConfig.create(ReconnectConfig.class).setSecondsBeforeFirstIPCheck((int) reconnectResult.getOfflineDuration() / 1000);
+            JsonConfig.create(ReconnectConfig.class).setSecondsToWaitForIPChange((int) (reconnectResult.getMaxSuccessDuration() / 1000));
+            JsonConfig.create(ReconnectConfig.class).setSecondsToWaitForOffline((int) reconnectResult.getMaxOfflineDuration() / 1000);
             updateGUI();
 
         }

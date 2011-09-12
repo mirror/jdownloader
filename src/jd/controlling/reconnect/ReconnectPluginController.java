@@ -189,7 +189,7 @@ public class ReconnectPluginController {
 
             Thread.sleep(waittime * 1000);
 
-            return IPController.getInstance().validateAndWait(this.getWaitForIPTime(), this.getIpCheckInterval());
+            return IPController.getInstance().validateAndWait(this.getWaitForIPTime(), storage.getSecondsToWaitForOffline(), this.getIpCheckInterval());
         } finally {
             System.out.println("IP AFTER=" + IPController.getInstance().getIP());
         }

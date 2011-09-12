@@ -23,7 +23,6 @@ import jd.config.Configuration;
 import jd.controlling.DownloadWatchDog;
 import jd.controlling.JDLogger;
 import jd.controlling.LinkCheck;
-import jd.controlling.ProgressController;
 import jd.controlling.reconnect.ipcheck.IPController;
 import jd.gui.UserIF;
 import jd.gui.UserIO;
@@ -199,7 +198,8 @@ public final class Reconnecter implements StateMachineInterface {
         DownloadWatchDog.getInstance().abortAllSingleDownloadControllers();
 
         int retry;
-        int maxretries = JsonConfig.create(ReconnectConfig.class).getMaxReconnectRetryNum();
+
+        int maxretries = storage.getMaxReconnectRetryNum();
         boolean ret = false;
         retry = 0;
         if (maxretries < 0) {
@@ -207,14 +207,12 @@ public final class Reconnecter implements StateMachineInterface {
         } else if (maxretries == 0) {
             maxretries = 1;
         }
-        final ProgressController progress = new ProgressController(this.toString(), maxretries + 10, "reconnect");
-        progress.increase(5);
+
         IPController.getInstance().invalidate();
         try {
             for (retry = 0; retry < maxretries; retry++) {
                 ReconnectPluginController.LOG.info("Starting " + this.toString() + " #" + (retry + 1));
-                progress.increase(1);
-                progress.setStatusText(_JDT._.jd_controlling_reconnect_plugins_ReconnectPluginController_doReconnect_1() + (retry + 1));
+
                 ret = ReconnectPluginController.getInstance().doReconnect();
                 if (ret) {
                     reconnectCounter.incrementAndGet();
@@ -230,7 +228,7 @@ public final class Reconnecter implements StateMachineInterface {
             e.printStackTrace();
             ret = false;
         } finally {
-            progress.doFinalize(1000);
+
         }
 
         this.eventSender.fireEvent(new ReconnecterEvent(ReconnecterEvent.Type.AFTER, ret));
@@ -337,8 +335,6 @@ public final class Reconnecter implements StateMachineInterface {
         }
         if (ret == false) {
             /* reconnect failed, increase fail counter */
-            final ProgressController progress = new ProgressController(_JDT._.jd_controlling_reconnect_Reconnector_progress_failed(), 100, "reconnect_warning");
-            progress.doFinalize(10000l);
 
             final long counter = this.storage.getFailedCounter();
 

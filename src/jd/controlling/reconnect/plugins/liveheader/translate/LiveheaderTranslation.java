@@ -265,4 +265,10 @@ public interface LiveheaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Reconnect failed. You can only share working reconnect settings." })
     String LiveHeaderDetectionWizard_sendRouter_reconnectFailed();
 
+    @Default(lngs = { "en" }, values = { "Share Reconnect Settings." })
+    String LiveHeaderReconnect_onConfigValueModified_ask_title();
+
+    @Default(lngs = { "en" }, values = { "You have set up your Reconnect successfully. Please share your settings to improve our Reconnect Wizard." })
+    String LiveHeaderReconnect_onConfigValueModified_ask_msg();
+
 }

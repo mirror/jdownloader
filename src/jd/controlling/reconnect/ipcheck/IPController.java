@@ -8,6 +8,7 @@ import jd.controlling.reconnect.ipcheck.event.IPControllEvent;
 import jd.controlling.reconnect.ipcheck.event.IPControllEventSender;
 
 import org.appwork.storage.config.JsonConfig;
+import org.appwork.utils.logging.Log;
 
 public class IPController extends ArrayList<IPConnectionState> {
     /**
@@ -188,7 +189,7 @@ public class IPController extends ArrayList<IPConnectionState> {
      * Tells the IpController, that the current ip is "BAD". We need a new one<br>
      * 
      * @see #validate()
-     * @see #validateAndWait(int, int)
+     * @see #validateAndWait(int, int, int)
      */
     public void invalidate() {
         if (this.invalidated == true) { return; }
@@ -208,7 +209,7 @@ public class IPController extends ArrayList<IPConnectionState> {
     /**
      * gets the latest connection state and validates if we have a new ip.<br>
      * 
-     * @see #validateAndWait(int, int) for more details.<br>
+     * @see #validateAndWait(int, int, int) for more details.<br>
      * 
      *      This method only does one single Check.
      */
@@ -249,11 +250,13 @@ public class IPController extends ArrayList<IPConnectionState> {
      * 
      * 
      * @param waitForIPTime
+     * @param waitForOfflineTime
+     *            TODO
      * @param ipCheckInterval
      * @return
      * @throws InterruptedException
      */
-    public boolean validateAndWait(final int waitForIPTime, final int ipCheckInterval) throws InterruptedException {
+    public boolean validateAndWait(final int waitForIPTime, int waitForOfflineTime, final int ipCheckInterval) throws InterruptedException {
         if (!this.invalidated) {
 
         return true; }
@@ -264,13 +267,18 @@ public class IPController extends ArrayList<IPConnectionState> {
             return true;
         }
         final long endTime = System.currentTimeMillis() + waitForIPTime * 1000;
-        while (System.currentTimeMillis() < endTime) {
+        final long endOfflineTime = System.currentTimeMillis() + waitForOfflineTime * 1000;
+        boolean hasBeenOffline = false;
+        while (true) {
             /* ip change detected then we can stop */
-            if (this.changedIP()) {
-                setInvalidated(false);
-                System.out.println(2);
+            this.validate();
+            if (!isInvalidated()) {
                 return true;
+            } else if (latestConnectionState.isOffline()) {
+                hasBeenOffline = true;
+
             }
+
             if (this.latestConnectionState.getCause() != null) {
                 try {
                     throw this.latestConnectionState.getCause();
@@ -283,6 +291,16 @@ public class IPController extends ArrayList<IPConnectionState> {
                 } catch (final Throwable e) {
                     // nothing
                 }
+            }
+            if (!hasBeenOffline && System.currentTimeMillis() >= endOfflineTime) {
+                // break
+                Log.L.info("Not offline after " + endOfflineTime + " seconds");
+                break;
+
+            }
+            if (System.currentTimeMillis() >= endTime) {
+                Log.L.info("Not reconnected after " + endTime + " seconds");
+                break;
             }
             Thread.sleep(Math.max(250, ipCheckInterval * 1000));
         }

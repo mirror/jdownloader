@@ -12,6 +12,7 @@ import javax.swing.JPanel;
 import javax.swing.SwingConstants;
 
 import jd.controlling.JDLogger;
+import jd.controlling.reconnect.ReconnectConfig;
 import jd.controlling.reconnect.ReconnectException;
 import jd.controlling.reconnect.ReconnectInvoker;
 import jd.controlling.reconnect.ReconnectResult;
@@ -129,12 +130,16 @@ public class UPNPRouterPlugin extends RouterPlugin implements IPCheckProvider {
         settings.setControlURL(i.getControlURL());
         settings.setModelName(i.getName());
         settings.setServiceType(i.getServiceType());
+
+        JsonConfig.create(ReconnectConfig.class).setSecondsBeforeFirstIPCheck((int) reconnectResult.getOfflineDuration() / 1000);
+        JsonConfig.create(ReconnectConfig.class).setSecondsToWaitForIPChange((int) (reconnectResult.getMaxSuccessDuration()) / 1000);
+        JsonConfig.create(ReconnectConfig.class).setSecondsToWaitForOffline((int) reconnectResult.getMaxOfflineDuration() / 1000);
         updateGUI();
     }
 
     @Override
     public JComponent getGUI() {
-        final JPanel p = new JPanel(new MigLayout("ins 0 0 0 0,wrap 3,debug", "[][][grow,fill]", "[fill]"));
+        final JPanel p = new JPanel(new MigLayout("ins 0 0 0 0,wrap 3", "[][][grow,fill]", "[fill]"));
         JButton find = new ExtButton(new UPNPScannerAction(this)).setTooltipsEnabled(true);
         find.setHorizontalAlignment(SwingConstants.LEFT);
         JButton auto = new ExtButton(new AutoDetectUpnpAction(this)).setTooltipsEnabled(true);

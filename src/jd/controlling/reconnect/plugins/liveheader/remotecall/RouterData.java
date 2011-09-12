@@ -6,14 +6,23 @@ import org.appwork.storage.Storable;
 
 public class RouterData implements Storable {
 
-    private String                  routerIP;
-    private String                  script;
+    private String routerIP;
+    private String script;
 
-    private String                  routerName;
-    private int                     priorityIndicator;
-    private String                  mac;
+    private String routerName;
+    private int    priorityIndicator;
+    private String mac;
 
-    private String                  manufactor;
+    private String manufactor;
+    private String scriptID;
+
+    public String getScriptID() {
+        return scriptID;
+    }
+
+    public void setScriptID(String scriptID) {
+        this.scriptID = scriptID;
+    }
 
     private int                     responseCode;
     private HashMap<String, String> responseHeaders;
@@ -88,6 +97,7 @@ public class RouterData implements Storable {
     private String sslTagFootprint;
 
     private String routerHost;
+    private String isp;
 
     public RouterData() {
         this.createTime = System.currentTimeMillis();
@@ -296,6 +306,14 @@ public class RouterData implements Storable {
 
     public void setTitle(final String title) {
         this.title = replace(title);
+    }
+
+    public String getIsp() {
+        return isp;
+    }
+
+    public void setIsp(String isp) {
+        this.isp = isp;
     }
 
 }
