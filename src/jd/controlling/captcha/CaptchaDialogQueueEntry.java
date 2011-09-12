@@ -14,6 +14,7 @@ import org.appwork.storage.JSonStorage;
 import org.appwork.storage.StorageException;
 import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.logging.Log;
+import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
@@ -35,6 +36,7 @@ public class CaptchaDialogQueueEntry extends QueueAction<String, RuntimeExceptio
     private int               flag;
     private String            def;
     private String            resp         = null;
+    private boolean           externalSet  = false;
     private CaptchaDialog     dialog;
     private IOPermission      ioPermission = null;
 
@@ -54,20 +56,26 @@ public class CaptchaDialogQueueEntry extends QueueAction<String, RuntimeExceptio
     }
 
     public void setResponse(String resp) {
+        externalSet = true;
         this.resp = resp;
-        try {
-            dialog.dispose();
-        } catch (final Throwable e) {
-            Log.exception(e);
-        }
+        new EDTRunner() {
+            @Override
+            protected void runInEDT() {
+                try {
+                    if (dialog.isInitialized()) dialog.dispose();
+                } catch (final Throwable e) {
+                    Log.exception(e);
+                }
+            }
+        };
     }
 
     protected String run() {
         /* external response already set, no need to ask user */
-        if (resp != null) return resp;
+        if (externalSet) return resp;
         String ret = viaGUI();
         /* external response set, return this instead */
-        if (resp != null) return resp;
+        if (externalSet) return resp;
         return ret;
     }
 
