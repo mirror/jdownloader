@@ -100,7 +100,6 @@ jd.plugins.hoster.directhttp.username = Utente (autentificazione base) per %s
 jd.plugins.hoster.rapidshare.handleerrors.message.nofreeslots = Impossibile scaricare correntemente come utente gratuito
 jd.plugins.hoster.rapidshare.handleerrors.message.stopflood = Fermarsi per non inondare di scaricamenti i nostri server
 jd.plugins.optional.awesomebar.awesomebar = Barra awesome
-jd.plugins.optional.awesomebar.awesomebar.description = 
 jd.plugins.optional.awesomebar.panel.description = questo è il più recente
 passwordsolver.askdialog = Scaricamento Password per %s/%s
 plugin.host.rapidshare.status.abused = File abusato
