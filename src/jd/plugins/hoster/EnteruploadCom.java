@@ -30,11 +30,11 @@ import jd.parser.html.HTMLParser;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -278,7 +278,7 @@ public class EnteruploadCom extends PluginForHost {
         if (space != null) ai.setUsedSpace(space.trim() + " Mb");
         account.setValid(true);
         String availabletraffic = br.getRegex("Traffic available today:<b>(.*?) Mb</b>").getMatch(0);
-        if (availabletraffic != null) {
+        if (availabletraffic != null && availabletraffic.trim().length() > 0) {
             ai.setTrafficLeft(SizeFormatter.getSize(availabletraffic));
         } else {
             ai.setUnlimitedTraffic();
@@ -332,7 +332,7 @@ public class EnteruploadCom extends PluginForHost {
                 checkErrors(link);
                 dllink = br.getRedirectLocation();
                 if (dllink == null) {
-                    /* search for final downloadlink */
+                    /* search for final download link */
                     if (br.containsHTML("(<br><b>Password:</b> <input|<br><b>Passwort:</b> <input|Wrong password)")) {
                         logger.warning("Wrong password, the entered password \"" + passCode + "\" is wrong, retrying...");
                         link.setProperty("pass", null);
@@ -346,7 +346,7 @@ public class EnteruploadCom extends PluginForHost {
                         dllink = br.getRegex("Download: <a href=\"(.*?)\"").getMatch(0);
                     }
                     if (dllink == null) {
-                        /* downloadbutton */
+                        /* download button */
                         Form form = br.getForm(1);
                         if (form != null && form.containsHTML("btn_download")) {
                             dllink = form.getAction();
@@ -421,7 +421,7 @@ public class EnteruploadCom extends PluginForHost {
     }
 
     public void checkErrors(DownloadLink theLink) throws NumberFormatException, PluginException {
-        // Some waittimes...
+        // Some wait times...
         if (br.containsHTML("You have to wait")) {
             int minutes = 0, seconds = 0, hours = 0;
             String tmphrs = br.getRegex("You have to wait.*?\\s+(\\d+)\\s+hours?").getMatch(0);
@@ -452,7 +452,7 @@ public class EnteruploadCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, waittime);
             }
         }
-        // Errorhandling for only-premium links
+        // Error handling for only-premium links
         if (br.containsHTML("(You can download files up to.*?only|Upgrade your account to download bigger files|This file reached max downloads)")) {
             String filesizelimit = br.getRegex("You can download files up to(.*?)only").getMatch(0);
             if (filesizelimit != null) {
