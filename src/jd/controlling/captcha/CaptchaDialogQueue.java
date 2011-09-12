@@ -1,5 +1,9 @@
 package jd.controlling.captcha;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.ListIterator;
+
 import jd.controlling.IOPermission;
 
 import org.appwork.utils.event.queue.Queue;
@@ -39,4 +43,40 @@ public class CaptchaDialogQueue extends Queue {
         }
     }
 
+    public List<CaptchaDialogQueueEntry> getEntries() {
+        ArrayList<CaptchaDialogQueueEntry> ret = new ArrayList<CaptchaDialogQueueEntry>();
+        synchronized (this.queueLock) {
+            CaptchaDialogQueueEntry cur = currentItem;
+            if (cur != null) {
+                ret.add(cur);
+            }
+            for (final QueuePriority prio : this.prios) {
+                ListIterator<QueueAction<?, ? extends Throwable>> li = this.queue.get(prio).listIterator();
+                while (li.hasNext()) {
+                    QueueAction<?, ? extends Throwable> next = li.next();
+                    if (next instanceof CaptchaDialogQueueEntry) {
+                        ret.add((CaptchaDialogQueueEntry) next);
+                    }
+                }
+            }
+        }
+        return ret;
+    }
+
+    public CaptchaDialogQueueEntry getCaptchabyID(long id) {
+        synchronized (this.queueLock) {
+            for (final QueuePriority prio : this.prios) {
+                ListIterator<QueueAction<?, ? extends Throwable>> li = this.queue.get(prio).listIterator();
+                while (li.hasNext()) {
+                    QueueAction<?, ? extends Throwable> next = li.next();
+                    if (next instanceof CaptchaDialogQueueEntry) {
+                        if (((CaptchaDialogQueueEntry) next).getID().getID() == id) { return (CaptchaDialogQueueEntry) next; }
+                    }
+                }
+            }
+            CaptchaDialogQueueEntry cur = currentItem;
+            if (cur != null && cur.getID().getID() == id) { return cur; }
+        }
+        return null;
+    }
 }

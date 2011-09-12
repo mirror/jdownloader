@@ -13,6 +13,7 @@ import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.KeyHandler;
 import org.appwork.utils.swing.dialog.Dialog;
+import org.jdownloader.api.RemoteAPIConfig;
 import org.jdownloader.controlling.LinkFilterSettings;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.linkgrabber.addlinksdialog.LinkgrabberSettings;
@@ -45,6 +46,7 @@ public class AdvancedConfigManager implements ConfigEventListener {
         register(JsonConfig.create(LinkgrabberSettings.class));
         register(JsonConfig.create(LinkCollectorConfig.class));
         register(JsonConfig.create(ReconnectConfig.class));
+        register(JsonConfig.create(RemoteAPIConfig.class));
 
     }
 

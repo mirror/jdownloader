@@ -63,6 +63,7 @@ import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.appwork.utils.swing.dialog.ProgressDialog;
 import org.appwork.utils.swing.dialog.ProgressDialog.ProgressGetter;
+import org.jdownloader.api.RemoteAPIController;
 import org.jdownloader.extensions.ExtensionController;
 import org.jdownloader.plugins.scanner.PluginScanner;
 import org.jdownloader.settings.GeneralSettings;
@@ -266,8 +267,17 @@ public class JDInit {
     }
 
     public void initControllers() {
-        GarbageController.getInstance();
-        DownloadController.getInstance();
+        new Thread() {
+
+            @Override
+            public void run() {
+                GarbageController.getInstance();
+                DownloadController.getInstance();
+                RemoteAPIController.getInstance();
+            }
+
+        }.start();
+
     }
 
     public void initGUI(final JDController controller) {

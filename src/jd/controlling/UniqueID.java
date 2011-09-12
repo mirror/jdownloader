@@ -4,7 +4,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 public class UniqueID {
     private static final AtomicLong ID = new AtomicLong(0);
-    public final long               id = ID.incrementAndGet();
+    private final long              id = ID.incrementAndGet();
 
     @Override
     public int hashCode() {
@@ -18,5 +18,14 @@ public class UniqueID {
             if (((UniqueID) o).id == id) return true;
         }
         return false;
+    }
+
+    public long getID() {
+        return id;
+    }
+
+    @Override
+    public String toString() {
+        return id + "";
     }
 }

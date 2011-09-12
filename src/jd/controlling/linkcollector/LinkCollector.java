@@ -46,6 +46,8 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
     private HashMap<UniqueID, CrawledPackage> packageMap        = new HashMap<UniqueID, CrawledPackage>();
     private HashMap<CrawledPackage, UniqueID> packageMapReverse = new HashMap<CrawledPackage, UniqueID>();
 
+    private LinkCollectorConfig               config;
+
     public static LinkCollector getInstance() {
         return INSTANCE;
     }
@@ -53,6 +55,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
     private LinkCollector() {
         linkChecker = new LinkChecker<CrawledLink>();
         linkChecker.setLinkCheckHandler(this);
+        config = JsonConfig.create(LinkCollectorConfig.class);
     }
 
     public boolean isRunning() {
@@ -103,7 +106,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
     public LinkCrawler addCrawlerJob(final CrawlerJob job) {
         if (job == null) throw new IllegalArgumentException("job is null");
         LinkCrawler lc = new LinkCrawler();
-        if (JsonConfig.create(LinkCollectorConfig.class).getDoLinkCheck()) {
+        if (config.getDoLinkCheck()) {
             lc.setHandler(new LinkCrawlerHandler() {
                 public void handleFinalLink(CrawledLink link) {
                     link.setSourceJob(job);

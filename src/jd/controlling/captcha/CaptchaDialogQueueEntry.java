@@ -1,18 +1,19 @@
 package jd.controlling.captcha;
 
 import java.io.File;
-import java.util.concurrent.atomic.AtomicLong;
 
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.controlling.IOPermission;
 import jd.controlling.IOPermission.CAPTCHA;
+import jd.controlling.UniqueID;
 import jd.gui.UserIO;
 import jd.gui.swing.dialog.CaptchaDialog;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.StorageException;
 import org.appwork.utils.event.queue.QueueAction;
+import org.appwork.utils.logging.Log;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
@@ -20,29 +21,28 @@ import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.translate._JDT;
 
 public class CaptchaDialogQueueEntry extends QueueAction<String, RuntimeException> {
-    private final static AtomicLong IDCounter = new AtomicLong(0);
-    private final long              ID;
+
+    private final UniqueID id = new UniqueID();
 
     /**
      * @return the iD
      */
-    public long getID() {
-        return ID;
+    public UniqueID getID() {
+        return id;
     }
 
-    private final CaptchaController captchaController;
-    private final int               flag;
-    private final String            def;
-    private String                  resp         = null;
-    private CaptchaDialog           dialog;
-    private IOPermission            ioPermission = null;
+    private CaptchaController captchaController;
+    private int               flag;
+    private String            def;
+    private String            resp         = null;
+    private CaptchaDialog     dialog;
+    private IOPermission      ioPermission = null;
 
     public CaptchaDialogQueueEntry(CaptchaController captchaController, int flag, String def) {
         this.captchaController = captchaController;
         this.ioPermission = captchaController.getIOPermission();
         this.flag = flag;
         this.def = def;
-        this.ID = IDCounter.incrementAndGet();
     }
 
     public String getHost() {
@@ -58,7 +58,7 @@ public class CaptchaDialogQueueEntry extends QueueAction<String, RuntimeExceptio
         try {
             dialog.dispose();
         } catch (final Throwable e) {
-            e.printStackTrace();
+            Log.exception(e);
         }
     }
 
