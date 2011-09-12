@@ -4,6 +4,7 @@ public interface IOPermission {
 
     public static enum CAPTCHA {
         OK,
+        BLOCKTHIS,
         BLOCKHOSTER,
         BLOCKALL
     }

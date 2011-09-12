@@ -593,7 +593,7 @@ public class LinkCrawler implements IOPermission {
     public synchronized void setCaptchaAllowed(String hoster, CAPTCHA mode) {
         switch (mode) {
         case OK:
-            if (hoster != null) {
+            if (hoster != null && hoster.length() > 0) {
                 captchaBlockedHoster.remove(hoster);
             } else {
                 captchaBlockedHoster.clear();

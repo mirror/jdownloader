@@ -5,6 +5,7 @@ import org.appwork.remoteapi.SessionRemoteAPI;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.logging.Log;
 import org.jdownloader.api.captcha.CaptchaAPIImpl;
+import org.jdownloader.api.jd.JDAPIImpl;
 
 public class RemoteAPIController {
 
@@ -21,6 +22,14 @@ public class RemoteAPIController {
     private SessionRemoteAPI<RemoteAPISession> rapi       = null;
     private RemoteAPISessionControllerImp      sessionc   = null;
     private int                                registered = 0;
+    private EventsAPIImpl                      eventsapi;
+
+    /**
+     * @return the eventsapi
+     */
+    public EventsAPIImpl getEventsapi() {
+        return eventsapi;
+    }
 
     private RemoteAPIController() {
         apiEnabled = JsonConfig.create(RemoteAPIConfig.class).getAPIEnabled();
@@ -28,14 +37,17 @@ public class RemoteAPIController {
         apiLocal = JsonConfig.create(RemoteAPIConfig.class).getAPIlocalhost();
         rapi = new SessionRemoteAPI<RemoteAPISession>();
         sessionc = new RemoteAPISessionControllerImp();
+        eventsapi = new EventsAPIImpl();
         try {
             sessionc.registerSessionRequestHandler(rapi);
             rapi.register(sessionc);
+            rapi.register(eventsapi);
         } catch (Throwable e) {
             Log.exception(e);
             apiEnabled = false;
         }
         register(new CaptchaAPIImpl());
+        register(new JDAPIImpl());
     }
 
     public synchronized void register(final RemoteAPIInterface x, boolean forceRegister) {

@@ -163,7 +163,7 @@ public class Netloadin extends PluginForHost {
                 if (res == null || res.trim().length() == 0) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 res = res.trim();
                 account.setValid(true);
-                if ("disallowd_agent".equalsIgnoreCase(res) || "unknown_auth".equalsIgnoreCase(res)) {
+                if ("disallowed_agent".equalsIgnoreCase(res) || "unknown_auth".equalsIgnoreCase(res)) {
                     logger.severe("api reports: " + res);
                     ai.setStatus("api reports: " + res);
 

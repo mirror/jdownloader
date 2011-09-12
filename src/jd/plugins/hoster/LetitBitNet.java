@@ -178,6 +178,9 @@ public class LetitBitNet extends PluginForHost {
         }
         /* because there can be another link to a downlodmanager first */
         if (dlUrl == null) {
+            if (br.getRedirectLocation() != null) {
+                br.getPage(br.getRedirectLocation());
+            }
             logger.severe(br.toString());
             if (br.containsHTML("callback_file_unavailable")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 30 * 60 * 1000l);
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);

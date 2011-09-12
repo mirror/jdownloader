@@ -33,12 +33,20 @@ public class CaptchaDialogQueueEntry extends QueueAction<String, RuntimeExceptio
     }
 
     private CaptchaController captchaController;
-    private int               flag;
-    private String            def;
-    private String            resp         = null;
-    private boolean           externalSet  = false;
-    private CaptchaDialog     dialog;
-    private IOPermission      ioPermission = null;
+
+    /**
+     * @return the captchaController
+     */
+    public CaptchaController getCaptchaController() {
+        return captchaController;
+    }
+
+    private int           flag;
+    private String        def;
+    private String        resp         = null;
+    private boolean       externalSet  = false;
+    private CaptchaDialog dialog;
+    private IOPermission  ioPermission = null;
 
     public CaptchaDialogQueueEntry(CaptchaController captchaController, int flag, String def) {
         this.captchaController = captchaController;
@@ -62,7 +70,7 @@ public class CaptchaDialogQueueEntry extends QueueAction<String, RuntimeExceptio
             @Override
             protected void runInEDT() {
                 try {
-                    if (dialog.isInitialized()) dialog.dispose();
+                    if (dialog != null && dialog.isInitialized()) dialog.dispose();
                 } catch (final Throwable e) {
                     Log.exception(e);
                 }

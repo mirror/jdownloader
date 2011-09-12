@@ -156,6 +156,7 @@ public abstract class PluginForDecrypt extends Plugin {
             progress.setInitials(getInitials());
             cryptLink.setProgressController(progress);
             ArrayList<DownloadLink> tmpLinks = null;
+            boolean showException = true;
             try {
                 /*
                  * we now lets log into plugin specific loggers with all
@@ -167,6 +168,9 @@ public abstract class PluginForDecrypt extends Plugin {
                 /* now we let the decrypter do its magic */
                 tmpLinks = decryptIt(cryptLink, progress);
             } catch (DecrypterException e) {
+                if (DecrypterException.CAPTCHA.equals(e.getErrorMessage())) {
+                    showException = false;
+                }
                 /*
                  * we got a decrypter exception, clear log and note that
                  * something went wrong
@@ -191,7 +195,7 @@ public abstract class PluginForDecrypt extends Plugin {
                 color = Color.RED;
                 progressShow = 15000;
             }
-            if (tmpLinks == null) {
+            if (tmpLinks == null && showException) {
                 /*
                  * null as return value? something must have happened, do not
                  * clear log

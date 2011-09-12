@@ -26,7 +26,18 @@ public class CaptchaDialogQueue extends Queue {
     public String addWait(final CaptchaDialogQueueEntry item) {
         IOPermission io = item.getIOPermission();
         if (io != null && !io.isCaptchaAllowed(item.getHost())) return null;
-        return super.addWait(item);
+        CaptchaEventSender.getInstance().fireEvent(new CaptchaTodoEvent(item.getCaptchaController()));
+        String result = null;
+        try {
+            if (item.isFinished()) {
+                result = item.getResult();
+            } else {
+                result = super.addWait(item);
+            }
+        } finally {
+            CaptchaEventSender.getInstance().fireEvent(new CaptchaFinishEvent(item.getCaptchaController()));
+        }
+        return result;
     }
 
     public CaptchaDialogQueueEntry getCurrentQueueEntry() {

@@ -47,6 +47,8 @@ public class CaptchaController {
 
     private IOPermission               ioPermission   = null;
 
+    private boolean                    responseSet    = false;
+
     public CaptchaController(IOPermission ioPermission, final String host, final String method, final File file, final String suggest, final String explain) {
         this.id = captchaCounter.getAndIncrement();
         this.host = host;
@@ -132,17 +134,19 @@ public class CaptchaController {
 
     public void setResponse(String code) {
         this.response = code;
+        this.responseSet = true;
         if (dialog != null) dialog.setResponse(code);
     }
 
     private String addCaptchaToQueue(final int flag, final String def) {
-        CaptchaEventSender.getInstance().fireEvent(new CaptchaTodoEvent(this));
-        try {
-            response = CaptchaDialogQueue.getInstance().addWait(dialog = new CaptchaDialogQueueEntry(this, flag, def));
-        } finally {
-            CaptchaEventSender.getInstance().fireEvent(new CaptchaFinishEvent(this));
-        }
+        dialog = new CaptchaDialogQueueEntry(this, flag, def);
+        String ret = CaptchaDialogQueue.getInstance().addWait(dialog);
+        if (responseSet == false) return ret;
         return response;
+    }
+
+    public CaptchaDialogQueueEntry getDialog() {
+        return dialog;
     }
 
     public IOPermission getIOPermission() {

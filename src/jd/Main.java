@@ -80,6 +80,7 @@ public class Main {
     public static SingleAppInstance SINGLE_INSTANCE_CONTROLLER = null;
 
     private static boolean          Init_Complete              = false;
+    public final static long        startup                    = System.currentTimeMillis();
 
     // private static JSonWrapper webConfig;
 
