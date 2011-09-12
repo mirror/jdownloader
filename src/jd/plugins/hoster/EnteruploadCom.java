@@ -30,11 +30,11 @@ import jd.parser.html.HTMLParser;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -61,7 +61,8 @@ public class EnteruploadCom extends PluginForHost {
     public void doFree(DownloadLink downloadLink) throws Exception, PluginException {
         boolean resumable = true;
         int maxchunks = 1;
-        // If the filesize regex above doesn't match you can copy this part into
+        // If the file size regex above doesn't match you can copy this part
+        // into
         // the available status (and delete it here)
         Form freeform = null;
         Form[] allForms = br.getForms();
@@ -147,8 +148,8 @@ public class EnteruploadCom extends PluginForHost {
             DLForm.put("code", code);
             logger.info("Put captchacode " + code + " obtained by captcha metod \"Standard captcha\" in the form.");
         } else if (br.containsHTML("api.recaptcha.net")) {
-            // Some hosters also got commentfields with captchas, therefore is
-            // the !br.contains...check Exampleplugin:
+            // Some hosters also got comment fields with captchas, therefore is
+            // the !br.contains...check Example plugin:
             // FileGigaCom
             logger.info("Detected captcha method \"Re Captcha\" for this host");
             PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
@@ -175,7 +176,7 @@ public class EnteruploadCom extends PluginForHost {
         /* Captcha END */
 
         // If the hoster uses Re Captcha the form has already been sent before
-        // here so here it's checked. Most hosters don't use Re Captcha so
+        // here so here it's checked. Most hosters don't use ReCaptcha so
         // usually recaptcha is false
         if (recaptcha == false) {
             if (password == true) {
@@ -276,7 +277,7 @@ public class EnteruploadCom extends PluginForHost {
         String space = br.getRegex(Pattern.compile(">Used space:<b>(.*?) of", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
         if (space != null) ai.setUsedSpace(space.trim() + " Mb");
         account.setValid(true);
-        String availabletraffic = br.getRegex("Traffic available.*?:</TD><TD><b>(.*?)</b>").getMatch(0);
+        String availabletraffic = br.getRegex("Traffic available today:<b>(.*?) Mb</b>").getMatch(0);
         if (availabletraffic != null) {
             ai.setTrafficLeft(SizeFormatter.getSize(availabletraffic));
         } else {
