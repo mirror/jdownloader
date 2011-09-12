@@ -23,12 +23,14 @@ import jd.config.SubConfiguration;
 import jd.gui.UserIO;
 import jd.gui.swing.components.BrowseFile;
 import jd.gui.swing.jdgui.views.settings.sidebar.AddonConfig;
+import jd.utils.JDGeoCode;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 import jd.utils.locale.JDLocale;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.storage.config.JsonConfig;
+import org.appwork.utils.Application;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.dialog.AbstractDialog;
 import org.appwork.utils.swing.dialog.Dialog;
@@ -60,27 +62,51 @@ public class InstallerDialog extends AbstractDialog<Object> {
 
     private BrowseFile browseFile;
 
+    private final String getScriptCode(String cntry) {
+        // TODO Serbian Cyrillic / Latin
+        // es-castillian: remove
+        // español and castellano correspond to the same language!
+        if (cntry.equals("CN") || cntry.equals("SG")) {
+            return "hans";
+        } else if (cntry.equals("HK") || cntry.equals("MO") || cntry.equals("TW")) { return "hant"; }
+        return null;
+    }
+
     private InstallerDialog(final File dlFolder) {
         super(UserIO.NO_ICON, _GUI._.installer_gui_title(), null, null, null);
 
-        final String countryCode = JDL.getCountryCodeByIP();
-        final String languageCode = countryCode != null ? countryCode.toLowerCase(Locale.getDefault()) : null;
+        Locale l = Locale.getDefault();
+        // ISO 3166 alpha-2 country code or UN M.49 numeric-3 area code
+        final String countryCode = JDGeoCode.COUNTRIES.containsKey(l.getCountry()) ? l.getCountry() : JDL.getCountryCodeByIP();
+        // ISO 639 alpha-2 or alpha-3 language code, or registered language
+        // subtags up to 8 alpha letters (for future enhancements).
+        final String languageCode = JDGeoCode.LANGUAGES.containsKey(l.getLanguage()) ? l.getLanguage() : null;
+        // ISO 15924 alpha-4 script code
+        final String scriptCode = (Application.getJavaVersion() >= 17000000 && JDGeoCode.EXTENSIONS.containsKey(l.getScript().toLowerCase())) ? l.getScript().toLowerCase() : (countryCode != null ? getScriptCode(countryCode) : null);
+
         if (languageCode != null) {
+            boolean C_Set = false;
+            boolean S_Set = false;
             for (final JDLocale id : JDL.getLocaleIDs()) {
-                if (id.getCountryCode() != null && id.getCountryCode().equalsIgnoreCase(languageCode)) {
-                    this.language = languageCode;
-                    break;
-                }
-            }
-            if (this.language == null) {
-                for (final JDLocale id : JDL.getLocaleIDs()) {
-                    if (id.getLanguageCode().equalsIgnoreCase(languageCode)) {
-                        this.language = languageCode;
-                        break;
+                if (id.getLanguageCode().equalsIgnoreCase(languageCode)) {
+                    if (countryCode != null && id.getCountryCode() != null && id.getCountryCode().equalsIgnoreCase(countryCode)) {
+                        if (!C_Set) {
+                            S_Set = false;
+                        }
+                        C_Set = true;
+                    } else if (C_Set) {
+                        continue;
+                    }
+                    if (scriptCode != null && id.getLngGeoCode().contains(scriptCode)) {
+                        S_Set = true;
+                        this.language = id.getLngGeoCode();
+                    } else if (!S_Set) {
+                        this.language = id.getLngGeoCode();
                     }
                 }
             }
         }
+
         if (this.language == null) {
             this.language = "en";
         }
