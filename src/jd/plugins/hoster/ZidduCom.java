@@ -38,6 +38,8 @@ public class ZidduCom extends PluginForHost {
         super(wrapper);
     }
 
+    private static final String FILEOFFLINE = "(may be deleted by the user or by the Adminstrator|src=images/oops\\.gif|The requested URL  was not found on this server)";
+
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
@@ -46,7 +48,7 @@ public class ZidduCom extends PluginForHost {
         Form form = br.getFormbyProperty("name", "dfrm");
         Thread.sleep(500);
         br.submitForm(form);
-        if (br.containsHTML("File.*?not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML(FILEOFFLINE)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         form = br.getFormbyProperty("name", "securefrm");
         if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String capurl = form.getRegex("(/CaptchaSecurityImages\\.php\\?width=\\d+&height=\\d+&characters=\\d)").getMatch(0);
@@ -61,7 +63,7 @@ public class ZidduCom extends PluginForHost {
          */
         if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
-            if (br.containsHTML("(The requested URL  was not found on this server|> Oops \\!\\!)")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error!");
+            if (br.containsHTML("FILEOFFLINE")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error!");
             throw new PluginException(LinkStatus.ERROR_CAPTCHA, JDL.L("downloadlink.status.error.captcha_wrong", "Captcha wrong"));
         }
         dl.startDownload();
@@ -84,7 +86,7 @@ public class ZidduCom extends PluginForHost {
         br.setDebug(true);
         br.setFollowRedirects(true);
         br.getPage(Url);
-        if (br.getRedirectLocation() != null && (br.getRedirectLocation().contains("errortracking") || br.getRedirectLocation().contains("notfound"))) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML(FILEOFFLINE) || br.getURL().contains("msg=File not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("top\\.document\\.title=\"Download (.*?) in Ziddu\"").getMatch(0);
         if (filename == null) filename = br.getRegex("download/\\d+/(.*?)\\.html").getMatch(0);
         String filesize = br.getRegex(">File Size :</span></td>[\t\n\r ]+<td height=\"\\d+\" align=\"left\" class=\"fontfamilyverdana normal12blue\"><span class=\"fontfamilyverdana normal12black\">(.*?)</span>").getMatch(0);

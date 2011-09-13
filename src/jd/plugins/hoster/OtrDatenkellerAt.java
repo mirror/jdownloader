@@ -19,6 +19,7 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
@@ -65,11 +66,13 @@ public class OtrDatenkellerAt extends PluginForHost {
         String dlPage = downloadLink.getDownloadURL().replace("?file=", "?getFile=");
         br.getPage(dlPage);
         String dllink = null;
+        String lowSpeedLink;
+        Browser br2 = br.cloneBrowser();
         if (br.containsHTML("klicken um den Download zu starten")) {
             dllink = getDllink();
         } else {
             downloadLink.getLinkStatus().setStatusText("Waiting for ticket...");
-            for (int i = 0; i <= 25; i++) {
+            for (int i = 0; i <= 50; i++) {
                 sleep(28 * 1000l, downloadLink);
                 String position = br.getRegex("<td>Deine Position in der Warteschlange: </td><td>~(\\d+)</td></tr>").getMatch(0);
                 if (position != null) downloadLink.getLinkStatus().setStatusText("Waiting for ticket...Position in der Warteschlange: " + position);
@@ -79,7 +82,19 @@ public class OtrDatenkellerAt extends PluginForHost {
                     dllink = getDllink();
                     break;
                 }
-                if (i > 24) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Didn't get a ticket");
+                lowSpeedLink = br.getRegex("\"(\\?lowSpeed=[^<>\\'\"]+)\"").getMatch(0);
+                if (i > 40 && lowSpeedLink != null) {
+                    br2.getPage("http://otr.datenkeller.at/" + lowSpeedLink);
+                    dllink = br2.getRegex(">Dein Download Link:<br>[\t\n\r ]+<a href=\"(http://[^<>\\'\"]+)\"").getMatch(0);
+                    if (dllink == null) dllink = br2.getRegex("\"(http://\\d+\\.\\d+\\.\\d+\\.\\d+/low/[a-z0-9]+/[^<>\\'\"]+)\"").getMatch(0);
+                    if (dllink != null) {
+                        logger.info("Using lowspeed link for downloadlink: " + downloadLink.getDownloadURL());
+                        break;
+                    } else {
+                        logger.warning("Failed to find low speed link, continuing to look for downloadticket...");
+                    }
+                }
+                if (i > 45) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Didn't get a ticket");
                 logger.info("Didn't get a ticket on try " + i + ". Retrying...Position: " + position);
             }
         }

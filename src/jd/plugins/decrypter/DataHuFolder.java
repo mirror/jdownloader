@@ -43,15 +43,17 @@ public class DataHuFolder extends PluginForDecrypt {
         br.getPage(parameter);
         if (br.containsHTML(">Sajnos ez a megosztás már megszűnt\\. Valószínűleg tulajdonosa már törölte rendszerünkből\\.<")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Wrong URL or the folder no longer exists."));
 
-        String[] links = br.getRegex("<div><a href='(http://.*?)'</a></div>").getColumn(0);
-        if (links == null || links.length == 0) links = br.getRegex("('http://[\\w\\.]*?data\\.hu/get/\\d+/.*?)'").getColumn(0);
-        String[] folders = br.getRegex("('http://[\\w\\.]*?data\\.hu/dir/[0-9a-z]+)'").getColumn(0);
+        String[] links = br.getRegex("<div><a href=\\'(http://.*?)\\'</a></div>").getColumn(0);
+        if (links == null || links.length == 0) links = br.getRegex("\\'(http://[\\w\\.]*?data\\.hu/get/\\d+/.*?)\\'").getColumn(0);
+        String[] folders = br.getRegex("\\'(http://[\\w\\.]*?data\\.hu/dir/[0-9a-z]+)\\'").getColumn(0);
         if ((links == null || links.length == 0) && (folders == null || folders.length == 0)) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-        for (String dl : links)
-            decryptedLinks.add(createDownloadlink(dl));
+        if (links != null && links.length != 0) {
+            for (String dl : links)
+                decryptedLinks.add(createDownloadlink(dl));
+        }
         if (folders != null && folders.length != 0) {
             for (String folderlink : folders)
                 decryptedLinks.add(createDownloadlink(folderlink));

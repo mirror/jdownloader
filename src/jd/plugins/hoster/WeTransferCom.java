@@ -44,7 +44,7 @@ public class WeTransferCom extends PluginForHost {
 
     private String              HASH             = null;
     private String              CODE             = null;
-    private static final String POSTDOWNLOADLINK = "https://krusty.wetransfer.com/fsdl.php";
+    private static final String POSTDOWNLOADLINK = "https://crazycatlady3.wetransfer.com/fsdl.php";
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
@@ -61,7 +61,7 @@ public class WeTransferCom extends PluginForHost {
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
-            con = br2.openPostConnection(POSTDOWNLOADLINK, "hash=" + HASH + "&flash=WIN%2010%2C3%2C181%2C26&profile=1&corporate=null&code=" + CODE);
+            con = br2.openPostConnection(POSTDOWNLOADLINK, "hash=" + HASH + "&flash=WIN%2010%2C3%2C183%2C7&corporate=null&profile=1&code=" + CODE);
             if (!con.getContentType().contains("html")) {
                 link.setDownloadSize(con.getLongContentLength());
                 link.setFinalFileName(getFileNameFromHeader(con));
@@ -81,7 +81,7 @@ public class WeTransferCom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         // More chunks are possible for some links but not for all
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, POSTDOWNLOADLINK, "hash=" + HASH + "&flash=WIN%2010%2C3%2C181%2C26&profile=1&corporate=null&code=" + CODE, true, -2);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, POSTDOWNLOADLINK, "hash=" + HASH + "&flash=WIN%2010%2C3%2C183%2C7&corporate=null&profile=1&code=" + CODE, true, -2);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
