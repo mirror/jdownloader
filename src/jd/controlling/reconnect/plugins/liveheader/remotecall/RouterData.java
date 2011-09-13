@@ -12,7 +12,25 @@ public class RouterData implements Storable {
     private String routerName;
     private int    priorityIndicator;
     private String mac;
+    private long   averageOfflineDuration;
 
+    public long getAverageOfflineDuration() {
+        return averageOfflineDuration;
+    }
+
+    public void setAverageOfflineDuration(long averageOfflineDuration) {
+        this.averageOfflineDuration = averageOfflineDuration;
+    }
+
+    public long getAverageSuccessDuration() {
+        return averageSuccessDuration;
+    }
+
+    public void setAverageSuccessDuration(long averageSuccessDuration) {
+        this.averageSuccessDuration = averageSuccessDuration;
+    }
+
+    private long   averageSuccessDuration;
     private String manufactor;
     private String scriptID;
 
@@ -101,6 +119,10 @@ public class RouterData implements Storable {
 
     public RouterData() {
         this.createTime = System.currentTimeMillis();
+    }
+
+    public RouterData(String scriptID) {
+        this.scriptID = scriptID;
     }
 
     public long getCreateTime() {

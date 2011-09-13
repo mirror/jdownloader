@@ -271,4 +271,10 @@ public interface LiveheaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "You have set up your Reconnect successfully. Please share your settings to improve our Reconnect Wizard." })
     String LiveHeaderReconnect_onConfigValueModified_ask_msg();
 
+    @Default(lngs = { "en" }, values = { "Service not Available" })
+    String LiveHeaderDetectionWizard_runOnlineScan_notavailable_t();
+
+    @Default(lngs = { "en" }, values = { "This service is currently not available.\r\nPlease try again later!" })
+    String LiveHeaderDetectionWizard_runOnlineScan_notavailable_mm();
+
 }

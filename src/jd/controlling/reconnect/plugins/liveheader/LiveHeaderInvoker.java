@@ -11,6 +11,8 @@ import jd.controlling.reconnect.ReconnectException;
 import jd.controlling.reconnect.ReconnectInvoker;
 import jd.controlling.reconnect.ReconnectResult;
 import jd.controlling.reconnect.ipcheck.IP;
+import jd.controlling.reconnect.plugins.liveheader.remotecall.RecollInterface;
+import jd.controlling.reconnect.plugins.liveheader.remotecall.RouterData;
 import jd.controlling.reconnect.plugins.liveheader.translate.T;
 import jd.http.Browser;
 import jd.http.Request;
@@ -21,7 +23,9 @@ import jd.nutils.encoding.Encoding;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.Regex;
+import org.appwork.utils.logging.Log;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
+import org.jdownloader.remotecall.RemoteClient;
 import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
@@ -47,6 +51,47 @@ public class LiveHeaderInvoker extends ReconnectInvoker {
         return ip;
     }
 
+    @Override
+    public ReconnectResult validate(ReconnectResult ret) throws InterruptedException, ReconnectException {
+
+        try {
+            ReconnectResult r = super.validate(ret);
+
+            RouterData rd = ((LiveHeaderReconnectResult) r).getRouterData();
+
+            if (rd != null && rd.getScriptID() != null) {
+                RecollInterface serverConnector;
+                try {
+                    serverConnector = new RemoteClient(LiveHeaderDetectionWizard.UPDATE3_JDOWNLOADER_ORG_RECOLL).getFactory().newInstance(RecollInterface.class);
+
+                    if (r.isSuccess()) {
+
+                        serverConnector.setWorking(rd.getScriptID(), null, r.getSuccessDuration(), r.getOfflineDuration());
+                    } else {
+                        serverConnector.setNotWorking(rd.getScriptID(), null);
+                    }
+
+                } catch (Throwable e) {
+                    Log.exception(e);
+                }
+            }
+            return r;
+        } catch (ReconnectException e) {
+            RouterData rd = ((LiveHeaderReconnectResult) ret).getRouterData();
+            if (rd != null && rd.getScriptID() != null) {
+                RecollInterface serverConnector;
+                try {
+                    serverConnector = new RemoteClient(LiveHeaderDetectionWizard.UPDATE3_JDOWNLOADER_ORG_RECOLL).getFactory().newInstance(RecollInterface.class);
+                    serverConnector.setNotWorking(rd.getScriptID(), null);
+                } catch (Throwable e1) {
+                    Log.exception(e1);
+                }
+            }
+            throw e;
+        }
+
+    }
+
     private String            user;
     private String            pass;
     private String            ip;
@@ -63,7 +108,7 @@ public class LiveHeaderInvoker extends ReconnectInvoker {
     }
 
     protected ReconnectResult createReconnectResult() {
-        return new LiveHeaderReconnectResult();
+        return new LiveHeaderReconnectResult(routerData);
     }
 
     public String getName() {
@@ -335,6 +380,7 @@ public class LiveHeaderInvoker extends ReconnectInvoker {
 
     private HashMap<String, String> variables;
     private HashMap<String, String> headerProperties;
+    private RouterData              routerData;
 
     public static String prepareScript(String script) {
         script = script.replaceAll("\\[\\[\\[", "<");
@@ -584,6 +630,12 @@ public class LiveHeaderInvoker extends ReconnectInvoker {
         } finally {
             feedback = null;
         }
+    }
+
+    public ReconnectResult validate(RouterData test) throws InterruptedException, ReconnectException {
+        this.routerData = test;
+
+        return validate();
     }
 
 }

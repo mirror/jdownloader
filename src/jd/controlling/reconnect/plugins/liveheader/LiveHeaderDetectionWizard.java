@@ -36,6 +36,7 @@ import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.utils.JDUtilities;
 
+import org.appwork.remotecall.client.RemoteCallCommunicationException;
 import org.appwork.remotecall.server.ParsingException;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Hash;
@@ -128,6 +129,12 @@ public class LiveHeaderDetectionWizard {
 
             r.isAlive();
 
+            RouterData rd = r.findRouter(new RouterData("382461045db1f79fee4d723ba23f6288"), null).get(0);
+
+            r.setWorking(rd.getScriptID(), null, 500, 100);
+
+            rd = r.findRouter(new RouterData("382461045db1f79fee4d723ba23f6288"), null).get(0);
+            System.out.println(rd.getAverageSuccessDuration());
         } catch (IllegalArgumentException e) {
             e.printStackTrace();
         } catch (ParsingException e) {
@@ -358,19 +365,20 @@ public class LiveHeaderDetectionWizard {
             ReconnectResult res;
             try {
                 LiveHeaderInvoker inv = new LiveHeaderInvoker(getPlugin(), test.getScript(), username, password, gatewayAdressHost, routerName != null && routerName.trim().length() > 0 ? routerName : test.getRouterName());
-                res = inv.validate();
-                ((LiveHeaderReconnectResult) res).setRouterData(test);
+                res = inv.validate(test);
+
                 if (res != null && res.isSuccess()) {
 
                     ret.add(res);
                     processCallBack.setStatus(this, ret);
+
                     if (i < tests.size() - 1) {
 
                         if (ret.size() == 1) NewUIO.I().showConfirmDialog(0, _GUI._.LiveHeaderDetectionWizard_testList_firstSuccess_title(), _GUI._.LiveHeaderDetectionWizard_testList_firstsuccess_msg(TimeFormatter.formatMilliSeconds(res.getSuccessDuration(), 0)), NewTheme.I().getIcon("ok", 32), _GUI._.LiveHeaderDetectionWizard_testList_ok(), _GUI._.LiveHeaderDetectionWizard_testList_use());
                         return ret;
                     }
                 } else {
-                    recoll.setNotWorking(test.getScriptID(), null);
+
                 }
             } catch (DialogNoAnswerException e) {
                 break;
@@ -431,6 +439,9 @@ public class LiveHeaderDetectionWizard {
             ArrayList<RouterData> list = downloadRouterDatasByAutoDetectValues();
 
             return runTests(list, processCallBack);
+        } catch (RemoteCallCommunicationException e) {
+            processCallBack.showDialog(this, T._.LiveHeaderDetectionWizard_runOnlineScan_notavailable_t(), T._.LiveHeaderDetectionWizard_runOnlineScan_notavailable_mm(), NewTheme.I().getIcon("error", 32));
+            return null;
         } catch (DialogNoAnswerException e) {
             throw new InterruptedException();
         } catch (InterruptedException e) {

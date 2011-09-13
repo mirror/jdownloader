@@ -7,6 +7,10 @@ public class LiveHeaderReconnectResult extends ReconnectResult {
 
     private RouterData routerData;
 
+    public LiveHeaderReconnectResult(RouterData routerData2) {
+        routerData = routerData2;
+    }
+
     public void setRouterData(RouterData test) {
         this.routerData = test;
     }
