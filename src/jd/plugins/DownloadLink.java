@@ -236,6 +236,10 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         uniqueID = new UniqueID();
     }
 
+    public UniqueID getUniqueID() {
+        return uniqueID;
+    }
+
     public DownloadLink addSourcePluginPassword(String sourcePluginPassword) {
         if (sourcePluginPassword == null || sourcePluginPassword.length() == 0) return this;
         synchronized (this) {

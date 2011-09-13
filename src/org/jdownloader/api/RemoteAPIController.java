@@ -5,6 +5,7 @@ import org.appwork.remoteapi.SessionRemoteAPI;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.logging.Log;
 import org.jdownloader.api.captcha.CaptchaAPIImpl;
+import org.jdownloader.api.downloads.DownloadsAPIImpl;
 import org.jdownloader.api.jd.JDAPIImpl;
 
 public class RemoteAPIController {
@@ -48,6 +49,7 @@ public class RemoteAPIController {
         }
         register(new CaptchaAPIImpl());
         register(new JDAPIImpl());
+        register(new DownloadsAPIImpl());
     }
 
     public synchronized void register(final RemoteAPIInterface x, boolean forceRegister) {

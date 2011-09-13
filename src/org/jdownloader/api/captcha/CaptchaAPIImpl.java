@@ -89,16 +89,25 @@ public class CaptchaAPIImpl implements CaptchaAPI, CaptchaEventListener {
             CaptchaJob job = new CaptchaJob();
             job.setCaptchaID(entry.getID().getID());
             job.setHosterID(entry.getHost());
-            EventsAPIEvent event = new EventsAPIEvent();
             HashMap<String, Object> data = new HashMap<String, Object>();
             data.put("module", "captcha");
             data.put("type", "new");
             data.put("data", job);
-            event.setData(data);
-            RemoteAPIController.getInstance().getEventsapi().publishEvent(event, null);
+            RemoteAPIController.getInstance().getEventsapi().publishEvent(new EventsAPIEvent(data), null);
         }
     }
 
     public void captchaFinish(CaptchaController controller) {
+        CaptchaDialogQueueEntry entry = controller.getDialog();
+        if (entry != null) {
+            CaptchaJob job = new CaptchaJob();
+            job.setCaptchaID(entry.getID().getID());
+            job.setHosterID(entry.getHost());
+            HashMap<String, Object> data = new HashMap<String, Object>();
+            data.put("module", "captcha");
+            data.put("type", "expired");
+            data.put("data", job);
+            RemoteAPIController.getInstance().getEventsapi().publishEvent(new EventsAPIEvent(data), null);
+        }
     }
 }
