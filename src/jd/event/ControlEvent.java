@@ -25,51 +25,51 @@ import org.appwork.utils.event.DefaultIntEvent;
  */
 public class ControlEvent extends DefaultIntEvent {
 
-    private static final long serialVersionUID = 1639354503246054870L;
+    private static final long serialVersionUID                 = 1639354503246054870L;
 
     /**
      * Ein PLugin wird beendet. Source: ist jeweils das PLugin Parameter:
      * Decrypter: decrypted Links Vector
      */
-    public static final int CONTROL_PLUGIN_INACTIVE = 4;
+    public static final int   CONTROL_PLUGIN_INACTIVE          = 4;
 
     /**
      * Ein Plugin fängt an zu arbeiten. Source ist das PLugin selbst Parameter:
      * Decrypter: encryptedLinks
      */
-    public static final int CONTROL_PLUGIN_ACTIVE = 5;
+    public static final int   CONTROL_PLUGIN_ACTIVE            = 5;
 
     /**
      * Wird aufgerufen sobald der Downloadvorgang komplett gestoppt ist
      */
-    public static final int CONTROL_DOWNLOAD_STOP = 6;
+    public static final int   CONTROL_DOWNLOAD_STOP            = 6;
 
     /**
      * Gibt an, dass der Downloadvorgang gestartet wurde
      */
-    public static final int CONTROL_DOWNLOAD_START = 13;
+    public static final int   CONTROL_DOWNLOAD_START           = 13;
 
     /**
      * wird verschickt wenn das Kontextmenü der Downloadlinks geöffnet wird
      * (oder package); soiu7rce: link/packlage parameter:menuitem arraylist
      */
-    public static final int CONTROL_LINKLIST_CONTEXT_MENU = 22;
+    public static final int   CONTROL_LINKLIST_CONTEXT_MENU    = 22;
 
     /**
      * Gibt an dass ein plugin, eine INteraction etc. einen Forschritt gemacht
      * haben. Das entsprechende Event wird aus der ProgressController klasse
      * ausgelöst
      */
-    public static final int CONTROL_ON_PROGRESS = 24;
+    public static final int   CONTROL_ON_PROGRESS              = 24;
 
     /**
      * Wird vom Controller vor dem beeenden des Programms aufgerufen
      */
-    public static final int CONTROL_SYSTEM_EXIT = 26;
+    public static final int   CONTROL_SYSTEM_EXIT              = 26;
 
-    public static final int CONTROL_JDPROPERTY_CHANGED = 27;
+    public static final int   CONTROL_JDPROPERTY_CHANGED       = 27;
 
-    public static final int CONTROL_INIT_COMPLETE = 30;
+    public static final int   CONTROL_INIT_COMPLETE            = 30;
 
     /**
      * Wird verwendet wenn eine datei verarbeitet wurde.z.B. eine datei entpackt
@@ -77,27 +77,29 @@ public class ControlEvent extends DefaultIntEvent {
      * entscheiden wie die files weiterverareitet werden sollen. Die files
      * werden als File[] parameter übergeben
      */
-    public static final int CONTROL_ON_FILEOUTPUT = 33;
+    public static final int   CONTROL_ON_FILEOUTPUT            = 33;
 
     /**
      * Sammelt über DataBox.java daten ein
      */
-    public static final int CONTROL_COLLECT_DATA = 34;
+    public static final int   CONTROL_COLLECT_DATA             = 34;
 
     /**
      * prepareShutDown is complete
      */
-    public static final int CONTROL_SYSTEM_SHUTDOWN_PREPARED = 261;
+    public static final int   CONTROL_SYSTEM_SHUTDOWN_PREPARED = 261;
 
     /**
      * Die ID des Ereignisses
      */
-    private final int controlID;
+    private final int         controlID;
 
     /**
      * Ein optionaler Parameter
      */
-    private final Object parameter;
+    private final Object      parameter1;
+
+    private final Object      parameter2;
 
     public ControlEvent(final Object source, final int controlID) {
         this(source, controlID, null);
@@ -106,16 +108,28 @@ public class ControlEvent extends DefaultIntEvent {
     public ControlEvent(final Object source, final int controlID, final Object parameter) {
         super(source, controlID);
         this.controlID = controlID;
-        this.parameter = parameter;
+        this.parameter1 = parameter;
+        this.parameter2 = null;
+    }
+
+    public ControlEvent(final Object source, final int controlID, final Object parameter1, final Object parameter2) {
+        super(source, controlID);
+        this.controlID = controlID;
+        this.parameter1 = parameter1;
+        this.parameter2 = parameter2;
     }
 
     public Object getParameter() {
-        return this.parameter;
+        return this.parameter1;
+    }
+
+    public Object getParameter2() {
+        return this.parameter2;
     }
 
     @Override
     public String toString() {
-        return "[source:" + this.getCaller() + ", controlID:" + this.controlID + ", parameter:" + this.parameter + "]";
+        return "[source:" + this.getCaller() + ", controlID:" + this.controlID + ", parameter:" + this.parameter1 + "," + this.parameter2 + "]";
     }
 
     @Deprecated

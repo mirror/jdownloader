@@ -386,7 +386,7 @@ public class DownloadsTable extends PackageControllerTable<FilePackage, Download
         }
         ret.add(RatedMenuItem.createSeparator());
         final ArrayList<MenuAction> entries = new ArrayList<MenuAction>();
-        JDUtilities.getController().fireControlEventDirect(new ControlEvent(obj, ControlEvent.CONTROL_LINKLIST_CONTEXT_MENU, entries));
+        JDUtilities.getController().fireControlEventDirect(new ControlEvent(obj, ControlEvent.CONTROL_LINKLIST_CONTEXT_MENU, entries, this));
         if (entries != null && entries.size() > 0) {
             for (final MenuAction next : entries) {
                 if (next.getType() == ToolBarAction.Types.SEPARATOR) {

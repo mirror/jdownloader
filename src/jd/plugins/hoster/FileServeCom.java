@@ -90,7 +90,7 @@ public class FileServeCom extends PluginForHost {
                 this.br.postPage("http://app.fileserve.com/api/linkchecker/", sb.toString());
                 for (final DownloadLink dl : links) {
                     final String fileid = getID(dl);
-                    final String regexForThisLink = "\"" + fileid + "\"\\:\\{(.*?)\\}";
+                    final String regexForThisLink = "\"" + fileid + "\"\\:\\{(.*?)\\\"}";
                     final String theData = this.br.getRegex(regexForThisLink).getMatch(0);
                     if (theData == null) {
                         logger.warning("Fileserve availablecheck is broken!");
@@ -98,7 +98,7 @@ public class FileServeCom extends PluginForHost {
                     }
                     final String status = new Regex(theData, "status\":\"(.*?)\"").getMatch(0);
                     String filename = new Regex(theData, "filename\":\"(.*?)\"").getMatch(0);
-                    String filesize = new Regex(theData, "filesize\":\"(\\d+)\"").getMatch(0);
+                    String filesize = new Regex(theData, "filesize\":\"(\\d+)").getMatch(0);
                     if (filename == null || filesize == null) {
                         logger.warning("Fileserve availablecheck is broken!");
                         dl.setAvailable(false);

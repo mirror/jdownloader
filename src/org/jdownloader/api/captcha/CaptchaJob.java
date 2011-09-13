@@ -8,9 +8,9 @@ public class CaptchaJob implements Storable {
         NORMAL;
     }
 
-    private String captchaID;
+    private long   captchaID;
     private String hosterID;
-    private String linkID;
+    private long   linkID;
     private TYPE   type = TYPE.NORMAL;
 
     /**
@@ -31,7 +31,7 @@ public class CaptchaJob implements Storable {
     public CaptchaJob() {
     }
 
-    public String getCaptchaID() {
+    public long getCaptchaID() {
         return captchaID;
     }
 
@@ -39,7 +39,7 @@ public class CaptchaJob implements Storable {
         return hosterID;
     }
 
-    public String getLinkID() {
+    public long getLinkID() {
         return linkID;
     }
 
@@ -47,7 +47,7 @@ public class CaptchaJob implements Storable {
      * @param captchaID
      *            the captchaID to set
      */
-    public void setCaptchaID(String captchaID) {
+    public void setCaptchaID(long captchaID) {
         this.captchaID = captchaID;
     }
 
@@ -63,7 +63,7 @@ public class CaptchaJob implements Storable {
      * @param linkID
      *            the linkID to set
      */
-    public void setLinkID(String linkID) {
+    public void setLinkID(long linkID) {
         this.linkID = linkID;
     }
 

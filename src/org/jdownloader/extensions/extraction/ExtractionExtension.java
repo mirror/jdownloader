@@ -56,6 +56,7 @@ import org.jdownloader.extensions.extraction.split.HJSplit;
 import org.jdownloader.extensions.extraction.split.Unix;
 import org.jdownloader.extensions.extraction.split.XtreamSplit;
 import org.jdownloader.extensions.extraction.translate.T;
+import org.jdownloader.gui.views.downloads.table.DownloadsTable;
 import org.jdownloader.settings.GeneralSettings;
 
 public class ExtractionExtension extends AbstractExtension<ExtractionConfig> implements ControlListener, ActionListener {
@@ -505,6 +506,8 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
             }
             break;
         case ControlEvent.CONTROL_LINKLIST_CONTEXT_MENU:
+            Object source = event.getParameter2();
+            if (source == null || !(source instanceof DownloadsTable)) break;
             ArrayList<MenuAction> items = (ArrayList<MenuAction>) event.getParameter();
             MenuAction m;
             MenuAction container = new MenuAction("Extract", "optional.extraction.linkmenu.container", 0) {
@@ -561,7 +564,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
                     m.setEnabled(false);
                 }
 
-                m.setProperty(MENU_LINKS, ((DownloadTable) ((JViewport) DownloadLinksPanel.getDownloadLinksPanel().getScrollPane().getComponent(0)).getComponent(0)).getSelectedDownloadLinks());
+                m.setProperty(MENU_LINKS, ((DownloadsTable) source).getSelectedDownloadLinks());
                 container.addMenuItem(m = new MenuAction("Autoextract", "optional.extraction.linkmenu.autoextract", SET_LINK_AUTOEXTRACT) {
 
                     private static final long serialVersionUID = -6049435417230844732L;
@@ -586,7 +589,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
                 if (!this.getPluginConfig().getBooleanProperty("ACTIVATED", true)) {
                     m.setEnabled(false);
                 }
-                m.setProperty(MENU_LINKS, ((DownloadTable) ((JViewport) DownloadLinksPanel.getDownloadLinksPanel().getScrollPane().getComponent(0)).getComponent(0)).getSelectedDownloadLinks());
+                m.setProperty(MENU_LINKS, ((DownloadsTable) source).getSelectedDownloadLinks());
                 container.addMenuItem(new MenuAction(Types.SEPARATOR) {
 
                     private static final long serialVersionUID = -8990247058181516475L;
@@ -634,7 +637,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
                 }
 
                 m.setProperty("LINK", link);
-                m.setProperty(MENU_LINKS, ((DownloadTable) ((JViewport) DownloadLinksPanel.getDownloadLinksPanel().getScrollPane().getComponent(0)).getComponent(0)).getSelectedDownloadLinks());
+                m.setProperty(MENU_LINKS, ((DownloadsTable) source).getSelectedDownloadLinks());
                 File dir = this.getExtractToPath(link);
                 while (dir != null && !dir.exists()) {
                     if (dir.getParentFile() == null) break;
