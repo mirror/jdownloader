@@ -31,18 +31,18 @@ import jd.parser.html.Form.MethodType;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wupload.com" }, urls = { "http://(www\\.)?wupload\\.[a-z0-9]{1,4}/.*?file/([0-9]+(/.+)?|[a-z0-9]+/[0-9]+(/.+)?)" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wupload.com" }, urls = { "http://(www\\.)?wupload\\..*?/.*?file/([0-9]+(/.+)?|[a-z0-9]+/[0-9]+(/.+)?)" }, flags = { 2 })
 public class WUploadCom extends PluginForHost implements ControlListener {
 
     private static final Object LOCK               = new Object();
@@ -172,7 +172,7 @@ public class WUploadCom extends PluginForHost implements ControlListener {
             downloadLink.setProperty("pass", null);
             throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.errors.wrongpassword", "Password wrong"));
         }
-        if (br.containsHTML("((?i)An Error Occurred(?-i)|>404 Not Found<)")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.wupload.servererror", "Server error"), 20 * 60 * 1000l); }
+        if (br.containsHTML("((?i)An Error Occurred(?-i)|>404 Not Found<|>The server is temporarily offline for maintenance, please try again later<)")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.wupload.servererror", "Server error"), 20 * 60 * 1000l); }
         if (br.containsHTML("This file is available for premium users only\\.")) { throw new PluginException(LinkStatus.ERROR_FATAL, "Premium only file. Buy Premium Account"); }
         if (br.containsHTML("(You can not access this page directly\\. Please use the|>website to start your download</a>|<p>If the problem persists, clear your cookies and try again\\.</p>)")) {
             logger.warning(br.toString());
