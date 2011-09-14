@@ -44,11 +44,13 @@ public class OronComFolder extends PluginForDecrypt {
         if (br.containsHTML(">No such folder exist<")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
         String fpName = br.getRegex("<h2>(.*?)</h2>").getMatch(0);
         String[] links = br.getRegex("<td style=\"padding-left: 5px\"><a href=\"(http://.*?)\"").getColumn(0);
-        if (links == null || links.length == 0) links = br.getRegex("\"(http://oron\\.com/[a-z0-9]{12})\"").getColumn(0);
-        if (links == null || links.length == 0) return null;
-        for (String dl : links)
-            decryptedLinks.add(createDownloadlink(dl));
         String[] folders = br.getRegex("\"(http://oron\\.com/folder/[a-z0-9]+)\"").getColumn(0);
+        if (links == null || links.length == 0) links = br.getRegex("\"(http://oron\\.com/[a-z0-9]{12})\"").getColumn(0);
+        if ((links == null || links.length == 0) && (folders == null || folders.length == 0)) return null;
+        if (links != null && links.length != 0) {
+            for (String dl : links)
+                decryptedLinks.add(createDownloadlink(dl));
+        }
         if (folders != null && folders.length != 0) {
             String id = new Regex(parameter, "oron\\.com/folder/([a-z0-9]+)").getMatch(0);
             for (String aFolder : folders)

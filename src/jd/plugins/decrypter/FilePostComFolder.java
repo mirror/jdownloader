@@ -44,11 +44,13 @@ public class FilePostComFolder extends PluginForDecrypt {
         if (br.containsHTML(">This folder is empty<")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the folder no longer exists."));
         String fpName = br.getRegex("<h1>(.*?)</h1>").getMatch(0);
         String[] links = br.getRegex("<div class=\"file archive\"><a href=\"(https?://.*?)\"").getColumn(0);
-        if (links == null || links.length == 0) links = br.getRegex("\"(https?://filepost\\.com/files/[a-z0-9]+)\"").getColumn(0);
-        if (links == null || links.length == 0) return null;
-        for (String dl : links)
-            decryptedLinks.add(createDownloadlink(dl));
         String[] folders = br.getRegex("\"(https?://filepost\\.com/folder/[a-z0-9]+)\"").getColumn(0);
+        if (links == null || links.length == 0) links = br.getRegex("\"(https?://filepost\\.com/files/[a-z0-9]+)\"").getColumn(0);
+        if ((links == null || links.length == 0) && (folders == null || folders.length == 0)) return null;
+        if (links != null && links.length != 0) {
+            for (String dl : links)
+                decryptedLinks.add(createDownloadlink(dl));
+        }
         if (folders != null && folders.length != 0) {
             String id = new Regex(parameter, "filepost\\.com/folder/([a-z0-9]+)").getMatch(0);
             for (String aFolder : folders)
