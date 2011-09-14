@@ -43,8 +43,8 @@ public class OronComFolder extends PluginForDecrypt {
         br.getPage(parameter);
         if (br.containsHTML(">No such folder exist<")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
         String fpName = br.getRegex("<h2>(.*?)</h2>").getMatch(0);
-        String[] links = br.getRegex("class=\"f_tahoma f_13px\"><a href=\"(http://.*?)\"").getColumn(0);
-        if (links == null || links.length == 0) links = br.getRegex("\"(http://oron\\.com/[a-z0-9]{12}/.*?\\.html)\"").getColumn(0);
+        String[] links = br.getRegex("<td style=\"padding-left: 5px\"><a href=\"(http://.*?)\"").getColumn(0);
+        if (links == null || links.length == 0) links = br.getRegex("\"(http://oron\\.com/[a-z0-9]{12})\"").getColumn(0);
         if (links == null || links.length == 0) return null;
         for (String dl : links)
             decryptedLinks.add(createDownloadlink(dl));
