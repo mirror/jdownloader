@@ -3,9 +3,7 @@ package org.jdownloader.api.downloads;
 import jd.plugins.DownloadLink;
 
 import org.appwork.storage.Storable;
-import org.codehaus.jackson.map.annotate.JsonSerialize;
 
-@JsonSerialize(include = JsonSerialize.Inclusion.NON_DEFAULT)
 public class DownloadLinkStorable implements Storable {
 
     public long getId() {

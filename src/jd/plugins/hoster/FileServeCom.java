@@ -43,10 +43,9 @@ import org.appwork.utils.formatter.TimeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fileserve.com" }, urls = { "http://(www\\.)?fileserve\\.com/file/[a-zA-Z0-9]+" }, flags = { 2 })
 public class FileServeCom extends PluginForHost {
 
-    public String               FILEIDREGEX = "fileserve\\.com/file/([a-zA-Z0-9]+)(http:.*)?";
-    private boolean             showDialog  = false;
-    public static String        agent       = RandomUserAgent.generate();
-    private static final String COOKIE_HOST = "http://www.fileserve.com";
+    public String        FILEIDREGEX = "fileserve\\.com/file/([a-zA-Z0-9]+)(http:.*)?";
+
+    public static String agent       = RandomUserAgent.generate();
 
     public FileServeCom(final PluginWrapper wrapper) {
         super(wrapper);
@@ -254,7 +253,7 @@ public class FileServeCom extends PluginForHost {
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
         try {
-            showDialog = true;
+
             loginAPI(br, account);
         } catch (PluginException e) {
             account.setValid(false);
@@ -263,8 +262,6 @@ public class FileServeCom extends PluginForHost {
             } else {
                 return ai;
             }
-        } finally {
-            showDialog = false;
         }
         if (account.getAccountInfo() != null) {
             return account.getAccountInfo();
@@ -339,16 +336,20 @@ public class FileServeCom extends PluginForHost {
 
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         this.requestFileInformation(link);
-        this.loginAPI(br, account);
-        String username = account.getUser();
-        String password = account.getPass();
-        String basic = "Basic " + Encoding.Base64Encode(username + ":" + password);
-        this.setBrowserExclusive();
-        br.setFollowRedirects(false);
-        br.getHeaders().put("Authorization", basic);
-        br.getPage(link.getDownloadURL());
-        String dllink = br.getRedirectLocation();
+        String username = Encoding.urlEncode(account.getUser());
+        String password = Encoding.urlEncode(account.getPass());
+        String id = getID(link);
+        br.postPage("http://app.fileserve.com/api/download/premium/", "username=" + username + "&password=" + password + "&shorten=" + id);
+        String code = br.getRegex("error_code\":(\\d+)").getMatch(0);
+        if ("305".equalsIgnoreCase(code) || "500".equalsIgnoreCase(code)) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 30 * 60 * 1000l); }
+        if ("403".equalsIgnoreCase(code) || "605".equalsIgnoreCase(code)) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE); }
+        if ("606".equalsIgnoreCase(code) || "607".equalsIgnoreCase(code) || "608".equalsIgnoreCase(code)) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        String dllink = null;
+        if ("302".equalsIgnoreCase(code)) {
+            dllink = br.getRegex("next\":\"(.*?)\"").getMatch(0);
+        }
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dllink = dllink.replaceAll("\\\\/", "/");
         br.setFollowRedirects(true);
         this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, link, dllink, true, 0);
         if (this.dl.getConnection().getResponseCode() == 404) {

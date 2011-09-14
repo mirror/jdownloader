@@ -5,9 +5,7 @@ import java.util.List;
 import jd.plugins.FilePackage;
 
 import org.appwork.storage.Storable;
-import org.codehaus.jackson.map.annotate.JsonSerialize;
 
-@JsonSerialize(include = JsonSerialize.Inclusion.NON_NULL)
 public class FilePackageStorable implements Storable {
 
     public String getName() {
