@@ -939,7 +939,11 @@ public class LnkCrptWs extends PluginForDecrypt {
         }
         if (password != null && password.hasInputFieldByName("password")) { throw new DecrypterException(DecrypterException.PASSWORD); }
         // Look for containers
-        final String[] containers = br.getRegex("eval(.*?)\n").getColumn(0);
+        String[] containers = br.getRegex("eval(.*?)\n").getColumn(0);
+        final String tmpc = br.getRegex("<div id=\"containerfiles\"(.*?)</script>").getMatch(0);
+        if (tmpc != null) {
+            containers = new Regex(tmpc, "eval(.*?)\n").getColumn(0);
+        }
         for (final String c : containers) {
             Object result = new Object();
             final ScriptEngineManager manager = new ScriptEngineManager();
@@ -996,7 +1000,7 @@ public class LnkCrptWs extends PluginForDecrypt {
         /* we have to open the normal page for weblinks */
         if (br.containsHTML("BlueHeadLine.*?>(Weblinks)<")) {
             br.getPage("http://linkcrypt.ws/dir/" + containerId);
-             logger.info("ContainerID is null, trying webdecryption...");
+            logger.info("ContainerID is null, trying webdecryption...");
             final Form[] forms = br.getForms();
             progress.setRange(forms.length - 8);
             for (final Form form : forms) {
