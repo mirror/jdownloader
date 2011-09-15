@@ -176,13 +176,19 @@ public abstract class PluginForDecrypt extends Plugin {
                  * something went wrong
                  */
                 progress.setStatusText(this.getHost() + ": " + e.getErrorMessage());
-                logger.clear();
+                if (logger instanceof JDPluginLogger) {
+                    /* make sure we use the right logger */
+                    ((JDPluginLogger) logger).clear();
+                }
                 logger.log(Level.SEVERE, "DecrypterException", e);
                 color = Color.RED;
                 progressShow = 15000;
             } catch (InterruptedException e) {
                 /* plugin got interrupted, clear log and note what happened */
-                logger.clear();
+                if (logger instanceof JDPluginLogger) {
+                    /* make sure we use the right logger */
+                    ((JDPluginLogger) logger).clear();
+                }
                 logger.log(Level.SEVERE, "Interrupted", e);
                 progressShow = 0;
             } catch (Throwable e) {
