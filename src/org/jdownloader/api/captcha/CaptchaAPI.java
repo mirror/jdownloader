@@ -28,4 +28,6 @@ public interface CaptchaAPI extends RemoteAPIInterface {
     public boolean solve(final long id, String result);
 
     public boolean abort(final long id, IOPermission.CAPTCHA what);
+
+    public boolean captcha();
 }

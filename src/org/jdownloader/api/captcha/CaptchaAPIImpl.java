@@ -11,6 +11,7 @@ import jd.controlling.captcha.CaptchaDialogQueue;
 import jd.controlling.captcha.CaptchaDialogQueueEntry;
 import jd.controlling.captcha.CaptchaEventListener;
 import jd.controlling.captcha.CaptchaEventSender;
+import jd.controlling.linkcrawler.LinkCrawler;
 
 import org.appwork.net.protocol.http.HTTPConstants.ResponseCode;
 import org.appwork.remoteapi.EventsAPIEvent;
@@ -32,8 +33,8 @@ public class CaptchaAPIImpl implements CaptchaAPI, CaptchaEventListener {
         for (CaptchaDialogQueueEntry entry : entries) {
             if (entry.isFinished()) continue;
             CaptchaJob job = new CaptchaJob();
-            job.setCaptchaID(entry.getID().getID());
-            job.setHosterID(entry.getHost());
+            job.setID(entry.getID().getID());
+            job.setHoster(entry.getHost());
             ret.add(job);
         }
         return ret;
@@ -43,12 +44,6 @@ public class CaptchaAPIImpl implements CaptchaAPI, CaptchaEventListener {
         CaptchaDialogQueueEntry captcha = CaptchaDialogQueue.getInstance().getCaptchabyID(id);
         if (captcha == null) { throw new RemoteAPIException(ResponseCode.ERROR_NOT_FOUND, "Captcha no longer available"); }
         final FileResponse fr = new FileResponse(request, response, captcha.getFile()) {
-
-            @Override
-            protected boolean allowGZIP() {
-                /* chrome has issues with chunked content */
-                return false;
-            }
 
             protected boolean useContentDisposition() {
                 /* we want the image to be displayed in browser */
@@ -84,30 +79,29 @@ public class CaptchaAPIImpl implements CaptchaAPI, CaptchaEventListener {
     }
 
     public void captchaTodo(CaptchaController controller) {
-        CaptchaDialogQueueEntry entry = controller.getDialog();
-        if (entry != null) {
-            CaptchaJob job = new CaptchaJob();
-            job.setCaptchaID(entry.getID().getID());
-            job.setHosterID(entry.getHost());
-            HashMap<String, Object> data = new HashMap<String, Object>();
-            data.put("module", "captcha");
-            data.put("type", "new");
-            data.put("data", job);
-            RemoteAPIController.getInstance().getEventsapi().publishEvent(new EventsAPIEvent(data), null);
-        }
+        sendEvent(controller, "new");
     }
 
     public void captchaFinish(CaptchaController controller) {
+        sendEvent(controller, "expired");
+    }
+
+    private void sendEvent(CaptchaController controller, String type) {
         CaptchaDialogQueueEntry entry = controller.getDialog();
         if (entry != null) {
             CaptchaJob job = new CaptchaJob();
-            job.setCaptchaID(entry.getID().getID());
-            job.setHosterID(entry.getHost());
+            job.setID(entry.getID().getID());
+            job.setHoster(entry.getHost());
             HashMap<String, Object> data = new HashMap<String, Object>();
-            data.put("module", "captcha");
-            data.put("type", "expired");
+            data.put("message", type);
             data.put("data", job);
-            RemoteAPIController.getInstance().getEventsapi().publishEvent(new EventsAPIEvent(data), null);
+            RemoteAPIController.getInstance().getEventsapi().publishEvent(new EventsAPIEvent("captcha", data), null);
         }
+    }
+
+    public boolean captcha() {
+        LinkCrawler lc = new LinkCrawler();
+
+        return true;
     }
 }

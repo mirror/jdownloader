@@ -31,15 +31,15 @@ public class CaptchaJob implements Storable {
     public CaptchaJob() {
     }
 
-    public long getCaptchaID() {
+    public long getID() {
         return captchaID;
     }
 
-    public String getHosterID() {
+    public String getHoster() {
         return hosterID;
     }
 
-    public long getLinkID() {
+    public long getLink() {
         return linkID;
     }
 
@@ -47,7 +47,7 @@ public class CaptchaJob implements Storable {
      * @param captchaID
      *            the captchaID to set
      */
-    public void setCaptchaID(long captchaID) {
+    public void setID(long captchaID) {
         this.captchaID = captchaID;
     }
 
@@ -55,7 +55,7 @@ public class CaptchaJob implements Storable {
      * @param hosterID
      *            the hosterID to set
      */
-    public void setHosterID(String hosterID) {
+    public void setHoster(String hosterID) {
         this.hosterID = hosterID;
     }
 
@@ -63,7 +63,7 @@ public class CaptchaJob implements Storable {
      * @param linkID
      *            the linkID to set
      */
-    public void setLinkID(long linkID) {
+    public void setLink(long linkID) {
         this.linkID = linkID;
     }
 
