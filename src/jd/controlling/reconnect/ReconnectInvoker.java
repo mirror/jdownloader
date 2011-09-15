@@ -77,6 +77,7 @@ public abstract class ReconnectInvoker {
                 while (System.currentTimeMillis() < endTime) {
                     /* ip change detected then we can stop */
                     long s = System.currentTimeMillis();
+                    if (Thread.currentThread().isInterrupted()) throw new InterruptedException();
                     if (ipc.validate()) {
                         ret.setSuccessTime(System.currentTimeMillis());
                         ret.setSuccess(true);

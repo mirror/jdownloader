@@ -1,4 +1,4 @@
-package org.jdownloader.controlling;
+package org.jdownloader.controlling.filter;
 
 import java.util.ArrayList;
 
@@ -10,9 +10,9 @@ import org.jdownloader.settings.annotations.AboutConfig;
 public interface LinkFilterSettings extends ConfigInterface {
     @DefaultObjectValue("[]")
     @AboutConfig
-    ArrayList<LinkFilter> getFilterList();
+    ArrayList<FilterRule> getFilterList();
 
-    void setFilterList(ArrayList<LinkFilter> list);
+    void setFilterList(ArrayList<FilterRule> list);
 
     @DefaultBooleanValue(true)
     @AboutConfig

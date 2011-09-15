@@ -11,6 +11,7 @@ import org.appwork.remotecall.client.RemoteCallClient;
 import org.appwork.remotecall.client.RemoteCallCommunicationException;
 import org.appwork.remotecall.server.Requestor;
 import org.appwork.remotecall.server.ServerInvokationException;
+import org.appwork.utils.logging.Log;
 
 public class RemoteClient extends RemoteCallClient {
 
@@ -29,7 +30,9 @@ public class RemoteClient extends RemoteCallClient {
     protected String send(String serviceName, String routine, String serialise) throws ServerInvokationException {
         try {
             String url = "http://" + this.host + "/" + serviceName + "/" + URLEncoder.encode(routine, "UTF-8");
+            Log.L.finer(url + "?" + serialise);
             String red = br.postPageRaw(url, serialise);
+
             URLConnectionAdapter con = br.getHttpConnection();
             if (con.getResponseCode() == HTTPConstants.ResponseCode.SUCCESS_OK.getCode()) {
                 return red;

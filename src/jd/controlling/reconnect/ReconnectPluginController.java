@@ -65,12 +65,14 @@ public class ReconnectPluginController {
     public ArrayList<ReconnectResult> autoFind(final ProcessCallBack feedback) throws InterruptedException {
 
         final ArrayList<ReconnectResult> scripts = new ArrayList<ReconnectResult>();
+
         for (final RouterPlugin plg : ReconnectPluginController.this.plugins) {
             if (Thread.currentThread().isInterrupted()) throw new InterruptedException();
             try {
                 ArrayList<ReconnectResult> founds = plg.runDetectionWizard(feedback);
                 if (founds != null) scripts.addAll(founds);
-
+            } catch (InterruptedException e) {
+                throw e;
             } catch (Exception e) {
 
             }

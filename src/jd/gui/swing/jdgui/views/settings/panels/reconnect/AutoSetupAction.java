@@ -7,6 +7,7 @@ import jd.controlling.reconnect.ReconnectConfig;
 import jd.controlling.reconnect.ReconnectPluginController;
 import jd.controlling.reconnect.ReconnectResult;
 import jd.controlling.reconnect.RouterPlugin;
+import jd.controlling.reconnect.RouterUtils;
 import jd.controlling.reconnect.WizardUtils;
 import jd.controlling.reconnect.ipcheck.IPController;
 import jd.controlling.reconnect.plugins.liveheader.LiveHeaderReconnectResult;
@@ -51,8 +52,12 @@ public class AutoSetupAction extends BasicAction {
                 public void run() throws InterruptedException {
                     setBarText(_GUI._.LiveaheaderDetection_wait_for_online());
                     IPController.getInstance().waitUntilWeAreOnline();
-                    if (WizardUtils.modemCheck()) return;
+                    setBarText(_GUI._.LiveaheaderDetection_find_router());
+                    RouterUtils.getAddress(false);
+                    setBarText(_GUI._.LiveaheaderDetection_network_setup_check());
 
+                    if (WizardUtils.modemCheck()) return;
+                    if (WizardUtils.vpnCheck()) return;
                     final ArrayList<ReconnectResult> scripts = ReconnectPluginController.getInstance().autoFind(new ProcessCallBackAdapter() {
 
                         public void setStatusString(Object caller, String string) {

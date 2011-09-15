@@ -6,8 +6,8 @@ import javax.swing.AbstractAction;
 
 import jd.controlling.IOEQ;
 
-import org.jdownloader.controlling.LinkFilter;
-import org.jdownloader.controlling.LinkFilterController;
+import org.jdownloader.controlling.filter.FilterRule;
+import org.jdownloader.controlling.filter.LinkFilterController;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 
@@ -35,7 +35,7 @@ public class NewAction extends AbstractAction {
         IOEQ.add(new Runnable() {
 
             public void run() {
-                LinkFilterController.getInstance().add(new LinkFilter(true, LinkFilter.Types.FILENAME, ""));
+                LinkFilterController.getInstance().add(new FilterRule());
                 table.getExtTableModel()._fireTableStructureChanged(LinkFilterController.getInstance().list(), false);
             }
 

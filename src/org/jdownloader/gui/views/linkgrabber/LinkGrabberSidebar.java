@@ -18,7 +18,7 @@ import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.KeyHandler;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.EDTRunner;
-import org.jdownloader.controlling.LinkFilterSettings;
+import org.jdownloader.controlling.filter.LinkFilterSettings;
 import org.jdownloader.gui.translate._GUI;
 
 public class LinkGrabberSidebar extends MigPanel {

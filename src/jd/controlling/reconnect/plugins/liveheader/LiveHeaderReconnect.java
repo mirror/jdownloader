@@ -333,6 +333,8 @@ public class LiveHeaderReconnect extends RouterPlugin implements ControlListener
         final LiveHeaderDetectionWizard wizard = new LiveHeaderDetectionWizard();
         try {
             return wizard.runOnlineScan(processCallBack);
+        } catch (InterruptedException e) {
+            throw e;
         } catch (Throwable e) {
             Log.exception(e);
         }

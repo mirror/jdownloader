@@ -1,4 +1,4 @@
-package org.jdownloader.controlling;
+package org.jdownloader.controlling.filter;
 
 import java.util.ArrayList;
 
@@ -19,7 +19,7 @@ public class LinkFilterController {
         return LinkFilterController.INSTANCE;
     }
 
-    private ArrayList<LinkFilter> filter;
+    private ArrayList<FilterRule> filter;
     private LinkFilterSettings    config;
 
     /**
@@ -29,7 +29,7 @@ public class LinkFilterController {
     private LinkFilterController() {
         config = JsonConfig.create(LinkFilterSettings.class);
         filter = config.getFilterList();
-        if (filter == null) filter = new ArrayList<LinkFilter>();
+        if (filter == null) filter = new ArrayList<FilterRule>();
         ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
 
             @Override
@@ -54,13 +54,13 @@ public class LinkFilterController {
         config.setBlackList(b);
     }
 
-    public ArrayList<LinkFilter> list() {
+    public ArrayList<FilterRule> list() {
         synchronized (this) {
-            return new ArrayList<LinkFilter>(filter);
+            return new ArrayList<FilterRule>(filter);
         }
     }
 
-    public void add(LinkFilter linkFilter) {
+    public void add(FilterRule linkFilter) {
         if (linkFilter == null) return;
         synchronized (this) {
             filter.add(linkFilter);
@@ -68,7 +68,7 @@ public class LinkFilterController {
         }
     }
 
-    public void remove(LinkFilter lf) {
+    public void remove(FilterRule lf) {
         if (lf == null) return;
         synchronized (this) {
             filter.remove(lf);

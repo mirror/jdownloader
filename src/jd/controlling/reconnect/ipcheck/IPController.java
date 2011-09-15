@@ -311,7 +311,7 @@ public class IPController extends ArrayList<IPConnectionState> {
         // Make sure that we are online
         while (IPController.getInstance().getIpState().isOffline()) {
             IPController.getInstance().invalidate();
-
+            if (Thread.currentThread().isInterrupted()) throw new InterruptedException();
             Thread.sleep(1000);
 
             IPController.getInstance().validate();

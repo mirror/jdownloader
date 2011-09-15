@@ -17,4 +17,8 @@ public interface RecollInterface extends RemoteCallInterface {
     public void setWorking(String scriptID, Requestor object, long successDuration, long offlineDuration) throws ScriptNotFoundExeption, FailedException;
 
     public RouterData getOne() throws FailedException;
+
+    public String getIsp(Requestor request);
+
+    public boolean isReconnectPossible(Requestor request);
 }

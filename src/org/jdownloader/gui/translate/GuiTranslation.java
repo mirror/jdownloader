@@ -2464,4 +2464,94 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Validating your Reconnect Script..." })
     String LiveHeaderDetectionWizard_sendRouter_havetovalidate();
 
+    @Default(lngs = { "en" }, values = { "Name" })
+    String settings_linkgrabber_filter_columns_name();
+
+    @Default(lngs = { "en" }, values = { "Save" })
+    String literally_save();
+
+    @Default(lngs = { "en" }, values = { "Rule: %s1" })
+    String FilterRuleDialog_FilterRuleDialog_(String name);
+
+    @Default(lngs = { "en" }, values = { "Enter a name for this rule..." })
+    String FilterRuleDialog_layoutDialogContent_ht_name();
+
+    @Default(lngs = { "en" }, values = { "Name" })
+    String FilterRuleDialog_layoutDialogContent_lbl_name();
+
+    @Default(lngs = { "en" }, values = { "equals" })
+    String FilterRuleDialog_layoutDialogContent_equals();
+
+    @Default(lngs = { "en" }, values = { "contains" })
+    String FilterRuleDialog_layoutDialogContent_contains();
+
+    @Default(lngs = { "en" }, values = { "Enter file name matcher..." })
+    String FilterRuleDialog_layoutDialogContent_ht_filename();
+
+    @Default(lngs = { "en" }, values = { "File Name" })
+    String FilterRuleDialog_layoutDialogContent_lbl_filename();
+
+    @Default(lngs = { "en" }, values = { "File Size" })
+    String FilterRuleDialog_layoutDialogContent_lbl_size();
+
+    @Default(lngs = { "en" }, values = { "Unsupported Network Settings?" })
+    String ReconnectPluginController_autoFind_gatewaywarning_t();
+
+    @Default(lngs = { "en" }, values = { "It seems that your network setup is not supported by Reconnect Wizard.\r\nThis Wizard is able to find Reconnect Settings for 'DSL via Router' - Connections.\r\nClick [Continue] to try it anyway." })
+    String ReconnectPluginController_autoFind_gatewaywarning();
+
+    @Default(lngs = { "en" }, values = { "Checking Network Settings..." })
+    String LiveaheaderDetection_network_setup_check();
+
+    @Default(lngs = { "en" }, values = { "Find Router IP..." })
+    String LiveaheaderDetection_find_router();
+
+    @Default(lngs = { "en" }, values = { "File Type" })
+    String FilterRuleDialog_layoutDialogContent_lbl_type();
+
+    @Default(lngs = { "en" }, values = { "Audio Files" })
+    String FilterRuleDialog_createTypeFilter_mime_audio();
+
+    @Default(lngs = { "en" }, values = { "Video Files" })
+    String FilterRuleDialog_createTypeFilter_mime_video();
+
+    @Default(lngs = { "en" }, values = { "Archives" })
+    String FilterRuleDialog_createTypeFilter_mime_archives();
+
+    @Default(lngs = { "en" }, values = { "Images" })
+    String FilterRuleDialog_createTypeFilter_mime_images();
+
+    @Default(lngs = { "en" }, values = { "Custom" })
+    String FilterRuleDialog_createTypeFilter_mime_custom();
+
+    @Default(lngs = { "en" }, values = { "Enter comma seperated extensions like 'pdf,html,png' ..." })
+    String FilterRuleDialog_createTypeFilter_mime_custom_help();
+
+    @Default(lngs = { "en" }, values = { "Hoster" })
+    String FilterRuleDialog_layoutDialogContent_lbl_hoster();
+
+    @Default(lngs = { "en" }, values = { "Enter a URL Expression like 'rapidshare.com'..." })
+    String FilterRuleDialog_layoutDialogContent_lbl_hoster_help();
+
+    @Default(lngs = { "en" }, values = { "Source" })
+    String FilterRuleDialog_layoutDialogContent_lbl_source();
+
+    @Default(lngs = { "en" }, values = { "Enter a Crawler Source Expression like 'jamendo.com'..." })
+    String FilterRuleDialog_layoutDialogContent_lbl_source_help();
+
+    @Default(lngs = { "en" }, values = { "If the following conditions match ... " })
+    String FilterRuleDialog_layoutDialogContent_if();
+
+    @Default(lngs = { "en" }, values = { "... then ..." })
+    String FilterRuleDialog_layoutDialogContent_then();
+
+    @Default(lngs = { "en" }, values = { "Name of this Filter Rule" })
+    String FilterRuleDialog_layoutDialogContent_name();
+
+    @Default(lngs = { "en" }, values = { "Drop File or Url - no further crawling or download" })
+    String FilterRuleDialog_layoutDialogContent_deny();
+
+    @Default(lngs = { "en" }, values = { "Accept File or Url - add to linkgrabber or continue crawling" })
+    String FilterRuleDialog_layoutDialogContent_accept();
+
 }

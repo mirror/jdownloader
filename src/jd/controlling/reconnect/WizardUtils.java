@@ -1,6 +1,7 @@
 package jd.controlling.reconnect;
 
 import java.awt.event.ActionEvent;
+import java.net.InetAddress;
 
 import javax.swing.AbstractAction;
 
@@ -8,7 +9,9 @@ import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
+import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.gui.uiserio.NewUIO;
 import org.jdownloader.images.NewTheme;
 
 public class WizardUtils {
@@ -51,6 +54,27 @@ public class WizardUtils {
 
             }
         } catch (Throwable e1) {
+
+        }
+        return false;
+    }
+
+    public static boolean vpnCheck() {
+
+        try {
+
+            InetAddress routerAdress = RouterUtils.getAddress(false);
+            InetAddress gateway = RouterUtils.getWindowsGateway();
+
+            if (!routerAdress.equals(gateway)) {
+                // ouch. if gateway is not routerIp, we might be in a VPN
+                try {
+                    NewUIO.I().showConfirmDialog(0, _GUI._.ReconnectPluginController_autoFind_gatewaywarning_t(), _GUI._.ReconnectPluginController_autoFind_gatewaywarning(), NewTheme.I().getIcon("warning", 32), _GUI._.literally_continue(), null);
+                } catch (DialogNoAnswerException e) {
+                    return true;
+                }
+            }
+        } catch (Throwable t) {
 
         }
         return false;

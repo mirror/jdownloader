@@ -12,27 +12,46 @@ public class RouterData implements Storable {
     private String routerName;
     private int    priorityIndicator;
     private String mac;
-    private long   averageOfflineDuration;
+    private long   avgOfD;
 
-    public long getAverageOfflineDuration() {
-        return averageOfflineDuration;
+    public long getAvgOfD() {
+        return avgOfD;
     }
 
-    public void setAverageOfflineDuration(long averageOfflineDuration) {
-        this.averageOfflineDuration = averageOfflineDuration;
+    public void setAvgOfD(long averageOfflineDuration) {
+        this.avgOfD = averageOfflineDuration;
     }
 
-    public long getAverageSuccessDuration() {
-        return averageSuccessDuration;
+    public long getAvgScD() {
+        return avgScD;
     }
 
-    public void setAverageSuccessDuration(long averageSuccessDuration) {
-        this.averageSuccessDuration = averageSuccessDuration;
+    public void setAvgScD(long averageSuccessDuration) {
+        this.avgScD = averageSuccessDuration;
     }
 
-    private long   averageSuccessDuration;
+    private long   avgScD;
     private String manufactor;
     private String scriptID;
+    private long   avgScDDev;
+
+    public long getAvgScDDev() {
+        return avgScDDev;
+    }
+
+    public void setAvgScDDev(long avgScDDev) {
+        this.avgScDDev = avgScDDev;
+    }
+
+    public long getAvgOfDDev() {
+        return avgOfDDev;
+    }
+
+    public void setAvgOfDDev(long avgFaDDev) {
+        this.avgOfDDev = avgFaDDev;
+    }
+
+    private long avgOfDDev;
 
     public String getScriptID() {
         return scriptID;

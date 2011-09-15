@@ -32,8 +32,10 @@ import jd.controlling.JDLogger;
 import jd.controlling.reconnect.ipcheck.IP;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
+import jd.nutils.DynByteBuffer;
 import jd.nutils.Executer;
 import jd.nutils.OSDetector;
+import jd.nutils.ProcessListener;
 import jd.nutils.Threader;
 import jd.nutils.Threader.WorkerListener;
 import jd.nutils.jobber.JDRunnable;
@@ -266,6 +268,7 @@ public class RouterUtils {
             if ("t-online.de".equals(domain)) return false;
             if ("opendns.com".equals(domain)) return false;
             return true;
+
         } catch (final Exception e) {
         } finally {
             try {
@@ -347,11 +350,12 @@ public class RouterUtils {
     /**
      * Calls netstat -nt to find the router's ip. returns null if nothing found
      * and the ip if found something;
-     * http://jdownloader.net:8081/pastebin/1ab4eabb60df171d0d442f0c7fb875a0
+     * 
      * 
      * @throws UnknownHostException
+     * @throws InterruptedException
      */
-    public static InetAddress getIPFormNetStat() throws UnknownHostException {
+    public static InetAddress getIPFormNetStat() throws UnknownHostException, InterruptedException {
 
         final Pattern pat = Pattern.compile("^\\s*(?:0\\.0\\.0\\.0\\s*){1,2}((?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)).*");
         final Executer exec = new Executer("netstat");
@@ -362,6 +366,7 @@ public class RouterUtils {
 
         final String[] out = Regex.getLines(exec.getOutputStream());
         for (final String string : out) {
+            if (Thread.currentThread().isInterrupted()) throw new InterruptedException();
             final String m = new Regex(string, pat).getMatch(0);
             if (m != null && !"0.0.0.0".equals(m)) {
                 if (checkPort(m)) { return InetAddress.getByName(m); }
@@ -481,7 +486,58 @@ public class RouterUtils {
     }
 
     public static void main(String[] args) throws SocketException {
-        System.out.println(isWindowsModemConnection());
+        System.out.println(getWindowsGateway());
+    }
+
+    /**
+     * USes windows tracert command to find the gateway
+     * 
+     * @return
+     */
+    public static InetAddress getWindowsGateway() {
+        if (CrossSystem.isWindows()) {
+            // tested on win7
+            final String[] ret = new String[1];
+            final Executer exec = new Executer("tracert ");
+            exec.addProcessListener(new ProcessListener() {
+
+                private int counter = 0;
+
+                public void onProcess(Executer exec, String latestLine, DynByteBuffer totalBuffer) {
+
+                    final Matcher matcher = Pattern.compile(IP.IP_PATTERN, Pattern.CASE_INSENSITIVE | Pattern.DOTALL).matcher(latestLine);
+                    if (matcher.find()) {
+                        if (counter++ > 0) {
+                            ;
+                            String firstRouteIP = matcher.group(0);
+                            if (IP.isLocalIP(firstRouteIP)) {
+                                ret[0] = firstRouteIP;
+                            } else {
+                                exec.interrupt();
+                            }
+                        }
+                    }
+
+                }
+
+                public void onBufferChanged(Executer exec, DynByteBuffer totalBuffer, int latestReadNum) {
+                }
+            }, Executer.LISTENER_STDSTREAM);
+            exec.addParameters(new String[] { "-d", "-h", "10", "-4", "jdownloader.org" });
+            exec.setRunin("/");
+            exec.setWaitTimeout(15000);
+            exec.start();
+            exec.waitTimeout();
+            try {
+                return InetAddress.getByName(ret[0]);
+            } catch (Throwable e) {
+                return null;
+            }
+
+        } else {
+            throw new IllegalStateException("OS not supported");
+        }
+
     }
 
     /**

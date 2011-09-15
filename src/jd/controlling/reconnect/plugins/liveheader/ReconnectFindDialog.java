@@ -141,20 +141,22 @@ public abstract class ReconnectFindDialog extends AbstractDialog<Object> impleme
         sp.add(label(_GUI._.ReconnectDialog_layoutDialogContent_currentip()));
         sp.add(newIP = new JLabel(), "width 100!");
         newIP.setHorizontalAlignment(SwingConstants.RIGHT);
-        IPController.getInstance().invalidate();
-        IPController.getInstance().validate();
-        if (IPController.getInstance().getIpState().isOffline()) {
-            setSubStatusState(_GUI._.ReconnectDialog_onIPOffline_(), NewTheme.I().getIcon("network-error", 16));
-            setNewIP(_GUI._.literally_offline());
-        } else {
-            setSubStatusState(_GUI._.ReconnectDialog_onIPOnline_(), NewTheme.I().getIcon("network-idle", 16));
-            setNewIP(IPController.getInstance().getIpState().getExternalIp().toString());
-        }
+
         p.add(sp);
 
         th = new Thread(getClass().getName()) {
             public void run() {
                 try {
+                    IPController.getInstance().invalidate();
+                    IPController.getInstance().validate();
+                    if (IPController.getInstance().getIpState().isOffline()) {
+                        setSubStatusState(_GUI._.ReconnectDialog_onIPOffline_(), NewTheme.I().getIcon("network-error", 16));
+                        setNewIP(_GUI._.literally_offline());
+                    } else {
+                        setSubStatusState(_GUI._.ReconnectDialog_onIPOnline_(), NewTheme.I().getIcon("network-idle", 16));
+                        setNewIP(IPController.getInstance().getIpState().getExternalIp().toString());
+                    }
+
                     ReconnectFindDialog.this.run();
                 } catch (InterruptedException e) {
                     e.printStackTrace();

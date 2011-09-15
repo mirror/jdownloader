@@ -14,7 +14,7 @@ import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.KeyHandler;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.api.RemoteAPIConfig;
-import org.jdownloader.controlling.LinkFilterSettings;
+import org.jdownloader.controlling.filter.LinkFilterSettings;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.linkgrabber.addlinksdialog.LinkgrabberSettings;
 import org.jdownloader.settings.AccountSettings;

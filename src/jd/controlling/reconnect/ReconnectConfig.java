@@ -91,7 +91,7 @@ public interface ReconnectConfig extends ConfigInterface {
     void setMaxReconnectRetryNum(int num);
 
     @AboutConfig
-    @DefaultIntValue(1000)
+    @DefaultIntValue(2000)
     int getIPCheckConnectTimeout();
 
     void setIPCheckConnectTimeout(int ms);

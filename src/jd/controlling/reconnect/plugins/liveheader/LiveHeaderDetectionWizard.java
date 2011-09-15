@@ -59,7 +59,7 @@ public class LiveHeaderDetectionWizard {
     // ;
     static String                   UPDATE3_JDOWNLOADER_ORG_RECOLL = "update3.jdownloader.org/recoll"; // "update3.jdownloader.org/recoll";
     static {
-        UPDATE3_JDOWNLOADER_ORG_RECOLL = "192.168.2.250/ces";
+        // UPDATE3_JDOWNLOADER_ORG_RECOLL = "192.168.2.250/ces";
     }
     private String                  mac;
 
@@ -129,12 +129,8 @@ public class LiveHeaderDetectionWizard {
 
             r.isAlive();
 
-            RouterData rd = r.findRouter(new RouterData("382461045db1f79fee4d723ba23f6288"), null).get(0);
-
-            r.setWorking(rd.getScriptID(), null, 500, 100);
-
-            rd = r.findRouter(new RouterData("382461045db1f79fee4d723ba23f6288"), null).get(0);
-            System.out.println(rd.getAverageSuccessDuration());
+            System.out.println(r.isReconnectPossible(null));
+            // System.out.println(rd.getAvgScD());
         } catch (IllegalArgumentException e) {
             e.printStackTrace();
         } catch (ParsingException e) {
@@ -441,7 +437,8 @@ public class LiveHeaderDetectionWizard {
             return runTests(list, processCallBack);
         } catch (RemoteCallCommunicationException e) {
             processCallBack.showDialog(this, T._.LiveHeaderDetectionWizard_runOnlineScan_notavailable_t(), T._.LiveHeaderDetectionWizard_runOnlineScan_notavailable_mm(), NewTheme.I().getIcon("error", 32));
-            return null;
+
+            throw new InterruptedException(e.getMessage());
         } catch (DialogNoAnswerException e) {
             throw new InterruptedException();
         } catch (InterruptedException e) {
