@@ -332,6 +332,7 @@ public class AddLinksDialog extends AbstractDialog<CrawlerJob> {
     private boolean validateFolder(String text) {
         if (text == null) return false;
         File file = new File(text);
+        if (file.isDirectory() && file.exists()) return true;
         return file.getParentFile() != null && file.getParentFile().exists();
     }
 
