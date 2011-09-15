@@ -37,7 +37,10 @@ public class Fl2pldNtFldr extends PluginForDecrypt {
         String parameter = param.toString();
         br.getPage(parameter);
         String[] links = br.getRegex("<td align=\"left\" width=\"50%\">.*?<A href=\"(.*?)\" title").getColumn(0);
-        if (links == null || links.length == 0) return null;
+        if (links == null || links.length == 0) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
+        }
         for (String dl : links)
             decryptedLinks.add(createDownloadlink(dl));
 
