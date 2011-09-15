@@ -22,11 +22,11 @@ import java.io.InterruptedIOException;
 import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -77,18 +77,31 @@ public class FuFoxCom extends PluginForHost {
         String filename = allData.getMatch(3);
         String ip = allData.getMatch(4);
         if (name == null || password == null || filename == null || ip == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        // Waittime can be skipped here
-        String dllink = "ftp://" + name + ":" + password + "@" + ip + "/" + filename;
-        try {
-            ((Ftp) JDUtilities.getNewPluginForHostInstance("ftp")).download(dllink, downloadLink);
-        } catch (InterruptedIOException e) {
-            if (downloadLink.isAborted()) return;
-            throw e;
-        } catch (IOException e) {
-            if (e.toString().contains("maximum number of clients")) {
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1000l);
-            } else {
+        boolean http = br.containsHTML("timingout\\(");
+        if (http) {
+            this.sleep(5000, downloadLink);
+            String dllink = "http://" + ip + "/http.php?l=" + name + "&p=" + password;
+            br.setFollowRedirects(true);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
+            if (dl.getConnection().getContentType().contains("html")) {
+                br.followConnection();
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            dl.startDownload();
+        } else {
+            // Waittime can be skipped here
+            String dllink = "ftp://" + name + ":" + password + "@" + ip + "/" + filename;
+            try {
+                ((Ftp) JDUtilities.getNewPluginForHostInstance("ftp")).download(dllink, downloadLink);
+            } catch (InterruptedIOException e) {
+                if (downloadLink.isAborted()) return;
                 throw e;
+            } catch (IOException e) {
+                if (e.toString().contains("maximum number of clients")) {
+                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1000l);
+                } else {
+                    throw e;
+                }
             }
         }
     }

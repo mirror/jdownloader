@@ -41,13 +41,13 @@ public class FilePackageStorable implements Storable {
     /**
      * @return the pw
      */
-    public String[] getPw() {
+    public String[] getPassword() {
         String[] list = pkg.getPasswordList();
         if (list == null || list.length == 0) return null;
         return list;
     }
 
-    public void setPw(String[] pw) {
+    public void setPassword(String[] pw) {
     }
 
     /**

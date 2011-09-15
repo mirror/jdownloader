@@ -156,6 +156,7 @@ public class WUploadCom extends PluginForHost implements ControlListener {
     }
 
     private void errorHandling(final DownloadLink downloadLink, final Browser br) throws PluginException {
+        if (br.containsHTML("The server is temporarily offline for maintenance")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server Maintenance", 60 * 60 * 1000l); }
         if (br.containsHTML("The file that you're trying to download is larger than")) {
             final String size = br.getRegex("trying to download is larger than (.*?)\\. <a href=\"").getMatch(0);
             if (size != null) {
