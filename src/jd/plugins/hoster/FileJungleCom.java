@@ -108,8 +108,7 @@ public class FileJungleCom extends PluginForHost {
         String waittime = br2.getRegex("\"waitTime\":(\\d+),\"").getMatch(0);
         if (waittime != null) wait = Integer.parseInt(waittime);
         sleep(wait * 1001l, downloadLink);
-        // Can be skipped
-        // br2.postPage(postlink, "downloadLink=show");
+        br2.postPage(postlink, "downloadLink=show");
         // Use normal browser here
         br.postPage(postlink, "download=normal");
         if (br.containsHTML("(>File is not available<|>The page you requested cannot be displayed right now|The file may have removed by the uploader or expired\\.<)")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
