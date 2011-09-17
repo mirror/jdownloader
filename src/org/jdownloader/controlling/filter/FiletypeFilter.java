@@ -7,6 +7,12 @@ public class FiletypeFilter extends Filter implements Storable {
         // Storable
     }
 
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+
+        return "Type is ***";
+    }
+
     private boolean audioFilesEnabled;
 
     public boolean isAudioFilesEnabled() {

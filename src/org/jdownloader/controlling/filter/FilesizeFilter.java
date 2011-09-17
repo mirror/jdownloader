@@ -1,12 +1,22 @@
 package org.jdownloader.controlling.filter;
 
 import org.appwork.storage.Storable;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.gui.translate._GUI;
 
 public class FilesizeFilter extends Filter implements Storable {
     private long from;
 
     private FilesizeFilter() {
         // Storable
+    }
+
+    public String toString() {
+        if (from == to) {
+            return _GUI._.FilesizeFilter_toString_same(SizeFormatter.formatBytes(from));
+        } else {
+            return _GUI._.FilesizeFilter_toString_(SizeFormatter.formatBytes(from), SizeFormatter.formatBytes(to));
+        }
     }
 
     /**

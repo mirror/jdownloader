@@ -1,10 +1,20 @@
 package org.jdownloader.controlling.filter;
 
 import org.appwork.storage.Storable;
+import org.jdownloader.gui.translate._GUI;
 
 public class RegexFilter extends Filter implements Storable {
     private RegexFilter() {
         // Storable
+    }
+
+    public String toString() {
+        if (matchType == MatchType.CONTAINS) {
+            return _GUI._.RegexFilter_toString_contains(regex);
+        } else {
+            return _GUI._.RegexFilter_toString_matches(regex);
+        }
+
     }
 
     public MatchType getMatchType() {

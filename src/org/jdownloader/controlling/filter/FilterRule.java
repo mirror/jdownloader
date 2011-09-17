@@ -1,6 +1,9 @@
 package org.jdownloader.controlling.filter;
 
+import java.util.ArrayList;
+
 import org.appwork.storage.Storable;
+import org.jdownloader.gui.translate._GUI;
 
 public class FilterRule implements Storable {
 
@@ -14,6 +17,45 @@ public class FilterRule implements Storable {
 
     public void setFilesizeFilter(FilesizeFilter size) {
         this.filesizeFilter = size;
+    }
+
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        ArrayList<String> cond = new ArrayList<String>();
+        if (filenameFilter.isEnabled()) {
+            cond.add(_GUI._.FilterRule_toString_name(filenameFilter.toString()));
+        }
+        if (filesizeFilter.isEnabled()) {
+
+            cond.add(filesizeFilter.toString());
+        }
+        if (filetypeFilter.isEnabled()) {
+
+            cond.add(filetypeFilter.toString());
+        }
+        if (hosterURLFilter.isEnabled()) {
+
+            cond.add(_GUI._.FilterRule_toString_hoster(hosterURLFilter.toString()));
+        }
+        if (sourceURLFilter.isEnabled()) {
+
+            cond.add(_GUI._.FilterRule_toString_source(sourceURLFilter.toString()));
+        }
+
+        for (int i = 0; i < cond.size(); i++) {
+            if (i > 0) {
+                if (i < cond.size() - 1) {
+                    sb.append(_GUI._.FilterRule_toString_comma(cond.get(i)));
+                } else {
+                    sb.append(_GUI._.FilterRule_toString_and(cond.get(i)));
+                }
+
+            } else {
+                sb.append(cond.get(i));
+            }
+
+        }
+        return sb.toString();
     }
 
     public RegexFilter getHosterURLFilter() {

@@ -4,8 +4,11 @@ import java.awt.Component;
 import java.awt.Point;
 
 import javax.swing.Icon;
+import javax.swing.JLabel;
 import javax.swing.JTable;
 import javax.swing.table.JTableHeader;
+
+import net.miginfocom.swing.MigLayout;
 
 import org.appwork.swing.components.tooltips.ExtTooltip;
 import org.appwork.swing.exttable.ExtTableHeaderRenderer;
@@ -83,6 +86,7 @@ public class FilterTableModel extends ExtTableModel<FilterRule> {
                 object.setEnabled(value);
             }
         });
+
         addColumn(new ExtTextColumn<FilterRule>(_GUI._.settings_linkgrabber_filter_columns_name()) {
 
             @Override
@@ -97,11 +101,41 @@ public class FilterTableModel extends ExtTableModel<FilterRule> {
 
             @Override
             public String getStringValue(FilterRule value) {
-                return value.getName().trim();
+                return value.getName();
+            }
+        });
+
+        addColumn(new ExtTextColumn<FilterRule>(_GUI._.settings_linkgrabber_filter_columns_condition()) {
+            {
+                rendererField.setHorizontalAlignment(JLabel.RIGHT);
+            }
+
+            @Override
+            public boolean isEnabled(FilterRule obj) {
+                return obj.isEnabled();
+            }
+
+            @Override
+            public ExtTooltip createToolTip(Point position, FilterRule obj) {
+                return createTooltip(obj);
+            }
+
+            @Override
+            public String getStringValue(FilterRule value) {
+                return _GUI._.settings_linkgrabber_filter_columns_if(value.toString());
             }
         });
 
         addColumn(new ExtTextColumn<FilterRule>(_GUI._.settings_linkgrabber_filter_columns_then()) {
+            {
+
+                renderer.removeAll();
+
+                renderer.setLayout(new MigLayout("ins 0", "[grow,fill]5[]", "[grow,fill]"));
+                renderer.add(this.rendererField);
+                renderer.add(this.rendererIcon);
+
+            }
 
             @Override
             public boolean isEnabled(FilterRule obj) {

@@ -2464,7 +2464,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Validating your Reconnect Script..." })
     String LiveHeaderDetectionWizard_sendRouter_havetovalidate();
 
-    @Default(lngs = { "en" }, values = { "If File or Url..." })
+    @Default(lngs = { "en" }, values = { "Rule Name" })
     String settings_linkgrabber_filter_columns_name();
 
     @Default(lngs = { "en" }, values = { "Save" })
@@ -2557,10 +2557,43 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "then" })
     String settings_linkgrabber_filter_columns_then();
 
-    @Default(lngs = { "en" }, values = { "Accept File or URL" })
+    @Default(lngs = { "en" }, values = { "add it to Linkgrabber." })
     String FilterTableModel_initColumns_accept_link();
 
-    @Default(lngs = { "en" }, values = { "Drop File or URL" })
+    @Default(lngs = { "en" }, values = { "drop it." })
     String FilterTableModel_initColumns_deny_link();
+
+    @Default(lngs = { "en" }, values = { "If %s1, " })
+    String settings_linkgrabber_filter_columns_if(String trim);
+
+    @Default(lngs = { "en" }, values = { "contains %s1" })
+    String RegexFilter_toString_contains(String regex);
+
+    @Default(lngs = { "en" }, values = { "is %s1" })
+    String RegexFilter_toString_matches(String regex);
+
+    @Default(lngs = { "en" }, values = { "Size is %s1" })
+    String FilesizeFilter_toString_same(String size);
+
+    @Default(lngs = { "en" }, values = { "Size is between %s1 and %s2" })
+    String FilesizeFilter_toString_(String formatBytes, String formatBytes2);
+
+    @Default(lngs = { "en" }, values = { "Filename %s1" })
+    String FilterRule_toString_name(String string);
+
+    @Default(lngs = { "en" }, values = { "Hoster URL %s1" })
+    String FilterRule_toString_hoster(String string);
+
+    @Default(lngs = { "en" }, values = { "Source URL %s1" })
+    String FilterRule_toString_source(String string);
+
+    @Default(lngs = { "en" }, values = { " , %s1" })
+    String FilterRule_toString_comma(String string);
+
+    @Default(lngs = { "en" }, values = { " and %s1" })
+    String FilterRule_toString_and(String string);
+
+    @Default(lngs = { "en" }, values = { "Condition" })
+    String settings_linkgrabber_filter_columns_condition();
 
 }
