@@ -32,12 +32,12 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "megashare.com" }, urls = { "http://[\\w\\.]*?megashare\\.com/[0-9]+" }, flags = { 2 })
 public class MegaShareCom extends PluginForHost {
@@ -104,10 +104,12 @@ public class MegaShareCom extends PluginForHost {
         return -1;
     }
 
+    @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         br.forceDebug(true);
         final String reconnectWaittime = br.getRegex("var c = (\\d+);").getMatch(0);
+        final String cDelay = br.getRegex("(var )?cDly ?= ?(\\d+);").getMatch(1);
         if (reconnectWaittime != null) {
             if (Integer.parseInt(reconnectWaittime) >= 299) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(reconnectWaittime) * 1001l); }
         }
@@ -120,10 +122,15 @@ public class MegaShareCom extends PluginForHost {
         DLFORM.put("wComp", "1");
         /* waittime */
         int wait = 10;
+        long cDly = 1001;
         if (reconnectWaittime != null) {
             wait = Integer.parseInt(reconnectWaittime);
         }
-        sleep(wait * 1001l, downloadLink);
+        if (cDelay != null) {
+            cDly = Long.parseLong(cDelay);
+            cDly = cDly + cDly / 1000;
+        }
+        sleep(wait * cDly, downloadLink);
         br.submitForm(DLFORM);
 
         /* FORM_POST_2 */
@@ -248,6 +255,7 @@ public class MegaShareCom extends PluginForHost {
         if (br.getCookie("http://www.megashare.com", "username") == null || br.getCookie("http://www.megashare.com", "password") == null) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE); }
     }
 
+    @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         setBrowserExclusive();
         br.getHeaders().put("User-Agent", UA);
@@ -255,7 +263,7 @@ public class MegaShareCom extends PluginForHost {
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("Not Found")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         final Form freeForm = br.getForm(1);
-        String crap = br.getRegex("src=\"images/dwn\\-btn3\\.gif\" name=\"(.*?)\"").getMatch(0);
+        final String crap = br.getRegex("src=\"images/dwn\\-btn3\\.gif\" name=\"(.*?)\"").getMatch(0);
         if (freeForm == null || crap == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         freeForm.put(Encoding.urlEncode(crap) + ".x", Integer.toString(new Random().nextInt(100)));
         freeForm.put(Encoding.urlEncode(crap) + ".y", Integer.toString(new Random().nextInt(100)));
