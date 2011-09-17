@@ -1,4 +1,4 @@
-package jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter;
+package jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog;
 
 import java.awt.Component;
 import java.awt.event.ActionEvent;
@@ -14,18 +14,20 @@ import javax.swing.JLabel;
 import javax.swing.JSeparator;
 import javax.swing.SpinnerNumberModel;
 
+import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.ClickDelegater;
 import jd.gui.swing.laf.LookAndFeelController;
 
 import org.appwork.app.gui.MigPanel;
 import org.appwork.swing.components.ExtCheckBox;
 import org.appwork.swing.components.ExtTextField;
 import org.appwork.swing.components.SizeSpinner;
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.swing.SwingUtils;
 import org.appwork.utils.swing.dialog.AbstractDialog;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
-import org.jdownloader.controlling.filter.FilersizeFilter;
+import org.jdownloader.controlling.filter.FilesizeFilter;
 import org.jdownloader.controlling.filter.FiletypeFilter;
 import org.jdownloader.controlling.filter.FilterRule;
 import org.jdownloader.controlling.filter.RegexFilter;
@@ -33,7 +35,7 @@ import org.jdownloader.controlling.filter.RegexFilter.MatchType;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 
-public class ConditionDialog extends AbstractDialog<Object> {
+public abstract class ConditionDialog<T> extends AbstractDialog<T> {
 
     protected ExtTextField txtName;
 
@@ -41,20 +43,64 @@ public class ConditionDialog extends AbstractDialog<Object> {
         return txtName.getText();
     }
 
+    public void setName(String name) {
+        txtName.setText(name);
+    }
+
+    public void setFilenameFilter(RegexFilter filter) {
+        if (filter == null) return;
+        cbFilename.setSelected(filter.isEnabled());
+        cobFilename.setSelectedIndex(filter.getMatchType().ordinal());
+        txtFilename.setText(filter.getRegex());
+    }
+
     public RegexFilter getFilenameFilter() {
         return new RegexFilter(cbFilename.isSelected(), MatchType.values()[cobFilename.getSelectedIndex()], txtFilename.getText());
     }
 
-    public FilersizeFilter getFilersizeFilter() {
-        return new FilersizeFilter(fromSize.getBytes(), toSize.getBytes(), cbSize.isSelected());
+    public void setFilesizeFilter(FilesizeFilter f) {
+        if (f == null) return;
+        cbSize.setSelected(f.isEnabled());
+
+        fromSize.setValue(f.getFrom());
+        toSize.setValue(f.getTo());
+    }
+
+    public FilesizeFilter getFilersizeFilter() {
+        return new FilesizeFilter(fromSize.getBytes(), toSize.getBytes(), cbSize.isSelected());
+    }
+
+    public void setFiletypeFilter(FiletypeFilter f) {
+        if (f == null) return;
+        cbType.setSelected(f.isEnabled());
+        cbAudio.setSelected(f.isAudioFilesEnabled());
+        cbArchive.setSelected(f.isArchivesEnabled());
+        cbCustom.setSelected(!StringUtils.isEmpty(f.getCustoms()));
+        txtCustumMime.setText(f.getCustoms());
+        cbImage.setSelected(f.isImagesEnabled());
+        cbVideo.setSelected(f.isVideoFilesEnabled());
     }
 
     public FiletypeFilter getFiletypeFilter() {
-        return new FiletypeFilter(cbType.isSelected(), cbAudio.isSelected(), cbVideo.isSelected(), cbArchive.isSelected(), cbImage.isSelected(), cbCustom.isSelected() ? txtCustumMime.getText().trim().split(",") : null);
+        return new FiletypeFilter(cbType.isSelected(), cbAudio.isSelected(), cbVideo.isSelected(), cbArchive.isSelected(), cbImage.isSelected(), cbCustom.isSelected() ? txtCustumMime.getText() : null);
+    }
+
+    public void setSourceFilter(RegexFilter filter) {
+        if (filter == null) return;
+        cbSource.setSelected(filter.isEnabled());
+        cobSource.setSelectedIndex(filter.getMatchType().ordinal());
+        txtSource.setText(filter.getRegex());
     }
 
     public RegexFilter getSourceFilter() {
         return new RegexFilter(cbSource.isSelected(), MatchType.values()[cobSource.getSelectedIndex()], txtSource.getText());
+    }
+
+    public void setHosterFilter(RegexFilter filter) {
+        if (filter == null) return;
+        cbHoster.setSelected(filter.isEnabled());
+        cobHoster.setSelectedIndex(filter.getMatchType().ordinal());
+        txtHoster.setText(filter.getRegex());
     }
 
     public RegexFilter getHosterFilter() {
@@ -95,11 +141,6 @@ public class ConditionDialog extends AbstractDialog<Object> {
     public ConditionDialog() {
         super(0, _GUI._.FilterRuleDialog_FilterRuleDialog_(""), null, _GUI._.literally_save(), null);
 
-    }
-
-    @Override
-    protected Object createReturnValue() {
-        return null;
     }
 
     public static void main(String[] args) {

@@ -5,7 +5,11 @@ import java.awt.event.ActionEvent;
 import javax.swing.AbstractAction;
 
 import jd.controlling.IOEQ;
+import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.FilterRuleDialog;
 
+import org.appwork.utils.swing.dialog.Dialog;
+import org.appwork.utils.swing.dialog.DialogCanceledException;
+import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.controlling.filter.FilterRule;
 import org.jdownloader.controlling.filter.LinkFilterController;
 import org.jdownloader.gui.translate._GUI;
@@ -32,15 +36,25 @@ public class NewAction extends AbstractAction {
     }
 
     public void actionPerformed(ActionEvent e) {
-        IOEQ.add(new Runnable() {
+        final FilterRule rule = new FilterRule();
+        FilterRuleDialog d = new FilterRuleDialog(rule);
+        try {
+            Dialog.getInstance().showDialog(d);
+            rule.setEnabled(true);
+            IOEQ.add(new Runnable() {
 
-            public void run() {
-                LinkFilterController.getInstance().add(new FilterRule());
-                table.getExtTableModel()._fireTableStructureChanged(LinkFilterController.getInstance().list(), false);
-            }
+                public void run() {
 
-        }, true);
+                    LinkFilterController.getInstance().add(rule);
+                    table.getExtTableModel()._fireTableStructureChanged(LinkFilterController.getInstance().list(), false);
+                }
 
+            }, true);
+        } catch (DialogClosedException e1) {
+            e1.printStackTrace();
+        } catch (DialogCanceledException e1) {
+            e1.printStackTrace();
+        }
     }
 
 }

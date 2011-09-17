@@ -2464,7 +2464,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Validating your Reconnect Script..." })
     String LiveHeaderDetectionWizard_sendRouter_havetovalidate();
 
-    @Default(lngs = { "en" }, values = { "Name" })
+    @Default(lngs = { "en" }, values = { "If File or Url..." })
     String settings_linkgrabber_filter_columns_name();
 
     @Default(lngs = { "en" }, values = { "Save" })
@@ -2473,7 +2473,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Rule: %s1" })
     String FilterRuleDialog_FilterRuleDialog_(String name);
 
-    @Default(lngs = { "en" }, values = { "Enter a name for this rule..." })
+    @Default(lngs = { "en" }, values = { "Enter s hort description of the conditions below..." })
     String FilterRuleDialog_layoutDialogContent_ht_name();
 
     @Default(lngs = { "en" }, values = { "Name" })
@@ -2545,7 +2545,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "... then ..." })
     String FilterRuleDialog_layoutDialogContent_then();
 
-    @Default(lngs = { "en" }, values = { "Name of this Filter Rule" })
+    @Default(lngs = { "en" }, values = { "Condition Name" })
     String FilterRuleDialog_layoutDialogContent_name();
 
     @Default(lngs = { "en" }, values = { "Drop File or Url - no further crawling or download" })
@@ -2553,5 +2553,14 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Accept File or Url - add to linkgrabber or continue crawling" })
     String FilterRuleDialog_layoutDialogContent_accept();
+
+    @Default(lngs = { "en" }, values = { "then" })
+    String settings_linkgrabber_filter_columns_then();
+
+    @Default(lngs = { "en" }, values = { "Accept File or URL" })
+    String FilterTableModel_initColumns_accept_link();
+
+    @Default(lngs = { "en" }, values = { "Drop File or URL" })
+    String FilterTableModel_initColumns_deny_link();
 
 }

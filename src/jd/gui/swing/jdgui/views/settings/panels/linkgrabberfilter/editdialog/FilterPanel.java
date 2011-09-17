@@ -1,4 +1,4 @@
-package jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter;
+package jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog;
 
 import java.awt.Component;
 import java.awt.event.MouseListener;

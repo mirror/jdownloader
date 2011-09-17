@@ -9,6 +9,7 @@ import javax.swing.JPopupMenu;
 import javax.swing.JSeparator;
 
 import jd.gui.swing.jdgui.BasicJDTable;
+import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.FilterRuleDialog;
 
 import org.appwork.swing.exttable.ExtColumn;
 import org.appwork.utils.swing.dialog.Dialog;

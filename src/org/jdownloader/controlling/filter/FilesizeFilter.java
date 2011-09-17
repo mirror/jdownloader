@@ -2,10 +2,10 @@ package org.jdownloader.controlling.filter;
 
 import org.appwork.storage.Storable;
 
-public class FilersizeFilter extends Filter implements Storable {
+public class FilesizeFilter extends Filter implements Storable {
     private long from;
 
-    private FilersizeFilter() {
+    private FilesizeFilter() {
         // Storable
     }
 
@@ -14,7 +14,7 @@ public class FilersizeFilter extends Filter implements Storable {
      * @param to
      * @param enabled
      */
-    public FilersizeFilter(long from, long to, boolean enabled) {
+    public FilesizeFilter(long from, long to, boolean enabled) {
         super();
         this.from = from;
         this.to = to;

@@ -3,6 +3,7 @@ package jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter;
 import java.awt.Component;
 import java.awt.Point;
 
+import javax.swing.Icon;
 import javax.swing.JTable;
 import javax.swing.table.JTableHeader;
 
@@ -85,15 +86,62 @@ public class FilterTableModel extends ExtTableModel<FilterRule> {
         addColumn(new ExtTextColumn<FilterRule>(_GUI._.settings_linkgrabber_filter_columns_name()) {
 
             @Override
+            public boolean isEnabled(FilterRule obj) {
+                return obj.isEnabled();
+            }
+
+            @Override
             public ExtTooltip createToolTip(Point position, FilterRule obj) {
                 return createTooltip(obj);
             }
 
             @Override
             public String getStringValue(FilterRule value) {
-                return value.getName();
+                return value.getName().trim();
             }
         });
+
+        addColumn(new ExtTextColumn<FilterRule>(_GUI._.settings_linkgrabber_filter_columns_then()) {
+
+            @Override
+            public boolean isEnabled(FilterRule obj) {
+                return obj.isEnabled();
+            }
+
+            @Override
+            public int getDefaultWidth() {
+                return 160;
+            }
+
+            @Override
+            protected boolean isDefaultResizable() {
+                return false;
+            }
+
+            @Override
+            public ExtTooltip createToolTip(Point position, FilterRule obj) {
+                return createTooltip(obj);
+            }
+
+            @Override
+            protected Icon getIcon(FilterRule value) {
+                if (value.isAccept()) {
+                    return NewTheme.I().getIcon("ok", 20);
+                } else {
+                    return NewTheme.I().getIcon("cancel", 20);
+                }
+            }
+
+            @Override
+            public String getStringValue(FilterRule value) {
+                if (value.isAccept()) {
+                    return _GUI._.FilterTableModel_initColumns_accept_link();
+                } else {
+                    return _GUI._.FilterTableModel_initColumns_deny_link();
+                }
+            }
+        });
+
     }
 
     protected ExtTooltip createTooltip(FilterRule obj) {

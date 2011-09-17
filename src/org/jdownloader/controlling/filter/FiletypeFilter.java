@@ -21,7 +21,7 @@ public class FiletypeFilter extends Filter implements Storable {
      * @param imagesEnabled
      * @param customs
      */
-    public FiletypeFilter(boolean enabled, boolean audioFilesEnabled, boolean videoFilesEnabled, boolean archivesEnabled, boolean imagesEnabled, String[] customs) {
+    public FiletypeFilter(boolean enabled, boolean audioFilesEnabled, boolean videoFilesEnabled, boolean archivesEnabled, boolean imagesEnabled, String customs) {
         super();
         this.enabled = enabled;
         this.audioFilesEnabled = audioFilesEnabled;
@@ -59,16 +59,16 @@ public class FiletypeFilter extends Filter implements Storable {
         this.imagesEnabled = imagesEnabled;
     }
 
-    public String[] getCustoms() {
+    public String getCustoms() {
         return customs;
     }
 
-    public void setCustoms(String[] customs) {
+    public void setCustoms(String customs) {
         this.customs = customs;
     }
 
-    private boolean  videoFilesEnabled;
-    private boolean  archivesEnabled;
-    private boolean  imagesEnabled;
-    private String[] customs;
+    private boolean videoFilesEnabled;
+    private boolean archivesEnabled;
+    private boolean imagesEnabled;
+    private String  customs;
 }

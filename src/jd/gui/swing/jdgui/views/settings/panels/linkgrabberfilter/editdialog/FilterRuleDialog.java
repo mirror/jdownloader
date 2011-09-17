@@ -1,4 +1,4 @@
-package jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter;
+package jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog;
 
 import java.awt.Component;
 import java.awt.event.ActionEvent;
@@ -15,7 +15,7 @@ import org.jdownloader.controlling.filter.FilterRule;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 
-public class FilterRuleDialog extends ConditionDialog {
+public class FilterRuleDialog extends ConditionDialog<FilterRule> {
 
     private FilterRule        rule;
     private JComboBox<String> then;
@@ -25,6 +25,41 @@ public class FilterRuleDialog extends ConditionDialog {
         super();
         this.rule = filterRule;
 
+    }
+
+    @Override
+    protected FilterRule createReturnValue() {
+        return rule;
+    }
+
+    @Override
+    protected void setReturnmask(boolean b) {
+        super.setReturnmask(b);
+        if (b) {
+            save();
+        }
+    }
+
+    private void save() {
+        rule.setFilenameFilter(getFilenameFilter());
+        rule.setHosterURLFilter(getHosterFilter());
+        rule.setName(getName());
+        rule.setFilesizeFilter(getFilersizeFilter());
+        rule.setSourceURLFilter(getSourceFilter());
+        rule.setFiletypeFilter(getFiletypeFilter());
+        rule.setAccept(then.getSelectedIndex() == 1);
+
+    }
+
+    private void updateGUI() {
+        setFilenameFilter(rule.getFilenameFilter());
+        setHosterFilter(rule.getHosterURLFilter());
+        setName(rule.getName());
+        setFilesizeFilter(rule.getFilesizeFilter());
+        setSourceFilter(rule.getSourceURLFilter());
+        setFiletypeFilter(rule.getFiletypeFilter());
+        then.setSelectedIndex(rule.isAccept() ? 1 : 0);
+        lbl.setIcon(then.getSelectedIndex() == 0 ? NewTheme.I().getIcon("cancel", 20) : NewTheme.I().getIcon("ok", 20));
     }
 
     @Override
@@ -39,7 +74,7 @@ public class FilterRuleDialog extends ConditionDialog {
                 JLabel r = (JLabel) org.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
                 switch (index) {
                 case 0:
-                    r.setIcon(NewTheme.I().getIcon("stopsign", 20));
+                    r.setIcon(NewTheme.I().getIcon("cancel", 20));
                     break;
                 case 1:
                     r.setIcon(NewTheme.I().getIcon("ok", 20));
@@ -55,16 +90,12 @@ public class FilterRuleDialog extends ConditionDialog {
         then.addActionListener(new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {
-                lbl.setIcon(then.getSelectedIndex() == 0 ? NewTheme.I().getIcon("stopsign", 20) : NewTheme.I().getIcon("ok", 20));
+                lbl.setIcon(then.getSelectedIndex() == 0 ? NewTheme.I().getIcon("cancel", 20) : NewTheme.I().getIcon("ok", 20));
             }
         });
-        lbl.setIcon(then.getSelectedIndex() == 0 ? NewTheme.I().getIcon("stopsign", 20) : NewTheme.I().getIcon("ok", 20));
+
         updateGUI();
         return ret;
-    }
-
-    private void updateGUI() {
-        // txtCustumMime.setText()
     }
 
     public boolean isAccept() {
