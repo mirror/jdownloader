@@ -42,8 +42,8 @@ import jd.plugins.PluginForHost;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "megashare.com" }, urls = { "http://[\\w\\.]*?megashare\\.com/[0-9]+" }, flags = { 2 })
 public class MegaShareCom extends PluginForHost {
 
-    private static final String UA = RandomUserAgent.generate();
-    private static Form         DLFORM;
+    private static final String UA     = RandomUserAgent.generate();
+    private Form                DLFORM = null;
 
     public MegaShareCom(final PluginWrapper wrapper) {
         super(wrapper);
@@ -271,7 +271,7 @@ public class MegaShareCom extends PluginForHost {
         if (br.containsHTML("This File has been DELETED")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         final String filename = br.getRegex("addthis_open\\(this, \\'\\', \\'http://(www\\.)?MegaShare\\.com\\d+\\', \\'(.*?)\\'\\)").getMatch(1);
         if (filename != null) {
-            downloadLink.setName(filename);
+            downloadLink.setFinalFileName(Encoding.htmlDecode(filename));
         }
         return AvailableStatus.TRUE;
     }
