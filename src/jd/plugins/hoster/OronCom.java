@@ -156,6 +156,7 @@ public class OronCom extends PluginForHost {
         return ai;
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public void handlePremium(DownloadLink link, Account account) throws Exception {
         String passCode = null;
@@ -318,6 +319,7 @@ public class OronCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    @SuppressWarnings("deprecation")
     public void doFree(DownloadLink downloadLink) throws Exception, PluginException {
         if (brbefore.contains(ONLY4PREMIUMERROR0) || brbefore.contains(ONLY4PREMIUMERROR1)) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.host.errormsg.only4premium", "Only downloadable for premium users!"));
         br.setFollowRedirects(true);
@@ -327,7 +329,7 @@ public class OronCom extends PluginForHost {
         checkErrors(downloadLink);
         String passCode = null;
         // Re Captcha handling
-        if (br.containsHTML("api\\.recaptcha\\.net")) {
+        if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
             PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
             jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
             rc.parse();

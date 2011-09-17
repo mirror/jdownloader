@@ -34,7 +34,7 @@ import jd.plugins.DownloadLink.AvailableStatus;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uloz.to" }, urls = { "http://[\\w\\.]*?((uloz\\.to|ulozto\\.sk|ulozto\\.cz|ulozto\\.net)/[0-9]+/|bagruj\\.cz/[a-z0-9]{12}/.*?\\.html)" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uloz.to" }, urls = { "http://(www\\.)?((uloz\\.to|ulozto\\.sk|ulozto\\.cz|ulozto\\.net)/[0-9]+/|bagruj\\.cz/[a-z0-9]{12}/.*?\\.html)" }, flags = { 2 })
 public class UlozTo extends PluginForHost {
 
     public UlozTo(PluginWrapper wrapper) {
@@ -88,7 +88,7 @@ public class UlozTo extends PluginForHost {
             }
         }
         if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        downloadLink.setName(filename.trim());
+        downloadLink.setName(Encoding.htmlDecode(filename.trim()));
         if (filesize != null) downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
     }

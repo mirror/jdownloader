@@ -31,7 +31,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "u.115.com" }, urls = { "http://[\\w\\.]*?u\\.115\\.com/file/[a-z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "u.115.com" }, urls = { "http://(www\\.)?(u\\.)?115\\.com/file/[a-z0-9]+" }, flags = { 0 })
 public class U115Com extends PluginForHost {
 
     private final String ua = RandomUserAgent.generate();
@@ -41,6 +41,10 @@ public class U115Com extends PluginForHost {
         // 10 seconds waittime between the downloadstart of simultan DLs of this
         // host
         this.setStartIntervall(10000l);
+    }
+
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("u.115.com/file/", "115.com/file/"));
     }
 
     @Override
@@ -83,7 +87,7 @@ public class U115Com extends PluginForHost {
             br.getPage(br.getRedirectLocation());
         }
         if (br.containsHTML("id=\"pickcode_error\">很抱歉，文件不存在。</div>") || br.containsHTML("很抱歉，文件不存在。")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<title>(.*?)\\|115网盘|网盘|115网络U盘-我的网盘|免费网络硬盘</title>").getMatch(0);
+        String filename = br.getRegex("<title>(.*?)下载\\|115网盘|网盘|115网络U盘-我的网盘|免费网络硬盘</title>").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("id=\"Download\"></a><a id=\"Download(.*?)\"></a>").getMatch(0);
             if (filename == null) {
@@ -134,9 +138,10 @@ public class U115Com extends PluginForHost {
     }
 
     public String findLink() throws Exception {
-        String linkToDownload = br.getRegex("\"(http://\\d+\\.(cnc|tel|bak)\\.115cdn\\.com/pickdown/.*?)\"").getMatch(0);
-        if (linkToDownload == null) linkToDownload = br.getRegex("</a>\\&nbsp;[\t\r\n ]+<a href=\"(http://.*?)\"").getMatch(0);
-        if (linkToDownload == null) linkToDownload = br.getRegex("download\\-link\">.*?<a href=\"(http://.*?)\"").getMatch(0);
+        String linkToDownload = br.getRegex("\"(http://\\d+\\.\\d+\\.\\d+\\.\\d+/down_group\\d+/[^<>\"\\']+)\"").getMatch(0);
+        if (linkToDownload == null) {
+            linkToDownload = br.getRegex("<div class=\"btn\\-wrap\">[\t\n\r ]+<a href=\"(http://\\d+\\.\\d+\\.\\d+\\.\\d+/[^\"\\'<>]+)\"").getMatch(0);
+        }
         return linkToDownload;
     }
 
