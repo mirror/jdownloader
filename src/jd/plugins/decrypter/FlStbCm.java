@@ -58,16 +58,16 @@ public class FlStbCm extends PluginForDecrypt {
                 if (fpName == null) {
                     fpName = br.getRegex("\">Download:(.*?)</h2>").getMatch(0);
                     if (fpName == null) {
-                        fpName = br.getRegex("widgetTitle: '(.*?)',").getMatch(0);
+                        fpName = br.getRegex("widgetTitle: \\'(.*?)\\',").getMatch(0);
                         if (fpName == null) {
                             fpName = br.getRegex("&quot;\\](.*?)\\[/url\\]\"").getMatch(0);
                         }
                     }
                 }
             }
-            String alternatives = br.getRegex("Alternatives\\('(http:.*?)'").getMatch(0);
-            String alterID = br.getRegex("getAlternatives\\('(.*?)'").getMatch(0);
-            String alterID2 = br.getRegex("getAlternatives\\('.*?', '(.*?)'").getMatch(0);
+            String alternatives = br.getRegex("Alternatives\\(\\'(http:.*?)\\'").getMatch(0);
+            String alterID = br.getRegex("getAlternatives\\(\\'(.*?)\\'").getMatch(0);
+            String alterID2 = br.getRegex("getAlternatives\\(\\'.*?\\', \\'(.*?)\\'").getMatch(0);
             String pagePiece = br.getRegex(Pattern.compile("id=\"copy_paste_links\" style=\".*?\">(.*?)</pre>", Pattern.DOTALL)).getMatch(0);
             if (pagePiece == null) return null;
             String temp[] = pagePiece.split("\r\n");
@@ -78,8 +78,8 @@ public class FlStbCm extends PluginForDecrypt {
             if (alternatives != null && alterID != null && alterID2 != null) {
                 Browser br2 = br.cloneBrowser();
                 br2.getPage(alternatives + "/get/" + alterID + "/" + alterID2 + "?callback=jsonp" + System.currentTimeMillis());
-                String alts[] = br2.getRegex("'t':'(.*?)'").getColumn(0);
-                if (alts != null) {
+                String alts[] = br2.getRegex("\\'t\\':\\'(.*?)\\'").getColumn(0);
+                if (alts != null && alts.length != 0) {
                     for (String link : alts) {
                         Browser br3 = br.cloneBrowser();
                         br3.getPage("http://www.filestube.com/" + link + "/go.html");

@@ -17,6 +17,7 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.Random;
 
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
@@ -52,16 +53,19 @@ public class DailyMotionCom extends PluginForHost {
     private static final String REGISTEREDONLY1        = "this content as suitable for mature audiences only";
     private static final String REGISTEREDONLY2        = "You must be logged in, over 18 years old, and set your family filter OFF, in order to watch it";
     private static final String REGISTEREDONLYUSERTEXT = "Download only possible for registered users";
+    private String[]            subtitles              = null;
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         br.setFollowRedirects(true);
         br.setCookie("http://www.dailymotion.com", "family_filter", "off");
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("(<title>Dailymotion – 404 Not Found</title>|url\\(/images/404_background\\.jpg)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<title>Dailymotion -(.*?)- ein Film \\& Kino Video</title>").getMatch(0);
+        if (br.containsHTML("(<title>Dailymotion \\– 404 Not Found</title>|url\\(/images/404_background\\.jpg)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String subtitleStuff = br.getRegex("\"sequence\",  \"(.*?)\"").getMatch(0);
+        if (subtitleStuff != null) subtitles = new Regex(Encoding.urlDecode(subtitleStuff, false).replace("\\", ""), "\"(http://static\\d+\\.dmcdn\\.net/static/video/\\d+/\\d+/\\d+:subtitle_[a-z]{1,4}\\.srt\\?\\d+)\"").getColumn(0);
+        String filename = br.getRegex("<title>Dailymotion \\-(.*?)\\- ein Film \\& Kino Video</title>").getMatch(0);
         if (filename == null) {
-            filename = br.getRegex("name=\"title\" content=\"Dailymotion -(.*?)- ein Film").getMatch(0);
+            filename = br.getRegex("name=\"title\" content=\"Dailymotion \\-(.*?)\\- ein Film").getMatch(0);
             if (filename == null) {
                 filename = br.getRegex("videos</a><span> > </span><b>(.*?)</b></div>").getMatch(0);
                 if (filename == null) {
@@ -137,7 +141,22 @@ public class DailyMotionCom extends PluginForHost {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl.startDownload();
+        if (dl.startDownload()) {
+            if (subtitles != null && subtitles.length != 0) {
+                String previousFilename = downloadLink.getName();
+                downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.dailymotioncom.downloadingsubtitles", "Downloading subtitles..."));
+                for (String subtitlelink : subtitles) {
+                    final String language = new Regex(subtitlelink, ".*?\\d+:subtitle_(.{1,4}).srt.*?").getMatch(0);
+                    if (language != null)
+                        downloadLink.setFinalFileName("Subtitle_" + language + ".srt");
+                    else
+                        downloadLink.setFinalFileName("Subtitle_" + Integer.toString(new Random().nextInt(1000)) + ".srt");
+                    dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, subtitlelink, false, 1);
+                    if (!dl.getConnection().getContentType().contains("html")) dl.startDownload();
+                }
+                downloadLink.setName(previousFilename);
+            }
+        }
     }
 
     private void login(Account account) throws Exception {

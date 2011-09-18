@@ -24,7 +24,6 @@ import jd.http.Browser;
 import jd.http.RandomUserAgent;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
@@ -39,7 +38,7 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "easy-share.com" }, urls = { "http://[\\w\\d\\.]*?easy-share\\.com/\\d+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "easy-share.com" }, urls = { "http://[\\w\\d\\.]*?easy\\-share\\.com/(\\d+|[A-Z0-9]+/.{1})" }, flags = { 2 })
 public class EasyShareCom extends PluginForHost {
 
     private static Boolean longwait = null;
@@ -117,8 +116,7 @@ public class EasyShareCom extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             br.setCookie(MAINPAGE, "language", "en");
-            String fileID = new Regex(downloadLink.getDownloadURL(), "easy-share\\.com/(\\d+)").getMatch(0);
-            con = br.openGetConnection("http://www.easy-share.com/" + fileID);
+            con = br.openGetConnection(downloadLink.getDownloadURL());
             if (con.getResponseCode() == 503) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             br.followConnection();
         } finally {
@@ -140,19 +138,6 @@ public class EasyShareCom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         /* Nochmals das File überprüfen */
         requestFileInformation(downloadLink);
-        URLConnectionAdapter con = null;
-        try {
-            br.setCookie(MAINPAGE, "language", "en");
-            String fileID = new Regex(downloadLink.getDownloadURL(), "easy-share\\.com/(\\d+)").getMatch(0);
-            con = br.openGetConnection("http://www.easy-share.com/" + fileID);
-            if (con.getResponseCode() == 503) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            br.followConnection();
-        } finally {
-            try {
-                con.disconnect();
-            } catch (Throwable e) {
-            }
-        }
         if (br.containsHTML(FILENOTFOUND)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML("There is another download in progress from your IP")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 15 * 60 * 1000l);
         if (br.containsHTML(ONLY4PREMIUM)) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.host.errormsg.only4premium", "Only downloadable for premium users!"));
@@ -178,7 +163,7 @@ public class EasyShareCom extends PluginForHost {
             }
         }
 
-        String id = br.getRegex("Recaptcha.create\\(\"(.*?)\"").getMatch(0);
+        String id = br.getRegex("Recaptcha\\.create\\(\"(.*?)\"").getMatch(0);
         if (br.containsHTML("Please wait or buy a Premium membership")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l);
 
         if (id == null) br.getPage(downloadLink.getDownloadURL());
@@ -246,19 +231,6 @@ public class EasyShareCom extends PluginForHost {
         login(account);
         br.getPage(MAINPAGE);
         br.setFollowRedirects(false);
-        URLConnectionAdapter con = null;
-        try {
-            br.setCookie(MAINPAGE, "language", "en");
-            String fileID = new Regex(downloadLink.getDownloadURL(), "easy-share\\.com/(\\d+)").getMatch(0);
-            con = br.openGetConnection("http://www.easy-share.com/" + fileID);
-            if (con.getResponseCode() == 503) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-            br.followConnection();
-        } finally {
-            try {
-                con.disconnect();
-            } catch (Throwable e) {
-            }
-        }
         if (br.containsHTML(FILENOTFOUND)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String url = br.getRedirectLocation();
         if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
