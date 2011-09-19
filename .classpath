@@ -63,8 +63,6 @@
 	<classpathentry kind="lib" path="ressourcen/libs/dbus/hexdump.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs/dbus/libdbus-java.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs/dbus/unix.jar"/>
-	<classpathentry kind="lib" path="ressourcen/libs/jpfm-fs.jar" sourcepath="ressourcen/code-ressourcen/jpfm-fs_src.zip"/>
-	<classpathentry kind="lib" path="ressourcen/libs/jpfm.jar" sourcepath="ressourcen/code-ressourcen/jpfm-src.zip"/>
 	<classpathentry kind="lib" path="ressourcen/libs_ext/fest-assert-1.2.jar" sourcepath="ressourcen/code-ressourcen/fest-assert-1.2-sources.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs_ext/fest-reflect-1.2.jar" sourcepath="ressourcen/code-ressourcen/fest-reflect-1.2-sources.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs_ext/fest-swing-1.2.jar" sourcepath="ressourcen/code-ressourcen/fest-swing-1.2-sources.jar"/>
