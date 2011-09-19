@@ -38,7 +38,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.hoster.DirectHTTP;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "lof.cc" }, urls = { "http://(www\\.)?iload\\.to/de/l/[a-z]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "lof.cc" }, urls = { "http://(www\\.)?iload\\.to/de/l/\\!?[a-z]+" }, flags = { 0 })
 public class LdTTemp extends PluginForDecrypt {
 
     public static final Object   LOCK                = new Object();
