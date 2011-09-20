@@ -45,12 +45,16 @@ import org.appwork.utils.formatter.TimeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wupload.com" }, urls = { "http://(www\\.)?wupload\\..*?/.*?file/([0-9]+(/.+)?|[a-z0-9]+/[0-9]+(/.+)?)" }, flags = { 2 })
 public class WUploadCom extends PluginForHost implements ControlListener {
 
-    private static final Object LOCK               = new Object();
-    private static final Object LOCK2              = new Object();
-    private static boolean      initDone           = false;
-    private static long         LAST_FREE_DOWNLOAD = 0l;
+    private static final Object  LOCK               = new Object();
+    private static final Object  LOCK2              = new Object();
+    private static boolean       initDone           = false;
+    private static volatile long LAST_FREE_DOWNLOAD = 0l;
 
-    private static String       geoDomain          = null;
+    private static final String  ua                 = "Mozilla/5.0 (JD; X11; U; Linux i686; en-US; rv:1.9.0.10) Gecko/2009042523 Ubuntu/9.04 (jaunty) Firefox/3.0.10";
+    private static final String  uaf                = "Mozilla/5.0 (JDF; X11; U; Linux i686; en-US; rv:1.9.0.10) Gecko/2009042523 Ubuntu/9.04 (jaunty) Firefox/3.0.10";
+    private static final String  uap                = "Mozilla/5.0 (JDP; X11; U; Linux i686; en-US; rv:1.9.0.10) Gecko/2009042523 Ubuntu/9.04 (jaunty) Firefox/3.0.10";
+
+    private static String        geoDomain          = null;
 
     public WUploadCom(final PluginWrapper wrapper) {
         super(wrapper);
@@ -78,6 +82,7 @@ public class WUploadCom extends PluginForHost implements ControlListener {
         try {
             final Browser br = new Browser();
             br.setCookie(getDomain(), "lang", "en");
+            br.getHeaders().put("User-Agent", ua);
             br.setCookiesExclusive(true);
             final StringBuilder sb = new StringBuilder();
             final ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
@@ -142,6 +147,7 @@ public class WUploadCom extends PluginForHost implements ControlListener {
         if (br == null) {
             br = new Browser();
         }
+        br.getHeaders().put("User-Agent", uap);
         br.setFollowRedirects(true);
         String pw = "";
         final String pwUsw = link.getStringProperty("pass", null);
@@ -222,6 +228,7 @@ public class WUploadCom extends PluginForHost implements ControlListener {
             geoDomain = getDomainAPI();
             if (geoDomain == null) {
                 final Browser br = new Browser();
+                br.getHeaders().put("User-Agent", ua);
                 br.setCookie(defaultDomain, "lang", "en");
                 br.setFollowRedirects(false);
                 br.getPage(defaultDomain);
@@ -248,6 +255,7 @@ public class WUploadCom extends PluginForHost implements ControlListener {
     private synchronized String getDomainAPI() {
         try {
             final Browser br = new Browser();
+            br.getHeaders().put("User-Agent", ua);
             br.setFollowRedirects(true);
             br.getPage("http://api.wupload.com/utility?method=getWuploadDomainForCurrentIp");
             final String domain = br.getRegex("response>.*?wupload(\\..*?)</resp").getMatch(0);
@@ -294,8 +302,8 @@ public class WUploadCom extends PluginForHost implements ControlListener {
         String downloadUrl = null;
         String passCode = null;
         passCode = null;
+        br.getHeaders().put("User-Agent", uaf);
         br.setCookiesExclusive(false);
-
         br.forceDebug(true);
         // we have to enter captcha before we get ip_blocked_state
         // we do this timeing check to avoid this
@@ -461,6 +469,7 @@ public class WUploadCom extends PluginForHost implements ControlListener {
         if (br == null) {
             br = new Browser();
         }
+        br.getHeaders().put("User-Agent", uap);
         br.setFollowRedirects(true);
         final String page = br.getPage("http://api.wupload.com/user?method=getInfo&u=" + Encoding.urlEncode(account.getUser()) + "&p=" + Encoding.urlEncode(account.getPass()) + "&format=xml");
         final String premium = br.getRegex("is_premium>(.*?)</is_").getMatch(0);

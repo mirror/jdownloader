@@ -32,12 +32,12 @@ import jd.parser.html.Form.MethodType;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -46,11 +46,15 @@ import org.appwork.utils.formatter.TimeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filesonic.com" }, urls = { "http://[\\w\\.]*?(sharingmatrix|filesonic)\\..*?/.*?file/([0-9]+(/.+)?|[a-z0-9]+/[0-9]+(/.+)?)" }, flags = { 2 })
 public class FileSonicCom extends PluginForHost implements ControlListener {
 
-    private static final Object LOCK               = new Object();
-    private static final Object LOCK2              = new Object();
-    private static long         LAST_FREE_DOWNLOAD = 0l;
-    private static boolean      initDone           = false;
-    private static String       geoDomain          = null;
+    private static final Object  LOCK               = new Object();
+    private static final Object  LOCK2              = new Object();
+    private static volatile long LAST_FREE_DOWNLOAD = 0l;
+    private static boolean       initDone           = false;
+    private static String        geoDomain          = null;
+
+    private static final String  ua                 = "Mozilla/5.0 (JD; X11; U; Linux i686; en-US; rv:1.9.0.10) Gecko/2009042523 Ubuntu/9.04 (jaunty) Firefox/3.0.10";
+    private static final String  uaf                = "Mozilla/5.0 (JDF; X11; U; Linux i686; en-US; rv:1.9.0.10) Gecko/2009042523 Ubuntu/9.04 (jaunty) Firefox/3.0.10";
+    private static final String  uap                = "Mozilla/5.0 (JDP; X11; U; Linux i686; en-US; rv:1.9.0.10) Gecko/2009042523 Ubuntu/9.04 (jaunty) Firefox/3.0.10";
 
     public FileSonicCom(final PluginWrapper wrapper) {
         super(wrapper);
@@ -84,6 +88,7 @@ public class FileSonicCom extends PluginForHost implements ControlListener {
             geoDomain = getDomainAPI();
             if (geoDomain == null) {
                 Browser br = new Browser();
+                br.getHeaders().put("User-Agent", ua);
                 br.setCookie(defaultDomain, "lang", "en");
                 br.setFollowRedirects(false);
                 br.getPage(defaultDomain);
@@ -110,6 +115,7 @@ public class FileSonicCom extends PluginForHost implements ControlListener {
     private synchronized String getDomainAPI() {
         try {
             Browser br = new Browser();
+            br.getHeaders().put("User-Agent", ua);
             br.setFollowRedirects(true);
             br.getPage("http://api.filesonic.com/utility?method=getFilesonicDomainForCurrentIp");
             String domain = br.getRegex("response>.*?filesonic(\\..*?)</resp").getMatch(0);
@@ -125,6 +131,7 @@ public class FileSonicCom extends PluginForHost implements ControlListener {
         if (urls == null || urls.length == 0) { return false; }
         try {
             final Browser br = new Browser();
+            br.getHeaders().put("User-Agent", ua);
             br.setCookie(getDomain(), "lang", "en");
             br.setCookiesExclusive(true);
             final StringBuilder sb = new StringBuilder();
@@ -227,6 +234,7 @@ public class FileSonicCom extends PluginForHost implements ControlListener {
     private String loginAPI(Browser useBr, Account account, boolean showMessageDialog) throws IOException, PluginException {
         Browser br = useBr;
         if (br == null) br = new Browser();
+        br.getHeaders().put("User-Agent", uap);
         br.setFollowRedirects(true);
         String page = br.getPage("http://api.filesonic.com/user?method=getInfo&u=" + Encoding.urlEncode(account.getUser()) + "&p=" + Encoding.urlEncode(account.getPass()) + "&format=xml");
         String premium = br.getRegex("is_premium>(.*?)</is_").getMatch(0);
@@ -246,6 +254,7 @@ public class FileSonicCom extends PluginForHost implements ControlListener {
     private String downloadAPI(Browser useBr, Account account, DownloadLink link) throws IOException, PluginException {
         Browser br = useBr;
         if (br == null) br = new Browser();
+        br.getHeaders().put("User-Agent", uap);
         br.setFollowRedirects(true);
         String pw = "";
         String pwUsw = link.getStringProperty("pass", null);
@@ -308,6 +317,7 @@ public class FileSonicCom extends PluginForHost implements ControlListener {
         String downloadUrl = null;
         String passCode = null;
         passCode = null;
+        br.getHeaders().put("User-Agent", uaf);
         this.br.setCookiesExclusive(false);
 
         this.br.forceDebug(true);

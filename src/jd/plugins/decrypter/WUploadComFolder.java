@@ -43,8 +43,8 @@ public class WUploadComFolder extends PluginForDecrypt {
         if (br.containsHTML("(>Error 9001|>The requested folder do not exist or was deleted by the owner|>If you want, you can contact the owner of the referring site to tell him about this mistake|>No links to show<)")) return decryptedLinks;
         if (br.containsHTML("(>Error 9002|>The requested folder is not public|>If you own this folder, make it public by editing the)")) throw new DecrypterException("Folder is not public");
         String[] links = br.getRegex("class=\"passwordIcon\" title=\"\"></span><a href=\"(http://.*?)\"").getColumn(0);
-        if (links == null || links.length == 0) links = br.getRegex("\"(http://(www\\.)?wupload\\..*?/file/\\d+/.*?)\"").getColumn(0);
-        String[] folders = br.getRegex("\"(http://(www\\.)?wupload\\..*?/folder/[0-9a-z]+)\"").getColumn(0);
+        if (links == null || links.length == 0) links = br.getRegex("\"(http://(www\\.)?wupload\\.[A-Za-z\\.]+/file/\\d+/.*?)\"").getColumn(0);
+        String[] folders = br.getRegex("\"(http://(www\\.)?wupload\\.[A-Za-z\\.]+/folder/[0-9a-z]+)\"").getColumn(0);
         if ((links == null || links.length == 0) && (folders == null || folders.length == 0)) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
