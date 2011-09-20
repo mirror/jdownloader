@@ -115,9 +115,9 @@ public class IFileIt extends PluginForHost {
                 final String captchaAddress = server + RECAPTCHAIMAGEPART + challenge;
                 final String code = getCaptchaCode(captchaAddress, downloadLink);
                 type = "ctype=recaptcha";
-                extra = "ctype=recaptcha&recaptcha_response=" + Encoding.urlEncode_light(code) + "&recaptcha_challenge=" + challenge;
+                extra = "&recaptcha_response=" + Encoding.urlEncode_light(code) + "&recaptcha_challenge=" + challenge;
                 xmlrequest(br2, finaldownlink, type + extra);
-                if (br2.containsHTML("\"retry\":1")) {
+                if (br2.containsHTML("\"captcha\":1")) {
                     xmlrequest(br2, finaldownlink, type + extra);
                     continue;
                 }
