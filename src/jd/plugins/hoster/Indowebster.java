@@ -17,6 +17,7 @@
 package jd.plugins.hoster;
 
 import jd.PluginWrapper;
+import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
@@ -27,7 +28,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "indowebster.com" }, urls = { "http://[\\w\\.]*?indowebster\\.com/(download/files/.+|[^\\s]+\\.html)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "indowebster.com" }, urls = { "http://(www\\.)?indowebster\\.com/(download/(files|audio)/.+|[^\\s]+\\.html)" }, flags = { 0 })
 public class Indowebster extends PluginForHost {
 
     public Indowebster(PluginWrapper wrapper) {
@@ -50,7 +51,7 @@ public class Indowebster extends PluginForHost {
         String newlink = br.getRegex("<meta http\\-equiv=\"refresh\" content=\"\\d+;URL=(http://v\\d+\\.indowebster\\.com/.*?)\"").getMatch(0);
         if (newlink != null) {
             newlink = newlink.trim();
-            downloadLink.setUrlDownload(newlink.trim());
+            downloadLink.setUrlDownload(newlink);
             logger.info("New link set...");
             br.getPage(newlink);
         }
@@ -59,11 +60,12 @@ public class Indowebster extends PluginForHost {
             filename = br.getRegex("class=\"dl\\-title\" title=\"(.*?)\">").getMatch(0);
         }
         String filesize = br.getRegex(">Size : <span style=\"float:none;\">(.*?)</span><").getMatch(0);
-        if (filesize == null) {
-            filesize = br.getRegex("Date upload: .{1,20} Size: (.*?)\"").getMatch(0);
-        }
+        if (filesize == null) filesize = br.getRegex("Date upload: .{1,20} Size: (.*?)\"").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        downloadLink.setName(filename.trim());
+        if (downloadLink.getDownloadURL().contains("/audio/"))
+            downloadLink.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".mp3");
+        else
+            downloadLink.setName(Encoding.htmlDecode(filename.trim()));
         if (filesize != null) downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
     }
@@ -71,6 +73,7 @@ public class Indowebster extends PluginForHost {
     @Override
     public void handleFree(DownloadLink link) throws Exception {
         requestFileInformation(link);
+        if (br.containsHTML("Storage Maintenance, Back Later")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Storage maintenance", 60 * 60 * 1000l);
         String ad_url = br.getRegex("<a id=\"download\" href=\"(http://.*?)\"").getMatch(0);
         if (ad_url == null) {
             ad_url = br.getRegex("\"(http://v\\d+\\.indowebster\\.com/downloads/jgjbcf/[a-z0-9]+)\"").getMatch(0);

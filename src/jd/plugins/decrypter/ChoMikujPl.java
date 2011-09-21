@@ -47,7 +47,7 @@ public class ChoMikujPl extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setFollowRedirects(false);
-        String parameter = param.toString();
+        String parameter = Encoding.htmlDecode(param.toString());
         // The message used on errors in this plugin
         String error = "Error while decrypting link: " + parameter;
         // If a link is password protected we have to save and use those data in
@@ -87,6 +87,8 @@ public class ChoMikujPl extends PluginForDecrypt {
         subFolderID = subFolderID.trim();
         // Alle Haupt-POSTdaten
         String postdata = "ctl00%24SM=ctl00%24CT%24FW%24FoldersUp%7Cctl00%24CT%24FW%24RefreshButton&__EVENTTARGET=ctl00%24CT%24FW%24RefreshButton&__EVENTARGUMENT=&__VIEWSTATE=" + Encoding.urlEncode(viewState) + "&PageCmd=&PageArg=undefined&ctl00%24LoginTop%24LoginChomikName=&ctl00%24LoginTop%24LoginChomikPassword=&ctl00%24SearchInputBox=nazwa%20lub%20e-mail&ctl00%24SearchFileBox=nazwa%20pliku&ctl00%24SearchType=all&SType=0&ctl00%24CT%24ChomikID=" + chomikId + "&ctl00%24CT%24PermW%24LoginCtrl%24PF=&treeExpandLog=&" + Encoding.urlEncode(treeExpandLog) + "&ChomikSubfolderId=" + subFolderID + "&tl00%24CT%24TW%24TreeExpandLog=" + "&ctl00%24CT%24FW%24SubfolderID=" + subFolderID + "&FVSortType=1&FVSortDir=1&FVSortChange=&FVPage=%jdownloaderpage%&ctl00%24CT%24FW%24inpFolderAddress=" + Encoding.urlEncode(parameter) + "&ctl00%24CT%24FrW%24FrPage=0&FrGroupId=0&__ASYNCPOST=true&";
+        // Needed for page-change for videolinks
+        if (br.containsHTML("GalPage")) postdata = postdata.replace("&FVPage=", "&GalPage=");
         // Passwort Handling
         if (br.containsHTML(PASSWORDTEXT)) {
             prepareBrowser(parameter, br);
@@ -120,6 +122,7 @@ public class ChoMikujPl extends PluginForDecrypt {
             br.postPage(parameter, postThatData);
             // Every full page has 30 links (pictures)
             boolean filenameIncluded = true;
+            boolean filenameIncludedVideo = true;
             String[][] fileIds = br.getRegex("class=\"FileName\" onclick=\"return ch\\.Download\\.dnFile\\((.*?)\\);\"><b>(.{1,300})</b>(.{1,300})</a>[\t\n\r ]+</td>[\t\n\r ]+<td>[\t\n\r ]+<table cellpadding=\"0\" cellspacing=\"3\" class=\"fInfoTable\">[\t\n\r ]+<tr>[\t\n\r ]+<td><div class=\"fInfoDiv\">(.{1,20})</div></td>").getMatches();
             if (fileIds == null || fileIds.length == 0) {
                 filenameIncluded = false;
@@ -128,7 +131,13 @@ public class ChoMikujPl extends PluginForDecrypt {
                     fileIds = br.getRegex("class=\"fileItemProp getFile\" onclick=\"return ch\\.Download\\.dnFile\\((\\d+)\\);\"").getMatches();
                 }
             }
-            if (fileIds == null || fileIds.length == 0) {
+            String[][] allFolders = br.getRegex("class=\"folders\" cellspacing=\"6\" cellpadding=\"0\" border=\"0\">[\t\n\r ]+<tr>[\t\n\r ]+<td><a href=\"(.*?)\" onclick=\"return Ts\\(\\'\\d+\\'\\)\">(.*?)</span>").getMatches();
+            String[][] videoIDs = br.getRegex("<div style=\"margin:10px\">[\t\n\r ]+<div style=\"padding: 10px;\">[\t\n\r ]+<a href=\".{1,300}/([^/\"\\'<>]+),\\d+([^/\"\\'<>]+)\" onclick=\"return ch\\.Download.dnFile\\((\\d+)\\);\"").getMatches();
+            if (videoIDs == null || videoIDs.length == 0) {
+                filenameIncludedVideo = false;
+                videoIDs = br.getRegex("ShowVideo\\.aspx\\?id=(\\d+)\\'").getMatches();
+            }
+            if ((fileIds == null || fileIds.length == 0) && (allFolders == null || allFolders.length == 0) && (videoIDs == null || videoIDs.length == 0)) {
                 // If the last page only contains a file or fileS the regexes
                 // don't work but the decrypter isn't broken so the user should
                 // get the links!
@@ -139,31 +148,51 @@ public class ChoMikujPl extends PluginForDecrypt {
                 logger.warning(error);
                 return null;
             }
-
-            for (String[] id : fileIds) {
-                String finalLink = String.format("&id=%s&gallerylink=%s&", id[0], param.toString().replace("chomikuj.pl", "60423fhrzisweguikipo9re"));
-                DownloadLink dl = createDownloadlink(finalLink);
-                if (filenameIncluded) {
-                    dl.setName(id[1].trim() + id[2].trim());
-                    dl.setDownloadSize(SizeFormatter.getSize(id[3]));
-                    dl.setAvailable(true);
-                } else {
-                    dl.setName(String.valueOf(new Random().nextInt(1000000)));
+            if (fileIds != null && fileIds.length != 0) {
+                for (String[] id : fileIds) {
+                    String finalLink = String.format("&id=%s&gallerylink=%s&", id[0], param.toString().replace("chomikuj.pl", "60423fhrzisweguikipo9re"));
+                    DownloadLink dl = createDownloadlink(finalLink);
+                    if (filenameIncluded) {
+                        dl.setName(id[1].trim() + id[2].trim());
+                        dl.setDownloadSize(SizeFormatter.getSize(id[3].replace(",", ".")));
+                        dl.setAvailable(true);
+                    } else {
+                        dl.setName(String.valueOf(new Random().nextInt(1000000)));
+                    }
+                    if (saveLink != null && savePost != null && password != null) {
+                        dl.setProperty("savedlink", saveLink);
+                        dl.setProperty("savedpost", savePost);
+                        // Not needed yet but might me useful for the future
+                        dl.setProperty("password", password);
+                    }
+                    decryptedLinks.add(dl);
                 }
-                if (saveLink != null && savePost != null && password != null) {
-                    dl.setProperty("savedlink", saveLink);
-                    dl.setProperty("savedpost", savePost);
-                    // Not needed yet but might me useful for the future
-                    dl.setProperty("password", password);
-                }
-                decryptedLinks.add(dl);
             }
-            String[][] allFolders = br.getRegex("class=\"folders\" cellspacing=\"6\" cellpadding=\"0\" border=\"0\">[\t\n\r ]+<tr>[\t\n\r ]+<td><a href=\"(.*?)\" onclick=\"return Ts\\(\\'\\d+\\'\\)\">(.*?)</span>").getMatches();
             if (allFolders != null && allFolders.length != 0) {
                 for (String[] folder : allFolders) {
                     String folderLink = folder[0];
                     folderLink = "http://chomikuj.pl" + folderLink;
                     decryptedLinks.add(createDownloadlink(folderLink));
+                }
+            }
+            if (videoIDs != null && videoIDs.length != 0) {
+                for (String videoID[] : videoIDs) {
+                    String vid;
+                    if (filenameIncludedVideo)
+                        vid = videoID[2];
+                    else
+                        vid = videoID[0];
+
+                    String finalLink = String.format("&id=%s&gallerylink=%s&", vid, param.toString().replace("chomikuj.pl", "60423fhrzisweguikipo9re"));
+                    DownloadLink dl = createDownloadlink(finalLink);
+                    if (filenameIncludedVideo) {
+                        dl.setFinalFileName(Encoding.htmlDecode(videoID[0] + videoID[1]));
+                        dl.setAvailable(true);
+                    } else {
+                        dl.setName(String.valueOf(new Random().nextInt(1000000)));
+                    }
+                    dl.setProperty("video", "true");
+                    decryptedLinks.add(dl);
                 }
             }
             progress.increase(1);
@@ -184,13 +213,14 @@ public class ChoMikujPl extends PluginForDecrypt {
         for (int i = 0; i <= 20; i++) {
             // Find number of pages
             String pagePiece = br2.getRegex("class=\"navigation\"><table id=\"ctl00_CT_FW_FV_NavTop_NavTable\" border=\"0\">(.*?)</table></div>").getMatch(0);
+            if (pagePiece == null) pagePiece = br2.getRegex("id=\"ctl00_CT_FW_FGNavBottom_NavTable\" border=\"0\">[\t\n\r ]+<tr>[\t\n\r ]+<td><span class=\"na\">\\&laquo; <b>poprzednia</b> strona</span></td><td style=\"width:\\d+%;\"></td><td><span>1</span></td><td><a (onclick=.*?</tr>[\t\n\r ]+</table></div>)").getMatch(0);
             if (pagePiece == null) {
                 logger.info("pagePiece is null so we should only have one page for this link...");
                 pageCount = 0;
                 break;
             }
             String[] lolpages = null;
-            if (pagePiece != null) lolpages = new Regex(pagePiece, "ch\\.changeFilesPage\\((\\d+)\\)").getColumn(0);
+            if (pagePiece != null) lolpages = new Regex(pagePiece, "(ch\\.changeFilesPage|changeGalPageBottom)\\((\\d+)\\)").getColumn(1);
             if (lolpages == null || lolpages.length == 0) return -1;
             // Find highest number of page
             for (String page : lolpages) {

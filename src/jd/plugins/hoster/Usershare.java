@@ -34,12 +34,12 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -105,7 +105,7 @@ public class Usershare extends PluginForHost {
             Form[] forms = br.getForms();
             if (forms == null || forms.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             for (Form singleForm : forms)
-                if (singleForm.containsHTML(link.getName())) {
+                if (singleForm.containsHTML("fname")) {
                     dlform = singleForm;
                     break;
                 }

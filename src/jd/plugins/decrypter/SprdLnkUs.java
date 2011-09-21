@@ -64,7 +64,6 @@ public class SprdLnkUs extends PluginForDecrypt {
             br.getPage("http://spreadlink.us/index.php?request=datei&datei=weiterleitung&link=" + theID + "&action=1");
         } else {
             logger.info("Found captcha- or passwordlink");
-            System.out.print(br.toString());
             Regex theData = br.getRegex("secToW\\(\\'(\\d+)\\', \\'([a-z0-9]+)\\', \\'(.*?)\\', \\'(\\d+)\\'\\);");
             String waittime = theData.getMatch(0);
             String linkid = theData.getMatch(1);

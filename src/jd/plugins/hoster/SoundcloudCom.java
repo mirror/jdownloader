@@ -66,10 +66,11 @@ public class SoundcloudCom extends PluginForHost {
         filename = Encoding.htmlDecode(filename.trim());
         String type = br.getRegex("title=\"Uploaded format\">(.*?)<").getMatch(0);
         if (type == null) {
-            type = br.getRegex("class=\"file-type\">(.*?)</span>").getMatch(0);
+            type = br.getRegex("class=\"file\\-type\">(.*?)</span>").getMatch(0);
             if (type == null) type = "mp3";
         }
-        if (username != null) filename += " - " + username.trim();
+        username = username.trim();
+        if (username != null && !filename.contains(username)) filename += " - " + username;
         filename += "." + type;
         if (!br.containsHTML("class=\"download pl\\-button\"")) {
             String[] data = br.getRegex("\"uid\":\"(.*?)\".*?\"token\":\"(.*?)\"").getRow(0);

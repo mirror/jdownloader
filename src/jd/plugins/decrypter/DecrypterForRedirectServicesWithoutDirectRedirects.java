@@ -286,6 +286,7 @@ public class DecrypterForRedirectServicesWithoutDirectRedirects extends PluginFo
             }
             br.getPage("http://hypem.com/serve/play/" + fid + "/" + id0 + ".mp3");
             finallink = br.getRedirectLocation();
+            if (finallink != null) finallink = finallink.replace("Http://", "http://");
             dh = true;
         } else if (parameter.contains("academicearth.org/")) {
             if (!(br.getRedirectLocation() != null && br.getRedirectLocation().contains("users/login"))) {

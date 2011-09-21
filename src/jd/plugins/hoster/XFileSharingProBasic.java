@@ -130,6 +130,7 @@ public class XFileSharingProBasic extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    @SuppressWarnings("deprecation")
     public void doFree(DownloadLink downloadLink, boolean resumable, int maxchunks, boolean checkFastWay) throws Exception, PluginException {
         String passCode = null;
         if (BRBEFORE.contains("\"download1\"")) {
@@ -150,7 +151,7 @@ public class XFileSharingProBasic extends PluginForHost {
                 if (dllink != null) {
                     Browser br2 = br.cloneBrowser();
                     URLConnectionAdapter con = br2.openGetConnection(dllink);
-                    if (con.getContentType().contains("html")) {
+                    if (con.getContentType().contains("html") || con.getContentLength() == -1) {
                         downloadLink.setProperty("freelink", Property.NULL);
                         dllink = null;
                     }
@@ -356,6 +357,7 @@ public class XFileSharingProBasic extends PluginForHost {
         return ai;
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public void handlePremium(DownloadLink link, Account account) throws Exception {
         String passCode = null;
@@ -366,7 +368,7 @@ public class XFileSharingProBasic extends PluginForHost {
             if (dllink != null) {
                 Browser br2 = br.cloneBrowser();
                 URLConnectionAdapter con = br2.openGetConnection(dllink);
-                if (con.getContentType().contains("html")) {
+                if (con.getContentType().contains("html") || con.getContentLength() == -1) {
                     link.setProperty("premlink", Property.NULL);
                     dllink = null;
                 }

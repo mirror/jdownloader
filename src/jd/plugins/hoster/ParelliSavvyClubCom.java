@@ -36,7 +36,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "parellisavvyclub.com" }, urls = { "http://(www\\.)?parellisavvyclub\\.com/(watchMedia\\.faces\\?id=\\d+|video\\?sckey=.*?\\&pl=\\d+)" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "parellisavvyclub.com" }, urls = { "http://(www\\.)?parellisavvyclub\\.com/(watchMedia\\.faces\\?id=\\d+|video\\?sckey=[^\"\\']+(\\&pl=\\d+)?)" }, flags = { 2 })
 public class ParelliSavvyClubCom extends PluginForHost {
 
     public ParelliSavvyClubCom(PluginWrapper wrapper) {
@@ -56,7 +56,6 @@ public class ParelliSavvyClubCom extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         String filename = link.getName();
-        long filesize = link.getDownloadSize();
         Account aa = AccountController.getInstance().getValidAccount(this);
         if (aa == null) {
             link.getLinkStatus().setStatusText("Link only checkable if you have an account!");
@@ -65,7 +64,7 @@ public class ParelliSavvyClubCom extends PluginForHost {
         login(aa, false);
         br.getPage(link.getDownloadURL());
         String dllink = getDllink();
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink == null) throw new Exception("Hey .bismarck, RTMP support is missing ;)");
         filename = new Regex(dllink, ".*?parelli\\.com/.{1,10}/(.*?)\\?Policy=").getMatch(0);
         if (filename == null) filename = br.getRegex("class=\"plWatchVideo playing\" rel=\"nofollow\" href=\"[^\"\\']+\">(.*?)<br>").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
