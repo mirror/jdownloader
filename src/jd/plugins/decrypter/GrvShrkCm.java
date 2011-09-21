@@ -37,7 +37,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "grooveshark.com" }, urls = { "http://(listen\\.)?grooveshark\\.com/(#/)?((album|artist|playlist|user)/.*?/\\d+(/music/favorites)?|popular)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "grooveshark.com" }, urls = { "http://(listen\\.)?grooveshark\\.com/(#/)?((album|artist|playlist|s|user)/.*?/([a-zA-z0-9]+|\\d+)(/music/favorites|/similar)?|popular)" }, flags = { 0 })
 public class GrvShrkCm extends PluginForDecrypt {
 
     private static final String     LISTEN = "http://grooveshark.com/";
@@ -62,11 +62,15 @@ public class GrvShrkCm extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
+        decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         parameter = parameter.replaceAll("\\?src=\\d+", "");
-        if (parameter.contains("search/song") || parameter.endsWith("similar")) {
+        if (parameter.endsWith("similar")) {
             logger.warning("Link format is not supported: " + parameter);
             return null;
+        }
+        if (parameter.contains("http://listen.")) {
+            parameter = parameter.replace("listen.", "");
         }
         /* single */
         if (parameter.contains("/s/")) {
@@ -76,9 +80,6 @@ public class GrvShrkCm extends PluginForDecrypt {
             dlLink.setProperty("type", "single");
             decryptedLinks.add(dlLink);
             return decryptedLinks;
-        }
-        if (parameter.contains("http://listen.")) {
-            parameter = parameter.replace("listen.", "");
         }
         if (!parameter.contains("/#/")) {
             parameter = parameter.replaceFirst(LISTEN, LISTEN + "#/");
@@ -108,7 +109,6 @@ public class GrvShrkCm extends PluginForDecrypt {
     }
 
     private void getAlbum(final String parameter, final ProgressController progress) throws IOException {
-        decryptedLinks = new ArrayList<DownloadLink>();
         final String country = br.getRegex(Pattern.compile("\"country(.*?)}", Pattern.UNICODE_CASE)).getMatch(-1);
         final HashMap<String, String> titleContent = new HashMap<String, String>();
         if (parameter.contains("artist") || parameter.contains("album") || parameter.contains("popular")) {
@@ -186,7 +186,6 @@ public class GrvShrkCm extends PluginForDecrypt {
     }
 
     private void getFavourites(final String parameter, final ProgressController progress) throws IOException {
-        decryptedLinks = new ArrayList<DownloadLink>();
         userID = new Regex(parameter, "grooveshark.com/#/user/.*?/(\\d+)/").getMatch(0);
         userName = new Regex(parameter, "grooveshark.com/#/user/(.*?)/(\\d+)/").getMatch(0);
         final String country = br.getRegex(Pattern.compile("\"country(.*?)}", Pattern.UNICODE_CASE)).getMatch(-1);
@@ -222,7 +221,6 @@ public class GrvShrkCm extends PluginForDecrypt {
     }
 
     private void getPlaylists(final String parameter, final ProgressController progress) throws IOException {
-        decryptedLinks = new ArrayList<DownloadLink>();
         final String playlistID = parameter.substring(parameter.lastIndexOf("/") + 1);
         final String country = br.getRegex(Pattern.compile("\"country(.*?)}", Pattern.UNICODE_CASE)).getMatch(-1);
         final String method = "playlistGetSongs";

@@ -35,7 +35,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "grooveshark.com" }, urls = { "http://(grooveshark\\.viajd/(#/)?.+|grooveshark\\.viajd/song/\\d+)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "grooveshark.com" }, urls = { "http://grooveshark\\.viajd/(s/.*?/[a-zA-Z0-9]+|song/\\d+)" }, flags = { 0 })
 public class GrooveShark extends PluginForHost {
 
     private static final String LISTEN = "http://grooveshark.com/";
