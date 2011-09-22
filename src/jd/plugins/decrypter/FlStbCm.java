@@ -80,12 +80,14 @@ public class FlStbCm extends PluginForDecrypt {
                 br2.getPage(alternatives + "/get/" + alterID + "/" + alterID2 + "?callback=jsonp" + System.currentTimeMillis());
                 String alts[] = br2.getRegex("\\'t\\':\\'(.*?)\\'").getColumn(0);
                 if (alts != null && alts.length != 0) {
+                    progress.setRange(alts.length);
                     for (String link : alts) {
                         Browser br3 = br.cloneBrowser();
                         br3.getPage("http://www.filestube.com/" + link + "/go.html");
                         String finallink = br3.getRegex("<noframes> <br /> <a href=\"(.*?)\"").getMatch(0);
                         if (finallink == null) finallink = br3.getRegex("<iframe style=\".*?\" src=\"(.*?)\"").getMatch(0);
                         if (finallink != null) decryptedLinks.add(createDownloadlink(finallink));
+                        progress.increase(1);
                     }
                 }
             }
