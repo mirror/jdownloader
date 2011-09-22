@@ -39,7 +39,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vkontakte.ru" }, urls = { "http://(www\\.)?(vkontakte\\.ru|vk\\.com)/(audio(\\.php)?\\?id=\\d+|video(-)?\\d+_\\d+|videos\\d+)" }, flags = { 0 })
+//                                                                                                                                              http://vkontakte.ru/audio?album_id=6161660&id=81295545
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vkontakte.ru" }, urls = { "http://(www\\.)?(vkontakte\\.ru|vk\\.com)/(audio(\\.php)?(\\?album_id=\\d+\\&id=|\\?id=)\\d+|video\\-?\\d+_\\d+|videos\\d+)" }, flags = { 0 })
 public class VKontakteRu extends PluginForDecrypt implements ProgressControllerListener {
 
     /* must be static so all plugins share same lock */
@@ -81,25 +82,16 @@ public class VKontakteRu extends PluginForDecrypt implements ProgressControllerL
             }
             br.setFollowRedirects(false);
             if (parameter.matches(".*?vkontakte\\.ru/audio.*?")) {
-                String[] audioLinks = br.getRegex("(id=\"audio_info\\d+_\\d+\" value=\"http://.*?/>.*?)class=\"user\">").getColumn(0);
-                if (audioLinks == null || audioLinks.length == 0) {
-                    audioLinks = br.getRegex("id=\"audio_info\\d+_\\d+\" value=\"(http://[^\"\\']+),\\d+\"").getColumn(0);
-                    if (audioLinks == null || audioLinks.length == 0) audioLinks = br.getRegex("\"(http://cs\\d+\\.vkontakte\\.ru/u\\d+/audio/[a-z0-9]+\\.mp3),\\d+\"").getColumn(0);
-                }
+                br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                br.postPage("http://vkontakte.ru/audio", "act=load_audios_silent&al=1&edit=0&gid=0&id=" + new Regex(parameter, "id=(\\d+)$").getMatch(0));
+                String[][] audioLinks = br.getRegex("\\'(http://cs\\d+\\.vkontakte\\.ru/u\\d+/audio/[a-z0-9]+\\.mp3)\\',\\'\\d+\\',\\'\\d+:\\d+\\',\\'(.*?)\\',\\'(.*?)\\'").getMatches();
                 if (audioLinks == null || audioLinks.length == 0) return null;
-                for (String audioInfo : audioLinks) {
-                    String finallink = null;
-                    if (audioInfo.startsWith("http"))
-                        finallink = audioInfo;
-                    else
-                        finallink = new Regex(audioInfo, "id=\"audio_info\\d+_\\d+\" value=\"(http://[^\"\\']+),\\d+\"").getMatch(0);
+                for (String audioInfo[] : audioLinks) {
+                    String finallink = audioInfo[0];
                     if (finallink == null) return null;
-                    Regex artistAndName = new Regex(audioInfo, "return; Audio\\.selectPerformer\\(event, \\'[^\"\\']+\\'\\); return false\">(.*?)</a></b> \\- <span class=\"title\">(<a href=\"\" onclick=\"Audio\\.showLyrics\\(\\'\\d+_\\d+\\',\\d+\\);return false;\">)?(.*?)(</a>)? </span><span");
-                    String artist = artistAndName.getMatch(0);
-                    String name = artistAndName.getMatch(2);
                     DownloadLink dl = createDownloadlink("directhttp://" + finallink);
                     // Set filename so we have nice filenames here ;)
-                    if (artist != null && name != null) dl.setFinalFileName(Encoding.htmlDecode(artist.trim()) + " - " + Encoding.htmlDecode(name.trim()) + ".mp3");
+                    dl.setFinalFileName(Encoding.htmlDecode(audioInfo[1].trim()) + " - " + Encoding.htmlDecode(audioInfo[2].trim()) + ".mp3");
                     dl.setAvailable(true);
                     decryptedLinks.add(dl);
                 }

@@ -86,6 +86,10 @@ public class EasyShareCom extends PluginForHost {
             return ai;
         }
         br.getPage("http://www.easy-share.com/accounts");
+        if (br.containsHTML(">expired")) {
+            ai.setExpired(true);
+            return ai;
+        }
         String isPremium = br.getRegex("Premium membership: <.*?>(Active)<").getMatch(0);
         String ends = br.getRegex("Ends:</span>.*?<span>(.*?)<").getMatch(0);
         /* there are 2 different versions of account info pages */
