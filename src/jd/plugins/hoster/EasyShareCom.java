@@ -110,6 +110,7 @@ public class EasyShareCom extends PluginForHost {
             ai.setUnlimitedTraffic();
         }
         account.setValid(true);
+        ai.setStatus("Premium User");
         return ai;
     }
 
@@ -233,8 +234,8 @@ public class EasyShareCom extends PluginForHost {
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         requestFileInformation(downloadLink);
         login(account);
-        br.getPage(MAINPAGE);
         br.setFollowRedirects(false);
+        br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML(FILENOTFOUND)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String url = br.getRedirectLocation();
         if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
