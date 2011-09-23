@@ -32,7 +32,7 @@ import jd.plugins.DownloadLink.AvailableStatus;
 
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision: 12761 $", interfaceVersion = 2, names = { "videobb.com" }, urls = { "http://(www\\.)?videobb\\.com/(video/|watch_video\\.php\\?v=)\\w+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision: 12761 $", interfaceVersion = 2, names = { "videobb.com" }, urls = { "http://(www\\.)?videobb\\.com/(video/|watch_video\\.php\\?v=|e/)\\w+" }, flags = { 2 })
 public class VideoBbCom extends PluginForHost {
 
     private static final Object LOCK     = new Object();
@@ -46,7 +46,7 @@ public class VideoBbCom extends PluginForHost {
     }
 
     public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("/video/", "/watch_video.php?v="));
+        link.setUrlDownload(link.getDownloadURL().replaceAll("/(video|e)/", "/watch_video.php?v="));
     }
 
     @Override

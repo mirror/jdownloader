@@ -28,7 +28,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "videozer.com" }, urls = { "http://(www\\.)?videozer\\.com/video/[A-Za-z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "videozer.com" }, urls = { "http://(www\\.)?videozer\\.com/(video|embed)/[A-Za-z0-9]+" }, flags = { 0 })
 public class VideozerCom extends PluginForHost {
 
     public VideozerCom(PluginWrapper wrapper) {
@@ -38,6 +38,10 @@ public class VideozerCom extends PluginForHost {
     @Override
     public String getAGBLink() {
         return "http://www.videozer.com/toc.php";
+    }
+
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("/embed/", "/video/"));
     }
 
     @Override

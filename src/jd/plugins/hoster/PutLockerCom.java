@@ -31,7 +31,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "putlocker.com" }, urls = { "http://(www\\.)?putlocker\\.com/file/[A-Z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "putlocker.com" }, urls = { "http://(www\\.)?putlocker\\.com/(file|embed)/[A-Z0-9]+" }, flags = { 0 })
 public class PutLockerCom extends PluginForHost {
 
     public PutLockerCom(PluginWrapper wrapper) {
@@ -44,6 +44,10 @@ public class PutLockerCom extends PluginForHost {
     }
 
     private static final String MAINPAGE = "http://www.putlocker.com";
+
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("/embed/", "/file/"));
+    }
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
