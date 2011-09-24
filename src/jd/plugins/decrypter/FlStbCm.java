@@ -65,28 +65,30 @@ public class FlStbCm extends PluginForDecrypt {
                     }
                 }
             }
-            String alternatives = br.getRegex("Alternatives\\(\\'(http:.*?)\\'").getMatch(0);
-            String alterID = br.getRegex("getAlternatives\\(\\'(.*?)\\'").getMatch(0);
-            String alterID2 = br.getRegex("getAlternatives\\(\\'.*?\\', \\'(.*?)\\'").getMatch(0);
             String pagePiece = br.getRegex(Pattern.compile("id=\"copy_paste_links\" style=\".*?\">(.*?)</pre>", Pattern.DOTALL)).getMatch(0);
+            // Find IDs for alternative links
+            String[][] alternativeLinks = br.getRegex("alternate_files\\.push\\(\\{key: \\'([a-z0-9]+)\\',token: \\'([a-z0-9]+)\\'\\}\\)").getMatches();
             if (pagePiece == null) return null;
             String temp[] = pagePiece.split("\r\n");
             if (temp == null) return null;
             if (temp == null || temp.length == 0) return null;
             for (String data : temp)
                 decryptedLinks.add(createDownloadlink(data));
-            if (alternatives != null && alterID != null && alterID2 != null) {
+            if (alternativeLinks != null && alternativeLinks.length != 0) {
                 Browser br2 = br.cloneBrowser();
-                br2.getPage(alternatives + "/get/" + alterID + "/" + alterID2 + "?callback=jsonp" + System.currentTimeMillis());
-                String alts[] = br2.getRegex("\\'t\\':\\'(.*?)\\'").getColumn(0);
-                if (alts != null && alts.length != 0) {
-                    progress.setRange(alts.length);
-                    for (String link : alts) {
+                progress.setRange(alternativeLinks.length);
+                for (String alternativeLinkInfo[] : alternativeLinks) {
+                    br2.getPage("http://149.13.65.144:8889/get/" + alternativeLinkInfo[0] + "/" + alternativeLinkInfo[1] + "?callback=jsonp" + System.currentTimeMillis());
+                    String alts[] = br2.getRegex("\\'t\\':\\'(.*?)\\'").getColumn(0);
+                    if (alts != null && alts.length != 0) {
                         Browser br3 = br.cloneBrowser();
-                        br3.getPage("http://www.filestube.com/" + link + "/go.html");
-                        String finallink = br3.getRegex("<noframes> <br /> <a href=\"(.*?)\"").getMatch(0);
-                        if (finallink == null) finallink = br3.getRegex("<iframe style=\".*?\" src=\"(.*?)\"").getMatch(0);
-                        if (finallink != null) decryptedLinks.add(createDownloadlink(finallink));
+                        for (String link : alts) {
+                            br3.getPage("http://www.filestube.com/" + link + "/go.html");
+                            String finallink = br3.getRegex("<noframes> <br /> <a href=\"(.*?)\"").getMatch(0);
+                            if (finallink == null) finallink = br3.getRegex("<iframe style=\".*?\" src=\"(.*?)\"").getMatch(0);
+                            if (finallink != null) decryptedLinks.add(createDownloadlink(finallink));
+                        }
+                        // 30 links = increase it by one
                         progress.increase(1);
                     }
                 }
@@ -99,5 +101,4 @@ public class FlStbCm extends PluginForDecrypt {
         }
         return decryptedLinks;
     }
-
 }

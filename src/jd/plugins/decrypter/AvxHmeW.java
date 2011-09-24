@@ -28,26 +28,27 @@ import jd.plugins.PluginForDecrypt;
 /**
  * @author typek_pb
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, urls = { "http://[\\w\\.]*?avaxhome\\.ws/(ebooks|music|software|video|magazines|games|graphics|misc|hraphile)/.+" }, flags = { 0 }, names = { "avaxhome.ws" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, urls = { "http://(www\\.)?avaxhome\\.ws/(ebooks|music|software|video|magazines|games|graphics|misc|hraphile)/.+" }, flags = { 0 }, names = { "avaxhome.ws" })
 public class AvxHmeW extends PluginForDecrypt {
 
     public AvxHmeW(PluginWrapper wrapper) {
         super(wrapper);
     }
 
+    private static final String AVXHMEREGEX = "http://(www\\.)?avaxhome\\.ws/(ebooks|music|software|video|magazines|games|graphics|misc|hraphile)/.+";
+
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink cryptedLink, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.clearCookies(getHost());
         br.getPage(cryptedLink.getCryptedUrl());
-
         // 1.st try: <a href="LINK" target="_blank" rel="nofollow"> but ignore
         // images/self site refs + imdb refs
         String[][] links = br.getRegex("<a href=\"(http(s)?://(?!(www[.]imdb[.]com|avaxhome[.]ws))[\\S&&[^<]]+?)\" target=\"_blank\" rel=\"nofollow\">(?!<img)").getMatches();
         if (null != links && 0 < links.length) {
             for (String[] link : links) {
                 if (null != link && 0 < link.length && null != link[0] && 0 < link[0].length()) {
-                    decryptedLinks.add(createDownloadlink(link[0]));
+                    if (!link[0].matches(AVXHMEREGEX)) decryptedLinks.add(createDownloadlink(link[0]));
                 }
             }
         }
@@ -58,7 +59,7 @@ public class AvxHmeW extends PluginForDecrypt {
         if (null != links && 0 < links.length) {
             for (String[] link : links) {
                 if (null != link && 0 < link.length && null != link[0] && 0 < link[0].length()) {
-                    decryptedLinks.add(createDownloadlink(link[0]));
+                    if (!link[0].matches(AVXHMEREGEX)) decryptedLinks.add(createDownloadlink(link[0]));
                 }
             }
         }

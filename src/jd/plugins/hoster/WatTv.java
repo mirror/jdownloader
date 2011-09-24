@@ -21,7 +21,7 @@ import java.io.IOException;
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
-import jd.parser.Regex;
+import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
@@ -48,9 +48,9 @@ public class WatTv extends PluginForHost {
         br.setCustomCharset("utf-8");
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("ERREUR 404 : Cette page n'existe pas")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<title>.*?\"(.*?)\"").getMatch(0);
-        if (filename == null || filename.equals("") || filename.equals("text/javascript")) filename = br.getRegex("<h2 class=\"titre\">(.*?)</h2>").getMatch(0);
+        if (br.getURL().equals("http://www.wat.tv/") || br.containsHTML("<title> WAT TV, vidéos replay musique et films, votre média vidéo \\– Wat\\.tv </title>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("<meta property=\"og:title\" content=\"(.*?)\"").getMatch(0);
+        if (filename == null || filename.equals("")) filename = br.getRegex("<meta name=\"name\" content=\"(.*?)\"").getMatch(0);
         if (filename == null || filename.equals("")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(filename.trim() + ".flv");
         return AvailableStatus.TRUE;
@@ -81,13 +81,13 @@ public class WatTv extends PluginForHost {
         }
         if (videoid == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         Browser br2 = br.cloneBrowser();
-        br2.getPage("http://www.wat.tv/interface/contentv2/" + videoid);
-        String sources = br2.toString().replace("\\", "");
-        String getVideoLink = new Regex(sources, "\"(http://www.wat.tv/get/.*?\\.flv)\"").getMatch(0);
-        if (getVideoLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        // Usually the country is in the link (e.g. "country=DE") but it works
-        // also without
-        getVideoLink = getVideoLink + "?context=swf2&country=&sitepage=WAT/generique/page&getURL=1";
+        // Scheinbar unwichtig, war der frühere Weg um an den Downloadlink zu
+        // kommen!
+        br2.getPage("http://www.wat.tv/interface/contentv3/" + videoid);
+        br2.getPage("http://www.wat.tv/get/web/" + videoid + "?token=" + "token4bismarck" + "/" + "tokenTwo4bismarck" + "&domain=www.wat.tv&domain2=www.wat.tv&revision=4.1.017&synd=0&helios=1&context=swf2&pub=5&country=DE&sitepage=WAT%2Ftv%2Fkoh-lanta-9&lieu=wat&playerContext=CONTEXT_WAT&getURL=1&version=WIN%2010,3,183,7");
+        String getVideoLink = br2.toString();
+        if (!getVideoLink.startsWith("http")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        getVideoLink = Encoding.htmlDecode(getVideoLink.trim());
         URLConnectionAdapter con = br2.openGetConnection(getVideoLink);
         if (con.getResponseCode() == 404 || con.getResponseCode() == 403) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.WatTv.CountryBlocked", "This video isn't available in your country!"));
         br2.followConnection();
