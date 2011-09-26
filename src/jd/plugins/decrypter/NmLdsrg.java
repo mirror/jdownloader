@@ -29,12 +29,17 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "anime-loads.org" }, urls = { "http://[\\w\\.]*?anime-loads\\.org/download/\\d+/[a-z]{2}\\.0|http://[\\w\\.]*?anime-loads\\.org/media/\\d+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "anime-loads.org" }, urls = { "http://[\\w\\.]*?anime-loads\\.org/redirect/\\d+/[a-z0-9]+|http://[\\w\\.]*?anime-loads\\.org/media/\\d+" }, flags = { 0 })
 public class NmLdsrg extends PluginForDecrypt {
 
     public NmLdsrg(PluginWrapper wrapper) {
         super(wrapper);
     }
+
+    /*
+     * Note: FilePackage gets overridden when crypt-it.com (link protection
+     * service) used. Old posts + streaming links still get caught.
+     */
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -44,24 +49,25 @@ public class NmLdsrg extends PluginForDecrypt {
         String parameter = param.toString();
         String fpName = null;
         br.setCookiesExclusive(true);
-        if (parameter.contains("/download/")) {
+        if (parameter.contains("/redirect/")) {
             links.add(parameter);
         } else {
             br.getPage(parameter);
-            if (br.containsHTML("Media nicht gefunden")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
-            fpName = br.getRegex("<title>\\[ ANIME-LOADS\\.ORG ] - Serie:(.*?)</title>").getMatch(0);
-            if (fpName == null) fpName = br.getRegex("<div class=\"headlinebg\"><h1 class=\"headline_inner\">(.*?)</h1>").getMatch(0);
-            String[] continueLinks = br.getRegex("\"(http://www\\.anime-loads\\.org/download/\\d+/.*?)\"").getColumn(0);
-            if (continueLinks == null || continueLinks.length == 0) continueLinks = br.getRegex("<a target=\"_blank\" href=\"(http.*?)\"").getColumn(0);
+            if (br.containsHTML("Link existiert nicht")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+            fpName = br.getRegex(":: (.*?)</span></h2>").getMatch(0);
+            if (fpName == null) fpName = "No Title";
+            String[] continueLinks = br.getRegex("\"(http://(www\\.)?anime-loads\\.org/redirect/\\d+/[a-z0-9]+)\"").getColumn(0);
             if (continueLinks == null || continueLinks.length == 0) return null;
-            for (String singlelink : continueLinks) {
-                links.add(singlelink);
+            if (continueLinks != null && continueLinks.length != 0) {
+                for (String singlelink : continueLinks) {
+                    links.add(singlelink);
+                }
             }
         }
         progress.setRange(links.size());
         for (String link : links) {
             br.getPage(link);
-            String dllink = Encoding.htmlDecode(br.getRegex("<meta http-equiv=\"refresh\" content=\"5; url=(.*?)\">").getMatch(0));
+            String dllink = Encoding.htmlDecode(br.getRegex("<meta http-equiv=\"refresh\" content=\"5;URL=(.*?)\" />").getMatch(0));
             DownloadLink dl = createDownloadlink(dllink);
             dl.setSourcePluginPasswordList(passwords);
             dl.setDecrypterPassword(passwords.get(0));
