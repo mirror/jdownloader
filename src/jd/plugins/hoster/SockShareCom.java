@@ -50,7 +50,7 @@ public class SockShareCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.getURL().contains("sockshare.com/?404") || br.containsHTML("(>This file doesn\\'t exist, or has been removed|<title>Share Files Easily on SockShare</title>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.getURL().contains("sockshare.com/?404") || br.containsHTML("(>404 Not Found<|>This file doesn\\'t exist, or has been removed|<title>Share Files Easily on SockShare</title>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         Regex fileInfo = br.getRegex("<h1>(.*?)<strong>\\( (.*?) \\)</strong></h1>");
         String filename = fileInfo.getMatch(0);
         if (filename == null) filename = br.getRegex("<title>(.*?) \\| SockShare</title>").getMatch(0);
@@ -66,8 +66,16 @@ public class SockShareCom extends PluginForHost {
         requestFileInformation(downloadLink);
         String hash = br.getRegex("<input type=\"hidden\" value=\"([a-z0-9]+)\" name=\"hash\">").getMatch(0);
         if (hash == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        // Can still be skipped
+        // String waittime =
+        // br.getRegex("var countdownNum = (\\d+);").getMatch(0);
+        // int wait = 5;
+        // if (waittime != null) wait = Integer.parseInt(waittime);
+        // sleep(wait * 1001l, downloadLink);
         br.postPage(br.getURL(), "hash=" + hash + "&confirm=Continue+as+Free+User");
-        br.getPage("http://www.sockshare.com/get_file.php?stream=" + new Regex(downloadLink.getDownloadURL(), "sockshare.com/file/(.+)").getMatch(0));
+        String streamID = br.getRegex("\\'/get_file\\.php\\?stream=([^\"\'<>]+)\\'").getMatch(0);
+        if (streamID == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        br.getPage("http://www.sockshare.com/get_file.php?stream=" + streamID);
         br.setFollowRedirects(false);
         String dllink = br.getRegex("<media:content url=\"(http://.*?)\"").getMatch(0);
         if (dllink == null) dllink = br.getRegex("\"(http://media\\-b\\d+\\.sockshare\\.com/download/-*?)\"").getMatch(0);
