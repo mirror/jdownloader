@@ -345,7 +345,7 @@ public class FileSonicCom extends PluginForHost implements ControlListener {
         this.errorHandling(downloadLink, ajax);
         this.br.setFollowRedirects(true);
         // download is ready already
-        final String re = "<p><a href=\"(http://[^<]*?\\.filesonic\\..*?[^<]*?)\"><span>Start download now!</span></a></p>";
+        final String re = "<p><a id=\"start_download_link\" href=\"(http://[^<]*?\\.filesonic\\..*?[^<]*?)\"><span>Start download now!</span></a></p>";
 
         downloadUrl = ajax.getRegex(re).getMatch(0);
         if (downloadUrl == null) {
