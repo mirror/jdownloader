@@ -306,60 +306,67 @@ public class LinkCrawler implements IOPermission {
             mainloop: for (final CrawledLink possibleCryptedLink : possibleCryptedLinks) {
                 String url = possibleCryptedLink.getURL();
                 if (url == null) continue;
-                /* first we will walk through all available decrypter plugins */
-                for (final DecryptPluginWrapper pDecrypt : pDecrypts) {
-                    if (pDecrypt.canHandle(url)) {
-                        try {
-                            PluginForDecrypt plg = pDecrypt.getPlugin();
-                            if (plg != null) {
-                                ArrayList<CrawledLink> allPossibleCryptedLinks = plg.getCrawlableLinks(url);
-                                if (allPossibleCryptedLinks != null) {
-                                    for (final CrawledLink decryptThis : allPossibleCryptedLinks) {
-                                        decryptThis.setParentLink(possibleCryptedLink);
-                                        if (possibleCryptedLink.getCryptedLink() != null) {
-                                            /*
-                                             * source contains CryptedLink, so
-                                             * lets forward important infos
-                                             */
-                                            HashMap<String, Object> props = possibleCryptedLink.getCryptedLink().getProperties();
-                                            if (props != null && !props.isEmpty()) {
-                                                decryptThis.getCryptedLink().setProperties(new HashMap<String, Object>(props));
-                                            }
-                                            decryptThis.getCryptedLink().setDecrypterPassword(possibleCryptedLink.getCryptedLink().getDecrypterPassword());
-                                        }
-
-                                        if (insideDecrypterPlugin()) {
-                                            /*
-                                             * direct decrypt this link because
-                                             * we are already inside a
-                                             * LinkCrawlerThread and this avoids
-                                             * deadlocks on plugin waiting for
-                                             * linkcrawler results
-                                             */
-                                            crawl(decryptThis);
-                                        } else {
-                                            /*
-                                             * enqueue this cryptedLink for
-                                             * decrypting
-                                             */
-                                            checkStartNotify();
-                                            threadPool.execute(new LinkCrawlerRunnable(LinkCrawler.this) {
-                                                public void run() {
-                                                    try {
-                                                        crawl(decryptThis);
-                                                    } finally {
-                                                        checkFinishNotify();
-                                                    }
+                if (!url.startsWith("directhttp")) {
+                    /*
+                     * first we will walk through all available decrypter
+                     * plugins
+                     */
+                    for (final DecryptPluginWrapper pDecrypt : pDecrypts) {
+                        if (pDecrypt.canHandle(url)) {
+                            try {
+                                PluginForDecrypt plg = pDecrypt.getPlugin();
+                                if (plg != null) {
+                                    ArrayList<CrawledLink> allPossibleCryptedLinks = plg.getCrawlableLinks(url);
+                                    if (allPossibleCryptedLinks != null) {
+                                        for (final CrawledLink decryptThis : allPossibleCryptedLinks) {
+                                            decryptThis.setParentLink(possibleCryptedLink);
+                                            if (possibleCryptedLink.getCryptedLink() != null) {
+                                                /*
+                                                 * source contains CryptedLink,
+                                                 * so lets forward important
+                                                 * infos
+                                                 */
+                                                HashMap<String, Object> props = possibleCryptedLink.getCryptedLink().getProperties();
+                                                if (props != null && !props.isEmpty()) {
+                                                    decryptThis.getCryptedLink().setProperties(new HashMap<String, Object>(props));
                                                 }
-                                            });
+                                                decryptThis.getCryptedLink().setDecrypterPassword(possibleCryptedLink.getCryptedLink().getDecrypterPassword());
+                                            }
+
+                                            if (insideDecrypterPlugin()) {
+                                                /*
+                                                 * direct decrypt this link
+                                                 * because we are already inside
+                                                 * a LinkCrawlerThread and this
+                                                 * avoids deadlocks on plugin
+                                                 * waiting for linkcrawler
+                                                 * results
+                                                 */
+                                                crawl(decryptThis);
+                                            } else {
+                                                /*
+                                                 * enqueue this cryptedLink for
+                                                 * decrypting
+                                                 */
+                                                checkStartNotify();
+                                                threadPool.execute(new LinkCrawlerRunnable(LinkCrawler.this) {
+                                                    public void run() {
+                                                        try {
+                                                            crawl(decryptThis);
+                                                        } finally {
+                                                            checkFinishNotify();
+                                                        }
+                                                    }
+                                                });
+                                            }
                                         }
                                     }
                                 }
+                            } catch (Throwable e) {
+                                Log.exception(e);
                             }
-                        } catch (Throwable e) {
-                            Log.exception(e);
+                            continue mainloop;
                         }
-                        continue mainloop;
                     }
                 }
                 /* now we will walk through all available hoster plugins */

@@ -345,9 +345,7 @@ public class FileSonicCom extends PluginForHost implements ControlListener {
         this.errorHandling(downloadLink, ajax);
         this.br.setFollowRedirects(true);
         // download is ready already
-        final String re = "<p><a id=\"start_download_link\" href=\"(http://[^<]*?\\.filesonic\\..*?[^<]*?)\"><span>Start download now!</span></a></p>";
-
-        downloadUrl = ajax.getRegex(re).getMatch(0);
+        downloadUrl = getDownloadURL(ajax);
         if (downloadUrl == null) {
 
             // downloadUrl =
@@ -418,7 +416,7 @@ public class FileSonicCom extends PluginForHost implements ControlListener {
                 if (ajax.containsHTML(RECAPTCHATEXT)) { throw new PluginException(LinkStatus.ERROR_CAPTCHA); }
             }
 
-            downloadUrl = ajax.getRegex(re).getMatch(0);
+            downloadUrl = getDownloadURL(ajax);
         }
         if (downloadUrl == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         /*
@@ -442,6 +440,14 @@ public class FileSonicCom extends PluginForHost implements ControlListener {
         this.dl.setFilenameFix(true);
         this.dl.startDownload();
         FileSonicCom.LAST_FREE_DOWNLOAD = System.currentTimeMillis();
+    }
+
+    private String getDownloadURL(Browser br) {
+        if (br == null) return null;
+        String ret = br.getRegex("<p><a href=\"(http://[^<]*?\\.filesonic\\..*?[^<]*?)\"><span>Start download now!</span></a></p>").getMatch(0);
+        if (ret == null) ret = br.getRegex("<p><a id=\"start_download_link\" href=\"(http://[^<]*?\\.filesonic\\..*?[^<]*?)\"><span>Start download now!</span></a></p>").getMatch(0);
+        return ret;
+
     }
 
     @Override
