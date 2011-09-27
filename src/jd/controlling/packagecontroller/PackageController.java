@@ -189,7 +189,11 @@ public abstract class PackageController<E extends AbstractPackageNode<V, E>, V e
                         Entry<E, LinkedList<V>> next = it.next();
                         E cpkg = next.getKey();
                         PackageController<E, V> controller = cpkg.getControlledBy();
-                        controller.removeChildren(cpkg, next.getValue(), false);
+                        if (controller == null) {
+                            Log.exception(new Throwable("NO CONTROLLER!!!"));
+                        } else {
+                            controller.removeChildren(cpkg, next.getValue(), false);
+                        }
                     }
                     writeLock();
                     try {

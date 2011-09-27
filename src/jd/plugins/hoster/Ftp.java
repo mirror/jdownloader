@@ -124,7 +124,10 @@ public class Ftp extends PluginForHost {
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
-            ftp.disconnect();
+            try {
+                ftp.disconnect();
+            } catch (final Throwable e) {
+            }
         }
         return AvailableStatus.TRUE;
     }

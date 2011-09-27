@@ -214,6 +214,10 @@ public class SimpleFTP {
         try {
             sendLine("QUIT");
         } finally {
+            try {
+                socket.close();
+            } catch (final Throwable e) {
+            }
             socket = null;
         }
     }
@@ -340,7 +344,7 @@ public class SimpleFTP {
                 System.out.println(host + " > " + line);
             }
         } catch (IOException e) {
-            socket = null;
+            disconnect();
             throw e;
         }
     }
@@ -669,7 +673,7 @@ public class SimpleFTP {
             }
             DownloadWatchDog.getInstance().getConnectionManager().addManagedThrottledInputStream(input);
 
-            String response = readLines(new int[] { 150 }, null);
+            String response = readLines(new int[] { 150, 125 }, null);
             byte[] buffer = new byte[32767];
             int bytesRead = 0;
             long counter = resumePosition;
