@@ -54,7 +54,7 @@ public class Spinner extends JSpinner implements SettingsComponent {
     }
 
     public String getConstraints() {
-        return null;
+        return "height 26!";
     }
 
     public boolean isMultiline() {

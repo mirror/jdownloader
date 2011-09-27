@@ -31,7 +31,7 @@ public class FolderChooser extends JPanel implements SettingsComponent, ActionLi
     private boolean                               setting;
 
     public FolderChooser(String id) {
-        super(new MigLayout("ins 0", "[grow,fill][]"));
+        super(new MigLayout("ins 0", "[grow,fill][]", "[26!,fill]"));
         this.id = id;
         txt = new JTextField();
         btn = new JButton(_JDT._.basics_browser_folder());

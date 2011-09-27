@@ -10,8 +10,8 @@ import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.Fil
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
-import org.jdownloader.controlling.filter.FilterRule;
 import org.jdownloader.controlling.filter.LinkFilterController;
+import org.jdownloader.controlling.filter.LinkgrabberFilterRule;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 
@@ -36,7 +36,7 @@ public class NewAction extends AbstractAction {
     }
 
     public void actionPerformed(ActionEvent e) {
-        final FilterRule rule = new FilterRule();
+        final LinkgrabberFilterRule rule = new LinkgrabberFilterRule();
         FilterRuleDialog d = new FilterRuleDialog(rule);
         try {
             Dialog.getInstance().showDialog(d);

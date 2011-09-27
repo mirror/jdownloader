@@ -14,46 +14,42 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter;
+package jd.gui.swing.jdgui.views.settings.panels.packagizer;
 
 import javax.swing.ImageIcon;
 
 import jd.controlling.IOEQ;
 
 import org.appwork.storage.config.JsonConfig;
-import org.jdownloader.controlling.filter.LinkFilterController;
+import org.jdownloader.controlling.packagizer.PackagizerController;
 import org.jdownloader.gui.settings.AbstractConfigPanel;
+import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.translate._JDT;
 
-public class Linkgrabber extends AbstractConfigPanel {
+public class Packagizer extends AbstractConfigPanel {
 
     private static final long serialVersionUID = 1L;
-    // private Checkbox checkLinks;
-    // private Checkbox cnl;
-    // private Checkbox rename;
-    private LinkgrabberFilter filter;
+
+    private PackagizerFilter  packagizer;
 
     public String getTitle() {
-        return _JDT._.gui_settings_linkgrabber_title();
+        return _GUI._.gui_config_linkgrabber_packagizer();
     }
 
-    public Linkgrabber() {
+    public Packagizer() {
         super();
 
-        this.addHeader(getTitle(), NewTheme.I().getIcon("linkgrabber", 32));
-
-        this.addDescriptionPlain(_JDT._.gui_settings_linkgrabber_filter_description());
-        filter = new LinkgrabberFilter();
-
-        add(filter);
-
+        this.addHeader(getTitle(), NewTheme.I().getIcon("packagizer", 32));
+        this.addDescriptionPlain(_JDT._.gui_settings_linkgrabber_packagizer_description());
+        packagizer = new PackagizerFilter();
+        add(packagizer);
     }
 
     @Override
     public ImageIcon getIcon() {
-        return NewTheme.I().getIcon("linkgrabber", 32);
+        return NewTheme.I().getIcon("packagizer", 32);
     }
 
     @Override
@@ -68,7 +64,7 @@ public class Linkgrabber extends AbstractConfigPanel {
         IOEQ.add(new Runnable() {
 
             public void run() {
-                filter.getTable().getExtTableModel()._fireTableStructureChanged(LinkFilterController.getInstance().list(), false);
+                packagizer.getTable().getExtTableModel()._fireTableStructureChanged(PackagizerController.getInstance().list(), false);
             }
 
         }, true);

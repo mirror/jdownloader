@@ -12,6 +12,7 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
@@ -518,7 +519,7 @@ public class LiveHeaderDetectionWizard {
 
             this.sslException = e.getClass().getSimpleName() + ": " + e.getMessage();
         }
-
+        // ToDO: filter dynamic contents in headers
         URLConnectionAdapter con = br.getHttpConnection();
         if (con != null) {
             this.sslResponseCode = con.getResponseCode();
@@ -529,6 +530,7 @@ public class LiveHeaderDetectionWizard {
                     this.sslResponseHeaders.put(next.getKey().toLowerCase(), value);
                 }
             }
+            filterHeaders(sslResponseHeaders);
         }
 
         try {
@@ -562,7 +564,47 @@ public class LiveHeaderDetectionWizard {
                     this.responseHeaders.put(next.getKey().toLowerCase(), value);
                 }
             }
+            filterHeaders(responseHeaders);
         }
+    }
+
+    final static private HashSet<String> ALLOWED_HEADER_KEYS = new HashSet<String>();
+    static {
+        ALLOWED_HEADER_KEYS.add("Accept-Ranges".toLowerCase());
+        ALLOWED_HEADER_KEYS.add("Allow".toLowerCase());
+        ALLOWED_HEADER_KEYS.add("Cache-Control".toLowerCase());
+        ALLOWED_HEADER_KEYS.add("Connection".toLowerCase());
+        ALLOWED_HEADER_KEYS.add("Content-Encoding".toLowerCase());
+        ALLOWED_HEADER_KEYS.add("Content-Language".toLowerCase());
+        ALLOWED_HEADER_KEYS.add("Content-Length".toLowerCase());
+        ALLOWED_HEADER_KEYS.add("Content-Location".toLowerCase());
+        ALLOWED_HEADER_KEYS.add("Content-MD5".toLowerCase());
+        ALLOWED_HEADER_KEYS.add("Content-Disposition".toLowerCase());
+        ALLOWED_HEADER_KEYS.add("Content-Range".toLowerCase());
+        ALLOWED_HEADER_KEYS.add("Content-Type".toLowerCase());
+        ALLOWED_HEADER_KEYS.add("ETag".toLowerCase());
+        ALLOWED_HEADER_KEYS.add("Link".toLowerCase());
+        ALLOWED_HEADER_KEYS.add("Location".toLowerCase());
+        ALLOWED_HEADER_KEYS.add("Pragma".toLowerCase());
+        ALLOWED_HEADER_KEYS.add("Refresh".toLowerCase());
+        ALLOWED_HEADER_KEYS.add("Retry-After".toLowerCase());
+        ALLOWED_HEADER_KEYS.add("Server".toLowerCase());
+        ALLOWED_HEADER_KEYS.add("Trailer".toLowerCase());
+        ALLOWED_HEADER_KEYS.add("Transfer-Encoding".toLowerCase());
+        ALLOWED_HEADER_KEYS.add("Warning".toLowerCase());
+    }
+
+    private void filterHeaders(HashMap<String, String> headerMap) {
+
+        Entry<String, String> next;
+        for (Iterator<Entry<String, String>> it = headerMap.entrySet().iterator(); it.hasNext();) {
+            next = it.next();
+            if (!ALLOWED_HEADER_KEYS.contains(next.getKey().toLowerCase())) {
+                it.remove();
+            }
+
+        }
+
     }
 
     private Browser getBrowser() {

@@ -19,7 +19,7 @@ public class LinkFilterController {
         return LinkFilterController.INSTANCE;
     }
 
-    private ArrayList<FilterRule> filter;
+    private ArrayList<LinkgrabberFilterRule> filter;
     private LinkFilterSettings    config;
 
     /**
@@ -29,7 +29,7 @@ public class LinkFilterController {
     private LinkFilterController() {
         config = JsonConfig.create(LinkFilterSettings.class);
         filter = config.getFilterList();
-        if (filter == null) filter = new ArrayList<FilterRule>();
+        if (filter == null) filter = new ArrayList<LinkgrabberFilterRule>();
         ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
 
             @Override
@@ -46,21 +46,13 @@ public class LinkFilterController {
         });
     }
 
-    public boolean isBlacklist() {
-        return config.isBlackList();
-    }
-
-    public void setBlacklist(boolean b) {
-        config.setBlackList(b);
-    }
-
-    public ArrayList<FilterRule> list() {
+    public ArrayList<LinkgrabberFilterRule> list() {
         synchronized (this) {
-            return new ArrayList<FilterRule>(filter);
+            return new ArrayList<LinkgrabberFilterRule>(filter);
         }
     }
 
-    public void add(FilterRule linkFilter) {
+    public void add(LinkgrabberFilterRule linkFilter) {
         if (linkFilter == null) return;
         synchronized (this) {
             filter.add(linkFilter);
@@ -68,16 +60,12 @@ public class LinkFilterController {
         }
     }
 
-    public void remove(FilterRule lf) {
+    public void remove(LinkgrabberFilterRule lf) {
         if (lf == null) return;
         synchronized (this) {
             filter.remove(lf);
             config.setFilterList(filter);
         }
-    }
-
-    public String test(String filter2) {
-        return null;
     }
 
 }

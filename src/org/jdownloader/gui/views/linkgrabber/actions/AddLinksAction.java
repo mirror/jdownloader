@@ -11,11 +11,10 @@ import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.linkgrabber.addlinksdialog.AddLinksDialog;
 import org.jdownloader.gui.views.linkgrabber.addlinksdialog.CrawlerJob;
-import org.jdownloader.images.NewTheme;
 
 public class AddLinksAction extends AppAction {
-    {
-        putValue(SMALL_ICON, NewTheme.I().getIcon("add", 16));
+    public AddLinksAction() {
+        setIconKey("add");
         putValue(NAME, _GUI._.AddLinksAction_());
 
     }

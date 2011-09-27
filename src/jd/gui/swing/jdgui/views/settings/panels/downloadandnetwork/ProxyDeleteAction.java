@@ -3,32 +3,27 @@ package jd.gui.swing.jdgui.views.settings.panels.downloadandnetwork;
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 
-import javax.swing.AbstractAction;
-
 import jd.controlling.IOEQ;
 import jd.controlling.proxy.ProxyController;
 import jd.controlling.proxy.ProxyInfo;
 
-import org.jdownloader.images.NewTheme;
-import org.jdownloader.translate._JDT;
+import org.jdownloader.gui.views.components.AbstractRemoveAction;
 
-public class ProxyDeleteAction extends AbstractAction {
+public class ProxyDeleteAction extends AbstractRemoveAction {
 
     private ArrayList<ProxyInfo> selected = null;
     private ProxyTable           table;
 
     public ProxyDeleteAction(ProxyTable table) {
-        super("Remove Proxy(s)");
+
         this.table = table;
-        this.putValue(NAME, _JDT._.basics_remove());
-        this.putValue(AbstractAction.SMALL_ICON, NewTheme.I().getIcon("remove", 20));
+
     }
 
     public ProxyDeleteAction(final ArrayList<ProxyInfo> selected, boolean force) {
-        super("Remove Proxy(s)");
+        super();
         this.selected = selected;
-        this.putValue(NAME, _JDT._.basics_remove());
-        this.putValue(AbstractAction.SMALL_ICON, NewTheme.I().getIcon("remove", 16));
+        toContextMenuAction();
     }
 
     @Override

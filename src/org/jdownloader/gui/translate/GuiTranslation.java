@@ -819,10 +819,10 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Filter Type" })
     String gui_config_linkgrabber_filter_type();
 
-    @Default(lngs = { "en" }, values = { "The linkfilter is used to filter links based on regular expressions." })
+    @Default(lngs = { "en" }, values = { "Filter Rules" })
     String gui_config_linkgrabber_ignorelist();
 
-    @Default(lngs = { "en" }, values = { "Show infopanel on linkgrab" })
+    @Default(lngs = { "en" }, values = { "Show infopanel on linkgrabber" })
     String gui_config_linkgrabber_infopanel_onlinkgrab();
 
     @Default(lngs = { "en" }, values = { "Check linkinfo and onlinestatus" })
@@ -2473,7 +2473,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Rule: %s1" })
     String FilterRuleDialog_FilterRuleDialog_(String name);
 
-    @Default(lngs = { "en" }, values = { "Enter s hort description of the conditions below..." })
+    @Default(lngs = { "en" }, values = { "Enter short name for this rule..." })
     String FilterRuleDialog_layoutDialogContent_ht_name();
 
     @Default(lngs = { "en" }, values = { "Name" })
@@ -2485,7 +2485,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "contains" })
     String FilterRuleDialog_layoutDialogContent_contains();
 
-    @Default(lngs = { "en" }, values = { "Enter file name matcher..." })
+    @Default(lngs = { "en" }, values = { "Enter file name matcher... (Use * as Wildcard)" })
     String FilterRuleDialog_layoutDialogContent_ht_filename();
 
     @Default(lngs = { "en" }, values = { "File Name" })
@@ -2524,19 +2524,19 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Custom" })
     String FilterRuleDialog_createTypeFilter_mime_custom();
 
-    @Default(lngs = { "en" }, values = { "Enter comma seperated extensions like 'pdf,html,png' ..." })
+    @Default(lngs = { "en" }, values = { "Enter comma seperated extensions like 'pdf,html,png,' ... (Use * as Wildcard)" })
     String FilterRuleDialog_createTypeFilter_mime_custom_help();
 
     @Default(lngs = { "en" }, values = { "Hoster" })
     String FilterRuleDialog_layoutDialogContent_lbl_hoster();
 
-    @Default(lngs = { "en" }, values = { "Enter a URL Expression like 'rapidshare.com'..." })
+    @Default(lngs = { "en" }, values = { "Enter a URL Expression like 'rapidshare.com'... (Use * as Wildcard)" })
     String FilterRuleDialog_layoutDialogContent_lbl_hoster_help();
 
     @Default(lngs = { "en" }, values = { "Source" })
     String FilterRuleDialog_layoutDialogContent_lbl_source();
 
-    @Default(lngs = { "en" }, values = { "Enter a Crawler Source Expression like 'jamendo.com'..." })
+    @Default(lngs = { "en" }, values = { "Enter a Crawler Source Expression like 'jamendo.com'... (Use * as Wildcard)" })
     String FilterRuleDialog_layoutDialogContent_lbl_source_help();
 
     @Default(lngs = { "en" }, values = { "If the following conditions match ... " })
@@ -2554,7 +2554,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Accept File or Url - add to linkgrabber or continue crawling" })
     String FilterRuleDialog_layoutDialogContent_accept();
 
-    @Default(lngs = { "en" }, values = { "then" })
+    @Default(lngs = { "en" }, values = { "Action" })
     String settings_linkgrabber_filter_columns_then();
 
     @Default(lngs = { "en" }, values = { "add it to Linkgrabber." })
@@ -2572,10 +2572,10 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "is %s1" })
     String RegexFilter_toString_matches(String regex);
 
-    @Default(lngs = { "en" }, values = { "Size is %s1" })
+    @Default(lngs = { "en" }, values = { "is %s1" })
     String FilesizeFilter_toString_same(String size);
 
-    @Default(lngs = { "en" }, values = { "Size is between %s1 and %s2" })
+    @Default(lngs = { "en" }, values = { "is between %s1 and %s2" })
     String FilesizeFilter_toString_(String formatBytes, String formatBytes2);
 
     @Default(lngs = { "en" }, values = { "Filename %s1" })
@@ -2587,7 +2587,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Source URL %s1" })
     String FilterRule_toString_source(String string);
 
-    @Default(lngs = { "en" }, values = { " , %s1" })
+    @Default(lngs = { "en" }, values = { ", %s1" })
     String FilterRule_toString_comma(String string);
 
     @Default(lngs = { "en" }, values = { " and %s1" })
@@ -2595,5 +2595,77 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Condition" })
     String settings_linkgrabber_filter_columns_condition();
+
+    @Default(lngs = { "en" }, values = { "Filename" })
+    String FilterTableModel_initColumns_filename();
+
+    @Default(lngs = { "en" }, values = { "Filesize" })
+    String FilterTableModel_initColumns_filesize();
+
+    @Default(lngs = { "en" }, values = { "Filetype" })
+    String FilterTableModel_initColumns_filetype();
+
+    @Default(lngs = { "en" }, values = { "Hoster" })
+    String FilterTableModel_initColumns_hoster();
+
+    @Default(lngs = { "en" }, values = { "Source" })
+    String FilterTableModel_initColumns_source();
+
+    @Default(lngs = { "en" }, values = { "Size %s1" })
+    String FilterRule_toString_size(String string);
+
+    @Default(lngs = { "en" }, values = { "Filetype %s1" })
+    String FilterRule_toString_type(String string);
+
+    @Default(lngs = { "en" }, values = { "Archive" })
+    String FiletypeFilter_toString_archives();
+
+    @Default(lngs = { "en" }, values = { "Audio" })
+    String FiletypeFilter_toString_audio();
+
+    @Default(lngs = { "en" }, values = { "Image" })
+    String FiletypeFilter_toString_image();
+
+    @Default(lngs = { "en" }, values = { "Video" })
+    String FiletypeFilter_toString_video();
+
+    @Default(lngs = { "en" }, values = { "'%s1'-File" })
+    String FiletypeFilter_toString_custom(String customs);
+
+    @Default(lngs = { "en" }, values = { " or %s1" })
+    String FilterRule_toString_or(String string);
+
+    @Default(lngs = { "en" }, values = { "is %s1" })
+    String FiletypeFilter_toString_(String string);
+
+    @Default(lngs = { "en" }, values = { "Packagizer" })
+    String gui_config_linkgrabber_packagizer();
+
+    @Default(lngs = { "en" }, values = { "Add" })
+    String literally_add();
+
+    @Default(lngs = { "en" }, values = { "Delete" })
+    String literally_delete();
+
+    @Default(lngs = { "en" }, values = { "Remove" })
+    String literally_remove();
+
+    @Default(lngs = { "en" }, values = { "Download Directory" })
+    String PackagizerFilterRuleDialog_layoutDialogContent_dest();
+
+    @Default(lngs = { "en" }, values = { "Priority" })
+    String PackagizerFilterRuleDialog_layoutDialogContent_priority();
+
+    @Default(lngs = { "en" }, values = { "Package Name" })
+    String PackagizerFilterRuleDialog_layoutDialogContent_packagename();
+
+    @Default(lngs = { "en" }, values = { "Extract Archives" })
+    String PackagizerFilterRuleDialog_layoutDialogContent_extract();
+
+    @Default(lngs = { "en" }, values = { "Chunks/Connections" })
+    String PackagizerFilterRuleDialog_layoutDialogContent_chunks();
+
+    @Default(lngs = { "en" }, values = { "... then set" })
+    String PackagizerFilterRuleDialog_layoutDialogContent_then();
 
 }

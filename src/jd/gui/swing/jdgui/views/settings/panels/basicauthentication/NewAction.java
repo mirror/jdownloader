@@ -2,16 +2,13 @@ package jd.gui.swing.jdgui.views.settings.panels.basicauthentication;
 
 import java.awt.event.ActionEvent;
 
-import javax.swing.AbstractAction;
-
 import jd.controlling.IOEQ;
 import jd.controlling.authentication.AuthenticationController;
 import jd.controlling.authentication.AuthenticationInfo;
 
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.images.NewTheme;
+import org.jdownloader.gui.views.components.AbstractAddAction;
 
-public class NewAction extends AbstractAction {
+public class NewAction extends AbstractAddAction {
     /**
      * 
      */
@@ -20,8 +17,7 @@ public class NewAction extends AbstractAction {
 
     public NewAction(AuthTable table) {
         this.table = table;
-        this.putValue(NAME, _GUI._.settings_auth_add());
-        this.putValue(AbstractAction.SMALL_ICON, NewTheme.I().getIcon("add", 16));
+        this.setIconKey("add");
     }
 
     public void actionPerformed(ActionEvent e) {

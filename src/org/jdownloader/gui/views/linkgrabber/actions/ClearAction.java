@@ -9,11 +9,11 @@ import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.images.NewTheme;
 
 public class ClearAction extends AppAction {
-    {
-        putValue(SMALL_ICON, NewTheme.I().getIcon("clear", 16));
+    public ClearAction() {
+        setIconKey("clear");
+
         putValue(SHORT_DESCRIPTION, _GUI._.ClearAction_tt_());
     }
 

@@ -6,25 +6,26 @@ import java.util.Comparator;
 
 import javax.swing.DefaultListModel;
 
+import jd.gui.swing.jdgui.views.downloads.DownloadControll;
 import jd.gui.swing.jdgui.views.settings.panels.BasicAuthentication;
 import jd.gui.swing.jdgui.views.settings.panels.ConfigPanelGeneral;
-import jd.gui.swing.jdgui.views.settings.panels.DownloadControll;
 import jd.gui.swing.jdgui.views.settings.panels.GUISettings;
 import jd.gui.swing.jdgui.views.settings.panels.ReconnectSettings;
 import jd.gui.swing.jdgui.views.settings.panels.accountmanager.AccountManagerSettings;
 import jd.gui.swing.jdgui.views.settings.panels.advanced.AdvancedSettings;
 import jd.gui.swing.jdgui.views.settings.panels.downloadandnetwork.ProxyConfig;
+import jd.gui.swing.jdgui.views.settings.panels.packagizer.Packagizer;
 import jd.gui.swing.jdgui.views.settings.panels.pluginsettings.PluginSettings;
 
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.extensions.AbstractExtensionWrapper;
 import org.jdownloader.extensions.ExtensionController;
 
-public class ConfigListModel extends DefaultListModel {
+public class SettingsSidebarModel extends DefaultListModel {
 
     private static final long serialVersionUID = -204494527404304349L;
 
-    public ConfigListModel() {
+    public SettingsSidebarModel() {
         super();
         fill();
     }
@@ -34,9 +35,10 @@ public class ConfigListModel extends DefaultListModel {
 
         addElement(new ConfigPanelGeneral());
         addElement(new DownloadControll());
-        addElement(new GUISettings());
+
         // addElement(new ToolbarController());
         addElement(new jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.Linkgrabber());
+        addElement(new Packagizer());
         addElement(new ReconnectSettings());
         addElement(new ProxyConfig());
         addElement(new AccountManagerSettings());
@@ -46,7 +48,7 @@ public class ConfigListModel extends DefaultListModel {
 
         addElement(new PluginSettings());
         // addElement(new ExtensionManager());
-
+        addElement(new GUISettings());
         addElement(new AdvancedSettings());
         boolean first = true;
         ArrayList<AbstractExtensionWrapper> pluginsOptional = ExtensionController.getInstance().getExtensions();

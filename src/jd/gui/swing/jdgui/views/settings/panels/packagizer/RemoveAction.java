@@ -1,20 +1,20 @@
-package jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter;
+package jd.gui.swing.jdgui.views.settings.panels.packagizer;
 
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 
 import jd.controlling.IOEQ;
 
-import org.jdownloader.controlling.filter.LinkFilterController;
-import org.jdownloader.controlling.filter.LinkgrabberFilterRule;
+import org.jdownloader.controlling.packagizer.PackagizerController;
+import org.jdownloader.controlling.packagizer.PackagizerRule;
 import org.jdownloader.gui.views.components.AbstractRemoveAction;
 
 public class RemoveAction extends AbstractRemoveAction {
-    private static final long                serialVersionUID = -477419276505058907L;
-    private ArrayList<LinkgrabberFilterRule> selected;
-    private FilterTable                      table;
-    private ArrayList<LinkgrabberFilterRule> remove;
-    private boolean                          ignoreSelection  = false;
+    private static final long         serialVersionUID = -477419276505058907L;
+    private ArrayList<PackagizerRule> selected;
+    private FilterTable               table;
+    private ArrayList<PackagizerRule> remove;
+    private boolean                   ignoreSelection  = false;
 
     public RemoveAction(FilterTable table) {
         this.table = table;
@@ -23,7 +23,7 @@ public class RemoveAction extends AbstractRemoveAction {
 
     }
 
-    public RemoveAction(FilterTable table, ArrayList<LinkgrabberFilterRule> selected, boolean force) {
+    public RemoveAction(FilterTable table, ArrayList<PackagizerRule> selected, boolean force) {
         this.table = table;
         this.selected = selected;
     }
@@ -37,10 +37,10 @@ public class RemoveAction extends AbstractRemoveAction {
             IOEQ.add(new Runnable() {
 
                 public void run() {
-                    for (LinkgrabberFilterRule lf : remove) {
-                        LinkFilterController.getInstance().remove(lf);
+                    for (PackagizerRule lf : remove) {
+                        PackagizerController.getInstance().remove(lf);
                     }
-                    table.getExtTableModel()._fireTableStructureChanged(LinkFilterController.getInstance().list(), false);
+                    table.getExtTableModel()._fireTableStructureChanged(PackagizerController.getInstance().list(), false);
                 }
 
             }, true);

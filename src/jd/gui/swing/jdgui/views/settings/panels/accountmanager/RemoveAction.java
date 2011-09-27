@@ -3,8 +3,6 @@ package jd.gui.swing.jdgui.views.settings.panels.accountmanager;
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 
-import javax.swing.AbstractAction;
-
 import jd.controlling.AccountController;
 import jd.controlling.IOEQ;
 import jd.plugins.Account;
@@ -13,9 +11,9 @@ import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.images.NewTheme;
+import org.jdownloader.gui.views.components.AbstractRemoveAction;
 
-public class RemoveAction extends AbstractAction {
+public class RemoveAction extends AbstractRemoveAction {
     /**
      * 
      */
@@ -25,16 +23,15 @@ public class RemoveAction extends AbstractAction {
     private ArrayList<Account>  selection        = null;
 
     public RemoveAction(PremiumAccountTable table) {
-        this.putValue(NAME, _GUI._.settings_accountmanager_delete());
-        this.putValue(AbstractAction.SMALL_ICON, NewTheme.I().getIcon("remove", 20));
+
         this.table = table;
     }
 
     public RemoveAction(ArrayList<Account> selection, boolean force) {
-        this.putValue(NAME, _GUI._.settings_accountmanager_delete());
-        this.putValue(AbstractAction.SMALL_ICON, NewTheme.I().getIcon("remove", 16));
+
         this.force = force;
         this.selection = selection;
+        toContextMenuAction();
     }
 
     public void actionPerformed(ActionEvent e) {

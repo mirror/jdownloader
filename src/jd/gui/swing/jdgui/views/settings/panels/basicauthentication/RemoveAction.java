@@ -3,16 +3,13 @@ package jd.gui.swing.jdgui.views.settings.panels.basicauthentication;
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 
-import javax.swing.AbstractAction;
-
 import jd.controlling.IOEQ;
 import jd.controlling.authentication.AuthenticationController;
 import jd.controlling.authentication.AuthenticationInfo;
 
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.images.NewTheme;
+import org.jdownloader.gui.views.components.AbstractRemoveAction;
 
-public class RemoveAction extends AbstractAction {
+public class RemoveAction extends AbstractRemoveAction {
     /**
      * 
      */
@@ -23,8 +20,7 @@ public class RemoveAction extends AbstractAction {
 
     public RemoveAction(AuthTable table) {
         this.table = table;
-        this.putValue(NAME, _GUI._.settings_auth_delete());
-        this.putValue(AbstractAction.SMALL_ICON, NewTheme.I().getIcon("remove", 20));
+
         this.ignoreSelection = true;
 
     }
@@ -32,8 +28,7 @@ public class RemoveAction extends AbstractAction {
     public RemoveAction(AuthTable authTable, ArrayList<AuthenticationInfo> selection, boolean force) {
         this.table = authTable;
         this.selection = selection;
-        this.putValue(NAME, _GUI._.settings_auth_delete());
-        this.putValue(AbstractAction.SMALL_ICON, NewTheme.I().getIcon("remove", 16));
+        toContextMenuAction();
     }
 
     public void actionPerformed(ActionEvent e) {

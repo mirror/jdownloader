@@ -2,8 +2,6 @@ package jd.gui.swing.jdgui.views.settings.panels.downloadandnetwork;
 
 import java.awt.event.ActionEvent;
 
-import javax.swing.AbstractAction;
-
 import jd.controlling.IOEQ;
 import jd.controlling.JDLogger;
 import jd.controlling.proxy.ProxyController;
@@ -13,21 +11,18 @@ import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
-import org.jdownloader.images.NewTheme;
-import org.jdownloader.translate._JDT;
+import org.jdownloader.gui.views.components.AbstractAddAction;
 
-public class ProxyAddAction extends AbstractAction {
+public class ProxyAddAction extends AbstractAddAction {
 
     public ProxyAddAction(ProxyTable table) {
-        super("Add new Proxy");
-        this.putValue(NAME, _JDT._.basics_add());
-        this.putValue(AbstractAction.SMALL_ICON, NewTheme.I().getIcon("add", 20));
+        super();
+
     }
 
     public ProxyAddAction() {
-        super("Add new Proxy");
-        this.putValue(NAME, _JDT._.basics_add());
-        this.putValue(AbstractAction.SMALL_ICON, NewTheme.I().getIcon("add", 16));
+        super();
+
     }
 
     /**

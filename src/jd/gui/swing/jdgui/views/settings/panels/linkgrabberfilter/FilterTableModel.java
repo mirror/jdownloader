@@ -15,24 +15,23 @@ import org.appwork.swing.exttable.ExtTableHeaderRenderer;
 import org.appwork.swing.exttable.ExtTableModel;
 import org.appwork.swing.exttable.columns.ExtCheckColumn;
 import org.appwork.swing.exttable.columns.ExtTextColumn;
-import org.jdownloader.controlling.filter.FilterRule;
+import org.jdownloader.controlling.filter.LinkgrabberFilterRule;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 
-public class FilterTableModel extends ExtTableModel<FilterRule> {
+public class FilterTableModel extends ExtTableModel<LinkgrabberFilterRule> {
 
     private static final long serialVersionUID = -7756459932564776739L;
-    private FilterTooltip     tooltip;
 
     public FilterTableModel(String id) {
         super(id);
-        tooltip = new FilterTooltip();
+
     }
 
     @Override
     protected void initColumns() {
 
-        this.addColumn(new ExtCheckColumn<FilterRule>(_GUI._.settings_linkgrabber_filter_columns_enabled()) {
+        this.addColumn(new ExtCheckColumn<LinkgrabberFilterRule>(_GUI._.settings_linkgrabber_filter_columns_enabled()) {
 
             private static final long serialVersionUID = -4667150369226691276L;
 
@@ -67,66 +66,66 @@ public class FilterTableModel extends ExtTableModel<FilterRule> {
             }
 
             @Override
-            protected boolean getBooleanValue(FilterRule value) {
+            protected boolean getBooleanValue(LinkgrabberFilterRule value) {
                 return value.isEnabled();
             }
 
             @Override
-            public boolean isEditable(FilterRule obj) {
+            public boolean isEditable(LinkgrabberFilterRule obj) {
                 return true;
             }
 
             @Override
-            public ExtTooltip createToolTip(Point position, FilterRule obj) {
+            public ExtTooltip createToolTip(Point position, LinkgrabberFilterRule obj) {
                 return createTooltip(obj);
             }
 
             @Override
-            protected void setBooleanValue(boolean value, FilterRule object) {
+            protected void setBooleanValue(boolean value, LinkgrabberFilterRule object) {
                 object.setEnabled(value);
             }
         });
 
-        addColumn(new ExtTextColumn<FilterRule>(_GUI._.settings_linkgrabber_filter_columns_name()) {
+        addColumn(new ExtTextColumn<LinkgrabberFilterRule>(_GUI._.settings_linkgrabber_filter_columns_name()) {
 
             @Override
-            public boolean isEnabled(FilterRule obj) {
+            public boolean isEnabled(LinkgrabberFilterRule obj) {
                 return obj.isEnabled();
             }
 
             @Override
-            public ExtTooltip createToolTip(Point position, FilterRule obj) {
+            public ExtTooltip createToolTip(Point position, LinkgrabberFilterRule obj) {
                 return createTooltip(obj);
             }
 
             @Override
-            public String getStringValue(FilterRule value) {
+            public String getStringValue(LinkgrabberFilterRule value) {
                 return value.getName();
             }
         });
 
-        addColumn(new ExtTextColumn<FilterRule>(_GUI._.settings_linkgrabber_filter_columns_condition()) {
+        addColumn(new ExtTextColumn<LinkgrabberFilterRule>(_GUI._.settings_linkgrabber_filter_columns_condition()) {
             {
                 rendererField.setHorizontalAlignment(JLabel.RIGHT);
             }
 
             @Override
-            public boolean isEnabled(FilterRule obj) {
+            public boolean isEnabled(LinkgrabberFilterRule obj) {
                 return obj.isEnabled();
             }
 
             @Override
-            public ExtTooltip createToolTip(Point position, FilterRule obj) {
+            public ExtTooltip createToolTip(Point position, LinkgrabberFilterRule obj) {
                 return createTooltip(obj);
             }
 
             @Override
-            public String getStringValue(FilterRule value) {
+            public String getStringValue(LinkgrabberFilterRule value) {
                 return _GUI._.settings_linkgrabber_filter_columns_if(value.toString());
             }
         });
 
-        addColumn(new ExtTextColumn<FilterRule>(_GUI._.settings_linkgrabber_filter_columns_then()) {
+        addColumn(new ExtTextColumn<LinkgrabberFilterRule>(_GUI._.settings_linkgrabber_filter_columns_then()) {
             {
 
                 renderer.removeAll();
@@ -138,7 +137,7 @@ public class FilterTableModel extends ExtTableModel<FilterRule> {
             }
 
             @Override
-            public boolean isEnabled(FilterRule obj) {
+            public boolean isEnabled(LinkgrabberFilterRule obj) {
                 return obj.isEnabled();
             }
 
@@ -153,12 +152,12 @@ public class FilterTableModel extends ExtTableModel<FilterRule> {
             }
 
             @Override
-            public ExtTooltip createToolTip(Point position, FilterRule obj) {
+            public ExtTooltip createToolTip(Point position, LinkgrabberFilterRule obj) {
                 return createTooltip(obj);
             }
 
             @Override
-            protected Icon getIcon(FilterRule value) {
+            protected Icon getIcon(LinkgrabberFilterRule value) {
                 if (value.isAccept()) {
                     return NewTheme.I().getIcon("ok", 20);
                 } else {
@@ -167,7 +166,7 @@ public class FilterTableModel extends ExtTableModel<FilterRule> {
             }
 
             @Override
-            public String getStringValue(FilterRule value) {
+            public String getStringValue(LinkgrabberFilterRule value) {
                 if (value.isAccept()) {
                     return _GUI._.FilterTableModel_initColumns_accept_link();
                 } else {
@@ -178,9 +177,10 @@ public class FilterTableModel extends ExtTableModel<FilterRule> {
 
     }
 
-    protected ExtTooltip createTooltip(FilterRule obj) {
-        if (obj == null) return null;
-        tooltip.updateRule(obj);
-        return tooltip;
+    protected ExtTooltip createTooltip(LinkgrabberFilterRule obj) {
+        // if (obj == null) return null;
+        // tooltip.updateRule(obj);
+        // return tooltip;
+        return null;
     }
 }

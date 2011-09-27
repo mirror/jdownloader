@@ -19,6 +19,7 @@ package jd.controlling.reconnect;
 import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.NetworkInterface;
 import java.net.Socket;
 import java.net.SocketException;
@@ -244,8 +245,10 @@ public class RouterUtils {
         Socket sock = null;
         URLConnectionAdapter con = null;
         try {
-            sock = new Socket(host, port);
+
+            sock = new Socket();
             sock.setSoTimeout(200);
+            sock.connect(new InetSocketAddress(host, port), 200);
             Browser br = new Browser();
             br.setProxy(HTTPProxy.NONE);
             br.setConnectTimeout(2000);
@@ -262,11 +265,16 @@ public class RouterUtils {
                 /* fallback to normal http */
                 con = br.openGetConnection("http://" + host + portS);
             }
+
             String redirect = br.getRedirectLocation();
             String domain = Browser.getHost(redirect);
             // some isps or DNS server redirect in case of no server found
-            if ("t-online.de".equals(domain)) return false;
-            if ("opendns.com".equals(domain)) return false;
+            if (!InetAddress.getByName(domain).equals(InetAddress.getByName(host))) {
+                // if we have redirects, the new domain should be the local one,
+                // too
+                return false;
+            }
+
             return true;
 
         } catch (final Exception e) {
@@ -361,6 +369,7 @@ public class RouterUtils {
         final Executer exec = new Executer("netstat");
         exec.addParameter("-rn");
         exec.setWaitTimeout(5000);
+        System.out.println(0);
         exec.start();
         exec.waitTimeout();
 

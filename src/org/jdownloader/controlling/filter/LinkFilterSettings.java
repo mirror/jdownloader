@@ -10,15 +10,9 @@ import org.jdownloader.settings.annotations.AboutConfig;
 public interface LinkFilterSettings extends ConfigInterface {
     @DefaultObjectValue("[]")
     @AboutConfig
-    ArrayList<FilterRule> getFilterList();
+    ArrayList<LinkgrabberFilterRule> getFilterList();
 
-    void setFilterList(ArrayList<FilterRule> list);
-
-    @DefaultBooleanValue(true)
-    @AboutConfig
-    boolean isBlackList();
-
-    void setBlackList(boolean b);
+    void setFilterList(ArrayList<LinkgrabberFilterRule> list);
 
     @DefaultBooleanValue(true)
     boolean isLinkgrabberQuickSettingsVisible();

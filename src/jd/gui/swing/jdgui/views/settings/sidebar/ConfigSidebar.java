@@ -124,7 +124,7 @@ public class ConfigSidebar extends JPanel implements ControlListener, MouseMotio
         };
         list.addMouseMotionListener(this);
         list.addMouseListener(this);
-        list.setModel(new ConfigListModel());
+        list.setModel(new SettingsSidebarModel());
         list.setCellRenderer(new TreeRenderer());
 
         list.setOpaque(false);

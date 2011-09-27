@@ -10,25 +10,41 @@ import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.ListCellRenderer;
 
+import jd.gui.swing.laf.LookAndFeelController;
+
 import org.appwork.app.gui.MigPanel;
-import org.jdownloader.controlling.filter.FilterRule;
+import org.appwork.utils.swing.dialog.Dialog;
+import org.appwork.utils.swing.dialog.DialogCanceledException;
+import org.appwork.utils.swing.dialog.DialogClosedException;
+import org.jdownloader.controlling.filter.LinkgrabberFilterRule;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 
-public class FilterRuleDialog extends ConditionDialog<FilterRule> {
+public class FilterRuleDialog extends ConditionDialog<LinkgrabberFilterRule> {
 
-    private FilterRule        rule;
-    private JComboBox<String> then;
-    private JLabel            lbl;
+    private LinkgrabberFilterRule rule;
+    private JComboBox<String>     then;
+    private JLabel                lbl;
 
-    public FilterRuleDialog(FilterRule filterRule) {
+    public FilterRuleDialog(LinkgrabberFilterRule filterRule) {
         super();
         this.rule = filterRule;
 
     }
 
+    public static void main(String[] args) {
+        try {
+            LookAndFeelController.getInstance().setUIManager();
+            Dialog.getInstance().showDialog(new FilterRuleDialog(new LinkgrabberFilterRule()));
+        } catch (DialogClosedException e) {
+            e.printStackTrace();
+        } catch (DialogCanceledException e) {
+            e.printStackTrace();
+        }
+    }
+
     @Override
-    protected FilterRule createReturnValue() {
+    protected LinkgrabberFilterRule createReturnValue() {
         return rule;
     }
 

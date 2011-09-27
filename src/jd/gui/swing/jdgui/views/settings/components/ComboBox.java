@@ -59,7 +59,7 @@ public class ComboBox<ContentType> extends JComboBox implements SettingsComponen
     }
 
     public String getConstraints() {
-        return null;
+        return "height 26!";
     }
 
     public boolean isMultiline() {

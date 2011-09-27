@@ -68,7 +68,7 @@ public interface JdownloaderTranslation extends TranslateInterface {
     @Default(lngs = { "en", "de" }, values = { "Using the hashcheck option, JDownloader to verify your downloads for correctness after download.", "Über den automatischen Hashcheck kann JDownloader die geladenen Dateien automatisch auf Korrektheit überprüfen." })
     String gui_settings_filewriting_description();
 
-    @Default(lngs = { "en", "de" }, values = { "Internet Connection", "Internet Verbindung" })
+    @Default(lngs = { "en", "de" }, values = { "Proxy", "Proxy" })
     String gui_settings_proxy_title();
 
     @Default(lngs = { "en", "de" }, values = { "Autostart Downloads?", "Downloads automatisch starten?" })
@@ -627,13 +627,10 @@ public interface JdownloaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Connection limits, Download order, Priorities, .... set up the Downloadcontroller details." })
     String gui_settings_downloadcontroll_description();
 
-    @Default(lngs = { "en" }, values = { "Link Grabber" })
+    @Default(lngs = { "en" }, values = { "Linkgrabber Filter" })
     String gui_settings_linkgrabber_title();
 
-    @Default(lngs = { "en" }, values = { "The \"Link Grabber\" is used to find mirrors, check link stati, and to order your downloads into packages before downloading." })
-    String gui_settings_linkgrabber_description();
-
-    @Default(lngs = { "en" }, values = { "Set up filters, to ignore files based on their address or filename" })
+    @Default(lngs = { "en" }, values = { "The linkfilter is used to filter links. Use it to ignore links, adresses, urls or files based on their properties. Use * as Wildcard, or enable regular expressions." })
     String gui_settings_linkgrabber_filter_description();
 
     @Default(lngs = { "en" }, values = { "Accessibility" })
@@ -710,4 +707,9 @@ public interface JdownloaderTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Offline" })
     String literally_offline();
+
+    @Default(lngs = { "en" }, values = { "The Packagizer rules let you auto-set Download Settings on Files based on their properties." })
+    String gui_settings_linkgrabber_packagizer_description();
+
+    String gui_settings_packagizer_title();
 }

@@ -47,9 +47,9 @@ public class ReconnectManager extends MigPanel implements SettingsComponent, Act
     }
 
     private void layoutComponents() {
-        this.add(this.combobox, "growx, pushx,height 24!");
-        this.add(new ExtButton(new AutoSetupAction()).setTooltipsEnabled(true), "height 24!");
-        this.add(new ExtButton(new ReconnectTestAction()).setTooltipsEnabled(true), "height 24!");
+        this.add(this.combobox, "growx, pushx,height 26!");
+        this.add(new ExtButton(new AutoSetupAction()).setTooltipsEnabled(true), "height 26!");
+        this.add(new ExtButton(new ReconnectTestAction()).setTooltipsEnabled(true), "height 26!");
         this.combobox.addActionListener(this);
         add(card, "spanx,pushy,growy");
     }

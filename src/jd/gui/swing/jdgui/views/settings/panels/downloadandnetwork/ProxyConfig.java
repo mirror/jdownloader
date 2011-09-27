@@ -3,7 +3,6 @@ package jd.gui.swing.jdgui.views.settings.panels.downloadandnetwork;
 import java.util.ArrayList;
 
 import javax.swing.ImageIcon;
-import javax.swing.JButton;
 import javax.swing.JScrollPane;
 import javax.swing.event.ListSelectionEvent;
 
@@ -14,6 +13,7 @@ import jd.controlling.proxy.ProxyInfo;
 import jd.gui.swing.jdgui.views.settings.ConfigPanel;
 
 import org.appwork.app.gui.MigPanel;
+import org.appwork.swing.components.ExtButton;
 import org.appwork.swing.exttable.utils.MinimumSelectionObserver;
 import org.appwork.utils.event.DefaultEventListener;
 import org.appwork.utils.swing.EDTRunner;
@@ -31,9 +31,9 @@ public class ProxyConfig extends AbstractConfigPanel implements DefaultEventList
 
     private ProxyTable        table;
 
-    private JButton           btnAdd;
+    private ExtButton         btnAdd;
 
-    private JButton           btnRemove;
+    private ExtButton         btnRemove;
 
     public ProxyConfig() {
         super();
@@ -45,10 +45,11 @@ public class ProxyConfig extends AbstractConfigPanel implements DefaultEventList
 
         JScrollPane sp = new JScrollPane(table);
         this.add(sp, "gapleft 37,growx, pushx,spanx,pushy,growy");
-        MigPanel toolbar = new MigPanel("ins 0", "[][][grow,fill]", "");
-        btnAdd = new JButton(new ProxyAddAction(table));
+        MigPanel toolbar = new MigPanel("ins 0", "[][][grow,fill]", "[]");
+        btnAdd = new ExtButton(new ProxyAddAction(table));
+
         ProxyDeleteAction dl;
-        btnRemove = new JButton(dl = new ProxyDeleteAction(table));
+        btnRemove = new ExtButton(dl = new ProxyDeleteAction(table));
         table.getSelectionModel().addListSelectionListener(new MinimumSelectionObserver(table, dl, 1) {
             @Override
             public void valueChanged(final ListSelectionEvent e) {
@@ -67,8 +68,8 @@ public class ProxyConfig extends AbstractConfigPanel implements DefaultEventList
             }
         });
 
-        toolbar.add(btnAdd, "sg 1");
-        toolbar.add(btnRemove, "sg 1");
+        toolbar.add(btnAdd, "sg 1,height 26!");
+        toolbar.add(btnRemove, "sg 1,height 26!");
 
         add(toolbar, "gapleft 37,growx,spanx");
 

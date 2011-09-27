@@ -5,8 +5,7 @@ import java.util.ArrayList;
 import org.appwork.storage.Storable;
 import org.jdownloader.gui.translate._GUI;
 
-public class FilterRule implements Storable {
-
+public abstract class FilterRule implements Storable {
     private FilesizeFilter filesizeFilter;
     private RegexFilter    hosterURLFilter;
     private RegexFilter    sourceURLFilter;
@@ -27,11 +26,11 @@ public class FilterRule implements Storable {
         }
         if (filesizeFilter.isEnabled()) {
 
-            cond.add(filesizeFilter.toString());
+            cond.add(_GUI._.FilterRule_toString_size(filesizeFilter.toString()));
         }
         if (filetypeFilter.isEnabled()) {
 
-            cond.add(filetypeFilter.toString());
+            cond.add(_GUI._.FilterRule_toString_type(filetypeFilter.toString()));
         }
         if (hosterURLFilter.isEnabled()) {
 
@@ -93,14 +92,9 @@ public class FilterRule implements Storable {
     private FiletypeFilter filetypeFilter;
     private RegexFilter    filenameFilter;
 
-    public FilterRule() {
-        // required by Storable
-    }
+    private boolean        enabled;
 
-    private boolean enabled;
-
-    private String  name;
-    private boolean accept;
+    private String         name;
 
     public String getName() {
         return name;
@@ -117,13 +111,4 @@ public class FilterRule implements Storable {
     public void setEnabled(boolean enabled) {
         this.enabled = enabled;
     }
-
-    public void setAccept(boolean b) {
-        accept = b;
-    }
-
-    public boolean isAccept() {
-        return accept;
-    }
-
 }
