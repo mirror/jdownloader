@@ -33,18 +33,18 @@ import jd.parser.html.Form.MethodType;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filepost.com" }, urls = { "https?://(www\\.)?filepost\\.com/files/[a-z0-9]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filepost.com" }, urls = { "https?://(www\\.)?(filepost\\.com/files|fp\\.io)/[a-z0-9]+" }, flags = { 2 })
 public class FilePostCom extends PluginForHost {
     private static final String ua                 = "Mozilla/5.0 (X11; U; Linux x86_64; en-US; rv:1.9.2.18) Gecko/20110628 Ubuntu/10.10 (maverick) Firefox/3.6.18";
     private boolean             showAccountCaptcha = false;
@@ -67,7 +67,7 @@ public class FilePostCom extends PluginForHost {
      */
     @Override
     public void correctDownloadLink(DownloadLink link) throws Exception {
-        link.setUrlDownload(link.getDownloadURL().replaceFirst("https:", "http:"));
+        link.setUrlDownload(link.getDownloadURL().replaceFirst("https:", "http:").replace("fp.io/", "filepost.com/files/"));
     }
 
     private static final String FILEIDREGEX = "filepost\\.com/files/(.+)";

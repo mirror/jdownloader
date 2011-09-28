@@ -29,7 +29,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision: 14951 $", interfaceVersion = 2, names = { "filepost.com" }, urls = { "https?://(www\\.)?filepost\\.com/folder/[a-z0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision: 14951 $", interfaceVersion = 2, names = { "filepost.com" }, urls = { "https?://(www\\.)?(filepost\\.com|fp\\.io)/folder/[a-z0-9]+" }, flags = { 0 })
 public class FilePostComFolder extends PluginForDecrypt {
 
     public FilePostComFolder(PluginWrapper wrapper) {
@@ -38,7 +38,7 @@ public class FilePostComFolder extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
+        String parameter = param.toString().replace("fp.io/", "filepost.com/");
         br.setCookie("http://filepost.com", "lang", "english");
         br.getPage(parameter);
         if (br.containsHTML(">This folder is empty<")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the folder no longer exists."));

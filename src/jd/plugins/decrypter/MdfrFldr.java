@@ -28,7 +28,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mediafire.com" }, urls = { "http://[\\w\\.]*?(?!download)[\\w\\.]*?mediafire\\.com/(imageview.+|i/\\?.+|\\\\?sharekey=.+|(?!download|file|\\?JDOWNLOADER).+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mediafire.com" }, urls = { "http://[\\w\\.]*?(?!download)[\\w\\.]*?(mediafire\\.com|mfi\\.re)/(imageview.+|i/\\?.+|\\\\?sharekey=.+|(?!download|file|\\?JDOWNLOADER).+)" }, flags = { 0 })
 public class MdfrFldr extends PluginForDecrypt {
 
     public MdfrFldr(PluginWrapper wrapper) {
@@ -37,7 +37,7 @@ public class MdfrFldr extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
+        String parameter = param.toString().replace("mfi.re/", "mediafire.com/");
         this.setBrowserExclusive();
         if (parameter.matches("http://download\\d+\\.mediafire.+")) {
             /* direct download */

@@ -31,12 +31,12 @@ import jd.parser.html.Form.MethodType;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -387,7 +387,9 @@ public class WUploadCom extends PluginForHost implements ControlListener {
             if (ajax.containsHTML(RECAPTCHATEXT)) {
                 final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
                 jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(ajax);
-                rc.findID();
+                // TODO: Remove after MAJOR (NIGHTLY) update
+                final String id = ajax.getRegex("Recaptcha\\.create\\(\"(.*?)\"").getMatch(0);
+                rc.setId(id);
                 Form rcForm = new Form();
                 rcForm.setMethod(MethodType.POST);
                 rcForm.setAction(freeDownloadLink);

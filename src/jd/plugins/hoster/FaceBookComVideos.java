@@ -75,23 +75,26 @@ public class FaceBookComVideos extends PluginForHost {
         dllink = Encoding.urlDecode(decodeUnicode(br.getRegex(DLLINKREGEXP).getMatch(1)), true);
         // extrahiere Videoname aus HTML-Quellcode
         String filename = br.getRegex("class=\"video_title datawrap\">(.*)</h3>").getMatch(0);
-
         // wird nichts gefunden, versuche Videoname aus einem anderen
         // Teil des Quellcodes rauszusuchen
         if (filename == null) {
             filename = br.getRegex("<title>Facebook \\| Videos posted by .*: (.*)</title>").getMatch(0);
-        }
-
-        // falls Videoname immer noch nicht gefunden wurde, dann
-        // versuche Username & Video-ID als Filename zu nehmen
-        if (filename == null) {
-            filename = br.getRegex("<title>Facebook \\| Videos posted by (.*): .*</title>").getMatch(0).trim();
-
-            // falls Username gefunden wurde, so setze dies und Video-ID
-            // zusammen
-            if (filename != null) {
-                final String videoid = new Regex(link.getDownloadURL(), "facebook\\.com/video/video\\.php\\?v=(\\d+)").getMatch(0);
-                filename = filename + " - Video_" + videoid;
+            if (filename == null) {
+                // Immer versuchen, allgemeine Regexes zu machen, da die
+                // Spracheinstellung nicht per Cookie funktioniert und jedes mal
+                // die Sprache ändern sinnlos ist!
+                filename = br.getRegex("class=\"mbs\"><span class=\"mtm mbs mrs fsm fwn fcg\">[A-Za-z]{1,30}:</span>(.*?)<span class").getMatch(0);
+                // falls Videoname immer noch nicht gefunden wurde, dann
+                // versuche Username & Video-ID als Filename zu nehmen
+                if (filename == null) {
+                    filename = br.getRegex("<title>Facebook \\| Videos posted by (.*): .*</title>").getMatch(0);
+                    // falls Username gefunden wurde, so setze dies und Video-ID
+                    // zusammen
+                    if (filename != null) {
+                        final String videoid = new Regex(link.getDownloadURL(), "facebook\\.com/video/video\\.php\\?v=(\\d+)").getMatch(0);
+                        filename = filename + " - Video_" + videoid;
+                    }
+                }
             }
         }
 

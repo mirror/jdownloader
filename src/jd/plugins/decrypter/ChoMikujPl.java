@@ -123,6 +123,7 @@ public class ChoMikujPl extends PluginForDecrypt {
             // Every full page has 30 links (pictures)
             boolean filenameIncluded = true;
             boolean filenameIncludedVideo = true;
+            String[][] videoIDs = br.getRegex("<div style=\"margin:10px\">[\t\n\r ]+<div style=\"padding: 10px;\">[\t\n\r ]+<a href=\".{1,300}/([^/\"\\'<>]+),\\d+([^/\"\\'<>]+)\" onclick=\"return ch\\.Download.dnFile\\((\\d+)\\);\"").getMatches();
             String[][] fileIds = br.getRegex("class=\"FileName\" onclick=\"return ch\\.Download\\.dnFile\\((.*?)\\);\"><b>(.{1,300})</b>(.{1,300})</a>[\t\n\r ]+</td>[\t\n\r ]+<td>[\t\n\r ]+<table cellpadding=\"0\" cellspacing=\"3\" class=\"fInfoTable\">[\t\n\r ]+<tr>[\t\n\r ]+<td><div class=\"fInfoDiv\">(.{1,20})</div></td>").getMatches();
             if (fileIds == null || fileIds.length == 0) {
                 filenameIncluded = false;
@@ -132,7 +133,6 @@ public class ChoMikujPl extends PluginForDecrypt {
                 }
             }
             String[][] allFolders = br.getRegex("class=\"folders\" cellspacing=\"6\" cellpadding=\"0\" border=\"0\">[\t\n\r ]+<tr>[\t\n\r ]+<td><a href=\"(.*?)\" onclick=\"return Ts\\(\\'\\d+\\'\\)\">(.*?)</span>").getMatches();
-            String[][] videoIDs = br.getRegex("<div style=\"margin:10px\">[\t\n\r ]+<div style=\"padding: 10px;\">[\t\n\r ]+<a href=\".{1,300}/([^/\"\\'<>]+),\\d+([^/\"\\'<>]+)\" onclick=\"return ch\\.Download.dnFile\\((\\d+)\\);\"").getMatches();
             if (videoIDs == null || videoIDs.length == 0) {
                 filenameIncludedVideo = false;
                 videoIDs = br.getRegex("ShowVideo\\.aspx\\?id=(\\d+)\\'").getMatches();
@@ -147,6 +147,26 @@ public class ChoMikujPl extends PluginForDecrypt {
                 }
                 logger.warning(error);
                 return null;
+            }
+            if (videoIDs != null && videoIDs.length != 0) {
+                for (String videoID[] : videoIDs) {
+                    String vid;
+                    if (filenameIncludedVideo)
+                        vid = videoID[2];
+                    else
+                        vid = videoID[0];
+
+                    String finalLink = String.format("&id=%s&gallerylink=%s&", vid, param.toString().replace("chomikuj.pl", "60423fhrzisweguikipo9re"));
+                    DownloadLink dl = createDownloadlink(finalLink);
+                    if (filenameIncludedVideo) {
+                        dl.setFinalFileName(Encoding.htmlDecode(videoID[0] + videoID[1]));
+                        dl.setAvailable(true);
+                    } else {
+                        dl.setName(String.valueOf(new Random().nextInt(1000000)));
+                    }
+                    dl.setProperty("video", "true");
+                    decryptedLinks.add(dl);
+                }
             }
             if (fileIds != null && fileIds.length != 0) {
                 for (String[] id : fileIds) {
@@ -173,26 +193,6 @@ public class ChoMikujPl extends PluginForDecrypt {
                     String folderLink = folder[0];
                     folderLink = "http://chomikuj.pl" + folderLink;
                     decryptedLinks.add(createDownloadlink(folderLink));
-                }
-            }
-            if (videoIDs != null && videoIDs.length != 0) {
-                for (String videoID[] : videoIDs) {
-                    String vid;
-                    if (filenameIncludedVideo)
-                        vid = videoID[2];
-                    else
-                        vid = videoID[0];
-
-                    String finalLink = String.format("&id=%s&gallerylink=%s&", vid, param.toString().replace("chomikuj.pl", "60423fhrzisweguikipo9re"));
-                    DownloadLink dl = createDownloadlink(finalLink);
-                    if (filenameIncludedVideo) {
-                        dl.setFinalFileName(Encoding.htmlDecode(videoID[0] + videoID[1]));
-                        dl.setAvailable(true);
-                    } else {
-                        dl.setName(String.valueOf(new Random().nextInt(1000000)));
-                    }
-                    dl.setProperty("video", "true");
-                    decryptedLinks.add(dl);
                 }
             }
             progress.increase(1);

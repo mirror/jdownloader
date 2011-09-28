@@ -223,9 +223,10 @@ public class GlumboUploadsCom extends PluginForHost {
                 rc.load();
                 File cf = rc.downloadCaptcha(getLocalCaptchaFile());
                 String c = getCaptchaCode(cf, downloadLink);
-                rc.prepareForm(c);
                 logger.info("Put captchacode " + c + " obtained by captcha metod \"Re Captcha\" in the form and submitted it.");
                 dlForm = rc.getForm();
+                dlForm.put("recaptcha_challenge_field", rc.getChallenge());
+                dlForm.put("recaptcha_response_field", Encoding.urlEncode(c));
                 // waittime is often skippable for reCaptcha handling
                 // skipWaittime = true;
             }
