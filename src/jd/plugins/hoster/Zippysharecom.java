@@ -168,7 +168,7 @@ public class Zippysharecom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         prepareBrowser(downloadLink);
-        if (br.containsHTML("(File has expired and does not exist anymore on this server|<title>Zippyshare.com - File does not exist</title>)")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        if (br.containsHTML("(File has expired and does not exist anymore on this server|<title>Zippyshare.com \\- File does not exist</title>|File does not exist on this server)")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         String filename = br.getRegex(Pattern.compile("Name:(\\s+)?</font>(\\s+)?<font style=.*?>(.*?)</font>", Pattern.CASE_INSENSITIVE)).getMatch(2);
         if (filename == null) {
             final String var = br.getRegex("var fulllink.*?'\\+(.*?)\\+'").getMatch(0);

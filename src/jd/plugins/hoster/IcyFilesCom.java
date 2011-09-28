@@ -32,7 +32,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "icyfiles.com" }, urls = { "http://[\\w\\.]*?icyfiles\\.com/[a-z0-9]+" }, flags = { 0 })
 public class IcyFilesCom extends PluginForHost {
 
-    public IcyFilesCom(PluginWrapper wrapper) {
+    public IcyFilesCom(final PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -42,36 +42,45 @@ public class IcyFilesCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.setFollowRedirects(true);
-        br.getPage(link.getDownloadURL());
-        if (br.containsHTML(">The requested File cant be found<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("id=\"file\">(.*?)</div>").getMatch(0);
-        String filesize = br.getRegex("<li>(\\d+) <span>Size/mb</span></li>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        link.setName(filename.trim());
-        link.setDownloadSize(SizeFormatter.getSize(filesize + "Mb"));
-        return AvailableStatus.TRUE;
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        String dllink = "http://icyfiles.com" + br.getRegex("id=\"downloadBtn\" rel=\"(.*?)\"").getMatch(0);
-        if (dllink.contains("null")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        String regexedwaittime = br.getRegex("class=\"counter\">(\\d+)</div>").getMatch(0);
+        final String dllink = "http://icyfiles.com" + br.getRegex("id=\"downloadBtn\" rel=\"(.*?)\"").getMatch(0);
+        if (dllink.contains("null")) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        final String regexedwaittime = br.getRegex("class=\"counter\">(\\d+)</div>").getMatch(0);
         int waitThis = 30;
-        if (regexedwaittime != null) waitThis = Integer.parseInt(regexedwaittime);
+        if (regexedwaittime != null) {
+            waitThis = Integer.parseInt(regexedwaittime);
+        }
         sleep((waitThis + 2) * 1001l, downloadLink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
-            if (br.containsHTML("(>All download tickets are in use|please try it again in a few seconds</div>)")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.icyfilescom.errors.nofreeslotsavailable", "No free download slots available"), 10 * 60 * 1000l);
-            if (br.containsHTML("Dont skip the countdown")) logger.warning("Waittime isn't correct...");
+            if (br.containsHTML("(>All download tickets are in use|please try it again in a few seconds</div>|<head><title>404 Not Found</title>)")) { throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.icyfilescom.errors.nofreeslotsavailable", "No free download slots available"), 10 * 60 * 1000l); }
+            if (br.containsHTML("Dont skip the countdown")) {
+                logger.warning("Waittime isn't correct...");
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    @Override
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        setBrowserExclusive();
+        br.setFollowRedirects(true);
+        br.getPage(link.getDownloadURL());
+        if (br.containsHTML(">The requested File cant be found<")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        final String filename = br.getRegex("id=\"file\">(.*?)</div>").getMatch(0);
+        final String filesize = br.getRegex("<li>(\\d+) <span>Size/mb</span></li>").getMatch(0);
+        if (filename == null || filesize == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        link.setName(filename.trim());
+        link.setDownloadSize(SizeFormatter.getSize(filesize + "Mb"));
+        return AvailableStatus.TRUE;
     }
 
     @Override
@@ -79,12 +88,7 @@ public class IcyFilesCom extends PluginForHost {
     }
 
     @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
-    }
-
-    @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetDownloadlink(final DownloadLink link) {
     }
 
 }
