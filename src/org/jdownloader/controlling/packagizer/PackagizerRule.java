@@ -8,4 +8,70 @@ public class PackagizerRule extends FilterRule implements Storable {
         // required by STorable
     }
 
+    private String downloadDestination;
+
+    public int getPriority() {
+        return priority;
+    }
+
+    public void setPriority(int priority) {
+        this.priority = priority;
+    }
+
+    public String getPackageName() {
+        return packageName;
+    }
+
+    public void setPackageName(String packageName) {
+        this.packageName = packageName;
+    }
+
+    public boolean isAutoExtractionEnabled() {
+        return autoExtractionEnabled;
+    }
+
+    public void setAutoExtractionEnabled(boolean autoExtractionEnabled) {
+        this.autoExtractionEnabled = autoExtractionEnabled;
+    }
+
+    public int getChunks() {
+        return chunks;
+    }
+
+    public void setChunks(int chunks) {
+        this.chunks = chunks;
+    }
+
+    public String getDownloadDestination() {
+        return downloadDestination;
+    }
+
+    private int     priority    = 0;
+    private String  packageName = null;
+    private boolean autoExtractionEnabled;
+    private boolean autoAddEnabled;
+
+    public boolean isAutoAddEnabled() {
+        return autoAddEnabled;
+    }
+
+    public void setAutoAddEnabled(boolean autoAddEnabled) {
+        this.autoAddEnabled = autoAddEnabled;
+    }
+
+    public boolean isAutoStartEnabled() {
+        return autoStartEnabled;
+    }
+
+    public void setAutoStartEnabled(boolean autoStartEnabled) {
+        this.autoStartEnabled = autoStartEnabled;
+    }
+
+    private boolean autoStartEnabled;
+    private int     chunks;
+
+    public void setDownloadDestination(String string) {
+        downloadDestination = string;
+    }
+
 }

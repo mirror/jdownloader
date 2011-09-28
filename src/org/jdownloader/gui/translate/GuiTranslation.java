@@ -2668,4 +2668,46 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "... then set" })
     String PackagizerFilterRuleDialog_layoutDialogContent_then();
 
+    @Default(lngs = { "en" }, values = { "Hoster Domain" })
+    String PackagizerFilterRuleDialog_createVariablesMenu_hoster();
+
+    @Default(lngs = { "en" }, values = { "Source Domain" })
+    String PackagizerFilterRuleDialog_createVariablesMenu_source();
+
+    @Default(lngs = { "en" }, values = { "Date or Time" })
+    String PackagizerFilterRuleDialog_createVariablesMenu_date();
+
+    @Default(lngs = { "en" }, values = { "Dynamic Variables" })
+    String PackagizerFilterRuleDialog_createVariablesMenu_menu();
+
+    @Default(lngs = { "en" }, values = { "Filename" })
+    String PackagizerFilterRuleDialog_createVariablesMenu_filename_complete();
+
+    @Default(lngs = { "en" }, values = { "Filename Match #%s1" })
+    String PackagizerFilterRuleDialog_createVariablesMenu_filename(int i);
+
+    @Default(lngs = { "en" }, values = { "Hoster Url Match #%s1" })
+    String PackagizerFilterRuleDialog_createVariablesMenu_hoster(int i);
+
+    @Default(lngs = { "en" }, values = { "Source Url Match #%s1" })
+    String PackagizerFilterRuleDialog_createVariablesMenu_source(int i);
+
+    @Default(lngs = { "en" }, values = { "Packagename" })
+    String PackagizerFilterRuleDialog_createVariablesMenu_packagename();
+
+    @Default(lngs = { "en" }, values = { "Auto extract Archives after download finished." })
+    String PackagizerFilterRuleDialog_layoutDialogContent_extract_desc();
+
+    @Default(lngs = { "en" }, values = { "Auto Start" })
+    String PackagizerFilterRuleDialog_layoutDialogContent_autostart();
+
+    @Default(lngs = { "en" }, values = { "Auto Accept" })
+    String PackagizerFilterRuleDialog_layoutDialogContent_autoadd();
+
+    @Default(lngs = { "en" }, values = { "Auto Confirm Links in Linkgrabber and add them to the Download View." })
+    String PackagizerFilterRuleDialog_layoutDialogContent_add_desc();
+
+    @Default(lngs = { "en" }, values = { "Start Downloads immediately" })
+    String PackagizerFilterRuleDialog_layoutDialogContent_start_desc();
+
 }

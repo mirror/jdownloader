@@ -48,4 +48,9 @@ public interface LinkFilterSettings extends ConfigInterface {
     boolean isLinkgrabberAutoConfirmEnabled();
 
     void setLinkgrabberAutoConfirmEnabled(boolean selected);
+
+    @DefaultBooleanValue(false)
+    boolean isRuleconditionsRegexEnabled();
+
+    void setRuleconditionsRegexEnabled(boolean b);
 }
