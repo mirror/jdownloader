@@ -325,8 +325,8 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
                         this.downloadLinkList.add(link);
                     }
                 }
-                notifyChanges();
             }
+            notifyChanges();
         } else {
             this.controlledby.addmoveChildren(this, Arrays.asList(links), -1);
         }
@@ -530,8 +530,8 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
                         if (link.getFilePackage() == this) link._setFilePackage(null);
                     }
                 }
-                notifyChanges();
             }
+            notifyChanges();
         } else {
             this.controlledby.removeChildren(this, Arrays.asList(links), true);
         }

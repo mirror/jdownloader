@@ -92,6 +92,7 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
             }
 
         };
+
     }
 
     public void addListener(final DownloadControllerListener l) {
@@ -130,7 +131,10 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
         } finally {
             readUnlock(readL);
         }
-        if (packages != null) JDUtilities.getDatabaseConnector().saveLinks(packages);
+        if (packages != null) {
+            JDUtilities.getDatabaseConnector().saveLinks(packages);
+            JDUtilities.getDatabaseConnector().save();
+        }
     }
 
     /**

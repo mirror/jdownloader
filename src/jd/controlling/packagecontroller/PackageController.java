@@ -57,38 +57,53 @@ public abstract class PackageController<E extends AbstractPackageNode<V, E>, V e
                         /* we have to reposition the package */
                         need2Remove = true;
                     } else if (controller != null) {
-                        /* remove package from another controller */
+                        /* first remove package from another controller */
                         controller.removePackage(pkg);
                     }
                     writeLock();
                     try {
                         ListIterator<E> li = packages.listIterator();
-                        int counter = 0;
+                        int currentIndex = 0;
                         boolean done = false;
                         boolean addLast = false;
-                        if (index < 0) {
-                            /* add end of list */
+                        if (index < 0 || index > packages.size() - 1) {
+                            /* lets add pkg at end of list */
                             done = true;
                             addLast = true;
                         }
                         while (li.hasNext()) {
-                            if (done && !need2Remove) break;
-                            E c = li.next();
-                            if (counter == index) {
-                                li.add(pkg);
-                                done = true;
+                            if (done && need2Remove == false) {
+                                /* we no longer need to iterate through list */
+                                break;
                             }
-                            if (c == pkg) {
+                            E c = li.next();
+                            if (c == pkg && currentIndex == index) {
+                                /*
+                                 * current element is pkg and index is correct,
+                                 * nothing to do
+                                 */
+                                return null;
+                            } else if (currentIndex == index) {
+                                /*
+                                 * current position is wished index, lets add
+                                 * pkg here
+                                 */
+                                E replaced = c;
+                                li.set(pkg);
+                                li.add(replaced);
+                                done = true;
+                                currentIndex++;
+                                continue;
+                            } else if (c == pkg) {
+                                /* current element is pkg, lets remove it */
                                 li.remove();
                                 isNew = false;
                                 need2Remove = false;
+                            } else {
+                                currentIndex++;
                             }
-                            counter++;
                         }
                         if (!done || addLast) {
-                            /**
-                             * index > packages.size , then add at end
-                             */
                             packages.addLast(pkg);
                         }
                         pkg.setControlledBy(PackageController.this);
@@ -211,8 +226,8 @@ public abstract class PackageController<E extends AbstractPackageNode<V, E>, V e
                             for (V child : children) {
                                 child.setParentNode(pkg);
                             }
-                            pkg.notifyChanges();
                         }
+                        pkg.notifyChanges();
                     } finally {
                         writeUnlock();
                     }
@@ -265,8 +280,8 @@ public abstract class PackageController<E extends AbstractPackageNode<V, E>, V e
                                     it.remove();
                                 }
                             }
-                            pkg.notifyChanges();
                         }
+                        pkg.notifyChanges();
                     } finally {
                         writeUnlock();
                     }

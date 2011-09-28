@@ -508,6 +508,25 @@ public class DatabaseConnector implements Serializable {
         }
     }
 
+    public void save() {
+        synchronized (LOCK) {
+            if (!isDatabaseShutdown()) {
+                PreparedStatement pst = null;
+                try {
+                    pst = con.prepareStatement("CHECKPOINT");
+                    pst.execute();
+                } catch (final Exception e) {
+                    JDLogger.exception(e);
+                } finally {
+                    try {
+                        pst.close();
+                    } catch (final Throwable e) {
+                    }
+                }
+            }
+        }
+    }
+
     /**
      * Returns the connection to the database
      */

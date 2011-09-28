@@ -352,7 +352,6 @@ public class JDController implements ControlListener {
         if (DatabaseConnector.isDatabaseShutdown()) return;
         LOGGER.info("Sync Downloadlist");
         JDUtilities.getDownloadController().saveDownloadLinks();
-
         LOGGER.info("Sync FavIconController");
         FavIconController.getInstance().saveSyncnonThread();
         LOGGER.info("Sync Passwordlist");

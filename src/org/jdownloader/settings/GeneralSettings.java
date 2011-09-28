@@ -137,6 +137,7 @@ public interface GeneralSettings extends ConfigInterface {
 
     @AboutConfig
     @Description("max buffer size for each download connection in kb")
+    @RangeValidatorMarker(range = { 100, 10240 })
     int getMaxBufferSize();
 
     void setMaxBufferSize(int num);
@@ -156,12 +157,14 @@ public interface GeneralSettings extends ConfigInterface {
 
     @AboutConfig
     @Description("Timeout for connecting to a httpserver")
+    @RangeValidatorMarker(range = { 0, 300000 })
     int getHttpConnectTimeout();
 
     void setHttpConnectTimeout(int seconds);
 
     @AboutConfig
     @Description("Timeout for reading to a httpserver")
+    @RangeValidatorMarker(range = { 0, 300000 })
     int getHttpReadTimeout();
 
     void setHttpReadTimeout(int seconds);

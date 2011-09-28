@@ -188,10 +188,8 @@ public class LiveHeaderInvoker extends ReconnectInvoker {
                 }
 
                 if (!current.getNodeName().equalsIgnoreCase("STEP")) {
-
                     LiveHeaderReconnect.LOG.severe("Root Node should only contain [[[STEP]]]*[[[/STEP]]] ChildTag: " + current.getNodeName());
                     throw new ReconnectException("Root Node should only contain [[[STEP]]]*[[[/STEP]]] ChildTag: " + current.getNodeName());
-
                 }
                 final NodeList toDos = current.getChildNodes();
                 final int toDosLength = toDos.getLength();
