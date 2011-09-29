@@ -45,6 +45,10 @@ public abstract class PackageController<E extends AbstractPackageNode<V, E>, V e
 
                 @Override
                 protected Void run() throws RuntimeException {
+                    if (pkg.getChildren().size() == 0) {
+                        /* we dont want empty packages here */
+                        return null;
+                    }
                     boolean isNew = true;
 
                     /**

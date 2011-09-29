@@ -23,7 +23,6 @@ import jd.controlling.LinkGrabberControllerEvent;
 import jd.controlling.LinkGrabberControllerListener;
 import jd.gui.UserIF;
 import jd.gui.swing.jdgui.JDGui;
-import jd.gui.swing.jdgui.actions.ActionController;
 import jd.gui.swing.jdgui.interfaces.View;
 
 import org.jdownloader.gui.translate._GUI;
@@ -84,9 +83,6 @@ public class LinkgrabberView extends View {
     }
 
     private void setActionStatus(boolean enabled) {
-        ActionController.getToolBarAction("action.remove_dupes").setEnabled(enabled);
-        ActionController.getToolBarAction("action.remove_disabled").setEnabled(enabled);
-        ActionController.getToolBarAction("action.remove_offline").setEnabled(enabled);
     }
 
     @Override

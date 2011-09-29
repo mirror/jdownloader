@@ -12,6 +12,7 @@ import jd.controlling.linkchecker.LinkCheckerHandler;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.linkcrawler.LinkCrawler;
+import jd.controlling.linkcrawler.LinkCrawlerFilter;
 import jd.controlling.linkcrawler.LinkCrawlerHandler;
 import jd.controlling.packagecontroller.PackageController;
 
@@ -47,6 +48,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
     private HashMap<CrawledPackage, UniqueID> packageMapReverse = new HashMap<CrawledPackage, UniqueID>();
 
     private LinkCollectorConfig               config;
+    private LinkCrawlerFilter                 crawlerFilter     = null;
 
     public static LinkCollector getInstance() {
         return INSTANCE;
@@ -106,6 +108,8 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
     public LinkCrawler addCrawlerJob(final CrawlerJob job) {
         if (job == null) throw new IllegalArgumentException("job is null");
         LinkCrawler lc = new LinkCrawler();
+        LinkCrawlerFilter filter = this.crawlerFilter;
+        if (filter != null) lc.setFilter(filter);
         if (config.getDoLinkCheck()) {
             lc.setHandler(new LinkCrawlerHandler() {
                 public void handleFinalLink(CrawledLink link) {
@@ -119,6 +123,10 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
                 public void linkCrawlerStopped() {
                     checkRunningState(false);
+                }
+
+                public void handleFilteredLink(CrawledLink link) {
+                    System.out.println("Filtered: " + link);
                 }
             });
         } else {
@@ -134,6 +142,10 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
                 public void linkCrawlerStopped() {
                     checkRunningState(false);
+                }
+
+                public void handleFilteredLink(CrawledLink link) {
+                    System.out.println("Filtered: " + link);
                 }
             });
         }
@@ -278,6 +290,21 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         } else {
             broadcaster.fireEvent(new LinkCollectorEvent(LinkCollector.this, LinkCollectorEvent.TYPE.COLLECTOR_START));
         }
+    }
+
+    /**
+     * @param crawlerFilter
+     *            the crawlerFilter to set
+     */
+    public void setCrawlerFilter(LinkCrawlerFilter crawlerFilter) {
+        this.crawlerFilter = crawlerFilter;
+    }
+
+    /**
+     * @return the crawlerFilter
+     */
+    public LinkCrawlerFilter getCrawlerFilter() {
+        return crawlerFilter;
     }
 
 }

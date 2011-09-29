@@ -30,18 +30,20 @@ public class LinkCrawler implements IOPermission {
 
     private static ArrayList<DecryptPluginWrapper> pDecrypts;
     private static ArrayList<HostPluginWrapper>    pHosts;
-    private static PluginForHost                   directHTTP              = null;
-    private ArrayList<CrawledLink>                 crawledLinks            = new ArrayList<CrawledLink>();
-    private AtomicInteger                          crawledLinksCounter     = new AtomicInteger(0);
-    private AtomicInteger                          crawler                 = new AtomicInteger(0);
-    private HashSet<String>                        duplicateFinder         = new HashSet<String>();
-    private LinkCrawlerHandler                     handler                 = null;
-    private LinkCrawlerHandler                     defaultFinalLinkHandler = null;
-    private long                                   createdDate             = -1;
-    private static ThreadPoolExecutor              threadPool              = null;
+    private static PluginForHost                   directHTTP           = null;
+    private ArrayList<CrawledLink>                 crawledLinks         = new ArrayList<CrawledLink>();
+    private AtomicInteger                          crawledLinksCounter  = new AtomicInteger(0);
+    private ArrayList<CrawledLink>                 filteredLinks        = new ArrayList<CrawledLink>();
+    private AtomicInteger                          filteredLinksCounter = new AtomicInteger(0);
+    private AtomicInteger                          crawler              = new AtomicInteger(0);
+    private HashSet<String>                        duplicateFinder      = new HashSet<String>();
+    private LinkCrawlerHandler                     handler              = null;
+    private long                                   createdDate          = -1;
+    private static ThreadPoolExecutor              threadPool           = null;
 
-    private HashSet<String>                        captchaBlockedHoster    = new HashSet<String>();
-    private boolean                                captchaBlockedAll       = false;
+    private HashSet<String>                        captchaBlockedHoster = new HashSet<String>();
+    private boolean                                captchaBlockedAll    = false;
+    private LinkCrawlerFilter                      filter               = null;
 
     static {
         int maxThreads = Math.max(JsonConfig.create(LinkCrawlerConfig.class).getMaxThreads(), 1);
@@ -93,8 +95,8 @@ public class LinkCrawler implements IOPermission {
     }
 
     public LinkCrawler() {
-        defaultFinalLinkHandler = defaulHandlerFactory();
-        setHandler(defaultFinalLinkHandler);
+        setHandler(defaulHandlerFactory());
+        setFilter(defaultFilterFactory());
         this.createdDate = System.currentTimeMillis();
     }
 
@@ -265,6 +267,11 @@ public class LinkCrawler implements IOPermission {
             Browser br = new Browser();
             try {
                 new URL(url);
+                CrawledLink source = new CrawledLink(url);
+                if (this.isCrawledLinkFiltered(source)) {
+                    /* link is filtered, stop here */
+                    return;
+                }
                 br.openGetConnection(url);
                 if (br.getHttpConnection().isContentDisposition() || (br.getHttpConnection().getContentType() != null && !br.getHttpConnection().getContentType().contains("text"))) {
                     try {
@@ -285,7 +292,16 @@ public class LinkCrawler implements IOPermission {
                     if (baseUrl != null && !baseUrl.endsWith("/")) {
                         baseUrl = baseUrl + "/";
                     }
-                    crawlNormal(br.toString(), baseUrl);
+                    String[] possibleLinks = HTMLParser.getHttpLinks(br.toString(), baseUrl);
+                    if (possibleLinks == null || possibleLinks.length == 0) return;
+                    ArrayList<CrawledLink> possibleCryptedLinks = new ArrayList<CrawledLink>(possibleLinks.length);
+                    for (String possibleLink : possibleLinks) {
+                        CrawledLink link;
+                        possibleCryptedLinks.add(link = new CrawledLink(possibleLink));
+                        /* lets forward source from this deepCrawling */
+                        link.setParentLink(source);
+                    }
+                    distribute(possibleCryptedLinks);
                 }
             } catch (Throwable e) {
             } finally {
@@ -385,7 +401,7 @@ public class LinkCrawler implements IOPermission {
                                     for (DownloadLink hosterLink : hosterLinks) {
                                         CrawledLink link = new CrawledLink(hosterLink);
                                         link.setParentLink(possibleCryptedLink.getParentLink());
-                                        handleFinalLink(link);
+                                        handleCrawledLink(link);
                                     }
                                 }
                             }
@@ -411,7 +427,7 @@ public class LinkCrawler implements IOPermission {
                                 for (DownloadLink hosterLink : httpLinks) {
                                     CrawledLink link = new CrawledLink(hosterLink);
                                     link.setParentLink(possibleCryptedLink.getParentLink());
-                                    handleFinalLink(link);
+                                    handleCrawledLink(link);
                                 }
                             }
                         } catch (Throwable e) {
@@ -467,6 +483,10 @@ public class LinkCrawler implements IOPermission {
             synchronized (duplicateFinder) {
                 /* did we already decrypt this crypted link? */
                 if (!duplicateFinder.add(cryptedLink.getURL())) { return; }
+            }
+            if (this.isCrawledLinkFiltered(cryptedLink)) {
+                /* link is filtered, stop here */
+                return;
             }
             if (cryptedLink == null || cryptedLink.getdPlugin() == null || cryptedLink.getCryptedLink() == null) return;
             /* we have to create new plugin instance here */
@@ -540,7 +560,12 @@ public class LinkCrawler implements IOPermission {
         return crawledLinks;
     }
 
-    protected void handleFinalLink(CrawledLink link) {
+    public ArrayList<CrawledLink> getFilteredLinks() {
+        return filteredLinks;
+    }
+
+    protected void handleCrawledLink(CrawledLink link) {
+        if (link == null) return;
         link.setCreated(createdDate);
         if (link.getDownloadLink() != null && link.getDownloadLink().getBooleanProperty("ALLOW_DUPE", false)) {
             /* forward dupeAllow info from DownloadLink to CrawledLinkInfo */
@@ -553,23 +578,34 @@ public class LinkCrawler implements IOPermission {
                 if (!duplicateFinder.add(link.getURL())) { return; }
             }
         }
-        crawledLinksCounter.incrementAndGet();
-        handler.handleFinalLink(link);
+        if (isCrawledLinkFiltered(link) == false) {
+            /* link is not filtered, so we can process it normally */
+            crawledLinksCounter.incrementAndGet();
+            handler.handleFinalLink(link);
+        }
+    }
+
+    protected boolean isCrawledLinkFiltered(CrawledLink link) {
+        if (filter.isCrawledLinkFiltered(link)) {
+            filteredLinksCounter.incrementAndGet();
+            handler.handleFilteredLink(link);
+            return true;
+        }
+        return false;
     }
 
     public int crawledLinksFound() {
         return crawledLinksCounter.get();
     }
 
-    public LinkCrawlerHandler getDefaultHandler() {
-        return defaultFinalLinkHandler;
+    public int filteredLinksFound() {
+        return filteredLinksCounter.get();
     }
 
     protected LinkCrawlerHandler defaulHandlerFactory() {
         return new LinkCrawlerHandler() {
 
             public void handleFinalLink(CrawledLink link) {
-                if (link == null) return;
                 synchronized (crawledLinks) {
                     crawledLinks.add(link);
                 }
@@ -580,7 +616,32 @@ public class LinkCrawler implements IOPermission {
 
             public void linkCrawlerStopped() {
             }
+
+            public void handleFilteredLink(CrawledLink link) {
+                synchronized (filteredLinks) {
+                    filteredLinks.add(link);
+                }
+            }
         };
+    }
+
+    protected LinkCrawlerFilter defaultFilterFactory() {
+        return new LinkCrawlerFilter() {
+
+            public boolean isCrawledLinkFiltered(CrawledLink link) {
+                return false;
+            };
+
+        };
+    }
+
+    public void setFilter(LinkCrawlerFilter filter) {
+        if (filter == null) throw new IllegalArgumentException("filter is null");
+        this.filter = filter;
+    }
+
+    public LinkCrawlerFilter getFilter() {
+        return filter;
     }
 
     public void setHandler(LinkCrawlerHandler handler) {
