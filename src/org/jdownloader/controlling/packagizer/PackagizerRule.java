@@ -1,6 +1,7 @@
 package org.jdownloader.controlling.packagizer;
 
 import org.appwork.storage.Storable;
+import org.jdownloader.controlling.Priority;
 import org.jdownloader.controlling.filter.FilterRule;
 
 public class PackagizerRule extends FilterRule implements Storable {
@@ -10,11 +11,11 @@ public class PackagizerRule extends FilterRule implements Storable {
 
     private String downloadDestination;
 
-    public int getPriority() {
+    public Priority getPriority() {
         return priority;
     }
 
-    public void setPriority(int priority) {
+    public void setPriority(Priority priority) {
         this.priority = priority;
     }
 
@@ -46,10 +47,10 @@ public class PackagizerRule extends FilterRule implements Storable {
         return downloadDestination;
     }
 
-    private int     priority    = 0;
-    private String  packageName = null;
-    private boolean autoExtractionEnabled;
-    private boolean autoAddEnabled;
+    private Priority priority    = Priority.DEFAULT;
+    private String   packageName = null;
+    private boolean  autoExtractionEnabled;
+    private boolean  autoAddEnabled;
 
     public boolean isAutoAddEnabled() {
         return autoAddEnabled;

@@ -17,7 +17,6 @@ import javax.swing.SpinnerNumberModel;
 import javax.swing.text.JTextComponent;
 
 import jd.gui.swing.jdgui.events.EDTEventQueue;
-import jd.gui.swing.jdgui.views.downloads.DownloadTable;
 import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.ConditionDialog;
 import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.FilterPanel;
 import jd.gui.swing.laf.LookAndFeelController;
@@ -35,18 +34,18 @@ import org.appwork.swing.components.pathchooser.PathChooser;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
+import org.jdownloader.controlling.Priority;
 import org.jdownloader.controlling.packagizer.PackagizerRule;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.images.NewTheme;
 
 public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> {
-    public int prio = 0;
+    public Priority prio = Priority.DEFAULT;
 
     private class PriorityAction extends AbstractAction {
 
-        private int priority;
+        private Priority priority;
 
-        public PriorityAction(int priority) {
+        public PriorityAction(Priority priority) {
 
             this.priority = priority;
 
@@ -57,11 +56,11 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
         }
 
         public ImageIcon getIcon() {
-            return NewTheme.I().getIcon("prio_" + priority, 18);
+            return priority.loadIcon(18);
         }
 
         public String getTooltipText() {
-            return DownloadTable.PRIO_DESCS[priority + 1];
+            return priority._();
         }
 
     }
@@ -154,16 +153,16 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
         prio = rule.getPriority();
         switch (rule.getPriority()) {
 
-        case 0:
+        case DEFAULT:
             p0.setSelected(true);
             break;
-        case 1:
+        case HIGH:
             p1.setSelected(true);
             break;
-        case 2:
+        case HIGHER:
             p2.setSelected(true);
             break;
-        case 3:
+        case HIGHEST:
             p3.setSelected(true);
             break;
         default:
@@ -226,11 +225,11 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
         };
 
         fpPriority = new FilterPanel("ins 0", "[]0[]8[]0[]8[]0[]8[]0[]8[]0[]", "[]");
-        PriorityAction pa_1 = new PriorityAction(-1);
-        PriorityAction pa0 = new PriorityAction(0);
-        PriorityAction pa1 = new PriorityAction(1);
-        PriorityAction pa2 = new PriorityAction(2);
-        PriorityAction pa3 = new PriorityAction(3);
+        PriorityAction pa_1 = new PriorityAction(Priority.LOWER);
+        PriorityAction pa0 = new PriorityAction(Priority.DEFAULT);
+        PriorityAction pa1 = new PriorityAction(Priority.HIGH);
+        PriorityAction pa2 = new PriorityAction(Priority.HIGHER);
+        PriorityAction pa3 = new PriorityAction(Priority.HIGHEST);
         p_1 = new RadioButton(pa_1);
 
         p0 = new RadioButton(pa0);

@@ -2710,4 +2710,40 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Start Downloads immediately" })
     String PackagizerFilterRuleDialog_layoutDialogContent_start_desc();
 
+    @Default(lngs = { "en" }, values = { "If this rule matches, set download destination ..." })
+    String settings_linkgrabber_filter_columns_dest();
+
+    @Default(lngs = { "en" }, values = { "Download files to %s1." })
+    String FilterTableModel_packagizer_tt_dest(String downloadDestination);
+
+    @Default(lngs = { "en" }, values = { "If this rule matches, set Download Priority to ..." })
+    String settings_linkgrabber_filter_columns_priority();
+
+    @Default(lngs = { "en" }, values = { "If this rule matches, set Packagename to ..." })
+    String settings_linkgrabber_filter_columns_packagename();
+
+    @Default(lngs = { "en" }, values = { "Use %s1 as packagename if possible." })
+    String FilterTableModel_packagizer_tt_packagename(String packageName);
+
+    @Default(lngs = { "en" }, values = { "If this rule matches, set Chunks to ..." })
+    String settings_linkgrabber_filter_columns_chunks();
+
+    @Default(lngs = { "en" }, values = { "If this rule matches, extract archives after Download ..." })
+    String settings_linkgrabber_filter_columns_extract();
+
+    @Default(lngs = { "en" }, values = { "Extract Archives after Download" })
+    String FilterTableModel_packagizer_tt_autoextract();
+
+    @Default(lngs = { "en" }, values = { "If this rule matches, move Links to Download View automatically ..." })
+    String settings_linkgrabber_filter_columns_add();
+
+    @Default(lngs = { "en" }, values = { "Move Links do Download View automatically" })
+    String FilterTableModel_packagizer_tt_autoadd();
+
+    @Default(lngs = { "en" }, values = { "If this rule matches, start download after Link has moved to Download View..." })
+    String settings_linkgrabber_filter_columns_start();
+
+    @Default(lngs = { "en" }, values = { "Start download after Link has moved to Download View." })
+    String FilterTableModel_packagizer_tt_autostart();
+
 }
