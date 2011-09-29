@@ -78,13 +78,13 @@ public class DownloadsTable extends PackageControllerTable<FilePackage, Download
         }
 
         initActions();
-        onSelectionChanged(null);
+        onSelectionChanged();
         setAutoResizeMode(JTable.AUTO_RESIZE_LAST_COLUMN);
     }
 
     @Override
-    protected void onSelectionChanged(ArrayList<AbstractNode> selected) {
-        if (selected == null || selected.size() == 0) {
+    protected void onSelectionChanged() {
+        if (this.getExtTableModel() == null || this.getExtTableModel().countSelectedObjects() == 0) {
             // disable move buttons
             moveDownAction.setEnabled(false);
             moveToBottomAction.setEnabled(false);
