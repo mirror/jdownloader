@@ -38,21 +38,39 @@ public class DownloadsTableTransferHandler extends TransferHandler {
             boolean linksAvailable = support.isDataFlavorSupported(DownloadLinksDataFlavor.Flavor);
             boolean packagesAvailable = support.isDataFlavorSupported(FilePackagesDataFlavor.Flavor);
             if (linksAvailable || packagesAvailable) {
-                if (!DownloadsTableTransferable.isVersionOkay(support.getTransferable())) return false;
+                if (!DownloadsTableTransferable.isVersionOkay(support.getTransferable())) {
+                    /*
+                     * packagecontroller has newer version, we no longer allow
+                     * this copy/paste to happen
+                     */
+                    return false;
+                }
             }
             boolean isInsert = dl.isInsertRow();
             int dropRow = dl.getRow();
             if (isInsert) {
-                Object beforeElement = table.getExtTableModel().getObjectbyRow(dropRow - 1);
                 if (linksAvailable) {
-                    if (dropRow == 0) {
-                        /* we cannot drop links at the beginn of downloadlist */
-                        return false;
+                    boolean insidePackage = false;
+                    Object beforeElement = table.getExtTableModel().getObjectbyRow(dropRow - 1);
+                    if (beforeElement != null) {
+                        if (beforeElement instanceof DownloadLink) {
+                            /*
+                             * beforeElement is DownloadLink, so we can drop
+                             * links here
+                             */
+                            insidePackage = true;
+                        } else {
+                            Object afterElement = table.getExtTableModel().getObjectbyRow(dropRow);
+                            if (afterElement != null && afterElement instanceof DownloadLink) {
+                                /*
+                                 * afterElement is DownloadLink, so we can drop
+                                 * links here
+                                 */
+                                insidePackage = true;
+                            }
+                        }
                     }
-                    if (dropRow == table.getExtTableModel().getRowCount() && beforeElement != null && beforeElement instanceof FilePackage) {
-                        /* we cannot drop links at the end of downloadlist */
-                        return false;
-                    }
+                    if (insidePackage == false) { return false; }
                 }
             } else {
                 Object onElement = table.getExtTableModel().getObjectbyRow(dropRow);

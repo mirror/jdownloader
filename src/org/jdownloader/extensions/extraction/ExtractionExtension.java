@@ -675,53 +675,54 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
                 m.setProperty("LINK", link);
             } else {
                 FilePackage fp = (FilePackage) event.getCaller();
+                if (fp != null) {
+                    container.addMenuItem(m = new MenuAction("Extract Package", "optional.extraction.linkmenu.package.extract", EXTRACT_PACKAGE) {
 
-                container.addMenuItem(m = new MenuAction("Extract Package", "optional.extraction.linkmenu.package.extract", EXTRACT_PACKAGE) {
+                        private static final long serialVersionUID = 5329598452469482639L;
 
-                    private static final long serialVersionUID = 5329598452469482639L;
+                        @Override
+                        protected String createMnemonic() {
+                            return null;
+                        }
 
-                    @Override
-                    protected String createMnemonic() {
-                        return null;
+                        @Override
+                        protected String createAccelerator() {
+                            return null;
+                        }
+
+                        @Override
+                        protected String createTooltip() {
+                            return null;
+                        }
+                    });
+                    m.setProperty(MENU_PACKAGES, ((DownloadTable) ((JViewport) DownloadLinksPanel.getDownloadLinksPanel().getScrollPane().getComponent(0)).getComponent(0)).getSelectedFilePackages());
+                    m.setIcon(getIconKey());
+                    m.setActionListener(this);
+                    container.addMenuItem(m = new MenuAction("Auto Extract Package", "optional.extraction.linkmenu.package.autoextract", SET_PACKAGE_AUTOEXTRACT) {
+
+                        private static final long serialVersionUID = 8363153410685078199L;
+
+                        @Override
+                        protected String createMnemonic() {
+                            return null;
+                        }
+
+                        @Override
+                        protected String createAccelerator() {
+                            return null;
+                        }
+
+                        @Override
+                        protected String createTooltip() {
+                            return null;
+                        }
+                    });
+                    m.setProperty(MENU_PACKAGES, ((DownloadTable) ((JViewport) DownloadLinksPanel.getDownloadLinksPanel().getScrollPane().getComponent(0)).getComponent(0)).getSelectedFilePackages());
+                    m.setSelected(fp.isPostProcessing());
+                    m.setActionListener(this);
+                    if (!this.getPluginConfig().getBooleanProperty("ACTIVATED", true)) {
+                        m.setEnabled(false);
                     }
-
-                    @Override
-                    protected String createAccelerator() {
-                        return null;
-                    }
-
-                    @Override
-                    protected String createTooltip() {
-                        return null;
-                    }
-                });
-                m.setProperty(MENU_PACKAGES, ((DownloadTable) ((JViewport) DownloadLinksPanel.getDownloadLinksPanel().getScrollPane().getComponent(0)).getComponent(0)).getSelectedFilePackages());
-                m.setIcon(getIconKey());
-                m.setActionListener(this);
-                container.addMenuItem(m = new MenuAction("Auto Extract Package", "optional.extraction.linkmenu.package.autoextract", SET_PACKAGE_AUTOEXTRACT) {
-
-                    private static final long serialVersionUID = 8363153410685078199L;
-
-                    @Override
-                    protected String createMnemonic() {
-                        return null;
-                    }
-
-                    @Override
-                    protected String createAccelerator() {
-                        return null;
-                    }
-
-                    @Override
-                    protected String createTooltip() {
-                        return null;
-                    }
-                });
-                m.setProperty(MENU_PACKAGES, ((DownloadTable) ((JViewport) DownloadLinksPanel.getDownloadLinksPanel().getScrollPane().getComponent(0)).getComponent(0)).getSelectedFilePackages());
-                m.setSelected(fp.isPostProcessing());
-                m.setActionListener(this);
-                if (!this.getPluginConfig().getBooleanProperty("ACTIVATED", true)) {
-                    m.setEnabled(false);
                 }
             }
             break;
