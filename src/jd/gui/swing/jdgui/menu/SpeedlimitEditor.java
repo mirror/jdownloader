@@ -16,6 +16,7 @@ import org.appwork.storage.config.KeyHandler;
 import org.appwork.swing.components.ExtCheckBox;
 import org.appwork.swing.components.SizeSpinner;
 import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.GeneralSettings;
@@ -55,13 +56,20 @@ public class SpeedlimitEditor extends MenuEditor implements ConfigEventListener,
     public void onConfigValidatorError(ConfigInterface config, Throwable validateException, KeyHandler methodHandler) {
     }
 
-    public void onConfigValueModified(ConfigInterface config, String key, Object newValue) {
-        if ("DownloadSpeedLimit".equalsIgnoreCase(key)) {
-            spinner.setValue(newValue);
+    public void onConfigValueModified(ConfigInterface c, final String key, final Object newValue) {
+        new EDTRunner() {
 
-        } else if ("DownloadSpeedLimitEnabled".equalsIgnoreCase(key)) {
-            cb.setSelected(this.config.isDownloadSpeedLimitEnabled());
-        }
+            @Override
+            protected void runInEDT() {
+                if ("DownloadSpeedLimit".equalsIgnoreCase(key)) {
+                    spinner.setValue(newValue);
+
+                } else if ("DownloadSpeedLimitEnabled".equalsIgnoreCase(key)) {
+                    cb.setSelected(config.isDownloadSpeedLimitEnabled());
+                }
+            }
+        };
+
     }
 
     public void stateChanged(ChangeEvent e) {

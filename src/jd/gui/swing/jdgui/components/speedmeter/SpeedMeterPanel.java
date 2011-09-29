@@ -26,9 +26,11 @@ import org.appwork.storage.config.ConfigEventListener;
 import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.KeyHandler;
+import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.Graph;
 import org.appwork.utils.swing.graph.Limiter;
+import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.settings.GeneralSettings;
 
 public class SpeedMeterPanel extends Graph {
@@ -37,33 +39,37 @@ public class SpeedMeterPanel extends Graph {
 
     private Limiter           speedLimiter;
 
+    private GeneralSettings   config;
+
     public SpeedMeterPanel(boolean contextMenu, boolean start) {
         super();
-        SpeedMeterConfig config = JsonConfig.create(SpeedMeterConfig.class);
-        this.setCapacity(config.getTimeFrame() * config.getFramesPerSecond());
-        this.setInterval(1000 / config.getFramesPerSecond());
-        setColorA(new Color((int) Long.parseLong(config.getCurrentColorA(), 16), true));
-        setColorB(new Color((int) Long.parseLong(config.getCurrentColorB(), 16), true));
-        setAverageColor(new Color((int) Long.parseLong(config.getAverageGraphColor(), 16), true));
+
+        SpeedMeterConfig sConfig = JsonConfig.create(SpeedMeterConfig.class);
+        this.setCapacity(sConfig.getTimeFrame() * sConfig.getFramesPerSecond());
+        this.setInterval(1000 / sConfig.getFramesPerSecond());
+        setColorA(new Color((int) Long.parseLong(sConfig.getCurrentColorA(), 16), true));
+        setColorB(new Color((int) Long.parseLong(sConfig.getCurrentColorB(), 16), true));
+        setAverageColor(new Color((int) Long.parseLong(sConfig.getAverageGraphColor(), 16), true));
         Color col = new JLabel().getForeground();
         setAverageTextColor(col);
         setTextColor(col);
         setOpaque(false);
-        Color a = new Color((int) Long.parseLong(config.getLimitColorA(), 16), true);
-        Color b = new Color((int) Long.parseLong(config.getLimitColorB(), 16), true);
+        Color a = new Color((int) Long.parseLong(sConfig.getLimitColorA(), 16), true);
+        Color b = new Color((int) Long.parseLong(sConfig.getLimitColorB(), 16), true);
         speedLimiter = new Limiter(a, b);
-        speedLimiter.setValue(JsonConfig.create(GeneralSettings.class).getDownloadSpeedLimit() * 1024);
-        JsonConfig.create(GeneralSettings.class).getStorageHandler().getEventSender().addListener(new ConfigEventListener() {
+        config = JsonConfig.create(GeneralSettings.class);
+        speedLimiter.setValue(config.isDownloadSpeedLimitEnabled() ? config.getDownloadSpeedLimit() : 0);
+        sConfig.getStorageHandler().getEventSender().addListener(new ConfigEventListener() {
 
-            public void onConfigValueModified(ConfigInterface config, String key, Object newValue) {
-                if ("downloadSpeedLimit".equalsIgnoreCase(key)) {
+            public void onConfigValueModified(ConfigInterface c, String key, Object newValue) {
+                if ("downloadSpeedLimit".equalsIgnoreCase(key) || "DownloadSpeedLimitEnabled".equalsIgnoreCase(key)) {
                     new EDTRunner() {
 
                         @Override
                         protected void runInEDT() {
 
                             resetAverage();
-                            speedLimiter.setValue(JsonConfig.create(GeneralSettings.class).getDownloadSpeedLimit() * 1024);
+                            speedLimiter.setValue(config.isDownloadSpeedLimitEnabled() ? config.getDownloadSpeedLimit() : 0);
                             // repaint immediately
                             new EDTRunner() {
 
@@ -84,6 +90,14 @@ public class SpeedMeterPanel extends Graph {
 
         setLimiter(new Limiter[] { speedLimiter });
         if (start) start();
+    }
+
+    protected String createTooltipText() {
+        if (config.isDownloadSpeedLimitEnabled() && config.getDownloadSpeedLimit() > 0) {
+            return getAverageSpeedString() + "  " + getSpeedString() + "\r\n" + _GUI._.SpeedMeterPanel_createTooltipText_(SizeFormatter.formatBytes(config.getDownloadSpeedLimit()));
+        } else {
+            return getAverageSpeedString() + "  " + getSpeedString();
+        }
     }
 
     @Override

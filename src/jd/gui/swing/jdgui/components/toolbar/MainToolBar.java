@@ -16,11 +16,17 @@
 
 package jd.gui.swing.jdgui.components.toolbar;
 
+import java.awt.Component;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+
 import jd.controlling.JDController;
 import jd.event.ControlEvent;
 import jd.event.ControlIDListener;
 import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.jdgui.components.speedmeter.SpeedMeterPanel;
+
+import org.jdownloader.gui.views.downloads.QuickSettingsPopup;
 
 public class MainToolBar extends ToolBar {
 
@@ -38,6 +44,18 @@ public class MainToolBar extends ToolBar {
         super();
 
         speedmeter = new SpeedMeterPanel(true, false);
+        speedmeter.addMouseListener(new MouseAdapter() {
+
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                if (e.isPopupTrigger() || e.getButton() == MouseEvent.BUTTON3) {
+                    QuickSettingsPopup pu = new QuickSettingsPopup();
+                    pu.show((Component) e.getSource(), e.getX(), e.getY());
+
+                }
+            }
+
+        });
         JDController.getInstance().addControlListener(new ControlIDListener(ControlEvent.CONTROL_DOWNLOAD_START, ControlEvent.CONTROL_DOWNLOAD_STOP) {
             @Override
             public void controlIDEvent(final ControlEvent event) {

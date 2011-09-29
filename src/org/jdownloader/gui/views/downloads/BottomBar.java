@@ -10,9 +10,6 @@ import javax.swing.JPopupMenu;
 import javax.swing.Timer;
 
 import jd.controlling.DownloadWatchDog;
-import jd.gui.swing.jdgui.menu.ChunksEditor;
-import jd.gui.swing.jdgui.menu.ParalellDownloadsEditor;
-import jd.gui.swing.jdgui.menu.SpeedlimitEditor;
 import jd.gui.swing.jdgui.menu.actions.AddContainerAction;
 import jd.gui.swing.jdgui.menu.actions.AddUrlAction;
 import jd.gui.swing.jdgui.menu.actions.CleanupDownloads;
@@ -123,10 +120,7 @@ public class BottomBar extends MigPanel implements ActionListener {
                 }
 
                 public void actionPerformed(ActionEvent e) {
-                    JPopupMenu pu = new JPopupMenu();
-                    pu.add(new ChunksEditor());
-                    pu.add(new ParalellDownloadsEditor());
-                    pu.add(new SpeedlimitEditor());
+                    QuickSettingsPopup pu = new QuickSettingsPopup();
                     int[] insets = LookAndFeelController.getInstance().getLAFOptions().getPopupBorderInsets();
                     pu.show((Component) e.getSource(), -pu.getPreferredSize().width + insets[3] + ((Component) e.getSource()).getWidth(), -pu.getPreferredSize().height + insets[2]);
                     // new CleanupMenu()

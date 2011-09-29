@@ -9,6 +9,7 @@ import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.KeyHandler;
 import org.appwork.swing.components.ExtSpinner;
+import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.GeneralSettings;
@@ -31,10 +32,18 @@ public class ParalellDownloadsEditor extends MenuEditor implements ChangeListene
     public void onConfigValidatorError(ConfigInterface config, Throwable validateException, KeyHandler methodHandler) {
     }
 
-    public void onConfigValueModified(ConfigInterface config, String key, Object newValue) {
-        if ("MaxSimultaneDownloads".equalsIgnoreCase(key)) {
-            spinner.setValue(newValue);
-        }
+    public void onConfigValueModified(ConfigInterface config, final String key, final Object newValue) {
+
+        new EDTRunner() {
+
+            @Override
+            protected void runInEDT() {
+                if ("MaxSimultaneDownloads".equalsIgnoreCase(key)) {
+                    spinner.setValue(newValue);
+                }
+            }
+        };
+
     }
 
     public void stateChanged(ChangeEvent e) {

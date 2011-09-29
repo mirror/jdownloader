@@ -194,7 +194,7 @@ public final class TrayIconPopup extends JWindow implements MouseListener, Chang
 
     private void initBottomPanel() {
         spMaxSpeed = new JDSpinner(T._.plugins_trayicon_popup_bottom_speed(), "width 60!,h 20!,right");
-        spMaxSpeed.getSpinner().setModel(new SpinnerNumberModel(JsonConfig.create(GeneralSettings.class).getDownloadSpeedLimit(), 0, Integer.MAX_VALUE, 50));
+        spMaxSpeed.getSpinner().setModel(new SpinnerNumberModel(JsonConfig.create(GeneralSettings.class).isDownloadSpeedLimitEnabled() ? JsonConfig.create(GeneralSettings.class).getDownloadSpeedLimit() : 0, 0, Integer.MAX_VALUE, 50));
         spMaxSpeed.setToolTipText(T._.gui_tooltip_statusbar_speedlimiter());
         spMaxSpeed.getSpinner().addChangeListener(this);
         colorizeSpinnerSpeed();

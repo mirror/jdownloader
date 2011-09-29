@@ -238,7 +238,7 @@ public class Serverhandler implements Handler {
         } else if (requestUrl.equals("/get/speedlimit")) {
             // Get speed limit
 
-            final int value = JsonConfig.create(GeneralSettings.class).getDownloadSpeedLimit();
+            final int value = JsonConfig.create(GeneralSettings.class).isDownloadSpeedLimitEnabled() ? JsonConfig.create(GeneralSettings.class).getDownloadSpeedLimit() : 0;
             response.addContent(value);
         } else if (requestUrl.equals("/get/downloadstatus")) {
             // Get download status

@@ -101,7 +101,7 @@ public class AntiReconnectExtension extends AbstractExtension<AntiReconnectConfi
         config.setGroup(new ConfigGroup(T._.gui_config_antireconnect_oldgroup(), "settings"));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), CONFIG_OLDDOWNLOADS, T._.gui_config_antireconnect_olddownloads(), 1, 20, 1).setDefaultValue(JsonConfig.create(GeneralSettings.class).getMaxSimultaneDownloads()));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), CONFIG_OLDRECONNECT, T._.gui_config_antireconnect_oldreconnect()).setDefaultValue(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_ALLOW_RECONNECT)));
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), CONFIG_OLDSPEED, T._.gui_config_antireconnect_oldspeed(), 0, 500000, 10).setDefaultValue(JsonConfig.create(GeneralSettings.class).getDownloadSpeedLimit()));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), CONFIG_OLDSPEED, T._.gui_config_antireconnect_oldspeed(), 0, 500000, 10).setDefaultValue(JsonConfig.create(GeneralSettings.class).isDownloadSpeedLimitEnabled() ? JsonConfig.create(GeneralSettings.class).getDownloadSpeedLimit() : 0));
         config.setGroup(new ConfigGroup(T._.gui_config_antireconnect_newgroup(), "settings"));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), CONFIG_NEWDOWNLOADS, T._.gui_config_antireconnect_newdownloads(), 1, 20, 1).setDefaultValue(3));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), CONFIG_NEWRECONNECT, T._.gui_config_antireconnect_newreconnect()).setDefaultValue(false));

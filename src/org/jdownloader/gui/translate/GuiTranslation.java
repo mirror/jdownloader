@@ -2770,4 +2770,13 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Open Quicksettings" })
     String BottomBar_BottomBar_settings();
 
+    @Default(lngs = { "en" }, values = { "Max. simultaneous Downloads" })
+    String gui_config_download_simultan_downloads();
+
+    @Default(lngs = { "en" }, values = { "Max. Chunks per Download" })
+    String gui_config_download_max_chunks();
+
+    @Default(lngs = { "en" }, values = { "Speedlimit: %s1/s" })
+    String SpeedMeterPanel_createTooltipText_(String formatBytes);
+
 }

@@ -389,7 +389,7 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
         t.setParam("config_current_speed", "" + (DownloadWatchDog.getInstance().getConnectionManager().getIncommingBandwidthUsage() / 1024));
 
         t.setParam("config_max_downloads", JsonConfig.create(GeneralSettings.class).getMaxSimultaneDownloads());
-        t.setParam("config_max_speed", JsonConfig.create(GeneralSettings.class).getDownloadSpeedLimit());
+        t.setParam("config_max_speed", JsonConfig.create(GeneralSettings.class).isDownloadSpeedLimitEnabled() ? JsonConfig.create(GeneralSettings.class).getDownloadSpeedLimit() : 0);
 
         if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_ALLOW_RECONNECT, true)) {
             t.setParam("config_autoreconnect", "checked");

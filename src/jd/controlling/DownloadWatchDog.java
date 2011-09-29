@@ -122,7 +122,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         config = JsonConfig.create(GeneralSettings.class);
 
         this.connectionManager = new ThrottledConnectionManager();
-        this.connectionManager.setIncommingBandwidthLimit(config.getDownloadSpeedLimit() * 1024);
+        this.connectionManager.setIncommingBandwidthLimit(config.isDownloadSpeedLimitEnabled() ? config.getDownloadSpeedLimit() : 0);
         stateMachine = new StateMachine(this, IDLE_STATE, STOPPED_STATE);
         stateMonitor = new StateMonitor(stateMachine);
         this.dlc = DownloadController.getInstance();
