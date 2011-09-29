@@ -46,7 +46,6 @@ public class ChoMikujPl extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        br.setFollowRedirects(false);
         String parameter = Encoding.htmlDecode(param.toString());
         // The message used on errors in this plugin
         String error = "Error while decrypting link: " + parameter;
@@ -55,7 +54,14 @@ public class ChoMikujPl extends PluginForDecrypt {
         String savePost = null;
         String saveLink = null;
         String password = null;
+        br.setFollowRedirects(false);
         br.getPage(parameter);
+        // If we have a new link we have to use it or we'll have big problems
+        // later when POSTing things to the server
+        if (br.getRedirectLocation() != null) {
+            parameter = br.getRedirectLocation();
+            br.getPage(br.getRedirectLocation());
+        }
         // // Check if the link directly wants to access a specified page of the
         // gallery, if so, remove it to avoid problems
         String checkPage = new Regex(parameter, "chomikuj\\.pl/.*?(,\\d+)$").getMatch(0);

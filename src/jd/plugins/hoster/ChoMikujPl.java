@@ -63,7 +63,7 @@ public class ChoMikujPl extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         if (link.getStringProperty("video") == null) {
-            getDllink(link);
+            getDllink(link, br.cloneBrowser());
             if (br.containsHTML("Najprawdopodobniej plik został w miedzyczasie usunięty z konta")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             if (br.containsHTML(PREMIUMONLY)) {
                 link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.chomikujpl.only4registered", PREMIUMONLYUSERTEXT));
@@ -105,7 +105,7 @@ public class ChoMikujPl extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         if (br.containsHTML(PREMIUMONLY)) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.chomikujpl.only4registered", PREMIUMONLYUSERTEXT));
-        if (!videolink) getDllink(downloadLink);
+        if (!videolink) getDllink(downloadLink, br);
         if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String additionalPath = downloadLink.getStringProperty("path");
         if (additionalPath != null) downloadLink.addSubdirectory(additionalPath);
@@ -117,8 +117,7 @@ public class ChoMikujPl extends PluginForHost {
         dl.startDownload();
     }
 
-    public void getDllink(DownloadLink theLink) throws NumberFormatException, PluginException, IOException {
-        Browser br2 = br.cloneBrowser();
+    public void getDllink(DownloadLink theLink, Browser br2) throws NumberFormatException, PluginException, IOException {
         // Set by the decrypter if the link is password protected
         String savedLink = theLink.getStringProperty("savedlink");
         String savedPost = theLink.getStringProperty("savedpost");
@@ -164,15 +163,19 @@ public class ChoMikujPl extends PluginForHost {
         login(account);
         br.setFollowRedirects(false);
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        getDllink(link);
+        Browser brc = br.cloneBrowser();
+        DLLINK = null;
+        getDllink(link, brc);
         if (DLLINK == null) {
-            String[] crappyConfirmVars = br.getRegex("\\\\u0027(.*?)\\\\u0027").getColumn(0);
-            if (crappyConfirmVars == null || crappyConfirmVars.length < 3) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            Regex confirmVarsRegex = new Regex(brc.toString().replace("\\", ""), "fileId=\\d+u0027,[a-z\r\n\t ]+u0027(.*?)u0027, u0027(.*?)u0027");
+            String argh1 = confirmVarsRegex.getMatch(0);
+            String argh2 = confirmVarsRegex.getMatch(1);
+            if (argh1 == null || argh2 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             // For some files they ask
             // "Do you really want to download this file", so we have to confirm
             // it with "YES" here ;)
-            br.postPage("http://chomikuj.pl/Chomik/License/acceptOwnTransfer?fileId=" + new Regex(link.getDownloadURL(), FILEIDREGEX).getMatch(0), "orgFile=" + Encoding.urlEncode(crappyConfirmVars[1]) + "&userSelection=" + Encoding.urlEncode(crappyConfirmVars[2]));
-            getDllink(link);
+            br.postPage("http://chomikuj.pl/Chomik/License/acceptOwnTransfer?fileId=" + new Regex(link.getDownloadURL(), FILEIDREGEX).getMatch(0), "orgFile=" + Encoding.urlEncode(argh1) + "&userSelection=" + Encoding.urlEncode(argh2));
+            getDllink(link, brc);
         }
         if (DLLINK == null) {
             logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");

@@ -38,7 +38,7 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "easy-share.com" }, urls = { "http://[\\w\\d\\.]*?easy\\-share\\.com/(\\d+|[A-Z0-9]+/.{1})" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "easy-share.com" }, urls = { "http://[\\w\\d\\.]*?easy\\-share\\.com/([A-Z0-9]+/.{1}|\\d+)" }, flags = { 2 })
 public class EasyShareCom extends PluginForHost {
 
     private static Boolean longwait = null;
