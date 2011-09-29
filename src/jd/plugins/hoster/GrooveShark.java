@@ -44,6 +44,7 @@ public class GrooveShark extends PluginForHost {
 
     public GrooveShark(final PluginWrapper wrapper) {
         super(wrapper);
+        setStartIntervall(2000l + (long) 1000 * (int) Math.round(Math.random() * 3 + Math.random() * 3));
     }
 
     private String cleanNameForURL(String name) {
@@ -206,6 +207,7 @@ public class GrooveShark extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+        setBrowserExclusive();
         final String url = downloadLink.getDownloadURL();
         if (new Regex(url, "grooveshark\\.com\\/song\\/\\d+").matches()) {
             return AvailableStatus.TRUE;
