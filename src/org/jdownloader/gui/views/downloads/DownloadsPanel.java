@@ -51,6 +51,7 @@ public class DownloadsPanel extends SwitchPanel implements DownloadControllerLis
             }, 250, 1000, TimeUnit.MILLISECONDS);
         }
         DownloadController.getInstance().addListener(this);
+        table.requestFocusInWindow();
     }
 
     @Override

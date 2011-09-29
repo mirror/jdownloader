@@ -94,7 +94,7 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
     protected void onShow() {
         tableModel.recreateModel();
         LinkCollector.getInstance().addListener(this);
-
+        table.requestFocusInWindow();
     }
 
     @Override

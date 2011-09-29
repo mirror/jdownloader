@@ -115,7 +115,6 @@ public class ToolbarController extends ConfigPanel {
         WHITELIST.add("action.restore");
         WHITELIST.add("premiumMenu.configuration");
         WHITELIST.add("action.passwordlist");
-        WHITELIST.add("action.premiumview.addacc");
         WHITELIST.add("action.premium.buy");
 
         WHITELIST.add("action.about");

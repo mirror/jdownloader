@@ -38,9 +38,9 @@ import jd.controlling.JDPluginLogger;
 import jd.controlling.SingleDownloadController;
 import jd.controlling.captcha.CaptchaController;
 import jd.gui.UserIF;
-import jd.gui.swing.jdgui.actions.ActionController;
 import jd.gui.swing.jdgui.actions.ToolBarAction.Types;
 import jd.gui.swing.jdgui.menu.MenuAction;
+import jd.gui.swing.jdgui.views.settings.panels.accountmanager.NewAction;
 import jd.http.Browser;
 import jd.nutils.Formatter;
 import jd.nutils.JDImage;
@@ -196,7 +196,7 @@ public abstract class PluginForHost extends Plugin implements FavIconRequestor {
         }
         if (eID == 2) {
             UserIF.getInstance().requestPanel(UserIF.Panels.PREMIUMCONFIG, null);
-            ActionController.getToolBarAction("action.premiumview.addacc").actionPerformed(new ActionEvent(this, 0, "addaccount"));
+            new NewAction().actionPerformed(new ActionEvent(this, 0, "addaccount"));
             return;
         }
         if (eID == 3) {

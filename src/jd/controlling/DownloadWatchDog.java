@@ -472,16 +472,6 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
     }
 
     /**
-     * returns how many concurrent downloads may run
-     * 
-     * @return
-     */
-    public int getSimultanDownloadNum() {
-
-        return config.getMaxSimultaneDownloads();
-    }
-
-    /**
      * returns how many concurrent downloads from the same host may run
      * 
      * @return
@@ -775,7 +765,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
     private int setDownloadActive() {
         DownloadControlInfo dci = null;
         int ret = 0;
-        int maxDownloads = getSimultanDownloadNum();
+        int maxDownloads = config.getMaxSimultaneDownloads();
         while ((this.forcedLinksWaiting() || this.activeDownloads.get() < maxDownloads)) {
             if (!this.newDLStartAllowed()) { return ret; }
             if (this.isStopMarkReached()) { return ret; }

@@ -84,7 +84,6 @@ public class LinkgrabberView extends View {
     }
 
     private void setActionStatus(boolean enabled) {
-
         ActionController.getToolBarAction("action.remove_dupes").setEnabled(enabled);
         ActionController.getToolBarAction("action.remove_disabled").setEnabled(enabled);
         ActionController.getToolBarAction("action.remove_offline").setEnabled(enabled);

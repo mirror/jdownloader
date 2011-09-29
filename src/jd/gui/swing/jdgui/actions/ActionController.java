@@ -35,14 +35,12 @@ import jd.event.ControlIDListener;
 import jd.gui.UserIF;
 import jd.gui.UserIO;
 import jd.gui.swing.SwingGui;
-import jd.gui.swing.dialog.AccountDialog;
 import jd.gui.swing.jdgui.components.premiumbar.PremiumStatus;
 import jd.gui.swing.jdgui.views.linkgrabber.LinkGrabberPanel;
 import jd.gui.swing.jdgui.views.settings.panels.addons.ExtensionManager;
 import jd.gui.swing.jdgui.views.settings.panels.passwords.PasswordList;
 import jd.nutils.JDFlags;
 import jd.plugins.LinkGrabberFilePackage;
-import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 import jd.utils.WebUpdate;
 
@@ -623,42 +621,6 @@ public class ActionController {
 
         };
 
-        new ToolBarAction(_GUI._.action_add_premium_account(), "action.premiumview.addacc", "add") {
-
-            private static final long serialVersionUID = -4407938288408350792L;
-
-            @Override
-            public void initDefaults() {
-            }
-
-            @Override
-            public void onAction(final ActionEvent e) {
-                /*
-                 * no need for IOEQ or Thread, as we want to show Dialog and
-                 * that blocks EDT anyway
-                 */
-                if (e.getSource() instanceof PluginForHost) {
-                    AccountDialog.showDialog((PluginForHost) e.getSource(), null);
-                } else {
-                    AccountDialog.showDialog(null, null);
-                }
-            }
-
-            @Override
-            protected String createMnemonic() {
-                return _GUI._.action_add_premium_account_mnemonic();
-            }
-
-            @Override
-            protected String createAccelerator() {
-                return _GUI._.action_add_premium_account_accelerator();
-            }
-
-            @Override
-            protected String createTooltip() {
-                return _GUI._.action_add_premium_account_tooltip();
-            }
-        };
         new ToolBarAction(_GUI._.action_settings(), "addonsMenu.configuration", "extension") {
             private static final long serialVersionUID = -3613887193435347389L;
 
