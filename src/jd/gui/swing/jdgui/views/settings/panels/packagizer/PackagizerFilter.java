@@ -14,12 +14,12 @@ import org.appwork.swing.exttable.utils.MinimumSelectionObserver;
 public class PackagizerFilter extends JPanel implements SettingsComponent {
     private static final long serialVersionUID = 6070464296168772795L;
     private MigPanel          tb;
-    private FilterTable       table;
+    private PackagizerFilterTable       table;
 
     public PackagizerFilter() {
         super(new MigLayout("ins 0,wrap 1", "[grow,fill]", "[][grow,fill]"));
         tb = new MigPanel("ins 0", "[][]", "[]");
-        table = new FilterTable();
+        table = new PackagizerFilterTable();
         tb.add(new JButton(new NewAction(table)), "height 26!,sg 1");
         RemoveAction ra;
         tb.add(new JButton(ra = new RemoveAction(table)), "height 26!,sg 1");
@@ -30,7 +30,7 @@ public class PackagizerFilter extends JPanel implements SettingsComponent {
 
     }
 
-    public FilterTable getTable() {
+    public PackagizerFilterTable getTable() {
         return table;
     }
 

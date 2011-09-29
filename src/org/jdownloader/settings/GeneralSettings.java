@@ -118,10 +118,10 @@ public interface GeneralSettings extends ConfigInterface {
     // JSonWrapper.get("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED,
     // 0)
     @AboutConfig
-    @Description("Download Speed limit in kilobytes.")
+    @Description("Download Speed limit in bytes.")
     int getDownloadSpeedLimit();
 
-    void setDownloadSpeedLimit(int kb);
+    void setDownloadSpeedLimit(int bytes);
 
     @AboutConfig
     @Description("Pause Speed. in Pause Mode we limit speed to this value to keep connections open, but use hardly bandwidth")
@@ -180,4 +180,9 @@ public interface GeneralSettings extends ConfigInterface {
     long getWaittimeOnConnectionLoss();
 
     void setWaittimeOnConnectionLoss(long milliseconds);
+
+    @AboutConfig
+    boolean isDownloadSpeedLimitEnabled();
+
+    void setDownloadSpeedLimitEnabled(boolean b);
 }

@@ -15,12 +15,12 @@ import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.controlling.packagizer.PackagizerRule;
 
-public class FilterTable extends BasicJDTable<PackagizerRule> {
+public class PackagizerFilterTable extends BasicJDTable<PackagizerRule> {
 
     private static final long serialVersionUID = 4698030718806607175L;
 
-    public FilterTable() {
-        super(new FilterTableModel("FilterTable2"));
+    public PackagizerFilterTable() {
+        super(new FilterTableModel("PackagizerFilterTable"));
         this.setSearchEnabled(true);
         getTableHeader().setReorderingAllowed(false);
 

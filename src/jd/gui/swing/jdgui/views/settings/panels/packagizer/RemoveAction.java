@@ -12,18 +12,18 @@ import org.jdownloader.gui.views.components.AbstractRemoveAction;
 public class RemoveAction extends AbstractRemoveAction {
     private static final long         serialVersionUID = -477419276505058907L;
     private ArrayList<PackagizerRule> selected;
-    private FilterTable               table;
+    private PackagizerFilterTable               table;
     private ArrayList<PackagizerRule> remove;
     private boolean                   ignoreSelection  = false;
 
-    public RemoveAction(FilterTable table) {
+    public RemoveAction(PackagizerFilterTable table) {
         this.table = table;
 
         this.ignoreSelection = true;
 
     }
 
-    public RemoveAction(FilterTable table, ArrayList<PackagizerRule> selected, boolean force) {
+    public RemoveAction(PackagizerFilterTable table, ArrayList<PackagizerRule> selected, boolean force) {
         this.table = table;
         this.selected = selected;
     }

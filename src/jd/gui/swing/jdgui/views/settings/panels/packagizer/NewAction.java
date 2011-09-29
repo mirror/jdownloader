@@ -17,9 +17,9 @@ public class NewAction extends AbstractAddAction {
      */
     private static final long serialVersionUID = 1L;
 
-    private FilterTable       table;
+    private PackagizerFilterTable       table;
 
-    public NewAction(FilterTable table) {
+    public NewAction(PackagizerFilterTable table) {
         super();
         this.table = table;
 

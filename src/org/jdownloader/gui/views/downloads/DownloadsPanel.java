@@ -11,7 +11,6 @@ import jd.controlling.DownloadControllerListener;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import net.miginfocom.swing.MigLayout;
 
-import org.jdownloader.gui.views.BottomBar;
 import org.jdownloader.gui.views.downloads.table.DownloadsTable;
 import org.jdownloader.gui.views.downloads.table.DownloadsTableModel;
 

@@ -225,4 +225,11 @@ public class GeneralSettingsDefaults implements GeneralSettings {
     public void setFlushBufferTimeout(int ms) {
     }
 
+    public boolean isDownloadSpeedLimitEnabled() {
+        return false;
+    }
+
+    public void setDownloadSpeedLimitEnabled(boolean b) {
+    }
+
 }

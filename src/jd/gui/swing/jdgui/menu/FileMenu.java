@@ -5,7 +5,6 @@ import javax.swing.JMenuItem;
 
 import jd.gui.swing.jdgui.menu.actions.ExitAction;
 import jd.gui.swing.jdgui.menu.actions.RestartAction;
-import jd.gui.swing.jdgui.menu.actions.SettingsAction;
 import jd.nutils.OSDetector;
 
 import org.jdownloader.gui.translate._GUI;
@@ -18,8 +17,7 @@ public class FileMenu extends JMenu {
         super(_GUI._.jd_gui_skins_simple_simplegui_menubar_filemenu());
 
         add(new SaveMenu());
-        addSeparator();
-        add(new SettingsAction());
+
         addSeparator();
 
         add(new RestartAction());
