@@ -57,6 +57,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
     private LinkCollector() {
         linkChecker = new LinkChecker<CrawledLink>();
         linkChecker.setLinkCheckHandler(this);
+        setCrawlerFilter(LinkCrawler.defaultFilterFactory());
         config = JsonConfig.create(LinkCollectorConfig.class);
     }
 
@@ -108,8 +109,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
     public LinkCrawler addCrawlerJob(final CrawlerJob job) {
         if (job == null) throw new IllegalArgumentException("job is null");
         LinkCrawler lc = new LinkCrawler();
-        LinkCrawlerFilter filter = this.crawlerFilter;
-        if (filter != null) lc.setFilter(filter);
+        lc.setFilter(crawlerFilter);
         if (config.getDoLinkCheck()) {
             lc.setHandler(new LinkCrawlerHandler() {
                 public void handleFinalLink(CrawledLink link) {
@@ -163,7 +163,11 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
     }
 
     public void linkCheckDone(CrawledLink link) {
-        addCrawledLink(link);
+        if (crawlerFilter.isCrawledLinkFiltered(link)) {
+            System.out.println("Filtered: " + link);
+        } else {
+            addCrawledLink(link);
+        }
     }
 
     public void linkCheckStarted() {
@@ -297,6 +301,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
      *            the crawlerFilter to set
      */
     public void setCrawlerFilter(LinkCrawlerFilter crawlerFilter) {
+        if (crawlerFilter == null) throw new IllegalArgumentException("crawlerFilter is null");
         this.crawlerFilter = crawlerFilter;
     }
 

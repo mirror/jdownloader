@@ -625,7 +625,7 @@ public class LinkCrawler implements IOPermission {
         };
     }
 
-    protected LinkCrawlerFilter defaultFilterFactory() {
+    public static LinkCrawlerFilter defaultFilterFactory() {
         return new LinkCrawlerFilter() {
 
             public boolean isCrawledLinkFiltered(CrawledLink link) {
