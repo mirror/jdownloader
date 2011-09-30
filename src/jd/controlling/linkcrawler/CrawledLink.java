@@ -173,7 +173,8 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
     }
 
     public boolean isEnabled() {
-        return false;
+        if (dlLink != null) return dlLink.isEnabled();
+        return true;
     }
 
     public long getCreated() {

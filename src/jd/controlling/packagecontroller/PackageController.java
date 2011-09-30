@@ -177,12 +177,13 @@ public abstract class PackageController<E extends AbstractPackageNode<V, E>, V e
         }
     }
 
-    public void addmoveChildren(final E pkg, final List<V> children, final int index) {
-        if (pkg != null && children != null && children.size() > 0) {
+    public void addmoveChildren(final E pkg, final List<V> movechildren, final int index) {
+        if (pkg != null && movechildren != null && movechildren.size() > 0) {
             IOEQ.getQueue().add(new QueueAction<Void, RuntimeException>() {
 
                 @Override
                 protected Void run() throws RuntimeException {
+                    LinkedList<V> children = new LinkedList<V>(movechildren);
                     if (PackageController.this != pkg.getControlledBy()) {
                         /*
                          * package not yet under control of this
@@ -312,11 +313,11 @@ public abstract class PackageController<E extends AbstractPackageNode<V, E>, V e
             @Override
             protected Void run() throws RuntimeException {
                 ArrayList<E> clearList = null;
-                writeLock();
+                boolean readL = readLock();
                 try {
                     clearList = new ArrayList<E>(packages);
                 } finally {
-                    writeUnlock();
+                    readUnlock(readL);
                 }
                 for (E pkg : clearList) {
                     removePackage(pkg);

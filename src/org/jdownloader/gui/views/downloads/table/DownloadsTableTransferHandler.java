@@ -51,11 +51,11 @@ public class DownloadsTableTransferHandler extends TransferHandler {
             if (isInsert) {
                 /* handle insert here */
                 Object beforeElement = table.getExtTableModel().getObjectbyRow(dropRow - 1);
-                if (beforeElement == null) {
+                Object afterElement = table.getExtTableModel().getObjectbyRow(dropRow);
+                if (beforeElement == null && afterElement == null) {
                     /* no before element, table is empty */
                     return true;
                 }
-                Object afterElement = table.getExtTableModel().getObjectbyRow(dropRow);
                 if (linksAvailable && packagesAvailable) {
                     /* we dont allow links/packages to get mixed on insert */
                     return false;

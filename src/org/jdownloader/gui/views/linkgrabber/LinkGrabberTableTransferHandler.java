@@ -11,6 +11,8 @@ import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
 
+import org.appwork.utils.logging.Log;
+
 public class LinkGrabberTableTransferHandler extends TransferHandler {
 
     /**
@@ -33,7 +35,7 @@ public class LinkGrabberTableTransferHandler extends TransferHandler {
     public boolean canImport(TransferSupport support) {
         if (!table.isOriginalOrder()) { return false; }
         if (support.isDrop()) {
-            /* we want to drop something */
+            /* dragdrop */
             JTable.DropLocation dl = (JTable.DropLocation) support.getDropLocation();
             boolean linksAvailable = support.isDataFlavorSupported(CrawledLinksDataFlavor.Flavor);
             boolean packagesAvailable = support.isDataFlavorSupported(CrawledPackagesDataFlavor.Flavor);
@@ -49,13 +51,13 @@ public class LinkGrabberTableTransferHandler extends TransferHandler {
             boolean isInsert = dl.isInsertRow();
             int dropRow = dl.getRow();
             if (isInsert) {
-                /* handle insert here */
+                /* handle insert,move here */
                 Object beforeElement = table.getExtTableModel().getObjectbyRow(dropRow - 1);
-                if (beforeElement == null) {
+                Object afterElement = table.getExtTableModel().getObjectbyRow(dropRow);
+                if (beforeElement == null && afterElement == null) {
                     /* no before element, table is empty */
                     return true;
                 }
-                Object afterElement = table.getExtTableModel().getObjectbyRow(dropRow);
                 if (linksAvailable && packagesAvailable) {
                     /* we dont allow links/packages to get mixed on insert */
                     return false;
@@ -101,7 +103,7 @@ public class LinkGrabberTableTransferHandler extends TransferHandler {
                     }
                 }
             } else {
-                /* handle dropOn here */
+                /* handle dropOn,merge here */
                 Object onElement = table.getExtTableModel().getObjectbyRow(dropRow);
                 if (onElement != null) {
                     /* on 1 element */
@@ -165,7 +167,58 @@ public class LinkGrabberTableTransferHandler extends TransferHandler {
     @Override
     public boolean importData(TransferSupport support) {
         if (!canImport(support)) return false;
-        return false;
+        final ArrayList<CrawledLink> links;
+        final ArrayList<CrawledPackage> packages;
+        if (support.isDataFlavorSupported(CrawledLinksDataFlavor.Flavor)) {
+            links = LinkGrabberTransferable.getChildren(support.getTransferable());
+        } else {
+            links = null;
+        }
+        if (support.isDataFlavorSupported(CrawledPackagesDataFlavor.Flavor)) {
+            packages = LinkGrabberTransferable.getPackages(support.getTransferable());
+        } else {
+            packages = null;
+        }
+        if (support.isDrop()) {
+            /* dragdrop */
+            JTable.DropLocation dl = (JTable.DropLocation) support.getDropLocation();
+            final boolean isInsert = dl.isInsertRow();
+            int dropRow = dl.getRow();
+            final Object afterElement = table.getExtTableModel().getObjectbyRow(dropRow);
+            if (isInsert == false) {
+                /* dropOn,merge */
+                if (afterElement instanceof CrawledPackage) {
+                    LinkCollector.getInstance().merge((CrawledPackage) afterElement, links, packages);
+                } else {
+                    Log.exception(new Throwable("this should not happen!"));
+                }
+            } else {
+                final Object beforeElement = table.getExtTableModel().getObjectbyRow(dropRow - 1);
+                /* insert,move */
+                if (packages != null) {
+                    /* move packages */
+                    CrawledPackage dest = null;
+                    boolean beforeAfter = false;
+                    if (afterElement instanceof CrawledPackage) {
+                        dest = (CrawledPackage) afterElement;
+                    }
+                    if (dest == null && beforeElement != null) {
+                        beforeAfter = true;
+                        if (beforeElement instanceof CrawledPackage) {
+                            dest = (CrawledPackage) beforeElement;
+                        } else if (beforeElement instanceof CrawledLink) {
+                            dest = ((CrawledLink) beforeElement).getParentNode();
+                        }
+                    }
+                    if (dest != null) {
+                        LinkCollector.getInstance().move(packages, dest, beforeAfter);
+                    }
+                }
+            }
+        } else {
+            /* paste */
+        }
+        return true;
     }
 
     @Override

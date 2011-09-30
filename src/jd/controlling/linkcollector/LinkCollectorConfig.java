@@ -15,4 +15,12 @@ public interface LinkCollectorConfig extends ConfigInterface {
     boolean getDoLinkCheck();
 
     void setDoLinkCheck(boolean b);
+
+    @DefaultBooleanValue(true)
+    @AboutConfig
+    @RequiresRestart
+    @Description("use top(true) or bottom(false) position for merge")
+    boolean getDoMergeTopBottom();
+
+    void setDoMergeTopBottom(boolean b);
 }
