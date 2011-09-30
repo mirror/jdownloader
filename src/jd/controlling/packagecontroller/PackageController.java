@@ -40,12 +40,21 @@ public abstract class PackageController<E extends AbstractPackageNode<V, E>, V e
      * @param index
      */
     public void addmovePackageAt(final E pkg, final int index) {
+        addmovePackageAt(pkg, index, false);
+    }
+
+    protected void addmovePackageAt(final E pkg, final int index, final boolean allowEmpty) {
         if (pkg != null) {
             IOEQ.getQueue().add(new QueueAction<Void, RuntimeException>() {
 
                 @Override
                 protected Void run() throws RuntimeException {
+                    if (allowEmpty == false && pkg.getChildren().size() == 0) {
+                        /* we dont want empty packages here */
+                        return null;
+                    }
                     boolean isNew = true;
+
                     /**
                      * iterate through all packages, remove the existing one and
                      * add at given position
@@ -179,7 +188,7 @@ public abstract class PackageController<E extends AbstractPackageNode<V, E>, V e
                          * package not yet under control of this
                          * PackageController so lets add it
                          */
-                        PackageController.this.addmovePackageAt(pkg, -1);
+                        PackageController.this.addmovePackageAt(pkg, -1, true);
                     }
                     /* build map for removal of children links */
                     HashMap<E, LinkedList<V>> removeaddMap = new HashMap<E, LinkedList<V>>();
