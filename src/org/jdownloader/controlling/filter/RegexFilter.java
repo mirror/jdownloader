@@ -55,4 +55,8 @@ public class RegexFilter extends Filter implements Storable {
         }
 
     }
+
+    public boolean matches(String downloadURL) {
+        return false;
+    }
 }

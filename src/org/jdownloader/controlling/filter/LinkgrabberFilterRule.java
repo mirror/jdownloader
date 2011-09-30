@@ -18,4 +18,10 @@ public class LinkgrabberFilterRule extends FilterRule implements Storable {
         return accept;
     }
 
+    public LinkgrabberFilterRuleWrapper compile() {
+
+        LinkgrabberFilterRuleWrapper ret = new LinkgrabberFilterRuleWrapper(this);
+        return ret;
+    }
+
 }

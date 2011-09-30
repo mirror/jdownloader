@@ -46,7 +46,10 @@ import org.appwork.controlling.StateMonitor;
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownVetoException;
 import org.appwork.shutdown.ShutdownVetoListener;
+import org.appwork.storage.config.ConfigEventListener;
+import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.JsonConfig;
+import org.appwork.storage.config.KeyHandler;
 import org.appwork.utils.Application;
 import org.appwork.utils.net.throttledconnection.ThrottledConnectionManager;
 import org.jdownloader.settings.GeneralSettings;
@@ -123,6 +126,20 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
 
         this.connectionManager = new ThrottledConnectionManager();
         this.connectionManager.setIncommingBandwidthLimit(config.isDownloadSpeedLimitEnabled() ? config.getDownloadSpeedLimit() : 0);
+
+        config.getStorageHandler().getEventSender().addListener(new ConfigEventListener() {
+
+            public void onConfigValueModified(ConfigInterface c, String key, Object newValue) {
+                if ("downloadSpeedLimit".equalsIgnoreCase(key) || "DownloadSpeedLimitEnabled".equalsIgnoreCase(key)) {
+                    connectionManager.setIncommingBandwidthLimit(config.isDownloadSpeedLimitEnabled() ? config.getDownloadSpeedLimit() : 0);
+                }
+
+            }
+
+            public void onConfigValidatorError(ConfigInterface config, Throwable validateException, KeyHandler methodHandler) {
+            }
+        });
+
         stateMachine = new StateMachine(this, IDLE_STATE, STOPPED_STATE);
         stateMonitor = new StateMonitor(stateMachine);
         this.dlc = DownloadController.getInstance();

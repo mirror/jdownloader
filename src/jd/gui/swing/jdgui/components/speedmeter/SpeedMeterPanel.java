@@ -59,7 +59,7 @@ public class SpeedMeterPanel extends Graph {
         speedLimiter = new Limiter(a, b);
         config = JsonConfig.create(GeneralSettings.class);
         speedLimiter.setValue(config.isDownloadSpeedLimitEnabled() ? config.getDownloadSpeedLimit() : 0);
-        sConfig.getStorageHandler().getEventSender().addListener(new ConfigEventListener() {
+        config.getStorageHandler().getEventSender().addListener(new ConfigEventListener() {
 
             public void onConfigValueModified(ConfigInterface c, String key, Object newValue) {
                 if ("downloadSpeedLimit".equalsIgnoreCase(key) || "DownloadSpeedLimitEnabled".equalsIgnoreCase(key)) {

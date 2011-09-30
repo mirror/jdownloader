@@ -15,6 +15,7 @@ import org.appwork.swing.exttable.ExtColumn;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
+import org.jdownloader.controlling.filter.LinkFilterController;
 import org.jdownloader.controlling.filter.LinkgrabberFilterRule;
 
 public class FilterTable extends BasicJDTable<LinkgrabberFilterRule> {
@@ -54,6 +55,7 @@ public class FilterTable extends BasicJDTable<LinkgrabberFilterRule> {
             e1.printStackTrace();
         }
         getExtTableModel().fireTableDataChanged();
+        LinkFilterController.getInstance().update();
     }
 
     /*

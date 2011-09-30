@@ -2,5 +2,7 @@ package jd.controlling.linkcrawler;
 
 public interface LinkCrawlerFilter {
 
-    public boolean isCrawledLinkFiltered(CrawledLink link);
+    public boolean dropByUrl(CrawledLink link);
+
+    public boolean dropByFileProperties(CrawledLink link);
 }

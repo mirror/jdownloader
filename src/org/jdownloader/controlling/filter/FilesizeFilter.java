@@ -49,4 +49,8 @@ public class FilesizeFilter extends Filter implements Storable {
         this.to = to;
     }
 
+    public boolean matches(long downloadSize) {
+        return from <= downloadSize && to >= downloadSize;
+    }
+
 }

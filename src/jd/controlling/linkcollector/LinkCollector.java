@@ -19,6 +19,7 @@ import jd.controlling.packagecontroller.PackageController;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.event.Eventsender;
 import org.appwork.utils.event.queue.QueueAction;
+import org.jdownloader.controlling.filter.LinkFilterController;
 import org.jdownloader.gui.views.linkgrabber.addlinksdialog.CrawlerJob;
 
 public class LinkCollector extends PackageController<CrawledPackage, CrawledLink> implements LinkCheckerHandler<CrawledLink> {
@@ -59,6 +60,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         linkChecker.setLinkCheckHandler(this);
         setCrawlerFilter(LinkCrawler.defaultFilterFactory());
         config = JsonConfig.create(LinkCollectorConfig.class);
+        this.setCrawlerFilter(LinkFilterController.getInstance());
     }
 
     public boolean isRunning() {
@@ -163,7 +165,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
     }
 
     public void linkCheckDone(CrawledLink link) {
-        if (crawlerFilter.isCrawledLinkFiltered(link)) {
+        if (crawlerFilter.dropByFileProperties(link)) {
             System.out.println("Filtered: " + link);
         } else {
             addCrawledLink(link);

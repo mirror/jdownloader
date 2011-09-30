@@ -42,7 +42,6 @@ public class MainToolBar extends ToolBar {
 
     private MainToolBar() {
         super();
-
         speedmeter = new SpeedMeterPanel(true, false);
         speedmeter.addMouseListener(new MouseAdapter() {
 

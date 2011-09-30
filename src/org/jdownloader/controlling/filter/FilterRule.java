@@ -18,6 +18,15 @@ public abstract class FilterRule implements Storable {
         this.filesizeFilter = size;
     }
 
+    /**
+     * Returns false if now filterrule is enabled
+     * 
+     * @return
+     */
+    public boolean isValid() {
+        return getFilenameFilter().isEnabled() || getFilesizeFilter().isEnabled() || getFiletypeFilter().isEnabled() || getHosterURLFilter().isEnabled() || getSourceURLFilter().isEnabled();
+    }
+
     public String toString() {
         StringBuilder sb = new StringBuilder();
         ArrayList<String> cond = new ArrayList<String>();
@@ -105,10 +114,11 @@ public abstract class FilterRule implements Storable {
     }
 
     public boolean isEnabled() {
-        return enabled;
+        return enabled && isValid();
     }
 
     public void setEnabled(boolean enabled) {
         this.enabled = enabled;
+
     }
 }

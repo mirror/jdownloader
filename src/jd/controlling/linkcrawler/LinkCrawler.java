@@ -586,7 +586,7 @@ public class LinkCrawler implements IOPermission {
     }
 
     protected boolean isCrawledLinkFiltered(CrawledLink link) {
-        if (filter.isCrawledLinkFiltered(link)) {
+        if (filter.dropByUrl(link)) {
             filteredLinksCounter.incrementAndGet();
             handler.handleFilteredLink(link);
             return true;
@@ -628,7 +628,11 @@ public class LinkCrawler implements IOPermission {
     public static LinkCrawlerFilter defaultFilterFactory() {
         return new LinkCrawlerFilter() {
 
-            public boolean isCrawledLinkFiltered(CrawledLink link) {
+            public boolean dropByUrl(CrawledLink link) {
+                return false;
+            }
+
+            public boolean dropByFileProperties(CrawledLink link) {
                 return false;
             };
 

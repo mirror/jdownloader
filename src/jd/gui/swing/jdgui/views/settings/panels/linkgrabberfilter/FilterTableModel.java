@@ -15,6 +15,7 @@ import org.appwork.swing.exttable.ExtTableHeaderRenderer;
 import org.appwork.swing.exttable.ExtTableModel;
 import org.appwork.swing.exttable.columns.ExtCheckColumn;
 import org.appwork.swing.exttable.columns.ExtTextColumn;
+import org.jdownloader.controlling.filter.LinkFilterController;
 import org.jdownloader.controlling.filter.LinkgrabberFilterRule;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
@@ -83,6 +84,7 @@ public class FilterTableModel extends ExtTableModel<LinkgrabberFilterRule> {
             @Override
             protected void setBooleanValue(boolean value, LinkgrabberFilterRule object) {
                 object.setEnabled(value);
+                LinkFilterController.getInstance().update();
             }
         });
 
