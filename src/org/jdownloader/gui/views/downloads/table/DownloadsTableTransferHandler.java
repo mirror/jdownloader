@@ -50,8 +50,17 @@ public class DownloadsTableTransferHandler extends TransferHandler {
             int dropRow = dl.getRow();
             if (isInsert) {
                 /* handle insert here */
+                Object beforeElement = table.getExtTableModel().getObjectbyRow(dropRow - 1);
+                if (beforeElement == null) {
+                    /* no before element, table is empty */
+                    return true;
+                }
+                Object afterElement = table.getExtTableModel().getObjectbyRow(dropRow);
+                if (linksAvailable && packagesAvailable) {
+                    /* we dont allow links/packages to get mixed on insert */
+                    return false;
+                }
                 if (linksAvailable || packagesAvailable) {
-                    Object beforeElement = table.getExtTableModel().getObjectbyRow(dropRow - 1);
                     FilePackage fp = null;
                     if (beforeElement != null) {
                         if (beforeElement instanceof DownloadLink) {
@@ -61,7 +70,6 @@ public class DownloadsTableTransferHandler extends TransferHandler {
                              */
                             fp = ((DownloadLink) beforeElement).getFilePackage();
                         } else {
-                            Object afterElement = table.getExtTableModel().getObjectbyRow(dropRow);
                             if (afterElement != null && afterElement instanceof DownloadLink) {
                                 /*
                                  * beforeElement is DownloadLink->we are inside
@@ -73,6 +81,15 @@ public class DownloadsTableTransferHandler extends TransferHandler {
                     }
                     if (fp == null && packagesAvailable == false) { return false; }
                     if (packagesAvailable) {
+                        if (afterElement != null && !(afterElement instanceof FilePackage)) {
+                            /*
+                             * we dont allow packages get get insert inside a
+                             * package
+                             */
+                            return false;
+                        } else {
+                            fp = null;
+                        }
                         ArrayList<FilePackage> packages = DownloadsTableTransferable.getPackages(support.getTransferable());
                         /*
                          * we do not allow drop on items that are part of our
@@ -83,7 +100,6 @@ public class DownloadsTableTransferHandler extends TransferHandler {
                         }
                     }
                 }
-
             } else {
                 /* handle dropOn here */
                 Object onElement = table.getExtTableModel().getObjectbyRow(dropRow);

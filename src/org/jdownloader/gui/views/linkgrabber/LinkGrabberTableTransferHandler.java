@@ -50,8 +50,17 @@ public class LinkGrabberTableTransferHandler extends TransferHandler {
             int dropRow = dl.getRow();
             if (isInsert) {
                 /* handle insert here */
+                Object beforeElement = table.getExtTableModel().getObjectbyRow(dropRow - 1);
+                if (beforeElement == null) {
+                    /* no before element, table is empty */
+                    return true;
+                }
+                Object afterElement = table.getExtTableModel().getObjectbyRow(dropRow);
+                if (linksAvailable && packagesAvailable) {
+                    /* we dont allow links/packages to get mixed on insert */
+                    return false;
+                }
                 if (linksAvailable || packagesAvailable) {
-                    Object beforeElement = table.getExtTableModel().getObjectbyRow(dropRow - 1);
                     CrawledPackage fp = null;
                     if (beforeElement != null) {
                         if (beforeElement instanceof CrawledLink) {
@@ -61,7 +70,6 @@ public class LinkGrabberTableTransferHandler extends TransferHandler {
                              */
                             fp = ((CrawledLink) beforeElement).getParentNode();
                         } else {
-                            Object afterElement = table.getExtTableModel().getObjectbyRow(dropRow);
                             if (afterElement != null && afterElement instanceof CrawledLink) {
                                 /*
                                  * beforeElement is DownloadLink->we are inside
@@ -73,6 +81,15 @@ public class LinkGrabberTableTransferHandler extends TransferHandler {
                     }
                     if (fp == null && packagesAvailable == false) { return false; }
                     if (packagesAvailable) {
+                        if (afterElement != null && !(afterElement instanceof CrawledPackage)) {
+                            /*
+                             * we dont allow packages get get insert inside a
+                             * package
+                             */
+                            return false;
+                        } else {
+                            fp = null;
+                        }
                         ArrayList<CrawledPackage> packages = LinkGrabberTransferable.getPackages(support.getTransferable());
                         /*
                          * we do not allow drop on items that are part of our

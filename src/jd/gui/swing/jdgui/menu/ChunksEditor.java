@@ -26,7 +26,7 @@ public class ChunksEditor extends MenuEditor implements ConfigEventListener, Cha
         config = JsonConfig.create(GeneralSettings.class);
         spinner = new ExtSpinner(new SpinnerNumberModel(config.getMaxChunksPerFile(), 1, 20, 1));
         spinner.addChangeListener(this);
-        config.getStorageHandler().getEventSender().addListener(this);
+        config.getStorageHandler().getEventSender().addListener(this, true);
         add(spinner, "height 20!");
     }
 
@@ -34,19 +34,17 @@ public class ChunksEditor extends MenuEditor implements ConfigEventListener, Cha
     }
 
     public void onConfigValueModified(ConfigInterface config, final String key, final Object newValue) {
-        new EDTRunner() {
-            @Override
-            protected void runInEDT() {
-                if ("MaxChunksPerFile".equalsIgnoreCase(key)) {
+        if ("MaxChunksPerFile".equalsIgnoreCase(key)) {
+            new EDTRunner() {
+                @Override
+                protected void runInEDT() {
                     spinner.setValue(newValue);
                 }
-            }
-        };
-
+            };
+        }
     }
 
     public void stateChanged(ChangeEvent e) {
-
         config.setMaxChunksPerFile(spinner.getIntValue());
     }
 

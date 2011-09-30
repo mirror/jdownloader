@@ -25,7 +25,7 @@ public class ParalellDownloadsEditor extends MenuEditor implements ChangeListene
         add(getLbl(_GUI._.ParalellDownloadsEditor_ParalellDownloadsEditor_(), NewTheme.I().getIcon("paralell", 18)));
         spinner = new ExtSpinner(new SpinnerNumberModel(config.getMaxSimultaneDownloads(), 1, 20, 1));
         spinner.addChangeListener(this);
-        config.getStorageHandler().getEventSender().addListener(this);
+        config.getStorageHandler().getEventSender().addListener(this, true);
         add(spinner, "height 20!");
     }
 
@@ -33,21 +33,17 @@ public class ParalellDownloadsEditor extends MenuEditor implements ChangeListene
     }
 
     public void onConfigValueModified(ConfigInterface config, final String key, final Object newValue) {
-
-        new EDTRunner() {
-
-            @Override
-            protected void runInEDT() {
-                if ("MaxSimultaneDownloads".equalsIgnoreCase(key)) {
+        if ("MaxSimultaneDownloads".equalsIgnoreCase(key)) {
+            new EDTRunner() {
+                @Override
+                protected void runInEDT() {
                     spinner.setValue(newValue);
                 }
-            }
-        };
-
+            };
+        }
     }
 
     public void stateChanged(ChangeEvent e) {
-        System.out.println(e);
         config.setMaxSimultaneDownloads(spinner.getIntValue());
     }
 
