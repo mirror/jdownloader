@@ -1,9 +1,12 @@
 package org.jdownloader.gui.views.linkgrabber;
 
+import java.awt.Color;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.io.File;
 import java.util.ArrayList;
+
+import javax.swing.DropMode;
 
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
@@ -16,6 +19,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.utils.JDUtilities;
 
+import org.appwork.swing.exttable.DropHighlighter;
 import org.appwork.utils.Application;
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTable;
@@ -48,7 +52,12 @@ public class LinkGrabberTable extends PackageControllerTable<CrawledPackage, Cra
 
     public LinkGrabberTable(final LinkGrabberTableModel tableModel) {
         super(tableModel);
-
+        if (Application.getJavaVersion() >= Application.JAVA16) {
+            this.addRowHighlighter(new DropHighlighter(null, new Color(27, 164, 191, 75)));
+            this.setTransferHandler(new LinkGrabberTableTransferHandler(this));
+            this.setDragEnabled(true);
+            this.setDropMode(DropMode.ON_OR_INSERT_ROWS);
+        }
     }
 
     @Override
@@ -61,6 +70,17 @@ public class LinkGrabberTable extends PackageControllerTable<CrawledPackage, Cra
         // new DeleteAction(getAllDownloadLinks(selectedObjects),
         // direct).actionPerformed(null);
         return true;
+    }
+
+    public ArrayList<DownloadLink> getSelectedDownloadLinks() {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final ArrayList<AbstractNode> selected = this.getExtTableModel().getSelectedObjects();
+        for (final AbstractNode node : selected) {
+            if (node instanceof DownloadLink) {
+                ret.add((DownloadLink) node);
+            }
+        }
+        return ret;
     }
 
     /**

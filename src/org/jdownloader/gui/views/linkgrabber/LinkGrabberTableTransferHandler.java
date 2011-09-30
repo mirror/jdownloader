@@ -1,4 +1,4 @@
-package org.jdownloader.gui.views.downloads.table;
+package org.jdownloader.gui.views.linkgrabber;
 
 import java.awt.datatransfer.Transferable;
 import java.util.ArrayList;
@@ -7,20 +7,20 @@ import javax.swing.JComponent;
 import javax.swing.JTable;
 import javax.swing.TransferHandler;
 
-import jd.controlling.DownloadController;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
+import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledPackage;
 
-public class DownloadsTableTransferHandler extends TransferHandler {
+public class LinkGrabberTableTransferHandler extends TransferHandler {
 
     /**
      * 
      */
     private static final long serialVersionUID = 7250267957897246993L;
-    private DownloadsTable    table;
+    private LinkGrabberTable  table;
 
-    public DownloadsTableTransferHandler(DownloadsTable downloadsTable) {
-        this.table = downloadsTable;
+    public LinkGrabberTableTransferHandler(LinkGrabberTable grabberTable) {
+        this.table = grabberTable;
     }
 
     @Override
@@ -35,10 +35,10 @@ public class DownloadsTableTransferHandler extends TransferHandler {
         if (support.isDrop()) {
             /* we want to drop something */
             JTable.DropLocation dl = (JTable.DropLocation) support.getDropLocation();
-            boolean linksAvailable = support.isDataFlavorSupported(DownloadLinksDataFlavor.Flavor);
-            boolean packagesAvailable = support.isDataFlavorSupported(FilePackagesDataFlavor.Flavor);
+            boolean linksAvailable = support.isDataFlavorSupported(CrawledLinksDataFlavor.Flavor);
+            boolean packagesAvailable = support.isDataFlavorSupported(CrawledPackagesDataFlavor.Flavor);
             if (linksAvailable || packagesAvailable) {
-                if (!DownloadsTableTransferable.isVersionOkay(support.getTransferable())) {
+                if (!LinkGrabberTransferable.isVersionOkay(support.getTransferable())) {
                     /*
                      * packagecontroller has newer version, we no longer allow
                      * this copy/paste to happen
@@ -52,52 +52,51 @@ public class DownloadsTableTransferHandler extends TransferHandler {
                 /* handle insert here */
                 if (linksAvailable || packagesAvailable) {
                     Object beforeElement = table.getExtTableModel().getObjectbyRow(dropRow - 1);
-                    FilePackage fp = null;
+                    CrawledPackage fp = null;
                     if (beforeElement != null) {
-                        if (beforeElement instanceof DownloadLink) {
+                        if (beforeElement instanceof CrawledLink) {
                             /*
                              * beforeElement is DownloadLink->we are inside an
                              * expanded package
                              */
-                            fp = ((DownloadLink) beforeElement).getFilePackage();
+                            fp = ((CrawledLink) beforeElement).getParentNode();
                         } else {
                             Object afterElement = table.getExtTableModel().getObjectbyRow(dropRow);
-                            if (afterElement != null && afterElement instanceof DownloadLink) {
+                            if (afterElement != null && afterElement instanceof CrawledLink) {
                                 /*
                                  * beforeElement is DownloadLink->we are inside
                                  * an expanded package
                                  */
-                                fp = ((DownloadLink) afterElement).getFilePackage();
+                                fp = ((CrawledLink) afterElement).getParentNode();
                             }
                         }
                     }
                     if (fp == null && packagesAvailable == false) { return false; }
                     if (packagesAvailable) {
-                        ArrayList<FilePackage> packages = DownloadsTableTransferable.getPackages(support.getTransferable());
+                        ArrayList<CrawledPackage> packages = LinkGrabberTransferable.getPackages(support.getTransferable());
                         /*
                          * we do not allow drop on items that are part of our
                          * transferable
                          */
-                        for (FilePackage p : packages) {
+                        for (CrawledPackage p : packages) {
                             if (p == fp) return false;
                         }
                     }
                 }
-
             } else {
                 /* handle dropOn here */
                 Object onElement = table.getExtTableModel().getObjectbyRow(dropRow);
                 if (onElement != null) {
                     /* on 1 element */
                     if (packagesAvailable) {
-                        if (onElement instanceof FilePackage) {
+                        if (onElement instanceof CrawledPackage) {
                             /* only drop on filepackages is allowed */
-                            ArrayList<FilePackage> packages = DownloadsTableTransferable.getPackages(support.getTransferable());
+                            ArrayList<CrawledPackage> packages = LinkGrabberTransferable.getPackages(support.getTransferable());
                             /*
                              * we do not allow drop on items that are part of
                              * our transferable
                              */
-                            for (FilePackage p : packages) {
+                            for (CrawledPackage p : packages) {
                                 if (p == onElement) return false;
                             }
                         } else {
@@ -109,20 +108,20 @@ public class DownloadsTableTransferHandler extends TransferHandler {
                         }
                     }
                     if (linksAvailable) {
-                        ArrayList<DownloadLink> links = DownloadsTableTransferable.getChildren(support.getTransferable());
-                        if (onElement instanceof DownloadLink) {
+                        ArrayList<CrawledLink> links = LinkGrabberTransferable.getChildren(support.getTransferable());
+                        if (onElement instanceof CrawledLink) {
                             /*
                              * downloadlinks are not allowed to drop on
                              * downloadlinks
                              */
                             return false;
-                        } else if (onElement instanceof FilePackage) {
+                        } else if (onElement instanceof CrawledPackage) {
                             /*
                              * downloadlinks are not allowed to drop on their
                              * own filepackage
                              */
-                            for (DownloadLink link : links) {
-                                if (link.getFilePackage() == onElement) return false;
+                            for (CrawledLink link : links) {
+                                if (link.getParentNode() == onElement) return false;
                             }
                         }
                     }
@@ -140,9 +139,9 @@ public class DownloadsTableTransferHandler extends TransferHandler {
          * get all selected filepackages and links and create a transferable if
          * possible
          */
-        ArrayList<FilePackage> packages = table.getSelectedPackages();
-        ArrayList<DownloadLink> links = table.getSelectedChildren();
-        if ((links != null && links.size() > 0) || (packages != null && packages.size() > 0)) { return new DownloadsTableTransferable(packages, links, DownloadController.getInstance().getPackageControllerChanges()); }
+        ArrayList<CrawledPackage> packages = table.getSelectedPackages();
+        ArrayList<CrawledLink> links = table.getSelectedChildren();
+        if ((links != null && links.size() > 0) || (packages != null && packages.size() > 0)) { return new LinkGrabberTransferable(packages, links, LinkCollector.getInstance().getPackageControllerChanges()); }
         return null;
     }
 

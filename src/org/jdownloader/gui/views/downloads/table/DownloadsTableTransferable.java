@@ -69,7 +69,7 @@ public class DownloadsTableTransferable implements Transferable {
     }
 
     @SuppressWarnings("unchecked")
-    public static ArrayList<FilePackage> getFilePackages(Transferable info) {
+    public static ArrayList<FilePackage> getPackages(Transferable info) {
         try {
             ArrayList<FilePackage> ret = (ArrayList<FilePackage>) info.getTransferData(FilePackagesDataFlavor.Flavor);
             return ret;
@@ -79,7 +79,7 @@ public class DownloadsTableTransferable implements Transferable {
     }
 
     @SuppressWarnings("unchecked")
-    public static ArrayList<DownloadLink> getDownloadLinks(Transferable info) {
+    public static ArrayList<DownloadLink> getChildren(Transferable info) {
         try {
             ArrayList<DownloadLink> ret = (ArrayList<DownloadLink>) info.getTransferData(DownloadLinksDataFlavor.Flavor);
             return ret;

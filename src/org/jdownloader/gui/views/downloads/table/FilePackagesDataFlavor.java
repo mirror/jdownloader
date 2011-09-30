@@ -20,7 +20,7 @@ public class FilePackagesDataFlavor extends DataFlavor {
      * we want to reuse the Content and not serialize/deserialize it every time
      */
     @Override
-    public boolean isFlavorSerializedObjectType() {
+    public boolean isRepresentationClassSerializable() {
         return false;
     }
 

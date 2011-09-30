@@ -1,20 +1,20 @@
-package org.jdownloader.gui.views.downloads.table;
+package org.jdownloader.gui.views.linkgrabber;
 
 import java.awt.datatransfer.DataFlavor;
 
-import jd.plugins.DownloadLink;
+import jd.controlling.linkcrawler.CrawledLink;
 
-public class DownloadLinksDataFlavor extends DataFlavor {
+public class CrawledLinksDataFlavor extends DataFlavor {
 
-    public static DownloadLinksDataFlavor Flavor = new DownloadLinksDataFlavor();
+    public static CrawledLinksDataFlavor Flavor = new CrawledLinksDataFlavor();
 
-    private DownloadLinksDataFlavor() {
+    private CrawledLinksDataFlavor() {
         /*
          * It is important to use this constructor, without it dragdrop will not
          * work correctly, we want to reuse the Content and not
          * serialize/deserialize it every time
          */
-        super(DownloadLink.class, "DownloadLinks");
+        super(CrawledLink.class, "CrawledLinks");
     }
 
     /*

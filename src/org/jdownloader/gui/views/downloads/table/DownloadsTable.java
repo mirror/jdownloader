@@ -1,5 +1,6 @@
 package org.jdownloader.gui.views.downloads.table;
 
+import java.awt.Color;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
@@ -27,6 +28,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.utils.JDUtilities;
 
+import org.appwork.swing.exttable.DropHighlighter;
 import org.appwork.swing.exttable.ExtColumn;
 import org.appwork.utils.Application;
 import org.appwork.utils.os.CrossSystem;
@@ -72,6 +74,7 @@ public class DownloadsTable extends PackageControllerTable<FilePackage, Download
         super(tableModel);
 
         if (Application.getJavaVersion() >= Application.JAVA16) {
+            this.addRowHighlighter(new DropHighlighter(null, new Color(27, 164, 191, 75)));
             this.setTransferHandler(new DownloadsTableTransferHandler(this));
             this.setDragEnabled(true);
             this.setDropMode(DropMode.ON_OR_INSERT_ROWS);
@@ -84,7 +87,7 @@ public class DownloadsTable extends PackageControllerTable<FilePackage, Download
 
     @Override
     protected void onSelectionChanged() {
-        if (this.getExtTableModel() == null || this.getExtTableModel().countSelectedObjects() == 0) {
+        if (this.getExtTableModel().countSelectedObjects() == 0) {
             // disable move buttons
             moveDownAction.setEnabled(false);
             moveToBottomAction.setEnabled(false);
@@ -234,54 +237,13 @@ public class DownloadsTable extends PackageControllerTable<FilePackage, Download
 
     @Override
     protected void onDoubleClick(final MouseEvent e, final AbstractNode obj) {
-
         new EditLinkOrPackageAction(this, obj).actionPerformed(null);
     }
 
     @Override
     protected boolean onShortcutDelete(final ArrayList<AbstractNode> selectedObjects, final KeyEvent evt, final boolean direct) {
-        new DeleteAction(getAllDownloadLinks(selectedObjects), direct).actionPerformed(null);
+        new DeleteAction(getAllSelectedChildren(selectedObjects), direct).actionPerformed(null);
         return true;
-    }
-
-    public ArrayList<FilePackage> getSelectedFilePackages() {
-        final ArrayList<FilePackage> ret = new ArrayList<FilePackage>();
-        final ArrayList<AbstractNode> selected = this.getExtTableModel().getSelectedObjects();
-        for (final AbstractNode node : selected) {
-            if (node instanceof FilePackage) {
-                ret.add((FilePackage) node);
-            }
-        }
-        return ret;
-    }
-
-    public ArrayList<DownloadLink> getSelectedDownloadLinks() {
-        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        final ArrayList<AbstractNode> selected = this.getExtTableModel().getSelectedObjects();
-        for (final AbstractNode node : selected) {
-            if (node instanceof DownloadLink) {
-                ret.add((DownloadLink) node);
-            }
-        }
-        return ret;
-    }
-
-    protected ArrayList<DownloadLink> getAllDownloadLinks(ArrayList<AbstractNode> selectedObjects) {
-        final ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
-        for (final AbstractNode node : selectedObjects) {
-            if (node instanceof DownloadLink) {
-                if (!links.contains(node)) links.add((DownloadLink) node);
-            } else {
-                synchronized (node) {
-                    for (final DownloadLink dl : ((FilePackage) node).getChildren()) {
-                        if (!links.contains(dl)) {
-                            links.add(dl);
-                        }
-                    }
-                }
-            }
-        }
-        return links;
     }
 
     @Override
@@ -379,7 +341,7 @@ public class DownloadsTable extends PackageControllerTable<FilePackage, Download
              * Desktop-Class (e.g. to open a file with correct application) is
              * only supported by v1.6 or higher
              */
-            if (Application.getJavaVersion() >= 16000000 && CrossSystem.isOpenFileSupported()) {
+            if (Application.getJavaVersion() >= Application.JAVA16 && CrossSystem.isOpenFileSupported()) {
                 // add the Open File entry
                 ret.add(new RatedMenuItem(new OpenFileAction(new File(((DownloadLink) obj).getFileOutput())), 0));
             }
