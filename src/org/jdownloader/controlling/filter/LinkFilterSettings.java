@@ -20,6 +20,12 @@ public interface LinkFilterSettings extends ConfigInterface {
     void setLinkgrabberQuickSettingsVisible(boolean b);
 
     @DefaultBooleanValue(true)
+    @AboutConfig
+    boolean isLinkFilterEnabled();
+
+    void setLinkFilterEnabled(boolean b);
+
+    @DefaultBooleanValue(true)
     boolean isLinkgrabberHosterQuickfilterEnabled();
 
     void setLinkgrabberHosterQuickfilterEnabled(boolean b);

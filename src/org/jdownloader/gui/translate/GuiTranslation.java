@@ -2779,4 +2779,28 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Speedlimit: %s1/s" })
     String SpeedMeterPanel_createTooltipText_(String formatBytes);
 
+    @Default(lngs = { "en" }, values = { "Enabled" })
+    String LinkgrabberFilter_LinkgrabberFilter_enable();
+
+    @Default(lngs = { "en" }, values = { "Enabled" })
+    String PackagizerFilter_PackagizerFilter_enable();
+
+    @Default(lngs = { "en" }, values = { "Import" })
+    String LinkgrabberFilter_LinkgrabberFilter_import();
+
+    @Default(lngs = { "en" }, values = { "Import Filterrules" })
+    String LinkgrabberFilter_import_dialog_title();
+
+    @Default(lngs = { "en" }, values = { "Rule File %s1 is empty or is invalid." })
+    String LinkgrabberFilter_LinkgrabberFilter_import_invalid(String name);
+
+    @Default(lngs = { "en" }, values = { "Export" })
+    String LinkgrabberFilter_LinkgrabberFilter_export();
+
+    @Default(lngs = { "en" }, values = { "Export to File" })
+    String LinkgrabberFilter_export_dialog_title();
+
+    @Default(lngs = { "en" }, values = { "Are you sure?" })
+    String literall_are_you_sure();
+
 }

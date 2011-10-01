@@ -15,17 +15,22 @@ import org.appwork.swing.exttable.ExtTableHeaderRenderer;
 import org.appwork.swing.exttable.ExtTableModel;
 import org.appwork.swing.exttable.columns.ExtCheckColumn;
 import org.appwork.swing.exttable.columns.ExtTextColumn;
+import org.appwork.utils.event.predefined.changeevent.ChangeEvent;
+import org.appwork.utils.event.predefined.changeevent.ChangeListener;
+import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.controlling.filter.LinkFilterController;
 import org.jdownloader.controlling.filter.LinkgrabberFilterRule;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 
-public class FilterTableModel extends ExtTableModel<LinkgrabberFilterRule> {
+public class FilterTableModel extends ExtTableModel<LinkgrabberFilterRule> implements ChangeListener {
 
     private static final long serialVersionUID = -7756459932564776739L;
 
     public FilterTableModel(String id) {
         super(id);
+
+        LinkFilterController.getInstance().getEventSender().addListener(this, false);
 
     }
 
@@ -184,5 +189,16 @@ public class FilterTableModel extends ExtTableModel<LinkgrabberFilterRule> {
         // tooltip.updateRule(obj);
         // return tooltip;
         return null;
+    }
+
+    public void onChangeEvent(ChangeEvent event) {
+        new EDTRunner() {
+
+            @Override
+            protected void runInEDT() {
+                _fireTableStructureChanged(LinkFilterController.getInstance().list(), true);
+            }
+        };
+
     }
 }

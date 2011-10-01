@@ -13,17 +13,21 @@ import org.appwork.swing.exttable.ExtTableModel;
 import org.appwork.swing.exttable.columns.ExtCheckColumn;
 import org.appwork.swing.exttable.columns.ExtIconColumn;
 import org.appwork.swing.exttable.columns.ExtTextColumn;
+import org.appwork.utils.event.predefined.changeevent.ChangeEvent;
+import org.appwork.utils.event.predefined.changeevent.ChangeListener;
+import org.appwork.utils.swing.EDTRunner;
+import org.jdownloader.controlling.packagizer.PackagizerController;
 import org.jdownloader.controlling.packagizer.PackagizerRule;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 
-public class FilterTableModel extends ExtTableModel<PackagizerRule> {
+public class FilterTableModel extends ExtTableModel<PackagizerRule> implements ChangeListener {
 
     private static final long serialVersionUID = -7756459932564776739L;
 
     public FilterTableModel(String id) {
         super(id);
-
+        PackagizerController.getInstance().getEventSender().addListener(this, false);
     }
 
     @Override
@@ -537,5 +541,16 @@ public class FilterTableModel extends ExtTableModel<PackagizerRule> {
             }
 
         });
+    }
+
+    public void onChangeEvent(ChangeEvent event) {
+        new EDTRunner() {
+
+            @Override
+            protected void runInEDT() {
+                _fireTableStructureChanged(PackagizerController.getInstance().list(), true);
+            }
+        };
+
     }
 }

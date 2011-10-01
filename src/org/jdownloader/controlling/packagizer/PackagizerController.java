@@ -5,6 +5,8 @@ import java.util.ArrayList;
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
 import org.appwork.storage.config.JsonConfig;
+import org.appwork.utils.event.predefined.changeevent.ChangeEvent;
+import org.appwork.utils.event.predefined.changeevent.ChangeEventSender;
 
 public class PackagizerController {
     private static final PackagizerController INSTANCE = new PackagizerController();
@@ -15,10 +17,12 @@ public class PackagizerController {
 
     private PackagizerSettings        config;
     private ArrayList<PackagizerRule> list;
+    private ChangeEventSender         eventSender;
 
     private PackagizerController() {
 
         config = JsonConfig.create(PackagizerSettings.class);
+        eventSender = new ChangeEventSender();
         list = config.getRuleList();
         if (list == null) list = new ArrayList<PackagizerRule>();
 
@@ -38,6 +42,10 @@ public class PackagizerController {
         });
     }
 
+    public ChangeEventSender getEventSender() {
+        return eventSender;
+    }
+
     public ArrayList<PackagizerRule> list() {
         synchronized (this) {
             return new ArrayList<PackagizerRule>(list);
@@ -50,6 +58,17 @@ public class PackagizerController {
             list.add(linkFilter);
             config.setRuleList(list);
         }
+        getEventSender().fireEvent(new ChangeEvent(this));
+    }
+
+    public void addAll(ArrayList<PackagizerRule> all) {
+        if (all == null) return;
+        synchronized (this) {
+            list.addAll(all);
+            config.setRuleList(list);
+
+        }
+        getEventSender().fireEvent(new ChangeEvent(this));
     }
 
     public void remove(PackagizerRule lf) {
@@ -58,6 +77,8 @@ public class PackagizerController {
             list.remove(lf);
             config.setRuleList(list);
         }
+        getEventSender().fireEvent(new ChangeEvent(this));
+
     }
 
 }

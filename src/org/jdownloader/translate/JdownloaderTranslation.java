@@ -711,5 +711,21 @@ public interface JdownloaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "The Packagizer rules let you auto-set Download Settings on Files based on their properties." })
     String gui_settings_linkgrabber_packagizer_description();
 
-    String gui_settings_packagizer_title();
+    @Default(lngs = { "en" }, values = { "%s1 (copy)" })
+    String LinkgrabberFilterRule_duplicate(String name);
+
+    @Default(lngs = { "en" }, values = { "Duplicate Rule" })
+    String DuplicateAction_DuplicateAction_();
+
+    @Default(lngs = { "en" }, values = { "Save rules to a file.\r\n- Backup\r\n- Share them with others" })
+    String ExportAction_ExportAction_tt();
+
+    @Default(lngs = { "en" }, values = { "Import Rules from *.jdfilter (*.jdregexfilter) files" })
+    String ImportAction_tt();
+
+    @Default(lngs = { "en" }, values = { "Are you sure?" })
+    String RemoveAction_actionPerformed_rly_title();
+
+    @Default(lngs = { "en" }, values = { "Really delete all selected rules??" })
+    String RemoveAction_actionPerformed_rly_msg();
 }

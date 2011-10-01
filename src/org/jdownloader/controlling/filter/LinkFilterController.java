@@ -11,6 +11,8 @@ import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Files;
+import org.appwork.utils.event.predefined.changeevent.ChangeEvent;
+import org.appwork.utils.event.predefined.changeevent.ChangeEventSender;
 
 public class LinkFilterController implements LinkCrawlerFilter {
     private static final LinkFilterController INSTANCE = new LinkFilterController();
@@ -31,6 +33,7 @@ public class LinkFilterController implements LinkCrawlerFilter {
     private ArrayList<LinkgrabberFilterRuleWrapper> acceptFileFilter;
     private ArrayList<LinkgrabberFilterRuleWrapper> denyUrlFilter;
     private ArrayList<LinkgrabberFilterRuleWrapper> acceptUrlFilter;
+    private ChangeEventSender                       eventSender;
 
     /**
      * Create a new instance of LinkFilterController. This is a singleton class.
@@ -39,6 +42,7 @@ public class LinkFilterController implements LinkCrawlerFilter {
     private LinkFilterController() {
         config = JsonConfig.create(LinkFilterSettings.class);
         filter = config.getFilterList();
+        eventSender = new ChangeEventSender();
         if (filter == null) filter = new ArrayList<LinkgrabberFilterRule>();
         ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
 
@@ -56,6 +60,10 @@ public class LinkFilterController implements LinkCrawlerFilter {
         });
 
         update();
+    }
+
+    public ChangeEventSender getEventSender() {
+        return eventSender;
     }
 
     public void update() {
@@ -98,6 +106,17 @@ public class LinkFilterController implements LinkCrawlerFilter {
         }
     }
 
+    public void addAll(ArrayList<LinkgrabberFilterRule> all) {
+        if (all == null) return;
+        synchronized (this) {
+            filter.addAll(all);
+            config.setFilterList(filter);
+
+            update();
+        }
+        getEventSender().fireEvent(new ChangeEvent(this));
+    }
+
     public void add(LinkgrabberFilterRule linkFilter) {
         if (linkFilter == null) return;
         synchronized (this) {
@@ -106,6 +125,7 @@ public class LinkFilterController implements LinkCrawlerFilter {
 
             update();
         }
+        getEventSender().fireEvent(new ChangeEvent(this));
 
     }
 
@@ -117,6 +137,7 @@ public class LinkFilterController implements LinkCrawlerFilter {
 
             update();
         }
+        getEventSender().fireEvent(new ChangeEvent(this));
     }
 
     public boolean dropByUrl(CrawledLink link) {

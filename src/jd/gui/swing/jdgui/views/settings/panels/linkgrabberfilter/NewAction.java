@@ -13,9 +13,10 @@ import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.controlling.filter.LinkFilterController;
 import org.jdownloader.controlling.filter.LinkgrabberFilterRule;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.gui.views.components.AbstractAddAction;
 import org.jdownloader.images.NewTheme;
 
-public class NewAction extends AbstractAction {
+public class NewAction extends AbstractAddAction {
     /**
      * 
      */
@@ -37,6 +38,10 @@ public class NewAction extends AbstractAction {
 
     public void actionPerformed(ActionEvent e) {
         final LinkgrabberFilterRule rule = new LinkgrabberFilterRule();
+        add(rule, table);
+    }
+
+    public static void add(final LinkgrabberFilterRule rule, final FilterTable table) {
         FilterRuleDialog d = new FilterRuleDialog(rule);
         try {
             Dialog.getInstance().showDialog(d);
@@ -46,7 +51,7 @@ public class NewAction extends AbstractAction {
                 public void run() {
 
                     LinkFilterController.getInstance().add(rule);
-                    table.getExtTableModel()._fireTableStructureChanged(LinkFilterController.getInstance().list(), false);
+
                 }
 
             }, true);

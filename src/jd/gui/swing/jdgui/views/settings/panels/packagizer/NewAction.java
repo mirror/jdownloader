@@ -15,9 +15,9 @@ public class NewAction extends AbstractAddAction {
     /**
      * 
      */
-    private static final long serialVersionUID = 1L;
+    private static final long     serialVersionUID = 1L;
 
-    private PackagizerFilterTable       table;
+    private PackagizerFilterTable table;
 
     public NewAction(PackagizerFilterTable table) {
         super();
@@ -36,7 +36,7 @@ public class NewAction extends AbstractAddAction {
                 public void run() {
 
                     PackagizerController.getInstance().add(rule);
-                    table.getExtTableModel()._fireTableStructureChanged(PackagizerController.getInstance().list(), false);
+
                 }
 
             }, true);

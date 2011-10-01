@@ -6,7 +6,6 @@ import java.util.ArrayList;
 
 import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
-import javax.swing.JSeparator;
 
 import jd.gui.swing.jdgui.BasicJDTable;
 import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.FilterRuleDialog;
@@ -38,10 +37,12 @@ public class FilterTable extends BasicJDTable<LinkgrabberFilterRule> {
      */
     @Override
     protected JPopupMenu onContextMenu(JPopupMenu popup, LinkgrabberFilterRule contextObject, ArrayList<LinkgrabberFilterRule> selection, ExtColumn<LinkgrabberFilterRule> column) {
-        popup.add(new JMenuItem(new NewAction(this)));
-        popup.add(new JMenuItem(new RemoveAction(this, selection, false)));
-        popup.add(new JSeparator());
-        popup.add(new JMenuItem(new TestAction()));
+        popup.add(new JMenuItem(new NewAction(this).toContextMenuAction()));
+        popup.add(new JMenuItem(new RemoveAction(this, selection, false).toContextMenuAction()));
+
+        popup.add(new JMenuItem(new DuplicateAction(contextObject, this).toContextMenuAction()));
+        popup.addSeparator();
+        popup.add(new ExportAction(selection).toContextMenuAction());
         return popup;
     }
 

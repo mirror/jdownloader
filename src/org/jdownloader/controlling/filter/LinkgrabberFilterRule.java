@@ -1,6 +1,7 @@
 package org.jdownloader.controlling.filter;
 
 import org.appwork.storage.Storable;
+import org.jdownloader.translate._JDT;
 
 public class LinkgrabberFilterRule extends FilterRule implements Storable {
 
@@ -21,6 +22,19 @@ public class LinkgrabberFilterRule extends FilterRule implements Storable {
     public LinkgrabberFilterRuleWrapper compile() {
 
         LinkgrabberFilterRuleWrapper ret = new LinkgrabberFilterRuleWrapper(this);
+        return ret;
+    }
+
+    public LinkgrabberFilterRule duplicate() {
+        LinkgrabberFilterRule ret = new LinkgrabberFilterRule();
+        ret.accept = accept;
+        ret.setEnabled(isEnabled());
+        ret.setFilenameFilter(getFilenameFilter());
+        ret.setFilesizeFilter(getFilesizeFilter());
+        ret.setFiletypeFilter(getFiletypeFilter());
+        ret.setHosterURLFilter(getHosterURLFilter());
+        ret.setName(_JDT._.LinkgrabberFilterRule_duplicate(getName()));
+        ret.setSourceURLFilter(getSourceURLFilter());
         return ret;
     }
 
