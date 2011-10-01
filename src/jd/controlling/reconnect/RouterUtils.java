@@ -247,8 +247,8 @@ public class RouterUtils {
         try {
 
             sock = new Socket();
-            sock.setSoTimeout(200);
-            sock.connect(new InetSocketAddress(host, port), 200);
+            sock.setSoTimeout(1000);
+            sock.connect(new InetSocketAddress(host, port), 1000);
             Browser br = new Browser();
             br.setProxy(HTTPProxy.NONE);
             br.setConnectTimeout(2000);
@@ -513,7 +513,10 @@ public class RouterUtils {
                 private int counter = 0;
 
                 public void onProcess(Executer exec, String latestLine, DynByteBuffer totalBuffer) {
-
+                    if (latestLine.contains("*")) {
+                        // timeouts
+                        exec.interrupt();
+                    }
                     final Matcher matcher = Pattern.compile(IP.IP_PATTERN, Pattern.CASE_INSENSITIVE | Pattern.DOTALL).matcher(latestLine);
                     if (matcher.find()) {
                         if (counter++ > 0) {
