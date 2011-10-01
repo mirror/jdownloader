@@ -19,6 +19,7 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.http.RandomUserAgent;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -41,9 +42,12 @@ public class GirlShareRo extends PluginForHost {
         return "http://www.girlshare.ro/";
     }
 
+    private static String UA = RandomUserAgent.generate();
+
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
+        br.getHeaders().put("User-Agent", UA);
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("(<b>Acest fisier nu exista\\.</b>|<title>GirlShare - Acest fisier nu exista\\.</title>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("title = \"(.*?)\";").getMatch(0);
@@ -57,12 +61,25 @@ public class GirlShareRo extends PluginForHost {
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+
         requestFileInformation(downloadLink);
+
         Form dlform = br.getForm(0);
+
         if (dlform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dlform.remove(null);
+
+        dlform.put("x", "" + (int) (100 * Math.random() + 1));
+        dlform.put("y", "" + (int) (25 * Math.random() + 1));
+        br.setFollowRedirects(true);
+
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlform, false, 1);
+        if (!dl.getConnection().isContentDisposition()) {
+            // website often opens ads on the first click.
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlform, false, 1);
+        }
         if (dl.getConnection().getContentType().contains("html")) {
+            System.out.println(1);
             if (!br.getURL().contains("girlshare.ro")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1001l);
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
