@@ -58,7 +58,7 @@ public class XFileSharingProBasic extends PluginForHost {
         // this.enablePremium(COOKIE_HOST + "/premium.html");
     }
 
-    // XfileSharingProBasic Version 2.5.0.5
+    // XfileSharingProBasic Version 2.5.0.7
     // This is only for developers to easily implement hosters using the
     // "xfileshare(pro)" script (more informations can be found on
     // xfilesharing.net)!
@@ -338,13 +338,13 @@ public class XFileSharingProBasic extends PluginForHost {
         }
         account.setValid(true);
         String availabletraffic = new Regex(BRBEFORE, "Traffic available.*?:</TD><TD><b>([^<>\"\\']+)</b>").getMatch(0);
-        if (availabletraffic != null && !availabletraffic.contains("nlimited") && !availabletraffic.equals(" Mb")) {
+        if (availabletraffic != null && !availabletraffic.contains("nlimited") && !availabletraffic.equalsIgnoreCase(" Mb")) {
             ai.setTrafficLeft(SizeFormatter.getSize(availabletraffic));
         } else {
             ai.setUnlimitedTraffic();
         }
         if (!NOPREMIUM) {
-            String expire = new Regex(BRBEFORE, Pattern.compile("<td>Premium(\\-| )Account expire:</td>.*?<td>(<b>)?(\\d{1,2} [A-Za-z]+ \\d{4})(</b>)?</td>", Pattern.CASE_INSENSITIVE)).getMatch(2);
+            String expire = new Regex(BRBEFORE, Pattern.compile("<td>Premium(\\-| )Account expires?:</td>.*?<td>(<b>)?(\\d{1,2} [A-Za-z]+ \\d{4})(</b>)?</td>", Pattern.CASE_INSENSITIVE)).getMatch(2);
             if (expire == null) {
                 ai.setExpired(true);
                 account.setValid(false);
@@ -387,22 +387,18 @@ public class XFileSharingProBasic extends PluginForHost {
                 }
             }
             if (dllink == null) {
-                dllink = br.getRedirectLocation();
+                br.getPage(link.getDownloadURL());
+                doSomething();
+                dllink = getDllink();
                 if (dllink == null) {
+                    checkErrors(link, true, passCode);
+                    Form DLForm = br.getFormbyProperty("name", "F1");
+                    if (DLForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    if (new Regex(BRBEFORE, PASSWORDTEXT).matches()) passCode = handlePassword(passCode, DLForm, link);
+                    br.submitForm(DLForm);
                     doSomething();
                     dllink = getDllink();
-                    if (dllink == null) {
-                        Form DLForm = br.getFormbyProperty("name", "F1");
-                        if (DLForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                        if (new Regex(BRBEFORE, PASSWORDTEXT).matches()) passCode = handlePassword(passCode, DLForm, link);
-                        br.submitForm(DLForm);
-                        doSomething();
-                        dllink = br.getRedirectLocation();
-                        if (dllink == null) {
-                            checkErrors(link, true, passCode);
-                            dllink = getDllink();
-                        }
-                    }
+                    checkErrors(link, true, passCode);
                 }
             }
             if (dllink == null) {

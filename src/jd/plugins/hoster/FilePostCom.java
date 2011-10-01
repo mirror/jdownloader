@@ -110,7 +110,7 @@ public class FilePostCom extends PluginForHost {
                         logger.warning("Filepost availablecheck is broken!");
                         return false;
                     }
-                    Regex theData = new Regex(correctedBR, ";\" target=\"_blank\">https?://filepost\\.com/files/" + fileid + "/(.{1,256})/</a></td>nttt<td>(.*?)</td>nttt<td>ntttt<span class=\"(x|v)\"");
+                    Regex theData = new Regex(correctedBR, ";\" target=\"_blank\">https?://filepost\\.com/files/" + fileid + "/(.{1,1000})/</a></td>nttt<td>(.*?)</td>nttt<td>ntttt<span class=\"(x|v)\"");
                     String filename = theData.getMatch(0);
                     String filesize = theData.getMatch(1);
                     if (filename == null || filesize == null || ("x".equals(theData.getMatch(2)))) {

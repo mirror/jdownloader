@@ -505,7 +505,7 @@ public class MediafireCom extends PluginForHost {
         this.br.submitForm(form);
         this.br.getPage("http://www.mediafire.com/myfiles.php");
         final String cookie = this.br.getCookie("http://www.mediafire.com", "user");
-        if (cookie.equals("x")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        if ("x".equals(cookie)) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         if (MediafireCom.CONFIGURATION_KEYS.get(account) == null) {
             this.br.getPage("http://www.mediafire.com/myaccount/download_options.php");
             String red = br.getRedirectLocation();
