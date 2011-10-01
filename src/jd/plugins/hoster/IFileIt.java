@@ -65,14 +65,15 @@ public class IFileIt extends PluginForHost {
         br.setFollowRedirects(true);
         // generating first request
         final String c = br.getRegex("eval(.*?)\n").getMatch(0);
-        final String dec = br.getRegex("dec\\( \'(.*?)\' \\),").getMatch(0);
+        final String fnName = br.getRegex("url:\\s+(.*?)\\(").getMatch(0);
+        final String dec = br.getRegex(fnName + "\\( \'(.*?)\' \\),").getMatch(0);
         Object result = new Object();
         final ScriptEngineManager manager = new ScriptEngineManager();
         final ScriptEngine engine = manager.getEngineByName("javascript");
         final Invocable inv = (Invocable) engine;
         try {
             engine.eval(engine.eval(c).toString());
-            result = inv.invokeFunction("dec", dec);
+            result = inv.invokeFunction(fnName, dec);
         } catch (final Throwable e) {
             result = "";
         }
