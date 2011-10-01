@@ -269,7 +269,7 @@ public class RouterUtils {
             String redirect = br.getRedirectLocation();
             String domain = Browser.getHost(redirect);
             // some isps or DNS server redirect in case of no server found
-            if (!InetAddress.getByName(domain).equals(InetAddress.getByName(host))) {
+            if (redirect != null && !InetAddress.getByName(domain).equals(InetAddress.getByName(host))) {
                 // if we have redirects, the new domain should be the local one,
                 // too
                 return false;
