@@ -29,10 +29,10 @@ public class ParalellDownloadsEditor extends MenuEditor implements ChangeListene
         add(spinner, "height 20!");
     }
 
-    public void onConfigValidatorError(ConfigInterface config, Throwable validateException, KeyHandler methodHandler) {
+    public void onConfigValidatorError(Class<? extends ConfigInterface> config, Throwable validateException, KeyHandler methodHandler) {
     }
 
-    public void onConfigValueModified(ConfigInterface config, final String key, final Object newValue) {
+    public void onConfigValueModified(Class<? extends ConfigInterface> config, final String key, final Object newValue) {
         if ("MaxSimultaneDownloads".equalsIgnoreCase(key)) {
             new EDTRunner() {
                 @Override

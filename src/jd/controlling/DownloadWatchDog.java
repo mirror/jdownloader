@@ -129,14 +129,14 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
 
         config.getStorageHandler().getEventSender().addListener(new ConfigEventListener() {
 
-            public void onConfigValueModified(ConfigInterface c, String key, Object newValue) {
+            public void onConfigValueModified(Class<? extends ConfigInterface> c, String key, Object newValue) {
                 if ("downloadSpeedLimit".equalsIgnoreCase(key) || "DownloadSpeedLimitEnabled".equalsIgnoreCase(key)) {
                     connectionManager.setIncommingBandwidthLimit(config.isDownloadSpeedLimitEnabled() ? config.getDownloadSpeedLimit() : 0);
                 }
 
             }
 
-            public void onConfigValidatorError(ConfigInterface config, Throwable validateException, KeyHandler methodHandler) {
+            public void onConfigValidatorError(Class<? extends ConfigInterface> config, Throwable validateException, KeyHandler methodHandler) {
             }
         });
 

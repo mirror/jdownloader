@@ -30,10 +30,10 @@ public class ChunksEditor extends MenuEditor implements ConfigEventListener, Cha
         add(spinner, "height 20!");
     }
 
-    public void onConfigValidatorError(ConfigInterface config, Throwable validateException, KeyHandler methodHandler) {
+    public void onConfigValidatorError(Class<? extends ConfigInterface> config, Throwable validateException, KeyHandler methodHandler) {
     }
 
-    public void onConfigValueModified(ConfigInterface config, final String key, final Object newValue) {
+    public void onConfigValueModified(Class<? extends ConfigInterface> config, final String key, final Object newValue) {
         if ("MaxChunksPerFile".equalsIgnoreCase(key)) {
             new EDTRunner() {
                 @Override

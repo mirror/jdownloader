@@ -20,7 +20,7 @@ public abstract class ExtensionConfigPanel<T extends AbstractExtension> extends 
 
     private Header            header;
 
-    public void onConfigValidatorError(ConfigInterface config, Throwable validateException, KeyHandler methodHandler) {
+    public void onConfigValidatorError(Class<? extends ConfigInterface> config, Throwable validateException, KeyHandler methodHandler) {
     }
 
     public ExtensionConfigPanel(T plg, boolean clean) {
@@ -50,7 +50,7 @@ public abstract class ExtensionConfigPanel<T extends AbstractExtension> extends 
 
     }
 
-    public void onConfigValueModified(ConfigInterface config, String key, Object newValue) {
+    public void onConfigValueModified(Class<? extends ConfigInterface> config, String key, Object newValue) {
         if ("enabled".equals(key)) {
             updateHeaders((Boolean) newValue);
 

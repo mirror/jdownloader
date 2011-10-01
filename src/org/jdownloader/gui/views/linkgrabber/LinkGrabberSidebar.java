@@ -31,9 +31,6 @@ public class LinkGrabberSidebar extends MigPanel {
     private Header             hosterFilter;
     private Header             filetypeFilter;
     private Header             quickSettingsHeader;
-    private Checkbox           addTop;
-    private Checkbox           autoConfirm;
-    private Checkbox           autoStart;
 
     public LinkGrabberSidebar(LinkGrabberTable table) {
         super("ins 0,wrap 1", "[grow,fill]", "[][][][][grow,fill][]");
@@ -92,64 +89,11 @@ public class LinkGrabberSidebar extends MigPanel {
 
         add(quicksettings, "hidemode 2");
 
-        addTop = new Checkbox(_GUI._.LinkGrabberSidebar_LinkGrabberSidebar_addtop(), _GUI._.LinkGrabberSidebar_LinkGrabberSidebar_addtop_tt()) {
+        quicksettings.add(new Checkbox(LinkFilterSettings.class, "LinkgrabberAddAtTop", _GUI._.LinkGrabberSidebar_LinkGrabberSidebar_addtop(), _GUI._.LinkGrabberSidebar_LinkGrabberSidebar_addtop_tt()));
+        quicksettings.add(new Checkbox(LinkFilterSettings.class, "LinkgrabberAutoConfirmEnabled", _GUI._.LinkGrabberSidebar_LinkGrabberSidebar_autoconfirm(), _GUI._.LinkGrabberSidebar_LinkGrabberSidebar_autoconfirm_tt()));
+        quicksettings.add(new Checkbox(LinkFilterSettings.class, "LinkgrabberAutoStartEnabled", _GUI._.LinkGrabberSidebar_LinkGrabberSidebar_autostart(), _GUI._.LinkGrabberSidebar_LinkGrabberSidebar_autostart_tt()));
 
-            /**
-             * 
-             */
-            private static final long serialVersionUID = 1L;
-
-            @Override
-            protected void setSelected(boolean selected) {
-                config.setLinkgrabberAddAtTop(selected);
-            }
-
-            @Override
-            protected boolean isSelected() {
-                return config.isLinkgrabberAddAtTop();
-            }
-
-        };
-        autoConfirm = new Checkbox(_GUI._.LinkGrabberSidebar_LinkGrabberSidebar_autoconfirm(), _GUI._.LinkGrabberSidebar_LinkGrabberSidebar_autoconfirm_tt()) {
-
-            /**
-             * 
-             */
-            private static final long serialVersionUID = 1L;
-
-            @Override
-            protected void setSelected(boolean selected) {
-                config.setLinkgrabberAutoConfirmEnabled(selected);
-            }
-
-            @Override
-            protected boolean isSelected() {
-                return config.isLinkgrabberAutoConfirmEnabled();
-            }
-
-        };
-        autoStart = new Checkbox(_GUI._.LinkGrabberSidebar_LinkGrabberSidebar_autostart(), _GUI._.LinkGrabberSidebar_LinkGrabberSidebar_autostart_tt()) {
-
-            /**
-             * 
-             */
-            private static final long serialVersionUID = 1L;
-
-            @Override
-            protected void setSelected(boolean selected) {
-                config.setLinkgrabberAutoStartEnabled(selected);
-            }
-
-            @Override
-            protected boolean isSelected() {
-                return config.isLinkgrabberAutoStartEnabled();
-            }
-
-        };
-
-        quicksettings.add(addTop);
-        quicksettings.add(autoConfirm);
-        quicksettings.add(autoStart);
+        quicksettings.add(new Checkbox(LinkFilterSettings.class, "LinkFilterEnabled", _GUI._.LinkGrabberSidebar_LinkGrabberSidebar_globfilter(), _GUI._.LinkGrabberSidebar_LinkGrabberSidebar_globfilter_tt()));
         // TableHeaderUI ds = table.getTableHeader().getUI();
         // JTableHeader th = table.getTableHeader();
 
@@ -163,12 +107,12 @@ public class LinkGrabberSidebar extends MigPanel {
 
         config.getStorageHandler().getEventSender().addListener(new ConfigEventListener() {
 
-            public void onConfigValueModified(ConfigInterface cfg, String key, Object newValue) {
+            public void onConfigValueModified(Class<? extends ConfigInterface> cfg, String key, Object newValue) {
 
                 updateVisibility();
             }
 
-            public void onConfigValidatorError(ConfigInterface config, Throwable validateException, KeyHandler methodHandler) {
+            public void onConfigValidatorError(Class<? extends ConfigInterface> config, Throwable validateException, KeyHandler methodHandler) {
             }
         });
         updateVisibility();

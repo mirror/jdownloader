@@ -61,7 +61,7 @@ public class SpeedMeterPanel extends Graph {
         speedLimiter.setValue(config.isDownloadSpeedLimitEnabled() ? config.getDownloadSpeedLimit() : 0);
         config.getStorageHandler().getEventSender().addListener(new ConfigEventListener() {
 
-            public void onConfigValueModified(ConfigInterface c, String key, Object newValue) {
+            public void onConfigValueModified(Class<? extends ConfigInterface> c, String key, Object newValue) {
                 if ("downloadSpeedLimit".equalsIgnoreCase(key) || "DownloadSpeedLimitEnabled".equalsIgnoreCase(key)) {
                     new EDTRunner() {
 
@@ -84,7 +84,7 @@ public class SpeedMeterPanel extends Graph {
 
             }
 
-            public void onConfigValidatorError(ConfigInterface config, Throwable validateException, KeyHandler methodHandler) {
+            public void onConfigValidatorError(Class<? extends ConfigInterface> config, Throwable validateException, KeyHandler methodHandler) {
             }
         });
 

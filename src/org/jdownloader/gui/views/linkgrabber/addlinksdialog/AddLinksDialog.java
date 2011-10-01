@@ -117,7 +117,7 @@ public class AddLinksDialog extends AbstractDialog<CrawlerJob> {
         errorLabel.setHorizontalAlignment(SwingConstants.RIGHT);
         ret.add(errorLabel, "alignx right");
         ret.add(this.okButton, "alignx right,sizegroup confirms,growx,pushx");
-        ret.add(confirmOptions, "width 8!");
+        ret.add(confirmOptions, "width 12!");
         return ret;
     }
 

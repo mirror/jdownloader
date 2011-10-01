@@ -208,7 +208,7 @@ public class ActionController {
                 });
                 JsonConfig.create(GeneralSettings.class).getStorageHandler().getEventSender().addListener(new ConfigEventListener() {
 
-                    public void onConfigValueModified(ConfigInterface config, String key, Object newValue) {
+                    public void onConfigValueModified(Class<? extends ConfigInterface> config, String key, Object newValue) {
                         if ("pausespeed".equalsIgnoreCase(key)) {
                             new EDTRunner() {
 
@@ -222,7 +222,7 @@ public class ActionController {
 
                     }
 
-                    public void onConfigValidatorError(ConfigInterface config, Throwable validateException, KeyHandler methodHandler) {
+                    public void onConfigValidatorError(Class<? extends ConfigInterface> config, Throwable validateException, KeyHandler methodHandler) {
                     }
                 });
 

@@ -141,7 +141,7 @@ public class LinkFilterController implements LinkCrawlerFilter {
     }
 
     public boolean dropByUrl(CrawledLink link) {
-
+        if (!config.isLinkFilterEnabled()) return false;
         boolean matches = false;
 
         if (denyUrlFilter.size() > 0) {
@@ -200,6 +200,7 @@ public class LinkFilterController implements LinkCrawlerFilter {
     }
 
     public boolean dropByFileProperties(CrawledLink link) {
+        if (!config.isLinkFilterEnabled()) return false;
         DownloadLink dlink = link.getDownloadLink();
         boolean matches = false;
 

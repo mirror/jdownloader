@@ -55,11 +55,11 @@ public class ProxyController implements ConfigEventListener {
         return eventSender;
     }
 
-    public void onConfigValueModified(ConfigInterface config, String key, Object newValue) {
+    public void onConfigValueModified(Class<? extends ConfigInterface> config, String key, Object newValue) {
         System.out.println("Reload");
-        config.getStorageHandler().getEventSender().removeListener(this);
+        JsonConfig.create(config).getStorageHandler().getEventSender().removeListener(this);
         loadProxySettings();
-        config.getStorageHandler().getEventSender().addListener(this);
+        JsonConfig.create(config).getStorageHandler().getEventSender().addListener(this);
     }
 
     private ProxyController() {
@@ -684,6 +684,6 @@ public class ProxyController implements ConfigEventListener {
         return none;
     }
 
-    public void onConfigValidatorError(ConfigInterface config, Throwable validateException, KeyHandler methodHandler) {
+    public void onConfigValidatorError(Class<? extends ConfigInterface> config, Throwable validateException, KeyHandler methodHandler) {
     }
 }

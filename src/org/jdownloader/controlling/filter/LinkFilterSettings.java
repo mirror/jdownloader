@@ -35,11 +35,6 @@ public interface LinkFilterSettings extends ConfigInterface {
 
     void setLinkgrabberFiletypeQuickfilterEnabled(boolean b);
 
-    @DefaultBooleanValue(true)
-    boolean isLingrabberGlobalLinkFilterEnabled();
-
-    void setLingrabberGlobalLinkFilterEnabled(boolean b);
-
     @DefaultBooleanValue(false)
     boolean isLinkgrabberAddAtTop();
 

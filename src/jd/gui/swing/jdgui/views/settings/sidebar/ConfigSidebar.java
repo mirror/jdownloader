@@ -345,7 +345,7 @@ public class ConfigSidebar extends JPanel implements ControlListener, MouseMotio
 
     }
 
-    public void onConfigValueModified(ConfigInterface config, String key, Object newValue) {
+    public void onConfigValueModified(Class<? extends ConfigInterface> config, String key, Object newValue) {
         new EDTRunner() {
 
             @Override
@@ -355,6 +355,6 @@ public class ConfigSidebar extends JPanel implements ControlListener, MouseMotio
         };
     }
 
-    public void onConfigValidatorError(ConfigInterface config, Throwable validateException, KeyHandler methodHandler) {
+    public void onConfigValidatorError(Class<? extends ConfigInterface> config, Throwable validateException, KeyHandler methodHandler) {
     }
 }

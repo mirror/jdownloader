@@ -2803,4 +2803,10 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Are you sure?" })
     String literall_are_you_sure();
 
+    @Default(lngs = { "en" }, values = { "Link Filter" })
+    String LinkGrabberSidebar_LinkGrabberSidebar_globfilter();
+
+    @Default(lngs = { "en" }, values = { "Enable/Disable global Linkgrabber Filter (see Settings)" })
+    String LinkGrabberSidebar_LinkGrabberSidebar_globfilter_tt();
+
 }

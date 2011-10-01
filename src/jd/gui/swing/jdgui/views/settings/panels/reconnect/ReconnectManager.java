@@ -106,10 +106,10 @@ public class ReconnectManager extends MigPanel implements SettingsComponent, Act
         return "wmin 10,height 60:n:n,pushy,growy";
     }
 
-    public void onConfigValidatorError(ConfigInterface config, Throwable validateException, KeyHandler methodHandler) {
+    public void onConfigValidatorError(Class<? extends ConfigInterface> config, Throwable validateException, KeyHandler methodHandler) {
     }
 
-    public void onConfigValueModified(ConfigInterface config, String key, Object newValue) {
+    public void onConfigValueModified(Class<? extends ConfigInterface> config, String key, Object newValue) {
         if (ReconnectConfig.ACTIVE_PLUGIN_ID.equalsIgnoreCase(key)) {
             fill();
         }

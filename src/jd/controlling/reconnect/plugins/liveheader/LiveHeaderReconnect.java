@@ -383,11 +383,11 @@ public class LiveHeaderReconnect extends RouterPlugin implements ControlListener
 
     }
 
-    public void onConfigValidatorError(ConfigInterface config, Throwable validateException, KeyHandler methodHandler) {
+    public void onConfigValidatorError(Class<? extends ConfigInterface> config, Throwable validateException, KeyHandler methodHandler) {
     }
 
-    public void onConfigValueModified(ConfigInterface config, String key, Object newValue) {
-        if (config == settings) {
+    public void onConfigValueModified(Class<? extends ConfigInterface> config, String key, Object newValue) {
+        if (JsonConfig.create(config) == settings) {
             System.out.println("Key: " + key + "=" + newValue);
             updateGUI();
         } else {

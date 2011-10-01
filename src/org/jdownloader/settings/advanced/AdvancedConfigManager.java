@@ -88,11 +88,11 @@ public class AdvancedConfigManager implements ConfigEventListener {
         }
     }
 
-    public void onConfigValueModified(ConfigInterface config, String key, Object newValue) {
+    public void onConfigValueModified(Class<? extends ConfigInterface> config, String key, Object newValue) {
     }
 
-    public void onConfigValidatorError(ConfigInterface config, Throwable validateException, KeyHandler methodHandler) {
-        Dialog.getInstance().showErrorDialog(_GUI._.AdvancedConfigmanager_error_validator(config.getStorageHandler().getConfigInterface().getClass().getSimpleName(), methodHandler.getKey(), validateException.getMessage()));
+    public void onConfigValidatorError(Class<? extends ConfigInterface> config, Throwable validateException, KeyHandler methodHandler) {
+        Dialog.getInstance().showErrorDialog(_GUI._.AdvancedConfigmanager_error_validator(JsonConfig.create(config).getStorageHandler().getConfigInterface().getClass().getSimpleName(), methodHandler.getKey(), validateException.getMessage()));
 
     }
 }
