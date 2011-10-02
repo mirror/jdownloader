@@ -1,7 +1,7 @@
 package jd.controlling.reconnect.plugins.upnp;
 
 import org.appwork.storage.config.ConfigInterface;
-import org.jdownloader.settings.annotations.AboutConfig;
+import org.appwork.storage.config.annotations.AboutConfig;
 
 public interface UPUPReconnectSettings extends ConfigInterface {
 

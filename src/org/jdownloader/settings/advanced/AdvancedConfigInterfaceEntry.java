@@ -5,21 +5,24 @@ import java.lang.reflect.Type;
 
 import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.KeyHandler;
+import org.appwork.storage.config.StorageHandler;
 import org.appwork.storage.config.annotations.Description;
-import org.jdownloader.settings.annotations.RangeValidatorMarker;
-import org.jdownloader.settings.annotations.RegexValidatorAnnotation;
+import org.appwork.storage.config.annotations.RangeValidator;
+import org.appwork.storage.config.annotations.RegexValidator;
 
 public class AdvancedConfigInterfaceEntry implements AdvancedConfigEntry {
 
-    private ConfigInterface configInterface;
-    private KeyHandler      keyHandler;
+    private ConfigInterface   configInterface;
+    private KeyHandler<?>     keyHandler;
+    private StorageHandler<?> storageHandler;
 
-    public KeyHandler getKeyHandler() {
+    public KeyHandler<?> getKeyHandler() {
         return keyHandler;
     }
 
     public AdvancedConfigInterfaceEntry(ConfigInterface cf, KeyHandler m) {
         configInterface = cf;
+        storageHandler = cf.getStorageHandler();
         keyHandler = m;
     }
 
@@ -31,8 +34,9 @@ public class AdvancedConfigInterfaceEntry implements AdvancedConfigEntry {
         return configInterface.getStorageHandler().getConfigInterface().getSimpleName().replace("Config", "") + "." + keyHandler.getKey();
     }
 
+    @SuppressWarnings("unchecked")
     public Object getValue() {
-        return keyHandler.getValue();
+        return storageHandler.getValue(keyHandler);
     }
 
     public Class<?> getType() {
@@ -40,17 +44,18 @@ public class AdvancedConfigInterfaceEntry implements AdvancedConfigEntry {
     }
 
     public String getDescription() {
+
         Description an = keyHandler.getAnnotation(Description.class);
         if (an != null) { return an.value(); }
         return null;
     }
 
     public Validator getValidator() {
-        RangeValidatorMarker an = keyHandler.getAnnotation(RangeValidatorMarker.class);
-        if (an != null) return new RangeValidator(an.range()[0], an.range()[1]);
+        RangeValidator an = keyHandler.getAnnotation(RangeValidator.class);
+        if (an != null) return new org.jdownloader.settings.advanced.RangeValidator(an.range()[0], an.range()[1]);
 
-        RegexValidatorAnnotation an2 = keyHandler.getAnnotation(RegexValidatorAnnotation.class);
-        if (an2 != null) return new RegexValidator(an2.value());
+        RegexValidator an2 = keyHandler.getAnnotation(RegexValidator.class);
+        if (an2 != null) return new org.jdownloader.settings.advanced.RegexValidator(an2.value());
         return null;
     }
 

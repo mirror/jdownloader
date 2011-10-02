@@ -2,10 +2,10 @@ package org.jdownloader.extensions.neembuu;
 
 import jd.plugins.ExtensionConfigInterface;
 
+import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultIntValue;
 import org.appwork.storage.config.annotations.Description;
 import org.appwork.storage.config.annotations.PlainStorage;
-import org.jdownloader.settings.annotations.AboutConfig;
 
 @PlainStorage
 public interface NeembuuConfig extends ExtensionConfigInterface {

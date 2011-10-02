@@ -3,13 +3,21 @@ package org.jdownloader.settings;
 import java.util.ArrayList;
 
 import org.appwork.storage.config.ConfigInterface;
+import org.appwork.storage.config.JsonConfig;
+import org.appwork.storage.config.KeyHandler;
+import org.appwork.storage.config.StorageHandler;
+import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultFactory;
 import org.appwork.storage.config.annotations.Description;
-import org.jdownloader.settings.annotations.AboutConfig;
-import org.jdownloader.settings.annotations.RangeValidatorMarker;
+import org.appwork.storage.config.annotations.RangeValidator;
 
 @DefaultFactory(GeneralSettingsDefaults.class)
 public interface GeneralSettings extends ConfigInterface {
+
+    public static final GeneralSettings                 CFG = JsonConfig.create(GeneralSettings.class);
+    @SuppressWarnings("unchecked")
+    public static final StorageHandler<GeneralSettings> SH  = (StorageHandler<GeneralSettings>) CFG.getStorageHandler();
+
     @AboutConfig
     void setDefaultDownloadFolder(String ddl);
 
@@ -64,7 +72,7 @@ public interface GeneralSettings extends ConfigInterface {
     void setIfFileExistsAction(IfFileExistsAction action);
 
     @AboutConfig
-    @RangeValidatorMarker(range = { 0, 100 })
+    @RangeValidator(range = { 0, 100 })
     int getMaxSimultaneDownloadsPerHost();
 
     void setMaxSimultaneDownloadsPerHost(int num);
@@ -99,10 +107,11 @@ public interface GeneralSettings extends ConfigInterface {
 
     // JSonWrapper.get("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN,
     // 2);
+    public static final KeyHandler MAX_SIMULTANE_DOWNLOADS = CFG.getStorageHandler().getKeyHandler("MaxSimultaneDownloads");
 
     @AboutConfig
     @Description("How many downloads should Jdownloader download at once? Note that most hosters allow only one download at a time in freemode")
-    @RangeValidatorMarker(range = { 1, 50 })
+    @RangeValidator(range = { 1, 50 })
     int getMaxSimultaneDownloads();
 
     void setMaxSimultaneDownloads(int num);
@@ -117,6 +126,8 @@ public interface GeneralSettings extends ConfigInterface {
 
     // JSonWrapper.get("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED,
     // 0)
+    public static final KeyHandler DOWNLOAD_SPEED_LIMIT = CFG.getStorageHandler().getKeyHandler("DownloadSpeedLimit");
+
     @AboutConfig
     @Description("Download Speed limit in bytes.")
     int getDownloadSpeedLimit();
@@ -129,6 +140,8 @@ public interface GeneralSettings extends ConfigInterface {
 
     void setPauseSpeed(int kb);
 
+    public static final KeyHandler MAX_CHUNKS_PER_FILE = CFG.getStorageHandler().getKeyHandler("MaxChunksPerFile");
+
     @AboutConfig
     @Description("http://jdownloader.org/knowledge/wiki/glossary/chunkload")
     int getMaxChunksPerFile();
@@ -137,14 +150,14 @@ public interface GeneralSettings extends ConfigInterface {
 
     @AboutConfig
     @Description("max buffer size for each download connection in kb")
-    @RangeValidatorMarker(range = { 100, 10240 })
+    @RangeValidator(range = { 100, 10240 })
     int getMaxBufferSize();
 
     void setMaxBufferSize(int num);
 
     @AboutConfig
     @Description("flush download buffers when filled up to x percent (1-100)")
-    @RangeValidatorMarker(range = { 1, 100 })
+    @RangeValidator(range = { 1, 100 })
     int getFlushBufferLevel();
 
     void setFlushBufferLevel(int level);
@@ -157,14 +170,14 @@ public interface GeneralSettings extends ConfigInterface {
 
     @AboutConfig
     @Description("Timeout for connecting to a httpserver")
-    @RangeValidatorMarker(range = { 0, 300000 })
+    @RangeValidator(range = { 0, 300000 })
     int getHttpConnectTimeout();
 
     void setHttpConnectTimeout(int seconds);
 
     @AboutConfig
     @Description("Timeout for reading to a httpserver")
-    @RangeValidatorMarker(range = { 0, 300000 })
+    @RangeValidator(range = { 0, 300000 })
     int getHttpReadTimeout();
 
     void setHttpReadTimeout(int seconds);
@@ -180,6 +193,8 @@ public interface GeneralSettings extends ConfigInterface {
     long getWaittimeOnConnectionLoss();
 
     void setWaittimeOnConnectionLoss(long milliseconds);
+
+    public static final KeyHandler DOWNLOAD_SPEED_LIMIT_ENABLED = CFG.getStorageHandler().getKeyHandler("DownloadSpeedLimitEnabled");
 
     @AboutConfig
     boolean isDownloadSpeedLimitEnabled();

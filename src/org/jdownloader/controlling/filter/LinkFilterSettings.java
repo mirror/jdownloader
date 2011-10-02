@@ -3,11 +3,21 @@ package org.jdownloader.controlling.filter;
 import java.util.ArrayList;
 
 import org.appwork.storage.config.ConfigInterface;
+import org.appwork.storage.config.JsonConfig;
+import org.appwork.storage.config.KeyHandler;
+import org.appwork.storage.config.StorageHandler;
+import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
 import org.appwork.storage.config.annotations.DefaultObjectValue;
-import org.jdownloader.settings.annotations.AboutConfig;
 
 public interface LinkFilterSettings extends ConfigInterface {
+
+    public static final LinkFilterSettings                 CFG                 = JsonConfig.create(LinkFilterSettings.class);
+    public static final StorageHandler<LinkFilterSettings> SH                  = (StorageHandler<LinkFilterSettings>) CFG.getStorageHandler();
+    // let's do this mapping here. We get a nullpointer on init if mapping is
+    // wrong.
+    public static final KeyHandler                         LINK_FILTER_ENABLED = CFG.getStorageHandler().getKeyHandler("LinkFilterEnabled");
+
     @DefaultObjectValue("[]")
     @AboutConfig
     ArrayList<LinkgrabberFilterRule> getFilterList();

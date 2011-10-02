@@ -3,8 +3,8 @@ package jd.controlling.reconnect.plugins.liveheader;
 import jd.controlling.reconnect.plugins.liveheader.remotecall.RouterData;
 
 import org.appwork.storage.config.ConfigInterface;
+import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultFactory;
-import org.jdownloader.settings.annotations.AboutConfig;
 
 @DefaultFactory(LiveHeaderReconnectSettingsDefaults.class)
 public interface LiveHeaderReconnectSettings extends ConfigInterface {

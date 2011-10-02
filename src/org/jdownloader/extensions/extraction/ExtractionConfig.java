@@ -2,18 +2,19 @@ package org.jdownloader.extensions.extraction;
 
 import jd.plugins.ExtensionConfigInterface;
 
+import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
 import org.appwork.storage.config.annotations.DefaultEnumValue;
 import org.appwork.storage.config.annotations.DefaultIntValue;
 import org.appwork.storage.config.annotations.DefaultStringArrayValue;
 import org.appwork.storage.config.annotations.DefaultStringValue;
 import org.appwork.storage.config.annotations.Description;
-import org.jdownloader.settings.annotations.AboutConfig;
-import org.jdownloader.settings.annotations.RangeValidatorMarker;
+import org.appwork.storage.config.annotations.RangeValidator;
 
 public interface ExtractionConfig extends ExtensionConfigInterface {
     @DefaultStringArrayValue(value = {})
     @AboutConfig
+    @Description("A Blacklist is a list of regular expressions. Use a blacklist to avoid extracting certain filetypes.")
     String[] getBlacklistPatterns();
 
     @DefaultEnumValue("org.jdownloader.extensions.extraction.CPUPriority.HIGH")
@@ -38,7 +39,7 @@ public interface ExtractionConfig extends ExtensionConfigInterface {
     @org.appwork.storage.config.annotations.Description("Only use subfolders if the archive contains more than *** files")
     @AboutConfig
     @DefaultIntValue(1)
-    @RangeValidatorMarker(range = { 0, 30 })
+    @RangeValidator(range = { 0, 30 })
     int getSubPathFilesTreshhold();
 
     @DefaultBooleanValue(true)
@@ -78,26 +79,20 @@ public interface ExtractionConfig extends ExtensionConfigInterface {
     @DefaultBooleanValue(false)
     boolean isSubpathEnabledIfAllFilesAreInAFolder();
 
-    @AboutConfig
     void setAskForUnknownPasswordsEnabled(boolean enabled);
 
-    @Description("A Blacklist is a list of regular expressions. Use a blacklist to avoid extracting certain filetypes.")
-    @AboutConfig
     void setBlacklistPatterns(String[] patterns);
 
-    @AboutConfig
     void setCPUPriority(CPUPriority priority);
 
     void setCustomExtractionPath(String path);
 
     void setCustomExtractionPathEnabled(boolean enabled);
 
-    @AboutConfig
     void setDeepExtractionEnabled(boolean enabled);
 
     void setDeleteArchiveFilesAfterExtraction(boolean enabled);
 
-    @AboutConfig
     void setDeleteInfoFilesAfterExtraction(boolean enabled);
 
     void setOverwriteExistingFilesEnabled(boolean enabled);

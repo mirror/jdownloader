@@ -3,11 +3,11 @@ package org.jdownloader.gui.views.linkgrabber.addlinksdialog;
 import java.util.ArrayList;
 
 import org.appwork.storage.config.ConfigInterface;
+import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
 import org.appwork.storage.config.annotations.DefaultObjectValue;
 import org.appwork.storage.config.annotations.Description;
-import org.jdownloader.settings.annotations.AboutConfig;
-import org.jdownloader.settings.annotations.RequiresRestart;
+import org.appwork.storage.config.annotations.RequiresRestart;
 
 public interface LinkgrabberSettings extends ConfigInterface {
 

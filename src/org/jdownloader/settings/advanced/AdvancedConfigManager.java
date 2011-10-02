@@ -12,6 +12,7 @@ import org.appwork.storage.config.ConfigEventListener;
 import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.KeyHandler;
+import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.api.RemoteAPIConfig;
 import org.jdownloader.controlling.filter.LinkFilterSettings;
@@ -22,7 +23,6 @@ import org.jdownloader.settings.AccountSettings;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 import org.jdownloader.settings.InternetConnectionSettings;
-import org.jdownloader.settings.annotations.AboutConfig;
 
 public class AdvancedConfigManager implements ConfigEventListener {
     private static final AdvancedConfigManager INSTANCE = new AdvancedConfigManager();

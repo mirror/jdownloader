@@ -2,11 +2,11 @@ package org.jdownloader.extensions.chat;
 
 import jd.plugins.ExtensionConfigInterface;
 
+import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
 import org.appwork.storage.config.annotations.DefaultIntValue;
 import org.appwork.storage.config.annotations.DefaultStringValue;
-import org.jdownloader.settings.annotations.AboutConfig;
-import org.jdownloader.settings.annotations.RangeValidatorMarker;
+import org.appwork.storage.config.annotations.RangeValidator;
 
 public interface ChatConfig extends ExtensionConfigInterface {
     @DefaultStringValue("#jDownloader")
@@ -38,7 +38,7 @@ public interface ChatConfig extends ExtensionConfigInterface {
 
     @DefaultIntValue(0)
     @AboutConfig
-    @RangeValidatorMarker(range = { 0, 1 })
+    @RangeValidator(range = { 0, 1 })
     int getUserListPosition();
 
     @DefaultBooleanValue(true)

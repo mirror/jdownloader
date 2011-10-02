@@ -23,10 +23,9 @@ import javax.swing.event.ChangeListener;
 import jd.gui.swing.jdgui.views.settings.components.ComboBox;
 import jd.gui.swing.jdgui.views.settings.components.Spinner;
 
-import org.appwork.storage.config.ConfigEventListener;
-import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.KeyHandler;
+import org.appwork.storage.config.listeners.ModifiedListener;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.gui.settings.AbstractConfigPanel;
 import org.jdownloader.gui.translate._GUI;
@@ -36,7 +35,7 @@ import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.settings.IfFileExistsAction;
 import org.jdownloader.translate._JDT;
 
-public class DownloadControll extends AbstractConfigPanel implements ConfigEventListener, ChangeListener {
+public class DownloadControll extends AbstractConfigPanel implements ChangeListener {
 
     private static final long                  serialVersionUID = 1L;
     private Spinner                            maxSimPerHost;
@@ -77,7 +76,24 @@ public class DownloadControll extends AbstractConfigPanel implements ConfigEvent
         this.addPair(_GUI._.gui_config_general_todowithdownloads(), remove);
         this.addPair(_GUI._.system_download_triggerfileexists(), ifFileExists);
         config = JsonConfig.create(GeneralSettings.class);
-        config.getStorageHandler().getEventSender().addListener(this);
+        config.getStorageHandler().getEventSender().addListener(new ModifiedListener(GeneralSettings.MAX_CHUNKS_PER_FILE, GeneralSettings.MAX_SIMULTANE_DOWNLOADS) {
+
+            @Override
+            protected void onChanged(KeyHandler<?> handler, Object newValue) {
+                if (isShown()) {
+                    new EDTRunner() {
+
+                        @Override
+                        protected void runInEDT() {
+                            if (isShown()) {
+                                updateContents();
+                            }
+                        }
+                    };
+                }
+            }
+
+        });
     }
 
     @Override
@@ -87,6 +103,7 @@ public class DownloadControll extends AbstractConfigPanel implements ConfigEvent
 
     @Override
     public void save() {
+
         config.setMaxChunksPerFile((Integer) maxchunks.getValue());
         config.setCleanupAfterDownloadAction(remove.getValue());
         config.setIfFileExistsAction(this.ifFileExists.getValue());
@@ -102,26 +119,6 @@ public class DownloadControll extends AbstractConfigPanel implements ConfigEvent
         this.ifFileExists.setValue(config.getIfFileExistsAction());
         this.maxSimPerHost.setValue(config.getMaxSimultaneDownloadsPerHost());
 
-    }
-
-    public void onConfigValidatorError(Class<? extends ConfigInterface> config, Throwable validateException, KeyHandler methodHandler) {
-    }
-
-    public void onConfigValueModified(Class<? extends ConfigInterface> c, final String key, final Object newValue) {
-        new EDTRunner() {
-
-            @Override
-            protected void runInEDT() {
-                if ("MaxChunksPerFile".equalsIgnoreCase(key)) {
-                    maxchunks.setValue(config.getMaxChunksPerFile());
-                } else if ("MaxSimultaneDownloads".equalsIgnoreCase(key)) {
-                    maxSim.setValue(config.getMaxSimultaneDownloads());
-                }
-                // else if("MaxChunksPerFile".equalsIgnoreCase(key)){
-                //
-                // }
-            }
-        };
     }
 
     public void stateChanged(ChangeEvent e) {

@@ -2,8 +2,8 @@ package org.jdownloader.extensions.translator;
 
 import jd.plugins.ExtensionConfigInterface;
 
+import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.Description;
-import org.jdownloader.settings.annotations.AboutConfig;
 
 /**
  * This interface defines all settings of the translation Extension. Extend it

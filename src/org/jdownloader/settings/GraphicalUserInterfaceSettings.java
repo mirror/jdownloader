@@ -1,13 +1,13 @@
 package org.jdownloader.settings;
 
 import org.appwork.storage.config.ConfigInterface;
+import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
 import org.appwork.storage.config.annotations.DefaultIntValue;
 import org.appwork.storage.config.annotations.DefaultStringValue;
 import org.appwork.storage.config.annotations.Description;
+import org.appwork.storage.config.annotations.RequiresRestart;
 import org.appwork.storage.config.annotations.ValueValidator;
-import org.jdownloader.settings.annotations.AboutConfig;
-import org.jdownloader.settings.annotations.RequiresRestart;
 
 @ValueValidator(GraphicalUserInterfaceSettingsValidator.class)
 public interface GraphicalUserInterfaceSettings extends ConfigInterface {
