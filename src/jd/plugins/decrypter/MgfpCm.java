@@ -16,7 +16,6 @@
 
 package jd.plugins.decrypter;
 
-import java.io.IOException;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
@@ -36,14 +35,12 @@ public class MgfpCm extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private String THISID;
-
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setFollowRedirects(false);
         String parameter = param.toString();
         parameter = parameter.replaceAll("view\\=[0-9]+", "view=2");
-        if (!parameter.contains("view=2")) parameter += "&view=2";
+        if (!parameter.contains("view=2")) parameter += "?view=2";
         br.getPage(parameter);
         if (br.getRedirectLocation() != null) {
             if (br.getRedirectLocation().contains("/pictures/")) {
@@ -85,59 +82,18 @@ public class MgfpCm extends PluginForDecrypt {
         }
         galleryName = Encoding.htmlDecode(galleryName);
         authorsName = Encoding.htmlDecode(authorsName);
-        THISID = new Regex(parameter, "imagefap\\.com/pictures/(\\d+)/").getMatch(0);
-        boolean done = false;
-        int currentLastPages = 0;
-        int lastLastPage = 0;
-        // Find out how many pages the link has
-        if (THISID != null) {
-            getSpecifiedPage(0);
-            for (int i = 0; i <= 20; i++) {
-                currentLastPages = findLastPage(currentLastPages);
-                if (currentLastPages == lastLastPage) {
-                    done = true;
-                    break;
-                    // if a link has 9(10) or more pages it doesn't show them
-                    // all so we have to access the last page and see how many
-                    // more pages we have.
-                    // By repeating this till we reach the end we know how many
-                    // pages the link has.
-                } else if (currentLastPages >= 9) {
-                    getSpecifiedPage(currentLastPages);
-                    lastLastPage = currentLastPages;
-                    continue;
-                }
-                done = true;
-                break;
-            }
-            if (currentLastPages > 0) logger.info("Found " + (currentLastPages + 1) + " pages, starting to decrypt...");
-            if (!done) {
-                logger.warning("Couldn't find all pages, stopping...");
-            }
-        }
-        // Decrypt all pages, find all links
-        progress.setRange(currentLastPages);
         double counter = 0.0001;
-        for (int i = 0; i <= currentLastPages; i++) {
-            if (currentLastPages > 0) {
-                logger.info("Decrypting page " + i + " of " + currentLastPages);
-                getSpecifiedPage(i);
-            }
-            if (!br.containsHTML("<b>Could not find gallery</b>")) {
-                String links[] = br.getRegex("<a name=\"\\d+\" href=\"/image\\.php\\?id=(\\d+)\\&").getColumn(0);
-                if (links == null || links.length == 0) return null;
-                for (String element : links) {
-                    String orderID = new Regex(String.format("&orderid=%.4f&", counter), "\\&orderid=0\\.(\\d+)").getMatch(0);
-                    DownloadLink link = createDownloadlink("http://imagefap.com/image.php?id=" + element);
-                    link.setProperty("orderid", orderID);
-                    link.setProperty("galleryname", galleryName);
-                    link.setProperty("authorsname", authorsName);
-                    link.setName(orderID);
-                    decryptedLinks.add(link);
-                    counter += 0.0001;
-                }
-            }
-            progress.increase(1);
+        String links[] = br.getRegex("<a name=\"\\d+\" href=\"/image\\.php\\?id=(\\d+)\\&").getColumn(0);
+        if (links == null || links.length == 0) return null;
+        for (String element : links) {
+            String orderID = new Regex(String.format("&orderid=%.4f&", counter), "\\&orderid=0\\.(\\d+)").getMatch(0);
+            DownloadLink link = createDownloadlink("http://imagefap.com/image.php?id=" + element);
+            link.setProperty("orderid", orderID);
+            link.setProperty("galleryname", galleryName);
+            link.setProperty("authorsname", authorsName);
+            link.setName(orderID);
+            decryptedLinks.add(link);
+            counter += 0.0001;
         }
         // Finally set the packagename even if its set again in the linkgrabber
         // available check of the imagefap hosterplugin
@@ -145,20 +101,6 @@ public class MgfpCm extends PluginForDecrypt {
         fp.setName(authorsName.trim() + " - " + galleryName.trim());
         fp.addLinks(decryptedLinks);
         return decryptedLinks;
-    }
-
-    private int findLastPage(int currentLastPage) {
-        String[] allpages = br.getRegex("<a class=link3 href=\"\\?pgid=\\&amp;gid=\\d+\\&amp;page=(\\d+)\\&amp;").getColumn(0);
-        if (allpages != null && allpages.length != 0) {
-            for (String pageText : allpages) {
-                if (Integer.parseInt(pageText) > currentLastPage) currentLastPage = Integer.parseInt(pageText);
-            }
-        }
-        return currentLastPage;
-    }
-
-    private void getSpecifiedPage(int page) throws IOException {
-        br.getPage("http://www.imagefap.com/pictures/" + THISID + "/bla?pgid=&gid=" + THISID + "&page=" + page + "&view=0");
     }
 
 }

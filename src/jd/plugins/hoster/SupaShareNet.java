@@ -261,7 +261,7 @@ public class SupaShareNet extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        doFree(downloadLink, true, 1, true);
+        doFree(downloadLink, true, 0, true);
     }
 
     @Override
