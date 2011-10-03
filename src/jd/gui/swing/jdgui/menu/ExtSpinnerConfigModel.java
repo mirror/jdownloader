@@ -6,8 +6,8 @@ import javax.swing.SpinnerNumberModel;
 import org.appwork.storage.config.ConfigEventListener;
 import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.JsonConfig;
-import org.appwork.storage.config.KeyHandler;
-import org.appwork.storage.config.StorageHandler;
+import org.appwork.storage.config.handler.KeyHandler;
+import org.appwork.storage.config.handler.StorageHandler;
 import org.appwork.utils.swing.EDTRunner;
 
 public class ExtSpinnerConfigModel extends SpinnerNumberModel implements ConfigEventListener {

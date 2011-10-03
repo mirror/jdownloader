@@ -9,7 +9,7 @@ import org.appwork.storage.config.annotations.DefaultIntValue;
 import org.appwork.storage.config.annotations.DefaultStringArrayValue;
 import org.appwork.storage.config.annotations.DefaultStringValue;
 import org.appwork.storage.config.annotations.Description;
-import org.appwork.storage.config.annotations.RangeValidator;
+import org.appwork.storage.config.annotations.SpinnerValidator;
 
 public interface ExtractionConfig extends ExtensionConfigInterface {
     @DefaultStringArrayValue(value = {})
@@ -39,7 +39,7 @@ public interface ExtractionConfig extends ExtensionConfigInterface {
     @org.appwork.storage.config.annotations.Description("Only use subfolders if the archive contains more than *** files")
     @AboutConfig
     @DefaultIntValue(1)
-    @RangeValidator(range = { 0, 30 })
+    @SpinnerValidator(min = 0, max = 30)
     int getSubPathFilesTreshhold();
 
     @DefaultBooleanValue(true)

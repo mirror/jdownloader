@@ -9,7 +9,7 @@ import org.appwork.storage.config.annotations.DefaultIntValue;
 import org.appwork.storage.config.annotations.DefaultStringValue;
 import org.appwork.storage.config.annotations.Description;
 import org.appwork.storage.config.annotations.PlainStorage;
-import org.appwork.storage.config.annotations.RangeValidator;
+import org.appwork.storage.config.annotations.SpinnerValidator;
 
 @PlainStorage
 public interface ReconnectConfig extends ConfigInterface {
@@ -105,7 +105,7 @@ public interface ReconnectConfig extends ConfigInterface {
     @AboutConfig
     @DefaultIntValue(5)
     @Description("Auto Reconnect Wizard performs a few reconnects for each successfull script to find the fastest one. The more rounds we use, the better the result will be, but the longer it will take.")
-    @RangeValidator(range = { 1, 20 })
+    @SpinnerValidator(min = 1, max = 20)
     int getOptimizationRounds();
 
     void setOptimizationRounds(int num);

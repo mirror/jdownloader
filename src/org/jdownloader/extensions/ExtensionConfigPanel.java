@@ -8,7 +8,7 @@ import javax.swing.ImageIcon;
 
 import org.appwork.storage.config.ConfigEventListener;
 import org.appwork.storage.config.ConfigInterface;
-import org.appwork.storage.config.KeyHandler;
+import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.gui.settings.AbstractConfigPanel;
 

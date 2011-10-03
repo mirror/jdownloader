@@ -6,7 +6,7 @@ import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
 import org.appwork.storage.config.annotations.DefaultIntValue;
 import org.appwork.storage.config.annotations.DefaultStringValue;
-import org.appwork.storage.config.annotations.RangeValidator;
+import org.appwork.storage.config.annotations.SpinnerValidator;
 
 public interface ChatConfig extends ExtensionConfigInterface {
     @DefaultStringValue("#jDownloader")
@@ -38,7 +38,7 @@ public interface ChatConfig extends ExtensionConfigInterface {
 
     @DefaultIntValue(0)
     @AboutConfig
-    @RangeValidator(range = { 0, 1 })
+    @SpinnerValidator(min = 0, max = 1)
     int getUserListPosition();
 
     @DefaultBooleanValue(true)

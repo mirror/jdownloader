@@ -49,7 +49,7 @@ import org.appwork.shutdown.ShutdownVetoListener;
 import org.appwork.storage.config.ConfigEventListener;
 import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.JsonConfig;
-import org.appwork.storage.config.KeyHandler;
+import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.utils.Application;
 import org.appwork.utils.net.throttledconnection.ThrottledConnectionManager;
 import org.jdownloader.settings.GeneralSettings;

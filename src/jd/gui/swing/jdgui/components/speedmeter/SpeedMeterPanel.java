@@ -25,7 +25,7 @@ import jd.controlling.DownloadWatchDog;
 import org.appwork.storage.config.ConfigEventListener;
 import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.JsonConfig;
-import org.appwork.storage.config.KeyHandler;
+import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.Graph;

@@ -47,7 +47,7 @@ import jd.utils.WebUpdate;
 import org.appwork.storage.config.ConfigEventListener;
 import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.JsonConfig;
-import org.appwork.storage.config.KeyHandler;
+import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.settings.GeneralSettings;

@@ -23,7 +23,7 @@ import org.appwork.shutdown.ShutdownEvent;
 import org.appwork.storage.config.ConfigEventListener;
 import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.JsonConfig;
-import org.appwork.storage.config.KeyHandler;
+import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.utils.Regex;
 import org.appwork.utils.event.DefaultEventSender;
 import org.appwork.utils.logging.Log;

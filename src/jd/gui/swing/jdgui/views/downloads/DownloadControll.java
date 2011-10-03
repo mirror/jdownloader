@@ -24,7 +24,7 @@ import jd.gui.swing.jdgui.views.settings.components.ComboBox;
 import jd.gui.swing.jdgui.views.settings.components.Spinner;
 
 import org.appwork.storage.config.JsonConfig;
-import org.appwork.storage.config.KeyHandler;
+import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.storage.config.listeners.ModifiedListener;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.gui.settings.AbstractConfigPanel;

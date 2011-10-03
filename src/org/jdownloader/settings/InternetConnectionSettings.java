@@ -10,9 +10,7 @@ import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
 import org.appwork.storage.config.annotations.DefaultObjectValue;
 import org.appwork.storage.config.annotations.Description;
-import org.appwork.storage.config.annotations.ValueValidator;
 
-@ValueValidator(InternetConnectionSettingsValidator.class)
 public interface InternetConnectionSettings extends ConfigInterface {
 
     @AboutConfig

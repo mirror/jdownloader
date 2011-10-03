@@ -4,11 +4,11 @@ import java.util.ArrayList;
 
 import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.JsonConfig;
-import org.appwork.storage.config.KeyHandler;
-import org.appwork.storage.config.StorageHandler;
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
 import org.appwork.storage.config.annotations.DefaultObjectValue;
+import org.appwork.storage.config.handler.KeyHandler;
+import org.appwork.storage.config.handler.StorageHandler;
 
 public interface LinkFilterSettings extends ConfigInterface {
 

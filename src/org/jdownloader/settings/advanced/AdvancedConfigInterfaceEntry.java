@@ -4,11 +4,11 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Type;
 
 import org.appwork.storage.config.ConfigInterface;
-import org.appwork.storage.config.KeyHandler;
-import org.appwork.storage.config.StorageHandler;
 import org.appwork.storage.config.annotations.Description;
-import org.appwork.storage.config.annotations.RangeValidator;
 import org.appwork.storage.config.annotations.RegexValidator;
+import org.appwork.storage.config.annotations.SpinnerValidator;
+import org.appwork.storage.config.handler.KeyHandler;
+import org.appwork.storage.config.handler.StorageHandler;
 
 public class AdvancedConfigInterfaceEntry implements AdvancedConfigEntry {
 
@@ -51,8 +51,8 @@ public class AdvancedConfigInterfaceEntry implements AdvancedConfigEntry {
     }
 
     public Validator getValidator() {
-        RangeValidator an = keyHandler.getAnnotation(RangeValidator.class);
-        if (an != null) return new org.jdownloader.settings.advanced.RangeValidator(an.range()[0], an.range()[1]);
+        SpinnerValidator an = keyHandler.getAnnotation(SpinnerValidator.class);
+        if (an != null) return new org.jdownloader.settings.advanced.RangeValidator(an.min(), an.max());
 
         RegexValidator an2 = keyHandler.getAnnotation(RegexValidator.class);
         if (an2 != null) return new org.jdownloader.settings.advanced.RegexValidator(an2.value());

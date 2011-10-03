@@ -12,7 +12,7 @@ import net.miginfocom.swing.MigLayout;
 import org.appwork.storage.config.ConfigEventListener;
 import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.JsonConfig;
-import org.appwork.storage.config.KeyHandler;
+import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.swing.components.ExtCheckBox;
 import org.appwork.swing.components.SizeSpinner;
 import org.appwork.utils.formatter.SizeFormatter;
