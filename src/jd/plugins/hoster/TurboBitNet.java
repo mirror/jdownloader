@@ -171,12 +171,15 @@ public class TurboBitNet extends PluginForHost {
             maxtime = br.getRegex("var Timeout.*?maxLimit: (\\d+)").getMatch(0);
             if (maxtime == null) maxtime = Encoding.Base64Decode("NjA=");
         }
-        String finalPage = "http://turbobit.net/download/getLinkAfterTimeout/" + new Regex(downloadLink.getDownloadURL(), "turbobit\\.net/(.*?)\\.html").getMatch(0) + "/" + maxtime;
+        String finalPage = "http://turbobit.net/download/getLinkAfterTimeout/" + new Regex(downloadLink.getDownloadURL(), "turbobit\\.net/([^/]+)/").getMatch(0) + "/" + Integer.parseInt(maxtime) * 2;
         sleep(tt * 1001, downloadLink);
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         br.getPage(finalPage);
         String downloadUrl = br.getRegex("<a href=\\'(.*?)\\'>").getMatch(0);
-        if (downloadUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (downloadUrl == null) {
+            if (br.containsHTML("Error: ")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Turbobit.net is blocking JDownloader: Please contact the turbobit.net support and complain!", 10 * 60 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadUrl, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
