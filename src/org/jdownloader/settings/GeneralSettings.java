@@ -70,13 +70,13 @@ public interface GeneralSettings extends ConfigInterface {
     void setAutoOpenContainerAfterDownload(boolean b);
 
     @AboutConfig
-    @DefaultEnumValue("org.jdownloader.settings.CleanAfterDownloadAction.NEVER")
+    @DefaultEnumValue("NEVER")
     CleanAfterDownloadAction getCleanupAfterDownloadAction();
 
     void setCleanupAfterDownloadAction(CleanAfterDownloadAction action);
 
     @AboutConfig
-    @DefaultEnumValue("org.jdownloader.settings.IfFileExistsAction.ASK_FOR_EACH_FILE")
+    @DefaultEnumValue("ASK_FOR_EACH_FILE")
     IfFileExistsAction getIfFileExistsAction();
 
     void setIfFileExistsAction(IfFileExistsAction action);
@@ -129,7 +129,7 @@ public interface GeneralSettings extends ConfigInterface {
 
     @AboutConfig
     @Description("How many downloads should Jdownloader download at once? Note that most hosters allow only one download at a time in freemode")
-    @SpinnerValidator(min = 1, max = 50)
+    @SpinnerValidator(min = 1, max = 20)
     @DefaultIntValue(3)
     int getMaxSimultaneDownloads();
 

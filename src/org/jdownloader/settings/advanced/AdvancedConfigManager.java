@@ -11,20 +11,17 @@ import jd.controlling.reconnect.ReconnectConfig;
 import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.annotations.AboutConfig;
-import org.appwork.storage.config.events.ConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
-import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.api.RemoteAPIConfig;
 import org.jdownloader.controlling.filter.LinkFilterSettings;
 import org.jdownloader.controlling.packagizer.PackagizerSettings;
-import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.linkgrabber.addlinksdialog.LinkgrabberSettings;
 import org.jdownloader.settings.AccountSettings;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 import org.jdownloader.settings.InternetConnectionSettings;
 
-public class AdvancedConfigManager implements ConfigEventListener {
+public class AdvancedConfigManager {
     private static final AdvancedConfigManager INSTANCE = new AdvancedConfigManager();
 
     public static AdvancedConfigManager getInstance() {
@@ -57,7 +54,7 @@ public class AdvancedConfigManager implements ConfigEventListener {
     }
 
     public void register(ConfigInterface cf) {
-        cf.getStorageHandler().getEventSender().addListener(this);
+
         HashMap<KeyHandler, Boolean> map = new HashMap<KeyHandler, Boolean>();
 
         for (KeyHandler m : cf.getStorageHandler().getMap().values()) {
@@ -88,11 +85,4 @@ public class AdvancedConfigManager implements ConfigEventListener {
         }
     }
 
-    public void onConfigValueModified(KeyHandler<?> keyHandler, Object newValue) {
-    }
-
-    public void onConfigValidatorError(KeyHandler<?> keyHandler, Throwable validateException) {
-        Dialog.getInstance().showErrorDialog(_GUI._.AdvancedConfigmanager_error_validator(keyHandler.getStorageHandler().getConfigInterface().getClass().getSimpleName(), keyHandler.getKey(), validateException.getMessage()));
-
-    }
 }

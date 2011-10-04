@@ -17,7 +17,7 @@ public interface ExtractionConfig extends ExtensionConfigInterface {
     @Description("A Blacklist is a list of regular expressions. Use a blacklist to avoid extracting certain filetypes.")
     String[] getBlacklistPatterns();
 
-    @DefaultEnumValue("org.jdownloader.extensions.extraction.CPUPriority.HIGH")
+    @DefaultEnumValue("HIGH")
     @AboutConfig
     CPUPriority getCPUPriority();
 
