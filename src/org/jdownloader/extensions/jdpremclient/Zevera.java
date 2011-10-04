@@ -23,6 +23,8 @@ import jd.plugins.PluginForHost;
 import jd.plugins.TransferStatus;
 import jd.plugins.download.DownloadInterface;
 
+import org.appwork.utils.formatter.TimeFormatter;
+
 public class Zevera extends PluginForHost implements JDPremInterface {
 
     private boolean                  proxyused    = false;
@@ -282,10 +284,19 @@ public class Zevera extends PluginForHost implements JDPremInterface {
             long trafficLeft = 0;
             String ses = null;
             String hosts = null;
+            String EndSubscriptionDate = null;
             try {
                 loginPage = br.getPage("http://www.zevera.com/jDownloader.ashx?cmd=accountinfo&login=" + username + "&pass=" + pass);
-                ses = new Regex(loginPage, "AvailableExtraTraffic:(.*?),").getMatch(0);
-                trafficLeft = Long.parseLong(ses);
+                ses = new Regex(loginPage, "AvailableExtraTraffic:(\\d+)").getMatch(0);
+                if (ses != null) {
+                    trafficLeft = Long.parseLong(ses);
+                } else {
+                    ses = new Regex(loginPage, "AvailableTodayTraffic:(\\d+)").getMatch(0);
+                    if (ses != null) {
+                        trafficLeft = Long.parseLong(ses);
+                    }
+                }
+                EndSubscriptionDate = new Regex(loginPage, "EndSubscriptionDate:(.*?),").getMatch(0);
                 hosts = br.getPage("http://www.zevera.com/jDownloader.ashx?cmd=gethosters&login=" + username + "&pass=" + pass);
             } catch (Exception e) {
                 account.setTempDisabled(true);
@@ -302,7 +313,7 @@ public class Zevera extends PluginForHost implements JDPremInterface {
                 ac.setStatus("Account invalid");
                 resetAvailablePremium();
             } else {
-                // ac.setValidUntil(expire * 1000);
+                if (EndSubscriptionDate != null) ac.setValidUntil(TimeFormatter.getMilliSeconds(EndSubscriptionDate, "yyyy/MM/dd HH:mm:ss", null));
                 ac.setTrafficLeft(trafficLeft * 1024 * 1024);
                 synchronized (LOCK) {
                     premiumHosts.clear();

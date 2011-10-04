@@ -21,6 +21,7 @@ import java.io.IOException;
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -51,20 +52,31 @@ public class YuvutuCom extends PluginForHost {
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML(">The video you requested does not exist<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("Amateur Videos, Amateur Porn, TV Sex Porno XXX -(.*?)</title>").getMatch(0);
+        if (filename == null) filename = br.getRegex("class=\"userName\">.*?img src.*?href.*?</a>:(.*?)</td").getMatch(0);
         if (filename == null) filename = br.getRegex("<span class=\"authorName\">.*?<a href=\".*?\">.*?</a>.*?</span>(.*?)</td>.*?<td class=\"videoTitle\"").getMatch(0);
         dllink = br.getRegex("value=\"file=(http.*?)\\&width").getMatch(0);
         if (dllink == null) dllink = br.getRegex("(http://vs\\d+\\.yuvutu\\.com/dl/.*?/streams/.*?\\.flv)").getMatch(0);
         if (filename == null || dllink == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         filename = filename.trim();
-        downloadLink.setFinalFileName(filename + ".flv");
+        String ext = new Regex(dllink, ".+(\\..{2,4})$").getMatch(0);
+        if (ext == null) ext = ".flv";
+        downloadLink.setFinalFileName(filename + ext);
         Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
-        URLConnectionAdapter con = br2.openGetConnection(dllink);
-        if (!con.getContentType().contains("html"))
-            downloadLink.setDownloadSize(con.getLongContentLength());
-        else
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        URLConnectionAdapter con = null;
+        try {
+            con = br2.openGetConnection(dllink);
+            if (!con.getContentType().contains("html"))
+                downloadLink.setDownloadSize(con.getLongContentLength());
+            else
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } finally {
+            try {
+                con.disconnect();
+            } catch (final Throwable e) {
+            }
+        }
         return AvailableStatus.TRUE;
     }
 

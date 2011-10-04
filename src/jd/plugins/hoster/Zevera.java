@@ -79,7 +79,7 @@ public class Zevera extends PluginForHost {
                 }
             }
             String res = br.getPage("http://www.zevera.com/jDownloader.ashx?cmd=accountinfo&login=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
-            if (res == null || res.trim().length() == 0) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            if ("No trafic".equals(res) || res == null || res.trim().length() == 0) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
             res = res.trim();
             account.setValid(true);
             if ("Login Error".equalsIgnoreCase(res)) {
@@ -107,7 +107,7 @@ public class Zevera extends PluginForHost {
                 // Regex(infos[0],"TrafficUsedToday:(.+)").getMatch(0).trim());
                 // Integer Balance = DayTraffic - TrafficUsedToday;
                 // ai.setAccountBalance(Balance * 1024);
-                String AvailableTodayTraffic = new Regex(infos[3], "AvailableTodayTraffic:(.+)").getMatch(0);
+                String AvailableTodayTraffic = new Regex(infos[3], "AvailableTodayTraffic:(\\d+)").getMatch(0);
                 logger.info("Zevera: AvailableTodayTraffic=" + AvailableTodayTraffic);
                 ai.setTrafficLeft(SizeFormatter.getSize(AvailableTodayTraffic + "mb"));
                 if (ai.isExpired()) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
