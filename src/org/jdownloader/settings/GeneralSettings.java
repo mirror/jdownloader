@@ -216,9 +216,9 @@ public interface GeneralSettings extends ConfigInterface {
     @AboutConfig
     @Description("Penaltytime before a retry if JDownloader lost connection")
     @DefaultIntValue(5 * 60 * 1000)
-    long getWaittimeOnConnectionLoss();
+    int getWaittimeOnConnectionLoss();
 
-    void setWaittimeOnConnectionLoss(long milliseconds);
+    void setWaittimeOnConnectionLoss(int milliseconds);
 
     public static final KeyHandler DOWNLOAD_SPEED_LIMIT_ENABLED = CFG.getStorageHandler().getKeyHandler("DownloadSpeedLimitEnabled");
 

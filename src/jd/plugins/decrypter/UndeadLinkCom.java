@@ -50,16 +50,14 @@ public class UndeadLinkCom extends PluginForDecrypt {
         br.getPage(parameter);
         if (!br.containsHTML("eval\\(")) { return null; }
 
-        hardAndStatic();
+        hardAndStatic(decryptedLinks);
         if (DLLINK == null) {
-            veryEasy();
+            veryEasy(decryptedLinks);
         }
-        if (DLLINK == null) { return null; }
-        decryptedLinks.add(createDownloadlink(DLLINK));
         return decryptedLinks;
     }
 
-    private String hardAndStatic() throws Exception {
+    private void hardAndStatic(ArrayList<DownloadLink> decryptedLinks) throws Exception {
         // Init rhino
         Object result = new Object();
         final ScriptEngineManager manager = new ScriptEngineManager();
@@ -68,7 +66,7 @@ public class UndeadLinkCom extends PluginForDecrypt {
         // Load function
         final Browser br2 = br.cloneBrowser();
         String unk = br.getRegex("<script src=\"(.*?)\"").getMatch(0);
-        if (unk == null) { return null; }
+        if (unk == null) { return; }
         unk = br2.getPage("http://" + br.getHost() + unk).toString();
 
         String beautifier = new Regex(br.toString().replaceAll("\n|\\\\|\\+|\\s", ""), "\\*/(eval\\('.*\\);)</script>").getMatch(0);
@@ -77,7 +75,7 @@ public class UndeadLinkCom extends PluginForDecrypt {
         beautifier = beautifier.replaceAll("'\\);|eval\\('|thelink=|'", "");
         String fn = beautifier.substring(0, beautifier.indexOf("("));
         final String[] value = new Regex(beautifier, fn + "\\((.*?)\\)\\.").getMatch(0).split(",");
-        if (value == null || value.length == 0) { return null; }
+        if (value == null || value.length == 0) { return; }
 
         // Execute subroutines
         for (final String p : value) {
@@ -101,15 +99,19 @@ public class UndeadLinkCom extends PluginForDecrypt {
         } catch (final Throwable e) {
             DLLINK = "undefined";
         }
-
+        String fsLink = new Regex(beautifier, "FILESERVE_LINK=(http://.*?);").getMatch(0);
+        if (fsLink != null) {
+            decryptedLinks.add(createDownloadlink(fsLink));
+        }
         if (DLLINK == "undefined") {
             DLLINK = null;
-            return null;
+            return;
         }
-        return DLLINK = result.toString();
+        DLLINK = result.toString();
+        if (DLLINK != null) decryptedLinks.add(createDownloadlink(DLLINK));
     }
 
-    private String veryEasy() throws Exception {
+    private void veryEasy(ArrayList<DownloadLink> decryptedLinks) throws Exception {
         try {
             final ExtBrowser eb = new ExtBrowser();
             eb.setBrowserEnviroment(new BasicBrowserEnviroment(new String[] { ".*" }, new String[] { ".*undeadlink.com.*" }) {
@@ -124,6 +126,6 @@ public class UndeadLinkCom extends PluginForDecrypt {
             DLLINK = null;
             e.printStackTrace();
         }
-        return DLLINK;
+        if (DLLINK != null) decryptedLinks.add(createDownloadlink(DLLINK));
     }
 }
