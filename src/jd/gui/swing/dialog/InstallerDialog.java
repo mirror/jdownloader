@@ -82,14 +82,21 @@ public class InstallerDialog extends AbstractDialog<Object> {
         // subtags up to 8 alpha letters (for future enhancements).
         final String languageCode = JDGeoCode.LANGUAGES.containsKey(l.getLanguage()) ? l.getLanguage() : null;
         // ISO 15924 alpha-4 script code
-        // 1.7! Locale.getScript
-        String scriptCode = null;
+
+        String scriptCode = (countryCode != null ? getScriptCode(countryCode) : null);
+
         if (Application.getJavaVersion() >= 17000000) {
-            if (JDGeoCode.EXTENSIONS.containsKey(l.getScript().toLowerCase())) {
-                scriptCode = l.getScript().toLowerCase();
+            // 1.7! Locale.getScript
+            try {
+                String sc = ((String) Locale.class.getMethod("getScript", new Class[] {}).invoke(l, new Object[] {})).toLowerCase();
+                if (JDGeoCode.EXTENSIONS.containsKey(sc)) {
+
+                    scriptCode = sc;
+
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
             }
-        } else {
-            scriptCode = (countryCode != null ? getScriptCode(countryCode) : null);
         }
 
         if (languageCode != null) {
