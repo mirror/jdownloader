@@ -106,7 +106,10 @@ public class UgotFileCom extends PluginForHost {
         } else {
             finalUrl = br.getRegex("Content.*?<a.*?href='(http://.*?ugotfile.com/.*?)'>").getMatch(0);
         }
-        if (finalUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (finalUrl == null) {
+            if (br.containsHTML("Server is temporarily unavailable for maintenance")) { throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server maintenance", 30 * 60 * 1000l); }
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finalUrl, true, 0);
         dl.startDownload();
@@ -131,6 +134,7 @@ public class UgotFileCom extends PluginForHost {
             sleep = Integer.parseInt(br.getRegex("seconds: (\\d+)").getMatch(0));
             if (sleep > 130) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, sleep * 1000);
         }
+        if (br.containsHTML("Server is temporarily unavailable for maintenance")) { throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server maintenance", 30 * 60 * 1000l); }
         if (br.containsHTML("Your hourly traffic limit is exceeded.")) {
             int block = Integer.parseInt(br.getRegex("<div id='sessionCountDown' style='font-weight:bold; font-size:20px;'>(.*?)</div>").getMatch(0)) * 1000 + 1;
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, block);

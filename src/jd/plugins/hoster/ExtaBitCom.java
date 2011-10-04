@@ -183,7 +183,7 @@ public class ExtaBitCom extends PluginForHost {
         br.getPage("http://extabit.com/");
         // old + new
         String expire = br.getRegex("Premium is active till <span class=\"green\"><strong>(.*?)</strong>").getMatch(0);
-        if (expire == null) expire = br.getRegex("Premium is active till (.*?)").getMatch(0);
+        if (expire == null) expire = br.getRegex("Premium is active till (.*?) ").getMatch(0);
         // old + new ?? new not tested only guessing, test account was
         // unlimited.
         String downloadsLeft = br.getRegex("You have <span class=\"green\"><strong>(\\d+) downloads</strong>").getMatch(0);
