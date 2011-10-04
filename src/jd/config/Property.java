@@ -175,9 +175,15 @@ public class Property implements Serializable {
     public void copyTo(Property dest) {
         if (dest != null && dest != this) {
             if (properties != null) {
+                if (dest.properties == null) {
+                    dest.properties = new HashMap<String, Object>();
+                }
                 dest.properties.putAll(this.properties);
             }
             if (propertiesHashes != null) {
+                if (dest.propertiesHashes == null) {
+                    dest.propertiesHashes = new HashMap<String, Integer>();
+                }
                 dest.propertiesHashes.putAll(this.propertiesHashes);
             }
         }
