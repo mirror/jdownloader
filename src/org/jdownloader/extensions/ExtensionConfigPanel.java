@@ -6,8 +6,7 @@ import java.awt.event.ActionListener;
 
 import javax.swing.ImageIcon;
 
-import org.appwork.storage.config.ConfigEventListener;
-import org.appwork.storage.config.ConfigInterface;
+import org.appwork.storage.config.events.ConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.gui.settings.AbstractConfigPanel;
@@ -20,7 +19,7 @@ public abstract class ExtensionConfigPanel<T extends AbstractExtension> extends 
 
     private Header            header;
 
-    public void onConfigValidatorError(Class<? extends ConfigInterface> config, Throwable validateException, KeyHandler methodHandler) {
+    public void onConfigValidatorError(KeyHandler<?> keyHandler, Throwable validateException) {
     }
 
     public ExtensionConfigPanel(T plg, boolean clean) {
@@ -50,8 +49,8 @@ public abstract class ExtensionConfigPanel<T extends AbstractExtension> extends 
 
     }
 
-    public void onConfigValueModified(Class<? extends ConfigInterface> config, String key, Object newValue) {
-        if ("enabled".equals(key)) {
+    public void onConfigValueModified(KeyHandler<?> keyHandler, Object newValue) {
+        if ("enabled".equals(keyHandler)) {
             updateHeaders((Boolean) newValue);
 
         }

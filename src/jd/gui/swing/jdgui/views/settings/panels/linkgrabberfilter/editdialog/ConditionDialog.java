@@ -102,34 +102,34 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
         return new RegexFilter(cbHoster.isSelected(), MatchType.values()[cobHoster.getSelectedIndex()], txtHoster.getText());
     }
 
-    protected ExtCheckBox       cbFilename;
+    protected ExtCheckBox      cbFilename;
 
-    protected JComboBox<String> cobFilename;
-    protected ExtTextField      txtFilename;
+    protected JComboBox        cobFilename;
+    protected ExtTextField     txtFilename;
 
-    private JComponent          size;
-    protected ExtCheckBox       cbSize;
+    private JComponent         size;
+    protected ExtCheckBox      cbSize;
 
-    protected SizeSpinner       fromSize;
-    protected SizeSpinner       toSize;
-    private SpinnerNumberModel  minSizeModel;
-    private SpinnerNumberModel  maxSizeModel;
+    protected SizeSpinner      fromSize;
+    protected SizeSpinner      toSize;
+    private SpinnerNumberModel minSizeModel;
+    private SpinnerNumberModel maxSizeModel;
 
-    protected ExtCheckBox       cbType;
-    protected ExtCheckBox       cbAudio;
-    protected ExtCheckBox       cbVideo;
-    protected ExtCheckBox       cbArchive;
-    protected ExtCheckBox       cbImage;
-    protected ExtTextField      txtCustumMime;
-    protected ExtCheckBox       cbCustom;
+    protected ExtCheckBox      cbType;
+    protected ExtCheckBox      cbAudio;
+    protected ExtCheckBox      cbVideo;
+    protected ExtCheckBox      cbArchive;
+    protected ExtCheckBox      cbImage;
+    protected ExtTextField     txtCustumMime;
+    protected ExtCheckBox      cbCustom;
 
-    protected ExtCheckBox       cbHoster;
-    protected ExtTextField      txtHoster;
-    protected JComboBox<String> cobHoster;
+    protected ExtCheckBox      cbHoster;
+    protected ExtTextField     txtHoster;
+    protected JComboBox        cobHoster;
 
-    protected ExtCheckBox       cbSource;
-    protected JComboBox<String> cobSource;
-    protected ExtTextField      txtSource;
+    protected ExtCheckBox      cbSource;
+    protected JComboBox        cobSource;
+    protected ExtTextField     txtSource;
 
     public ConditionDialog() {
         super(0, _GUI._.FilterRuleDialog_FilterRuleDialog_(""), null, _GUI._.literally_save(), null);
@@ -159,7 +159,7 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
 
         panel.add(createHeader(_GUI._.FilterRuleDialog_layoutDialogContent_if()), "gaptop 10,spanx,growx,pushx");
 
-        cobFilename = new JComboBox<String>(new String[] { _GUI._.FilterRuleDialog_layoutDialogContent_equals(), _GUI._.FilterRuleDialog_layoutDialogContent_contains() });
+        cobFilename = new JComboBox(new String[] { _GUI._.FilterRuleDialog_layoutDialogContent_equals(), _GUI._.FilterRuleDialog_layoutDialogContent_contains() });
         txtFilename = new ExtTextField();
         txtFilename.setHelpText(_GUI._.FilterRuleDialog_layoutDialogContent_ht_filename());
 
@@ -304,7 +304,7 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
         }
         cbType.setDependencies(comp.toArray(new JComponent[] {}));
         // hoster
-        cobHoster = new JComboBox<String>(new String[] { _GUI._.FilterRuleDialog_layoutDialogContent_equals(), _GUI._.FilterRuleDialog_layoutDialogContent_contains() });
+        cobHoster = new JComboBox(new String[] { _GUI._.FilterRuleDialog_layoutDialogContent_equals(), _GUI._.FilterRuleDialog_layoutDialogContent_contains() });
         txtHoster = new ExtTextField();
         txtHoster.setHelpText(_GUI._.FilterRuleDialog_layoutDialogContent_lbl_hoster_help());
 
@@ -326,7 +326,7 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
         panel.add(txtHoster);
         // crawler
 
-        cobSource = new JComboBox<String>(new String[] { _GUI._.FilterRuleDialog_layoutDialogContent_equals(), _GUI._.FilterRuleDialog_layoutDialogContent_contains() });
+        cobSource = new JComboBox(new String[] { _GUI._.FilterRuleDialog_layoutDialogContent_equals(), _GUI._.FilterRuleDialog_layoutDialogContent_contains() });
         txtSource = new ExtTextField();
         txtSource.setHelpText(_GUI._.FilterRuleDialog_layoutDialogContent_lbl_source_help());
 

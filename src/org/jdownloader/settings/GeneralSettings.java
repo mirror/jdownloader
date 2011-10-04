@@ -11,6 +11,7 @@ import org.appwork.storage.config.annotations.DefaultIntValue;
 import org.appwork.storage.config.annotations.DefaultValue;
 import org.appwork.storage.config.annotations.Description;
 import org.appwork.storage.config.annotations.SpinnerValidator;
+import org.appwork.storage.config.handler.IntegerKeyHandler;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.storage.config.handler.StorageHandler;
 
@@ -80,6 +81,8 @@ public interface GeneralSettings extends ConfigInterface {
 
     void setIfFileExistsAction(IfFileExistsAction action);
 
+    public static final IntegerKeyHandler MAX_SIMULTANE_DOWNLOADS_PER_HOST = SH.getKeyHandler("MaxSimultaneDownloadsPerHost", IntegerKeyHandler.class);
+
     @AboutConfig
     @DefaultIntValue(0)
     @SpinnerValidator(min = 0, max = 100)
@@ -122,7 +125,7 @@ public interface GeneralSettings extends ConfigInterface {
 
     // JSonWrapper.get("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN,
     // 2);
-    public static final KeyHandler MAX_SIMULTANE_DOWNLOADS = CFG.getStorageHandler().getKeyHandler("MaxSimultaneDownloads");
+    public static final IntegerKeyHandler MAX_SIMULTANE_DOWNLOADS = SH.getKeyHandler("MaxSimultaneDownloads", IntegerKeyHandler.class);
 
     @AboutConfig
     @Description("How many downloads should Jdownloader download at once? Note that most hosters allow only one download at a time in freemode")
@@ -143,7 +146,7 @@ public interface GeneralSettings extends ConfigInterface {
 
     // JSonWrapper.get("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED,
     // 0)
-    public static final KeyHandler DOWNLOAD_SPEED_LIMIT = CFG.getStorageHandler().getKeyHandler("DownloadSpeedLimit");
+    public static final KeyHandler DOWNLOAD_SPEED_LIMIT = SH.getKeyHandler("DownloadSpeedLimit");
 
     @AboutConfig
     @Description("Download Speed limit in bytes.")
@@ -151,14 +154,16 @@ public interface GeneralSettings extends ConfigInterface {
 
     void setDownloadSpeedLimit(int bytes);
 
+    public static final IntegerKeyHandler PAUSE_SPEED = SH.getKeyHandler("PauseSpeed", IntegerKeyHandler.class);
+
     @AboutConfig
     @Description("Pause Speed. in Pause Mode we limit speed to this value to keep connections open, but use hardly bandwidth")
-    @DefaultIntValue(10 * 1024)
+    @DefaultIntValue(10)
     int getPauseSpeed();
 
     void setPauseSpeed(int kb);
 
-    public static final KeyHandler MAX_CHUNKS_PER_FILE = CFG.getStorageHandler().getKeyHandler("MaxChunksPerFile");
+    public static final IntegerKeyHandler MAX_CHUNKS_PER_FILE = SH.getKeyHandler("MaxChunksPerFile", IntegerKeyHandler.class);
 
     @AboutConfig
     @Description("http://jdownloader.org/knowledge/wiki/glossary/chunkload")
@@ -220,7 +225,7 @@ public interface GeneralSettings extends ConfigInterface {
 
     void setWaittimeOnConnectionLoss(int milliseconds);
 
-    public static final KeyHandler DOWNLOAD_SPEED_LIMIT_ENABLED = CFG.getStorageHandler().getKeyHandler("DownloadSpeedLimitEnabled");
+    public static final KeyHandler DOWNLOAD_SPEED_LIMIT_ENABLED = SH.getKeyHandler("DownloadSpeedLimitEnabled");
 
     @AboutConfig
     boolean isDownloadSpeedLimitEnabled();

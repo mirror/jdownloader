@@ -22,18 +22,16 @@ import javax.swing.JLabel;
 
 import jd.controlling.DownloadWatchDog;
 
-import org.appwork.storage.config.ConfigEventListener;
-import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.JsonConfig;
+import org.appwork.storage.config.events.ConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.Graph;
 import org.appwork.utils.swing.graph.Limiter;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.settings.GeneralSettings;
 
-public class SpeedMeterPanel extends Graph {
+public class SpeedMeterPanel extends Graph implements ConfigEventListener {
 
     private static final long serialVersionUID = 5571694800446993879L;
 
@@ -59,37 +57,20 @@ public class SpeedMeterPanel extends Graph {
         speedLimiter = new Limiter(a, b);
         config = JsonConfig.create(GeneralSettings.class);
         speedLimiter.setValue(config.isDownloadSpeedLimitEnabled() ? config.getDownloadSpeedLimit() : 0);
-        config.getStorageHandler().getEventSender().addListener(new ConfigEventListener() {
-
-            public void onConfigValueModified(Class<? extends ConfigInterface> c, String key, Object newValue) {
-                if ("downloadSpeedLimit".equalsIgnoreCase(key) || "DownloadSpeedLimitEnabled".equalsIgnoreCase(key)) {
-                    new EDTRunner() {
-
-                        @Override
-                        protected void runInEDT() {
-
-                            resetAverage();
-                            speedLimiter.setValue(config.isDownloadSpeedLimitEnabled() ? config.getDownloadSpeedLimit() : 0);
-                            // repaint immediately
-                            new EDTRunner() {
-
-                                @Override
-                                protected void runInEDT() {
-                                    repaint();
-                                }
-                            };
-                        }
-                    };
-                }
-
-            }
-
-            public void onConfigValidatorError(Class<? extends ConfigInterface> config, Throwable validateException, KeyHandler methodHandler) {
-            }
-        });
-
+        GeneralSettings.DOWNLOAD_SPEED_LIMIT.getEventSender().addListener(this, true);
+        GeneralSettings.DOWNLOAD_SPEED_LIMIT_ENABLED.getEventSender().addListener(this, true);
         setLimiter(new Limiter[] { speedLimiter });
         if (start) start();
+    }
+
+    public void onConfigValidatorError(KeyHandler<?> keyHandler, Throwable validateException) {
+    }
+
+    public void onConfigValueModified(KeyHandler<?> keyHandler, Object newValue) {
+
+        if (keyHandler == GeneralSettings.DOWNLOAD_SPEED_LIMIT || keyHandler == GeneralSettings.DOWNLOAD_SPEED_LIMIT_ENABLED) {
+            speedLimiter.setValue(config.isDownloadSpeedLimitEnabled() ? config.getDownloadSpeedLimit() : 0);
+        }
     }
 
     protected String createTooltipText() {

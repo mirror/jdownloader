@@ -50,7 +50,7 @@ public class PackagizerFilter extends JPanel implements SettingsComponent {
             }
         });
         tb.add(new JLabel(_GUI._.PackagizerFilter_PackagizerFilter_enable()));
-        enable = new ExtCheckBox(PackagizerSettings.class, "PackagizerEnabled", table, btAdd, btRemove);
+        enable = new ExtCheckBox(PackagizerSettings.ENABLED, table, btAdd, btRemove);
         tb.add(enable);
 
         table.getSelectionModel().addListSelectionListener(new MinimumSelectionObserver(table, ra, 1));

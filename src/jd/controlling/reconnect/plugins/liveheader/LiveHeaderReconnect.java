@@ -31,9 +31,8 @@ import jd.gui.UserIO;
 import jd.gui.swing.GuiRunnable;
 import net.miginfocom.swing.MigLayout;
 
-import org.appwork.storage.config.ConfigEventListener;
-import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.JsonConfig;
+import org.appwork.storage.config.events.ConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.swing.components.ExtButton;
 import org.appwork.swing.components.ExtPasswordField;
@@ -383,12 +382,12 @@ public class LiveHeaderReconnect extends RouterPlugin implements ControlListener
 
     }
 
-    public void onConfigValidatorError(Class<? extends ConfigInterface> config, Throwable validateException, KeyHandler methodHandler) {
+    public void onConfigValidatorError(KeyHandler<?> keyHandler, Throwable validateException) {
     }
 
-    public void onConfigValueModified(Class<? extends ConfigInterface> config, String key, Object newValue) {
-        if (JsonConfig.create(config) == settings) {
-            System.out.println("Key: " + key + "=" + newValue);
+    public void onConfigValueModified(KeyHandler<?> keyHandler, Object newValue) {
+        if (keyHandler.isChildOf(settings)) {
+            System.out.println("Key: " + keyHandler + "=" + newValue);
             updateGUI();
         } else {
             if (dosession && ReconnectPluginController.getInstance().getActivePlugin() == this) {

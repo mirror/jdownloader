@@ -1,5 +1,7 @@
 package org.jdownloader.gui.views.linkgrabber.addlinksdialog;
 
+import java.awt.Image;
+import java.awt.Point;
 import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
@@ -14,14 +16,42 @@ import jd.parser.html.HTMLParser;
 
 import org.appwork.swing.components.ExtTextArea;
 
-public class DragAndDropDelegater extends TransferHandler {
+public class J17DragAndDropDelegater extends TransferHandler {
 
     private TransferHandler org;
     private ExtTextArea     input;
 
-    public DragAndDropDelegater(ExtTextArea input) {
+    public J17DragAndDropDelegater(ExtTextArea input) {
         org = input.getTransferHandler();
         this.input = input;
+    }
+
+    // 1.7 only @Override
+    @Override
+    public void setDragImage(Image img) {
+        // 1.7 only
+        org.setDragImage(img);
+    }
+
+    @Override
+    // 1.7 only @Override
+    public Image getDragImage() {
+        // 1.7 only
+        return org.getDragImage();
+    }
+
+    @Override
+    // 1.7 only @Override
+    public void setDragImageOffset(Point p) {
+        // 1.7 only
+        org.setDragImageOffset(p);
+    }
+
+    @Override
+    // 1.7 only @Override
+    public Point getDragImageOffset() {
+        // 1.7 only
+        return org.getDragImageOffset();
     }
 
     @Override

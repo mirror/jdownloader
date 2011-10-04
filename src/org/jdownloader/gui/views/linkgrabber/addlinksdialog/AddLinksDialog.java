@@ -35,6 +35,7 @@ import org.appwork.storage.config.JsonConfig;
 import org.appwork.swing.components.ExtTextArea;
 import org.appwork.swing.components.ExtTextField;
 import org.appwork.swing.components.searchcombo.SearchComboBox;
+import org.appwork.utils.Application;
 import org.appwork.utils.Lists;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.AbstractDialog;
@@ -275,9 +276,13 @@ public class AddLinksDialog extends AbstractDialog<CrawlerJob> {
         String newText = ClipboardHandler.getClipboard().getCurrentClipboardLinks();
         if (config.isAddLinksPreParserEnabled()) {
             if (newText != null) input.setText(list(HTMLParser.getHttpLinks(newText)));
-
-            DragAndDropDelegater dnd = new DragAndDropDelegater(input);
-            input.setTransferHandler(dnd);
+            if (Application.getJavaVersion() >= 17000000) {
+                J17DragAndDropDelegater dnd = new J17DragAndDropDelegater(input);
+                input.setTransferHandler(dnd);
+            } else {
+                DragAndDropDelegater dnd = new DragAndDropDelegater(input);
+                input.setTransferHandler(dnd);
+            }
         } else {
             if (newText != null) input.setText(newText);
         }

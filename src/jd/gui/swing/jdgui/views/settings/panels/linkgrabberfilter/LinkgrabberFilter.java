@@ -49,7 +49,7 @@ public class LinkgrabberFilter extends JPanel implements SettingsComponent {
         });
 
         tb.add(new JLabel(_GUI._.LinkgrabberFilter_LinkgrabberFilter_enable()));
-        enable = new ExtCheckBox(LinkFilterSettings.class, "LinkFilterEnabled", table, btadd, btRemove);
+        enable = new ExtCheckBox(LinkFilterSettings.LINK_FILTER_ENABLED, table, btadd, btRemove);
 
         tb.add(enable);
 

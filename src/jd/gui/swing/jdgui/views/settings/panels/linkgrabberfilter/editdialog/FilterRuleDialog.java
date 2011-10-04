@@ -23,7 +23,7 @@ import org.jdownloader.images.NewTheme;
 public class FilterRuleDialog extends ConditionDialog<LinkgrabberFilterRule> {
 
     private LinkgrabberFilterRule rule;
-    private JComboBox<String>     then;
+    private JComboBox             then;
     private JLabel                lbl;
 
     public FilterRuleDialog(LinkgrabberFilterRule filterRule) {
@@ -82,11 +82,11 @@ public class FilterRuleDialog extends ConditionDialog<LinkgrabberFilterRule> {
     public JComponent layoutDialogContent() {
         MigPanel ret = (MigPanel) super.layoutDialogContent();
         ret.add(createHeader(_GUI._.FilterRuleDialog_layoutDialogContent_then()), "gaptop 10, spanx,growx,pushx");
-        then = new JComboBox<String>(new String[] { _GUI._.FilterRuleDialog_layoutDialogContent_deny(), _GUI._.FilterRuleDialog_layoutDialogContent_accept() });
-        final ListCellRenderer<? super String> org = then.getRenderer();
-        then.setRenderer(new ListCellRenderer<String>() {
+        then = new JComboBox(new String[] { _GUI._.FilterRuleDialog_layoutDialogContent_deny(), _GUI._.FilterRuleDialog_layoutDialogContent_accept() });
+        final ListCellRenderer org = then.getRenderer();
+        then.setRenderer(new ListCellRenderer() {
 
-            public Component getListCellRendererComponent(JList<? extends String> list, String value, int index, boolean isSelected, boolean cellHasFocus) {
+            public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
                 JLabel r = (JLabel) org.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
                 switch (index) {
                 case 0:
@@ -99,6 +99,7 @@ public class FilterRuleDialog extends ConditionDialog<LinkgrabberFilterRule> {
                 }
                 return r;
             }
+
         });
         lbl = new JLabel();
         ret.add(lbl, "gaptop 10");

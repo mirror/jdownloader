@@ -9,9 +9,8 @@ import javax.swing.event.ChangeListener;
 
 import net.miginfocom.swing.MigLayout;
 
-import org.appwork.storage.config.ConfigEventListener;
-import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.JsonConfig;
+import org.appwork.storage.config.events.ConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.swing.components.ExtCheckBox;
 import org.appwork.swing.components.SizeSpinner;
@@ -34,7 +33,10 @@ public class SpeedlimitEditor extends MenuEditor implements ConfigEventListener,
 
         setOpaque(false);
         config = JsonConfig.create(GeneralSettings.class);
-        config.getStorageHandler().getEventSender().addListener(this);
+
+        GeneralSettings.DOWNLOAD_SPEED_LIMIT.getEventSender().addListener(this, true);
+        GeneralSettings.DOWNLOAD_SPEED_LIMIT_ENABLED.getEventSender().addListener(this, true);
+
         lbl = getLbl(_GUI._.SpeedlimitEditor_SpeedlimitEditor_(), NewTheme.I().getIcon("speed", 18));
         spinner = new SizeSpinner(1, Long.MAX_VALUE, 1) {
             protected String longToText(long longValue) {
@@ -53,22 +55,27 @@ public class SpeedlimitEditor extends MenuEditor implements ConfigEventListener,
 
     }
 
-    public void onConfigValidatorError(Class<? extends ConfigInterface> config, Throwable validateException, KeyHandler methodHandler) {
+    public void onConfigValidatorError(KeyHandler<?> keyHandler, Throwable validateException) {
     }
 
-    public void onConfigValueModified(Class<? extends ConfigInterface> c, final String key, final Object newValue) {
-        new EDTRunner() {
+    public void onConfigValueModified(final KeyHandler<?> keyHandler, final Object newValue) {
+        if (keyHandler == GeneralSettings.DOWNLOAD_SPEED_LIMIT) {
+            new EDTRunner() {
 
-            @Override
-            protected void runInEDT() {
-                if ("DownloadSpeedLimit".equalsIgnoreCase(key)) {
+                @Override
+                protected void runInEDT() {
                     spinner.setValue(newValue);
+                }
+            };
+        } else {
+            new EDTRunner() {
 
-                } else if ("DownloadSpeedLimitEnabled".equalsIgnoreCase(key)) {
+                @Override
+                protected void runInEDT() {
                     cb.setSelected(config.isDownloadSpeedLimitEnabled());
                 }
-            }
-        };
+            };
+        }
 
     }
 

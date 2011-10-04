@@ -18,9 +18,7 @@ import jd.gui.swing.jdgui.views.settings.components.SettingsComponent;
 import jd.gui.swing.jdgui.views.settings.components.StateUpdateListener;
 
 import org.appwork.app.gui.MigPanel;
-import org.appwork.storage.config.ConfigEventListener;
-import org.appwork.storage.config.ConfigInterface;
-import org.appwork.storage.config.JsonConfig;
+import org.appwork.storage.config.events.ConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.swing.components.ExtButton;
 import org.appwork.utils.swing.EDTRunner;
@@ -36,7 +34,7 @@ public class ReconnectManager extends MigPanel implements SettingsComponent, Act
         initComponents();
         layoutComponents();
         fill();
-        JsonConfig.create(ReconnectConfig.class).getStorageHandler().getEventSender().addListener(this);
+        ReconnectConfig.ACTIVE_PLUGIN_ID.getEventSender().addListener(this);
 
     }
 
@@ -106,13 +104,13 @@ public class ReconnectManager extends MigPanel implements SettingsComponent, Act
         return "wmin 10,height 60:n:n,pushy,growy";
     }
 
-    public void onConfigValidatorError(Class<? extends ConfigInterface> config, Throwable validateException, KeyHandler methodHandler) {
+    public void onConfigValidatorError(KeyHandler<?> keyHandler, Throwable validateException) {
     }
 
-    public void onConfigValueModified(Class<? extends ConfigInterface> config, String key, Object newValue) {
-        if (ReconnectConfig.ACTIVE_PLUGIN_ID.equalsIgnoreCase(key)) {
-            fill();
-        }
+    public void onConfigValueModified(KeyHandler<?> keyHandler, Object newValue) {
+
+        fill();
+
     }
 
 }

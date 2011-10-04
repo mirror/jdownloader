@@ -8,10 +8,10 @@ import jd.controlling.linkcollector.LinkCollectorConfig;
 import jd.controlling.linkcrawler.LinkCrawlerConfig;
 import jd.controlling.reconnect.ReconnectConfig;
 
-import org.appwork.storage.config.ConfigEventListener;
 import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.annotations.AboutConfig;
+import org.appwork.storage.config.events.ConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.api.RemoteAPIConfig;
@@ -88,11 +88,11 @@ public class AdvancedConfigManager implements ConfigEventListener {
         }
     }
 
-    public void onConfigValueModified(Class<? extends ConfigInterface> config, String key, Object newValue) {
+    public void onConfigValueModified(KeyHandler<?> keyHandler, Object newValue) {
     }
 
-    public void onConfigValidatorError(Class<? extends ConfigInterface> config, Throwable validateException, KeyHandler methodHandler) {
-        Dialog.getInstance().showErrorDialog(_GUI._.AdvancedConfigmanager_error_validator(JsonConfig.create(config).getStorageHandler().getConfigInterface().getClass().getSimpleName(), methodHandler.getKey(), validateException.getMessage()));
+    public void onConfigValidatorError(KeyHandler<?> keyHandler, Throwable validateException) {
+        Dialog.getInstance().showErrorDialog(_GUI._.AdvancedConfigmanager_error_validator(keyHandler.getStorageHandler().getConfigInterface().getClass().getSimpleName(), keyHandler.getKey(), validateException.getMessage()));
 
     }
 }

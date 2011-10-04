@@ -12,9 +12,8 @@ import jd.controlling.FavIconController;
 import jd.gui.swing.laf.LookAndFeelController;
 
 import org.appwork.app.gui.MigPanel;
-import org.appwork.storage.config.ConfigEventListener;
-import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.JsonConfig;
+import org.appwork.storage.config.events.ConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.EDTRunner;
@@ -89,11 +88,11 @@ public class LinkGrabberSidebar extends MigPanel {
 
         add(quicksettings, "hidemode 2");
 
-        quicksettings.add(new Checkbox(LinkFilterSettings.class, "LinkgrabberAddAtTop", _GUI._.LinkGrabberSidebar_LinkGrabberSidebar_addtop(), _GUI._.LinkGrabberSidebar_LinkGrabberSidebar_addtop_tt()));
-        quicksettings.add(new Checkbox(LinkFilterSettings.class, "LinkgrabberAutoConfirmEnabled", _GUI._.LinkGrabberSidebar_LinkGrabberSidebar_autoconfirm(), _GUI._.LinkGrabberSidebar_LinkGrabberSidebar_autoconfirm_tt()));
-        quicksettings.add(new Checkbox(LinkFilterSettings.class, "LinkgrabberAutoStartEnabled", _GUI._.LinkGrabberSidebar_LinkGrabberSidebar_autostart(), _GUI._.LinkGrabberSidebar_LinkGrabberSidebar_autostart_tt()));
+        quicksettings.add(new Checkbox(LinkFilterSettings.ADD_AT_TOP, _GUI._.LinkGrabberSidebar_LinkGrabberSidebar_addtop(), _GUI._.LinkGrabberSidebar_LinkGrabberSidebar_addtop_tt()));
+        quicksettings.add(new Checkbox(LinkFilterSettings.AUTO_CONFIRM_ENABLED, _GUI._.LinkGrabberSidebar_LinkGrabberSidebar_autoconfirm(), _GUI._.LinkGrabberSidebar_LinkGrabberSidebar_autoconfirm_tt()));
+        quicksettings.add(new Checkbox(LinkFilterSettings.AUTO_START_ENABLED, _GUI._.LinkGrabberSidebar_LinkGrabberSidebar_autostart(), _GUI._.LinkGrabberSidebar_LinkGrabberSidebar_autostart_tt()));
 
-        quicksettings.add(new Checkbox(LinkFilterSettings.class, "LinkFilterEnabled", _GUI._.LinkGrabberSidebar_LinkGrabberSidebar_globfilter(), _GUI._.LinkGrabberSidebar_LinkGrabberSidebar_globfilter_tt()));
+        quicksettings.add(new Checkbox(LinkFilterSettings.LINK_FILTER_ENABLED, _GUI._.LinkGrabberSidebar_LinkGrabberSidebar_globfilter(), _GUI._.LinkGrabberSidebar_LinkGrabberSidebar_globfilter_tt()));
         // TableHeaderUI ds = table.getTableHeader().getUI();
         // JTableHeader th = table.getTableHeader();
 
@@ -107,12 +106,12 @@ public class LinkGrabberSidebar extends MigPanel {
 
         config.getStorageHandler().getEventSender().addListener(new ConfigEventListener() {
 
-            public void onConfigValueModified(Class<? extends ConfigInterface> cfg, String key, Object newValue) {
+            public void onConfigValueModified(KeyHandler<?> keyHandler, Object newValue) {
 
                 updateVisibility();
             }
 
-            public void onConfigValidatorError(Class<? extends ConfigInterface> config, Throwable validateException, KeyHandler methodHandler) {
+            public void onConfigValidatorError(KeyHandler<?> keyHandler, Throwable validateException) {
             }
         });
         updateVisibility();

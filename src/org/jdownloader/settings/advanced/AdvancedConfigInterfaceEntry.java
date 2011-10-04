@@ -36,7 +36,7 @@ public class AdvancedConfigInterfaceEntry implements AdvancedConfigEntry {
 
     @SuppressWarnings("unchecked")
     public Object getValue() {
-        return storageHandler.getValue(keyHandler);
+        return keyHandler.getValue();
     }
 
     public Class<?> getType() {

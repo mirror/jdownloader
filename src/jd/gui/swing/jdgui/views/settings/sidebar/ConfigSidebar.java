@@ -45,8 +45,7 @@ import jd.gui.swing.jdgui.views.settings.panels.advanced.AdvancedSettings;
 import jd.gui.swing.laf.LookAndFeelController;
 import net.miginfocom.swing.MigLayout;
 
-import org.appwork.storage.config.ConfigEventListener;
-import org.appwork.storage.config.ConfigInterface;
+import org.appwork.storage.config.events.ConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.swing.EDTRunner;
@@ -345,7 +344,7 @@ public class ConfigSidebar extends JPanel implements ControlListener, MouseMotio
 
     }
 
-    public void onConfigValueModified(Class<? extends ConfigInterface> config, String key, Object newValue) {
+    public void onConfigValueModified(KeyHandler<?> keyHandler, Object newValue) {
         new EDTRunner() {
 
             @Override
@@ -355,6 +354,6 @@ public class ConfigSidebar extends JPanel implements ControlListener, MouseMotio
         };
     }
 
-    public void onConfigValidatorError(Class<? extends ConfigInterface> config, Throwable validateException, KeyHandler methodHandler) {
+    public void onConfigValidatorError(KeyHandler<?> keyHandler, Throwable validateException) {
     }
 }

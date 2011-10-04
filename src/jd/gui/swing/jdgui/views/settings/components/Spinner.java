@@ -6,7 +6,9 @@ import javax.swing.SpinnerNumberModel;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
-public class Spinner extends JSpinner implements SettingsComponent {
+import org.appwork.swing.components.ExtSpinner;
+
+public class Spinner extends ExtSpinner implements SettingsComponent {
 
     /**
      * 
@@ -17,7 +19,12 @@ public class Spinner extends JSpinner implements SettingsComponent {
 
     public Spinner(int min, int max) {
 
-        super(new SpinnerNumberModel(min, min, max, 1));
+        this(new SpinnerNumberModel(min, min, max, 1));
+
+    }
+
+    public Spinner(SpinnerNumberModel extSpinnerConfigModel) {
+        super(extSpinnerConfigModel);
         setEditor(new JSpinner.NumberEditor(this, "#"));
         eventSender = new StateUpdateEventSender<Spinner>();
         this.addChangeListener(new ChangeListener() {

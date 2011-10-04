@@ -23,10 +23,7 @@ import javax.swing.event.ChangeListener;
 import jd.gui.swing.jdgui.views.settings.components.ComboBox;
 import jd.gui.swing.jdgui.views.settings.components.Spinner;
 
-import org.appwork.storage.config.JsonConfig;
-import org.appwork.storage.config.handler.KeyHandler;
-import org.appwork.storage.config.listeners.ModifiedListener;
-import org.appwork.utils.swing.EDTRunner;
+import org.appwork.storage.config.swing.models.ConfigIntSpinnerModel;
 import org.jdownloader.gui.settings.AbstractConfigPanel;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
@@ -55,14 +52,12 @@ public class DownloadControll extends AbstractConfigPanel implements ChangeListe
         this.addHeader(_JDT._.gui_settings_downloadcontroll_title(), NewTheme.I().getIcon("downloadmanagment", 32));
         this.addDescription(_JDT._.gui_settings_downloadcontroll_description());
 
-        maxSimPerHost = new Spinner(0, 20);
+        maxSimPerHost = new Spinner(new ConfigIntSpinnerModel(GeneralSettings.MAX_SIMULTANE_DOWNLOADS_PER_HOST));
 
-        maxSim = new Spinner(1, 20);
+        maxSim = new Spinner(new ConfigIntSpinnerModel(GeneralSettings.MAX_SIMULTANE_DOWNLOADS));
 
-        maxchunks = new Spinner(1, 20);
-        maxSimPerHost.addChangeListener(this);
-        maxSim.addChangeListener(this);
-        maxchunks.addChangeListener(this);
+        maxchunks = new Spinner(new ConfigIntSpinnerModel(GeneralSettings.MAX_CHUNKS_PER_FILE));
+
         String[] removeDownloads = new String[] { _GUI._.gui_config_general_toDoWithDownloads_immediate(), _GUI._.gui_config_general_toDoWithDownloads_atstart(), _GUI._.gui_config_general_toDoWithDownloads_packageready(), _GUI._.gui_config_general_toDoWithDownloads_never() };
 
         remove = new ComboBox<CleanAfterDownloadAction>(CleanAfterDownloadAction.values(), removeDownloads);
@@ -75,25 +70,8 @@ public class DownloadControll extends AbstractConfigPanel implements ChangeListe
 
         this.addPair(_GUI._.gui_config_general_todowithdownloads(), remove);
         this.addPair(_GUI._.system_download_triggerfileexists(), ifFileExists);
-        config = JsonConfig.create(GeneralSettings.class);
-        config.getStorageHandler().getEventSender().addListener(new ModifiedListener(GeneralSettings.MAX_CHUNKS_PER_FILE, GeneralSettings.MAX_SIMULTANE_DOWNLOADS) {
+        config = GeneralSettings.CFG;
 
-            @Override
-            protected void onChanged(KeyHandler<?> handler, Object newValue) {
-                if (isShown()) {
-                    new EDTRunner() {
-
-                        @Override
-                        protected void runInEDT() {
-                            if (isShown()) {
-                                updateContents();
-                            }
-                        }
-                    };
-                }
-            }
-
-        });
     }
 
     @Override
@@ -104,20 +82,16 @@ public class DownloadControll extends AbstractConfigPanel implements ChangeListe
     @Override
     public void save() {
 
-        config.setMaxChunksPerFile((Integer) maxchunks.getValue());
         config.setCleanupAfterDownloadAction(remove.getValue());
         config.setIfFileExistsAction(this.ifFileExists.getValue());
-        config.setMaxSimultaneDownloadsPerHost((Integer) maxSimPerHost.getValue());
-        config.setMaxSimultaneDownloads((Integer) maxSim.getValue());
+
     }
 
     @Override
     public void updateContents() {
-        maxchunks.setValue(config.getMaxChunksPerFile());
-        maxSim.setValue(config.getMaxSimultaneDownloads());
+
         this.remove.setValue(config.getCleanupAfterDownloadAction());
         this.ifFileExists.setValue(config.getIfFileExistsAction());
-        this.maxSimPerHost.setValue(config.getMaxSimultaneDownloadsPerHost());
 
     }
 

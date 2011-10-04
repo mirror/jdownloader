@@ -44,9 +44,8 @@ import jd.plugins.LinkGrabberFilePackage;
 import jd.utils.JDUtilities;
 import jd.utils.WebUpdate;
 
-import org.appwork.storage.config.ConfigEventListener;
-import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.JsonConfig;
+import org.appwork.storage.config.events.ConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.gui.translate._GUI;
@@ -206,23 +205,23 @@ public class ActionController {
                         }
                     }
                 });
-                JsonConfig.create(GeneralSettings.class).getStorageHandler().getEventSender().addListener(new ConfigEventListener() {
 
-                    public void onConfigValueModified(Class<? extends ConfigInterface> config, String key, Object newValue) {
-                        if ("pausespeed".equalsIgnoreCase(key)) {
-                            new EDTRunner() {
+                GeneralSettings.PAUSE_SPEED.getEventSender().addListener(new ConfigEventListener() {
 
-                                @Override
-                                protected void runInEDT() {
-                                    setToolTipText(_GUI._.gui_menu_action_break2_desc(JsonConfig.create(GeneralSettings.class).getPauseSpeed()));
+                    public void onConfigValueModified(KeyHandler<?> keyHandler, Object newValue) {
 
-                                }
-                            };
-                        }
+                        new EDTRunner() {
+
+                            @Override
+                            protected void runInEDT() {
+                                setToolTipText(_GUI._.gui_menu_action_break2_desc(GeneralSettings.PAUSE_SPEED.getValue()));
+
+                            }
+                        };
 
                     }
 
-                    public void onConfigValidatorError(Class<? extends ConfigInterface> config, Throwable validateException, KeyHandler methodHandler) {
+                    public void onConfigValidatorError(KeyHandler<?> keyHandler, Throwable validateException) {
                     }
                 });
 

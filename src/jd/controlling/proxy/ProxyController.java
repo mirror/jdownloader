@@ -20,9 +20,8 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
-import org.appwork.storage.config.ConfigEventListener;
-import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.JsonConfig;
+import org.appwork.storage.config.events.ConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.utils.Regex;
 import org.appwork.utils.event.DefaultEventSender;
@@ -55,11 +54,12 @@ public class ProxyController implements ConfigEventListener {
         return eventSender;
     }
 
-    public void onConfigValueModified(Class<? extends ConfigInterface> config, String key, Object newValue) {
+    public void onConfigValueModified(KeyHandler<?> keyHandler, Object newValue) {
         System.out.println("Reload");
-        JsonConfig.create(config).getStorageHandler().getEventSender().removeListener(this);
+
+        keyHandler.getStorageHandler().getEventSender().removeListener(this);
         loadProxySettings();
-        JsonConfig.create(config).getStorageHandler().getEventSender().addListener(this);
+        keyHandler.getStorageHandler().getEventSender().addListener(this);
     }
 
     private ProxyController() {
@@ -684,6 +684,6 @@ public class ProxyController implements ConfigEventListener {
         return none;
     }
 
-    public void onConfigValidatorError(Class<? extends ConfigInterface> config, Throwable validateException, KeyHandler methodHandler) {
+    public void onConfigValidatorError(KeyHandler<?> keyHandler, Throwable validateException) {
     }
 }
