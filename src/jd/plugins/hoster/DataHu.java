@@ -25,11 +25,11 @@ import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -76,13 +76,12 @@ public class DataHu extends PluginForHost {
             br.forceDebug(true);
             br.getPage("http://data.hu/");
             String loginID = br.getRegex("name=\"login_passfield\" value=\"(.*?)\"").getMatch(0);
-            String postData = "act=dologin&login_passfield=" + loginID + "&target=%2Findex.php&t=&id=&data=&username=" + Encoding.urlEncode(account.getUser()) + "&" + loginID + "=" + Encoding.urlEncode(account.getPass()) + "&remember=on";
+            String postData = "act=dologin&login_passfield=" + loginID + "&target=%2Findex.php&t=&id=&data=&username=" + Encoding.urlEncode(account.getUser()) + "&" + loginID + "=" + Encoding.urlEncode(account.getPass()) + "&remember=on&url_for_login=%2F&need_redirect=1&";
             br.postPage("http://data.hu/login.php", postData);
             if (br.getCookie("http://data.hu/", "datapremiumseccode") == null) {
                 logger.warning("Cookie error!");
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
-            if (!br.containsHTML("<td>Prémium:</td>")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
     }
 
@@ -96,7 +95,11 @@ public class DataHu extends PluginForHost {
             account.setValid(false);
             return ai;
         }
-
+        br.getPage("http://data.hu/");
+        if (!br.containsHTML("<td>Prémium:</td>")) {
+            account.setValid(false);
+            return ai;
+        }
         String days = br.getRegex("<td><a href=\"/premium\\.php\">(.*?)<span").getMatch(0);
         if (days != null && !days.equals("0")) {
             ai.setValidUntil(TimeFormatter.getMilliSeconds(days, "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH));

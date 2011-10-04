@@ -88,7 +88,7 @@ public class UlozTo extends PluginForHost {
             }
         }
         if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        downloadLink.setName(Encoding.htmlDecode(filename.trim()));
+        downloadLink.setFinalFileName(Encoding.htmlDecode(filename.trim()));
         if (filesize != null) downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
     }

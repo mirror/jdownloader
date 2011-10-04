@@ -70,7 +70,6 @@ public class XFileSharingProBasic extends PluginForHost {
     private String              BRBEFORE            = "";
     private static final String PASSWORDTEXT        = "(<br><b>Password:</b> <input|<br><b>Passwort:</b> <input)";
     private static final String COOKIE_HOST         = "http://ForDevsToPlayWith.com";
-    public boolean              NOPREMIUM           = false;
     private static final String MAINTENANCE         = ">This server is in maintenance mode";
     private static final String MAINTENANCEUSERTEXT = "This server is under Maintenance";
     private static final Object LOCK                = new Object();
@@ -302,7 +301,7 @@ public class XFileSharingProBasic extends PluginForHost {
             br.getPage(COOKIE_HOST + "/?op=my_account");
             doSomething();
             if (!new Regex(BRBEFORE, "(Premium\\-Account expire|Upgrade to premium|>Renew premium<)").matches()) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-            if (!new Regex(BRBEFORE, "(Premium\\-Account expire|>Renew premium<)").matches()) NOPREMIUM = true;
+            if (!new Regex(BRBEFORE, "(Premium\\-Account expire|>Renew premium<)").matches()) account.setProperty("nopremium", "true");
             // Save cookies
             final HashMap<String, String> cookies = new HashMap<String, String>();
             final Cookies add = this.br.getCookies(COOKIE_HOST);
@@ -343,7 +342,9 @@ public class XFileSharingProBasic extends PluginForHost {
         } else {
             ai.setUnlimitedTraffic();
         }
-        if (!NOPREMIUM) {
+        if (account.getBooleanProperty("nopremium")) {
+            ai.setStatus("Registered (free) User");
+        } else {
             String expire = new Regex(BRBEFORE, Pattern.compile("<td>Premium(\\-| )Account expires?:</td>.*?<td>(<b>)?(\\d{1,2} [A-Za-z]+ \\d{4})(</b>)?</td>", Pattern.CASE_INSENSITIVE)).getMatch(2);
             if (expire == null) {
                 ai.setExpired(true);
@@ -354,8 +355,6 @@ public class XFileSharingProBasic extends PluginForHost {
                 ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", null));
             }
             ai.setStatus("Premium User");
-        } else {
-            ai.setStatus("Registered (free) User");
         }
         return ai;
     }
@@ -367,7 +366,7 @@ public class XFileSharingProBasic extends PluginForHost {
         requestFileInformation(link);
         login(account, false);
         String dllink = null;
-        if (NOPREMIUM) {
+        if (account.getBooleanProperty("nopremium")) {
             br.getPage(link.getDownloadURL());
             doSomething();
             doFree(link, true, 0, false);

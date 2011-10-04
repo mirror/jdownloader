@@ -295,7 +295,7 @@ public class BiggeruploadCom extends PluginForHost {
             br.getPage(COOKIE_HOST + "/?op=my_account");
             doSomething();
             if (!new Regex(BRBEFORE, "(Premium\\-Account expire|Upgrade to premium|>Renew premium<)").matches()) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-            if (!new Regex(BRBEFORE, "(Premium\\-Account expire|>Renew premium<)").matches()) NOPREMIUM = true;
+            if (!new Regex(BRBEFORE, "(Premium\\-Account expire|>Renew premium<)").matches()) account.setProperty("nopremium", "true");
             // Save cookies
             final HashMap<String, String> cookies = new HashMap<String, String>();
             final Cookies add = this.br.getCookies(COOKIE_HOST);
@@ -331,13 +331,15 @@ public class BiggeruploadCom extends PluginForHost {
         }
         account.setValid(true);
         String availabletraffic = new Regex(BRBEFORE, "Traffic available.*?:</TD><TD><b>([^<>\"\\']+)</b>").getMatch(0);
-        if (availabletraffic != null && !availabletraffic.contains("nlimited") && !availabletraffic.equals(" Mb")) {
+        if (availabletraffic != null && !availabletraffic.contains("nlimited") && !availabletraffic.equalsIgnoreCase(" Mb")) {
             ai.setTrafficLeft(SizeFormatter.getSize(availabletraffic));
         } else {
             ai.setUnlimitedTraffic();
         }
-        if (!NOPREMIUM) {
-            String expire = new Regex(BRBEFORE, Pattern.compile("<td>Premium(\\-| )Account expire:</td>.*?<td>(<b>)?(\\d{1,2} [A-Za-z]+ \\d{4})(</b>)?</td>", Pattern.CASE_INSENSITIVE)).getMatch(2);
+        if (account.getBooleanProperty("nopremium")) {
+            ai.setStatus("Registered (free) User");
+        } else {
+            String expire = new Regex(BRBEFORE, Pattern.compile("<td>Premium(\\-| )Account expires?:</td>.*?<td>(<b>)?(\\d{1,2} [A-Za-z]+ \\d{4})(</b>)?</td>", Pattern.CASE_INSENSITIVE)).getMatch(2);
             if (expire == null) {
                 ai.setExpired(true);
                 account.setValid(false);
@@ -347,72 +349,68 @@ public class BiggeruploadCom extends PluginForHost {
                 ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", null));
             }
             ai.setStatus("Premium User");
-        } else {
-            ai.setStatus("Registered (free) User");
         }
         return ai;
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public void handlePremium(DownloadLink link, Account account) throws Exception {
         String passCode = null;
         requestFileInformation(link);
         login(account, false);
-        String dllink = link.getStringProperty("premlink");
-        try {
-            if (dllink != null) {
-                Browser br2 = br.cloneBrowser();
-                URLConnectionAdapter con = br2.openGetConnection(dllink);
-                if (con.getContentType().contains("html")) {
-                    link.setProperty("premlink", Property.NULL);
-                    dllink = null;
-                }
-                con.disconnect();
-            }
-        } catch (Exception e) {
-            dllink = null;
-        }
-        if (dllink == null) {
+        String dllink = null;
+        if (account.getBooleanProperty("nopremium")) {
             br.getPage(link.getDownloadURL());
             doSomething();
-            if (NOPREMIUM) {
-                doFree(link, true, 0, false);
-            } else {
-                dllink = br.getRedirectLocation();
-                if (dllink == null) {
-                    doSomething();
-                    dllink = getDllink();
-                    if (dllink == null) {
-                        Form DLForm = br.getFormbyProperty("name", "F1");
-                        if (DLForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                        if (new Regex(BRBEFORE, PASSWORDTEXT).matches()) passCode = handlePassword(passCode, DLForm, link);
-                        br.submitForm(DLForm);
-                        doSomething();
-                        dllink = br.getRedirectLocation();
-                        if (dllink == null) {
-                            checkErrors(link, true, passCode);
-                            dllink = getDllink();
-                        }
+            doFree(link, false, 1, false);
+        } else {
+            dllink = link.getStringProperty("premlink");
+            if (dllink != null) {
+                try {
+                    Browser br2 = br.cloneBrowser();
+                    URLConnectionAdapter con = br2.openGetConnection(dllink);
+                    if (con.getContentType().contains("html") || con.getContentLength() == -1) {
+                        link.setProperty("premlink", Property.NULL);
+                        dllink = null;
                     }
-                }
-                if (dllink == null) {
-                    logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    con.disconnect();
+                } catch (Exception e) {
+                    dllink = null;
                 }
             }
+            if (dllink == null) {
+                br.getPage(link.getDownloadURL());
+                doSomething();
+                dllink = getDllink();
+                if (dllink == null) {
+                    checkErrors(link, true, passCode);
+                    Form DLForm = br.getFormbyProperty("name", "F1");
+                    if (DLForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    if (new Regex(BRBEFORE, PASSWORDTEXT).matches()) passCode = handlePassword(passCode, DLForm, link);
+                    br.submitForm(DLForm);
+                    doSomething();
+                    dllink = getDllink();
+                    checkErrors(link, true, passCode);
+                }
+            }
+            if (dllink == null) {
+                logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            logger.info("Final downloadlink = " + dllink + " starting the download...");
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+            if (passCode != null) link.setProperty("pass", passCode);
+            if (dl.getConnection().getContentType().contains("html")) {
+                logger.warning("The final dllink seems not to be a file!");
+                br.followConnection();
+                doSomething();
+                checkServerErrors();
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            link.setProperty("premlink", dllink);
+            dl.startDownload();
         }
-        logger.info("Final downloadlink = " + dllink + " starting the download...");
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
-        if (passCode != null) link.setProperty("pass", passCode);
-        if (dl.getConnection().getContentType().contains("html")) {
-            logger.warning("The final dllink seems not to be a file!");
-            br.followConnection();
-            doSomething();
-            checkServerErrors();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        link.setProperty("premlink", dllink);
-        dl.startDownload();
     }
 
     @Override
