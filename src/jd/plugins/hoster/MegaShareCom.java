@@ -32,12 +32,12 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "megashare.com" }, urls = { "http://[\\w\\.]*?megashare\\.com/[0-9]+" }, flags = { 2 })
 public class MegaShareCom extends PluginForHost {
@@ -262,7 +262,8 @@ public class MegaShareCom extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("Not Found")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-        final Form freeForm = br.getForm(1);
+        Form freeForm = br.getForm(1);
+        if (freeForm == null) freeForm = br.getForm(0);
         final String crap = br.getRegex("src=\"images/dwn\\-btn3\\.gif\" name=\"(.*?)\"").getMatch(0);
         if (freeForm == null || crap == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         freeForm.put(Encoding.urlEncode(crap) + ".x", Integer.toString(new Random().nextInt(100)));
@@ -270,9 +271,7 @@ public class MegaShareCom extends PluginForHost {
         br.submitForm(freeForm);
         if (br.containsHTML("This File has been DELETED")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         final String filename = br.getRegex("addthis_open\\(this, \\'\\', \\'http://(www\\.)?MegaShare\\.com\\d+\\', \\'(.*?)\\'\\)").getMatch(1);
-        if (filename != null) {
-            downloadLink.setFinalFileName(Encoding.htmlDecode(filename));
-        }
+        if (filename != null) downloadLink.setFinalFileName(Encoding.htmlDecode(filename));
         return AvailableStatus.TRUE;
     }
 
