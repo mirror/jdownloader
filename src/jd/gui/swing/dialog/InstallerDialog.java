@@ -94,7 +94,7 @@ public class InstallerDialog extends AbstractDialog<Object> {
                     scriptCode = sc;
 
                 }
-            } catch (Exception e) {
+            } catch (Throwable e) {
                 e.printStackTrace();
             }
         }

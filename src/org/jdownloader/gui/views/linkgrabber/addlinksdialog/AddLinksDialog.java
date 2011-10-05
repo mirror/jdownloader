@@ -26,11 +26,13 @@ import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 
 import jd.controlling.ClipboardHandler;
+import jd.controlling.IOEQ;
 import jd.gui.swing.laf.LookAndFeelController;
 import jd.parser.html.HTMLParser;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.app.gui.MigPanel;
+import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.swing.components.ExtTextArea;
 import org.appwork.swing.components.ExtTextField;
@@ -77,6 +79,8 @@ public class AddLinksDialog extends AbstractDialog<CrawlerJob> {
 
     private JLabel                 errorLabel;
 
+    private DelayedRunnable        delayedValidate;
+
     public boolean isDeepAnalyse() {
         return deepAnalyse;
     }
@@ -88,6 +92,14 @@ public class AddLinksDialog extends AbstractDialog<CrawlerJob> {
     public AddLinksDialog() {
         super(Dialog.BUTTONS_HIDE_OK, _GUI._.AddLinksDialog_AddLinksDialog_(), null, _GUI._.AddLinksDialog_AddLinksDialog_confirm(), null);
         config = JsonConfig.create(LinkgrabberSettings.class);
+        delayedValidate = new DelayedRunnable(IOEQ.TIMINGQUEUE, 500l, 10000l) {
+
+            @Override
+            public void delayedrun() {
+                validateForm();
+            }
+
+        };
     }
 
     @Override
@@ -161,7 +173,7 @@ public class AddLinksDialog extends AbstractDialog<CrawlerJob> {
 
             @Override
             protected void onChanged() {
-                validateForm();
+                delayedValidate.run();
             }
 
         };
@@ -213,7 +225,7 @@ public class AddLinksDialog extends AbstractDialog<CrawlerJob> {
 
             @Override
             protected void onChanged() {
-                validateForm();
+                delayedValidate.run();
             }
 
         };
@@ -286,7 +298,7 @@ public class AddLinksDialog extends AbstractDialog<CrawlerJob> {
         } else {
             if (newText != null) input.setText(newText);
         }
-        validateForm();
+        delayedValidate.run();
         return p;
     }
 
@@ -304,34 +316,39 @@ public class AddLinksDialog extends AbstractDialog<CrawlerJob> {
 
     protected void validateForm() {
         if (input == null) return;
-        okButton.setEnabled(true);
-        confirmOptions.setEnabled(true);
-        errorLabel.setText("");
-        String[] links = jd.parser.html.HTMLParser.getHttpLinks(input.getText());
-        if (links.length == 0) {
-            errorLabel.setText(_GUI._.AddLinksDialog_validateForm_input_missing());
+        final String[] links = jd.parser.html.HTMLParser.getHttpLinks(input.getText());
+        new EDTRunner() {
 
-            input.setToolTipText(_GUI._.AddLinksDialog_validateForm_input_missing());
-            okButton.setEnabled(false);
-            confirmOptions.setEnabled(false);
+            @Override
+            protected void runInEDT() {
+                okButton.setEnabled(true);
+                confirmOptions.setEnabled(true);
+                errorLabel.setText("");
+                if (links.length == 0) {
+                    errorLabel.setText(_GUI._.AddLinksDialog_validateForm_input_missing());
 
-        } else {
-            input.setToolTipText(null);
-            input.setBadgeIcon(null);
-        }
-        if (!validateFolder(destination.getText())) {
-            if (errorLabel.getText().length() == 0) errorLabel.setText(_GUI._.AddLinksDialog_validateForm_folder_invalid_missing());
+                    input.setToolTipText(_GUI._.AddLinksDialog_validateForm_input_missing());
+                    okButton.setEnabled(false);
+                    confirmOptions.setEnabled(false);
 
-            okButton.setEnabled(false);
-            destination.setToolTipText(_GUI._.AddLinksDialog_validateForm_folder_invalid_missing());
-            confirmOptions.setEnabled(false);
-            destination.setForeground(new Color(LookAndFeelController.getInstance().getLAFOptions().getErrorForeground()));
-        } else {
-            destination.setToolTipText(null);
+                } else {
+                    input.setToolTipText(null);
+                    input.setBadgeIcon(null);
+                }
+                if (!validateFolder(destination.getText())) {
+                    if (errorLabel.getText().length() == 0) errorLabel.setText(_GUI._.AddLinksDialog_validateForm_folder_invalid_missing());
 
-            destination.setForeground(null);
-        }
+                    okButton.setEnabled(false);
+                    destination.setToolTipText(_GUI._.AddLinksDialog_validateForm_folder_invalid_missing());
+                    confirmOptions.setEnabled(false);
+                    destination.setForeground(new Color(LookAndFeelController.getInstance().getLAFOptions().getErrorForeground()));
+                } else {
+                    destination.setToolTipText(null);
 
+                    destination.setForeground(null);
+                }
+            }
+        };
     }
 
     private boolean validateFolder(String text) {
