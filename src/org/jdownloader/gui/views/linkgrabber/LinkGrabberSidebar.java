@@ -11,11 +11,7 @@ import jd.gui.swing.laf.LookAndFeelController;
 
 import org.appwork.app.gui.MigPanel;
 import org.appwork.storage.config.JsonConfig;
-import org.appwork.storage.config.ValidationException;
-import org.appwork.storage.config.events.GenericConfigEventListener;
-import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.controlling.filter.LinkFilterSettings;
 import org.jdownloader.gui.translate._GUI;
 
@@ -40,11 +36,6 @@ public class LinkGrabberSidebar extends MigPanel {
             setBackground(new Color(c));
             setOpaque(true);
         }
-        hosterFilter = new Header(LinkFilterSettings.LG_QUICKFILTER_HOSTER_VISIBLE, _GUI._.LinkGrabberSidebar_LinkGrabberSidebar_hosterfilter());
-
-        filetypeFilter = new Header(LinkFilterSettings.LG_QUICKFILTER_TYPE_VISIBLE, _GUI._.LinkGrabberSidebar_LinkGrabberSidebar_extensionfilter());
-
-        quickSettingsHeader = new Header(LinkFilterSettings.LG_QUICKSETTINGS_VISIBLE, _GUI._.LinkGrabberSidebar_LinkGrabberSidebar_settings());
 
         hosterFilterTable = new FilterTable();
         Filter filter = new Filter("rapidshare.com", null, true);
@@ -61,75 +52,61 @@ public class LinkGrabberSidebar extends MigPanel {
             e.printStackTrace();
         }
         quicksettings = new MigPanel("ins 0,wrap 1", "[grow,fill]", "[]0[]0[]");
-        add(hosterFilter, "gaptop 7");
-        add(hosterFilterTable, "hidemode 2");
-        add(filetypeFilter, "gaptop 7");
-        add(filetypeFilterTable, "hidemode 2");
-        add(Box.createGlue());
-        add(quickSettingsHeader, "gaptop 7");
-
-        add(quicksettings, "hidemode 2");
 
         quicksettings.add(new Checkbox(LinkFilterSettings.ADD_AT_TOP, _GUI._.LinkGrabberSidebar_LinkGrabberSidebar_addtop(), _GUI._.LinkGrabberSidebar_LinkGrabberSidebar_addtop_tt()));
         quicksettings.add(new Checkbox(LinkFilterSettings.AUTO_CONFIRM_ENABLED, _GUI._.LinkGrabberSidebar_LinkGrabberSidebar_autoconfirm(), _GUI._.LinkGrabberSidebar_LinkGrabberSidebar_autoconfirm_tt()));
         quicksettings.add(new Checkbox(LinkFilterSettings.AUTO_START_ENABLED, _GUI._.LinkGrabberSidebar_LinkGrabberSidebar_autostart(), _GUI._.LinkGrabberSidebar_LinkGrabberSidebar_autostart_tt()));
 
         quicksettings.add(new Checkbox(LinkFilterSettings.LINK_FILTER_ENABLED, _GUI._.LinkGrabberSidebar_LinkGrabberSidebar_globfilter(), _GUI._.LinkGrabberSidebar_LinkGrabberSidebar_globfilter_tt()));
-        // TableHeaderUI ds = table.getTableHeader().getUI();
-        // JTableHeader th = table.getTableHeader();
-
-        // setBorder(new JTextField().getBorder());
-        // header = new LinkGrabberSideBarHeader();
-        // scrollPane = new JScrollPane();
-        // scrollPane.setBorder(null);
-        // add(header, " height 20!");
-
-        // add(scrollPane);
-        LinkFilterSettings.LG_QUICKFILTER_HOSTER_VISIBLE.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
-
-            public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
-            }
-
-            public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
-            }
-        });
-        // config.getStorageHandler().getEventSender().addListener(new
-        // ConfigEventListener() {
-        //
-        // public void onConfigValueModified(KeyHandler<Object> keyHandler,
-        // Object newValue) {
-        // if (keyHandler == LinkFilterSettings.LG_QUICKFILTER_HOSTER_VISIBLE) {
-        //
-        // } else if (keyHandler ==
-        // LinkFilterSettings.LG_QUICKFILTER_TYPE_VISIBLE) {
-        //
-        // } else if (keyHandler == LinkFilterSettings.LG_QUICKSETTINGS_VISIBLE)
-        // {
-        // // quicksettings.set
-        //
-        // }
-        // }
-        //
-        // public void onConfigValidatorError(KeyHandler<Object> keyHandler,
-        // Throwable validateException) {
-        // }
-        // });
-        updateVisibility();
-
-    }
-
-    protected void updateVisibility() {
-        new EDTRunner() {
+        hosterFilter = new Header(LinkFilterSettings.LG_QUICKFILTER_HOSTER_VISIBLE, _GUI._.LinkGrabberSidebar_LinkGrabberSidebar_hosterfilter()) {
 
             @Override
-            protected void runInEDT() {
-                quicksettings.setVisible(config.isLinkgrabberQuickSettingsVisible());
-                filetypeFilterTable.setVisible(config.isLinkgrabberFiletypeQuickfilterEnabled());
-                hosterFilterTable.setVisible(config.isLinkgrabberHosterQuickfilterEnabled());
-
+            protected void setContentsVisible(boolean selected) {
+                hosterFilterTable.setVisible(selected);
             }
+
         };
+
+        filetypeFilter = new Header(LinkFilterSettings.LG_QUICKFILTER_TYPE_VISIBLE, _GUI._.LinkGrabberSidebar_LinkGrabberSidebar_extensionfilter()) {
+
+            @Override
+            protected void setContentsVisible(boolean selected) {
+                filetypeFilterTable.setVisible(selected);
+            }
+
+        };
+
+        quickSettingsHeader = new Header(LinkFilterSettings.LG_QUICKSETTINGS_VISIBLE, _GUI._.LinkGrabberSidebar_LinkGrabberSidebar_settings()) {
+
+            @Override
+            protected void setContentsVisible(boolean selected) {
+                quicksettings.setVisible(selected);
+            }
+
+        };
+
+        add(hosterFilter, "gaptop 7");
+        add(hosterFilterTable, "hidemode 2");
+        add(filetypeFilter, "gaptop 7");
+        add(filetypeFilterTable, "hidemode 2");
+        add(Box.createGlue());
+        add(quickSettingsHeader, "gaptop 7");
+        add(quicksettings, "hidemode 2");
+
     }
+
+    // protected void updateVisibility() {
+    // new EDTRunner() {
+    //
+    // @Override
+    // protected void runInEDT() {
+    // quicksettings.setVisible(config.isLinkgrabberQuickSettingsVisible());
+    // filetypeFilterTable.setVisible(config.isLinkgrabberFiletypeQuickfilterEnabled());
+    // hosterFilterTable.setVisible(config.isLinkgrabberHosterQuickfilterEnabled());
+    //
+    // }
+    // };
+    // }
 
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);

@@ -11,7 +11,7 @@ import org.appwork.storage.config.handler.BooleanKeyHandler;
 import org.appwork.swing.components.ExtCheckBox;
 import org.appwork.utils.swing.SwingUtils;
 
-public class Header extends MigPanel {
+public abstract class Header extends MigPanel {
 
     private ExtCheckBox checkBox;
     private JLabel      lbl;
@@ -27,11 +27,18 @@ public class Header extends MigPanel {
         // Color(LookAndFeelController.getInstance().getLAFOptions().getPanelHeaderLineColor()));
         add(lbl);
 
-        checkBox = new ExtCheckBox(visible, lbl);
+        checkBox = new ExtCheckBox(visible, lbl) {
+            public void updateDependencies() {
+                super.updateDependencies();
+                setContentsVisible(isSelected());
+            }
+        };
         add(checkBox);
         setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, new JTable().getGridColor()));
 
     }
+
+    abstract protected void setContentsVisible(boolean selected);
 
     public JCheckBox getCheckBox() {
         return checkBox;

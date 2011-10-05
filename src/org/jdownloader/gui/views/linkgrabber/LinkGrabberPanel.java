@@ -83,11 +83,11 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
         add(rightBar, "");
         leftBar.add(addLinks, "height 24!");
 
-        leftBar.add(popup, "height 24!,width 8!");
+        leftBar.add(popup, "height 24!,width 12!");
         leftBar.add(clearAll, "width 24!,height 24!");
         leftBar.add(Box.createGlue());
         rightBar.add(confirmAll, "height 24!");
-        rightBar.add(popupConfirm, "height 24!,width 8!");
+        rightBar.add(popupConfirm, "height 24!,width 12!");
     }
 
     @Override

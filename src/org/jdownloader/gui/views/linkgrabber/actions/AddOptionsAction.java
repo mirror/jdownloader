@@ -30,7 +30,7 @@ public class AddOptionsAction extends AbstractAction {
         AddLinksAction ala = new AddLinksAction();
         ala.putValue(AbstractAction.NAME, _GUI._.AddOptionsAction_actionPerformed_addlinks());
         popup.add(new JMenuItem(ala));
-        popup.add(new JMenuItem(new AddContainerAction()));
+        popup.add(new JMenuItem(new AddContainerAction().toContextMenuAction()));
         int[] insets = LookAndFeelController.getInstance().getLAFOptions().getPopupBorderInsets();
 
         Dimension pref = popup.getPreferredSize();
