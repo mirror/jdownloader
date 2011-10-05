@@ -7,7 +7,6 @@ import org.appwork.storage.config.annotations.DefaultIntValue;
 import org.appwork.storage.config.annotations.DefaultStringValue;
 import org.appwork.storage.config.annotations.Description;
 import org.appwork.storage.config.annotations.RequiresRestart;
-import org.appwork.storage.config.annotations.Validator;
 
 public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     void setActiveConfigPanel(String name);
@@ -17,7 +16,7 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     @DefaultStringValue("standard")
     @AboutConfig
     @Description("Icon Theme ID. Make sure that ./themes/<ID>/ exists")
-    @Validator(ThemeValidator.class)
+    // @Validator(ThemeValidator.class)
     String getThemeID();
 
     void setThemeID(String themeID);
