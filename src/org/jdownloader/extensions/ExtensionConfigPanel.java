@@ -6,6 +6,7 @@ import java.awt.event.ActionListener;
 
 import javax.swing.ImageIcon;
 
+import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.ConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.utils.swing.dialog.Dialog;
@@ -19,7 +20,7 @@ public abstract class ExtensionConfigPanel<T extends AbstractExtension> extends 
 
     private Header            header;
 
-    public void onConfigValidatorError(KeyHandler<?> keyHandler, Throwable validateException) {
+    public void onConfigValidatorError(KeyHandler<Object> keyHandler, Object invalidValue, ValidationException validateException) {
     }
 
     public ExtensionConfigPanel(T plg, boolean clean) {
@@ -49,7 +50,7 @@ public abstract class ExtensionConfigPanel<T extends AbstractExtension> extends 
 
     }
 
-    public void onConfigValueModified(KeyHandler<?> keyHandler, Object newValue) {
+    public void onConfigValueModified(KeyHandler<Object> keyHandler, Object newValue) {
         if ("enabled".equals(keyHandler)) {
             updateHeaders((Boolean) newValue);
 

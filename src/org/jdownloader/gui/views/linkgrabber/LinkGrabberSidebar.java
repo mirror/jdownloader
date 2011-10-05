@@ -2,8 +2,6 @@ package org.jdownloader.gui.views.linkgrabber;
 
 import java.awt.Color;
 import java.awt.Graphics;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.io.IOException;
 
 import javax.swing.Box;
@@ -13,7 +11,8 @@ import jd.gui.swing.laf.LookAndFeelController;
 
 import org.appwork.app.gui.MigPanel;
 import org.appwork.storage.config.JsonConfig;
-import org.appwork.storage.config.events.ConfigEventListener;
+import org.appwork.storage.config.ValidationException;
+import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.EDTRunner;
@@ -41,28 +40,11 @@ public class LinkGrabberSidebar extends MigPanel {
             setBackground(new Color(c));
             setOpaque(true);
         }
-        hosterFilter = new Header(_GUI._.LinkGrabberSidebar_LinkGrabberSidebar_hosterfilter());
-        hosterFilter.getCheckBox().addActionListener(new ActionListener() {
+        hosterFilter = new Header(LinkFilterSettings.LG_QUICKFILTER_HOSTER_VISIBLE, _GUI._.LinkGrabberSidebar_LinkGrabberSidebar_hosterfilter());
 
-            public void actionPerformed(ActionEvent e) {
-                config.setLinkgrabberHosterQuickfilterEnabled(hosterFilter.isSelected());
-            }
-        });
-        filetypeFilter = new Header(_GUI._.LinkGrabberSidebar_LinkGrabberSidebar_extensionfilter());
-        filetypeFilter.getCheckBox().addActionListener(new ActionListener() {
+        filetypeFilter = new Header(LinkFilterSettings.LG_QUICKFILTER_TYPE_VISIBLE, _GUI._.LinkGrabberSidebar_LinkGrabberSidebar_extensionfilter());
 
-            public void actionPerformed(ActionEvent e) {
-                config.setLinkgrabberFiletypeQuickfilterEnabled(filetypeFilter.isSelected());
-            }
-        });
-
-        quickSettingsHeader = new Header(_GUI._.LinkGrabberSidebar_LinkGrabberSidebar_settings());
-        quickSettingsHeader.getCheckBox().addActionListener(new ActionListener() {
-
-            public void actionPerformed(ActionEvent e) {
-                config.setLinkgrabberQuickSettingsVisible(quickSettingsHeader.isSelected());
-            }
-        });
+        quickSettingsHeader = new Header(LinkFilterSettings.LG_QUICKSETTINGS_VISIBLE, _GUI._.LinkGrabberSidebar_LinkGrabberSidebar_settings());
 
         hosterFilterTable = new FilterTable();
         Filter filter = new Filter("rapidshare.com", null, true);
@@ -103,17 +85,35 @@ public class LinkGrabberSidebar extends MigPanel {
         // add(header, " height 20!");
 
         // add(scrollPane);
+        LinkFilterSettings.LG_QUICKFILTER_HOSTER_VISIBLE.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
 
-        config.getStorageHandler().getEventSender().addListener(new ConfigEventListener() {
-
-            public void onConfigValueModified(KeyHandler<?> keyHandler, Object newValue) {
-
-                updateVisibility();
+            public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
             }
 
-            public void onConfigValidatorError(KeyHandler<?> keyHandler, Throwable validateException) {
+            public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
             }
         });
+        // config.getStorageHandler().getEventSender().addListener(new
+        // ConfigEventListener() {
+        //
+        // public void onConfigValueModified(KeyHandler<Object> keyHandler,
+        // Object newValue) {
+        // if (keyHandler == LinkFilterSettings.LG_QUICKFILTER_HOSTER_VISIBLE) {
+        //
+        // } else if (keyHandler ==
+        // LinkFilterSettings.LG_QUICKFILTER_TYPE_VISIBLE) {
+        //
+        // } else if (keyHandler == LinkFilterSettings.LG_QUICKSETTINGS_VISIBLE)
+        // {
+        // // quicksettings.set
+        //
+        // }
+        // }
+        //
+        // public void onConfigValidatorError(KeyHandler<Object> keyHandler,
+        // Throwable validateException) {
+        // }
+        // });
         updateVisibility();
 
     }
@@ -126,9 +126,7 @@ public class LinkGrabberSidebar extends MigPanel {
                 quicksettings.setVisible(config.isLinkgrabberQuickSettingsVisible());
                 filetypeFilterTable.setVisible(config.isLinkgrabberFiletypeQuickfilterEnabled());
                 hosterFilterTable.setVisible(config.isLinkgrabberHosterQuickfilterEnabled());
-                hosterFilter.setSelected(config.isLinkgrabberHosterQuickfilterEnabled());
-                filetypeFilter.setSelected(config.isLinkgrabberFiletypeQuickfilterEnabled());
-                quickSettingsHeader.setSelected(config.isLinkgrabberQuickSettingsVisible());
+
             }
         };
     }

@@ -18,12 +18,13 @@ import jd.gui.swing.jdgui.views.settings.components.SettingsComponent;
 import jd.gui.swing.jdgui.views.settings.components.StateUpdateListener;
 
 import org.appwork.app.gui.MigPanel;
-import org.appwork.storage.config.events.ConfigEventListener;
+import org.appwork.storage.config.ValidationException;
+import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.swing.components.ExtButton;
 import org.appwork.utils.swing.EDTRunner;
 
-public class ReconnectManager extends MigPanel implements SettingsComponent, ActionListener, ConfigEventListener {
+public class ReconnectManager extends MigPanel implements SettingsComponent, ActionListener, GenericConfigEventListener<String> {
     private static final long serialVersionUID = 1L;
     private JComboBox         combobox;
 
@@ -104,10 +105,10 @@ public class ReconnectManager extends MigPanel implements SettingsComponent, Act
         return "wmin 10,height 60:n:n,pushy,growy";
     }
 
-    public void onConfigValidatorError(KeyHandler<?> keyHandler, Throwable validateException) {
+    public void onConfigValidatorError(KeyHandler<String> keyHandler, String invalidValue, ValidationException validateException) {
     }
 
-    public void onConfigValueModified(KeyHandler<?> keyHandler, Object newValue) {
+    public void onConfigValueModified(KeyHandler<String> keyHandler, String newValue) {
 
         fill();
 

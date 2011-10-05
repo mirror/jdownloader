@@ -45,7 +45,8 @@ import jd.utils.JDUtilities;
 import jd.utils.WebUpdate;
 
 import org.appwork.storage.config.JsonConfig;
-import org.appwork.storage.config.events.ConfigEventListener;
+import org.appwork.storage.config.ValidationException;
+import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.gui.translate._GUI;
@@ -206,10 +207,12 @@ public class ActionController {
                     }
                 });
 
-                GeneralSettings.PAUSE_SPEED.getEventSender().addListener(new ConfigEventListener() {
+                GeneralSettings.PAUSE_SPEED.getEventSender().addListener(new GenericConfigEventListener<Integer>() {
 
-                    public void onConfigValueModified(KeyHandler<?> keyHandler, Object newValue) {
+                    public void onConfigValidatorError(KeyHandler<Integer> keyHandler, Integer invalidValue, ValidationException validateException) {
+                    }
 
+                    public void onConfigValueModified(KeyHandler<Integer> keyHandler, Integer newValue) {
                         new EDTRunner() {
 
                             @Override
@@ -218,11 +221,8 @@ public class ActionController {
 
                             }
                         };
-
                     }
 
-                    public void onConfigValidatorError(KeyHandler<?> keyHandler, Throwable validateException) {
-                    }
                 });
 
             }

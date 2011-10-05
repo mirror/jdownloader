@@ -21,6 +21,7 @@ import jd.plugins.PluginForHost;
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
 import org.appwork.storage.config.JsonConfig;
+import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.ConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.utils.Regex;
@@ -54,7 +55,7 @@ public class ProxyController implements ConfigEventListener {
         return eventSender;
     }
 
-    public void onConfigValueModified(KeyHandler<?> keyHandler, Object newValue) {
+    public void onConfigValueModified(KeyHandler<Object> keyHandler, Object newValue) {
         System.out.println("Reload");
 
         keyHandler.getStorageHandler().getEventSender().removeListener(this);
@@ -684,6 +685,6 @@ public class ProxyController implements ConfigEventListener {
         return none;
     }
 
-    public void onConfigValidatorError(KeyHandler<?> keyHandler, Throwable validateException) {
+    public void onConfigValidatorError(KeyHandler<Object> keyHandler, Object invalidValue, ValidationException validateException) {
     }
 }

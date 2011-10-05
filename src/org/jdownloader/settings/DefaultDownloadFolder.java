@@ -2,10 +2,10 @@ package org.jdownloader.settings;
 
 import java.io.File;
 
-import org.appwork.storage.config.defaults.DefaultFactory;
+import org.appwork.storage.config.defaults.AbstractDefaultFactory;
 import org.appwork.utils.Application;
 
-public class DefaultDownloadFolder extends DefaultFactory<String> {
+public class DefaultDownloadFolder extends AbstractDefaultFactory<String> {
 
     @Override
     public String getDefaultValue() {

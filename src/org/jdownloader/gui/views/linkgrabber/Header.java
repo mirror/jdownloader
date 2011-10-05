@@ -4,18 +4,19 @@ import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.JCheckBox;
 import javax.swing.JLabel;
-import javax.swing.JSeparator;
 import javax.swing.JTable;
 
 import org.appwork.app.gui.MigPanel;
+import org.appwork.storage.config.handler.BooleanKeyHandler;
+import org.appwork.swing.components.ExtCheckBox;
 import org.appwork.utils.swing.SwingUtils;
 
 public class Header extends MigPanel {
 
-    private JCheckBox checkBox;
-    private JLabel    lbl;
+    private ExtCheckBox checkBox;
+    private JLabel      lbl;
 
-    public Header(String title) {
+    public Header(BooleanKeyHandler visible, String title) {
         super("ins 0", "[grow,fill][]8[]4", "[]");
         setOpaque(false);
         setBackground(null);
@@ -26,7 +27,7 @@ public class Header extends MigPanel {
         // Color(LookAndFeelController.getInstance().getLAFOptions().getPanelHeaderLineColor()));
         add(lbl);
 
-        checkBox = new JCheckBox();
+        checkBox = new ExtCheckBox(visible, lbl);
         add(checkBox);
         setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, new JTable().getGridColor()));
 
@@ -34,15 +35,6 @@ public class Header extends MigPanel {
 
     public JCheckBox getCheckBox() {
         return checkBox;
-    }
-
-    public void setSelected(boolean linkgrabberQuickSettingsVisible) {
-        lbl.setEnabled(linkgrabberQuickSettingsVisible);
-        checkBox.setSelected(linkgrabberQuickSettingsVisible);
-    }
-
-    public boolean isSelected() {
-        return checkBox.isSelected();
     }
 
 }

@@ -8,7 +8,7 @@ import jd.controlling.proxy.ProxyData;
 import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
-import org.appwork.storage.config.annotations.DefaultObjectValue;
+import org.appwork.storage.config.annotations.DefaultJsonObject;
 import org.appwork.storage.config.annotations.Description;
 
 public interface InternetConnectionSettings extends ConfigInterface {
@@ -17,14 +17,14 @@ public interface InternetConnectionSettings extends ConfigInterface {
     @Description("List of all external Proxies")
     void setCustomProxyList(ArrayList<ProxyData> ret);
 
-    @DefaultObjectValue("[]")
+    @DefaultJsonObject("[]")
     ArrayList<ProxyData> getCustomProxyList();
 
     @AboutConfig
     @Description("List of all available direct gateways. Invalid entries will be removed")
     void setDirectGatewayList(ArrayList<DirectGatewayData> ret);
 
-    @DefaultObjectValue("[]")
+    @DefaultJsonObject("[]")
     ArrayList<DirectGatewayData> getDirectGatewayList();
 
     @AboutConfig

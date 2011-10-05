@@ -8,11 +8,11 @@ import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
 import org.appwork.storage.config.annotations.DefaultEnumValue;
 import org.appwork.storage.config.annotations.DefaultIntValue;
-import org.appwork.storage.config.annotations.DefaultValue;
+import org.appwork.storage.config.annotations.DefaultFactory;
 import org.appwork.storage.config.annotations.Description;
 import org.appwork.storage.config.annotations.SpinnerValidator;
+import org.appwork.storage.config.handler.BooleanKeyHandler;
 import org.appwork.storage.config.handler.IntegerKeyHandler;
-import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.storage.config.handler.StorageHandler;
 
 public interface GeneralSettings extends ConfigInterface {
@@ -24,7 +24,7 @@ public interface GeneralSettings extends ConfigInterface {
     @AboutConfig
     void setDefaultDownloadFolder(String ddl);
 
-    @DefaultValue(DefaultDownloadFolder.class)
+    @DefaultFactory(DefaultDownloadFolder.class)
     String getDefaultDownloadFolder();
 
     boolean isAutoStartDownloadsOnStartupEnabled();
@@ -146,10 +146,11 @@ public interface GeneralSettings extends ConfigInterface {
 
     // JSonWrapper.get("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED,
     // 0)
-    public static final KeyHandler DOWNLOAD_SPEED_LIMIT = SH.getKeyHandler("DownloadSpeedLimit");
+    public static final IntegerKeyHandler DOWNLOAD_SPEED_LIMIT = SH.getKeyHandler("DownloadSpeedLimit", IntegerKeyHandler.class);
 
     @AboutConfig
     @Description("Download Speed limit in bytes.")
+    @SpinnerValidator(min = 0, max = Integer.MAX_VALUE)
     int getDownloadSpeedLimit();
 
     void setDownloadSpeedLimit(int bytes);
@@ -225,7 +226,7 @@ public interface GeneralSettings extends ConfigInterface {
 
     void setWaittimeOnConnectionLoss(int milliseconds);
 
-    public static final KeyHandler DOWNLOAD_SPEED_LIMIT_ENABLED = SH.getKeyHandler("DownloadSpeedLimitEnabled");
+    public static final BooleanKeyHandler DOWNLOAD_SPEED_LIMIT_ENABLED = SH.getKeyHandler("DownloadSpeedLimitEnabled", BooleanKeyHandler.class);
 
     @AboutConfig
     boolean isDownloadSpeedLimitEnabled();

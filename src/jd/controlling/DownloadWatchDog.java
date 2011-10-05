@@ -47,14 +47,15 @@ import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownVetoException;
 import org.appwork.shutdown.ShutdownVetoListener;
 import org.appwork.storage.config.JsonConfig;
-import org.appwork.storage.config.events.ConfigEventListener;
+import org.appwork.storage.config.ValidationException;
+import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.utils.Application;
 import org.appwork.utils.net.throttledconnection.ThrottledConnectionManager;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.translate._JDT;
 
-public class DownloadWatchDog implements DownloadControllerListener, StateMachineInterface, ShutdownVetoListener, IOPermission, ConfigEventListener {
+public class DownloadWatchDog implements DownloadControllerListener, StateMachineInterface, ShutdownVetoListener, IOPermission {
 
     /*
      * inner class to provide everything thats needed in order to start a
@@ -125,8 +126,24 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
 
         this.connectionManager = new ThrottledConnectionManager();
         this.connectionManager.setIncommingBandwidthLimit(config.isDownloadSpeedLimitEnabled() ? config.getDownloadSpeedLimit() : 0);
-        GeneralSettings.DOWNLOAD_SPEED_LIMIT.getEventSender().addListener(this, true);
-        GeneralSettings.DOWNLOAD_SPEED_LIMIT_ENABLED.getEventSender().addListener(this, true);
+        GeneralSettings.DOWNLOAD_SPEED_LIMIT.getEventSender().addListener(new GenericConfigEventListener<Integer>() {
+
+            public void onConfigValueModified(KeyHandler<Integer> keyHandler, Integer newValue) {
+            }
+
+            public void onConfigValidatorError(KeyHandler<Integer> keyHandler, Integer invalidValue, ValidationException validateException) {
+                connectionManager.setIncommingBandwidthLimit(config.isDownloadSpeedLimitEnabled() ? config.getDownloadSpeedLimit() : 0);
+            }
+        }, false);
+        GeneralSettings.DOWNLOAD_SPEED_LIMIT_ENABLED.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
+
+            public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
+            }
+
+            public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
+                connectionManager.setIncommingBandwidthLimit(config.isDownloadSpeedLimitEnabled() ? config.getDownloadSpeedLimit() : 0);
+            }
+        }, false);
 
         stateMachine = new StateMachine(this, IDLE_STATE, STOPPED_STATE);
         stateMonitor = new StateMonitor(stateMachine);
@@ -1251,13 +1268,4 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
     public void setCaptchaAllowed(String hoster, CAPTCHA mode) {
     }
 
-    public void onConfigValidatorError(KeyHandler<?> keyHandler, Throwable validateException) {
-    }
-
-    public void onConfigValueModified(KeyHandler<?> keyHandler, Object newValue) {
-
-        if (keyHandler == GeneralSettings.DOWNLOAD_SPEED_LIMIT || keyHandler == GeneralSettings.DOWNLOAD_SPEED_LIMIT_ENABLED) {
-            connectionManager.setIncommingBandwidthLimit(config.isDownloadSpeedLimitEnabled() ? config.getDownloadSpeedLimit() : 0);
-        }
-    }
 }

@@ -23,15 +23,17 @@ import javax.swing.JLabel;
 import jd.controlling.DownloadWatchDog;
 
 import org.appwork.storage.config.JsonConfig;
-import org.appwork.storage.config.events.ConfigEventListener;
+import org.appwork.storage.config.ValidationException;
+import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.Graph;
 import org.appwork.utils.swing.graph.Limiter;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.settings.GeneralSettings;
 
-public class SpeedMeterPanel extends Graph implements ConfigEventListener {
+public class SpeedMeterPanel extends Graph {
 
     private static final long serialVersionUID = 5571694800446993879L;
 
@@ -57,20 +59,38 @@ public class SpeedMeterPanel extends Graph implements ConfigEventListener {
         speedLimiter = new Limiter(a, b);
         config = JsonConfig.create(GeneralSettings.class);
         speedLimiter.setValue(config.isDownloadSpeedLimitEnabled() ? config.getDownloadSpeedLimit() : 0);
-        GeneralSettings.DOWNLOAD_SPEED_LIMIT.getEventSender().addListener(this, true);
-        GeneralSettings.DOWNLOAD_SPEED_LIMIT_ENABLED.getEventSender().addListener(this, true);
+        GeneralSettings.DOWNLOAD_SPEED_LIMIT.getEventSender().addListener(new GenericConfigEventListener<Integer>() {
+
+            public void onConfigValueModified(KeyHandler<Integer> keyHandler, Integer newValue) {
+            }
+
+            public void onConfigValidatorError(KeyHandler<Integer> keyHandler, Integer invalidValue, ValidationException validateException) {
+                new EDTRunner() {
+
+                    @Override
+                    protected void runInEDT() {
+                        speedLimiter.setValue(config.isDownloadSpeedLimitEnabled() ? config.getDownloadSpeedLimit() : 0);
+                    }
+                };
+            }
+        }, false);
+        GeneralSettings.DOWNLOAD_SPEED_LIMIT_ENABLED.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
+
+            public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
+            }
+
+            public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
+                new EDTRunner() {
+
+                    @Override
+                    protected void runInEDT() {
+                        speedLimiter.setValue(config.isDownloadSpeedLimitEnabled() ? config.getDownloadSpeedLimit() : 0);
+                    }
+                };
+            }
+        }, false);
         setLimiter(new Limiter[] { speedLimiter });
         if (start) start();
-    }
-
-    public void onConfigValidatorError(KeyHandler<?> keyHandler, Throwable validateException) {
-    }
-
-    public void onConfigValueModified(KeyHandler<?> keyHandler, Object newValue) {
-
-        if (keyHandler == GeneralSettings.DOWNLOAD_SPEED_LIMIT || keyHandler == GeneralSettings.DOWNLOAD_SPEED_LIMIT_ENABLED) {
-            speedLimiter.setValue(config.isDownloadSpeedLimitEnabled() ? config.getDownloadSpeedLimit() : 0);
-        }
     }
 
     protected String createTooltipText() {

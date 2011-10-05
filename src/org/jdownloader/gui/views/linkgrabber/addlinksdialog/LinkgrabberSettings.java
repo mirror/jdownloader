@@ -5,19 +5,19 @@ import java.util.ArrayList;
 import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
-import org.appwork.storage.config.annotations.DefaultObjectValue;
+import org.appwork.storage.config.annotations.DefaultJsonObject;
 import org.appwork.storage.config.annotations.Description;
 import org.appwork.storage.config.annotations.RequiresRestart;
 
 public interface LinkgrabberSettings extends ConfigInterface {
 
-    @DefaultObjectValue("[]")
+    @DefaultJsonObject("[]")
     @AboutConfig
     ArrayList<String> getDownloadDestinationHistory();
 
     void setDownloadDestinationHistory(ArrayList<String> value);
 
-    @DefaultObjectValue("[]")
+    @DefaultJsonObject("[]")
     @AboutConfig
     ArrayList<String> getPackageNameHistory();
 

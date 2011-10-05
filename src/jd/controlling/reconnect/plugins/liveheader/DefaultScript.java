@@ -3,9 +3,9 @@ package jd.controlling.reconnect.plugins.liveheader;
 import jd.config.Configuration;
 import jd.utils.JDUtilities;
 
-import org.appwork.storage.config.defaults.DefaultFactory;
+import org.appwork.storage.config.defaults.AbstractDefaultFactory;
 
-public class DefaultScript extends DefaultFactory<String> {
+public class DefaultScript extends AbstractDefaultFactory<String> {
 
     @Override
     public String getDefaultValue() {

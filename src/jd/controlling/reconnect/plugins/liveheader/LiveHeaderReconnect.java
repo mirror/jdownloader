@@ -32,6 +32,7 @@ import jd.gui.swing.GuiRunnable;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.storage.config.JsonConfig;
+import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.ConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.swing.components.ExtButton;
@@ -382,10 +383,10 @@ public class LiveHeaderReconnect extends RouterPlugin implements ControlListener
 
     }
 
-    public void onConfigValidatorError(KeyHandler<?> keyHandler, Throwable validateException) {
+    public void onConfigValidatorError(KeyHandler<Object> keyHandler, Object invalidValue, ValidationException validateException) {
     }
 
-    public void onConfigValueModified(KeyHandler<?> keyHandler, Object newValue) {
+    public void onConfigValueModified(KeyHandler<Object> keyHandler, Object newValue) {
         if (keyHandler.isChildOf(settings)) {
             System.out.println("Key: " + keyHandler + "=" + newValue);
             updateGUI();

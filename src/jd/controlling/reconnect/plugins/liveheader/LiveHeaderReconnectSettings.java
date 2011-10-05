@@ -5,35 +5,35 @@ import jd.controlling.reconnect.plugins.liveheader.remotecall.RouterData;
 import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
-import org.appwork.storage.config.annotations.DefaultObjectValue;
-import org.appwork.storage.config.annotations.DefaultValue;
+import org.appwork.storage.config.annotations.DefaultJsonObject;
+import org.appwork.storage.config.annotations.DefaultFactory;
 
 public interface LiveHeaderReconnectSettings extends ConfigInterface {
     @AboutConfig
-    @DefaultValue(DefaultScript.class)
+    @DefaultFactory(DefaultScript.class)
     String getScript();
 
     void setScript(String script);
 
     @AboutConfig
-    @DefaultValue(DefaultUsername.class)
+    @DefaultFactory(DefaultUsername.class)
     String getUserName();
 
     void setUserName(String str);
 
     @AboutConfig
-    @DefaultValue(DefaultPassword.class)
+    @DefaultFactory(DefaultPassword.class)
     String getPassword();
 
     void setPassword(String str);
 
     @AboutConfig
-    @DefaultValue(DefaultRouterIP.class)
+    @DefaultFactory(DefaultRouterIP.class)
     String getRouterIP();
 
     void setRouterIP(String str);
 
-    @DefaultObjectValue("{}")
+    @DefaultJsonObject("{}")
     void setRouterData(RouterData routerData);
 
     RouterData getRouterData();
