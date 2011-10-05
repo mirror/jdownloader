@@ -167,7 +167,7 @@ public class LinkFilterController implements LinkCrawlerFilter {
         }
         // no deny filter match. We can return here
         if (!matches) {
-            System.out.println("false " + link);
+            // System.out.println("false " + link);
             return false;
         }
 
@@ -195,7 +195,7 @@ public class LinkFilterController implements LinkCrawlerFilter {
 
             return false;
         }
-        System.out.println("true " + link);
+        // System.out.println("true " + link);
         return true;
     }
 

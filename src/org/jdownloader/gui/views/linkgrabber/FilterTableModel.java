@@ -6,12 +6,14 @@ import net.miginfocom.swing.MigLayout;
 
 import org.appwork.swing.exttable.ExtTableModel;
 import org.appwork.swing.exttable.columns.ExtCheckColumn;
+import org.appwork.swing.exttable.columns.ExtLongColumn;
 import org.appwork.swing.exttable.columns.ExtTextColumn;
 
 public class FilterTableModel extends ExtTableModel<Filter> {
 
     public FilterTableModel() {
         super("FilterTableModel");
+
     }
 
     @Override
@@ -57,7 +59,7 @@ public class FilterTableModel extends ExtTableModel<Filter> {
                 return "";
             }
         });
-        addColumn(new ExtTextColumn<Filter>("Hoster") {
+        addColumn(new ExtLongColumn<Filter>("Hoster") {
             // {
             // renderer.setLayout(new MigLayout("ins 0", "[grow,fill][]",
             // "[]"));
@@ -89,9 +91,10 @@ public class FilterTableModel extends ExtTableModel<Filter> {
             }
 
             @Override
-            public String getStringValue(Filter value) {
-                return value.getInfo();
+            protected long getLong(Filter value) {
+                return value.getCounter();
             }
+
         });
         addColumn(new ExtTextColumn<Filter>("Hoster") {
             {

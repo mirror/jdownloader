@@ -20,9 +20,14 @@ import org.appwork.utils.logging.Log;
 
 public abstract class PackageController<E extends AbstractPackageNode<V, E>, V extends AbstractPackageChildrenNode<E>> {
     private final AtomicLong structureChanged = new AtomicLong(0);
+    private final AtomicLong childrenChanged  = new AtomicLong(0);
 
     public long getPackageControllerChanges() {
         return structureChanged.get();
+    }
+
+    public long getChildrenChanges() {
+        return childrenChanged.get();
     }
 
     protected LinkedList<E>              packages  = new LinkedList<E>();
@@ -100,16 +105,13 @@ public abstract class PackageController<E extends AbstractPackageNode<V, E>, V e
                                 li.set(pkg);
                                 li.add(replaced);
                                 done = true;
-                                currentIndex++;
-                                continue;
                             } else if (c == pkg) {
                                 /* current element is pkg, lets remove it */
                                 li.remove();
                                 isNew = false;
                                 need2Remove = false;
-                            } else {
-                                currentIndex++;
                             }
+                            currentIndex++;
                         }
                         if (!done || addLast) {
                             packages.addLast(pkg);
@@ -120,6 +122,7 @@ public abstract class PackageController<E extends AbstractPackageNode<V, E>, V e
                     }
                     structureChanged.incrementAndGet();
                     if (isNew) {
+                        if (pkg.getChildren().size() > 0) childrenChanged.incrementAndGet();
                         _controllerPackageNodeAdded(pkg);
                     } else {
                         _controllerStructureChanged();
@@ -165,6 +168,7 @@ public abstract class PackageController<E extends AbstractPackageNode<V, E>, V e
                         remove = new ArrayList<V>(pkg.getChildren());
                     }
                     if (removed && remove != null) {
+                        if (remove.size() > 0) childrenChanged.incrementAndGet();
                         controller._controllerParentlessLinks(remove);
                     }
                     if (removed) {
@@ -192,11 +196,15 @@ public abstract class PackageController<E extends AbstractPackageNode<V, E>, V e
                         PackageController.this.addmovePackageAt(pkg, -1, true);
                     }
                     /* build map for removal of children links */
+                    boolean newChildren = false;
                     HashMap<E, LinkedList<V>> removeaddMap = new HashMap<E, LinkedList<V>>();
                     for (V child : children) {
                         E parent = child.getParentNode();
                         if (parent == null || pkg == parent) {
                             /* parent is our destination, so no need here */
+                            if (parent == null) {
+                                newChildren = true;
+                            }
                             continue;
                         }
                         LinkedList<V> pmap = removeaddMap.get(parent);
@@ -222,15 +230,26 @@ public abstract class PackageController<E extends AbstractPackageNode<V, E>, V e
                     writeLock();
                     try {
                         synchronized (pkg) {
+                            int destIndex = index;
                             List<V> pkgchildren = pkg.getChildren();
                             /* remove all */
-                            pkgchildren.removeAll(children);
+                            /*
+                             * TODO: speed optimization, we have to correct the
+                             * index to match changes in children structure
+                             */
+                            for (V child : children) {
+                                int childI = pkgchildren.indexOf(child);
+                                if (childI >= 0) {
+                                    if (childI < destIndex) destIndex -= 1;
+                                    pkgchildren.remove(childI);
+                                }
+                            }
                             /* add at wanted position */
-                            if (index < 0 || index >= pkgchildren.size() - 1) {
+                            if (destIndex < 0 || destIndex > pkgchildren.size() - 1) {
                                 /* add at the end */
                                 pkgchildren.addAll(children);
                             } else {
-                                pkgchildren.addAll(index, children);
+                                pkgchildren.addAll(destIndex, children);
                             }
                             for (V child : children) {
                                 child.setParentNode(pkg);
@@ -241,6 +260,7 @@ public abstract class PackageController<E extends AbstractPackageNode<V, E>, V e
                         writeUnlock();
                     }
                     structureChanged.incrementAndGet();
+                    if (newChildren) childrenChanged.incrementAndGet();
                     _controllerStructureChanged();
                     return null;
                 }
@@ -296,7 +316,10 @@ public abstract class PackageController<E extends AbstractPackageNode<V, E>, V e
                     }
                     if (links.size() > 0) {
                         controller.structureChanged.incrementAndGet();
-                        if (doNotifyParentlessLinks) controller._controllerParentlessLinks(links);
+                        if (doNotifyParentlessLinks) {
+                            childrenChanged.incrementAndGet();
+                            controller._controllerParentlessLinks(links);
+                        }
                         if (pkg.getChildren().size() == 0) {
                             controller.removePackage(pkg);
                         }

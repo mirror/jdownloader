@@ -6,7 +6,6 @@ import java.io.IOException;
 
 import javax.swing.Box;
 
-import jd.controlling.FavIconController;
 import jd.gui.swing.laf.LookAndFeelController;
 
 import org.appwork.app.gui.MigPanel;
@@ -17,14 +16,14 @@ import org.jdownloader.gui.translate._GUI;
 
 public class LinkGrabberSidebar extends MigPanel {
 
-    private LinkGrabberTable   table;
-    private MigPanel           quicksettings;
-    private FilterTable        hosterFilterTable;
-    private FilterTable        filetypeFilterTable;
-    private LinkFilterSettings config;
-    private Header             hosterFilter;
-    private Header             filetypeFilter;
-    private Header             quickSettingsHeader;
+    private LinkGrabberTable       table;
+    private MigPanel               quicksettings;
+    private QuickFilterHosterTable hosterFilterTable;
+    private FilterTable            filetypeFilterTable;
+    private LinkFilterSettings     config;
+    private Header                 hosterFilter;
+    private Header                 filetypeFilter;
+    private Header                 quickSettingsHeader;
 
     public LinkGrabberSidebar(LinkGrabberTable table) {
         super("ins 0,wrap 1", "[grow,fill]", "[][][][][grow,fill][]");
@@ -37,13 +36,7 @@ public class LinkGrabberSidebar extends MigPanel {
             setOpaque(true);
         }
 
-        hosterFilterTable = new FilterTable();
-        Filter filter = new Filter("rapidshare.com", null, true);
-        filter.setIcon(FavIconController.getFavIcon("rapidshare.com", filter, true));
-        hosterFilterTable.getExtTableModel().addElement(filter);
-        filter = new Filter("share-online.biz", null, true);
-        filter.setIcon(FavIconController.getFavIcon("share-online.biz", filter, true));
-        hosterFilterTable.getExtTableModel().addElement(filter);
+        hosterFilterTable = new QuickFilterHosterTable();
         filetypeFilterTable = new FilterTable();
         filetypeFilterTable.setVisible(config.isLinkgrabberFiletypeQuickfilterEnabled());
         try {

@@ -198,21 +198,30 @@ public class LinkGrabberTableTransferHandler extends TransferHandler {
                 if (packages != null) {
                     /* move packages */
                     CrawledPackage dest = null;
-                    boolean beforeAfter = false;
-                    if (afterElement instanceof CrawledPackage) {
-                        dest = (CrawledPackage) afterElement;
+                    if (beforeElement == null) {
+                        dest = null;
+                    } else if (beforeElement instanceof CrawledPackage) {
+                        dest = (CrawledPackage) beforeElement;
+                    } else if (beforeElement instanceof CrawledLink) {
+                        dest = ((CrawledLink) beforeElement).getParentNode();
                     }
-                    if (dest == null && beforeElement != null) {
-                        beforeAfter = true;
-                        if (beforeElement instanceof CrawledPackage) {
-                            dest = (CrawledPackage) beforeElement;
-                        } else if (beforeElement instanceof CrawledLink) {
-                            dest = ((CrawledLink) beforeElement).getParentNode();
+                    LinkCollector.getInstance().move(packages, dest);
+                } else if (links != null) {
+                    /* move links */
+                    CrawledPackage destP = null;
+                    CrawledLink afterL = null;
+                    if (beforeElement != null) {
+                        if (beforeElement instanceof CrawledLink) {
+                            afterL = (CrawledLink) beforeElement;
+                            destP = afterL.getParentNode();
+                        } else if (beforeElement instanceof CrawledPackage) {
+                            afterL = null;
+                            destP = ((CrawledPackage) beforeElement);
                         }
+                    } else {
+
                     }
-                    if (dest != null) {
-                        LinkCollector.getInstance().move(packages, dest, beforeAfter);
-                    }
+                    LinkCollector.getInstance().move(links, destP, afterL);
                 }
             }
         } else {

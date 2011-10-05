@@ -19,7 +19,6 @@ import jd.controlling.packagecontroller.PackageController;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.event.Eventsender;
 import org.appwork.utils.event.queue.QueueAction;
-import org.appwork.utils.logging.Log;
 import org.jdownloader.controlling.filter.LinkFilterController;
 import org.jdownloader.gui.views.linkgrabber.addlinksdialog.CrawlerJob;
 
@@ -330,23 +329,44 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         });
     }
 
-    public void move(final ArrayList<CrawledPackage> srcPkgs, final CrawledPackage dest, final boolean beforeAfter) {
+    public void move(final ArrayList<CrawledPackage> srcPkgs, final CrawledPackage afterDest) {
         if (srcPkgs == null || srcPkgs.size() == 0) return;
-        if (dest == null) {
-            Log.exception(new Throwable("WTF no dest?!?!"));
-            return;
-        }
         IOEQ.getQueue().add(new QueueAction<Void, RuntimeException>() {
             @Override
             protected Void run() throws RuntimeException {
-                int destination = packages.indexOf(dest);
-                if (beforeAfter == false) {
-                    destination -= 1;
-                }
-                int counter = Math.max(destination, 0);
                 for (CrawledPackage srcPkg : srcPkgs) {
-                    addmovePackageAt(srcPkg, counter++);
+                    int destination = 0;
+                    if (afterDest != null) {
+                        int destI = 0;
+                        boolean readL = readLock();
+                        try {
+                            destI = packages.indexOf(afterDest);
+                        } finally {
+                            readUnlock(readL);
+                        }
+                        destination = Math.max(destI, 0) + 1;
+                    }
+                    addmovePackageAt(srcPkg, destination);
                 }
+                return null;
+            }
+        });
+    }
+
+    public void move(final ArrayList<CrawledLink> srcLinks, final CrawledPackage dstPkg, final CrawledLink afterLink) {
+        if (dstPkg == null || srcLinks == null || srcLinks.size() == 0) return;
+        IOEQ.getQueue().add(new QueueAction<Void, RuntimeException>() {
+            @Override
+            protected Void run() throws RuntimeException {
+                int destination = 0;
+                if (afterLink != null) {
+                    int destI = 0;
+                    synchronized (dstPkg) {
+                        destI = dstPkg.getChildren().indexOf(afterLink);
+                    }
+                    destination = Math.max(destI, 0) + 1;
+                }
+                addmoveChildren(dstPkg, srcLinks, destination);
                 return null;
             }
         });

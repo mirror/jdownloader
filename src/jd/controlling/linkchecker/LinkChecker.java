@@ -14,6 +14,7 @@ import jd.http.Browser;
 import jd.http.BrowserSettingsThread;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
 
 import org.appwork.storage.config.JsonConfig;
@@ -21,9 +22,6 @@ import org.appwork.utils.logging.Log;
 
 public class LinkChecker<E extends CheckableLink> {
 
-    private static final String                                                     HTTP_LINKS_HOST        = "http links";
-    private static final String                                                     DIRECT_HTTP_HOST       = "DirectHTTP";
-    private static final String                                                     FTP_HOST               = "ftp";
     /* static variables */
     private static AtomicInteger                                                    LINKCHECKER_THREAD_NUM = new AtomicInteger(0);
     private final static int                                                        MAX_THREADS;
@@ -88,7 +86,7 @@ public class LinkChecker<E extends CheckableLink> {
         DownloadLink dlLink = link.getDownloadLink();
         /* get Host of the link */
         String host = dlLink.getHost();
-        if (LinkChecker.FTP_HOST.equalsIgnoreCase(host) || LinkChecker.DIRECT_HTTP_HOST.equalsIgnoreCase(host) || LinkChecker.HTTP_LINKS_HOST.equalsIgnoreCase(host)) {
+        if (Plugin.FTP_HOST.equalsIgnoreCase(host) || Plugin.DIRECT_HTTP_HOST.equalsIgnoreCase(host) || Plugin.HTTP_LINKS_HOST.equalsIgnoreCase(host)) {
             /* direct and ftp links are divided by their hostname */
             String specialHost = Browser.getHost(dlLink.getDownloadURL());
             if (specialHost != null) host = specialHost;

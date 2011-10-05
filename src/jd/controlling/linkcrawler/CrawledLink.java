@@ -3,8 +3,10 @@ package jd.controlling.linkcrawler;
 import javax.swing.ImageIcon;
 
 import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
+import jd.http.Browser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
+import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 
@@ -17,6 +19,7 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
     private CrawlerJob       sourceJob   = null;
     private long             created     = -1;
     private boolean          isDupeAllow = false;
+    private String           realHost    = null;
 
     /**
      * @return the isDupeAllow
@@ -132,6 +135,19 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
     public String getHost() {
         if (dlLink != null) return dlLink.getHost();
         return null;
+    }
+
+    public String getRealHost() {
+        if (realHost != null) return realHost;
+        if (dlLink != null) {
+            realHost = dlLink.getHost();
+            if (Plugin.FTP_HOST.equalsIgnoreCase(realHost) || Plugin.DIRECT_HTTP_HOST.equalsIgnoreCase(realHost) || Plugin.HTTP_LINKS_HOST.equalsIgnoreCase(realHost)) {
+                /* direct and ftp links are divided by their hostname */
+                String specialHost = Browser.getHost(dlLink.getDownloadURL());
+                if (specialHost != null) realHost = specialHost;
+            }
+        }
+        return realHost;
     }
 
     public ImageIcon getIcon() {

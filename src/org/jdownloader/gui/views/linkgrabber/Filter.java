@@ -9,14 +9,14 @@ import org.jdownloader.images.NewTheme;
 public class Filter implements FavIconRequestor {
     private boolean   enabled = true;
     private ImageIcon icon    = null;
-    private String    info    = "" + (int) (Math.random() * 100);
+    private int       counter = 0;
 
-    public String getInfo() {
-        return info;
+    public int getCounter() {
+        return counter;
     }
 
-    public void setInfo(String info) {
-        this.info = info;
+    public void setCounter(int counter) {
+        this.counter = counter;
     }
 
     public ImageIcon getIcon() {

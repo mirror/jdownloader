@@ -21,6 +21,7 @@ public class IOEQ {
         TIMINGQUEUE.allowCoreThreadTimeOut(true);
     }
     private static final Queue                      INSTANCE    = new Queue("InOrderExcecutionQueue") {
+
                                                                     @Override
                                                                     public void killQueue() {
                                                                         Log.exception(new Throwable("YOU CANNOT KILL ME!"));

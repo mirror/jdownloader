@@ -52,12 +52,16 @@ import org.jdownloader.translate._JDT;
  */
 public abstract class Plugin implements ActionListener {
 
+    public static final String HTTP_LINKS_HOST  = "http links";
+    public static final String DIRECT_HTTP_HOST = "DirectHTTP";
+    public static final String FTP_HOST         = "ftp";
+
     /* to keep 0.95xx comp */
     /* switch this on every stable update */
     // protected static Logger logger = jd.controlling.JDLogger.getLogger();
 
     /* afer 0.95xx */
-    protected JDPluginLogger logger = null;
+    protected JDPluginLogger   logger           = null;
 
     /**
      * Gibt nur den Dateinamen aus der URL extrahiert zurück. Um auf den
