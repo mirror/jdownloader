@@ -86,6 +86,10 @@ public abstract class PackageControllerTableModel<E extends AbstractPackageNode<
         asyncRecreate.run();
     }
 
+    public void instantRecreateModel() {
+        asyncRecreate.delayedrun();
+    }
+
     public void refreshModel() {
         asyncRefresh.run();
     }

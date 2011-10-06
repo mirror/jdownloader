@@ -106,7 +106,7 @@ public class QuickFilterHosterTable extends FilterTable<CrawledPackage, CrawledL
                                          * request recreate the model of
                                          * filtered view
                                          */
-                                        table2Filter.getPackageControllerTableModel().recreateModel();
+                                        table2Filter.getPackageControllerTableModel().instantRecreateModel();
                                     }
 
                                 };
