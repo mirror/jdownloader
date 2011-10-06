@@ -1,15 +1,17 @@
-package org.jdownloader.gui.views.linkgrabber;
+package org.jdownloader.gui.views.linkgrabber.quickfilter;
 
 import javax.swing.ImageIcon;
 
 import jd.controlling.FavIconRequestor;
+import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
+import jd.controlling.packagecontroller.AbstractPackageNode;
 
 import org.jdownloader.images.NewTheme;
 
-public class Filter implements FavIconRequestor {
-    private boolean   enabled = true;
+public abstract class Filter<E extends AbstractPackageNode<V, E>, V extends AbstractPackageChildrenNode<E>> implements FavIconRequestor {
+    protected boolean enabled = true;
     private ImageIcon icon    = null;
-    private int       counter = 0;
+    protected int     counter = 0;
 
     public int getCounter() {
         return counter;
@@ -28,7 +30,7 @@ public class Filter implements FavIconRequestor {
     }
 
     public Filter(String string, ImageIcon icon, boolean b) {
-        this.hoster = string;
+        this.name = string;
         if (icon != null) this.icon = NewTheme.I().getScaledInstance(icon, 16);
         this.enabled = b;
     }
@@ -38,20 +40,24 @@ public class Filter implements FavIconRequestor {
     }
 
     public void setEnabled(boolean enabled) {
-        this.enabled = enabled;
+        this.enabled = !enabled;
     }
 
-    public String getHoster() {
-        return hoster;
+    public String getName() {
+        return name;
     }
 
-    public void setHoster(String hoster) {
-        this.hoster = hoster;
+    public void setName(String hoster) {
+        this.name = hoster;
     }
 
-    private String hoster = null;
+    protected String name = null;
 
     public void setFavIcon(ImageIcon icon) {
         setIcon(icon);
     }
+
+    abstract public boolean isFiltered(V link);
+
+    abstract public boolean isFiltered(E link);
 }

@@ -28,11 +28,13 @@ public abstract class PackageControllerTableModel<E extends AbstractPackageNode<
         BOTTOM
     }
 
-    private DelayedRunnable             asyncRefresh;
-    protected PackageController<E, V>   pc;
-    private DelayedRunnable             asyncRecreate = null;
+    private DelayedRunnable                                    asyncRefresh;
+    protected PackageController<E, V>                          pc;
+    private DelayedRunnable                                    asyncRecreate = null;
+    private ArrayList<PackageControllerTableModelFilter<E, V>> tableFilters       = new ArrayList<PackageControllerTableModelFilter<E, V>>();
+    private Object                                             LOCK          = new Object();
 
-    private ScheduledThreadPoolExecutor queue         = new ScheduledThreadPoolExecutor(1);
+    private ScheduledThreadPoolExecutor                        queue         = new ScheduledThreadPoolExecutor(1);
 
     public PackageControllerTableModel(PackageController<E, V> pc, String id) {
         super(id);
@@ -115,6 +117,24 @@ public abstract class PackageControllerTableModel<E extends AbstractPackageNode<
 
     }
 
+    public void addFilter(PackageControllerTableModelFilter<E, V> filter) {
+        synchronized (LOCK) {
+            if (tableFilters.contains(filter)) return;
+            ArrayList<PackageControllerTableModelFilter<E, V>> newfilters = new ArrayList<PackageControllerTableModelFilter<E, V>>(tableFilters);
+            newfilters.add(filter);
+            tableFilters = newfilters;
+        }
+    }
+
+    public void removeFilter(PackageControllerTableModelFilter<E, V> filter) {
+        synchronized (LOCK) {
+            if (!tableFilters.contains(filter)) return;
+            ArrayList<PackageControllerTableModelFilter<E, V>> newfilters = new ArrayList<PackageControllerTableModelFilter<E, V>>(tableFilters);
+            newfilters.remove(filter);
+            tableFilters = newfilters;
+        }
+    }
+
     /*
      * we override sort to have a better sorting of packages/files, to keep
      * their structure alive,data is only used to specify the size of the new
@@ -146,18 +166,53 @@ public abstract class PackageControllerTableModel<E extends AbstractPackageNode<
         } finally {
             pc.readUnlock(readL);
         }
+        ArrayList<PackageControllerTableModelFilter<E, V>> filters = this.tableFilters;
+        /* filter packages */
+        for (int index = packages.size() - 1; index >= 0; index--) {
+            AbstractNode pkg = packages.get(index);
+            for (PackageControllerTableModelFilter<E, V> filter : filters) {
+                if (filter.isFiltered((E) pkg)) {
+                    /* remove package because it is filtered */
+                    packages.remove(index);
+                    break;
+                }
+            }
+        }
         /* sort packages */
         if (column != null) Collections.sort(packages, column.getRowSorter());
         ArrayList<AbstractNode> newData = new ArrayList<AbstractNode>(Math.max(data.size(), packages.size()));
         for (AbstractNode node : packages) {
-            newData.add(node);
-            if (!((E) node).isExpanded()) continue;
             ArrayList<AbstractNode> files = null;
             synchronized (node) {
                 files = new ArrayList<AbstractNode>(((E) node).getChildren());
-                if (column != null) Collections.sort(files, column.getRowSorter());
             }
-            newData.addAll(files);
+            /* filter children of this package */
+            for (int index = files.size() - 1; index >= 0; index--) {
+                AbstractNode child = files.get(index);
+                for (PackageControllerTableModelFilter<E, V> filter : filters) {
+                    if (filter.isFiltered((V) child)) {
+                        /* remove child because it is filtered */
+                        files.remove(index);
+                        break;
+                    }
+                }
+            }
+            boolean expanded = ((E) node).isExpanded();
+            if (column != null && expanded) {
+                /* we only have to sort children if the package is expanded */
+                Collections.sort(files, column.getRowSorter());
+            }
+            if (files.size() > 0) {
+                /* only add package node if it contains children */
+                newData.add(node);
+            }
+            if (!expanded) {
+                /* not expanded */
+                continue;
+            } else {
+                /* expanded, add its children */
+                newData.addAll(files);
+            }
         }
         return newData;
     }

@@ -1,7 +1,9 @@
-package org.jdownloader.gui.views.linkgrabber;
+package org.jdownloader.gui.views.linkgrabber.quickfilter;
 
 import javax.swing.Icon;
 
+import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
+import jd.controlling.packagecontroller.AbstractPackageNode;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.swing.exttable.ExtTableModel;
@@ -9,7 +11,12 @@ import org.appwork.swing.exttable.columns.ExtCheckColumn;
 import org.appwork.swing.exttable.columns.ExtLongColumn;
 import org.appwork.swing.exttable.columns.ExtTextColumn;
 
-public class FilterTableModel extends ExtTableModel<Filter> {
+public class FilterTableModel<E extends AbstractPackageNode<V, E>, V extends AbstractPackageChildrenNode<E>> extends ExtTableModel<Filter<E, V>> {
+
+    /**
+     * 
+     */
+    private static final long serialVersionUID = 1749243877638799385L;
 
     public FilterTableModel() {
         super("FilterTableModel");
@@ -18,7 +25,7 @@ public class FilterTableModel extends ExtTableModel<Filter> {
 
     @Override
     protected void initColumns() {
-        addColumn(new ExtTextColumn<Filter>("Hoster") {
+        addColumn(new ExtTextColumn<Filter<E, V>>("Hoster") {
             // {
             // renderer.setLayout(new MigLayout("ins 0", "[grow,fill][]",
             // "[]"));
@@ -41,7 +48,7 @@ public class FilterTableModel extends ExtTableModel<Filter> {
 
             @Override
             public boolean isEnabled(Filter obj) {
-                return obj.isEnabled();
+                return !obj.isEnabled();
             }
 
             @Override
@@ -59,7 +66,7 @@ public class FilterTableModel extends ExtTableModel<Filter> {
                 return "";
             }
         });
-        addColumn(new ExtLongColumn<Filter>("Hoster") {
+        addColumn(new ExtLongColumn<Filter<E, V>>("Hoster") {
             // {
             // renderer.setLayout(new MigLayout("ins 0", "[grow,fill][]",
             // "[]"));
@@ -81,51 +88,52 @@ public class FilterTableModel extends ExtTableModel<Filter> {
             }
 
             @Override
-            public boolean isEnabled(Filter obj) {
-                return obj.isEnabled();
+            public boolean isEnabled(Filter<E, V> obj) {
+                return !obj.isEnabled();
             }
 
             @Override
-            public boolean isSortable(Filter obj) {
+            public boolean isSortable(Filter<E, V> obj) {
                 return false;
             }
 
             @Override
-            protected long getLong(Filter value) {
+            protected long getLong(Filter<E, V> value) {
                 return value.getCounter();
             }
 
         });
-        addColumn(new ExtTextColumn<Filter>("Hoster") {
+        ExtTextColumn<Filter<E, V>> hosterColumn;
+        addColumn(hosterColumn = new ExtTextColumn<Filter<E, V>>("Hoster") {
             {
                 renderer.setLayout(new MigLayout("ins 0", "[grow,fill][]", "[]"));
 
             }
 
             @Override
-            public boolean isEnabled(Filter obj) {
-                return obj.isEnabled();
+            public boolean isEnabled(Filter<E, V> obj) {
+                return !obj.isEnabled();
             }
 
             @Override
-            public boolean isSortable(Filter obj) {
+            public boolean isSortable(Filter<E, V> obj) {
                 return true;
             }
 
             @Override
-            public String getStringValue(Filter value) {
-                return value.getHoster();
+            public String getStringValue(Filter<E, V> value) {
+                return value.getName();
             }
         });
-        addColumn(new ExtCheckColumn<Filter>("Check") {
+        addColumn(new ExtCheckColumn<Filter<E, V>>("Check") {
             @Override
-            public boolean isSortable(Filter obj) {
+            public boolean isSortable(Filter<E, V> obj) {
                 return false;
             }
 
             @Override
-            protected boolean getBooleanValue(Filter value) {
-                return value.isEnabled();
+            protected boolean getBooleanValue(Filter<E, V> value) {
+                return !value.isEnabled();
             }
 
             @Override
@@ -144,15 +152,16 @@ public class FilterTableModel extends ExtTableModel<Filter> {
             }
 
             @Override
-            public boolean isEditable(Filter obj) {
+            public boolean isEditable(Filter<E, V> obj) {
                 return true;
             }
 
             @Override
-            protected void setBooleanValue(boolean value, Filter object) {
+            protected void setBooleanValue(boolean value, Filter<E, V> object) {
                 object.setEnabled(value);
             }
         });
+        this.setSortColumn(hosterColumn);
     }
 
 }

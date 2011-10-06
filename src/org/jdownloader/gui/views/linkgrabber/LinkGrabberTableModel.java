@@ -225,27 +225,7 @@ public class LinkGrabberTableModel extends PackageControllerTableModel<CrawledPa
             } catch (final Exception e) {
                 Log.exception(e);
             }
-            ArrayList<AbstractNode> packages = null;
-            final boolean readL = pc.readLock();
-            try {
-                /* get all packages from controller */
-                packages = new ArrayList<AbstractNode>(pc.size());
-                packages.addAll(pc.getPackages());
-            } finally {
-                pc.readUnlock(readL);
-            }
-            ArrayList<AbstractNode> newData = new ArrayList<AbstractNode>(Math.max(data.size(), packages.size()));
-            for (AbstractNode node : packages) {
-                newData.add(node);
-                if (!((CrawledPackage) node).isExpanded()) continue;
-                ArrayList<AbstractNode> files = null;
-                synchronized (node) {
-                    files = new ArrayList<AbstractNode>(((CrawledPackage) node).getChildren());
-                }
-                newData.addAll(files);
-            }
-            return newData;
-
+            return super.sort(data, sortColumn);
         } else {
             return super.sort(data, column);
         }

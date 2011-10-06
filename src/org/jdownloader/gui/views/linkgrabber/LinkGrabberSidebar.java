@@ -2,17 +2,19 @@ package org.jdownloader.gui.views.linkgrabber;
 
 import java.awt.Color;
 import java.awt.Graphics;
-import java.io.IOException;
 
 import javax.swing.Box;
 
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledPackage;
 import jd.gui.swing.laf.LookAndFeelController;
 
 import org.appwork.app.gui.MigPanel;
 import org.appwork.storage.config.JsonConfig;
-import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.controlling.filter.LinkFilterSettings;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.gui.views.linkgrabber.quickfilter.FilterTable;
+import org.jdownloader.gui.views.linkgrabber.quickfilter.QuickFilterHosterTable;
 
 public class LinkGrabberSidebar extends MigPanel {
 
@@ -36,14 +38,11 @@ public class LinkGrabberSidebar extends MigPanel {
             setOpaque(true);
         }
 
-        hosterFilterTable = new QuickFilterHosterTable();
-        filetypeFilterTable = new FilterTable();
+        hosterFilterTable = new QuickFilterHosterTable(table);
+        hosterFilterTable.setVisible(config.isLinkgrabberHosterQuickfilterEnabled());
+        filetypeFilterTable = new FilterTable<CrawledPackage, CrawledLink>();
         filetypeFilterTable.setVisible(config.isLinkgrabberFiletypeQuickfilterEnabled());
-        try {
-            filetypeFilterTable.getExtTableModel().addAllElements(new Filter("rar", CrossSystem.getMime().getFileIcon("rar", 16, 16), true), new Filter("rar", CrossSystem.getMime().getFileIcon("rar", 16, 16), true), new Filter("html", CrossSystem.getMime().getFileIcon("html", 16, 16), true), new Filter("zip", CrossSystem.getMime().getFileIcon("zip", 16, 16), true));
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+
         quicksettings = new MigPanel("ins 0,wrap 1", "[grow,fill]", "[]0[]0[]");
 
         quicksettings.add(new Checkbox(LinkFilterSettings.ADD_AT_TOP, _GUI._.LinkGrabberSidebar_LinkGrabberSidebar_addtop(), _GUI._.LinkGrabberSidebar_LinkGrabberSidebar_addtop_tt()));
@@ -56,6 +55,8 @@ public class LinkGrabberSidebar extends MigPanel {
             @Override
             protected void setContentsVisible(boolean selected) {
                 hosterFilterTable.setVisible(selected);
+                /* lets recreate the linkgrabber model */
+                LinkGrabberSidebar.this.table.getPackageControllerTableModel().recreateModel();
             }
 
         };

@@ -41,6 +41,10 @@ public abstract class PackageControllerTable<E extends AbstractPackageNode<V, E>
         }
     }
 
+    public PackageControllerTableModel<E, V> getPackageControllerTableModel() {
+        return tableModel;
+    }
+
     @Override
     protected void onSingleClick(MouseEvent e, final AbstractNode obj) {
         if (obj instanceof AbstractPackageNode) {
