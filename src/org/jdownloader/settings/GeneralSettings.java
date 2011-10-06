@@ -1,5 +1,6 @@
 package org.jdownloader.settings;
 
+import java.io.File;
 import java.util.ArrayList;
 
 import org.appwork.storage.config.ConfigInterface;
@@ -7,13 +8,15 @@ import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
 import org.appwork.storage.config.annotations.DefaultEnumValue;
-import org.appwork.storage.config.annotations.DefaultIntValue;
 import org.appwork.storage.config.annotations.DefaultFactory;
+import org.appwork.storage.config.annotations.DefaultIntValue;
 import org.appwork.storage.config.annotations.Description;
 import org.appwork.storage.config.annotations.SpinnerValidator;
+import org.appwork.storage.config.defaults.AbstractDefaultFactory;
 import org.appwork.storage.config.handler.BooleanKeyHandler;
 import org.appwork.storage.config.handler.IntegerKeyHandler;
 import org.appwork.storage.config.handler.StorageHandler;
+import org.appwork.utils.Application;
 
 public interface GeneralSettings extends ConfigInterface {
 
@@ -23,6 +26,23 @@ public interface GeneralSettings extends ConfigInterface {
 
     @AboutConfig
     void setDefaultDownloadFolder(String ddl);
+
+    class DefaultDownloadFolder extends AbstractDefaultFactory<String> {
+
+        @Override
+        public String getDefaultValue() {
+            File home = new File(System.getProperty("user.home"));
+            if (home.exists() && home.isDirectory()) {
+                // new File(home, "downloads").mkdirs();
+                return new File(home, "downloads").getAbsolutePath();
+
+            } else {
+                return Application.getResource("downloads").getAbsolutePath();
+
+            }
+        }
+
+    }
 
     @DefaultFactory(DefaultDownloadFolder.class)
     String getDefaultDownloadFolder();

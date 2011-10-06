@@ -1,22 +1,37 @@
 package org.jdownloader.settings;
 
 import org.appwork.storage.config.ConfigInterface;
+import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.annotations.AboutConfig;
+import org.appwork.storage.config.annotations.AbstractValidator;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
 import org.appwork.storage.config.annotations.DefaultIntValue;
 import org.appwork.storage.config.annotations.DefaultStringValue;
 import org.appwork.storage.config.annotations.Description;
 import org.appwork.storage.config.annotations.RequiresRestart;
+import org.appwork.storage.config.annotations.ValidatorFactory;
+import org.appwork.utils.Application;
 
 public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     void setActiveConfigPanel(String name);
 
     String getActiveConfigPanel();
 
+    class ThemeValidator extends AbstractValidator<String> {
+
+        @Override
+        public void validate(String themeID) throws ValidationException {
+            if (!Application.getResource("themes/" + themeID).exists()) {
+                throw new ValidationException(Application.getResource("themes/" + themeID) + " must exist");
+            } else if (!Application.getResource("themes/" + themeID).isDirectory()) { throw new ValidationException(Application.getResource("themes/" + themeID) + " must be a directory"); }
+        }
+
+    }
+
     @DefaultStringValue("standard")
     @AboutConfig
     @Description("Icon Theme ID. Make sure that ./themes/<ID>/ exists")
-    // @Validator(ThemeValidator.class)
+    @ValidatorFactory(ThemeValidator.class)
     String getThemeID();
 
     void setThemeID(String themeID);
