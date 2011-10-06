@@ -73,6 +73,7 @@ public class ShragleCom extends PluginForHost {
             ai.setStatus("No Premium Account");
         } else if (accountinfos[0].trim().equalsIgnoreCase("2")) {
             account.setValid(true);
+            ai.setStatus("Premium Account");
         }
         ai.setValidUntil(Long.parseLong(accountinfos[1].trim()) * 1000l);
         return ai;
@@ -179,8 +180,8 @@ public class ShragleCom extends PluginForHost {
         this.setBrowserExclusive();
         br.getHeaders().put("User-Agent", AGENT);
         this.br.setFollowRedirects(true);
-        this.br.getPage("http://www.shragle.com/index.php?p=login");
-        this.br.postPage("http://www.shragle.com/index.php?p=login", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&cookie=1&submit=Login");
+        this.br.getPage("http://www.shragle.com/");
+        this.br.postPage("http://www.shragle.com/login", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&cookie=1&submit=Login");
         String Cookie = this.br.getCookie("http://www.shragle.com", "userID");
         if (Cookie == null) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE); }
         Cookie = this.br.getCookie("http://www.shragle.com", "username");

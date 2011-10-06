@@ -1,17 +1,9 @@
 package org.jdownloader.gui.views.linkgrabber;
 
-import java.util.ArrayList;
-
-import javax.swing.Icon;
-
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
-import jd.controlling.packagecontroller.AbstractNode;
 
-import org.appwork.swing.exttable.ExtColumn;
-import org.appwork.swing.exttable.ExtTableModel;
-import org.appwork.utils.logging.Log;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTableModel;
 import org.jdownloader.gui.views.downloads.columns.AddedDateColumn;
 import org.jdownloader.gui.views.downloads.columns.AvailabilityColumn;
@@ -23,8 +15,7 @@ import org.jdownloader.gui.views.downloads.columns.SizeColumn;
 
 public class LinkGrabberTableModel extends PackageControllerTableModel<CrawledPackage, CrawledLink> {
 
-    private static final long   serialVersionUID      = -198189279671615981L;
-    private static final String SORT_LINKGRABBERORDER = "LINKGRABBER";
+    private static final long serialVersionUID = -198189279671615981L;
 
     public LinkGrabberTableModel() {
         super(LinkCollector.getInstance(), "LinkGrabberTableModel");
@@ -178,57 +169,6 @@ public class LinkGrabberTableModel extends PackageControllerTableModel<CrawledPa
         this.addColumn(new AddedDateColumn());
         this.addColumn(new PriorityColumn());
         this.addColumn(new CommentColumn());
-    }
-
-    /**
-     * we want to return to default sort after each start
-     */
-    protected boolean isSortStateSaverEnabled() {
-        return false;
-    }
-
-    // /**
-    // * @return
-    // */
-    protected ExtColumn<AbstractNode> getDefaultSortColumn() {
-        return null;
-    }
-
-    @Override
-    public String getNextSortIdentifier(String sortOrderIdentifier) {
-        if (sortOrderIdentifier == null || sortOrderIdentifier.equals(ExtColumn.SORT_ASC)) {
-            return ExtColumn.SORT_DESC;
-        } else if (sortOrderIdentifier.equals(ExtColumn.SORT_DESC)) {
-            return SORT_LINKGRABBERORDER;
-        } else {
-            return ExtColumn.SORT_ASC;
-        }
-    }
-
-    public Icon getSortIcon(String sortOrderIdentifier) {
-        if (SORT_LINKGRABBERORDER.equals(sortOrderIdentifier)) { return null; }
-        return super.getSortIcon(sortOrderIdentifier);
-    }
-
-    /*
-     * we override sort to have a better sorting of packages/files, to keep
-     * their structure alive,data is only used to specify the size of the new
-     * ArrayList
-     */
-    @Override
-    public ArrayList<AbstractNode> sort(final ArrayList<AbstractNode> data, ExtColumn<AbstractNode> column) {
-        if (column == null || column.getSortOrderIdentifier() == SORT_LINKGRABBERORDER) {
-            this.sortColumn = null;
-            try {
-                getStorage().put(ExtTableModel.SORT_ORDER_ID_KEY, (String) null);
-                getStorage().put(ExtTableModel.SORTCOLUMN_KEY, (String) null);
-            } catch (final Exception e) {
-                Log.exception(e);
-            }
-            return super.sort(data, sortColumn);
-        } else {
-            return super.sort(data, column);
-        }
     }
 
 }

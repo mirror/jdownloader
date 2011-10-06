@@ -5,6 +5,8 @@ import java.util.Collections;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
+import javax.swing.Icon;
+
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
 import jd.controlling.packagecontroller.AbstractPackageNode;
@@ -28,16 +30,19 @@ public abstract class PackageControllerTableModel<E extends AbstractPackageNode<
         BOTTOM
     }
 
+    private static final String                                SORT_ORIGINAL = "ORIGINAL";
+
     private DelayedRunnable                                    asyncRefresh;
     protected PackageController<E, V>                          pc;
     private DelayedRunnable                                    asyncRecreate = null;
-    private ArrayList<PackageControllerTableModelFilter<E, V>> tableFilters       = new ArrayList<PackageControllerTableModelFilter<E, V>>();
+    private ArrayList<PackageControllerTableModelFilter<E, V>> tableFilters  = new ArrayList<PackageControllerTableModelFilter<E, V>>();
     private Object                                             LOCK          = new Object();
 
     private ScheduledThreadPoolExecutor                        queue         = new ScheduledThreadPoolExecutor(1);
 
     public PackageControllerTableModel(PackageController<E, V> pc, String id) {
         super(id);
+        resetSorting();
         queue.setKeepAliveTime(10000, TimeUnit.MILLISECONDS);
         queue.allowCoreThreadTimeOut(true);
         this.pc = pc;
@@ -61,6 +66,16 @@ public abstract class PackageControllerTableModel<E extends AbstractPackageNode<
             }
         };
 
+    }
+
+    public void resetSorting() {
+        this.sortColumn = null;
+        try {
+            getStorage().put(ExtTableModel.SORT_ORDER_ID_KEY, (String) null);
+            getStorage().put(ExtTableModel.SORTCOLUMN_KEY, (String) null);
+        } catch (final Exception e) {
+            Log.exception(e);
+        }
     }
 
     public ScheduledThreadPoolExecutor getThreadPool() {
@@ -143,19 +158,24 @@ public abstract class PackageControllerTableModel<E extends AbstractPackageNode<
     @SuppressWarnings("unchecked")
     @Override
     public ArrayList<AbstractNode> sort(final ArrayList<AbstractNode> data, ExtColumn<AbstractNode> column) {
-        this.sortColumn = column;
-        String id = null;
-        if (column != null) id = column.getSortOrderIdentifier();
-        try {
-            if (column != null) {
-                getStorage().put(ExtTableModel.SORT_ORDER_ID_KEY, id);
-                getStorage().put(ExtTableModel.SORTCOLUMN_KEY, column.getID());
-            } else {
+        if (column == null || column.getSortOrderIdentifier() == SORT_ORIGINAL) {
+            /* RESET sorting to nothing,tri-state */
+            this.sortColumn = column = null;
+            try {
                 getStorage().put(ExtTableModel.SORT_ORDER_ID_KEY, (String) null);
                 getStorage().put(ExtTableModel.SORTCOLUMN_KEY, (String) null);
+            } catch (final Exception e) {
+                Log.exception(e);
             }
-        } catch (final Exception e) {
-            Log.exception(e);
+        } else {
+            this.sortColumn = column;
+            String id = column.getSortOrderIdentifier();
+            try {
+                getStorage().put(ExtTableModel.SORT_ORDER_ID_KEY, id);
+                getStorage().put(ExtTableModel.SORTCOLUMN_KEY, column.getID());
+            } catch (final Exception e) {
+                Log.exception(e);
+            }
         }
         ArrayList<AbstractNode> packages = null;
         final boolean readL = pc.readLock();
@@ -215,5 +235,29 @@ public abstract class PackageControllerTableModel<E extends AbstractPackageNode<
             }
         }
         return newData;
+    }
+
+    protected ExtColumn<AbstractNode> getDefaultSortColumn() {
+        return null;
+    }
+
+    protected boolean isSortStateSaverEnabled() {
+        return false;
+    }
+
+    @Override
+    public String getNextSortIdentifier(String sortOrderIdentifier) {
+        if (sortOrderIdentifier == null || sortOrderIdentifier.equals(ExtColumn.SORT_ASC)) {
+            return ExtColumn.SORT_DESC;
+        } else if (sortOrderIdentifier.equals(ExtColumn.SORT_DESC)) {
+            return SORT_ORIGINAL;
+        } else {
+            return ExtColumn.SORT_ASC;
+        }
+    }
+
+    public Icon getSortIcon(String sortOrderIdentifier) {
+        if (SORT_ORIGINAL.equals(sortOrderIdentifier)) { return null; }
+        return super.getSortIcon(sortOrderIdentifier);
     }
 }
