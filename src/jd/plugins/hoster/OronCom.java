@@ -345,7 +345,8 @@ public class OronCom extends PluginForHost {
                 }
                 rc.getForm().put("password", passCode);
             }
-            waitTime(timeBefore, downloadLink);
+            // Can be skipped at the moment
+            // waitTime(timeBefore, downloadLink);
             rc.setCode(c);
         } else {
             // No captcha handling

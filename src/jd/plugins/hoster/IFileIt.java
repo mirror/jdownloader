@@ -17,6 +17,8 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 import javax.script.Invocable;
 import javax.script.ScriptEngine;
@@ -24,7 +26,8 @@ import javax.script.ScriptEngineManager;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
-import jd.http.Browser.BrowserException;
+import jd.http.Cookie;
+import jd.http.Cookies;
 import jd.http.RandomUserAgent;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
@@ -32,11 +35,11 @@ import jd.parser.html.HTMLParser;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
@@ -168,7 +171,7 @@ public class IFileIt extends PluginForHost {
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
         try {
-            login(account);
+            login(account, true);
         } catch (final PluginException e) {
             account.setValid(false);
             return ai;
@@ -203,36 +206,50 @@ public class IFileIt extends PluginForHost {
     @Override
     public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
         requestFileInformation(downloadLink);
-        login(account);
+        login(account, false);
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         doFree(downloadLink);
     }
 
-    public void login(final Account account) throws Exception {
-        setBrowserExclusive();
+    @SuppressWarnings("unchecked")
+    public void login(final Account account, boolean force) throws Exception {
         synchronized (LOCK) {
-            br.setCookie(MAINPAGE, COOKIENAME, getPluginConfig().getStringProperty("logincookie", null));
-            br.getHeaders().put("User-Agent", useragent);
-            boolean alreadyLoggedIn = false;
-            try {
-                br.getPage("https://secure.ifile.it/account-signin.html");
-            } catch (final BrowserException e) {
-                alreadyLoggedIn = true;
-            }
-            if (!alreadyLoggedIn) {
-                final Form loginForm = br.getForm(0);
-                if (loginForm != null) {
-                    loginForm.put("username", Encoding.urlEncode(account.getUser()));
-                    loginForm.put("password", Encoding.urlEncode(account.getPass()));
-                    br.submitForm(loginForm);
-                } else {
-                    br.postPage("https://secure.ifile.it/account-signin_p.html", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+            // Load cookies
+            br.setCookiesExclusive(false);
+            final Object ret = account.getProperty("cookies", null);
+            boolean acmatch = Encoding.urlEncode(account.getUser()).matches(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
+            if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).matches(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+            if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
+                final HashMap<String, String> cookies = (HashMap<String, String>) ret;
+                if (cookies.containsKey(COOKIENAME) && account.isValid()) {
+                    for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
+                        final String key = cookieEntry.getKey();
+                        final String value = cookieEntry.getValue();
+                        this.br.setCookie(MAINPAGE, key, value);
+                    }
+                    return;
                 }
-                if (br.getCookie(MAINPAGE, COOKIENAME) == null) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE); }
             }
-            getPluginConfig().setProperty("logincookie", br.getCookie(MAINPAGE, COOKIENAME));
-            getPluginConfig().save();
+            br.getHeaders().put("User-Agent", useragent);
+            final Form loginForm = br.getForm(0);
+            if (loginForm != null) {
+                loginForm.put("username", Encoding.urlEncode(account.getUser()));
+                loginForm.put("password", Encoding.urlEncode(account.getPass()));
+                br.submitForm(loginForm);
+            } else {
+                br.postPage("https://secure.ifile.it/account-signin_p.html", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+            }
+            if (br.getCookie(MAINPAGE, COOKIENAME) == null) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE); }
+            // Save cookies
+            final HashMap<String, String> cookies = new HashMap<String, String>();
+            final Cookies add = this.br.getCookies(MAINPAGE);
+            for (final Cookie c : add.getCookies()) {
+                cookies.put(c.getKey(), c.getValue());
+            }
+            account.setProperty("name", Encoding.urlEncode(account.getUser()));
+            account.setProperty("pass", Encoding.urlEncode(account.getPass()));
+            account.setProperty("cookies", cookies);
         }
     }
 
