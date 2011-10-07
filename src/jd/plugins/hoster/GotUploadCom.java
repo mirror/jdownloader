@@ -71,6 +71,7 @@ public class GotUploadCom extends PluginForHost {
             logger.warning("file is 99,99% offline, throwing \"file not found\" now...");
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        Regex fileInfo = new Regex(BRBEFORE, "<a href=\"http://gotupload\\.com/[a-z0-9]{12}/[^\"\\']+\">(.*?) \\- (\\d+.*?)</a></textarea>");
         String filename = new Regex(BRBEFORE, "You have requested.*?http://.*?[a-z0-9]{12}/(.*?)</font>").getMatch(0);
         if (filename == null) {
             filename = new Regex(BRBEFORE, "fname\" value=\"(.*?)\"").getMatch(0);
@@ -81,7 +82,10 @@ public class GotUploadCom extends PluginForHost {
                     if (filename == null) {
                         filename = new Regex(BRBEFORE, "Filename.*?nowrap.*?>(.*?)</td").getMatch(0);
                         if (filename == null) {
-                            filename = new Regex(BRBEFORE, "<h3>Download / Stream : </b>(.*?)</h3>").getMatch(0);
+                            filename = fileInfo.getMatch(0);
+                            if (filename == null) {
+                                filename = new Regex(BRBEFORE, "<h3>(.*?)</h3>").getMatch(0);
+                            }
                         }
                     }
                 }
@@ -92,6 +96,10 @@ public class GotUploadCom extends PluginForHost {
             filesize = new Regex(BRBEFORE, "\\(([0-9]+ bytes)\\)").getMatch(0);
             if (filesize == null) {
                 filesize = new Regex(BRBEFORE, "</font>[ ]+\\((.*?)\\)(.*?)</font>").getMatch(0);
+                if (filesize == null) {
+                    filesize = fileInfo.getMatch(1);
+                    if (filesize == null) filesize = new Regex(BRBEFORE, "<b>Size:</b></td><td>(.*?)\\&nbsp; <small>").getMatch(0);
+                }
             }
         }
         if (filename == null) {

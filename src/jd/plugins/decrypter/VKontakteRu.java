@@ -23,6 +23,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import jd.PluginWrapper;
+import jd.config.Property;
 import jd.controlling.ProgressController;
 import jd.controlling.ProgressControllerEvent;
 import jd.controlling.ProgressControllerListener;
@@ -36,11 +37,11 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-//                                                                                                                                              http://vkontakte.ru/audio?album_id=6161660&id=81295545
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vkontakte.ru" }, urls = { "http://(www\\.)?(vkontakte\\.ru|vk\\.com)/(audio(\\.php)?(\\?album_id=\\d+\\&id=|\\?id=)\\d+|video\\-?\\d+_\\d+|videos\\d+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vkontakte.ru" }, urls = { "http://(www\\.)?(vkontakte\\.ru|vk\\.com)/(audio(\\.php)?(\\?album_id=\\d+\\&id=|\\?id=)\\d+|video\\-?\\d+_\\d+|videos\\d+|([A-Za-z0-9_\\-]+#/)?album\\d+_\\d+)" }, flags = { 0 })
 public class VKontakteRu extends PluginForDecrypt implements ProgressControllerListener {
 
     /* must be static so all plugins share same lock */
@@ -78,10 +79,11 @@ public class VKontakteRu extends PluginForDecrypt implements ProgressControllerL
                 br.clearCookies("login.vk.com");
                 br.clearCookies("vk.com");
                 if (!getUserLogin()) return null;
-                br.getPage(parameter);
             }
             br.setFollowRedirects(false);
             if (parameter.matches(".*?vkontakte\\.ru/audio.*?")) {
+                // Audio playlists
+                br.getPage(parameter);
                 br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                 br.postPage("http://vkontakte.ru/audio", "act=load_audios_silent&al=1&edit=0&gid=0&id=" + new Regex(parameter, "id=(\\d+)$").getMatch(0));
                 String[][] audioLinks = br.getRegex("\\'(http://cs\\d+\\.vkontakte\\.ru/u\\d+/audio/[a-z0-9]+\\.mp3)\\',\\'\\d+\\',\\'\\d+:\\d+\\',\\'(.*?)\\',\\'(.*?)\\'").getMatches();
@@ -96,6 +98,8 @@ public class VKontakteRu extends PluginForDecrypt implements ProgressControllerL
                     decryptedLinks.add(dl);
                 }
             } else if (parameter.matches(".*?vkontakte\\.ru/video(\\-)?\\d+_\\d+")) {
+                // Single video
+                br.getPage(parameter);
                 if (br.containsHTML("class=\"button_blue\"><button id=\"msg_back_button\">Wr\\&#243;\\&#263;</button>")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
                 DownloadLink finallink = findVideolink(parameter);
                 if (finallink == null) {
@@ -103,8 +107,47 @@ public class VKontakteRu extends PluginForDecrypt implements ProgressControllerL
                     return null;
                 }
                 decryptedLinks.add(finallink);
+            } else if (parameter.matches(".*?album\\d+_\\d+")) {
+                // Photo albums
+                if (parameter.contains("#/album")) parameter = "http://vk.com/album" + new Regex(parameter, "#/album(\\d+_\\d+)").getMatch(0);
+                br.getPage(parameter);
+                String[] photoIDs = br.getRegex("class=\"photo_row\" id=\"photo_row(\\d+_\\d+)\"").getColumn(0);
+                if (photoIDs == null || photoIDs.length == 0) {
+                    photoIDs = br.getRegex("><a href=\"/photo(\\d+_\\d+)\"").getColumn(0);
+                    if (photoIDs == null || photoIDs.length == 0) {
+                        photoIDs = br.getRegex("showPhoto\\(\\'(\\d+_\\d+)\\'").getColumn(0);
+                    }
+                }
+                if (photoIDs == null || photoIDs.length == 0) {
+                    logger.warning("Decrypter broken for link: " + parameter);
+                    return null;
+                }
+                progress.setRange(photoIDs.length);
+                br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                String albumID = new Regex(parameter, "/album(.+)").getMatch(0);
+                for (String photoID : photoIDs) {
+                    br.postPage("http://vk.com/al_photos.php", "act=show&al=1&list=" + albumID + "&photo=" + photoID);
+                    String correctedBR = br.toString().replace("\\", "");
+                    String finallink = new Regex(correctedBR, "\"id\":\"" + photoID + "\",\"w_src\":\"(http://.*?)\"").getMatch(0);
+                    if (finallink == null) {
+                        finallink = new Regex(correctedBR, "\"id\":\"" + photoID + "\",\"x_src\":\"http://[^\"\\']+\",\"y_src\":\"(http://.*?)\"").getMatch(0);
+                        if (finallink == null) {
+                            finallink = new Regex(correctedBR, "\"id\":\"" + photoID + "\",\"x_src\":\"(http://.*?)\"").getMatch(0);
+                        }
+                    }
+                    if (finallink == null) {
+                        logger.warning("Decrypter broken for link: " + parameter + "\n");
+                        return null;
+                    }
+                    decryptedLinks.add(createDownloadlink("directhttp://" + finallink));
+                    progress.increase(1);
+                }
+                FilePackage fp = FilePackage.getInstance();
+                fp.setName(new Regex(parameter, "/album(.+)").getMatch(0));
+                fp.addLinks(decryptedLinks);
             } else {
                 // Video-Playlists
+                br.getPage(parameter);
                 String[] allVideos = br.getRegex("<div class=\"video_name\"><a href=\"(video.*?)\"").getColumn(0);
                 if (allVideos == null || allVideos.length == 0) allVideos = br.getRegex("style=\"position:relative;\">[\t\n\r ]+<a href=\"(video.*?)\"").getColumn(0);
                 if (allVideos == null || allVideos.length == 0) {
@@ -208,26 +251,29 @@ public class VKontakteRu extends PluginForDecrypt implements ProgressControllerL
         String password = null;
         synchronized (LOCK) {
             int loginCounter = this.getPluginConfig().getIntegerProperty("logincounter");
-            // Only login every 20th time to prevent getting banned
+            // Only login every 20th time to prevent getting banned | else just
+            // set cookies (re-use them)
             if (loginCounter > 20 || loginCounter == -1) {
                 username = this.getPluginConfig().getStringProperty("user", null);
                 password = this.getPluginConfig().getStringProperty("pass", null);
                 for (int i = 0; i < 3; i++) {
-                    if (username == null || password == null || loginCounter > 20 || loginCounter == -1) {
-                        if (username == null || password == null) {
-                            username = UserIO.getInstance().requestInputDialog("Enter Loginname for " + DOMAIN + " :");
-                            if (username == null) return false;
-                            password = UserIO.getInstance().requestInputDialog("Enter password for " + DOMAIN + " :");
-                            if (password == null) return false;
-                        }
-                        if (!loginSite(username, password))
-                            break;
-                        else
-                            loginCounter++;
+                    if (username == null || password == null) {
+                        username = UserIO.getInstance().requestInputDialog("Enter Loginname for " + DOMAIN + " :");
+                        if (username == null) return false;
+                        password = UserIO.getInstance().requestInputDialog("Enter password for " + DOMAIN + " :");
+                        if (password == null) return false;
+                    }
+                    if (!loginSite(username, password)) {
+                        break;
                     } else {
+                        if (loginCounter > 20) {
+                            loginCounter = 0;
+                        } else {
+                            loginCounter++;
+                        }
                         this.getPluginConfig().setProperty("user", username);
                         this.getPluginConfig().setProperty("pass", password);
-                        this.getPluginConfig().setProperty("logincounter", "1");
+                        this.getPluginConfig().setProperty("logincounter", loginCounter);
                         final HashMap<String, String> cookies = new HashMap<String, String>();
                         final Cookies add = this.br.getCookies(DOMAIN);
                         for (final Cookie c : add.getCookies()) {
@@ -253,6 +299,11 @@ public class VKontakteRu extends PluginForDecrypt implements ProgressControllerL
                 }
             }
         }
+        this.getPluginConfig().setProperty("user", Property.NULL);
+        this.getPluginConfig().setProperty("pass", Property.NULL);
+        this.getPluginConfig().setProperty("logincounter", "-1");
+        this.getPluginConfig().setProperty("cookies", Property.NULL);
+        this.getPluginConfig().save();
         throw new DecrypterException("Login or/and password for " + DOMAIN + " is wrong!");
     }
 

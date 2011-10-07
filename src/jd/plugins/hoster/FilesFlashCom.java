@@ -19,6 +19,9 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.nutils.encoding.Encoding;
+import jd.plugins.Account;
+import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
@@ -28,12 +31,14 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filesflash.com" }, urls = { "http://(www\\.)?filesflash\\.com/[a-z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filesflash.com" }, urls = { "http://(www\\.)?filesflash\\.com/[a-z0-9]+" }, flags = { 2 })
 public class FilesFlashCom extends PluginForHost {
 
     public FilesFlashCom(PluginWrapper wrapper) {
         super(wrapper);
+        this.enablePremium("http://filesflash.com/premium.php");
     }
 
     @Override
@@ -42,6 +47,7 @@ public class FilesFlashCom extends PluginForHost {
     }
 
     private static final String IPBLOCKED = "(>Your IP address is already downloading another link|Please wait for that download to finish\\.|Free users may only download one file at a time\\.)";
+    private static final String MAINPAGE  = "http://filesflash.com/";
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
@@ -81,6 +87,60 @@ public class FilesFlashCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    private void login(Account account) throws Exception {
+        this.setBrowserExclusive();
+        br.postPage("http://filesflash.com/login.php", "email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&submit=Login");
+        if (br.getCookie(MAINPAGE, "userid") == null || br.getCookie(MAINPAGE, "password") == null || br.containsHTML(">Invalid email address or password")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+    }
+
+    @Override
+    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+        AccountInfo ai = new AccountInfo();
+        try {
+            login(account);
+        } catch (PluginException e) {
+            account.setValid(false);
+            return ai;
+        }
+        br.getPage("http://filesflash.com/index.php");
+        ai.setUnlimitedTraffic();
+        String expire = br.getRegex("Premium: (\\d{4}\\-\\d{2}\\-\\d{2} \\d{2}:\\d{2}:\\d{2}) UTC").getMatch(0);
+        if (expire == null) {
+            account.setValid(false);
+            return ai;
+        } else {
+            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy-MM-dd hh:mm:ss", null));
+        }
+        account.setValid(true);
+        ai.setStatus("Premium User");
+        return ai;
+    }
+
+    @Override
+    public void handlePremium(DownloadLink link, Account account) throws Exception {
+        requestFileInformation(link);
+        login(account);
+        br.setFollowRedirects(false);
+        br.getPage(link.getDownloadURL());
+        String dllink = br.getRedirectLocation();
+        if (dllink == null) {
+            logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+        if (dl.getConnection().getContentType().contains("html")) {
+            logger.warning("The final dllink seems not to be a file!");
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
+    }
+
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        return -1;
     }
 
     @Override
