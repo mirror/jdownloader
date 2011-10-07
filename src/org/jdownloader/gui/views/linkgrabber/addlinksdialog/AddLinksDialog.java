@@ -347,6 +347,9 @@ public class AddLinksDialog extends AbstractDialog<CrawlerJob> {
 
                     destination.setForeground(null);
                 }
+                if (okButton.isEnabled()) {
+                    if (cancelButton.hasFocus()) okButton.requestFocus();
+                }
             }
         };
     }
