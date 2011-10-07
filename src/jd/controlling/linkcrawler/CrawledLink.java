@@ -11,7 +11,7 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 
-import org.jdownloader.controlling.filter.LinkgrabberFilterRule;
+import org.jdownloader.controlling.filter.FilterRule;
 import org.jdownloader.gui.views.linkgrabber.addlinksdialog.CrawlerJob;
 
 public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>, CheckableLink {
@@ -107,10 +107,10 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
         return cLink;
     }
 
-    private CryptedLink           cLink      = null;
-    private String                url;
-    private CrawledLink           parentLink = null;
-    private LinkgrabberFilterRule matchingFilter;
+    private CryptedLink cLink      = null;
+    private String      url;
+    private CrawledLink parentLink = null;
+    private FilterRule  matchingFilter;
 
     public CrawledLink(DownloadLink dlLink) {
         this.dlLink = dlLink;
@@ -216,8 +216,7 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
         this.parentLink = parent;
     }
 
-    public void setMatchingFilter(LinkgrabberFilterRule matchedFilter) {
-
+    public void setMatchingFilter(FilterRule matchedFilter) {
         this.matchingFilter = matchedFilter;
     }
 
@@ -229,7 +228,7 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
      * 
      * @return
      */
-    public LinkgrabberFilterRule getMatchingFilter() {
+    public FilterRule getMatchingFilter() {
         return matchingFilter;
     }
 
