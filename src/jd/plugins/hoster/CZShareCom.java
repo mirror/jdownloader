@@ -156,6 +156,7 @@ public class CZShareCom extends PluginForHost {
         if (expires != null && !"neomezená".equals(expires)) ai.setValidUntil(TimeFormatter.getMilliSeconds(expires, "dd.MM.yy HH:mm", Locale.GERMANY));
         if (trafficleft != null) ai.setTrafficLeft(trafficleft.replace(",", "."));
         account.setValid(true);
+        ai.setStatus("Premium User");
         return ai;
     }
 
@@ -170,8 +171,11 @@ public class CZShareCom extends PluginForHost {
         login(account, false);
         br.setFollowRedirects(false);
         br.getPage(downloadLink.getDownloadURL());
-        Regex linkIDs = new Regex(downloadLink.getDownloadURL(), "czshare\\.com/(\\d+)/([A-Za-z0-9_]+)/");
-        br.postPage("http://czshare.com/profi_down.php", "id=" + linkIDs.getMatch(0) + "&code=" + linkIDs.getMatch(1));
+        String code = br.getRegex("<input type=\"hidden\" name=\"code\" value=\"(.*?)\"").getMatch(0);
+        if (code == null) code = br.getRegex("\\&amp;code=(.*?)\"").getMatch(0);
+        String linkID = new Regex(downloadLink.getDownloadURL(), "czshare\\.com/(\\d+)/").getMatch(0);
+        if (linkID == null || code == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        br.postPage("http://czshare.com/profi_down.php", "id=" + linkID + "&code=" + code);
         String dllink = br.getRedirectLocation();
         if (dllink == null) {
             logger.warning("dllink is null...");
@@ -203,7 +207,8 @@ public class CZShareCom extends PluginForHost {
         if (filename == null) filename = Encoding.htmlDecode(br.getRegex("<title>(.*?) CZshare\\.com download</title>").getMatch(0));
         String filesize = br.getRegex("Velikost: (.*?)<").getMatch(0);
         if (filename == null || filesize == null || "0 B".equals(filesize)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        downloadLink.setName(filename.trim());
+        // Set final filename here because server sends html encoded filenames
+        downloadLink.setFinalFileName(filename.trim());
         downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.replace(",", ".").replace(" ", "")));
         return AvailableStatus.TRUE;
     }

@@ -82,21 +82,23 @@ public class MotherLessCom extends PluginForDecrypt {
                 if (fpName == null) {
                     fpName = br.getRegex("<div class=\"member\\-bio\\-username\">.*?\\'s Gallery \\&bull; (.*?)</div>").getMatch(0);
                 }
-                String[] picturelinks = br.getRegex("class=\"thumbnail mediatype_image\" rel=\"[A-Z0-9]+\">[\t\n\r ]+<div class=\"thumbnail\\-img-wrap\" id=\"wrapper_[A-Z0-9]+\">[\t\n\r ]+<a href=\"(http://motherless\\.com/[A-Z0-9]+)\"").getColumn(0);
+                String[] picturelinks = br.getRegex("class=\"thumbnail mediatype_image\" rel=\"[A-Z0-9]+\">[\t\n\r ]+<div class=\"thumbnail\\-img-wrap\" id=\"wrapper_[A-Z0-9]+\">[\t\n\r ]+<a([\t\n\r ]+)?href=\"((http://motherless\\.com)?/[A-Z0-9]+(/[A-Z0-9]+)?)\"").getColumn(1);
                 if (picturelinks != null && picturelinks.length != 0) {
                     logger.info("Decrypting page " + getthepage + " which contains " + picturelinks.length + " links.");
                     for (String singlelink : picturelinks) {
+                        singlelink = formLink(singlelink);
                         DownloadLink dl = createDownloadlink(singlelink.replace("motherless.com/", "motherlesspictures.com/"));
                         if (fpName != null) dl.setProperty("package", fpName);
                         decryptedLinks.add(dl);
                         dl.setProperty("dltype", "image");
                     }
                 }
-                String[] videolinks = br.getRegex("class=\"thumbnail mediatype_video\" rel=\"[A-Z0-9]+\">[\t\n\r ]+<div class=\"thumbnail\\-img-wrap\" id=\"wrapper_[A-Z0-9]+\">[\t\n\r ]+<a href=\"(http://motherless\\.com/.*?)\"").getColumn(0);
+                String[] videolinks = br.getRegex("class=\"thumbnail mediatype_video\" rel=\"[A-Z0-9]+\">[\t\n\r ]+<div class=\"thumbnail\\-img\\-wrap\" id=\"wrapper_[A-Z0-9]+\">[\t\n\r ]+<a([\t\n\r ]+)?href=\"((http://motherless\\.com/)?.*?)\"").getColumn(1);
                 if (videolinks != null && videolinks.length != 0) {
                     for (String singlelink : videolinks) {
                         String linkID = new Regex(singlelink, "/g/.*?/([A-Z0-9]+$)").getMatch(0);
                         if (linkID != null) singlelink = "http://motherless.com/" + linkID;
+                        singlelink = formLink(singlelink);
                         DownloadLink dl = createDownloadlink(singlelink.replace("motherless.com/", "motherlessvideos.com/"));
                         dl.setProperty("dltype", "video");
                         if (fpName != null) dl.setProperty("package", fpName);
@@ -120,5 +122,12 @@ public class MotherLessCom extends PluginForDecrypt {
             fp.addLinks(decryptedLinks);
         }
         return decryptedLinks;
+    }
+
+    private String formLink(String singlelink) {
+        if (singlelink.startsWith("/")) singlelink = "http://motherless.com" + singlelink;
+        String ID = new Regex(singlelink, "http://motherless\\.com/[A-Z0-9]+/([A-Z0-9]+)").getMatch(0);
+        if (ID != null) singlelink = "http://motherless.com/" + ID;
+        return singlelink;
     }
 }

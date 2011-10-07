@@ -51,8 +51,11 @@ public class JustinTvDecrypt extends PluginForDecrypt {
                 decryptedLinks.add(createDownloadlink(HOSTURL + dl));
         } else {
             if (br.getURL().contains("/videos")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
-            String filename = br.getRegex("autocomplete=\"off\"[\t\n\r ]+value=\"(.*?)\"").getMatch(0);
-            if (filename == null) filename = br.getRegex("<span id=\"gameselector_meta_game\">[\t\n\r ]+\\&raquo;(.*?)</span>").getMatch(0);
+            String filename = br.getRegex("<meta name=\"title\" content=\"(.*?)\"").getMatch(0);
+            if (filename == null) {
+                filename = br.getRegex("<meta property=\"og:title\" content=\"(.*?)\"/>").getMatch(0);
+                if (filename == null) filename = br.getRegex("<h2 class=\"clip_title\">(.*?)</h2>").getMatch(0);
+            }
             DownloadLink singleLink = createDownloadlink(parameter.replace("justin", "justindecrypted"));
             String[] links = br.getRegex("\\|[\t\n\r ]+<a href=\"(/.*?)\"").getColumn(0);
             int counter = 2;
