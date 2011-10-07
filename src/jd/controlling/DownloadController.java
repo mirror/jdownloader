@@ -37,6 +37,7 @@ import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
 import org.appwork.utils.Exceptions;
 import org.appwork.utils.event.Eventsender;
+import org.appwork.utils.event.queue.Queue.QueuePriority;
 import org.appwork.utils.event.queue.QueueAction;
 
 public class DownloadController extends PackageController<FilePackage, DownloadLink> {
@@ -508,7 +509,7 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
     }
 
     @Override
-    protected void _controllerParentlessLinks(List<DownloadLink> links) {
+    protected void _controllerParentlessLinks(List<DownloadLink> links, QueuePriority priority) {
         asyncSaving.run();
         broadcaster.fireEvent(new DownloadControllerEvent(DownloadController.this, DownloadControllerEvent.TYPE.REMOVE_CONTENT, links));
         if (links != null) {
@@ -520,19 +521,19 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
     }
 
     @Override
-    protected void _controllerPackageNodeRemoved(FilePackage pkg) {
+    protected void _controllerPackageNodeRemoved(FilePackage pkg, QueuePriority priority) {
         asyncSaving.run();
         broadcaster.fireEvent(new DownloadControllerEvent(DownloadController.this, DownloadControllerEvent.TYPE.REMOVE_CONTENT, pkg));
     }
 
     @Override
-    protected void _controllerStructureChanged() {
+    protected void _controllerStructureChanged(QueuePriority priority) {
         asyncSaving.run();
         broadcaster.fireEvent(new DownloadControllerEvent(this, DownloadControllerEvent.TYPE.REFRESH_STRUCTURE));
     }
 
     @Override
-    protected void _controllerPackageNodeAdded(FilePackage pkg) {
+    protected void _controllerPackageNodeAdded(FilePackage pkg, QueuePriority priority) {
         asyncSaving.run();
         broadcaster.fireEvent(new DownloadControllerEvent(this, DownloadControllerEvent.TYPE.REFRESH_STRUCTURE));
     }

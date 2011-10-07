@@ -81,7 +81,7 @@ public class AccountDialog extends AbstractDialog<Integer> {
                 public int getProgress() {
                     return -1;
                 }
-            }, 0, _GUI._.accountdialog_check(), _GUI._.accountdialog_check_msg(), NewTheme.I().getScaledInstance(dialog.getHoster().getIconUnscaled(), 32));
+            }, 0, _GUI._.accountdialog_check(), _GUI._.accountdialog_check_msg(), dialog.getHoster().getIcon());
 
             try {
                 Dialog.getInstance().showDialog(pd);
@@ -175,7 +175,7 @@ public class AccountDialog extends AbstractDialog<Integer> {
             @Override
             protected Icon getIconForValue(HostPluginWrapper value) {
                 if (value == null) return null;
-                return value.getIconScaled();
+                return value.getIcon();
             }
 
             @Override

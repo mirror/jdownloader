@@ -99,7 +99,7 @@ public class BuyAction extends AbstractAction {
                                 @Override
                                 protected Icon getIconForValue(HostPluginWrapper value) {
 
-                                    return isPopupVisible() ? value.getIconScaled() : null;
+                                    return isPopupVisible() ? value.getIcon() : null;
                                 }
 
                                 @Override
@@ -111,7 +111,7 @@ public class BuyAction extends AbstractAction {
                             combo.addActionListener(new ActionListener() {
 
                                 public void actionPerformed(ActionEvent e) {
-                                    _this.setIcon(NewTheme.I().getScaledInstance(((HostPluginWrapper) combo.getSelectedItem()).getIconUnscaled(), 32));
+                                    _this.setIcon((((HostPluginWrapper) combo.getSelectedItem()).getIcon()));
                                 }
                             });
                             combo.setSelectedItem(defaultSelection);

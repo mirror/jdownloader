@@ -55,8 +55,6 @@ public class LinkGrabberSidebar extends MigPanel {
             @Override
             protected void setContentsVisible(boolean selected) {
                 hosterFilterTable.setVisible(selected);
-                /* lets recreate the linkgrabber model */
-                LinkGrabberSidebar.this.table.getPackageControllerTableModel().recreateModel();
             }
 
         };

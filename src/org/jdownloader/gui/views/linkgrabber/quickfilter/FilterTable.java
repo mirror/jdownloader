@@ -16,6 +16,7 @@ import org.appwork.swing.exttable.ExtColumn;
 import org.appwork.swing.exttable.ExtComponentRowHighlighter;
 import org.appwork.swing.exttable.ExtTable;
 import org.appwork.utils.ColorUtils;
+import org.jdownloader.controlling.filter.LinkFilterSettings;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTableModelFilter;
 
 public class FilterTable<E extends AbstractPackageNode<V, E>, V extends AbstractPackageChildrenNode<E>> extends ExtTable<Filter<E, V>> implements PackageControllerTableModelFilter<E, V> {
@@ -23,9 +24,8 @@ public class FilterTable<E extends AbstractPackageNode<V, E>, V extends Abstract
     /**
      * 
      */
-    private static final long         serialVersionUID       = -5917220196056769905L;
-    protected ArrayList<Filter<E, V>> filters                = new ArrayList<Filter<E, V>>();
-    protected boolean                 filtersEnabledGlobally = false;
+    private static final long         serialVersionUID = -5917220196056769905L;
+    protected ArrayList<Filter<E, V>> filters          = new ArrayList<Filter<E, V>>();
 
     public FilterTable() {
         super(new FilterTableModel<E, V>());
@@ -76,14 +76,8 @@ public class FilterTable<E extends AbstractPackageNode<V, E>, V extends Abstract
         this.setIntercellSpacing(new Dimension(0, 0));
     }
 
-    @Override
-    public void setVisible(boolean aFlag) {
-        filtersEnabledGlobally = aFlag;
-        super.setVisible(aFlag);
-    }
-
     public boolean isFiltered(E e) {
-        if (filtersEnabledGlobally == false) return false;
+        if (LinkFilterSettings.LG_QUICKFILTER_HOSTER_VISIBLE.getValue() == false) return false;
         ArrayList<Filter<E, V>> lfilters = filters;
         for (Filter<E, V> filter : lfilters) {
             if (!filter.isEnabled()) continue;
@@ -93,7 +87,7 @@ public class FilterTable<E extends AbstractPackageNode<V, E>, V extends Abstract
     }
 
     public boolean isFiltered(V v) {
-        if (filtersEnabledGlobally == false) return false;
+        if (LinkFilterSettings.LG_QUICKFILTER_HOSTER_VISIBLE.getValue() == false) return false;
         ArrayList<Filter<E, V>> lfilters = filters;
         for (Filter<E, V> filter : lfilters) {
             if (!filter.isEnabled()) continue;

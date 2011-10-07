@@ -53,8 +53,9 @@ public abstract class Filter<E extends AbstractPackageNode<V, E>, V extends Abst
 
     protected String name = null;
 
-    public void setFavIcon(ImageIcon icon) {
+    public ImageIcon setFavIcon(ImageIcon icon) {
         setIcon(icon);
+        return icon;
     }
 
     abstract public boolean isFiltered(V link);

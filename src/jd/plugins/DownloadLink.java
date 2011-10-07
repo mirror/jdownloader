@@ -48,6 +48,7 @@ import jd.utils.JDUtilities;
 import org.appwork.utils.Regex;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.os.CrossSystem;
+import org.jdownloader.DomainInfo;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.GeneralSettings;
 
@@ -175,6 +176,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     private long                               finishedDate             = -1l;
 
     private transient UniqueID                 uniqueID                 = null;
+    private transient String                   iconHost                 = null;
 
     /**
      * Erzeugt einen neuen DownloadLink
@@ -1075,11 +1077,40 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      * @param scaled
      * @return
      */
-    public ImageIcon getHosterIcon(boolean scaled) {
+    public ImageIcon getHosterIcon() {
         PluginForHost plugin = this.liveplugin;
-        if (plugin == null) plugin = this.defaultplugin;
-        if (scaled) return plugin.getHosterIconScaled();
-        return plugin.getHosterIconUnscaled();
+        if (plugin != null) {
+            /* live plugin available, lets use its icon */
+            return plugin.getHosterIcon();
+        } else {
+            if (iconHost != null) {
+                if (iconHost == host) {
+                    /* iconHost equals host, lets use default plugin icon */
+                    return this.defaultplugin.getHosterIcon();
+                } else {
+                    /* custom iconHost */
+                    return DomainInfo.getInstance(iconHost).getFavIcon();
+                }
+            } else if ("DirectHTTP".equals(defaultplugin.getHost()) || "http links".equals(defaultplugin.getHost())) {
+                /* custom iconHost */
+                try {
+                    iconHost = Browser.getHost(new URL(getDownloadURL()));
+                    return DomainInfo.getInstance(iconHost).getFavIcon();
+                } catch (final Throwable e) {
+                }
+            }
+            /* fallback, use default plugin icon */
+            iconHost = host;
+            return this.defaultplugin.getHosterIcon();
+        }
+    }
+
+    public String getIconHost() {
+        return iconHost;
+    }
+
+    public void setIconHost(String iconHost) {
+        this.iconHost = iconHost;
     }
 
     public String getType() {

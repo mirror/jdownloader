@@ -22,7 +22,7 @@ public class HosterToolTip extends ExtTooltip {
 
             if (dupeFilter.add(link.getHost())) {
                 JLabel lbl;
-                panel.add(lbl = new JLabel(link.getHost(), link.getHosterIconScaled(), JLabel.LEADING));
+                panel.add(lbl = new JLabel(link.getHost(), link.getHosterIcon(), JLabel.LEADING));
                 SwingUtils.setOpaque(lbl, false);
                 lbl.setForeground(new Color(this.getConfig().getForegroundColor()));
             }

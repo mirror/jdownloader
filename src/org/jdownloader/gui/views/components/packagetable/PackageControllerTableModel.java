@@ -25,7 +25,9 @@ public abstract class PackageControllerTableModel<E extends AbstractPackageNode<
     private static final long serialVersionUID = 1L;
 
     public static enum TOGGLEMODE {
-        CURRENT, TOP, BOTTOM
+        CURRENT,
+        TOP,
+        BOTTOM
     }
 
     private static final String                                SORT_ORIGINAL = "ORIGINAL";
@@ -63,7 +65,6 @@ public abstract class PackageControllerTableModel<E extends AbstractPackageNode<
                 _fireTableStructureChanged(newtableData, false);
             }
         };
-
     }
 
     public void resetSorting() {
@@ -80,16 +81,28 @@ public abstract class PackageControllerTableModel<E extends AbstractPackageNode<
         return queue;
     }
 
-    public void recreateModel() {
-        asyncRecreate.run();
+    public void recreateModel(boolean delay) {
+        if (delay) {
+            asyncRecreate.run();
+        } else {
+            asyncRecreate.delayedrun();
+        }
     }
 
-    public void instantRecreateModel() {
-        asyncRecreate.delayedrun();
+    public void recreateModel() {
+        recreateModel(true);
+    }
+
+    public void refreshModel(boolean delay) {
+        if (delay) {
+            asyncRefresh.run();
+        } else {
+            asyncRefresh.delayedrun();
+        }
     }
 
     public void refreshModel() {
-        asyncRefresh.run();
+        refreshModel(true);
     }
 
     public void toggleFilePackageExpand(final AbstractPackageNode fp2, final TOGGLEMODE mode) {

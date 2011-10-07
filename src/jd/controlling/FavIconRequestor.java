@@ -4,6 +4,6 @@ import javax.swing.ImageIcon;
 
 public interface FavIconRequestor {
 
-    public void setFavIcon(ImageIcon icon);
+    public ImageIcon setFavIcon(ImageIcon icon);
 
 }

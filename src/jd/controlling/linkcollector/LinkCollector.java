@@ -18,6 +18,7 @@ import jd.controlling.packagecontroller.PackageController;
 
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.event.Eventsender;
+import org.appwork.utils.event.queue.Queue.QueuePriority;
 import org.appwork.utils.event.queue.QueueAction;
 import org.jdownloader.controlling.filter.LinkFilterController;
 import org.jdownloader.gui.views.linkgrabber.addlinksdialog.CrawlerJob;
@@ -48,6 +49,9 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
     private HashMap<UniqueID, CrawledPackage> packageMap        = new HashMap<UniqueID, CrawledPackage>();
     private HashMap<CrawledPackage, UniqueID> packageMapReverse = new HashMap<CrawledPackage, UniqueID>();
 
+    /* sync on filteredStuff itself when accessing it */
+    private ArrayList<CrawledLink>            filteredStuff     = new ArrayList<CrawledLink>();
+
     private LinkCollectorConfig               config;
     private LinkCrawlerFilter                 crawlerFilter     = null;
 
@@ -76,7 +80,8 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
     }
 
     @Override
-    protected void _controllerParentlessLinks(List<CrawledLink> links) {
+    protected void _controllerParentlessLinks(List<CrawledLink> links, QueuePriority priority) {
+        broadcaster.fireEvent(new LinkCollectorEvent(LinkCollector.this, LinkCollectorEvent.TYPE.REMOVE_CONTENT, links, priority));
         for (CrawledLink link : links) {
             /* update dupeMap */
             dupeCheck dupes = dupeMap.get(link.getURL());
@@ -87,25 +92,29 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                 }
             }
         }
-        broadcaster.fireEvent(new LinkCollectorEvent(LinkCollector.this, LinkCollectorEvent.TYPE.REMOVE_CONTENT, links));
     }
 
     @Override
-    protected void _controllerPackageNodeRemoved(CrawledPackage pkg) {
+    protected void _controllerPackageNodeRemoved(CrawledPackage pkg, QueuePriority priority) {
         /* update packageMap */
         UniqueID id = packageMapReverse.remove(pkg);
         if (id != null) packageMap.remove(id);
-        broadcaster.fireEvent(new LinkCollectorEvent(LinkCollector.this, LinkCollectorEvent.TYPE.REMOVE_CONTENT, pkg));
+        broadcaster.fireEvent(new LinkCollectorEvent(LinkCollector.this, LinkCollectorEvent.TYPE.REMOVE_CONTENT, pkg, priority));
     }
 
     @Override
-    protected void _controllerStructureChanged() {
-        broadcaster.fireEvent(new LinkCollectorEvent(LinkCollector.this, LinkCollectorEvent.TYPE.REFRESH_STRUCTURE));
+    protected void _controllerStructureChanged(QueuePriority priority) {
+        broadcaster.fireEvent(new LinkCollectorEvent(LinkCollector.this, LinkCollectorEvent.TYPE.REFRESH_STRUCTURE, priority));
     }
 
     @Override
-    protected void _controllerPackageNodeAdded(CrawledPackage pkg) {
-        broadcaster.fireEvent(new LinkCollectorEvent(LinkCollector.this, LinkCollectorEvent.TYPE.REFRESH_STRUCTURE));
+    protected void _controllerPackageNodeAdded(CrawledPackage pkg, QueuePriority priority) {
+        broadcaster.fireEvent(new LinkCollectorEvent(LinkCollector.this, LinkCollectorEvent.TYPE.REFRESH_STRUCTURE, priority));
+    }
+
+    public LinkCrawler addCrawlerJob(final ArrayList<CrawledLink> links) {
+        if (links == null || links.size() == 0) throw new IllegalArgumentException("no links");
+        return null;
     }
 
     public LinkCrawler addCrawlerJob(final CrawlerJob job) {
@@ -128,7 +137,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                 }
 
                 public void handleFilteredLink(CrawledLink link) {
-                    System.out.println("Filtered: " + link);
+                    addFilteredStuff(link);
                 }
             });
         } else {
@@ -147,7 +156,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                 }
 
                 public void handleFilteredLink(CrawledLink link) {
-                    System.out.println("Filtered: " + link);
+                    addFilteredStuff(link);
                 }
             });
         }
@@ -166,7 +175,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
     public void linkCheckDone(CrawledLink link) {
         if (crawlerFilter.dropByFileProperties(link)) {
-            System.out.println("Filtered: " + link);
+            addFilteredStuff(link);
         } else {
             addCrawledLink(link);
         }
@@ -388,4 +397,34 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         return crawlerFilter;
     }
 
+    private void addFilteredStuff(CrawledLink filtered) {
+        System.out.println("got Filtered: " + filtered);
+        synchronized (filteredStuff) {
+            filteredStuff.add(filtered);
+        }
+        broadcaster.fireEvent(new LinkCollectorEvent(LinkCollector.this, LinkCollectorEvent.TYPE.FILTERED_AVAILABLE));
+    }
+
+    @Override
+    public void clear() {
+        super.clear();
+        synchronized (filteredStuff) {
+            filteredStuff.clear();
+        }
+        broadcaster.fireEvent(new LinkCollectorEvent(LinkCollector.this, LinkCollectorEvent.TYPE.FILTERED_EMPTY));
+    }
+
+    public ArrayList<CrawledLink> getFilteredStuff(boolean clearAfterGet) {
+        ArrayList<CrawledLink> ret = null;
+        synchronized (filteredStuff) {
+            ret = new ArrayList<CrawledLink>(filteredStuff);
+            if (clearAfterGet) filteredStuff.clear();
+        }
+        if (clearAfterGet) broadcaster.fireEvent(new LinkCollectorEvent(LinkCollector.this, LinkCollectorEvent.TYPE.FILTERED_EMPTY));
+        return ret;
+    }
+
+    public int getfilteredStuffSize() {
+        return filteredStuff.size();
+    }
 }

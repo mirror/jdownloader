@@ -17,13 +17,17 @@ import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
 
 import org.appwork.scheduler.DelayedRunnable;
+import org.appwork.storage.config.ValidationException;
+import org.appwork.storage.config.events.GenericConfigEventListener;
+import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.swing.exttable.ExtColumn;
 import org.appwork.utils.event.queue.QueueAction;
+import org.jdownloader.controlling.filter.LinkFilterSettings;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTable;
 import org.jdownloader.gui.views.linkgrabber.sidebar.actions.DropHosterAction;
 import org.jdownloader.gui.views.linkgrabber.sidebar.actions.KeepOnlyAction;
 
-public class QuickFilterHosterTable extends FilterTable<CrawledPackage, CrawledLink> implements LinkCollectorListener {
+public class QuickFilterHosterTable extends FilterTable<CrawledPackage, CrawledLink> implements LinkCollectorListener, GenericConfigEventListener<Boolean> {
 
     /**
      * 
@@ -48,6 +52,10 @@ public class QuickFilterHosterTable extends FilterTable<CrawledPackage, CrawledL
             }
 
         };
+        LinkFilterSettings.LG_QUICKFILTER_HOSTER_VISIBLE.getEventSender().addListener(this);
+        if (LinkFilterSettings.LG_QUICKFILTER_HOSTER_VISIBLE.getValue() == true) {
+            delayedRefresh.delayedrun();
+        }
     }
 
     @Override
@@ -66,7 +74,7 @@ public class QuickFilterHosterTable extends FilterTable<CrawledPackage, CrawledL
         switch (event.getType()) {
         case REMOVE_CONTENT:
         case REFRESH_STRUCTURE:
-            if (filtersEnabledGlobally && old != LinkCollector.getInstance().getChildrenChanges()) {
+            if (LinkFilterSettings.LG_QUICKFILTER_HOSTER_VISIBLE.getValue() && old != LinkCollector.getInstance().getChildrenChanges()) {
                 old = LinkCollector.getInstance().getChildrenChanges();
                 IOEQ.getQueue().add(new QueueAction<Void, RuntimeException>() {
 
@@ -123,7 +131,7 @@ public class QuickFilterHosterTable extends FilterTable<CrawledPackage, CrawledL
                                          * request recreate the model of
                                          * filtered view
                                          */
-                                        table2Filter.getPackageControllerTableModel().instantRecreateModel();
+                                        table2Filter.getPackageControllerTableModel().recreateModel(false);
                                     }
 
                                 };
@@ -162,19 +170,12 @@ public class QuickFilterHosterTable extends FilterTable<CrawledPackage, CrawledL
         return false;
     }
 
-    @Override
-    public void setVisible(boolean aFlag) {
-        super.setVisible(aFlag);
-        if (aFlag) {
-            IOEQ.getQueue().add(new QueueAction<Void, RuntimeException>() {
+    public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
+    }
 
-                @Override
-                protected Void run() throws RuntimeException {
-                    delayedRefresh.run();
-                    return null;
-                }
-            });
-        }
+    public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
+        delayedRefresh.delayedrun();
+        table2Filter.getPackageControllerTableModel().recreateModel(false);
     }
 
 }

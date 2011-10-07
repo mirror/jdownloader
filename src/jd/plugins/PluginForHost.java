@@ -49,7 +49,7 @@ import jd.plugins.download.DownloadInterface;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Regex;
 import org.appwork.utils.os.CrossSystem;
-import org.jdownloader.HosterInfo;
+import org.jdownloader.DomainInfo;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.translate._JDT;
@@ -889,14 +889,10 @@ public abstract class PluginForHost extends Plugin {
         return ioPermission;
     }
 
-    public ImageIcon getHosterIconScaled() {
+    public ImageIcon getHosterIcon() {
         String host = getCustomFavIconURL();
         if (host == null) host = getHost();
-        return HosterInfo.getInstance(host).getFavIcon();
-    }
-
-    public ImageIcon getHosterIconUnscaled() {
-        return getHosterIconScaled();
+        return DomainInfo.getInstance(host).getFavIcon();
     }
 
 }

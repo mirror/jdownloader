@@ -19,12 +19,12 @@ import org.appwork.storage.config.MinTimeWeakReference;
 import org.appwork.utils.images.IconIO;
 import org.appwork.utils.images.Interpolation;
 
-public class HosterInfo implements FavIconRequestor {
+public class DomainInfo implements FavIconRequestor {
     private static final long CACHE_TIMEOUT = 30000;
     private static final int  WIDTH         = 16;
     private static final int  HEIGHT        = 16;
 
-    private HosterInfo(String tld) {
+    private DomainInfo(String tld) {
         this.tld = tld;
     }
 
@@ -47,8 +47,9 @@ public class HosterInfo implements FavIconRequestor {
      * @return
      */
     public synchronized ImageIcon getFavIcon() {
+        ImageIcon ia = null;
         if (hosterIcon != null) {
-            ImageIcon ia = hosterIcon.get();
+            ia = hosterIcon.get();
             // cleanup;
             if (ia == null) {
                 resetFavIcon();
@@ -59,16 +60,14 @@ public class HosterInfo implements FavIconRequestor {
         if (!hosterIconRequested) {
             hosterIconRequested = true;
             // load it
-            ImageIcon ia = FavIconController.getFavIcon(getTld(), this, true);
-            ia = new ImageIcon(IconIO.getScaledInstance(ia.getImage(), WIDTH, HEIGHT, Interpolation.BICUBIC, true));
-            if (ia != null) hosterIcon = new MinTimeWeakReference<ImageIcon>(ia, CACHE_TIMEOUT, getTld());
-
-            return ia;
+            ia = FavIconController.getFavIcon(getTld(), this, true);
+            if (ia != null) {
+                ia = setFavIcon(ia);
+                return ia;
+            }
         }
-
-        ImageIcon ia = new ImageIcon(createDefaultFavIcon());
-        if (ia != null) hosterIcon = new MinTimeWeakReference<ImageIcon>(ia, CACHE_TIMEOUT, getTld());
-
+        /* use default favicon */
+        ia = setFavIcon(null);
         return ia;
 
     }
@@ -109,23 +108,27 @@ public class HosterInfo implements FavIconRequestor {
         hosterIcon = null;
     }
 
-    public void setFavIcon(ImageIcon icon) {
-        icon = new ImageIcon(IconIO.getScaledInstance(icon.getImage(), WIDTH, HEIGHT, Interpolation.BICUBIC, true));
+    public synchronized ImageIcon setFavIcon(ImageIcon icon) {
+        if (icon == null) {
+            icon = new ImageIcon(createDefaultFavIcon());
+        } else {
+            icon = new ImageIcon(IconIO.getScaledInstance(icon.getImage(), WIDTH, HEIGHT, Interpolation.BICUBIC, true));
+        }
         this.hosterIcon = new MinTimeWeakReference<ImageIcon>(icon, CACHE_TIMEOUT, getTld());
+        return icon;
     }
 
-    private static HashMap<String, HosterInfo> CACHE = new HashMap<String, HosterInfo>();
+    private static HashMap<String, DomainInfo> CACHE = new HashMap<String, DomainInfo>();
 
-    public static HosterInfo getInstance(String host) {
-        // MEMLEAK ALARM!!!
+    public static DomainInfo getInstance(String host) {
+        // WARNING: can be a memleak
         synchronized (CACHE) {
-            HosterInfo ret = CACHE.get(host);
+            DomainInfo ret = CACHE.get(host);
             if (ret == null) {
-                CACHE.put(host, ret = new HosterInfo(host));
+                CACHE.put(host, ret = new DomainInfo(host));
             }
             return ret;
         }
-
     }
 
 }

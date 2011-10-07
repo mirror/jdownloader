@@ -28,7 +28,7 @@ import jd.gui.swing.components.JDLabelContainer;
 import jd.nutils.JDFlags;
 import jd.plugins.PluginForHost;
 
-import org.jdownloader.HosterInfo;
+import org.jdownloader.DomainInfo;
 
 public class HostPluginWrapper extends PluginWrapper implements JDLabelContainer {
     private static final ArrayList<HostPluginWrapper> HOST_WRAPPER = new ArrayList<HostPluginWrapper>();
@@ -101,16 +101,7 @@ public class HostPluginWrapper extends PluginWrapper implements JDLabelContainer
     }
 
     public ImageIcon getIcon() {
-        return getIconScaled();
-    }
-
-    public ImageIcon getIconScaled() {
-        return HosterInfo.getInstance(getHost()).getFavIcon();
-    }
-
-    public ImageIcon getIconUnscaled() {
-        return HosterInfo.getInstance(getHost()).getFavIcon();
-
+        return DomainInfo.getInstance(getHost()).getFavIcon();
     }
 
     public String getLabel() {

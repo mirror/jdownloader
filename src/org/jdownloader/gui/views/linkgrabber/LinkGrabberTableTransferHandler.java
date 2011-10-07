@@ -7,10 +7,14 @@ import javax.swing.JComponent;
 import javax.swing.JTable;
 import javax.swing.TransferHandler;
 
+import jd.controlling.IOEQ;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
 
+import org.appwork.exceptions.WTFException;
+import org.appwork.utils.event.queue.Queue.QueuePriority;
+import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.logging.Log;
 
 public class LinkGrabberTableTransferHandler extends TransferHandler {
@@ -188,28 +192,45 @@ public class LinkGrabberTableTransferHandler extends TransferHandler {
             if (isInsert == false) {
                 /* dropOn,merge */
                 if (afterElement instanceof CrawledPackage) {
-                    LinkCollector.getInstance().merge((CrawledPackage) afterElement, links, packages);
+                    IOEQ.getQueue().add(new QueueAction<Void, RuntimeException>(QueuePriority.HIGH) {
+
+                        @Override
+                        protected Void run() throws RuntimeException {
+                            LinkCollector.getInstance().merge((CrawledPackage) afterElement, links, packages);
+                            return null;
+                        }
+                    });
                 } else {
-                    Log.exception(new Throwable("this should not happen!"));
+                    Log.exception(new WTFException("this should not happen!"));
                 }
             } else {
                 final Object beforeElement = table.getExtTableModel().getObjectbyRow(dropRow - 1);
                 /* insert,move */
                 if (packages != null) {
                     /* move packages */
-                    CrawledPackage dest = null;
+                    final CrawledPackage dest;
                     if (beforeElement == null) {
                         dest = null;
                     } else if (beforeElement instanceof CrawledPackage) {
                         dest = (CrawledPackage) beforeElement;
                     } else if (beforeElement instanceof CrawledLink) {
                         dest = ((CrawledLink) beforeElement).getParentNode();
+                    } else {
+                        dest = null;
                     }
-                    LinkCollector.getInstance().move(packages, dest);
+                    IOEQ.getQueue().add(new QueueAction<Void, RuntimeException>(QueuePriority.HIGH) {
+
+                        @Override
+                        protected Void run() throws RuntimeException {
+                            LinkCollector.getInstance().move(packages, dest);
+                            return null;
+                        }
+
+                    });
                 } else if (links != null) {
                     /* move links */
-                    CrawledPackage destP = null;
-                    CrawledLink afterL = null;
+                    final CrawledPackage destP;
+                    final CrawledLink afterL;
                     if (beforeElement != null) {
                         if (beforeElement instanceof CrawledLink) {
                             afterL = (CrawledLink) beforeElement;
@@ -217,11 +238,23 @@ public class LinkGrabberTableTransferHandler extends TransferHandler {
                         } else if (beforeElement instanceof CrawledPackage) {
                             afterL = null;
                             destP = ((CrawledPackage) beforeElement);
+                        } else {
+                            afterL = null;
+                            destP = null;
                         }
                     } else {
-
+                        afterL = null;
+                        destP = null;
                     }
-                    LinkCollector.getInstance().move(links, destP, afterL);
+                    IOEQ.getQueue().add(new QueueAction<Void, RuntimeException>(QueuePriority.HIGH) {
+
+                        @Override
+                        protected Void run() throws RuntimeException {
+                            LinkCollector.getInstance().move(links, destP, afterL);
+                            return null;
+                        }
+                    });
+
                 }
             }
         } else {

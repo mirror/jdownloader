@@ -1,26 +1,53 @@
 package jd.controlling.linkcollector;
 
 import org.appwork.utils.event.SimpleEvent;
+import org.appwork.utils.event.queue.Queue.QueuePriority;
 
 public class LinkCollectorEvent extends SimpleEvent<LinkCollector, Object, LinkCollectorEvent.TYPE> {
 
-    public LinkCollectorEvent(LinkCollector caller, TYPE type, Object[] parameters) {
-        super(caller, type, parameters);
+    private QueuePriority prio = QueuePriority.NORM;
+
+    public QueuePriority getPrio() {
+        return prio;
     }
 
-    public LinkCollectorEvent(LinkCollector caller, TYPE type, Object parameter) {
+    public void setPrio(QueuePriority prio) {
+        this.prio = prio;
+    }
+
+    public LinkCollectorEvent(LinkCollector caller, TYPE type, Object[] parameters, QueuePriority prio) {
+        super(caller, type, parameters);
+        this.prio = prio;
+    }
+
+    public LinkCollectorEvent(LinkCollector caller, TYPE type, Object parameter, QueuePriority prio) {
         super(caller, type, new Object[] { parameter });
+        this.prio = prio;
+    }
+
+    public LinkCollectorEvent(LinkCollector caller, TYPE type, QueuePriority prio) {
+        super(caller, type);
+        this.prio = prio;
     }
 
     public LinkCollectorEvent(LinkCollector caller, TYPE type) {
-        super(caller, type);
+        this(caller, type, QueuePriority.NORM);
     }
 
     public static enum TYPE {
+        /* new filtered stuff is available */
+        FILTERED_AVAILABLE,
+        /* all filtered stuff is gone */
+        FILTERED_EMPTY,
+        /* linkcollector started */
         COLLECTOR_START,
+        /* linkcollector stopped */
         COLLECTOR_STOP,
+        /* only refresh the content data */
         REFRESH_DATA,
+        /* refresh content structure */
         REFRESH_STRUCTURE,
+        /* content got removed */
         REMOVE_CONTENT
     }
 

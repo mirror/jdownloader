@@ -17,7 +17,6 @@ import org.appwork.swing.exttable.columns.ExtCheckColumn;
 import org.appwork.swing.exttable.columns.ExtTextColumn;
 import org.appwork.utils.event.predefined.changeevent.ChangeEvent;
 import org.appwork.utils.event.predefined.changeevent.ChangeListener;
-import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.controlling.filter.LinkFilterController;
 import org.jdownloader.controlling.filter.LinkgrabberFilterRule;
 import org.jdownloader.gui.translate._GUI;
@@ -192,13 +191,6 @@ public class FilterTableModel extends ExtTableModel<LinkgrabberFilterRule> imple
     }
 
     public void onChangeEvent(ChangeEvent event) {
-        new EDTRunner() {
-
-            @Override
-            protected void runInEDT() {
-                _fireTableStructureChanged(LinkFilterController.getInstance().list(), true);
-            }
-        };
-
+        _fireTableStructureChanged(LinkFilterController.getInstance().list(), true);
     }
 }

@@ -39,7 +39,7 @@ public class DownloadsPanel extends SwitchPanel implements DownloadControllerLis
 
     @Override
     protected void onShow() {
-        tableModel.recreateModel();
+        tableModel.recreateModel(false);
         synchronized (this) {
             if (timer != null) timer.cancel(false);
             timer = tableModel.getThreadPool().scheduleWithFixedDelay(new Runnable() {

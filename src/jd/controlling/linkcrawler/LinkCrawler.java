@@ -335,7 +335,11 @@ public class LinkCrawler implements IOPermission {
                                     ArrayList<CrawledLink> allPossibleCryptedLinks = plg.getCrawlableLinks(url);
                                     if (allPossibleCryptedLinks != null) {
                                         for (final CrawledLink decryptThis : allPossibleCryptedLinks) {
-                                            decryptThis.setParentLink(possibleCryptedLink);
+                                            /*
+                                             * forward important data to new
+                                             * ones
+                                             */
+                                            forwardCrawledLinkInfos(possibleCryptedLink, decryptThis);
                                             if (possibleCryptedLink.getCryptedLink() != null) {
                                                 /*
                                                  * source contains CryptedLink,
@@ -400,7 +404,8 @@ public class LinkCrawler implements IOPermission {
                                     forwardDownloadLinkInfos(possibleCryptedLink.getDownloadLink(), hosterLinks);
                                     for (DownloadLink hosterLink : hosterLinks) {
                                         CrawledLink link = new CrawledLink(hosterLink);
-                                        link.setParentLink(possibleCryptedLink.getParentLink());
+                                        /* forward important data to new ones */
+                                        forwardCrawledLinkInfos(possibleCryptedLink, link);
                                         handleCrawledLink(link);
                                     }
                                 }
@@ -426,7 +431,8 @@ public class LinkCrawler implements IOPermission {
                                 forwardDownloadLinkInfos(possibleCryptedLink.getDownloadLink(), httpLinks);
                                 for (DownloadLink hosterLink : httpLinks) {
                                     CrawledLink link = new CrawledLink(hosterLink);
-                                    link.setParentLink(possibleCryptedLink.getParentLink());
+                                    /* forward important data to new ones */
+                                    forwardCrawledLinkInfos(possibleCryptedLink, link);
                                     handleCrawledLink(link);
                                 }
                             }
@@ -439,6 +445,13 @@ public class LinkCrawler implements IOPermission {
         } finally {
             checkFinishNotify();
         }
+    }
+
+    private void forwardCrawledLinkInfos(CrawledLink source, CrawledLink dest) {
+        if (source == null || dest == null) return;
+        dest.setParentLink(source.getParentLink());
+        dest.setMatchingFilter(source.getMatchingFilter());
+        dest.setSourceJob(source.getSourceJob());
     }
 
     protected void forwardDownloadLinkInfos(DownloadLink source, List<DownloadLink> dests) {
@@ -519,7 +532,7 @@ public class LinkCrawler implements IOPermission {
                             link.setBrowserUrl(cryptedLink.getURL());
                             CrawledLink ret;
                             possibleCryptedLinks.add(ret = new CrawledLink(link));
-                            ret.setParentLink(cryptedLink);
+                            forwardCrawledLinkInfos(cryptedLink, ret);
                         }
                         checkStartNotify();
                         /* enqueue distributing of the links */

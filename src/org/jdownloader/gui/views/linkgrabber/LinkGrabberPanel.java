@@ -15,6 +15,7 @@ import jd.gui.swing.laf.LookAndFeelController;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.app.gui.MigPanel;
+import org.appwork.utils.event.queue.Queue.QueuePriority;
 import org.jdownloader.gui.views.components.HeaderScrollPane;
 import org.jdownloader.gui.views.linkgrabber.actions.AddLinksAction;
 import org.jdownloader.gui.views.linkgrabber.actions.AddOptionsAction;
@@ -90,7 +91,7 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
 
     @Override
     protected void onShow() {
-        tableModel.recreateModel();
+        tableModel.recreateModel(false);
         LinkCollector.getInstance().addListener(this);
         table.requestFocusInWindow();
     }
@@ -104,7 +105,7 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
         switch (event.getType()) {
         case REFRESH_STRUCTURE:
         case REMOVE_CONTENT:
-            tableModel.recreateModel();
+            tableModel.recreateModel(!QueuePriority.HIGH.equals(event.getPrio()));
             break;
         case REFRESH_DATA:
             tableModel.refreshModel();

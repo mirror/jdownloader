@@ -76,13 +76,13 @@ public class LinkFilterController implements LinkCrawlerFilter {
 
             // url filter only require the urls, and thus can be done brefore
             // linkcheck
-            denyUrlFilter = new ArrayList<LinkgrabberFilterRuleWrapper>();
-            acceptUrlFilter = new ArrayList<LinkgrabberFilterRuleWrapper>();
+            ArrayList<LinkgrabberFilterRuleWrapper> newdenyUrlFilter = new ArrayList<LinkgrabberFilterRuleWrapper>();
+            ArrayList<LinkgrabberFilterRuleWrapper> newacceptUrlFilter = new ArrayList<LinkgrabberFilterRuleWrapper>();
 
             // FIlefilters require the full file information available after
             // linkcheck
-            denyFileFilter = new ArrayList<LinkgrabberFilterRuleWrapper>();
-            acceptFileFilter = new ArrayList<LinkgrabberFilterRuleWrapper>();
+            ArrayList<LinkgrabberFilterRuleWrapper> newdenyFileFilter = new ArrayList<LinkgrabberFilterRuleWrapper>();
+            ArrayList<LinkgrabberFilterRuleWrapper> newacceptFileFilter = new ArrayList<LinkgrabberFilterRuleWrapper>();
             for (LinkgrabberFilterRule lgr : filter) {
                 if (lgr.isEnabled() && lgr.isValid()) {
 
@@ -102,6 +102,15 @@ public class LinkFilterController implements LinkCrawlerFilter {
                     }
                 }
             }
+            newdenyUrlFilter.trimToSize();
+            denyUrlFilter = newdenyUrlFilter;
+            newacceptUrlFilter.trimToSize();
+            acceptUrlFilter = newacceptUrlFilter;
+
+            newdenyFileFilter.trimToSize();
+            denyFileFilter = newdenyFileFilter;
+            newacceptFileFilter.trimToSize();
+            acceptFileFilter = newacceptFileFilter;
         }
     }
 
@@ -116,7 +125,6 @@ public class LinkFilterController implements LinkCrawlerFilter {
         synchronized (this) {
             filter.addAll(all);
             config.setFilterList(filter);
-
             update();
         }
         getEventSender().fireEvent(new ChangeEvent(this));
@@ -127,7 +135,6 @@ public class LinkFilterController implements LinkCrawlerFilter {
         synchronized (this) {
             filter.add(linkFilter);
             config.setFilterList(filter);
-
             update();
         }
         getEventSender().fireEvent(new ChangeEvent(this));
@@ -139,19 +146,28 @@ public class LinkFilterController implements LinkCrawlerFilter {
         synchronized (this) {
             filter.remove(lf);
             config.setFilterList(filter);
-
             update();
         }
         getEventSender().fireEvent(new ChangeEvent(this));
     }
 
     public boolean dropByUrl(CrawledLink link) {
-        if (!config.isLinkFilterEnabled()) return false;
+        if (link.getMatchingFilter() != null) {
+            /*
+             * links with set matching filtered are allowed, user wants to add
+             * them
+             */
+            return false;
+        }
+        if (!LinkFilterSettings.LINK_FILTER_ENABLED.getValue()) return false;
         boolean matches = false;
         LinkgrabberFilterRule matchingFilter = null;
-        if (denyUrlFilter.size() > 0) {
+        final ArrayList<LinkgrabberFilterRuleWrapper> localdenyUrlFilter = denyUrlFilter;
+        final ArrayList<LinkgrabberFilterRuleWrapper> localacceptUrlFilter = acceptUrlFilter;
+        final ArrayList<LinkgrabberFilterRuleWrapper> localacceptFileFilter = acceptFileFilter;
+        if (localdenyUrlFilter.size() > 0) {
 
-            for (LinkgrabberFilterRuleWrapper lgr : denyUrlFilter) {
+            for (LinkgrabberFilterRuleWrapper lgr : localdenyUrlFilter) {
                 try {
                     if (!checkHoster(lgr, link)) continue;
                 } catch (NoDownloadLinkException e) {
@@ -165,7 +181,7 @@ public class LinkFilterController implements LinkCrawlerFilter {
 
         } else {
             // no filter
-            if (acceptFileFilter.size() > 0 || acceptUrlFilter.size() > 0) {
+            if (localacceptFileFilter.size() > 0 || localacceptUrlFilter.size() > 0) {
                 // no deny filter, but accept filter. does not make any sense.
                 // add a virtual deny all filter if we have accept filters
                 matches = true;
@@ -179,7 +195,7 @@ public class LinkFilterController implements LinkCrawlerFilter {
         }
 
         // now check if we have an accept filter for this link.
-        for (LinkgrabberFilterRuleWrapper lgr : acceptUrlFilter) {
+        for (LinkgrabberFilterRuleWrapper lgr : localacceptUrlFilter) {
 
             try {
                 if (!checkHoster(lgr, link)) continue;
@@ -192,7 +208,7 @@ public class LinkFilterController implements LinkCrawlerFilter {
             return false;
 
         }
-        for (LinkgrabberFilterRuleWrapper lgr : acceptFileFilter) {
+        for (LinkgrabberFilterRuleWrapper lgr : localacceptFileFilter) {
             try {
                 if (!checkHoster(lgr, link)) continue;
             } catch (NoDownloadLinkException e) {
@@ -208,14 +224,25 @@ public class LinkFilterController implements LinkCrawlerFilter {
     }
 
     public boolean dropByFileProperties(CrawledLink link) {
-        if (!config.isLinkFilterEnabled()) return false;
+        if (link.getMatchingFilter() != null) {
+            /*
+             * links with set matching filtered are allowed, user wants to add
+             * them
+             */
+            return false;
+        }
+        if (!LinkFilterSettings.LINK_FILTER_ENABLED.getValue()) return false;
         DownloadLink dlink = link.getDownloadLink();
+        if (dlink == null) { throw new WTFException(); }
         boolean matches = false;
         LinkgrabberFilterRule matchedFilter = null;
-        if (dlink == null) { throw new WTFException(); }
-        if (denyFileFilter.size() > 0 || denyUrlFilter.size() > 0) {
+        final ArrayList<LinkgrabberFilterRuleWrapper> localdenyUrlFilter = denyUrlFilter;
+        final ArrayList<LinkgrabberFilterRuleWrapper> localacceptUrlFilter = acceptUrlFilter;
+        final ArrayList<LinkgrabberFilterRuleWrapper> localacceptFileFilter = acceptFileFilter;
+        final ArrayList<LinkgrabberFilterRuleWrapper> localdenyFileFilter = denyFileFilter;
+        if (localdenyFileFilter.size() > 0 || localdenyUrlFilter.size() > 0) {
 
-            for (LinkgrabberFilterRuleWrapper lgr : denyFileFilter) {
+            for (LinkgrabberFilterRuleWrapper lgr : localdenyFileFilter) {
 
                 try {
                     if (!checkHoster(lgr, link)) continue;
@@ -231,7 +258,7 @@ public class LinkFilterController implements LinkCrawlerFilter {
                 break;
             }
             if (!matches) {
-                for (LinkgrabberFilterRuleWrapper lgr : denyUrlFilter) {
+                for (LinkgrabberFilterRuleWrapper lgr : localdenyUrlFilter) {
                     try {
                         if (!checkHoster(lgr, link)) continue;
                     } catch (NoDownloadLinkException e) {
@@ -247,7 +274,7 @@ public class LinkFilterController implements LinkCrawlerFilter {
         } else {
 
             // no deny filter...add a virtual MATCH ALL one
-            if (acceptFileFilter.size() > 0 || acceptUrlFilter.size() > 0) {
+            if (localacceptFileFilter.size() > 0 || localacceptUrlFilter.size() > 0) {
                 // no deny filter, but accept filter. does not make any sense.
                 // add a virtual deny all filter if we have accept filters
                 matches = true;
@@ -257,7 +284,7 @@ public class LinkFilterController implements LinkCrawlerFilter {
         if (!matches) return false;
         System.out.println("ACCEPT?");
         // now check if we have an accept filter for this link.
-        for (LinkgrabberFilterRuleWrapper lgr : acceptUrlFilter) {
+        for (LinkgrabberFilterRuleWrapper lgr : localacceptUrlFilter) {
 
             try {
                 if (!checkHoster(lgr, link)) continue;
@@ -270,7 +297,7 @@ public class LinkFilterController implements LinkCrawlerFilter {
             return false;
 
         }
-        for (LinkgrabberFilterRuleWrapper lgr : acceptFileFilter) {
+        for (LinkgrabberFilterRuleWrapper lgr : localacceptFileFilter) {
             try {
                 if (!checkHoster(lgr, link)) continue;
             } catch (NoDownloadLinkException e) {
@@ -307,34 +334,23 @@ public class LinkFilterController implements LinkCrawlerFilter {
     }
 
     private boolean checkFileName(LinkgrabberFilterRuleWrapper lgr, CrawledLink link) {
-        if (lgr.getFileNameRule() != null) {
-            //
-            return lgr.getFileNameRule().matches(link.getDownloadLink().getName());
-        }
+        if (lgr.getFileNameRule() != null) { return lgr.getFileNameRule().matches(link.getDownloadLink().getName()); }
         return true;
     }
 
     private boolean checkHoster(LinkgrabberFilterRuleWrapper lgr, CrawledLink link) throws NoDownloadLinkException {
-
         if (lgr.getHosterRule() != null) {
             if (link.getDownloadLink() == null) { throw new NoDownloadLinkException(); }
             return lgr.getHosterRule().matches(link.getDownloadLink().getDownloadURL());
-
         }
         return true;
     }
 
     private boolean checkSource(LinkgrabberFilterRuleWrapper lgr, CrawledLink link) {
-
         CrawledLink p = link;
         if (lgr.getSourceRule() != null) {
             do {
-                if (lgr.getSourceRule().matches(p.getURL())) {
-
-                return true;
-                //
-                }
-
+                if (lgr.getSourceRule().matches(p.getURL())) { return true; }
             } while ((p = p.getParentLink()) != null);
             return false;
         }

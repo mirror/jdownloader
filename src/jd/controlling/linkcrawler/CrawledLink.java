@@ -4,10 +4,8 @@ import javax.swing.ImageIcon;
 
 import jd.controlling.captcha.CaptchaController;
 import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
-import jd.http.Browser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
-import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 
@@ -130,8 +128,8 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
         return "DUMMY";
     }
 
-    public ImageIcon getHosterIcon(boolean scaled) {
-        if (dlLink != null) return dlLink.getHosterIcon(scaled);
+    public ImageIcon getHosterIcon() {
+        if (dlLink != null) return dlLink.getHosterIcon();
         return null;
     }
 
@@ -143,12 +141,9 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
     public String getRealHost() {
         if (realHost != null) return realHost;
         if (dlLink != null) {
-            realHost = dlLink.getHost();
-            if (Plugin.FTP_HOST.equalsIgnoreCase(realHost) || Plugin.DIRECT_HTTP_HOST.equalsIgnoreCase(realHost) || Plugin.HTTP_LINKS_HOST.equalsIgnoreCase(realHost)) {
-                /* direct and ftp links are divided by their hostname */
-                String specialHost = Browser.getHost(dlLink.getDownloadURL());
-                if (specialHost != null) realHost = specialHost;
-            }
+            /* causes creation of iconHost in DownloadLink */
+            dlLink.getHosterIcon();
+            realHost = dlLink.getIconHost();
         }
         return realHost;
     }

@@ -18,7 +18,7 @@ import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
-import org.jdownloader.HosterInfo;
+import org.jdownloader.DomainInfo;
 import org.jdownloader.gui.uiserio.NewUIO;
 import org.jdownloader.translate._JDT;
 
@@ -56,7 +56,7 @@ public class CaptchaDialogQueueEntry extends QueueAction<String, RuntimeExceptio
         this.def = def;
     }
 
-    public HosterInfo getHost() {
+    public DomainInfo getHost() {
         return captchaController.getHost();
     }
 
@@ -114,7 +114,6 @@ public class CaptchaDialogQueueEntry extends QueueAction<String, RuntimeExceptio
                         case 0:
                             // nothing
                             CaptchaSettings.CFG.setLastCancelOption(0);
-
                             break;
                         case 1:
                             if (ioPermission != null) {

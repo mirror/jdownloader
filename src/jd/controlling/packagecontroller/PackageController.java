@@ -15,6 +15,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock.WriteLock;
 
 import jd.controlling.IOEQ;
 
+import org.appwork.utils.event.queue.Queue.QueuePriority;
 import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.logging.Log;
 
@@ -123,9 +124,9 @@ public abstract class PackageController<E extends AbstractPackageNode<V, E>, V e
                     structureChanged.incrementAndGet();
                     if (isNew) {
                         if (pkg.getChildren().size() > 0) childrenChanged.incrementAndGet();
-                        _controllerPackageNodeAdded(pkg);
+                        _controllerPackageNodeAdded(pkg, this.getQueuePrio());
                     } else {
-                        _controllerStructureChanged();
+                        _controllerStructureChanged(this.getQueuePrio());
                     }
                     return null;
                 }
@@ -169,11 +170,11 @@ public abstract class PackageController<E extends AbstractPackageNode<V, E>, V e
                     }
                     if (removed && remove != null) {
                         if (remove.size() > 0) childrenChanged.incrementAndGet();
-                        controller._controllerParentlessLinks(remove);
+                        controller._controllerParentlessLinks(remove, this.getQueuePrio());
                     }
                     if (removed) {
                         controller.structureChanged.incrementAndGet();
-                        controller._controllerPackageNodeRemoved(pkg);
+                        controller._controllerPackageNodeRemoved(pkg, this.getQueuePrio());
                     }
                     return null;
                 }
@@ -261,7 +262,7 @@ public abstract class PackageController<E extends AbstractPackageNode<V, E>, V e
                     }
                     structureChanged.incrementAndGet();
                     if (newChildren) childrenChanged.incrementAndGet();
-                    _controllerStructureChanged();
+                    _controllerStructureChanged(this.getQueuePrio());
                     return null;
                 }
             });
@@ -318,7 +319,7 @@ public abstract class PackageController<E extends AbstractPackageNode<V, E>, V e
                         controller.structureChanged.incrementAndGet();
                         if (doNotifyParentlessLinks) {
                             childrenChanged.incrementAndGet();
-                            controller._controllerParentlessLinks(links);
+                            controller._controllerParentlessLinks(links, this.getQueuePrio());
                         }
                         if (pkg.getChildren().size() == 0) {
                             controller.removePackage(pkg);
@@ -350,13 +351,13 @@ public abstract class PackageController<E extends AbstractPackageNode<V, E>, V e
         });
     }
 
-    abstract protected void _controllerParentlessLinks(final List<V> links);
+    abstract protected void _controllerParentlessLinks(final List<V> links, QueuePriority priority);
 
-    abstract protected void _controllerPackageNodeRemoved(E pkg);
+    abstract protected void _controllerPackageNodeRemoved(E pkg, QueuePriority priority);
 
-    abstract protected void _controllerStructureChanged();
+    abstract protected void _controllerStructureChanged(QueuePriority priority);
 
-    abstract protected void _controllerPackageNodeAdded(E pkg);
+    abstract protected void _controllerPackageNodeAdded(E pkg, QueuePriority priority);
 
     public boolean readLock() {
         if (!this.writeLock.isHeldByCurrentThread()) {
