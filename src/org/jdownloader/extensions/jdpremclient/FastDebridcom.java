@@ -7,8 +7,6 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
-import javax.swing.ImageIcon;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.controlling.AccountController;
@@ -109,12 +107,7 @@ public class FastDebridcom extends PluginForHost implements JDPremInterface {
         } else if (!PremiumCompoundExtension.preferLocalAccounts()) {
             if (handleFastDebrid(downloadLink)) return;
         }
-        if (proxyused = true) {
-            /* failed, now try normal */
-            // errmalt: disable fast-debrid account disabling
-            // proxyused = false;
-            resetFavIcon();
-        }
+
         plugin.handle(downloadLink, account);
     }
 
@@ -184,7 +177,7 @@ public class FastDebridcom extends PluginForHost implements JDPremInterface {
         proxyused = true;
         requestFileInformation(link);
         if (link.isAvailabilityStatusChecked() && !link.isAvailable()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        resetFavIcon();
+
         boolean dofollow = br.isFollowingRedirects();
         try {
             br.setFollowRedirects(true);
@@ -534,19 +527,6 @@ public class FastDebridcom extends PluginForHost implements JDPremInterface {
         if (proxyused) return "fast-debrid.com";
         if (plugin != null) return plugin.getCustomFavIconURL();
         return null;
-    }
-
-    @Override
-    public void setFavIcon(ImageIcon icon) {
-        if (plugin != null) plugin.setFavIcon(icon);
-        this.hosterIcon = icon;
-    }
-
-    @Override
-    public void resetFavIcon() {
-        if (plugin != null) plugin.resetFavIcon();
-        hosterIconRequested = false;
-        hosterIcon = null;
     }
 
 }

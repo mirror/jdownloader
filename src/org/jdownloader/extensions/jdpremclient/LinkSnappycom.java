@@ -6,8 +6,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
-import javax.swing.ImageIcon;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.controlling.AccountController;
@@ -112,7 +110,7 @@ public class LinkSnappycom extends PluginForHost implements JDPremInterface {
         if (proxyused = true) {
             /* failed, now try normal */
             proxyused = false;
-            resetFavIcon();
+
         }
         plugin.handle(downloadLink, account);
     }
@@ -177,7 +175,7 @@ public class LinkSnappycom extends PluginForHost implements JDPremInterface {
         proxyused = true;
         requestFileInformation(link);
         if (link.isAvailabilityStatusChecked() && !link.isAvailable()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        resetFavIcon();
+
         br.setConnectTimeout(90 * 1000);
         br.setReadTimeout(90 * 1000);
         br.setDebug(true);
@@ -506,19 +504,6 @@ public class LinkSnappycom extends PluginForHost implements JDPremInterface {
         if (proxyused) return "linksnappy.com";
         if (plugin != null) return plugin.getCustomFavIconURL();
         return null;
-    }
-
-    @Override
-    public void setFavIcon(ImageIcon icon) {
-        if (plugin != null) plugin.setFavIcon(icon);
-        this.hosterIcon = icon;
-    }
-
-    @Override
-    public void resetFavIcon() {
-        if (plugin != null) plugin.resetFavIcon();
-        hosterIconRequested = false;
-        hosterIcon = null;
     }
 
 }

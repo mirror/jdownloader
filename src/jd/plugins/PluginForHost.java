@@ -30,8 +30,6 @@ import javax.swing.ImageIcon;
 import jd.HostPluginWrapper;
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
-import jd.controlling.FavIconController;
-import jd.controlling.FavIconRequestor;
 import jd.controlling.IOPermission;
 import jd.controlling.JDLogger;
 import jd.controlling.JDPluginLogger;
@@ -51,6 +49,7 @@ import jd.plugins.download.DownloadInterface;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Regex;
 import org.appwork.utils.os.CrossSystem;
+import org.jdownloader.HosterInfo;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.translate._JDT;
@@ -61,7 +60,7 @@ import org.jdownloader.translate._JDT;
  * 
  * @author astaldo
  */
-public abstract class PluginForHost extends Plugin implements FavIconRequestor {
+public abstract class PluginForHost extends Plugin {
 
     private IOPermission ioPermission = null;
 
@@ -79,6 +78,7 @@ public abstract class PluginForHost extends Plugin implements FavIconRequestor {
     }
 
     public JDPluginLogger getLogger() {
+
         return (JDPluginLogger) logger;
     }
 
@@ -157,8 +157,6 @@ public abstract class PluginForHost extends Plugin implements FavIconRequestor {
 
     private String                             premiumurl             = null;
 
-    protected ImageIcon                        hosterIcon             = null;
-    protected boolean                          hosterIconRequested    = false;
     private DownloadLink                       link                   = null;
 
     public boolean checkLinks(final DownloadLink[] urls) {
@@ -856,39 +854,6 @@ public abstract class PluginForHost extends Plugin implements FavIconRequestor {
         return getHost();
     }
 
-    public ImageIcon getHosterIconUnscaled() {
-        if (hosterIcon == null && !hosterIconRequested && getCustomFavIconURL() != null) {
-            hosterIcon = FavIconController.getFavIcon(getCustomFavIconURL(), this, true);
-            hosterIconRequested = true;
-        }
-        if (hosterIcon != null) return hosterIcon;
-        return getWrapper().getIconUnscaled();
-    }
-
-    public final ImageIcon getHosterIconScaled() {
-        if (hosterIcon == null && !hosterIconRequested && getCustomFavIconURL() != null) {
-            hosterIcon = FavIconController.getFavIcon(getCustomFavIconURL(), this, true);
-            hosterIconRequested = true;
-        }
-        if (hosterIcon != null) return JDImage.getScaledImageIcon(getHosterIconUnscaled(), 16, -1);
-        return getWrapper().getIconScaled();
-    }
-
-    /* override this to use customized favicons */
-    public String getCustomFavIconURL() {
-        return null;
-    }
-
-    /* reset customized favicon */
-    public void resetFavIcon() {
-        hosterIconRequested = false;
-        hosterIcon = null;
-    }
-
-    public void setFavIcon(ImageIcon icon) {
-        this.hosterIcon = icon;
-    }
-
     public void setDownloadLink(DownloadLink link) {
         this.link = link;
     }
@@ -905,6 +870,10 @@ public abstract class PluginForHost extends Plugin implements FavIconRequestor {
         return false;
     }
 
+    public String getCustomFavIconURL() {
+        return getHost();
+    }
+
     /**
      * @param ioPermission
      *            the ioPermission to set
@@ -918,6 +887,16 @@ public abstract class PluginForHost extends Plugin implements FavIconRequestor {
      */
     public IOPermission getIOPermission() {
         return ioPermission;
+    }
+
+    public ImageIcon getHosterIconScaled() {
+        String host = getCustomFavIconURL();
+        if (host == null) host = getHost();
+        return HosterInfo.getInstance(host).getFavIcon();
+    }
+
+    public ImageIcon getHosterIconUnscaled() {
+        return getHosterIconScaled();
     }
 
 }

@@ -4,8 +4,6 @@ import java.awt.event.ActionEvent;
 import java.io.IOException;
 import java.util.ArrayList;
 
-import javax.swing.ImageIcon;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.controlling.AccountController;
@@ -121,7 +119,7 @@ public class PremGet extends PluginForHost implements JDPremInterface {
         if (proxyused = true) {
             /* failed, now try normal */
             proxyused = false;
-            resetFavIcon();
+
         }
         plugin.handle(downloadLink, account);
     }
@@ -188,7 +186,6 @@ public class PremGet extends PluginForHost implements JDPremInterface {
         requestFileInformation(link);
         if (link.isAvailabilityStatusChecked() && !link.isAvailable()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
 
-        resetFavIcon();
         br.setConnectTimeout(90 * 1000);
         br.setReadTimeout(90 * 1000);
         br.setDebug(true);
@@ -496,19 +493,6 @@ public class PremGet extends PluginForHost implements JDPremInterface {
         if (proxyused) return "PremGet.pl";
         if (plugin != null) return plugin.getCustomFavIconURL();
         return null;
-    }
-
-    @Override
-    public void setFavIcon(ImageIcon icon) {
-        if (plugin != null) plugin.setFavIcon(icon);
-        this.hosterIcon = icon;
-    }
-
-    @Override
-    public void resetFavIcon() {
-        if (plugin != null) plugin.resetFavIcon();
-        hosterIconRequested = false;
-        hosterIcon = null;
     }
 
 }

@@ -3,8 +3,6 @@ package org.jdownloader.extensions.jdpremclient;
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 
-import javax.swing.ImageIcon;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.controlling.AccountController;
@@ -105,7 +103,7 @@ public class Streammaniacom extends PluginForHost implements JDPremInterface {
         if (proxyused = true) {
             /* failed, now try normal */
             proxyused = false;
-            resetFavIcon();
+
         }
         plugin.handle(downloadLink, account);
     }
@@ -176,7 +174,7 @@ public class Streammaniacom extends PluginForHost implements JDPremInterface {
         proxyused = true;
         requestFileInformation(link);
         if (link.isAvailabilityStatusChecked() && !link.isAvailable()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        resetFavIcon();
+
         boolean dofollow = br.isFollowingRedirects();
         try {
             br.setFollowRedirects(true);
@@ -457,19 +455,6 @@ public class Streammaniacom extends PluginForHost implements JDPremInterface {
         if (proxyused) return "streammania.com";
         if (plugin != null) return plugin.getCustomFavIconURL();
         return null;
-    }
-
-    @Override
-    public void setFavIcon(ImageIcon icon) {
-        if (plugin != null) plugin.setFavIcon(icon);
-        this.hosterIcon = icon;
-    }
-
-    @Override
-    public void resetFavIcon() {
-        if (plugin != null) plugin.resetFavIcon();
-        hosterIconRequested = false;
-        hosterIcon = null;
     }
 
 }
