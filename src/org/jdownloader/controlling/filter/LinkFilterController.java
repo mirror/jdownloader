@@ -89,15 +89,15 @@ public class LinkFilterController implements LinkCrawlerFilter {
                     LinkgrabberFilterRuleWrapper compiled = lgr.compile();
                     if (lgr.isAccept()) {
                         if (!compiled.isRequiresLinkcheck()) {
-                            acceptUrlFilter.add(compiled);
+                            newacceptUrlFilter.add(compiled);
                         } else {
-                            acceptFileFilter.add(compiled);
+                            newacceptFileFilter.add(compiled);
                         }
                     } else {
                         if (!compiled.isRequiresLinkcheck()) {
-                            denyUrlFilter.add(compiled);
+                            newdenyUrlFilter.add(compiled);
                         } else {
-                            denyFileFilter.add(compiled);
+                            newdenyFileFilter.add(compiled);
                         }
                     }
                 }
