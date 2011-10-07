@@ -16,14 +16,13 @@ import jd.controlling.linkcrawler.LinkCrawlerFilter;
 import jd.controlling.linkcrawler.LinkCrawlerHandler;
 import jd.controlling.packagecontroller.PackageController;
 
-import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.event.Eventsender;
 import org.appwork.utils.event.queue.Queue.QueuePriority;
 import org.appwork.utils.event.queue.QueueAction;
 import org.jdownloader.controlling.filter.LinkFilterController;
 import org.jdownloader.gui.views.linkgrabber.addlinksdialog.CrawlerJob;
 
-public class LinkCollector extends PackageController<CrawledPackage, CrawledLink> implements LinkCheckerHandler<CrawledLink> {
+public class LinkCollector extends PackageController<CrawledPackage, CrawledLink> implements LinkCheckerHandler<CrawledLink>, LinkCrawlerHandler {
 
     private transient Eventsender<LinkCollectorListener, LinkCollectorEvent> broadcaster = new Eventsender<LinkCollectorListener, LinkCollectorEvent>() {
 
@@ -52,7 +51,6 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
     /* sync on filteredStuff itself when accessing it */
     private ArrayList<CrawledLink>            filteredStuff     = new ArrayList<CrawledLink>();
 
-    private LinkCollectorConfig               config;
     private LinkCrawlerFilter                 crawlerFilter     = null;
 
     public static LinkCollector getInstance() {
@@ -63,7 +61,6 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         linkChecker = new LinkChecker<CrawledLink>();
         linkChecker.setLinkCheckHandler(this);
         setCrawlerFilter(LinkCrawler.defaultFilterFactory());
-        config = JsonConfig.create(LinkCollectorConfig.class);
         this.setCrawlerFilter(LinkFilterController.getInstance());
     }
 
@@ -114,52 +111,39 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
     public LinkCrawler addCrawlerJob(final ArrayList<CrawledLink> links) {
         if (links == null || links.size() == 0) throw new IllegalArgumentException("no links");
-        return null;
+        LinkCrawler lc = new LinkCrawler();
+        lc.setFilter(crawlerFilter);
+        lc.setHandler(this);
+        ArrayList<CrawledLink> deep = new ArrayList<CrawledLink>();
+        ArrayList<CrawledLink> normal = new ArrayList<CrawledLink>();
+        for (CrawledLink link : links) {
+            if (link.getSourceJob() == null || !link.getSourceJob().isDeepAnalyse()) {
+                normal.add(link);
+            } else {
+                deep.add(link);
+            }
+        }
+        lc.enqueueNormal(normal);
+        normal = null;
+        lc.enqueueDeep(deep);
+        deep = null;
+        return lc;
     }
 
     public LinkCrawler addCrawlerJob(final CrawlerJob job) {
         if (job == null) throw new IllegalArgumentException("job is null");
-        LinkCrawler lc = new LinkCrawler();
+        LinkCrawler lc = new LinkCrawler() {
+
+            @Override
+            protected CrawledLink crawledLinkFactorybyURL(String url) {
+                CrawledLink ret = super.crawledLinkFactorybyURL(url);
+                ret.setSourceJob(job);
+                return ret;
+            }
+
+        };
         lc.setFilter(crawlerFilter);
-        if (config.getDoLinkCheck()) {
-            lc.setHandler(new LinkCrawlerHandler() {
-                public void handleFinalLink(CrawledLink link) {
-                    link.setSourceJob(job);
-                    linkChecker.check(link);
-                }
-
-                public void linkCrawlerStarted() {
-                    checkRunningState(true);
-                }
-
-                public void linkCrawlerStopped() {
-                    checkRunningState(false);
-                }
-
-                public void handleFilteredLink(CrawledLink link) {
-                    addFilteredStuff(link);
-                }
-            });
-        } else {
-            lc.setHandler(new LinkCrawlerHandler() {
-                public void handleFinalLink(CrawledLink link) {
-                    link.setSourceJob(job);
-                    addCrawledLink(link);
-                }
-
-                public void linkCrawlerStarted() {
-                    checkRunningState(true);
-                }
-
-                public void linkCrawlerStopped() {
-                    checkRunningState(false);
-                }
-
-                public void handleFilteredLink(CrawledLink link) {
-                    addFilteredStuff(link);
-                }
-            });
-        }
+        lc.setHandler(this);
         if (job.isDeepAnalyse()) {
             lc.enqueueDeep(job.getText(), null);
         } else {
@@ -313,7 +297,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         IOEQ.getQueue().add(new QueueAction<Void, RuntimeException>() {
             @Override
             protected Void run() throws RuntimeException {
-                int positionMerge = config.getDoMergeTopBottom() ? 0 : -1;
+                int positionMerge = LinkCollectorConfig.DOMERGETOP.getValue() ? 0 : -1;
                 if (srcLinks != null) {
                     /* move srcLinks to dest */
                     addmoveChildren(dest, srcLinks, positionMerge);
@@ -426,5 +410,25 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
     public int getfilteredStuffSize() {
         return filteredStuff.size();
+    }
+
+    public void handleFinalLink(CrawledLink link) {
+        if (LinkCollectorConfig.DOLINKCHECK.getValue()) {
+            linkChecker.check(link);
+        } else {
+            addCrawledLink(link);
+        }
+    }
+
+    public void linkCrawlerStarted() {
+        checkRunningState(true);
+    }
+
+    public void linkCrawlerStopped() {
+        checkRunningState(false);
+    }
+
+    public void handleFilteredLink(CrawledLink link) {
+        addFilteredStuff(link);
     }
 }

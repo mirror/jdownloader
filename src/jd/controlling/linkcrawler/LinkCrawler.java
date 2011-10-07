@@ -109,11 +109,15 @@ public class LinkCrawler implements IOPermission {
         crawlNormal(possibleLinks);
     }
 
+    protected CrawledLink crawledLinkFactorybyURL(String url) {
+        return new CrawledLink(url);
+    }
+
     public void crawlNormal(String[] links) {
         if (links == null || links.length == 0) return;
         ArrayList<CrawledLink> possibleCryptedLinks = new ArrayList<CrawledLink>(links.length);
         for (String possibleLink : links) {
-            possibleCryptedLinks.add(new CrawledLink(possibleLink));
+            possibleCryptedLinks.add(crawledLinkFactorybyURL(possibleLink));
         }
         distribute(possibleCryptedLinks);
     }
@@ -123,60 +127,75 @@ public class LinkCrawler implements IOPermission {
         if (possibleLinks == null || possibleLinks.length == 0) return;
         final ArrayList<CrawledLink> possibleCryptedLinks = new ArrayList<CrawledLink>(possibleLinks.length);
         for (String possibleLink : possibleLinks) {
-            possibleCryptedLinks.add(new CrawledLink(possibleLink));
+            possibleCryptedLinks.add(crawledLinkFactorybyURL(possibleLink));
         }
-        if (insideDecrypterPlugin()) {
-            /*
-             * direct decrypt this link because we are already inside a
-             * LinkCrawlerThread and this avoids deadlocks on plugin waiting for
-             * linkcrawler results
-             */
-            distribute(possibleCryptedLinks);
-            return;
-        } else {
-            /*
-             * enqueue this cryptedLink for decrypting
-             */
-            checkStartNotify();
-            threadPool.execute(new LinkCrawlerRunnable(LinkCrawler.this) {
-                public void run() {
-                    try {
-                        distribute(possibleCryptedLinks);
-                    } finally {
-                        checkFinishNotify();
+        enqueueNormal(possibleCryptedLinks);
+    }
+
+    public void enqueueNormal(final ArrayList<CrawledLink> possibleCryptedLinks) {
+        if (possibleCryptedLinks == null || possibleCryptedLinks.size() == 0) return;
+        checkStartNotify();
+        try {
+            if (insideDecrypterPlugin()) {
+                /*
+                 * direct decrypt this link because we are already inside a
+                 * LinkCrawlerThread and this avoids deadlocks on plugin waiting
+                 * for linkcrawler results
+                 */
+                distribute(possibleCryptedLinks);
+                return;
+            } else {
+                /*
+                 * enqueue this cryptedLink for decrypting
+                 */
+                checkStartNotify();
+                threadPool.execute(new LinkCrawlerRunnable(LinkCrawler.this) {
+                    public void run() {
+                        try {
+                            distribute(possibleCryptedLinks);
+                        } finally {
+                            checkFinishNotify();
+                        }
                     }
-                }
-            });
-            return;
+                });
+                return;
+            }
+        } finally {
+            checkFinishNotify();
         }
     }
 
     public void enqueueDeep(String text, String url) {
         final String[] possibleLinks = HTMLParser.getHttpLinks(text, url);
         if (possibleLinks == null || possibleLinks.length == 0) return;
-        if (insideDecrypterPlugin()) {
-            /*
-             * direct decrypt this link because we are already inside a
-             * LinkCrawlerThread and this avoids deadlocks on plugin waiting for
-             * linkcrawler results
-             */
-            crawlDeep(possibleLinks);
-            return;
-        } else {
-            /*
-             * enqueue this cryptedLink for decrypting
-             */
-            checkStartNotify();
-            threadPool.execute(new LinkCrawlerRunnable(LinkCrawler.this) {
-                public void run() {
-                    try {
-                        crawlDeep(possibleLinks);
-                    } finally {
-                        checkFinishNotify();
+        checkStartNotify();
+        try {
+            if (insideDecrypterPlugin()) {
+                /*
+                 * direct decrypt this link because we are already inside a
+                 * LinkCrawlerThread and this avoids deadlocks on plugin waiting
+                 * for linkcrawler results
+                 */
+                crawlDeep(possibleLinks);
+                return;
+            } else {
+                /*
+                 * enqueue this cryptedLink for decrypting
+                 */
+                checkStartNotify();
+                threadPool.execute(new LinkCrawlerRunnable(LinkCrawler.this) {
+                    public void run() {
+                        try {
+                            crawlDeep(possibleLinks);
+                        } finally {
+                            checkFinishNotify();
+                        }
                     }
-                }
-            });
-            return;
+                });
+                return;
+            }
+        } finally {
+            checkFinishNotify();
         }
     }
 
@@ -189,29 +208,44 @@ public class LinkCrawler implements IOPermission {
     }
 
     public void crawlDeep(String[] links) {
-        for (final String url : links) {
-            if (insideDecrypterPlugin()) {
-                /*
-                 * direct decrypt this link because we are already inside a
-                 * LinkCrawlerThread and this avoids deadlocks on plugin waiting
-                 * for linkcrawler results
-                 */
-                crawlDeeper(url);
-            } else {
-                /*
-                 * enqueue this cryptedLink for decrypting
-                 */
-                checkStartNotify();
-                threadPool.execute(new LinkCrawlerRunnable(LinkCrawler.this) {
-                    public void run() {
-                        try {
-                            crawlDeeper(url);
-                        } finally {
-                            checkFinishNotify();
+        if (links == null || links.length == 0) return;
+        final ArrayList<CrawledLink> possibleCryptedLinks = new ArrayList<CrawledLink>(links.length);
+        for (String possibleLink : links) {
+            possibleCryptedLinks.add(crawledLinkFactorybyURL(possibleLink));
+        }
+        enqueueDeep(possibleCryptedLinks);
+    }
+
+    public void enqueueDeep(final ArrayList<CrawledLink> possibleCryptedLinks) {
+        if (possibleCryptedLinks == null || possibleCryptedLinks.size() == 0) return;
+        checkStartNotify();
+        try {
+            for (final CrawledLink link : possibleCryptedLinks) {
+                if (insideDecrypterPlugin()) {
+                    /*
+                     * direct decrypt this link because we are already inside a
+                     * LinkCrawlerThread and this avoids deadlocks on plugin
+                     * waiting for linkcrawler results
+                     */
+                    crawlDeeper(link);
+                } else {
+                    /*
+                     * enqueue this cryptedLink for decrypting
+                     */
+                    checkStartNotify();
+                    threadPool.execute(new LinkCrawlerRunnable(LinkCrawler.this) {
+                        public void run() {
+                            try {
+                                crawlDeeper(link);
+                            } finally {
+                                checkFinishNotify();
+                            }
                         }
-                    }
-                });
+                    });
+                }
             }
+        } finally {
+            checkFinishNotify();
         }
     }
 
@@ -257,22 +291,22 @@ public class LinkCrawler implements IOPermission {
         if (started) handler.linkCrawlerStarted();
     }
 
-    protected void crawlDeeper(String url) {
+    protected void crawlDeeper(CrawledLink url) {
         checkStartNotify();
         try {
+            if (url == null) return;
             synchronized (duplicateFinder) {
                 /* did we already crawlDeeper this url */
-                if (!duplicateFinder.add(url)) { return; }
+                if (!duplicateFinder.add(url.getURL())) { return; }
             }
             Browser br = new Browser();
             try {
-                new URL(url);
-                CrawledLink source = new CrawledLink(url);
-                if (this.isCrawledLinkFiltered(source)) {
+                new URL(url.getURL());
+                if (this.isCrawledLinkFiltered(url)) {
                     /* link is filtered, stop here */
                     return;
                 }
-                br.openGetConnection(url);
+                br.openGetConnection(url.getURL());
                 if (br.getHttpConnection().isContentDisposition() || (br.getHttpConnection().getContentType() != null && !br.getHttpConnection().getContentType().contains("text"))) {
                     try {
                         br.getHttpConnection().disconnect();
@@ -283,7 +317,9 @@ public class LinkCrawler implements IOPermission {
                      * the url
                      */
                     ArrayList<CrawledLink> links = new ArrayList<CrawledLink>();
-                    links.add(new CrawledLink("directhttp://" + url));
+                    CrawledLink link;
+                    links.add(link = crawledLinkFactorybyURL("directhttp://" + url));
+                    forwardCrawledLinkInfos(url, link);
                     distribute(links);
                 } else {
                     /* try to load the webpage and find links on it */
@@ -297,9 +333,8 @@ public class LinkCrawler implements IOPermission {
                     ArrayList<CrawledLink> possibleCryptedLinks = new ArrayList<CrawledLink>(possibleLinks.length);
                     for (String possibleLink : possibleLinks) {
                         CrawledLink link;
-                        possibleCryptedLinks.add(link = new CrawledLink(possibleLink));
-                        /* lets forward source from this deepCrawling */
-                        link.setParentLink(source);
+                        possibleCryptedLinks.add(link = crawledLinkFactorybyURL(possibleLink));
+                        forwardCrawledLinkInfos(url, link);
                     }
                     distribute(possibleCryptedLinks);
                 }
