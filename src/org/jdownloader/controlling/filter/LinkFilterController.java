@@ -331,7 +331,9 @@ public class LinkFilterController implements LinkCrawlerFilter {
             do {
                 if (lgr.getSourceRule().matches(p.getURL())) {
 
-                return true; }
+                return true;
+                //
+                }
 
             } while ((p = p.getParentLink()) != null);
             return false;

@@ -18,6 +18,7 @@ import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
+import org.jdownloader.HosterInfo;
 import org.jdownloader.gui.uiserio.NewUIO;
 import org.jdownloader.translate._JDT;
 
@@ -55,7 +56,7 @@ public class CaptchaDialogQueueEntry extends QueueAction<String, RuntimeExceptio
         this.def = def;
     }
 
-    public String getHost() {
+    public HosterInfo getHost() {
         return captchaController.getHost();
     }
 
@@ -88,7 +89,7 @@ public class CaptchaDialogQueueEntry extends QueueAction<String, RuntimeExceptio
     }
 
     private String viaGUI() {
-        if (ioPermission != null && !ioPermission.isCaptchaAllowed(getHost())) { return null; }
+        if (ioPermission != null && !ioPermission.isCaptchaAllowed(getHost().getTld())) { return null; }
 
         try {
 
@@ -117,7 +118,7 @@ public class CaptchaDialogQueueEntry extends QueueAction<String, RuntimeExceptio
                             break;
                         case 1:
                             if (ioPermission != null) {
-                                ioPermission.setCaptchaAllowed(getHost(), CAPTCHA.BLOCKHOSTER);
+                                ioPermission.setCaptchaAllowed(getHost().getTld(), CAPTCHA.BLOCKHOSTER);
                             }
                             CaptchaSettings.CFG.setLastCancelOption(1);
                             break;

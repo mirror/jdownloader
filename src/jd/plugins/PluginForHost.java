@@ -133,7 +133,7 @@ public abstract class PluginForHost extends Plugin implements FavIconRequestor {
                 e.printStackTrace();
             }
             link.requestGuiUpdate();
-            final String cc = new CaptchaController(ioPermission, getHost(), method, file, defaultValue, explain).getCode(flag);
+            final String cc = new CaptchaController(ioPermission, method, file, defaultValue, explain, this).getCode(flag);
             if (cc == null) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             return cc;
         } finally {

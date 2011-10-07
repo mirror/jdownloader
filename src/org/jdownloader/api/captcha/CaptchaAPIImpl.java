@@ -34,7 +34,7 @@ public class CaptchaAPIImpl implements CaptchaAPI, CaptchaEventListener {
             if (entry.isFinished()) continue;
             CaptchaJob job = new CaptchaJob();
             job.setID(entry.getID().getID());
-            job.setHoster(entry.getHost());
+            job.setHoster(entry.getHost().getTld());
             ret.add(job);
         }
         return ret;
@@ -72,7 +72,7 @@ public class CaptchaAPIImpl implements CaptchaAPI, CaptchaEventListener {
             if (IOPermission.CAPTCHA.BLOCKTHIS == what) {
                 captcha.setResponse(null);
             } else {
-                io.setCaptchaAllowed(captcha.getHost(), what);
+                io.setCaptchaAllowed(captcha.getHost().getTld(), what);
             }
         }
         return true;
@@ -91,7 +91,7 @@ public class CaptchaAPIImpl implements CaptchaAPI, CaptchaEventListener {
         if (entry != null) {
             CaptchaJob job = new CaptchaJob();
             job.setID(entry.getID().getID());
-            job.setHoster(entry.getHost());
+            job.setHoster(entry.getHost().getTld());
             HashMap<String, Object> data = new HashMap<String, Object>();
             data.put("message", type);
             data.put("data", job);

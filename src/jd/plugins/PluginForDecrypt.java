@@ -308,7 +308,7 @@ public abstract class PluginForDecrypt extends Plugin {
         if (link.getProgressController() != null) link.getProgressController().setStatusText(_JDT._.gui_linkgrabber_waitinguserio2(method));
         String cc = null;
         try {
-            cc = new CaptchaController(ioPermission, getHost(), method, file, defaultValue, explain).getCode(flag);
+            cc = new CaptchaController(ioPermission, method, file, defaultValue, explain, this).getCode(flag);
         } finally {
             if (link.getProgressController() != null) link.getProgressController().setStatusText(null);
         }

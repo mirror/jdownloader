@@ -44,6 +44,7 @@ import org.appwork.utils.swing.dialog.AbstractDialog;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
+import org.jdownloader.HosterInfo;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 
@@ -63,7 +64,7 @@ public class CaptchaDialog extends AbstractDialog<String> implements ActionListe
     private final String      explain;
 
     public static void main(String[] args) {
-        CaptchaDialog cp = new CaptchaDialog(0, "filesonic.com", new File("C:\\Users\\Thomas\\.jd_home\\captchas\\filesonic.com_29.09.2011_11.49.41.233.jpg"), null, "Enter both words...");
+        CaptchaDialog cp = new CaptchaDialog(0, HosterInfo.getInstance("filesonic.com"), new File("C:\\Users\\Thomas\\.jd_home\\captchas\\filesonic.com_29.09.2011_11.49.41.233.jpg"), null, "Enter both words...");
         LookAndFeelController.getInstance().setUIManager();
         try {
             Dialog.getInstance().showDialog(cp);
@@ -74,8 +75,8 @@ public class CaptchaDialog extends AbstractDialog<String> implements ActionListe
         }
     }
 
-    public CaptchaDialog(final int flag, final String host, final File imagefile, final String defaultValue, final String explain) {
-        super(flag | Dialog.STYLE_HIDE_ICON, (host != null ? host + ": " : "") + _GUI._.gui_captchaWindow_askForInput(), null, null, null);
+    public CaptchaDialog(final int flag, final HosterInfo hosterInfo, final File imagefile, final String defaultValue, final String explain) {
+        super(flag | Dialog.STYLE_HIDE_ICON, (hosterInfo != null ? hosterInfo + ": " : "") + _GUI._.gui_captchaWindow_askForInput(), null, null, null);
 
         this.imagefile = imagefile;
         this.defaultValue = defaultValue;

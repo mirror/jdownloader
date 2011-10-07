@@ -30,6 +30,9 @@ import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.controlling.IOPermission;
 import jd.gui.UserIO;
+import jd.plugins.Plugin;
+
+import org.jdownloader.HosterInfo;
 
 public class CaptchaController {
 
@@ -40,7 +43,7 @@ public class CaptchaController {
     private final File                 captchafile;
     private final String               explain;
     private final String               suggest;
-    private final String               host;
+    private final HosterInfo           host;
 
     private CaptchaDialogQueueEntry    dialog         = null;
     private String                     response       = null;
@@ -49,14 +52,21 @@ public class CaptchaController {
 
     private boolean                    responseSet    = false;
 
-    public CaptchaController(IOPermission ioPermission, final String host, final String method, final File file, final String suggest, final String explain) {
+    private Plugin                     plugin;
+
+    public Plugin getPlugin() {
+        return plugin;
+    }
+
+    public CaptchaController(IOPermission ioPermission, final String method, final File file, final String suggest, final String explain, Plugin plugin) {
         this.id = captchaCounter.getAndIncrement();
-        this.host = host;
+        this.host = HosterInfo.getInstance(plugin.getHost());
         this.methodname = method;
         this.captchafile = file;
         this.explain = explain;
         this.suggest = suggest;
         this.ioPermission = ioPermission;
+        this.plugin = plugin;
     }
 
     public int getId() {
@@ -79,7 +89,7 @@ public class CaptchaController {
         return suggest;
     }
 
-    public String getHost() {
+    public HosterInfo getHost() {
         return host;
     }
 
