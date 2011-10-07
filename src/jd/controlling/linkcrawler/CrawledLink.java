@@ -2,6 +2,7 @@ package jd.controlling.linkcrawler;
 
 import javax.swing.ImageIcon;
 
+import jd.controlling.captcha.CaptchaController;
 import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
 import jd.http.Browser;
 import jd.plugins.CryptedLink;
@@ -10,6 +11,7 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 
+import org.jdownloader.controlling.filter.LinkgrabberFilterRule;
 import org.jdownloader.gui.views.linkgrabber.addlinksdialog.CrawlerJob;
 
 public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>, CheckableLink {
@@ -105,9 +107,10 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
         return cLink;
     }
 
-    private CryptedLink cLink      = null;
-    private String      url;
-    private CrawledLink parentLink = null;
+    private CryptedLink           cLink      = null;
+    private String                url;
+    private CrawledLink           parentLink = null;
+    private LinkgrabberFilterRule matchingFilter;
 
     public CrawledLink(DownloadLink dlLink) {
         this.dlLink = dlLink;
@@ -211,6 +214,23 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
 
     public void setParentLink(CrawledLink parent) {
         this.parentLink = parent;
+    }
+
+    public void setMatchingFilter(LinkgrabberFilterRule matchedFilter) {
+
+        this.matchingFilter = matchedFilter;
+    }
+
+    /**
+     * If this Link got filtered by {@link CaptchaController}, you can get the
+     * matching deny rule here.<br>
+     * may return org.jdownloader.controlling.filter.LinkFilterController.
+     * VIRTUAL_DENY_RULE <br>
+     * 
+     * @return
+     */
+    public LinkgrabberFilterRule getMatchingFilter() {
+        return matchingFilter;
     }
 
 }

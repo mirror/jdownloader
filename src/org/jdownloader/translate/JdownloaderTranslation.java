@@ -728,4 +728,7 @@ public interface JdownloaderTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Really delete all selected rules??" })
     String RemoveAction_actionPerformed_rly_msg();
+
+    @Default(lngs = { "en" }, values = { "Drop ALL links - Whitelist" })
+    String LinkFilterController_deny_all_();
 }

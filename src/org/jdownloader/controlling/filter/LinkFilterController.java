@@ -13,9 +13,14 @@ import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Files;
 import org.appwork.utils.event.predefined.changeevent.ChangeEvent;
 import org.appwork.utils.event.predefined.changeevent.ChangeEventSender;
+import org.jdownloader.translate._JDT;
 
 public class LinkFilterController implements LinkCrawlerFilter {
-    private static final LinkFilterController INSTANCE = new LinkFilterController();
+    private static final LinkFilterController INSTANCE          = new LinkFilterController();
+    public static final LinkgrabberFilterRule VIRTUAL_DENY_RULE = new LinkgrabberFilterRule();
+    static {
+        VIRTUAL_DENY_RULE.setName(_JDT._.LinkFilterController_deny_all_());
+    }
 
     /**
      * get the only existing instance of LinkFilterController. This is a
@@ -143,7 +148,7 @@ public class LinkFilterController implements LinkCrawlerFilter {
     public boolean dropByUrl(CrawledLink link) {
         if (!config.isLinkFilterEnabled()) return false;
         boolean matches = false;
-
+        LinkgrabberFilterRule matchingFilter = null;
         if (denyUrlFilter.size() > 0) {
 
             for (LinkgrabberFilterRuleWrapper lgr : denyUrlFilter) {
@@ -154,6 +159,7 @@ public class LinkFilterController implements LinkCrawlerFilter {
                 }
                 if (!checkSource(lgr, link)) continue;
                 matches = true;
+                matchingFilter = lgr.getRule();
 
             }
 
@@ -163,6 +169,7 @@ public class LinkFilterController implements LinkCrawlerFilter {
                 // no deny filter, but accept filter. does not make any sense.
                 // add a virtual deny all filter if we have accept filters
                 matches = true;
+                matchingFilter = VIRTUAL_DENY_RULE;
             }
         }
         // no deny filter match. We can return here
@@ -196,6 +203,7 @@ public class LinkFilterController implements LinkCrawlerFilter {
             return false;
         }
         // System.out.println("true " + link);
+        link.setMatchingFilter(matchingFilter);
         return true;
     }
 
@@ -203,7 +211,7 @@ public class LinkFilterController implements LinkCrawlerFilter {
         if (!config.isLinkFilterEnabled()) return false;
         DownloadLink dlink = link.getDownloadLink();
         boolean matches = false;
-
+        LinkgrabberFilterRule matchedFilter = null;
         if (dlink == null) { throw new WTFException(); }
         if (denyFileFilter.size() > 0 || denyUrlFilter.size() > 0) {
 
@@ -219,21 +227,23 @@ public class LinkFilterController implements LinkCrawlerFilter {
                 if (!checkFileSize(lgr, link)) continue;
                 if (!checkFileType(lgr, link)) continue;
                 matches = true;
+                matchedFilter = lgr.getRule();
                 break;
             }
+            if (!matches) {
+                for (LinkgrabberFilterRuleWrapper lgr : denyUrlFilter) {
+                    try {
+                        if (!checkHoster(lgr, link)) continue;
+                    } catch (NoDownloadLinkException e) {
+                        throw new WTFException();
 
-            for (LinkgrabberFilterRuleWrapper lgr : denyUrlFilter) {
-                try {
-                    if (!checkHoster(lgr, link)) continue;
-                } catch (NoDownloadLinkException e) {
-                    throw new WTFException();
+                    }
+                    if (!checkSource(lgr, link)) continue;
+                    matches = true;
+                    matchedFilter = lgr.getRule();
 
                 }
-                if (!checkSource(lgr, link)) continue;
-                matches = true;
-
             }
-
         } else {
 
             // no deny filter...add a virtual MATCH ALL one
@@ -241,6 +251,7 @@ public class LinkFilterController implements LinkCrawlerFilter {
                 // no deny filter, but accept filter. does not make any sense.
                 // add a virtual deny all filter if we have accept filters
                 matches = true;
+                matchedFilter = VIRTUAL_DENY_RULE;
             }
         }
         if (!matches) return false;
@@ -273,6 +284,8 @@ public class LinkFilterController implements LinkCrawlerFilter {
             System.out.println(1);
             return false;
         }
+
+        link.setMatchingFilter(matchedFilter);
         return true;
     }
 

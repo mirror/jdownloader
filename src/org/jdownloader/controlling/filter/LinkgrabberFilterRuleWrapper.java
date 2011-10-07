@@ -42,9 +42,14 @@ public class LinkgrabberFilterRuleWrapper {
     private CompiledRegexFilter    sourceRule;
     private FilesizeFilter         filesizeRule;
     private CompiledFiletypeFilter filetypeFilter;
+    private LinkgrabberFilterRule  rule;
+
+    public LinkgrabberFilterRule getRule() {
+        return rule;
+    }
 
     public LinkgrabberFilterRuleWrapper(LinkgrabberFilterRule rule) {
-
+        this.rule = rule;
         if (rule.getFilenameFilter().isEnabled()) {
             fileNameRule = new CompiledRegexFilter(rule.getFilenameFilter());
             requiresLinkcheck = true;
