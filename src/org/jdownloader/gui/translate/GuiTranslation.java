@@ -2809,4 +2809,10 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Enable/Disable global Linkgrabber Filter (see Settings)" })
     String LinkGrabberSidebar_LinkGrabberSidebar_globfilter_tt();
 
+    @Default(lngs = { "en" }, values = { "Remove selected Hosters" })
+    String DropHosterAction_DropHosterAction_();
+
+    @Default(lngs = { "en" }, values = { "Keep only selected Hosters" })
+    String KeepOnlyAction_KeepOnlyAction_();
+
 }

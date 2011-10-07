@@ -6,6 +6,8 @@ import java.util.LinkedHashMap;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import javax.swing.JPopupMenu;
+
 import jd.controlling.FavIconController;
 import jd.controlling.IOEQ;
 import jd.controlling.linkcollector.LinkCollector;
@@ -15,8 +17,11 @@ import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
 
 import org.appwork.scheduler.DelayedRunnable;
+import org.appwork.swing.exttable.ExtColumn;
 import org.appwork.utils.event.queue.QueueAction;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTable;
+import org.jdownloader.gui.views.linkgrabber.sidebar.actions.DropHosterAction;
+import org.jdownloader.gui.views.linkgrabber.sidebar.actions.KeepOnlyAction;
 
 public class QuickFilterHosterTable extends FilterTable<CrawledPackage, CrawledLink> implements LinkCollectorListener {
 
@@ -43,6 +48,18 @@ public class QuickFilterHosterTable extends FilterTable<CrawledPackage, CrawledL
             }
 
         };
+    }
+
+    @Override
+    protected JPopupMenu onContextMenu(JPopupMenu popup, Filter<CrawledPackage, CrawledLink> contextObject, ArrayList<Filter<CrawledPackage, CrawledLink>> selection, ExtColumn<Filter<CrawledPackage, CrawledLink>> column) {
+        ArrayList<String> ret = new ArrayList<String>();
+        for (Filter<CrawledPackage, CrawledLink> f : selection) {
+            ret.add(f.getName());
+        }
+        popup.add(new DropHosterAction(ret).toContextMenuAction());
+        popup.add(new KeepOnlyAction(ret).toContextMenuAction());
+
+        return popup;
     }
 
     public void onLinkCollectorEvent(LinkCollectorEvent event) {

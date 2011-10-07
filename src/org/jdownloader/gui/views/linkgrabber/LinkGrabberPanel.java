@@ -1,13 +1,11 @@
 package org.jdownloader.gui.views.linkgrabber;
 
 import java.awt.Color;
-import java.awt.LayoutManager;
 
 import javax.swing.Box;
 import javax.swing.JButton;
 import javax.swing.JScrollPane;
 import javax.swing.ScrollPaneConstants;
-import javax.swing.plaf.ScrollPaneUI;
 
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcollector.LinkCollectorEvent;
@@ -50,9 +48,9 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
             // table.getTableHeader().getPreferredSize().getHeight();
             // }
         };
-        ScrollPaneUI udi = sp.getUI();
+        // ScrollPaneUI udi = sp.getUI();
         int c = LookAndFeelController.getInstance().getLAFOptions().getPanelBackgroundColor();
-        LayoutManager lm = sp.getLayout();
+        // LayoutManager lm = sp.getLayout();
 
         if (c >= 0) {
             sp.setBackground(new Color(c));
@@ -61,7 +59,7 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
         sp.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
         sp.setColumnHeaderView(new LinkGrabberSideBarHeader(table));
         // sp.setColumnHeaderView(new LinkGrabberSideBarHeader(table));
-        add(sp, "width 220!");
+        add(sp, "width 240!");
         addLinks = new JButton(new AddLinksAction());
         confirmAll = new JButton(new ConfirmAllAction());
         clearAll = new JButton(new ClearAction());

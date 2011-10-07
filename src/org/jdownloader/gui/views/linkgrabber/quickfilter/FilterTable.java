@@ -4,13 +4,18 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.util.ArrayList;
 
+import javax.swing.JLabel;
 import javax.swing.ListSelectionModel;
 
 import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
 import jd.controlling.packagecontroller.AbstractPackageNode;
 import jd.gui.swing.laf.LookAndFeelController;
 
+import org.appwork.swing.exttable.AlternateHighlighter;
+import org.appwork.swing.exttable.ExtColumn;
+import org.appwork.swing.exttable.ExtComponentRowHighlighter;
 import org.appwork.swing.exttable.ExtTable;
+import org.appwork.utils.ColorUtils;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTableModelFilter;
 
 public class FilterTable<E extends AbstractPackageNode<V, E>, V extends AbstractPackageChildrenNode<E>> extends ExtTable<Filter<E, V>> implements PackageControllerTableModelFilter<E, V> {
@@ -28,7 +33,7 @@ public class FilterTable<E extends AbstractPackageNode<V, E>, V extends Abstract
         this.setShowVerticalLines(false);
         this.setShowGrid(false);
         this.setShowHorizontalLines(false);
-        this.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        this.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
         this.setRowHeight(22);
 
         int c = LookAndFeelController.getInstance().getLAFOptions().getPanelHeaderColor();
@@ -42,6 +47,18 @@ public class FilterTable<E extends AbstractPackageNode<V, E>, V extends Abstract
             f2 = getBackground();
         }
         this.setBackground(new Color(LookAndFeelController.getInstance().getLAFOptions().getPanelBackgroundColor()));
+
+        this.getExtTableModel().addExtComponentRowHighlighter(new ExtComponentRowHighlighter<Filter<E, V>>(f2, b2, null) {
+
+            @Override
+            public boolean accept(ExtColumn<Filter<E, V>> column, Filter<E, V> value, boolean selected, boolean focus, int row) {
+                return selected;
+            }
+
+        });
+
+        this.addRowHighlighter(new AlternateHighlighter(null, ColorUtils.getAlphaInstance(new JLabel().getForeground(), 6)));
+
         // this.addRowHighlighter(new SelectionHighlighter(null, b2));
         // this.getExtTableModel().addExtComponentRowHighlighter(new
         // ExtComponentRowHighlighter<T>(f2, b2, null) {

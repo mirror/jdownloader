@@ -24,7 +24,6 @@ import javax.swing.JFileChooser;
 import javax.swing.ListCellRenderer;
 import javax.swing.filechooser.FileFilter;
 
-import jd.gui.swing.dialog.CaptchaDialog;
 import jd.gui.swing.dialog.ClickPositionDialog;
 import jd.gui.swing.dialog.MultiSelectionDialog;
 import jd.nutils.JDFlags;
@@ -259,9 +258,14 @@ public class UserIO {
         }
     }
 
-    public String requestCaptchaDialog(final int flag, final String host, final File captchafile, final String suggestion, final String explain) throws DialogClosedException, DialogCanceledException {
-        return Dialog.getInstance().showDialog(new CaptchaDialog(flag | Dialog.LOGIC_COUNTDOWN, host, captchafile, suggestion, explain));
-    }
+    // not used any more
+    // public String requestCaptchaDialog(final int flag, final String host,
+    // final File captchafile, final String suggestion, final String explain)
+    // throws DialogClosedException, DialogCanceledException {
+    // // NewUIO.I().requestCaptchaDialog(host,captchafile)
+    // return Dialog.getInstance().showDialog(new CaptchaDialog(flag |
+    // Dialog.LOGIC_COUNTDOWN, host, captchafile, suggestion, explain));
+    // }
 
     public Point requestClickPositionDialog(final File imagefile, final String title, final String explain) {
         try {

@@ -1,6 +1,6 @@
 package jd.controlling.reconnect.plugins.liveheader;
 
-import org.jdownloader.gui.uiserio.UserIODefinition;
+import org.appwork.utils.swing.dialog.UserIODefinition;
 
 public interface DataCompareDialogInterface extends UserIODefinition {
 

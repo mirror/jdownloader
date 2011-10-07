@@ -6,6 +6,7 @@ import org.appwork.utils.swing.dialog.AbstractDialog;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
+import org.appwork.utils.swing.dialog.UserIODefinition;
 
 public class JDSwingUserIO implements UserIOInterface {
     private static final Dialog D = Dialog.I();

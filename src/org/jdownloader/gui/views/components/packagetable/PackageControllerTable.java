@@ -22,16 +22,16 @@ import org.jdownloader.gui.views.components.packagetable.PackageControllerTableM
 import org.jdownloader.gui.views.downloads.columns.FileColumn;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 
-public abstract class PackageControllerTable<E extends AbstractPackageNode<V, E>, V extends AbstractPackageChildrenNode<E>> extends BasicJDTable<AbstractNode> {
+public abstract class PackageControllerTable<ParentType extends AbstractPackageNode<ChildrenType, ParentType>, ChildrenType extends AbstractPackageChildrenNode<ParentType>> extends BasicJDTable<AbstractNode> {
 
     /**
      * 
      */
     private static final long                 serialVersionUID = 3880570615872972276L;
-    private PackageControllerTableModel<E, V> tableModel       = null;
+    private PackageControllerTableModel<ParentType, ChildrenType> tableModel       = null;
     private Color                             sortNotifyColor;
 
-    public PackageControllerTable(PackageControllerTableModel<E, V> pctm) {
+    public PackageControllerTable(PackageControllerTableModel<ParentType, ChildrenType> pctm) {
         super(pctm);
         tableModel = pctm;
         this.setShowVerticalLines(false);
@@ -41,7 +41,7 @@ public abstract class PackageControllerTable<E extends AbstractPackageNode<V, E>
         }
     }
 
-    public PackageControllerTableModel<E, V> getPackageControllerTableModel() {
+    public PackageControllerTableModel<ParentType, ChildrenType> getPackageControllerTableModel() {
         return tableModel;
     }
 
@@ -99,40 +99,40 @@ public abstract class PackageControllerTable<E extends AbstractPackageNode<V, E>
     }
 
     @SuppressWarnings("unchecked")
-    public ArrayList<E> getSelectedPackages() {
-        final ArrayList<E> ret = new ArrayList<E>();
+    public ArrayList<ParentType> getSelectedPackages() {
+        final ArrayList<ParentType> ret = new ArrayList<ParentType>();
         final int[] rows = this.getSelectedRows();
         for (final int row : rows) {
             final AbstractNode node = getExtTableModel().getObjectbyRow(row);
             if (node != null && node instanceof AbstractPackageNode<?, ?>) {
-                ret.add((E) node);
+                ret.add((ParentType) node);
             }
         }
         return ret;
     }
 
     @SuppressWarnings("unchecked")
-    public ArrayList<V> getSelectedChildren() {
-        final ArrayList<V> ret = new ArrayList<V>();
+    public ArrayList<ChildrenType> getSelectedChildren() {
+        final ArrayList<ChildrenType> ret = new ArrayList<ChildrenType>();
         final int[] rows = this.getSelectedRows();
         for (final int row : rows) {
             final AbstractNode node = getExtTableModel().getObjectbyRow(row);
             if (node != null && node instanceof AbstractPackageChildrenNode<?>) {
-                ret.add((V) node);
+                ret.add((ChildrenType) node);
             }
         }
         return ret;
     }
 
     @SuppressWarnings("unchecked")
-    protected ArrayList<V> getAllSelectedChildren(ArrayList<AbstractNode> selectedObjects) {
-        final ArrayList<V> links = new ArrayList<V>();
+    protected ArrayList<ChildrenType> getAllSelectedChildren(ArrayList<AbstractNode> selectedObjects) {
+        final ArrayList<ChildrenType> links = new ArrayList<ChildrenType>();
         for (final AbstractNode node : selectedObjects) {
             if (node instanceof AbstractPackageChildrenNode<?>) {
-                if (!links.contains(node)) links.add((V) node);
+                if (!links.contains(node)) links.add((ChildrenType) node);
             } else {
                 synchronized (node) {
-                    for (final V dl : ((E) node).getChildren()) {
+                    for (final ChildrenType dl : ((ParentType) node).getChildren()) {
                         if (!links.contains(dl)) {
                             links.add(dl);
                         }

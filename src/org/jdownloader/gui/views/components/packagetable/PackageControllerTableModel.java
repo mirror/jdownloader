@@ -25,9 +25,7 @@ public abstract class PackageControllerTableModel<E extends AbstractPackageNode<
     private static final long serialVersionUID = 1L;
 
     public static enum TOGGLEMODE {
-        CURRENT,
-        TOP,
-        BOTTOM
+        CURRENT, TOP, BOTTOM
     }
 
     private static final String                                SORT_ORIGINAL = "ORIGINAL";
@@ -58,7 +56,7 @@ public abstract class PackageControllerTableModel<E extends AbstractPackageNode<
                 };
             }
         };
-        asyncRecreate = new DelayedRunnable(queue, 300l, 1000l) {
+        asyncRecreate = new DelayedRunnable(queue, 50l, 1000l) {
             @Override
             public void delayedrun() {
                 final ArrayList<AbstractNode> newtableData = refreshSort(tableData);
