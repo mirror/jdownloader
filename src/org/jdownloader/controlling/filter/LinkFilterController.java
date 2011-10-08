@@ -2,6 +2,7 @@ package org.jdownloader.controlling.filter;
 
 import java.util.ArrayList;
 
+import jd.controlling.IOEQ;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.LinkCrawlerFilter;
 import jd.plugins.DownloadLink;
@@ -38,6 +39,7 @@ public class LinkFilterController implements LinkCrawlerFilter {
     private ArrayList<LinkgrabberFilterRuleWrapper> acceptFileFilter;
     private ArrayList<LinkgrabberFilterRuleWrapper> denyUrlFilter;
     private ArrayList<LinkgrabberFilterRuleWrapper> acceptUrlFilter;
+    private ArrayList<LinkgrabberFilterRuleWrapper> quickFilter;
     private ChangeEventSender                       eventSender;
 
     /**
@@ -64,60 +66,82 @@ public class LinkFilterController implements LinkCrawlerFilter {
             }
         });
 
-        update();
+        updateInternal();
     }
 
     public ChangeEventSender getEventSender() {
         return eventSender;
     }
 
-    public void update() {
-        synchronized (this) {
+    private void updateInternal() {
+        // url filter only require the urls, and thus can be done
+        // brefore
+        // linkcheck
+        ArrayList<LinkgrabberFilterRuleWrapper> newdenyUrlFilter = new ArrayList<LinkgrabberFilterRuleWrapper>();
+        ArrayList<LinkgrabberFilterRuleWrapper> newacceptUrlFilter = new ArrayList<LinkgrabberFilterRuleWrapper>();
 
-            // url filter only require the urls, and thus can be done brefore
-            // linkcheck
-            ArrayList<LinkgrabberFilterRuleWrapper> newdenyUrlFilter = new ArrayList<LinkgrabberFilterRuleWrapper>();
-            ArrayList<LinkgrabberFilterRuleWrapper> newacceptUrlFilter = new ArrayList<LinkgrabberFilterRuleWrapper>();
+        // FIlefilters require the full file information available after
+        // linkcheck
+        ArrayList<LinkgrabberFilterRuleWrapper> newdenyFileFilter = new ArrayList<LinkgrabberFilterRuleWrapper>();
+        ArrayList<LinkgrabberFilterRuleWrapper> newacceptFileFilter = new ArrayList<LinkgrabberFilterRuleWrapper>();
 
-            // FIlefilters require the full file information available after
-            // linkcheck
-            ArrayList<LinkgrabberFilterRuleWrapper> newdenyFileFilter = new ArrayList<LinkgrabberFilterRuleWrapper>();
-            ArrayList<LinkgrabberFilterRuleWrapper> newacceptFileFilter = new ArrayList<LinkgrabberFilterRuleWrapper>();
-            for (LinkgrabberFilterRule lgr : filter) {
-                if (lgr.isEnabled() && lgr.isValid()) {
+        ArrayList<LinkgrabberFilterRuleWrapper> newquickFilter = new ArrayList<LinkgrabberFilterRuleWrapper>();
 
-                    LinkgrabberFilterRuleWrapper compiled = lgr.compile();
-                    if (lgr.isAccept()) {
-                        if (!compiled.isRequiresLinkcheck()) {
-                            newacceptUrlFilter.add(compiled);
-                        } else {
-                            newacceptFileFilter.add(compiled);
-                        }
+        for (LinkgrabberFilterRule lgr : filter) {
+            if (lgr.isQuickEnabled() && lgr.isValid()) {
+                newquickFilter.add(lgr.compile());
+            }
+            if (lgr.isEnabled() && lgr.isValid()) {
+
+                LinkgrabberFilterRuleWrapper compiled = lgr.compile();
+                if (lgr.isAccept()) {
+                    if (!compiled.isRequiresLinkcheck()) {
+                        newacceptUrlFilter.add(compiled);
                     } else {
-                        if (!compiled.isRequiresLinkcheck()) {
-                            newdenyUrlFilter.add(compiled);
-                        } else {
-                            newdenyFileFilter.add(compiled);
-                        }
+                        newacceptFileFilter.add(compiled);
+                    }
+                } else {
+                    if (!compiled.isRequiresLinkcheck()) {
+                        newdenyUrlFilter.add(compiled);
+                    } else {
+                        newdenyFileFilter.add(compiled);
                     }
                 }
             }
-            newdenyUrlFilter.trimToSize();
-            denyUrlFilter = newdenyUrlFilter;
-            newacceptUrlFilter.trimToSize();
-            acceptUrlFilter = newacceptUrlFilter;
-
-            newdenyFileFilter.trimToSize();
-            denyFileFilter = newdenyFileFilter;
-            newacceptFileFilter.trimToSize();
-            acceptFileFilter = newacceptFileFilter;
         }
+        newdenyUrlFilter.trimToSize();
+        denyUrlFilter = newdenyUrlFilter;
+        newacceptUrlFilter.trimToSize();
+        acceptUrlFilter = newacceptUrlFilter;
+
+        newdenyFileFilter.trimToSize();
+        denyFileFilter = newdenyFileFilter;
+        newacceptFileFilter.trimToSize();
+        acceptFileFilter = newacceptFileFilter;
+
+        newquickFilter.trimToSize();
+        quickFilter = newquickFilter;
+        getEventSender().fireEvent(new ChangeEvent(LinkFilterController.this));
+    }
+
+    public void update() {
+        IOEQ.add(new Runnable() {
+
+            public void run() {
+                updateInternal();
+            }
+
+        }, true);
     }
 
     public ArrayList<LinkgrabberFilterRule> list() {
         synchronized (this) {
             return new ArrayList<LinkgrabberFilterRule>(filter);
         }
+    }
+
+    public ArrayList<LinkgrabberFilterRuleWrapper> listQuickFilter() {
+        return quickFilter;
     }
 
     public void addAll(ArrayList<LinkgrabberFilterRule> all) {
@@ -127,7 +151,6 @@ public class LinkFilterController implements LinkCrawlerFilter {
             config.setFilterList(filter);
             update();
         }
-        getEventSender().fireEvent(new ChangeEvent(this));
     }
 
     public void add(LinkgrabberFilterRule linkFilter) {
@@ -137,8 +160,6 @@ public class LinkFilterController implements LinkCrawlerFilter {
             config.setFilterList(filter);
             update();
         }
-        getEventSender().fireEvent(new ChangeEvent(this));
-
     }
 
     public void remove(LinkgrabberFilterRule lf) {
@@ -148,7 +169,6 @@ public class LinkFilterController implements LinkCrawlerFilter {
             config.setFilterList(filter);
             update();
         }
-        getEventSender().fireEvent(new ChangeEvent(this));
     }
 
     public boolean dropByUrl(CrawledLink link) {

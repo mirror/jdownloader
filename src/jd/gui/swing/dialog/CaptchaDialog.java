@@ -39,6 +39,7 @@ import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 
+import jd.Main;
 import jd.gui.swing.laf.LAFOptions;
 import jd.gui.swing.laf.LookAndFeelController;
 import net.miginfocom.swing.MigLayout;
@@ -96,7 +97,8 @@ public class CaptchaDialog extends AbstractDialog<String> implements ActionListe
         CaptchaDialog cp;
         try {
             Application.setApplication(".jd_home");
-            cp = new CaptchaDialog(Dialog.LOGIC_COUNTDOWN, DialogType.HOSTER, DomainInfo.getInstance("filesonic.com"), IconIO.getImageIcon(new File("C:\\Users\\Thomas\\.jd_home\\captchas\\share-links.biz_05.07.2011_15.09.19.801.jpg").toURI().toURL()), null, "Enter both words...");
+            Main.statics();
+            cp = new CaptchaDialog(Dialog.LOGIC_COUNTDOWN, DialogType.HOSTER, DomainInfo.getInstance("wupload.com"), IconIO.getImageIcon(new File("/home/daniel/.jd_home/captchas/share-online.biz_17.08.2011_13.49.51.137.jpg").toURI().toURL()), null, "Enter both words...");
             cp.setFilename("My File.rar");
             cp.setFilesize(21874638l);
             cp.setMethodName("filesonic.com");

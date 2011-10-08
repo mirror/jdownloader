@@ -1803,6 +1803,9 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Enable/Disable" })
     String settings_linkgrabber_filter_columns_enabled();
 
+    @Default(lngs = { "en" }, values = { "QuickFilter Enable/Disable" })
+    String settings_linkgrabber_filter_columns_quick_enabled();
+
     @Default(lngs = { "en" }, values = { "Filter" })
     String settings_linkgrabber_filter_columns_regex();
 
@@ -2175,6 +2178,9 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "File Type Filter" })
     String LinkGrabberSidebar_LinkGrabberSidebar_extensionfilter();
+
+    @Default(lngs = { "en" }, values = { "Customized Filter" })
+    String LinkGrabberSidebar_LinkGrabberSidebar_customfilter();
 
     @Default(lngs = { "en" }, values = { "Quick Settings" })
     String LinkGrabberSidebar_LinkGrabberSidebar_settings();

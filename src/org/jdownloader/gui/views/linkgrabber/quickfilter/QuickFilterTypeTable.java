@@ -154,7 +154,7 @@ public class QuickFilterTypeTable extends FilterTable<CrawledPackage, CrawledLin
             /* filter is enabled, add listener and run again */
             LinkCollector.getInstance().addListener(this);
             table2Filter.getPackageControllerTableModel().addFilter(this);
-            delayedRefresh.delayedrun();
+            updateQuickFilerTableData();
         } else {
             enabled = false;
             /* filter disabled, remove listener */

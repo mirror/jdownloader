@@ -24,6 +24,7 @@ public interface LinkFilterSettings extends ConfigInterface {
     public static final BooleanKeyHandler                  LG_QUICKFILTER_TYPE_VISIBLE   = SH.getKeyHandler("LinkgrabberFiletypeQuickfilterEnabled", BooleanKeyHandler.class);
 
     public static final BooleanKeyHandler                  LG_QUICKFILTER_HOSTER_VISIBLE = SH.getKeyHandler("LinkgrabberHosterQuickfilterEnabled", BooleanKeyHandler.class);
+    public static final BooleanKeyHandler                  LG_QUICKFILTER_CUSTOM_VISIBLE = SH.getKeyHandler("LinkgrabberCustomQuickfilterEnabled", BooleanKeyHandler.class);
 
     @DefaultJsonObject("[]")
     @AboutConfig
@@ -51,6 +52,11 @@ public interface LinkFilterSettings extends ConfigInterface {
     boolean isLinkgrabberFiletypeQuickfilterEnabled();
 
     void setLinkgrabberFiletypeQuickfilterEnabled(boolean b);
+
+    @DefaultBooleanValue(true)
+    boolean isLinkgrabberCustomQuickfilterEnabled();
+
+    void setLinkgrabberCustomQuickfilterEnabled(boolean b);
 
     @DefaultBooleanValue(false)
     boolean isLinkgrabberAddAtTop();
