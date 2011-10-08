@@ -89,7 +89,6 @@ public class SrBoxCom extends PluginForDecrypt {
 
         // We look if the link in the array is supported by a decrypter plug-in
         ArrayList<DecryptPluginWrapper> AllDecrypter = new ArrayList<DecryptPluginWrapper>(DecryptPluginWrapper.getDecryptWrapper());
-        iLink = 0;
         for (int iIndex = 0; iIndex < TabTemp.length; iIndex++) {
             strLink = TabTemp[iIndex].toLowerCase();
             for (DecryptPluginWrapper wrapper : AllDecrypter) {
