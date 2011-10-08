@@ -1,15 +1,19 @@
 package jd.controlling.captcha;
 
 import java.io.File;
+import java.net.MalformedURLException;
 
 import jd.controlling.IOPermission;
 import jd.controlling.IOPermission.CAPTCHA;
 import jd.controlling.UniqueID;
 import jd.gui.swing.dialog.CaptchaDialog;
 import jd.gui.swing.dialog.CaptchaDialogInterface;
+import jd.gui.swing.dialog.CaptchaDialogInterface.DialogType;
+import jd.plugins.PluginForHost;
 
 import org.appwork.storage.StorageException;
 import org.appwork.utils.event.queue.QueueAction;
+import org.appwork.utils.images.IconIO;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.ComboBoxDialog;
@@ -97,7 +101,15 @@ public class CaptchaDialogQueueEntry extends QueueAction<String, RuntimeExceptio
             if (CaptchaSettings.CFG.isCountdownEnabled() && CaptchaSettings.CFG.getCountdown() > 0) {
                 f = f | Dialog.LOGIC_COUNTDOWN;
             }
-            this.dialog = new CaptchaDialog(f, getHost(), captchaController.getCaptchafile(), def, captchaController.getExplain());
+            if (captchaController.getPlugin() instanceof PluginForHost) {
+                this.dialog = new CaptchaDialog(f, DialogType.HOSTER, getHost(), IconIO.getImageIcon(captchaController.getCaptchafile().toURI().toURL()), def, captchaController.getExplain());
+                dialog.setFilename(((PluginForHost) captchaController.getPlugin()).getDownloadLink().getName());
+                dialog.setFilesize(((PluginForHost) captchaController.getPlugin()).getDownloadLink().getDownloadMax());
+                dialog.setMethodName(captchaController.getMethodname());
+            } else {
+                this.dialog = new CaptchaDialog(f, DialogType.CRAWLER, getHost(), IconIO.getImageIcon(captchaController.getCaptchafile().toURI().toURL()), def, captchaController.getExplain());
+                dialog.setMethodName(captchaController.getMethodname());
+            }
             dialog.setCountdownTime(CaptchaSettings.CFG.getCountdown());
             CaptchaDialogInterface answer = NewUIO.I().show(CaptchaDialogInterface.class, dialog);
             return answer.getCaptchaCode();
@@ -137,6 +149,8 @@ public class CaptchaDialogQueueEntry extends QueueAction<String, RuntimeExceptio
                     }
                 }
             }
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
         }
 
         return null;

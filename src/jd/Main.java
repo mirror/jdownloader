@@ -69,12 +69,7 @@ import org.jdownloader.update.JDUpdater;
  */
 public class Main {
     static {
-        // USe Jacksonmapper in this project
-        JSonStorage.setMapper(new JacksonMapper());
-        // do this call to keep the correct root in Application Cache
-        Application.setApplication(".jd_home");
-        Application.getRoot(Main.class);
-        NewUIO.setUserIO(new JDSwingUserIO());
+        statics();
     }
     private static Logger           LOG;
     private static boolean          instanceStarted            = false;
@@ -134,6 +129,15 @@ public class Main {
                 }
             }
         }
+    }
+
+    public static void statics() {
+        // USe Jacksonmapper in this project
+        JSonStorage.setMapper(new JacksonMapper());
+        // do this call to keep the correct root in Application Cache
+        Application.setApplication(".jd_home");
+        Application.getRoot(Main.class);
+        NewUIO.setUserIO(new JDSwingUserIO());
     }
 
     public static boolean isInitComplete() {

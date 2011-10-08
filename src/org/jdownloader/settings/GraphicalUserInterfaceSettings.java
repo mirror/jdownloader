@@ -1,6 +1,7 @@
 package org.jdownloader.settings;
 
 import org.appwork.storage.config.ConfigInterface;
+import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.AbstractValidator;
@@ -9,10 +10,19 @@ import org.appwork.storage.config.annotations.DefaultIntValue;
 import org.appwork.storage.config.annotations.DefaultStringValue;
 import org.appwork.storage.config.annotations.Description;
 import org.appwork.storage.config.annotations.RequiresRestart;
+import org.appwork.storage.config.annotations.SpinnerValidator;
 import org.appwork.storage.config.annotations.ValidatorFactory;
+import org.appwork.storage.config.handler.IntegerKeyHandler;
+import org.appwork.storage.config.handler.StorageHandler;
 import org.appwork.utils.Application;
 
 public interface GraphicalUserInterfaceSettings extends ConfigInterface {
+
+    public static final GraphicalUserInterfaceSettings                 CFG           = JsonConfig.create(GraphicalUserInterfaceSettings.class);
+    @SuppressWarnings("unchecked")
+    public static final StorageHandler<GraphicalUserInterfaceSettings> SH            = (StorageHandler<GraphicalUserInterfaceSettings>) CFG.getStorageHandler();
+    public static final IntegerKeyHandler                              CAPTCHA_SCALE = SH.getKeyHandler("CaptchaScaleFactor", IntegerKeyHandler.class);
+
     void setActiveConfigPanel(String name);
 
     String getActiveConfigPanel();
@@ -134,6 +144,14 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     int getFontScaleFactor();
 
     void setFontScaleFactor(int b);
+
+    @AboutConfig
+    @Description("Captcha Dialog Image scale Faktor in %")
+    @DefaultIntValue(100)
+    @SpinnerValidator(min = 50, max = 500, step = 10)
+    int getCaptchaScaleFactor();
+
+    void setCaptchaScaleFactor(int b);
 
     @AboutConfig
     @Description("Font to be used. Default value is default.")

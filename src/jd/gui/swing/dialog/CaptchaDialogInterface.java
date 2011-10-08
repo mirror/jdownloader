@@ -1,9 +1,29 @@
 package jd.gui.swing.dialog;
 
+import javax.swing.ImageIcon;
+
 import org.appwork.utils.swing.dialog.UserIODefinition;
+import org.jdownloader.DomainInfo;
 
 public interface CaptchaDialogInterface extends UserIODefinition {
+    public static enum DialogType {
+        CRAWLER, HOSTER, OTHER;
+    }
 
-    String getCaptchaCode();
+    public String getFilename();
+
+    public long getFilesize();
+
+    public String getCaptchaCode();
+
+    public DomainInfo getDomainInfo();
+
+    public DialogType getType();
+
+    public ImageIcon getImage();
+
+    public String getDefaultValue();
+
+    public String getHelpText();
 
 }

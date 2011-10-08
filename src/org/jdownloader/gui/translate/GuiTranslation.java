@@ -633,8 +633,8 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Yes" })
     String gui_btn_yes();
 
-    @Default(lngs = { "en" }, values = { "Please enter..." })
-    String gui_captchaWindow_askForInput();
+    @Default(lngs = { "en" }, values = { "Enter Captcha to continue!" })
+    String gui_captchaWindow_askForInput(String hoster);
 
     @Default(lngs = { "en" }, values = { "DefaultProxy" })
     String gui_column_defaultproxy();
@@ -2814,5 +2814,56 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Keep only selected Hosters" })
     String KeepOnlyAction_KeepOnlyAction_();
+
+    @Default(lngs = { "en" }, values = { "Hate Captchas? Click here!" })
+    String CaptchaDialog_getDefaultButtonPanel_premium();
+
+    @Default(lngs = { "en" }, values = { "File '%s1'(%s2) from %s3" })
+    String CaptchaDialog_layoutDialogContent_header(String filename, String formatBytes, String hoster);
+
+    @Default(lngs = { "en" }, values = { "File '%s1' from %s3" })
+    String CaptchaDialog_layoutDialogContent_header2(String filename, String hoster);
+
+    @Default(lngs = { "en" }, values = { "Avoid %s1 Captchas" })
+    String PremiumInfoDialog_PremiumInfoDialog_(String tld);
+
+    @Default(lngs = { "en" }, values = { "JDownloader is able to auto recognize most of the Captchas out there.\r\nHowever, %s1 unfortunately uses a Captcha Type which cannot be recognized.\r\nTo download without interruptions, we recommend to use %s1's Premium Mode." })
+    String PremiumInfoDialog_layoutDialogContent_explain(String name);
+
+    @Default(lngs = { "en" }, values = { "Unlimited Downloadspeed - use your full Internet Bandwidth!" })
+    String PremiumFeature_speed_();
+
+    @Default(lngs = { "en" }, values = { "Unlimited Traffic - Download as much as you want." })
+    String PremiumFeature_bandwidth_();
+
+    @Default(lngs = { "en" }, values = { "Download files in parallel" })
+    String PremiumFeature_parallel_();
+
+    @Default(lngs = { "en" }, values = { "Resume stopped or broken Downloads" })
+    String PremiumFeature_resume_();
+
+    @Default(lngs = { "en" }, values = { "Boost Downloadspeed with Chunkload - Use several connections per file" })
+    String PremiumFeature_chunkload_();
+
+    @Default(lngs = { "en" }, values = { "Besides avoiding annoying Captchas, there are further benefits of using Premium:" })
+    String PremiumInfoDialog_layoutDialogContent_advantages_header();
+
+    @Default(lngs = { "en" }, values = { "No Waittime before or between Downloads" })
+    String PremiumFeature_noWaittime_();
+
+    @Default(lngs = { "en" }, values = { "Give it a try" })
+    String PremiumInfoDialog_layoutDialogContent_interested();
+
+    @Default(lngs = { "en" }, values = { "No Thanks" })
+    String literall_no_thanks();
+
+    @Default(lngs = { "en" }, values = { "1. Get a Premium Account" })
+    String BuyAndAddPremiumAccount_layoutDialogContent_get();
+
+    @Default(lngs = { "en" }, values = { "2. Enter your Logins" })
+    String BuyAndAddPremiumAccount_layoutDialogContent_enter();
+
+    @Default(lngs = { "en" }, values = { "Click here to get an Premium Account" })
+    String OpenURLAction_OpenURLAction_();
 
 }

@@ -6,6 +6,8 @@ import javax.swing.SpinnerNumberModel;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
+import org.appwork.storage.config.handler.IntegerKeyHandler;
+import org.appwork.storage.config.swing.models.ConfigIntSpinnerModel;
 import org.appwork.swing.components.ExtSpinner;
 
 public class Spinner extends ExtSpinner implements SettingsComponent {
@@ -36,6 +38,20 @@ public class Spinner extends ExtSpinner implements SettingsComponent {
             }
         });
 
+    }
+
+    public Spinner(IntegerKeyHandler cfg) {
+        super(new ConfigIntSpinnerModel(cfg));
+        setEditor(new JSpinner.NumberEditor(this, "#"));
+        eventSender = new StateUpdateEventSender<Spinner>();
+        this.addChangeListener(new ChangeListener() {
+
+            public void stateChanged(ChangeEvent e) {
+                if (!setting) {
+                    eventSender.fireEvent(new StateUpdateEvent<Spinner>(Spinner.this));
+                }
+            }
+        });
     }
 
     @Override

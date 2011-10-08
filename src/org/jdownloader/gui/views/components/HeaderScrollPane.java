@@ -10,9 +10,28 @@ import javax.swing.JScrollPane;
 
 import jd.gui.swing.laf.LookAndFeelController;
 
+import org.appwork.app.gui.BasicGui;
+import org.jdownloader.gui.views.linkgrabber.LinkGrabberPanel;
+
 public class HeaderScrollPane extends JScrollPane {
     private Color headerColor;
     private Color headerlineColor;
+
+    public static void main(String[] args) {
+        LookAndFeelController.getInstance().setUIManager();
+        new BasicGui("TEst") {
+
+            @Override
+            protected void requestExit() {
+            }
+
+            @Override
+            protected void layoutPanel() {
+
+                getFrame().add(new LinkGrabberPanel());
+            }
+        };
+    }
 
     public HeaderScrollPane(JComponent sidebar) {
         super(sidebar);

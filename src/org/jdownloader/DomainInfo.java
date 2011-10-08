@@ -8,6 +8,9 @@ import java.awt.GraphicsDevice;
 import java.awt.GraphicsEnvironment;
 import java.awt.Transparency;
 import java.awt.image.BufferedImage;
+import java.io.File;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.util.HashMap;
 
 import javax.swing.ImageIcon;
@@ -15,9 +18,12 @@ import javax.swing.ImageIcon;
 import jd.controlling.FavIconController;
 import jd.controlling.FavIconRequestor;
 
+import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.MinTimeWeakReference;
+import org.appwork.utils.Application;
 import org.appwork.utils.images.IconIO;
 import org.appwork.utils.images.Interpolation;
+import org.jdownloader.images.NewTheme;
 
 public class DomainInfo implements FavIconRequestor {
     private static final long CACHE_TIMEOUT = 30000;
@@ -131,4 +137,49 @@ public class DomainInfo implements FavIconRequestor {
         }
     }
 
+    public AffiliateSettings getAffiliateSettings() {
+        URL url = Application.getRessourceURL("cfg/aff." + getTld() + ".json");
+        if (url != null && url.getProtocol().equals("file")) {
+            try {
+                File path = new File(new File(url.toURI()).getParentFile(), "aff." + getTld());
+                return JsonConfig.create(path, AffiliateSettings.class);
+            } catch (URISyntaxException e) {
+                return JsonConfig.create(AffiliateSettings.class);
+            }
+        } else {
+            return JsonConfig.create(AffiliateSettings.class);
+        }
+    }
+
+    public String getName() {
+        String name = getAffiliateSettings().getName();
+        if (name == null) return getTld();
+        return name;
+    }
+
+    /**
+     * returns a high quality icon for this domain. most domains do not support
+     * this and will return null; the icon is NOT cached. use with care
+     * 
+     * @param i
+     * @return
+     */
+    public ImageIcon getIcon(int size) {
+
+        ImageIcon ret = null;
+
+        if (NewTheme.I().hasIcon("fav/" + getTld())) {
+            ret = NewTheme.I().getIcon("fav/" + getTld(), -1);
+        }
+        ;
+        if (ret != null && ret.getIconHeight() >= size && ret.getIconWidth() >= size) {
+
+        return new ImageIcon(IconIO.getScaledInstance((BufferedImage) ret.getImage(), size, size));
+
+        }
+        if (!hosterIconRequested) getFavIcon();
+        ret = FavIconController.getFavIcon(getTld(), null, true);
+        if (ret.getIconHeight() >= size && ret.getIconWidth() >= size) { return new ImageIcon(IconIO.getScaledInstance((BufferedImage) ret.getImage(), size, size)); }
+        return null;
+    }
 }

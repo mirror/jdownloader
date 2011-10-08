@@ -3,6 +3,7 @@
 	<classpathentry excluding="jd/plugins/optional/neembuu/|jd/plugins/optional/remoteserv/|jd/plugins/optional/remoteserv/|org/jdownloader/extensions/langfileeditor/" kind="src" path="src"/>
 	<classpathentry kind="src" path="translations"/>
 	<classpathentry kind="src" path="themes"/>
+	<classpathentry kind="src" path="cfg"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER">
 		<attributes>
 			<attribute name="org.eclipse.jdt.launching.CLASSPATH_ATTR_LIBRARY_PATH_ENTRY" value="jd/ressourcen/libs/dbus"/>

@@ -1,34 +1,36 @@
 package org.jdownloader.gui.views.linkgrabber;
 
 import java.awt.Color;
+import java.awt.Graphics;
 
 import javax.swing.Box;
 
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledPackage;
 import jd.gui.swing.laf.LookAndFeelController;
 
 import org.appwork.app.gui.MigPanel;
+import org.appwork.storage.config.JsonConfig;
 import org.jdownloader.controlling.filter.LinkFilterSettings;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.gui.views.linkgrabber.quickfilter.FilterTable;
 import org.jdownloader.gui.views.linkgrabber.quickfilter.QuickFilterHosterTable;
-import org.jdownloader.gui.views.linkgrabber.quickfilter.QuickFilterTypeTable;
 
 public class LinkGrabberSidebar extends MigPanel {
 
-    /**
-     * 
-     */
-    private static final long      serialVersionUID = 5865888043646186886L;
-
+    private LinkGrabberTable       table;
     private MigPanel               quicksettings;
     private QuickFilterHosterTable hosterFilterTable;
-
+    private FilterTable            filetypeFilterTable;
+    private LinkFilterSettings     config;
     private Header                 hosterFilter;
     private Header                 filetypeFilter;
     private Header                 quickSettingsHeader;
-    private QuickFilterTypeTable   filetypeFilterTable;
 
     public LinkGrabberSidebar(LinkGrabberTable table) {
-        super("ins 0,wrap 1", "[grow,fill]", "[][][][][grow,fill][]");
+        super("ins 0,wrap 1,debug", "[grow,fill]", "[][][][][grow,fill][]");
+        config = JsonConfig.create(LinkFilterSettings.class);
+        this.table = table;
         int c = LookAndFeelController.getInstance().getLAFOptions().getPanelBackgroundColor();
 
         if (c >= 0) {
@@ -37,22 +39,19 @@ public class LinkGrabberSidebar extends MigPanel {
         }
 
         hosterFilterTable = new QuickFilterHosterTable(table);
-        hosterFilterTable.setVisible(LinkFilterSettings.LG_QUICKFILTER_HOSTER_VISIBLE.getValue());
-        filetypeFilterTable = new QuickFilterTypeTable(table);
-        filetypeFilterTable.setVisible(LinkFilterSettings.LG_QUICKFILTER_TYPE_VISIBLE.getValue());
+
+        hosterFilterTable.setVisible(config.isLinkgrabberHosterQuickfilterEnabled());
+        filetypeFilterTable = new FilterTable<CrawledPackage, CrawledLink>();
+        filetypeFilterTable.setVisible(config.isLinkgrabberFiletypeQuickfilterEnabled());
 
         quicksettings = new MigPanel("ins 0,wrap 1", "[grow,fill]", "[]0[]0[]");
+
         quicksettings.add(new Checkbox(LinkFilterSettings.ADD_AT_TOP, _GUI._.LinkGrabberSidebar_LinkGrabberSidebar_addtop(), _GUI._.LinkGrabberSidebar_LinkGrabberSidebar_addtop_tt()));
         quicksettings.add(new Checkbox(LinkFilterSettings.AUTO_CONFIRM_ENABLED, _GUI._.LinkGrabberSidebar_LinkGrabberSidebar_autoconfirm(), _GUI._.LinkGrabberSidebar_LinkGrabberSidebar_autoconfirm_tt()));
         quicksettings.add(new Checkbox(LinkFilterSettings.AUTO_START_ENABLED, _GUI._.LinkGrabberSidebar_LinkGrabberSidebar_autostart(), _GUI._.LinkGrabberSidebar_LinkGrabberSidebar_autostart_tt()));
 
         quicksettings.add(new Checkbox(LinkFilterSettings.LINK_FILTER_ENABLED, _GUI._.LinkGrabberSidebar_LinkGrabberSidebar_globfilter(), _GUI._.LinkGrabberSidebar_LinkGrabberSidebar_globfilter_tt()));
         hosterFilter = new Header(LinkFilterSettings.LG_QUICKFILTER_HOSTER_VISIBLE, _GUI._.LinkGrabberSidebar_LinkGrabberSidebar_hosterfilter()) {
-
-            /**
-             * 
-             */
-            private static final long serialVersionUID = 1488271787955778046L;
 
             @Override
             protected void setContentsVisible(boolean selected) {
@@ -63,11 +62,6 @@ public class LinkGrabberSidebar extends MigPanel {
 
         filetypeFilter = new Header(LinkFilterSettings.LG_QUICKFILTER_TYPE_VISIBLE, _GUI._.LinkGrabberSidebar_LinkGrabberSidebar_extensionfilter()) {
 
-            /**
-             * 
-             */
-            private static final long serialVersionUID = 2113097293812798851L;
-
             @Override
             protected void setContentsVisible(boolean selected) {
                 filetypeFilterTable.setVisible(selected);
@@ -76,11 +70,6 @@ public class LinkGrabberSidebar extends MigPanel {
         };
 
         quickSettingsHeader = new Header(LinkFilterSettings.LG_QUICKSETTINGS_VISIBLE, _GUI._.LinkGrabberSidebar_LinkGrabberSidebar_settings()) {
-
-            /**
-             * 
-             */
-            private static final long serialVersionUID = 5513219446538680052L;
 
             @Override
             protected void setContentsVisible(boolean selected) {
@@ -99,4 +88,28 @@ public class LinkGrabberSidebar extends MigPanel {
 
     }
 
+    // protected void updateVisibility() {
+    // new EDTRunner() {
+    //
+    // @Override
+    // protected void runInEDT() {
+    // quicksettings.setVisible(config.isLinkgrabberQuickSettingsVisible());
+    // filetypeFilterTable.setVisible(config.isLinkgrabberFiletypeQuickfilterEnabled());
+    // hosterFilterTable.setVisible(config.isLinkgrabberHosterQuickfilterEnabled());
+    //
+    // }
+    // };
+    // }
+
+    protected void paintComponent(Graphics g) {
+        super.paintComponent(g);
+    }
+
+    public void paint(Graphics g) {
+        super.paint(g);
+    }
+
+    protected void paintBorder(Graphics g) {
+        super.paintBorder(g);
+    }
 }

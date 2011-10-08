@@ -307,9 +307,10 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
         this.linkgrabberView = new LinkGrabberView();
 
         this.mainTabbedPane.addTab(new DownloadsView());
-
+        mainTabbedPane.addTab("TEST", new org.jdownloader.gui.views.linkgrabber.LinkGrabberPanel());
         this.mainTabbedPane.addTab(this.linkgrabberView);
         this.mainTabbedPane.addTab(LinkgrabberView.getInstance());
+
         if (JsonConfig.create(GraphicalUserInterfaceSettings.class).isConfigViewVisible()) {
             this.mainTabbedPane.addTab(ConfigurationView.getInstance());
         }
@@ -441,11 +442,16 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
     private void layoutComponents() {
         final JPanel contentPane = new JPanel(new MigLayout("ins 0, wrap 1", "[grow,fill]", "[grow,fill]0[shrink]"));
         contentPane.add(this.mainTabbedPane);
+        // contentPane.add(new
+        // org.jdownloader.gui.views.linkgrabber.LinkGrabberPanel());
+
+        // contentPane.add(tb);
         contentPane.add(this.statusBar, "dock SOUTH");
 
         this.mainFrame.setContentPane(contentPane);
         this.mainFrame.setJMenuBar(this.menuBar);
         this.mainFrame.add(this.toolBar, "dock NORTH");
+
     }
 
     // private void openSettings() {
