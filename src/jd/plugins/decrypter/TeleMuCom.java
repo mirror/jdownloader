@@ -19,6 +19,7 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 
 import jd.DecryptPluginWrapper;
+import jd.HostPluginWrapper;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -30,7 +31,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision: 10500 $", interfaceVersion = 2, names = { "telechargementmu.com" }, urls = { "http://[\\w\\.]*telechargementmu\\.com/[musique]*/([pop]*/|)[0-9]+-.*?\\.html" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision: 10500 $", interfaceVersion = 2, names = { "telechargementmu.com" }, urls = { "http://[\\w\\.]*telechargementmu\\.com/.*\\.html.*|http://feedproxy.google.com/~r/telechargementmu/.*\\.html.*" }, flags = { 0 })
 public class TeleMuCom extends PluginForDecrypt {
 
     public TeleMuCom(PluginWrapper wrapper) {
@@ -40,6 +41,10 @@ public class TeleMuCom extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
+        if (parameter.startsWith("http://feedproxy.google.com")) {
+            br.getPage(parameter);
+            parameter = br.getRedirectLocation();
+        }
         br.setFollowRedirects(false);
         // The site needs authentication to works (It seems that the browser
         // cookie does not work, then I add it here)
@@ -69,58 +74,68 @@ public class TeleMuCom extends PluginForDecrypt {
 
         String[] TabPassword = br.getRegex("</a>[ \t]+([A-Z0-9][^ ]*)[ \t]+<a href").getColumn(0);
 
-        String[] TabTemp = br.getRegex("<a href=\"http://protect-my-links\\.com/(.*?)\"").getColumn(0);
-        if (TabTemp != null) {
-            for (int iIndex = 0; iIndex < TabTemp.length; iIndex++) {
-                TabTemp[iIndex] = "http://protect-my-links.com/" + TabTemp[iIndex];
-            }
-        }
-        if (TabTemp == null || TabTemp.length == 0) {
-            TabTemp = br.getRegex("http://[\\w\\.]*jheberg\\.com/(.*?)\\.html").getColumn(0);
-            if (TabTemp == null || TabTemp.length == 0) {
-                return null;
-            } else {
-                for (int iIndex = 0; iIndex < TabTemp.length; iIndex++) {
-                    if (TabTemp[iIndex].indexOf("...") == -1)
-                        TabTemp[iIndex] = "http://www.jheberg.com/" + TabTemp[iIndex] + ".html";
-                    else
-                        TabTemp[iIndex] = null;
+        String[] TabTemp = br.getRegex("href=\"(.*?)\"").getColumn(0);
+        if (TabTemp == null || TabTemp.length == 0) return null;
+
+        String strLink = null;
+        String[] linksTemp = new String[TabTemp.length];
+        ArrayList<HostPluginWrapper> AllHosts = new ArrayList<HostPluginWrapper>(HostPluginWrapper.getHostWrapper());
+
+        // We look if the link in the array is supported by a hoster plug-in
+        int iLink = 0;
+        for (int iIndex = 0; iIndex < TabTemp.length; iIndex++) {
+            strLink = TabTemp[iIndex].toLowerCase();
+            for (HostPluginWrapper wrapper : AllHosts) {
+                if (wrapper.canHandle(strLink)) {
+                    linksTemp[iLink] = strLink;
+                    iLink++;
+                    break;
                 }
             }
         }
 
-        String strLink = null;
-        String[] linksTemp = new String[TabTemp.length];
-
-        ArrayList<DecryptPluginWrapper> AllDecrypters = new ArrayList<DecryptPluginWrapper>(DecryptPluginWrapper.getDecryptWrapper());
-
-        int iLink = 0;
+        // We look if the link in the array is supported by a decrypter plug-in
+        ArrayList<DecryptPluginWrapper> AllDecrypter = new ArrayList<DecryptPluginWrapper>(DecryptPluginWrapper.getDecryptWrapper());
         for (int iIndex = 0; iIndex < TabTemp.length; iIndex++) {
-            if (TabTemp[iIndex] != null) {
-                strLink = TabTemp[iIndex].toLowerCase();
-                for (DecryptPluginWrapper wrapper : AllDecrypters) {
-                    if (!this.getHost().equals(wrapper.getHost())) {
-                        if (wrapper.canHandle(strLink)) {
-                            linksTemp[iLink] = strLink;
-                            iLink++;
-                            break;
-                        }
+            strLink = TabTemp[iIndex].toLowerCase();
+            for (DecryptPluginWrapper wrapper : AllDecrypter) {
+                if (wrapper.compareTo(this.getWrapper()) != 0) {
+                    if (wrapper.canHandle(strLink)) {
+                        linksTemp[iLink] = strLink;
+                        iLink++;
+                        break;
                     }
                 }
             }
         }
 
+        // Creation of the array of link that is supported by all plug-in
         String[] links = new String[iLink];
         for (int iIndex = 0; iIndex < links.length; iIndex++) {
             links[iIndex] = linksTemp[iIndex];
         }
+
+        String[] linksCrypted = br.getRegex("\"(http://telechargementmu\\.com/engine/go\\.php\\?url=.*?)\"").getColumn(0);
+
+        // Number of picture
         int iImage = TabImage == null ? 0 : TabImage.length;
 
-        progress.setRange(links.length + iImage);
+        progress.setRange(links.length + iImage + linksCrypted.length);
 
+        // Added links
         for (String redirectlink : links) {
             decryptedLinks.add(createDownloadlink(redirectlink));
             progress.increase(1);
+        }
+
+        // Added crypted links
+        for (String redirectlink : linksCrypted) {
+            br.getPage(redirectlink);
+            String finallink = br.getRedirectLocation();
+            if (finallink != null) {
+                decryptedLinks.add(createDownloadlink(finallink));
+                progress.increase(1);
+            }
         }
 
         if (TabImage != null) {
