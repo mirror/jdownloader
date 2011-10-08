@@ -396,7 +396,10 @@ public class Usershare extends PluginForHost {
                 }
             }
         }
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null) {
+            if (br.containsHTML("(>You have to wait|>Download files instantly with a Premium)")) return AvailableStatus.TRUE;
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         parameter.setName(filename.trim());
         if (filesize != null) parameter.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
