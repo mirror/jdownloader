@@ -18,6 +18,7 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
+import jd.DecryptPluginWrapper;
 import jd.HostPluginWrapper;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -72,7 +73,7 @@ public class SrBoxCom extends PluginForDecrypt {
         String[] linksTemp = new String[TabTemp.length];
         ArrayList<HostPluginWrapper> AllHosts = new ArrayList<HostPluginWrapper>(HostPluginWrapper.getHostWrapper());
 
-        // We look if the link in the array is supported by a plug-in
+        // We look if the link in the array is supported by a hoster plug-in
         int iLink = 0;
         for (int iIndex = 0; iIndex < TabTemp.length; iIndex++) {
             strLink = TabTemp[iIndex].toLowerCase();
@@ -86,11 +87,29 @@ public class SrBoxCom extends PluginForDecrypt {
             }
         }
 
-        // Creation of the array of link that is supported by plug-in
+        // We look if the link in the array is supported by a decrypter plug-in
+        ArrayList<DecryptPluginWrapper> AllDecrypter = new ArrayList<DecryptPluginWrapper>(DecryptPluginWrapper.getDecryptWrapper());
+        iLink = 0;
+        for (int iIndex = 0; iIndex < TabTemp.length; iIndex++) {
+            strLink = TabTemp[iIndex].toLowerCase();
+            for (DecryptPluginWrapper wrapper : AllDecrypter) {
+                if (wrapper.compareTo(this.getWrapper()) != 0) {
+                    if (wrapper.canHandle(strLink)) {
+                        linksTemp[iLink] = strLink;
+                        iLink++;
+                        break;
+                    }
+                }
+            }
+        }
+
+        // Creation of the array of link that is supported by all plug-in
         String[] links = new String[iLink];
         for (int iIndex = 0; iIndex < links.length; iIndex++) {
             links[iIndex] = linksTemp[iIndex];
         }
+
+        // Number of picture
         int iImage = TabImage == null ? 0 : TabImage.length;
 
         // Some link can be crypted in this site, see if it is the case
@@ -147,6 +166,9 @@ public class SrBoxCom extends PluginForDecrypt {
 
         strName = strName.replace("VA - ", "");
         strName = strName.replace("FLAC", "");
+        strName = strName.replace("flac", "");
+        strName = strName.replace("APE", "");
+        strName = strName.replace("ape", "");
         return strName;
     }
 }
