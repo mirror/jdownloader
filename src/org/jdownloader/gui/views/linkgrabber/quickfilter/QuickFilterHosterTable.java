@@ -21,7 +21,6 @@ import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.swing.exttable.ExtColumn;
-import org.appwork.utils.event.queue.QueueAction;
 import org.jdownloader.controlling.filter.LinkFilterSettings;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTable;
 import org.jdownloader.gui.views.linkgrabber.sidebar.actions.DropHosterAction;
@@ -38,12 +37,11 @@ public class QuickFilterHosterTable extends FilterTable<CrawledPackage, CrawledL
     private long                                                       old              = -1;
     private DelayedRunnable                                            delayedRefresh;
     private PackageControllerTable<CrawledPackage, CrawledLink>        table2Filter     = null;
+    private final Object                                               LOCK             = new Object();
 
     public QuickFilterHosterTable(PackageControllerTable<CrawledPackage, CrawledLink> table2Filter) {
         super();
         this.table2Filter = table2Filter;
-        LinkCollector.getInstance().addListener(this);
-        table2Filter.getPackageControllerTableModel().addFilter(this);
         delayedRefresh = new DelayedRunnable(IOEQ.TIMINGQUEUE, 100l, 1000l) {
 
             @Override
@@ -53,9 +51,7 @@ public class QuickFilterHosterTable extends FilterTable<CrawledPackage, CrawledL
 
         };
         LinkFilterSettings.LG_QUICKFILTER_HOSTER_VISIBLE.getEventSender().addListener(this);
-        if (LinkFilterSettings.LG_QUICKFILTER_HOSTER_VISIBLE.getValue() == true) {
-            delayedRefresh.delayedrun();
-        }
+        onConfigValueModified(null, LinkFilterSettings.LG_QUICKFILTER_HOSTER_VISIBLE.getValue());
     }
 
     @Override
@@ -74,93 +70,89 @@ public class QuickFilterHosterTable extends FilterTable<CrawledPackage, CrawledL
         switch (event.getType()) {
         case REMOVE_CONTENT:
         case REFRESH_STRUCTURE:
-            if (LinkFilterSettings.LG_QUICKFILTER_HOSTER_VISIBLE.getValue() && old != LinkCollector.getInstance().getChildrenChanges()) {
+            if (Boolean.TRUE.equals(LinkFilterSettings.LG_QUICKFILTER_HOSTER_VISIBLE.getValue()) && old != LinkCollector.getInstance().getChildrenChanges()) {
                 old = LinkCollector.getInstance().getChildrenChanges();
-                IOEQ.getQueue().add(new QueueAction<Void, RuntimeException>() {
-
-                    @Override
-                    protected Void run() throws RuntimeException {
-                        delayedRefresh.run();
-                        return null;
-                    }
-                });
+                delayedRefresh.run();
             }
             break;
         }
     }
 
     private void updateQuickFilerTableData() {
-        /* reset existing filter counters */
-        Set<Entry<String, Filter<CrawledPackage, CrawledLink>>> es = filterMap.entrySet();
-        Iterator<Entry<String, Filter<CrawledPackage, CrawledLink>>> it = es.iterator();
-        while (it.hasNext()) {
-            it.next().getValue().setCounter(0);
-        }
-        /* update filter list */
-        boolean readL = LinkCollector.getInstance().readLock();
-        try {
-            for (CrawledPackage pkg : LinkCollector.getInstance().getPackages()) {
-                synchronized (pkg) {
-                    for (CrawledLink link : pkg.getChildren()) {
-                        String hoster = link.getRealHost();
-                        if (hoster != null) {
-                            Filter<CrawledPackage, CrawledLink> filter = null;
-                            filter = filterMap.get(hoster);
-                            if (filter == null) {
-                                /*
-                                 * create new filter entry and set its icon
-                                 */
-                                filter = new Filter<CrawledPackage, CrawledLink>(hoster, null, false) {
+        ArrayList<Filter<CrawledPackage, CrawledLink>> newTableData = null;
+        synchronized (LOCK) {
+            /* reset existing filter counters */
+            Set<Entry<String, Filter<CrawledPackage, CrawledLink>>> es = filterMap.entrySet();
+            Iterator<Entry<String, Filter<CrawledPackage, CrawledLink>>> it = es.iterator();
+            while (it.hasNext()) {
+                it.next().getValue().setCounter(0);
+            }
+            /* update filter list */
+            boolean readL = LinkCollector.getInstance().readLock();
+            try {
+                for (CrawledPackage pkg : LinkCollector.getInstance().getPackages()) {
+                    synchronized (pkg) {
+                        for (CrawledLink link : pkg.getChildren()) {
+                            String hoster = link.getRealHost();
+                            if (hoster != null) {
+                                Filter<CrawledPackage, CrawledLink> filter = null;
+                                filter = filterMap.get(hoster);
+                                if (filter == null) {
+                                    /*
+                                     * create new filter entry and set its icon
+                                     */
+                                    filter = new Filter<CrawledPackage, CrawledLink>(hoster, null, false) {
 
-                                    @Override
-                                    public boolean isFiltered(CrawledLink link) {
-                                        if (name.equals(link.getRealHost())) return true;
-                                        return false;
-                                    }
+                                        @Override
+                                        public boolean isFiltered(CrawledLink link) {
+                                            if (name.equals(link.getRealHost())) return true;
+                                            return false;
+                                        }
 
-                                    @Override
-                                    public boolean isFiltered(CrawledPackage link) {
-                                        /* we do not filter packages */
-                                        return false;
-                                    }
+                                        @Override
+                                        public boolean isFiltered(CrawledPackage link) {
+                                            /* we do not filter packages */
+                                            return false;
+                                        }
 
-                                    @Override
-                                    public void setEnabled(boolean enabled) {
-                                        super.setEnabled(enabled);
-                                        /*
-                                         * request recreate the model of
-                                         * filtered view
-                                         */
-                                        table2Filter.getPackageControllerTableModel().recreateModel(false);
-                                    }
+                                        @Override
+                                        public void setEnabled(boolean enabled) {
+                                            super.setEnabled(enabled);
+                                            /*
+                                             * request recreate the model of
+                                             * filtered view
+                                             */
+                                            table2Filter.getPackageControllerTableModel().recreateModel(false);
+                                        }
 
-                                };
-                                filter.setIcon(FavIconController.getFavIcon(hoster, filter, true));
-                                filterMap.put(hoster, filter);
+                                    };
+                                    filter.setIcon(FavIconController.getFavIcon(hoster, filter, true));
+                                    filterMap.put(hoster, filter);
+                                }
+                                filter.setCounter(filter.getCounter() + 1);
                             }
-                            filter.setCounter(filter.getCounter() + 1);
                         }
                     }
                 }
+            } finally {
+                LinkCollector.getInstance().readUnlock(readL);
             }
-        } finally {
-            LinkCollector.getInstance().readUnlock(readL);
-        }
-        /* update FilterTableModel */
-        ArrayList<Filter<CrawledPackage, CrawledLink>> newfilters = new ArrayList<Filter<CrawledPackage, CrawledLink>>();
-        es = filterMap.entrySet();
-        it = es.iterator();
-        ArrayList<Filter<CrawledPackage, CrawledLink>> newTableData = new ArrayList<Filter<CrawledPackage, CrawledLink>>(QuickFilterHosterTable.this.getExtTableModel().getTableData().size());
-        while (it.hasNext()) {
-            Entry<String, Filter<CrawledPackage, CrawledLink>> next = it.next();
-            Filter<CrawledPackage, CrawledLink> value = next.getValue();
-            if (value.getCounter() > 0) {
-                /* only add entries with counter >0 to visible table */
-                newTableData.add(value);
+            /* update FilterTableModel */
+            ArrayList<Filter<CrawledPackage, CrawledLink>> newfilters = new ArrayList<Filter<CrawledPackage, CrawledLink>>();
+            es = filterMap.entrySet();
+            it = es.iterator();
+            newTableData = new ArrayList<Filter<CrawledPackage, CrawledLink>>(QuickFilterHosterTable.this.getExtTableModel().getTableData().size());
+            while (it.hasNext()) {
+                Entry<String, Filter<CrawledPackage, CrawledLink>> next = it.next();
+                Filter<CrawledPackage, CrawledLink> value = next.getValue();
+                if (value.getCounter() > 0) {
+                    /* only add entries with counter >0 to visible table */
+                    newTableData.add(value);
+                }
+                newfilters.add(value);
             }
-            newfilters.add(value);
+            filters = newfilters;
         }
-        filters = newfilters;
         QuickFilterHosterTable.this.getExtTableModel()._fireTableStructureChanged(newTableData, true);
     }
 
@@ -174,7 +166,19 @@ public class QuickFilterHosterTable extends FilterTable<CrawledPackage, CrawledL
     }
 
     public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
-        delayedRefresh.delayedrun();
+        if (Boolean.TRUE.equals(newValue)) {
+            enabled = true;
+            /* filter is enabled, add listener and run again */
+            LinkCollector.getInstance().addListener(this);
+            table2Filter.getPackageControllerTableModel().addFilter(this);
+            updateQuickFilerTableData();
+        } else {
+            enabled = false;
+            /* filter disabled, remove listener */
+            old = -1;
+            table2Filter.getPackageControllerTableModel().removeFilter(this);
+            LinkCollector.getInstance().removeListener(this);
+        }
         table2Filter.getPackageControllerTableModel().recreateModel(false);
     }
 

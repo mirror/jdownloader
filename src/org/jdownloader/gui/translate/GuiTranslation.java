@@ -1749,6 +1749,9 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Delete" })
     String settings_auth_delete();
 
+    @Default(lngs = { "en" }, values = { "Others" })
+    String settings_linkgrabber_filter_others();
+
     @Default(lngs = { "en" }, values = { "Add" })
     String settings_linkgrabber_filter_action_add();
 
@@ -1766,9 +1769,6 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Delete" })
     String settings_linkgrabber_filter_action_remove();
-
-    @Default(lngs = { "en" }, values = { "Run Test" })
-    String settings_linkgrabber_filter_action_test();
 
     @Default(lngs = { "en" }, values = { "Linkfilter test on %s1" })
     String settings_linkgrabber_filter_action_test_title(String filter);

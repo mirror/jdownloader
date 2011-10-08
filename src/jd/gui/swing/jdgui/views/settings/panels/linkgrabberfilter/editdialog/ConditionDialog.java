@@ -23,6 +23,10 @@ import org.appwork.swing.components.SizeSpinner;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.swing.SwingUtils;
 import org.appwork.utils.swing.dialog.AbstractDialog;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ArchiveExtensions;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter.AudioExtensions;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ImageExtensions;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter.VideoExtensions;
 import org.jdownloader.controlling.filter.FilesizeFilter;
 import org.jdownloader.controlling.filter.FiletypeFilter;
 import org.jdownloader.controlling.filter.RegexFilter;
@@ -201,8 +205,8 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
 
         ArrayList<JComponent> comp = new ArrayList<JComponent>();
         JLabel lbl, ico;
-        lbl = new JLabel(_GUI._.FilterRuleDialog_createTypeFilter_mime_audio());
-        ico = new JLabel(NewTheme.I().getIcon("audio", 18));
+        lbl = new JLabel(AudioExtensions.AA.getDesc());
+        ico = new JLabel(NewTheme.I().getIcon(AudioExtensions.AA.getIconID(), 18));
         ActionListener al = new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {
@@ -226,8 +230,8 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
         comp.add(cbAudio);
         comp.add(lbl);
         // video
-        lbl = new JLabel(_GUI._.FilterRuleDialog_createTypeFilter_mime_video());
-        ico = new JLabel(NewTheme.I().getIcon("video", 18));
+        lbl = new JLabel(VideoExtensions.ASF.getDesc());
+        ico = new JLabel(NewTheme.I().getIcon(VideoExtensions.ASF.getIconID(), 18));
         cbVideo = new ExtCheckBox(lbl, ico);
         cbVideo.addActionListener(al);
         lbl.addMouseListener(new ClickDelegater(cbVideo));
@@ -239,8 +243,8 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
         comp.add(cbVideo);
         comp.add(lbl);
         // archives
-        lbl = new JLabel(_GUI._.FilterRuleDialog_createTypeFilter_mime_archives());
-        ico = new JLabel(NewTheme.I().getIcon("archive", 18));
+        lbl = new JLabel(ArchiveExtensions.ACE.getDesc());
+        ico = new JLabel(NewTheme.I().getIcon(ArchiveExtensions.ACE.getIconID(), 18));
         cbArchive = new ExtCheckBox(lbl, ico);
         cbArchive.addActionListener(al);
         lbl.addMouseListener(new ClickDelegater(cbArchive));
@@ -252,8 +256,8 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
         comp.add(cbArchive);
         comp.add(lbl);
         // images
-        lbl = new JLabel(_GUI._.FilterRuleDialog_createTypeFilter_mime_images());
-        ico = new JLabel(NewTheme.I().getIcon("image", 18));
+        lbl = new JLabel(ImageExtensions.BMP.getDesc());
+        ico = new JLabel(NewTheme.I().getIcon(ImageExtensions.BMP.getIconID(), 18));
         cbImage = new ExtCheckBox(lbl, ico);
         cbImage.addActionListener(al);
 

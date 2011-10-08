@@ -4,12 +4,49 @@ import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 import org.appwork.storage.config.JsonConfig;
+import org.appwork.utils.logging.Log;
+import org.jdownloader.gui.translate._GUI;
 
 public class CompiledFiletypeFilter {
-    private ArrayList<Pattern> list = new ArrayList<Pattern>();
+    private Pattern[] list = new Pattern[0];
 
-    public static enum AudioExtensions {
-        MP3, WMA, ACC, WAV, FLAC, MID, MOD, OGG, S3M, FourMP("4MP"), AA, AIF, AIFF, AU, M3U, M4a, M4b, M4P, MKA, MP1, MP2, MPA, OMG, OMF, SND;
+    public static interface ExtensionsFilterInterface {
+        public Pattern compiledAllPattern();
+
+        public String getDesc();
+
+        public String getIconID();
+
+        public Pattern getPattern();
+
+    }
+
+    public static enum AudioExtensions implements ExtensionsFilterInterface {
+        MP3,
+        WMA,
+        ACC,
+        WAV,
+        FLAC,
+        MID,
+        MOD,
+        OGG,
+        S3M,
+        FourMP("4MP"),
+        AA,
+        AIF,
+        AIFF,
+        AU,
+        M3U,
+        M4a,
+        M4b,
+        M4P,
+        MKA,
+        MP1,
+        MP2,
+        MPA,
+        OMG,
+        OMF,
+        SND;
 
         private Pattern pattern;
 
@@ -24,10 +61,49 @@ public class CompiledFiletypeFilter {
         private AudioExtensions(String id) {
             this.pattern = Pattern.compile(id, Pattern.DOTALL | Pattern.CASE_INSENSITIVE);
         }
+
+        public String getDesc() {
+            return _GUI._.FilterRuleDialog_createTypeFilter_mime_audio();
+        }
+
+        public String getIconID() {
+            return "audio";
+        }
+
+        public Pattern compiledAllPattern() {
+            StringBuilder sb = new StringBuilder();
+            sb.append("(");
+            boolean or = false;
+            for (AudioExtensions value : AudioExtensions.values()) {
+                if (or) sb.append("|");
+                sb.append(value.getPattern());
+                or = true;
+            }
+            sb.append(")");
+            return Pattern.compile(sb.toString(), Pattern.DOTALL | Pattern.CASE_INSENSITIVE);
+        }
     }
 
-    public static enum VideoExtensions {
-        ASF, AVI, DIVX, XVID, FLV, MP4, H264, M4U, M4V, MOV, MKV, MPEG, MPEG4, MPG, OGM, OGV, VOB, WMV;
+    public static enum VideoExtensions implements ExtensionsFilterInterface {
+        ASF,
+        AVI,
+        DIVX,
+        XVID,
+        FLV,
+        MP4,
+        H264,
+        M4U,
+        M4V,
+        MOV,
+        MKV,
+        MPEG,
+        MPEG4,
+        MPG,
+        OGM,
+        OGV,
+        VOB,
+        WMV,
+        WEBM;
 
         private Pattern pattern;
 
@@ -42,10 +118,49 @@ public class CompiledFiletypeFilter {
         private VideoExtensions(String id) {
             this.pattern = Pattern.compile(id, Pattern.DOTALL | Pattern.CASE_INSENSITIVE);
         }
+
+        public String getDesc() {
+            return _GUI._.FilterRuleDialog_createTypeFilter_mime_video();
+        }
+
+        public Pattern compiledAllPattern() {
+            return compileAllPattern(VideoExtensions.values());
+        }
+
+        public String getIconID() {
+            return "video";
+        }
     }
 
-    public static enum ArchiveExtensions {
-        RAR, ZIP, SevenZIP("7ZIP"), R_NUM("r\\d+"), NUM("\\d+"), ACE, TAR, GZ, AR, BZ2, SevenZ("7Z"), S7Z, DMG, SFX, TGZ;
+    private static Pattern compileAllPattern(ExtensionsFilterInterface[] filters) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("(");
+        boolean or = false;
+        for (ExtensionsFilterInterface value : filters) {
+            if (or) sb.append("|");
+            sb.append(value.getPattern());
+            or = true;
+        }
+        sb.append(")");
+        return Pattern.compile(sb.toString(), Pattern.DOTALL | Pattern.CASE_INSENSITIVE);
+    }
+
+    public static enum ArchiveExtensions implements ExtensionsFilterInterface {
+        RAR,
+        ZIP,
+        SevenZIP("7ZIP"),
+        R_NUM("r\\d+"),
+        NUM("\\d+"),
+        ACE,
+        TAR,
+        GZ,
+        AR,
+        BZ2,
+        SevenZ("7Z"),
+        S7Z,
+        DMG,
+        SFX,
+        TGZ;
 
         private Pattern pattern;
 
@@ -60,10 +175,30 @@ public class CompiledFiletypeFilter {
         private ArchiveExtensions(String id) {
             this.pattern = Pattern.compile(id, Pattern.DOTALL | Pattern.CASE_INSENSITIVE);
         }
+
+        public String getDesc() {
+            return _GUI._.FilterRuleDialog_createTypeFilter_mime_archives();
+        }
+
+        public Pattern compiledAllPattern() {
+            return compileAllPattern(ArchiveExtensions.values());
+        }
+
+        public String getIconID() {
+            return "archive";
+        }
     }
 
-    public static enum ImageExtensions {
-        JPG, JPEG, GIF, PNG, BMP, TIFF, RAW, SVG;
+    public static enum ImageExtensions implements ExtensionsFilterInterface {
+        JPG,
+        JPEG,
+        GIF,
+        PNG,
+        BMP,
+        TIFF,
+        RAW,
+        SVG,
+        ICO;
 
         private Pattern pattern;
 
@@ -78,9 +213,22 @@ public class CompiledFiletypeFilter {
         private ImageExtensions(String id) {
             this.pattern = Pattern.compile(id, Pattern.DOTALL | Pattern.CASE_INSENSITIVE);
         }
+
+        public String getDesc() {
+            return _GUI._.FilterRuleDialog_createTypeFilter_mime_images();
+        }
+
+        public Pattern compiledAllPattern() {
+            return compileAllPattern(ImageExtensions.values());
+        }
+
+        public String getIconID() {
+            return "image";
+        }
     }
 
     public CompiledFiletypeFilter(FiletypeFilter filetypeFilter) {
+        ArrayList<Pattern> list = new ArrayList<Pattern>();
         if (filetypeFilter.isArchivesEnabled()) {
             for (ArchiveExtensions ae : ArchiveExtensions.values()) {
                 list.add(ae.getPattern());
@@ -103,23 +251,27 @@ public class CompiledFiletypeFilter {
                 list.add(ae.getPattern());
             }
         }
-        if (filetypeFilter.getCustoms() != null) {
-            if (JsonConfig.create(LinkFilterSettings.class).isRuleconditionsRegexEnabled()) {
-                list.add(Pattern.compile(filetypeFilter.getCustoms(), Pattern.DOTALL | Pattern.CASE_INSENSITIVE));
-            } else {
+        try {
+            if (filetypeFilter.getCustoms() != null) {
+                if (JsonConfig.create(LinkFilterSettings.class).isRuleconditionsRegexEnabled()) {
+                    list.add(Pattern.compile(filetypeFilter.getCustoms(), Pattern.DOTALL | Pattern.CASE_INSENSITIVE));
+                } else {
 
-                for (String s : filetypeFilter.getCustoms().split("\\,")) {
-                    list.add(LinkgrabberFilterRuleWrapper.createPattern(s));
+                    for (String s : filetypeFilter.getCustoms().split("\\,")) {
+                        list.add(LinkgrabberFilterRuleWrapper.createPattern(s));
+                    }
                 }
             }
+        } catch (final IllegalArgumentException e) {
+            /* custom regex may contain errors */
+            Log.exception(e);
         }
-
+        this.list = list.toArray(new Pattern[list.size()]);
     }
 
     public boolean matches(String extension) {
-        System.out.println(1);
         try {
-            for (Pattern o : list) {
+            for (Pattern o : this.list) {
                 if (o.matcher(extension).matches()) return true;
             }
         } catch (Throwable e) {

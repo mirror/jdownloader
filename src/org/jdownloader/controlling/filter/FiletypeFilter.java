@@ -3,6 +3,10 @@ package org.jdownloader.controlling.filter;
 import java.util.ArrayList;
 
 import org.appwork.storage.Storable;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ArchiveExtensions;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter.AudioExtensions;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ImageExtensions;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter.VideoExtensions;
 import org.jdownloader.gui.translate._GUI;
 
 public class FiletypeFilter extends Filter implements Storable {
@@ -16,21 +20,21 @@ public class FiletypeFilter extends Filter implements Storable {
         ArrayList<String> cond = new ArrayList<String>();
         if (archivesEnabled) {
 
-            cond.add(_GUI._.FiletypeFilter_toString_archives());
+            cond.add(ArchiveExtensions.ACE.getDesc());
         }
         if (audioFilesEnabled) {
 
-            cond.add(_GUI._.FiletypeFilter_toString_audio());
+            cond.add(AudioExtensions.AA.getDesc());
         }
 
         if (imagesEnabled) {
 
-            cond.add(_GUI._.FiletypeFilter_toString_image());
+            cond.add(ImageExtensions.BMP.getDesc());
         }
 
         if (videoFilesEnabled) {
 
-            cond.add(_GUI._.FiletypeFilter_toString_video());
+            cond.add(VideoExtensions.ASF.getDesc());
         }
         if (customs != null) {
 

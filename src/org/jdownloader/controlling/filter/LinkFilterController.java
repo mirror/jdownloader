@@ -318,7 +318,7 @@ public class LinkFilterController implements LinkCrawlerFilter {
 
     private boolean checkFileType(LinkgrabberFilterRuleWrapper lgr, CrawledLink link) {
         if (lgr.getFiletypeFilter() != null) {
-            String ext = Files.getExtension(link.getDownloadLink().getName());
+            String ext = Files.getExtension(link.getName());
             if (ext == null) return true;
             return lgr.getFiletypeFilter().matches(ext);
         }
@@ -328,20 +328,20 @@ public class LinkFilterController implements LinkCrawlerFilter {
     private boolean checkFileSize(LinkgrabberFilterRuleWrapper lgr, CrawledLink link) {
         if (lgr.getFilesizeRule() != null) {
             // if (link.getDownloadLink().getDownloadSize() <= 0) return true;
-            return lgr.getFilesizeRule().matches(link.getDownloadLink().getDownloadSize());
+            return lgr.getFilesizeRule().matches(link.getSize());
         }
         return true;
     }
 
     private boolean checkFileName(LinkgrabberFilterRuleWrapper lgr, CrawledLink link) {
-        if (lgr.getFileNameRule() != null) { return lgr.getFileNameRule().matches(link.getDownloadLink().getName()); }
+        if (lgr.getFileNameRule() != null) { return lgr.getFileNameRule().matches(link.getName()); }
         return true;
     }
 
     private boolean checkHoster(LinkgrabberFilterRuleWrapper lgr, CrawledLink link) throws NoDownloadLinkException {
         if (lgr.getHosterRule() != null) {
             if (link.getDownloadLink() == null) { throw new NoDownloadLinkException(); }
-            return lgr.getHosterRule().matches(link.getDownloadLink().getDownloadURL());
+            return lgr.getHosterRule().matches(link.getURL());
         }
         return true;
     }
