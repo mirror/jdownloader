@@ -17,7 +17,6 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
-import java.util.StringTokenizer;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
@@ -30,15 +29,20 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.decrypter.TbCm.DestinationFormat;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "clipfish.de" }, urls = { "http://[\\w\\.]*?clipfish\\.de/(.*?channel/\\d+/video/\\d+|video/\\d+(/.+)?|special/.*?/video/\\d+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "clipfish.de" }, urls = { "http://(www\\.)?clipfish\\.de/(.*?channel/\\d+/video/\\d+|video/\\d+(/.+)?|special/.*?/video/\\d+|musikvideos/video/\\d+(/.+)?)" }, flags = { 0 })
 public class ClpfshD extends PluginForDecrypt {
 
-    private static final Pattern PATTERN_CAHNNEL_VIDEO  = Pattern.compile("http://[\\w\\.]*?clipfish\\.de/.*?channel/\\d+/video/(\\d+)");
-    private static final Pattern PATTERN_STANDARD_VIDEO = Pattern.compile("http://[\\w\\.]*?clipfish\\.de/video/(\\d+)(/.+)?");
-    private static final Pattern PATTERN_SPECIAL_VIDEO  = Pattern.compile("clipfish\\.de/special/.*?/video/(\\d+)");
-    private static final Pattern PATTERN_FLV_FILE       = Pattern.compile("&url=(http://.+?\\.flv)&", Pattern.CASE_INSENSITIVE);
-    private static final Pattern PATTERN_TITEL          = Pattern.compile("<title>(.+?)</title>", Pattern.CASE_INSENSITIVE);
+    private static final Pattern PATTERN_CAHNNEL_VIDEO  = Pattern.compile("http://(www\\.)?clipfish\\.de/.*?channel/\\d+/video/(\\d+)");
+    private static final Pattern PATTERN_MUSIK_VIDEO    = Pattern.compile("http://(www\\.)?clipfish\\.de/musikvideos/video/(\\d+)(/.+)?");
+    private static final Pattern PATTERN_STANDARD_VIDEO = Pattern.compile("http://(www\\.)?clipfish\\.de/video/(\\d+)(/.+)?");
+    private static final Pattern PATTERN_SPECIAL_VIDEO  = Pattern.compile("http://(www\\.)?clipfish\\.de/special/.*?/video/(\\d+)");
+    private static final Pattern PATTERN_FLV_FILE       = Pattern.compile("&url=(http://.+?\\....)&", Pattern.CASE_INSENSITIVE);
+    private static final Pattern PATTERN_TITEL          = Pattern.compile("<meta property=\"og:title\" content=\"(.+?)\"/>", Pattern.CASE_INSENSITIVE);
     private static final String  XML_PATH               = "http://www.clipfish.de/video_n.php?vid=";
+
+    // private final String NEW_XMP_PATH =
+    // "http://www.clipfish.de/devxml/videoinfo/" + vidId + "?ts="+
+    // System.currentTimeMillis();
 
     public ClpfshD(final PluginWrapper wrapper) {
         super(wrapper);
@@ -55,17 +59,16 @@ public class ClpfshD extends PluginForDecrypt {
         decryptedLinks.add(downloadLink);
     }
 
+    @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink cryptedLink, final ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        this.br.clearCookies(this.getHost());
-        final Regex regexInfo = new Regex(this.br.getPage(cryptedLink.getCryptedUrl()), ClpfshD.PATTERN_TITEL);
-        final StringTokenizer tokenizer = new StringTokenizer(regexInfo.getMatch(0), "-");
-        String name = "";
-        int i = 0;
-        while (tokenizer.hasMoreTokens() && i < 2) {
-            i++;
-            name += tokenizer.nextToken("-");
-        }
+        br.clearCookies(getHost());
+        final Regex regexInfo = new Regex(br.getPage(cryptedLink.getCryptedUrl()), ClpfshD.PATTERN_TITEL);
+        final String tmpStr = regexInfo.getMatch(0);
+        if (tmpStr == null) { return null; }
+        final String name = tmpStr.substring(0, tmpStr.lastIndexOf("-"));
+        final String cType = tmpStr.substring(tmpStr.lastIndexOf("-") + 1, tmpStr.length()).toLowerCase();
+        if (name == null || cType == null) { return null; }
 
         int vidId = -1;
         if (new Regex(cryptedLink.getCryptedUrl(), ClpfshD.PATTERN_STANDARD_VIDEO).matches()) {
@@ -74,17 +77,28 @@ public class ClpfshD extends PluginForDecrypt {
             vidId = Integer.parseInt(new Regex(cryptedLink.getCryptedUrl(), ClpfshD.PATTERN_CAHNNEL_VIDEO).getMatch(0));
         } else if (new Regex(cryptedLink.getCryptedUrl(), ClpfshD.PATTERN_SPECIAL_VIDEO).matches()) {
             vidId = Integer.parseInt(new Regex(cryptedLink.getCryptedUrl(), ClpfshD.PATTERN_SPECIAL_VIDEO).getMatch(0));
+        } else if (new Regex(cryptedLink.getCryptedUrl(), ClpfshD.PATTERN_MUSIK_VIDEO).matches()) {
+            vidId = Integer.parseInt(new Regex(cryptedLink.getCryptedUrl(), ClpfshD.PATTERN_MUSIK_VIDEO).getMatch(0));
         } else {
             logger.severe("No VidID found");
             return decryptedLinks;
         }
-        final String page = this.br.getPage(ClpfshD.XML_PATH + vidId);
+        final String page = br.getPage(ClpfshD.XML_PATH + vidId);
         final String pathToflv = new Regex(page, ClpfshD.PATTERN_FLV_FILE).getMatch(0);
         if (pathToflv == null) { return null; }
-        final DownloadLink downloadLink = this.createDownloadlink(pathToflv);
-        // create a package, for each quality.
-        this.addLink(cryptedLink, decryptedLinks, name, downloadLink, DestinationFormat.VIDEOFLV);
-        this.addLink(cryptedLink, decryptedLinks, name, downloadLink, DestinationFormat.AUDIOMP3);
+        final DownloadLink downloadLink = createDownloadlink(pathToflv);
+        /*
+         * scheinbar gibt es auf clipfish keine flv Audiodateien mehr.
+         */
+        if (cType.equals("audio")) {
+            addLink(cryptedLink, decryptedLinks, name, downloadLink, DestinationFormat.VIDEOFLV);
+            addLink(cryptedLink, decryptedLinks, name, downloadLink, DestinationFormat.AUDIOMP3);
+        } else {
+            String ext = pathToflv.substring(pathToflv.lastIndexOf(".") + 1, pathToflv.length());
+            ext = ext.equals("f4v") || ext.equals("") || ext.equals(null) ? "mp4" : ext;
+            downloadLink.setFinalFileName(name + "." + ext);
+            decryptedLinks.add(downloadLink);
+        }
 
         return decryptedLinks;
     }

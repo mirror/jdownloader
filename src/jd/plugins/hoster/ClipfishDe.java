@@ -27,7 +27,7 @@ import jd.plugins.decrypter.TbCm;
 import jd.plugins.decrypter.TbCm.DestinationFormat;
 import jd.utils.JDUtilities;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "clipfish.de" }, urls = { "http://[\\w\\.]*?pg\\d+\\.clipfish\\.de/media/.+?\\.flv" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "clipfish.de" }, urls = { "http://[\\w\\.]*?pg\\d+\\.clipfish\\.de/media/.+?\\...." }, flags = { 0 })
 public class ClipfishDe extends PluginForHost {
     private static final String AGB_LINK = "http://www.clipfish.de/agb/";
 
@@ -49,15 +49,15 @@ public class ClipfishDe extends PluginForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         final LinkStatus linkStatus = downloadLink.getLinkStatus();
 
-        this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, downloadLink.getDownloadURL());
-        URLConnectionAdapter urlConnection = this.dl.connect();
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL());
+        final URLConnectionAdapter urlConnection = dl.connect();
         if (urlConnection.getLongContentLength() == 0) {
-            this.br.followConnection();
+            br.followConnection();
             linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_DEFECT);
             return;
         }
 
-        if (this.dl.startDownload()) {
+        if (dl.startDownload()) {
             if (downloadLink.getProperty("convertto") != null) {
                 final DestinationFormat convertTo = DestinationFormat.valueOf(downloadLink.getProperty("convertto").toString());
                 final DestinationFormat inType = DestinationFormat.VIDEOFLV;
