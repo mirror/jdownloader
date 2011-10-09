@@ -56,8 +56,6 @@ public class GooGl extends PluginForDecrypt {
             }
 
             if (iLink == 0) {
-                // We look if the link in the array is supported by a decrypter
-                // plug-in
                 ArrayList<DecryptPluginWrapper> AllDecrypter = new ArrayList<DecryptPluginWrapper>(DecryptPluginWrapper.getDecryptWrapper());
                 for (DecryptPluginWrapper wrapper : AllDecrypter) {
                     if (wrapper.compareTo(this.getWrapper()) != 0) {
@@ -76,9 +74,7 @@ public class GooGl extends PluginForDecrypt {
                 decryptedLinks.add(createDownloadlink(parameter));
                 progress.increase(1);
                 return decryptedLinks;
-
-            } else
-                return null;
+            }
         }
         return null;
     }
