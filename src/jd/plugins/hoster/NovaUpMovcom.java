@@ -107,7 +107,7 @@ public class NovaUpMovcom extends PluginForHost {
                 return AvailableStatus.TRUE;
             }
             br.getPage("http://www.novamov.com/api/player.api.php?user=undefined&codes=" + fileCid + "&file=" + fileId + "&pass=undefined&key=" + fileKey);
-            DLLINK = br.getRegex("url=(.*)").getMatch(0);
+            DLLINK = br.getRegex("url=(.*?)\\&").getMatch(0);
             if (DLLINK == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
             final URLConnectionAdapter con = br.openGetConnection(DLLINK);
             try {
