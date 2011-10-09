@@ -76,7 +76,7 @@ public class SrBoxCom extends PluginForDecrypt {
         // We look if the link in the array is supported by a hoster plug-in
         int iLink = 0;
         for (int iIndex = 0; iIndex < TabTemp.length; iIndex++) {
-            strLink = TabTemp[iIndex].toLowerCase();
+            strLink = TabTemp[iIndex];
             for (HostPluginWrapper wrapper : AllHosts) {
 
                 if (wrapper.canHandle(strLink)) {
@@ -90,7 +90,7 @@ public class SrBoxCom extends PluginForDecrypt {
         // We look if the link in the array is supported by a decrypter plug-in
         ArrayList<DecryptPluginWrapper> AllDecrypter = new ArrayList<DecryptPluginWrapper>(DecryptPluginWrapper.getDecryptWrapper());
         for (int iIndex = 0; iIndex < TabTemp.length; iIndex++) {
-            strLink = TabTemp[iIndex].toLowerCase();
+            strLink = TabTemp[iIndex];
             for (DecryptPluginWrapper wrapper : AllDecrypter) {
                 if (wrapper.compareTo(this.getWrapper()) != 0) {
                     if (wrapper.canHandle(strLink)) {
