@@ -55,7 +55,12 @@ import de.savemytube.flv.FLV;
 public class TbCm extends PluginForDecrypt {
 
     public static enum DestinationFormat {
-        AUDIOMP3("Audio (MP3)", new String[] { ".mp3" }), VIDEOFLV("Video (FLV)", new String[] { ".flv" }), VIDEOMP4("Video (MP4)", new String[] { ".mp4" }), VIDEOWEBM("Video (Webm)", new String[] { ".webm" }), VIDEO3GP("Video (3GP)", new String[] { ".3gp" }), UNKNOWN("Unknown (unk)", new String[] { ".unk" }),
+        AUDIOMP3("Audio (MP3)", new String[] { ".mp3" }),
+        VIDEOFLV("Video (FLV)", new String[] { ".flv" }),
+        VIDEOMP4("Video (MP4)", new String[] { ".mp4" }),
+        VIDEOWEBM("Video (Webm)", new String[] { ".webm" }),
+        VIDEO3GP("Video (3GP)", new String[] { ".3gp" }),
+        UNKNOWN("Unknown (unk)", new String[] { ".unk" }),
 
         VIDEOIPHONE("Video (IPhone)", new String[] { ".mp4" });
 
@@ -399,6 +404,7 @@ public class TbCm extends PluginForDecrypt {
         br.setCookie("youtube.com", "PREF", "f2=40100000");
         br.getHeaders().put("User-Agent", "Wget/1.12");
         br.getPage(video);
+        if (br.containsHTML("id=\"unavailable-submessage\" class=\"watch-unavailable-submessage\"")) { return null; }
         final String VIDEOID = new Regex(video, "watch\\?v=([\\w_\\-]+)").getMatch(0);
         String YT_FILENAME = br.containsHTML("&title=") ? Encoding.htmlDecode(br.getRegex("&title=([^&$]+)").getMatch(0).replaceAll("\\+", " ").trim()) : VIDEOID;
         final String url = br.getURL();

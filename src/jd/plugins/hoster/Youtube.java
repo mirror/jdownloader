@@ -180,7 +180,7 @@ public class Youtube extends PluginForHost {
                     checkConnection = unescape(checkConnection);
                     br.cloneBrowser().getPage(checkConnection);
                 }
-                final Form form = br.getForm(1);
+                final Form form = br.getForm(0);
                 form.put("pstMsg", "1");
                 form.put("dnConn", "https%3A%2F%2Faccounts.youtube.com&continue=http%3A%2F%2Fwww.youtube.com%2Fsignin%3Faction_handle_signin%3Dtrue%26nomobiletemp%3D1%26hl%3Den_US%26next%3D%252F");
                 form.put("Email", Encoding.urlEncode(account.getUser()));
