@@ -18,8 +18,6 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
-import jd.DecryptPluginWrapper;
-import jd.HostPluginWrapper;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
@@ -35,46 +33,18 @@ public class GooGl extends PluginForDecrypt {
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         // Get the real URL
         br.getPage(parameter);
         parameter = br.getRedirectLocation();
 
-        int iLink = 0;
         if (parameter != null) {
-            // Verifying if the URL pointed by goo.gl is OK to be added in the
-            // download manager
-            ArrayList<HostPluginWrapper> AllHosts = new ArrayList<HostPluginWrapper>(HostPluginWrapper.getHostWrapper());
-
-            // We look if the link in the array is supported by a hoster plug-in
-            for (HostPluginWrapper wrapper : AllHosts) {
-                if (wrapper.canHandle(parameter)) {
-                    iLink++;
-                    break;
-                }
-            }
-
-            if (iLink == 0) {
-                ArrayList<DecryptPluginWrapper> AllDecrypter = new ArrayList<DecryptPluginWrapper>(DecryptPluginWrapper.getDecryptWrapper());
-                for (DecryptPluginWrapper wrapper : AllDecrypter) {
-                    if (wrapper.compareTo(this.getWrapper()) != 0) {
-                        if (wrapper.canHandle(parameter)) {
-                            iLink++;
-                            break;
-                        }
-                    }
-                }
-            }
-
-            if (iLink != 0) {
-                progress.setRange(iLink);
-
-                // Added links
-                decryptedLinks.add(createDownloadlink(parameter));
-                progress.increase(1);
-                return decryptedLinks;
-            }
+            // Added links
+            progress.setRange(1);
+            ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+            decryptedLinks.add(createDownloadlink(parameter));
+            progress.increase(1);
+            return decryptedLinks;
         }
         return null;
     }
