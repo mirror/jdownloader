@@ -36,12 +36,12 @@ import jd.parser.html.InputField;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -505,17 +505,22 @@ public class MediafireCom extends PluginForHost {
         this.br.submitForm(form);
         this.br.getPage("http://www.mediafire.com/myfiles.php");
         final String cookie = this.br.getCookie("http://www.mediafire.com", "user");
-        if ("x".equals(cookie)) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        if ("x".equals(cookie) || cookie == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         if (MediafireCom.CONFIGURATION_KEYS.get(account) == null) {
-            this.br.getPage("http://www.mediafire.com/myaccount/download_options.php");
+            this.br.getPage("http://www.mediafire.com/myaccount/download_options.php?enable=1");
             String red = br.getRedirectLocation();
             if (red != null && red.contains("select_account_type.php")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-            String configurationKey = this.br.getRegex("Configuration Key:.*? value=\"(.*?)\"").getMatch(0);
-            if (configurationKey == null) configurationKey = this.br.getRegex("Configuration Key.*? value=\"(.*?)\"").getMatch(0);
+            String configurationKey = getAPIKEY(br);
             if (configurationKey == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
             MediafireCom.CONFIGURATION_KEYS.put(account, configurationKey);
         }
+    }
 
+    private String getAPIKEY(Browser br) {
+        if (br == null) return null;
+        String configurationKey = this.br.getRegex("Configuration Key:.*? value=\"(.*?)\"").getMatch(0);
+        if (configurationKey == null) configurationKey = this.br.getRegex("Configuration Key.*? value=\"(.*?)\"").getMatch(0);
+        return configurationKey;
     }
 
     @Override

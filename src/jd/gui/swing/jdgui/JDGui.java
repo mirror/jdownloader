@@ -307,7 +307,6 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
         this.linkgrabberView = new LinkGrabberView();
 
         this.mainTabbedPane.addTab(new DownloadsView());
-        mainTabbedPane.addTab("TEST", new org.jdownloader.gui.views.linkgrabber.LinkGrabberPanel());
         this.mainTabbedPane.addTab(this.linkgrabberView);
         this.mainTabbedPane.addTab(LinkgrabberView.getInstance());
 
