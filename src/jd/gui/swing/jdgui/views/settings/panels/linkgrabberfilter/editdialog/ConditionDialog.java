@@ -219,7 +219,7 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
         cbType = new ExtCheckBox();
         panel.add(cbType, "aligny top");
         panel.add(lblType, "aligny top,gaptop 3");
-        cbAudio = new ExtCheckBox(lbl, ico);
+        cbAudio = new ExtCheckBox();
         lbl.addMouseListener(new ClickDelegater(cbAudio));
         ico.addMouseListener(new ClickDelegater(cbAudio));
         panel.add(ico, "split 2");
@@ -232,7 +232,7 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
         // video
         lbl = new JLabel(VideoExtensions.ASF.getDesc());
         ico = new JLabel(NewTheme.I().getIcon(VideoExtensions.ASF.getIconID(), 18));
-        cbVideo = new ExtCheckBox(lbl, ico);
+        cbVideo = new ExtCheckBox();
         cbVideo.addActionListener(al);
         lbl.addMouseListener(new ClickDelegater(cbVideo));
         ico.addMouseListener(new ClickDelegater(cbVideo));
@@ -245,7 +245,7 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
         // archives
         lbl = new JLabel(ArchiveExtensions.ACE.getDesc());
         ico = new JLabel(NewTheme.I().getIcon(ArchiveExtensions.ACE.getIconID(), 18));
-        cbArchive = new ExtCheckBox(lbl, ico);
+        cbArchive = new ExtCheckBox();
         cbArchive.addActionListener(al);
         lbl.addMouseListener(new ClickDelegater(cbArchive));
         ico.addMouseListener(new ClickDelegater(cbArchive));
@@ -258,7 +258,7 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
         // images
         lbl = new JLabel(ImageExtensions.BMP.getDesc());
         ico = new JLabel(NewTheme.I().getIcon(ImageExtensions.BMP.getIconID(), 18));
-        cbImage = new ExtCheckBox(lbl, ico);
+        cbImage = new ExtCheckBox();
         cbImage.addActionListener(al);
 
         lbl.addMouseListener(new ClickDelegater(cbImage));
@@ -284,7 +284,7 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
                 cbCustom.updateDependencies();
             }
         });
-        cbCustom = new ExtCheckBox(ico, txtCustumMime);
+        cbCustom = new ExtCheckBox();
         cbCustom.addActionListener(al);
         ico.addMouseListener(new ClickDelegater(cbCustom));
         panel.add(ico, "skip 2,split 2");
