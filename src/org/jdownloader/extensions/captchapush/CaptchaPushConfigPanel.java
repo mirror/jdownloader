@@ -26,8 +26,8 @@ public class CaptchaPushConfigPanel extends ExtensionConfigPanel<CaptchaPushExte
     }
 
     protected void layoutPanel() {
-        addPair("Host of the Broker:", brokerHost);
-        addPair("Topic of the Broker:", brokerTopic);
+        addPair("Host of the Broker:", null, brokerHost);
+        addPair("Topic of the Broker:", null, brokerTopic);
     }
 
     @Override

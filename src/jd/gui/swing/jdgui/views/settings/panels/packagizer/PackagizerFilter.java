@@ -65,7 +65,8 @@ public class PackagizerFilter extends JPanel implements SettingsComponent {
     }
 
     public String getConstraints() {
-        return "wmin 10,height 60:n:n";
+
+        return "gapleft 37,spanx,growx,pushx,height 60:n:n,pushy,growy";
     }
 
     public boolean isMultiline() {

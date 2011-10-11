@@ -68,7 +68,7 @@ public interface JdownloaderTranslation extends TranslateInterface {
     @Default(lngs = { "en", "de" }, values = { "Using the hashcheck option, JDownloader to verify your downloads for correctness after download.", "Über den automatischen Hashcheck kann JDownloader die geladenen Dateien automatisch auf Korrektheit überprüfen." })
     String gui_settings_filewriting_description();
 
-    @Default(lngs = { "en", "de" }, values = { "Proxy", "Proxy" })
+    @Default(lngs = { "en", "de" }, values = { "Connection Manager", "Verbindungsverwaltung" })
     String gui_settings_proxy_title();
 
     @Default(lngs = { "en", "de" }, values = { "Autostart Downloads?", "Downloads automatisch starten?" })

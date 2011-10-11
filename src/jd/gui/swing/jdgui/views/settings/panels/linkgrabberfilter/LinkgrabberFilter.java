@@ -28,7 +28,7 @@ public class LinkgrabberFilter extends JPanel implements SettingsComponent {
     private ExtButton         btExport;
 
     public LinkgrabberFilter() {
-        super(new MigLayout("ins 0,wrap 1", "[grow,fill]", "[][grow,fill]"));
+        super(new MigLayout("ins 0,wrap 1", "[grow,fill]", "[grow,fill][]"));
         tb = new MigPanel("ins 0", "[][][grow,fill][][][][]", "[]");
         table = new FilterTable();
         tb.add(btadd = new ExtButton(new NewAction(this)), "height 26!,sg 1");
@@ -66,7 +66,8 @@ public class LinkgrabberFilter extends JPanel implements SettingsComponent {
     }
 
     public String getConstraints() {
-        return "wmin 10,height 60:n:n";
+
+        return "gapleft 37,spanx,growx,pushx,height 60:n:n,pushy,growy";
     }
 
     public boolean isMultiline() {

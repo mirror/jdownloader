@@ -35,10 +35,10 @@ public class ChatConfigPanel extends ExtensionConfigPanel<ChatExtension> {
 
     protected void layoutPanel() {
 
-        addPair(T._.settings_nick(), nick);
-        addPair(T._.settings_enabled_userlist_colors(), userColors);
-        addPair(T._.settings_userlist_position(), userPosition);
-        addPair(T._.settings_perform(), perform);
+        addPair(T._.settings_nick(), null, nick);
+        addPair(T._.settings_enabled_userlist_colors(), null, userColors);
+        addPair(T._.settings_userlist_position(), null, userPosition);
+        addPair(T._.settings_perform(), null, perform);
 
     }
 

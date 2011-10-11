@@ -58,16 +58,16 @@ public class ConfigPanelGeneral extends AbstractConfigPanel {
         this.addHeader(_GUI._.gui_config_general_downloaddirectory(), NewTheme.I().getIcon("downloadpath", 32));
         this.addDescription(_JDT._.gui_settings_downloadpath_description());
         this.add(downloadFolder);
-        this.addPair(_GUI._.gui_config_general_createsubfolders(), subfolder);
+        this.addPair(_GUI._.gui_config_general_createsubfolders(), null, subfolder);
 
         /* File Writing */
         autoCRC = new Checkbox();
         this.addHeader(_GUI._.gui_config_download_write(), NewTheme.I().getIcon("hashsum", 32));
         this.addDescription(_JDT._.gui_settings_filewriting_description());
-        this.addPair(_GUI._.gui_config_download_crc(), autoCRC);
+        this.addPair(_GUI._.gui_config_download_crc(), null, autoCRC);
 
         this.addHeader(_GUI._.gui_config_various(), NewTheme.I().getIcon("settings", 32));
-        this.addPair(_GUI._.gui_config_simple_container(), simpleContainer);
+        this.addPair(_GUI._.gui_config_simple_container(), null, simpleContainer);
     }
 
     @Override

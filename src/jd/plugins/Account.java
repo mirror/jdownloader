@@ -19,6 +19,8 @@ package jd.plugins;
 import jd.config.Property;
 import jd.controlling.AccountController;
 
+import org.jdownloader.DomainInfo;
+
 public class Account extends Property {
 
     private static final long serialVersionUID      = -7578649066389032068L;
@@ -237,5 +239,9 @@ public class Account extends Property {
             if (account2.pass == null || !this.pass.equalsIgnoreCase(account2.pass)) { return false; }
         }
         return true;
+    }
+
+    public DomainInfo getDomainInfo() {
+        return DomainInfo.getInstance(getHoster());
     }
 }

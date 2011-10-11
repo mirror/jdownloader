@@ -17,6 +17,8 @@ import javax.swing.ImageIcon;
 
 import jd.controlling.FavIconController;
 import jd.controlling.FavIconRequestor;
+import jd.plugins.PluginForHost;
+import jd.utils.JDUtilities;
 
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.MinTimeWeakReference;
@@ -181,5 +183,9 @@ public class DomainInfo implements FavIconRequestor {
         ret = FavIconController.getFavIcon(getTld(), null, true);
         if (ret.getIconHeight() >= size && ret.getIconWidth() >= size) { return new ImageIcon(IconIO.getScaledInstance((BufferedImage) ret.getImage(), size, size)); }
         return null;
+    }
+
+    public PluginForHost findPlugin() {
+        return JDUtilities.getPluginForHost(getTld());
     }
 }

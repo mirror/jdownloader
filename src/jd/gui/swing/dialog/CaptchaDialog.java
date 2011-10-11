@@ -98,7 +98,7 @@ public class CaptchaDialog extends AbstractDialog<String> implements ActionListe
         try {
             Application.setApplication(".jd_home");
             Main.statics();
-            cp = new CaptchaDialog(Dialog.LOGIC_COUNTDOWN, DialogType.HOSTER, DomainInfo.getInstance("wupload.com"), IconIO.getImageIcon(new File("/home/daniel/.jd_home/captchas/share-online.biz_17.08.2011_13.49.51.137.jpg").toURI().toURL()), null, "Enter both words...");
+            cp = new CaptchaDialog(Dialog.LOGIC_COUNTDOWN, DialogType.HOSTER, DomainInfo.getInstance("wupload.com"), IconIO.getImageIcon(new File("C:/Users/Thomas/.jd_home/captchas/filesonic.com_29.09.2011_11.49.01.653.jpg").toURI().toURL()), null, "Enter both words...");
             cp.setFilename("My File.rar");
             cp.setFilesize(21874638l);
             cp.setMethodName("filesonic.com");

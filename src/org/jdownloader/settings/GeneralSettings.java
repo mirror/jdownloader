@@ -104,8 +104,8 @@ public interface GeneralSettings extends ConfigInterface {
     public static final IntegerKeyHandler MAX_SIMULTANE_DOWNLOADS_PER_HOST = SH.getKeyHandler("MaxSimultaneDownloadsPerHost", IntegerKeyHandler.class);
 
     @AboutConfig
-    @DefaultIntValue(0)
-    @SpinnerValidator(min = 0, max = 100)
+    @DefaultIntValue(1)
+    @SpinnerValidator(min = 1, max = 100)
     int getMaxSimultaneDownloadsPerHost();
 
     void setMaxSimultaneDownloadsPerHost(int num);
@@ -246,7 +246,14 @@ public interface GeneralSettings extends ConfigInterface {
 
     void setWaittimeOnConnectionLoss(int milliseconds);
 
-    public static final BooleanKeyHandler DOWNLOAD_SPEED_LIMIT_ENABLED = SH.getKeyHandler("DownloadSpeedLimitEnabled", BooleanKeyHandler.class);
+    public static final BooleanKeyHandler DOWNLOAD_SPEED_LIMIT_ENABLED             = SH.getKeyHandler("DownloadSpeedLimitEnabled", BooleanKeyHandler.class);
+    public static final BooleanKeyHandler MAX_SIMULTANE_DOWNLOADS_PER_HOST_ENABLED = SH.getKeyHandler("MaxDownloadsPerHostEnabled", BooleanKeyHandler.class);
+
+    @AboutConfig
+    @DefaultBooleanValue(false)
+    boolean isMaxDownloadsPerHostEnabled();
+
+    void setMaxDownloadsPerHostEnabled(boolean b);
 
     @AboutConfig
     boolean isDownloadSpeedLimitEnabled();

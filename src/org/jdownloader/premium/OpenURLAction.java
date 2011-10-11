@@ -6,6 +6,7 @@ import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.DomainInfo;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.jdserv.JD_SERV_CONSTANTS;
 
 public class OpenURLAction extends AppAction {
 
@@ -18,7 +19,8 @@ public class OpenURLAction extends AppAction {
     }
 
     public void actionPerformed(ActionEvent e) {
-        CrossSystem.openURLOrShowMessage(info.getAffiliateSettings().getBuyPremiumLink());
+
+        CrossSystem.openURLOrShowMessage(JD_SERV_CONSTANTS.redirect(info.getAffiliateSettings().getBuyPremiumLink()));
     }
 
 }

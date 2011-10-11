@@ -40,22 +40,22 @@ public class ExtractionConfigPanel extends ExtensionConfigPanel<ExtractionExtens
         // plg.getSettings().isAskForUnknownPasswordsEnabled()
 
         this.addHeader(T._.settings_extractto(), NewTheme.I().getIcon("folder", 32));
-        toggleCustomizedPath = this.addPair(T._.settings_extract_to_archive_folder(), new Checkbox());
-        customPath = this.addPair(T._.settings_extract_to_path(), new FolderChooser("custom_extraction_path"));
+        toggleCustomizedPath = this.addPair(T._.settings_extract_to_archive_folder(), null, new Checkbox());
+        customPath = this.addPair(T._.settings_extract_to_path(), null, new FolderChooser("custom_extraction_path"));
         customPath.setConditionPair(toggleCustomizedPath);
-        toggleUseSubpath = this.addPair(T._.settings_use_subpath(), new Checkbox());
+        toggleUseSubpath = this.addPair(T._.settings_use_subpath(), null, new Checkbox());
         Spinner spinner = new Spinner(0, Integer.MAX_VALUE);
         spinner.setFormat("# " + T._.files());
-        subPathMinFiles = this.addPair(T._.settings_subpath_minnum(), spinner);
+        subPathMinFiles = this.addPair(T._.settings_subpath_minnum(), null, spinner);
         subPathMinFiles.setConditionPair(toggleUseSubpath);
-        toggleUseSubpathOnlyIfNotFoldered = this.addPair(T._.settings_subpath_no_folder(), new Checkbox());
+        toggleUseSubpathOnlyIfNotFoldered = this.addPair(T._.settings_subpath_no_folder(), null, new Checkbox());
         toggleUseSubpathOnlyIfNotFoldered.setToolTipText(T._.settings_subpath_no_folder_tt());
         toggleUseSubpathOnlyIfNotFoldered.setConditionPair(toggleUseSubpath);
-        subPath = this.addPair(T._.settings_subpath(), new TextInput());
+        subPath = this.addPair(T._.settings_subpath(), null, new TextInput());
         subPath.setConditionPair(toggleUseSubpath);
         this.addHeader(T._.settings_various(), NewTheme.I().getIcon("settings", 32));
-        toggleDeleteArchives = this.addPair(T._.settings_remove_after_extract(), new Checkbox());
-        toggleOverwriteExisting = this.addPair(T._.settings_overwrite(), new Checkbox());
+        toggleDeleteArchives = this.addPair(T._.settings_remove_after_extract(), null, new Checkbox());
+        toggleOverwriteExisting = this.addPair(T._.settings_overwrite(), null, new Checkbox());
 
     }
 

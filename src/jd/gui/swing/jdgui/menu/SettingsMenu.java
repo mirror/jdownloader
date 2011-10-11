@@ -14,6 +14,7 @@ public class SettingsMenu extends JMenu {
         addSeparator();
         add(new ChunksEditor());
         add(new ParalellDownloadsEditor());
+        add(new ParallelDownloadsPerHostEditor());
         add(new SpeedlimitEditor());
 
     }

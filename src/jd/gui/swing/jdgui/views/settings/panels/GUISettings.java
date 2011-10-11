@@ -41,7 +41,7 @@ public class GUISettings extends AbstractConfigPanel {
         captchaSize.setFormat("#'%'");
         this.addHeader(getTitle(), NewTheme.I().getIcon("barrierfreesettings", 32));
         this.addDescription(_JDT._.gui_settings_barrierfree_description());
-        this.addPair(_GUI._.gui_config_barrierfree_captchasize(), captchaSize);
+        this.addPair(_GUI._.gui_config_barrierfree_captchasize(), null, captchaSize);
 
     }
 

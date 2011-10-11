@@ -735,7 +735,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Do not start new links if reconnect requested" })
     String gui_config_download_preferreconnect();
 
-    @Default(lngs = { "en" }, values = { "Maximum of simultaneous downloads per host (0 = no limit)" })
+    @Default(lngs = { "en" }, values = { "Maximum of simultaneous downloads per host" })
     String gui_config_download_simultan_downloads_per_host();
 
     @Default(lngs = { "en" }, values = { "File writing" })
@@ -2871,5 +2871,17 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Click here to get an Premium Account" })
     String OpenURLAction_OpenURLAction_();
+
+    @Default(lngs = { "en" }, values = { "Enter username..." })
+    String BuyAndAddPremiumAccount_layoutDialogContent_username(String name);
+
+    @Default(lngs = { "en" }, values = { "Enter password..." })
+    String BuyAndAddPremiumAccount_layoutDialogContent_pass();
+
+    @Default(lngs = { "en" }, values = { "Max. sim. Downloads per Hoster" })
+    String ParalellDownloadsEditor_ParallelDownloadsPerHostEditor_();
+
+    @Default(lngs = { "en" }, values = { "Enable/Disable this option" })
+    String AbstractConfigPanel_addPair_enabled();
 
 }

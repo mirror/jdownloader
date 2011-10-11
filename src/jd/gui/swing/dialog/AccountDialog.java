@@ -52,6 +52,7 @@ import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.appwork.utils.swing.dialog.ProgressDialog;
 import org.appwork.utils.swing.dialog.ProgressDialog.ProgressGetter;
+import org.jdownloader.DomainInfo;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 
@@ -65,62 +66,84 @@ public class AccountDialog extends AbstractDialog<Integer> {
         try {
             Dialog.getInstance().showDialog(dialog);
             final Account ac = new Account(dialog.getUsername(), dialog.getPassword());
+            ac.setHoster(dialog.getHoster().getHost());
 
-            ProgressDialog pd = new ProgressDialog(new ProgressGetter() {
-
-                public void run() throws Exception {
-                    ac.setHoster(dialog.getHoster().getPlugin().getHost());
-                    AccountCheckJob job = AccountChecker.getInstance().check(ac, true);
-                    job.waitChecked();
-                }
-
-                public String getString() {
-                    return null;
-                }
-
-                public int getProgress() {
-                    return -1;
-                }
-            }, 0, _GUI._.accountdialog_check(), _GUI._.accountdialog_check_msg(), dialog.getHoster().getIcon());
-
-            try {
-                Dialog.getInstance().showDialog(pd);
-            } catch (DialogClosedException e) {
-
-                throw e;
-            } catch (DialogCanceledException e) {
-                if (pd.getThrowable() == null) { throw e; }
-
+            if (!addAccount(ac)) {
+                showDialog(dialog.getHoster().getPlugin(), ac);
             }
-
-            if (ac.getAccountInfo() != null) {
-                if (ac.getAccountInfo().isExpired()) {
-                    Dialog.getInstance().showConfirmDialog(0, _GUI._.accountdialog_check_expired_title(), _GUI._.accountdialog_check_expired(ac.getAccountInfo().getStatus()), null, _GUI._.accountdialog_check_expired_renew(), null);
-
-                    AccountController.getInstance().addAccount(dialog.getHoster().getPlugin(), ac);
-                    return;
-
-                } else if (!ac.isValid()) {
-
-                    Dialog.getInstance().showMessageDialog(_GUI._.accountdialog_check_invalid(ac.getAccountInfo().getStatus()));
-
-                } else {
-                    Dialog.getInstance().showMessageDialog(_GUI._.accountdialog_check_valid(ac.getAccountInfo().getStatus()));
-                    AccountController.getInstance().addAccount(dialog.getHoster().getPlugin(), ac);
-                    return;
-
-                }
-            } else {
-                Throwable t = pd.getThrowable();
-                if (t != null) Dialog.getInstance().showExceptionDialog(_GUI._.accountdialog_check_failed(), _GUI._.accountdialog_check_failed_msg(), t);
-            }
-            showDialog(dialog.getHoster().getPlugin(), ac);
         } catch (DialogClosedException e) {
             e.printStackTrace();
         } catch (DialogCanceledException e) {
             e.printStackTrace();
         }
 
+    }
+
+    public static boolean addAccount(final Account ac) throws DialogClosedException, DialogCanceledException {
+        try {
+            checkAccount(ac);
+
+        } catch (DialogClosedException e) {
+
+            throw e;
+        } catch (DialogCanceledException e) {
+            throw e;
+
+        } catch (Throwable e) {
+            Dialog.getInstance().showExceptionDialog(_GUI._.accountdialog_check_failed(), _GUI._.accountdialog_check_failed_msg(), e);
+        }
+
+        if (ac.getAccountInfo() != null) {
+            if (ac.getAccountInfo().isExpired()) {
+                Dialog.getInstance().showConfirmDialog(0, _GUI._.accountdialog_check_expired_title(), _GUI._.accountdialog_check_expired(ac.getAccountInfo().getStatus()), null, _GUI._.accountdialog_check_expired_renew(), null);
+
+                AccountController.getInstance().addAccount(ac.getDomainInfo().findPlugin(), ac);
+                return true;
+
+            } else if (!ac.isValid()) {
+
+                Dialog.getInstance().showMessageDialog(_GUI._.accountdialog_check_invalid(ac.getAccountInfo().getStatus()));
+                return false;
+            } else {
+                Dialog.getInstance().showMessageDialog(_GUI._.accountdialog_check_valid(ac.getAccountInfo().getStatus()));
+                AccountController.getInstance().addAccount(ac.getDomainInfo().findPlugin(), ac);
+                return true;
+
+            }
+        } else {
+            return false;
+        }
+    }
+
+    public static ProgressDialog checkAccount(final Account ac) throws Throwable {
+        ProgressDialog pd = new ProgressDialog(new ProgressGetter() {
+
+            public void run() throws Exception {
+                ac.setHoster(ac.getHoster());
+                AccountCheckJob job = AccountChecker.getInstance().check(ac, true);
+                job.waitChecked();
+            }
+
+            public String getString() {
+                return null;
+            }
+
+            public int getProgress() {
+                return -1;
+            }
+        }, 0, _GUI._.accountdialog_check(), _GUI._.accountdialog_check_msg(), DomainInfo.getInstance(ac.getHoster()).getFavIcon());
+        try {
+
+            Dialog.getInstance().showDialog(pd);
+        } catch (DialogCanceledException e) {
+            if (pd.getThrowable() == null) {
+                throw e;
+            } else {
+                throw pd.getThrowable();
+            }
+
+        }
+        return pd;
     }
 
     private SearchComboBox<HostPluginWrapper> hoster;
