@@ -11,7 +11,6 @@ import org.appwork.exceptions.WTFException;
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
 import org.appwork.storage.config.JsonConfig;
-import org.appwork.utils.Files;
 import org.appwork.utils.event.predefined.changeevent.ChangeEvent;
 import org.appwork.utils.event.predefined.changeevent.ChangeEventSender;
 import org.jdownloader.translate._JDT;
@@ -189,11 +188,11 @@ public class LinkFilterController implements LinkCrawlerFilter {
 
             for (LinkgrabberFilterRuleWrapper lgr : localdenyUrlFilter) {
                 try {
-                    if (!checkHoster(lgr, link)) continue;
+                    if (!lgr.checkHoster(link)) continue;
                 } catch (NoDownloadLinkException e) {
                     continue;
                 }
-                if (!checkSource(lgr, link)) continue;
+                if (!lgr.checkSource(link)) continue;
                 matches = true;
                 matchingFilter = lgr.getRule();
 
@@ -218,23 +217,23 @@ public class LinkFilterController implements LinkCrawlerFilter {
         for (LinkgrabberFilterRuleWrapper lgr : localacceptUrlFilter) {
 
             try {
-                if (!checkHoster(lgr, link)) continue;
+                if (!lgr.checkHoster(link)) continue;
             } catch (NoDownloadLinkException e) {
 
                 return false;
             }
-            if (!checkSource(lgr, link)) continue;
+            if (!lgr.checkSource(link)) continue;
 
             return false;
 
         }
         for (LinkgrabberFilterRuleWrapper lgr : localacceptFileFilter) {
             try {
-                if (!checkHoster(lgr, link)) continue;
+                if (!lgr.checkHoster(link)) continue;
             } catch (NoDownloadLinkException e) {
                 return false;
             }
-            if (!checkSource(lgr, link)) continue;
+            if (!lgr.checkSource(link)) continue;
 
             return false;
         }
@@ -265,14 +264,14 @@ public class LinkFilterController implements LinkCrawlerFilter {
             for (LinkgrabberFilterRuleWrapper lgr : localdenyFileFilter) {
 
                 try {
-                    if (!checkHoster(lgr, link)) continue;
+                    if (!lgr.checkHoster(link)) continue;
                 } catch (NoDownloadLinkException e) {
                     throw new WTFException();
                 }
-                if (!checkSource(lgr, link)) continue;
-                if (!checkFileName(lgr, link)) continue;
-                if (!checkFileSize(lgr, link)) continue;
-                if (!checkFileType(lgr, link)) continue;
+                if (!lgr.checkSource(link)) continue;
+                if (!lgr.checkFileName(link)) continue;
+                if (!lgr.checkFileSize(link)) continue;
+                if (!lgr.checkFileType(link)) continue;
                 matches = true;
                 matchedFilter = lgr.getRule();
                 break;
@@ -280,12 +279,12 @@ public class LinkFilterController implements LinkCrawlerFilter {
             if (!matches) {
                 for (LinkgrabberFilterRuleWrapper lgr : localdenyUrlFilter) {
                     try {
-                        if (!checkHoster(lgr, link)) continue;
+                        if (!lgr.checkHoster(link)) continue;
                     } catch (NoDownloadLinkException e) {
                         throw new WTFException();
 
                     }
-                    if (!checkSource(lgr, link)) continue;
+                    if (!lgr.checkSource(link)) continue;
                     matches = true;
                     matchedFilter = lgr.getRule();
 
@@ -307,27 +306,27 @@ public class LinkFilterController implements LinkCrawlerFilter {
         for (LinkgrabberFilterRuleWrapper lgr : localacceptUrlFilter) {
 
             try {
-                if (!checkHoster(lgr, link)) continue;
+                if (!lgr.checkHoster(link)) continue;
             } catch (NoDownloadLinkException e) {
                 e.printStackTrace();
                 throw new WTFException();
             }
-            if (!checkSource(lgr, link)) continue;
+            if (!lgr.checkSource(link)) continue;
 
             return false;
 
         }
         for (LinkgrabberFilterRuleWrapper lgr : localacceptFileFilter) {
             try {
-                if (!checkHoster(lgr, link)) continue;
+                if (!lgr.checkHoster(link)) continue;
             } catch (NoDownloadLinkException e) {
 
                 throw new WTFException();
             }
-            if (!checkSource(lgr, link)) continue;
-            if (!checkFileName(lgr, link)) continue;
-            if (!checkFileSize(lgr, link)) continue;
-            if (!checkFileType(lgr, link)) continue;
+            if (!lgr.checkSource(link)) continue;
+            if (!lgr.checkFileName(link)) continue;
+            if (!lgr.checkFileSize(link)) continue;
+            if (!lgr.checkFileType(link)) continue;
             System.out.println(1);
             return false;
         }
@@ -335,46 +334,4 @@ public class LinkFilterController implements LinkCrawlerFilter {
         link.setMatchingFilter(matchedFilter);
         return true;
     }
-
-    private boolean checkFileType(LinkgrabberFilterRuleWrapper lgr, CrawledLink link) {
-        if (lgr.getFiletypeFilter() != null) {
-            String ext = Files.getExtension(link.getName());
-            if (ext == null) return true;
-            return lgr.getFiletypeFilter().matches(ext);
-        }
-        return true;
-    }
-
-    private boolean checkFileSize(LinkgrabberFilterRuleWrapper lgr, CrawledLink link) {
-        if (lgr.getFilesizeRule() != null) {
-            // if (link.getDownloadLink().getDownloadSize() <= 0) return true;
-            return lgr.getFilesizeRule().matches(link.getSize());
-        }
-        return true;
-    }
-
-    private boolean checkFileName(LinkgrabberFilterRuleWrapper lgr, CrawledLink link) {
-        if (lgr.getFileNameRule() != null) { return lgr.getFileNameRule().matches(link.getName()); }
-        return true;
-    }
-
-    private boolean checkHoster(LinkgrabberFilterRuleWrapper lgr, CrawledLink link) throws NoDownloadLinkException {
-        if (lgr.getHosterRule() != null) {
-            if (link.getDownloadLink() == null) { throw new NoDownloadLinkException(); }
-            return lgr.getHosterRule().matches(link.getURL());
-        }
-        return true;
-    }
-
-    private boolean checkSource(LinkgrabberFilterRuleWrapper lgr, CrawledLink link) {
-        CrawledLink p = link;
-        if (lgr.getSourceRule() != null) {
-            do {
-                if (lgr.getSourceRule().matches(p.getURL())) { return true; }
-            } while ((p = p.getParentLink()) != null);
-            return false;
-        }
-        return true;
-    }
-
 }

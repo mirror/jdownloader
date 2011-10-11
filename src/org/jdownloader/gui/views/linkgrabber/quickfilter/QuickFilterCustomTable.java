@@ -20,6 +20,7 @@ import org.jdownloader.controlling.filter.LinkFilterController;
 import org.jdownloader.controlling.filter.LinkFilterSettings;
 import org.jdownloader.controlling.filter.LinkgrabberFilterRule;
 import org.jdownloader.controlling.filter.LinkgrabberFilterRuleWrapper;
+import org.jdownloader.controlling.filter.NoDownloadLinkException;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTable;
 
 public class QuickFilterCustomTable extends FilterTable<CrawledPackage, CrawledLink> implements LinkCollectorListener, GenericConfigEventListener<Boolean>, ChangeListener {
@@ -83,12 +84,53 @@ public class QuickFilterCustomTable extends FilterTable<CrawledPackage, CrawledL
             for (LinkgrabberFilterRuleWrapper customFilter : customFilters) {
                 CustomizedFilter<CrawledPackage, CrawledLink> filter = filterMap.get(customFilter.getRule());
                 if (filter == null) {
-                    filter = new CustomizedFilter<CrawledPackage, CrawledLink>(customFilter);
+                    filter = new CustomizedFilter<CrawledPackage, CrawledLink>(customFilter) {
+
+                        @Override
+                        public boolean isFiltered(CrawledLink link) {
+                            boolean ret = _isFiltered(link);
+                            if (lgr.getRule().isAccept()) {
+                                return ret;
+                            } else {
+                                return !ret;
+                            }
+                        }
+
+                        private boolean _isFiltered(CrawledLink link) {
+                            try {
+                                if (!lgr.checkHoster(link)) return false;
+                            } catch (NoDownloadLinkException e) {
+                                return false;
+                            }
+                            if (!lgr.checkSource(link)) return false;
+                            if (!lgr.checkFileName(link)) return false;
+                            if (!lgr.checkFileSize(link)) return false;
+                            if (!lgr.checkFileType(link)) return false;
+                            return true;
+                        }
+
+                        @Override
+                        public boolean isFiltered(CrawledPackage link) {
+                            /* we do not filter packages */
+                            return false;
+                        }
+
+                        @Override
+                        public void setEnabled(boolean enabled) {
+                            super.setEnabled(enabled);
+                            /*
+                             * request recreate the model of filtered view
+                             */
+                            table2Filter.getPackageControllerTableModel().recreateModel(false);
+                        }
+
+                    };
                 }
                 filter.setCounter(0);
                 filters.add(filter);
                 newfilterMap.put(customFilter.getRule(), filter);
             }
+            filterMap = newfilterMap;
             /* update filter list */
             boolean readL = LinkCollector.getInstance().readLock();
             try {
@@ -96,7 +138,7 @@ public class QuickFilterCustomTable extends FilterTable<CrawledPackage, CrawledL
                     synchronized (pkg) {
                         for (CrawledLink link : pkg.getChildren()) {
                             for (Filter<CrawledPackage, CrawledLink> filter : filters) {
-                                if (((ExtensionFilter<CrawledPackage, CrawledLink>) filter).isFiltered(link)) {
+                                if (((CustomizedFilter<CrawledPackage, CrawledLink>) filter).isFiltered(link)) {
                                     filter.setCounter(filter.getCounter() + 1);
                                     break;
                                 }

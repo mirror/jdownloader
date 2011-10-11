@@ -1,28 +1,34 @@
 package org.jdownloader.gui.views.linkgrabber.quickfilter;
 
+import javax.swing.ImageIcon;
+
 import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
 import jd.controlling.packagecontroller.AbstractPackageNode;
 
 import org.jdownloader.controlling.filter.LinkgrabberFilterRuleWrapper;
 import org.jdownloader.images.NewTheme;
 
-public class CustomizedFilter<E extends AbstractPackageNode<V, E>, V extends AbstractPackageChildrenNode<E>> extends Filter<E, V> {
+public abstract class CustomizedFilter<E extends AbstractPackageNode<V, E>, V extends AbstractPackageChildrenNode<E>> extends Filter<E, V> {
 
-    private LinkgrabberFilterRuleWrapper rule;
+    protected LinkgrabberFilterRuleWrapper lgr;
 
     public CustomizedFilter(LinkgrabberFilterRuleWrapper rule) {
-        super(rule.getRule().getName(), NewTheme.I().getIcon("find", 16), false);
-        this.rule = rule;
+        super(rule.getRule().getName(), null, false);
+        this.lgr = rule;
     }
 
     @Override
-    public boolean isFiltered(V link) {
-        return true;
+    public String getName() {
+        return lgr.getRule().getName();
     }
 
     @Override
-    public boolean isFiltered(E link) {
-        return false;
+    public ImageIcon getIcon() {
+        if (lgr.getRule().isAccept()) {
+            return NewTheme.I().getIcon("ok", 16);
+        } else {
+            return NewTheme.I().getIcon("cancel", 16);
+        }
     }
 
 }

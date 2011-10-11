@@ -2,7 +2,10 @@ package org.jdownloader.controlling.filter;
 
 import java.util.regex.Pattern;
 
+import jd.controlling.linkcrawler.CrawledLink;
+
 import org.appwork.storage.config.JsonConfig;
+import org.appwork.utils.Files;
 
 public class LinkgrabberFilterRuleWrapper {
 
@@ -87,6 +90,47 @@ public class LinkgrabberFilterRuleWrapper {
             return Pattern.compile(sb.toString(), Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
         }
 
+    }
+
+    public boolean checkFileType(CrawledLink link) {
+        if (getFiletypeFilter() != null) {
+            String ext = Files.getExtension(link.getName());
+            if (ext == null) return true;
+            return getFiletypeFilter().matches(ext);
+        }
+        return true;
+    }
+
+    public boolean checkFileSize(CrawledLink link) {
+        if (getFilesizeRule() != null) {
+            // if (link.getDownloadLink().getDownloadSize() <= 0) return true;
+            return getFilesizeRule().matches(link.getSize());
+        }
+        return true;
+    }
+
+    public boolean checkFileName(CrawledLink link) {
+        if (getFileNameRule() != null) { return getFileNameRule().matches(link.getName()); }
+        return true;
+    }
+
+    public boolean checkHoster(CrawledLink link) throws NoDownloadLinkException {
+        if (getHosterRule() != null) {
+            if (link.getDownloadLink() == null) { throw new NoDownloadLinkException(); }
+            return getHosterRule().matches(link.getURL());
+        }
+        return true;
+    }
+
+    public boolean checkSource(CrawledLink link) {
+        CrawledLink p = link;
+        if (getSourceRule() != null) {
+            do {
+                if (getSourceRule().matches(p.getURL())) { return true; }
+            } while ((p = p.getParentLink()) != null);
+            return false;
+        }
+        return true;
     }
 
 }

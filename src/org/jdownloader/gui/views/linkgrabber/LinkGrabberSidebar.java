@@ -30,7 +30,7 @@ public class LinkGrabberSidebar extends MigPanel {
     private Header                 customFilter;
 
     public LinkGrabberSidebar(LinkGrabberTable table) {
-        super("ins 0,wrap 1", "[grow,fill]", "[][][][][grow,fill][]");
+        super("ins 0,wrap 1", "[grow,fill]", "[][][][][][][grow,fill][]");
         int c = LookAndFeelController.getInstance().getLAFOptions().getPanelBackgroundColor();
 
         if (c >= 0) {
