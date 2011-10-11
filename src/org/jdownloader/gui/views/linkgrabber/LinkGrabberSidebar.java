@@ -9,7 +9,6 @@ import jd.gui.swing.laf.LookAndFeelController;
 import org.appwork.app.gui.MigPanel;
 import org.jdownloader.controlling.filter.LinkFilterSettings;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.gui.views.linkgrabber.quickfilter.QuickFilterCustomTable;
 import org.jdownloader.gui.views.linkgrabber.quickfilter.QuickFilterHosterTable;
 import org.jdownloader.gui.views.linkgrabber.quickfilter.QuickFilterTypeTable;
 
@@ -25,9 +24,6 @@ public class LinkGrabberSidebar extends MigPanel {
     private Header                 hosterFilter;
     private Header                 filetypeFilter;
     private Header                 quickSettingsHeader;
-    private QuickFilterCustomTable customFilterTable;
-
-    private Header                 customFilter;
 
     public LinkGrabberSidebar(LinkGrabberTable table) {
         super("ins 0,wrap 1", "[grow,fill]", "[][][][][][][grow,fill][]");
@@ -42,9 +38,6 @@ public class LinkGrabberSidebar extends MigPanel {
         hosterFilterTable.setVisible(LinkFilterSettings.LG_QUICKFILTER_HOSTER_VISIBLE.getValue());
         filetypeFilterTable = new QuickFilterTypeTable(table);
         filetypeFilterTable.setVisible(LinkFilterSettings.LG_QUICKFILTER_TYPE_VISIBLE.getValue());
-
-        customFilterTable = new QuickFilterCustomTable(table);
-        customFilterTable.setVisible(LinkFilterSettings.LG_QUICKFILTER_CUSTOM_VISIBLE.getValue());
 
         quicksettings = new MigPanel("ins 0,wrap 1", "[grow,fill]", "[]0[]0[]");
 
@@ -81,20 +74,6 @@ public class LinkGrabberSidebar extends MigPanel {
 
         };
 
-        customFilter = new Header(LinkFilterSettings.LG_QUICKFILTER_CUSTOM_VISIBLE, _GUI._.LinkGrabberSidebar_LinkGrabberSidebar_customfilter()) {
-
-            /**
-             * 
-             */
-            private static final long serialVersionUID = 2113097293812798851L;
-
-            @Override
-            protected void setContentsVisible(boolean selected) {
-                customFilterTable.setVisible(selected);
-            }
-
-        };
-
         quickSettingsHeader = new Header(LinkFilterSettings.LG_QUICKSETTINGS_VISIBLE, _GUI._.LinkGrabberSidebar_LinkGrabberSidebar_settings()) {
 
             /**
@@ -113,8 +92,6 @@ public class LinkGrabberSidebar extends MigPanel {
         add(hosterFilterTable, "hidemode 2");
         add(filetypeFilter, "gaptop 7");
         add(filetypeFilterTable, "hidemode 2");
-        add(customFilter, "gaptop 7");
-        add(customFilterTable, "hidemode 2");
         add(Box.createGlue());
         add(quickSettingsHeader, "gaptop 7");
         add(quicksettings, "hidemode 2");

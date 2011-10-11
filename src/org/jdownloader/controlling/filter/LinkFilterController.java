@@ -38,7 +38,7 @@ public class LinkFilterController implements LinkCrawlerFilter {
     private ArrayList<LinkgrabberFilterRuleWrapper> acceptFileFilter;
     private ArrayList<LinkgrabberFilterRuleWrapper> denyUrlFilter;
     private ArrayList<LinkgrabberFilterRuleWrapper> acceptUrlFilter;
-    private ArrayList<LinkgrabberFilterRuleWrapper> quickFilter;
+
     private ChangeEventSender                       eventSender;
 
     /**
@@ -84,12 +84,7 @@ public class LinkFilterController implements LinkCrawlerFilter {
         ArrayList<LinkgrabberFilterRuleWrapper> newdenyFileFilter = new ArrayList<LinkgrabberFilterRuleWrapper>();
         ArrayList<LinkgrabberFilterRuleWrapper> newacceptFileFilter = new ArrayList<LinkgrabberFilterRuleWrapper>();
 
-        ArrayList<LinkgrabberFilterRuleWrapper> newquickFilter = new ArrayList<LinkgrabberFilterRuleWrapper>();
-
         for (LinkgrabberFilterRule lgr : filter) {
-            if (lgr.isQuickEnabled() && lgr.isValid()) {
-                newquickFilter.add(lgr.compile());
-            }
             if (lgr.isEnabled() && lgr.isValid()) {
 
                 LinkgrabberFilterRuleWrapper compiled = lgr.compile();
@@ -117,9 +112,6 @@ public class LinkFilterController implements LinkCrawlerFilter {
         denyFileFilter = newdenyFileFilter;
         newacceptFileFilter.trimToSize();
         acceptFileFilter = newacceptFileFilter;
-
-        newquickFilter.trimToSize();
-        quickFilter = newquickFilter;
         getEventSender().fireEvent(new ChangeEvent(LinkFilterController.this));
     }
 
@@ -137,10 +129,6 @@ public class LinkFilterController implements LinkCrawlerFilter {
         synchronized (this) {
             return new ArrayList<LinkgrabberFilterRule>(filter);
         }
-    }
-
-    public ArrayList<LinkgrabberFilterRuleWrapper> listQuickFilter() {
-        return quickFilter;
     }
 
     public void addAll(ArrayList<LinkgrabberFilterRule> all) {

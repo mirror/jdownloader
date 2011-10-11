@@ -90,67 +90,11 @@ public class FilterTableModel extends ExtTableModel<LinkgrabberFilterRule> imple
             }
         });
 
-        this.addColumn(new ExtCheckColumn<LinkgrabberFilterRule>(_GUI._.settings_linkgrabber_filter_columns_quick_enabled()) {
-
-            private static final long serialVersionUID = -4667150369226691276L;
-
-            public ExtTableHeaderRenderer getHeaderRenderer(final JTableHeader jTableHeader) {
-
-                final ExtTableHeaderRenderer ret = new ExtTableHeaderRenderer(this, jTableHeader) {
-
-                    private static final long serialVersionUID = 3938290423337000265L;
-
-                    @Override
-                    public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
-                        super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-                        setIcon(NewTheme.I().getIcon("ok", 14));
-                        setHorizontalAlignment(CENTER);
-                        setText(null);
-                        return this;
-                    }
-
-                };
-
-                return ret;
-            }
-
-            @Override
-            public int getMaxWidth() {
-                return 30;
-            }
-
-            @Override
-            public boolean isHidable() {
-                return false;
-            }
-
-            @Override
-            protected boolean getBooleanValue(LinkgrabberFilterRule value) {
-                return value.isQuickEnabled();
-            }
-
-            @Override
-            public boolean isEditable(LinkgrabberFilterRule obj) {
-                return true;
-            }
-
-            @Override
-            public ExtTooltip createToolTip(Point position, LinkgrabberFilterRule obj) {
-                return createTooltip(obj);
-            }
-
-            @Override
-            protected void setBooleanValue(boolean value, LinkgrabberFilterRule object) {
-                object.setQuickEnabled(value);
-                LinkFilterController.getInstance().update();
-            }
-        });
-
         addColumn(new ExtTextColumn<LinkgrabberFilterRule>(_GUI._.settings_linkgrabber_filter_columns_name()) {
 
             @Override
             public boolean isEnabled(LinkgrabberFilterRule value) {
-                return value.isEnabled() || value.isQuickEnabled();
+                return value.isEnabled();
             }
 
             @Override
@@ -171,7 +115,7 @@ public class FilterTableModel extends ExtTableModel<LinkgrabberFilterRule> imple
 
             @Override
             public boolean isEnabled(LinkgrabberFilterRule value) {
-                return value.isEnabled() || value.isQuickEnabled();
+                return value.isEnabled();
             }
 
             @Override
@@ -198,7 +142,7 @@ public class FilterTableModel extends ExtTableModel<LinkgrabberFilterRule> imple
 
             @Override
             public boolean isEnabled(LinkgrabberFilterRule value) {
-                return value.isEnabled() || value.isQuickEnabled();
+                return value.isEnabled();
             }
 
             @Override

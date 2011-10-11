@@ -102,17 +102,8 @@ public abstract class FilterRule implements Storable {
     private RegexFilter    filenameFilter;
 
     private boolean        enabled;
-    private boolean        quick;
 
-    public boolean isQuickEnabled() {
-        return quick;
-    }
-
-    public void setQuickEnabled(boolean quick) {
-        this.quick = quick;
-    }
-
-    private String name;
+    private String         name;
 
     public String getName() {
         return name;
