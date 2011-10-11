@@ -30,18 +30,37 @@ import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
+import jd.utils.JDUtilities;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "parellisavvyclub.com" }, urls = { "http://(www\\.)?parellisavvyclub\\.com/(watchMedia\\.faces\\?id=\\d+|video\\?sckey=[^\"\\']+(\\&pl=\\d+)?)" }, flags = { 2 })
 public class ParelliSavvyClubCom extends PluginForHost {
 
-    public ParelliSavvyClubCom(PluginWrapper wrapper) {
+    private static final String MAINPAGE = "http://www.parellisavvyclub.com";
+
+    private static final Object LOCK     = new Object();
+
+    public ParelliSavvyClubCom(final PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://shop.parellinaturalhorsetraining.com/savvySignupStep1.jsf");
+    }
+
+    @Override
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
+        final AccountInfo ai = new AccountInfo();
+        try {
+            login(account, true);
+        } catch (final PluginException e) {
+            account.setValid(false);
+            return ai;
+        }
+        ai.setUnlimitedTraffic();
+        ai.setStatus("Premium User");
+        return ai;
     }
 
     @Override
@@ -49,90 +68,108 @@ public class ParelliSavvyClubCom extends PluginForHost {
         return "http://www.parellisavvyclub.com/termsofservice.faces";
     }
 
-    private static final String MAINPAGE = "http://www.parellisavvyclub.com";
-    private static final Object LOCK     = new Object();
-
-    @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
-        this.setBrowserExclusive();
-        String filename = link.getName();
-        Account aa = AccountController.getInstance().getValidAccount(this);
-        if (aa == null) {
-            link.getLinkStatus().setStatusText("Link only checkable if you have an account!");
-            return AvailableStatus.UNCHECKABLE;
+    private String getDllink() {
+        String dllink = br.getRegex("(http://down\\d+\\.parelli\\.com/[^\"\\']+)\"").getMatch(0);
+        if (dllink == null) {
+            dllink = br.getRegex("flashvars=\"file=(.*?)\"").getMatch(0);
         }
-        login(aa, false);
-        br.getPage(link.getDownloadURL());
-        String dllink = getDllink();
-        if (dllink == null) throw new Exception("Hey .bismarck, RTMP support is missing ;)");
-        filename = new Regex(dllink, ".*?parelli\\.com/.{1,10}/(.*?)\\?Policy=").getMatch(0);
-        if (filename == null) filename = br.getRegex("class=\"plWatchVideo playing\" rel=\"nofollow\" href=\"[^\"\\']+\">(.*?)<br>").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        filename = filename.trim();
-        String ext = filename.substring(filename.lastIndexOf("."));
-        if (ext == null) ext = ".mov";
-        if (!filename.contains(ext)) filename += ext;
-        link.setFinalFileName(filename);
-        Browser br2 = br.cloneBrowser();
-        // In case the link redirects to the finallink
-        br2.setFollowRedirects(true);
-        URLConnectionAdapter con = null;
-        try {
-            con = br2.openGetConnection(dllink);
-            if (!con.getContentType().contains("html"))
-                link.setDownloadSize(con.getLongContentLength());
-            else
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            return AvailableStatus.TRUE;
-        } finally {
-            try {
-                con.disconnect();
-            } catch (Throwable e) {
-            }
-        }
+        return dllink;
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
+    }
+
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        return -1;
+    }
+
+    @Override
+    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadalbe for premium members");
     }
 
-    private String getDllink() {
-        String dllink = br.getRegex("(http://down\\d+\\.parelli\\.com/[^\"\\']+)\"").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("flashvars=\"file=(http://.*?)\"").getMatch(0);
-        return dllink;
+    @Override
+    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
+        requestFileInformation(link);
+        login(account, false);
+        br.getPage(link.getDownloadURL());
+        final String dllink = getDllink();
+        if (dllink == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+
+        final String[] urlValues = new Regex(dllink, "(.*?)\\&streamer=(.*?)\\&autostart.+").getRow(0);
+        if (urlValues == null || urlValues.length != 2) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+
+        if (urlValues[1].startsWith("rtmp")) {
+            if (isStableEnviroment()) { throw new PluginException(LinkStatus.ERROR_FATAL, "Developer Version of JD needed!"); }
+
+            dl = new RTMPDownload(this, link, urlValues[1] + "/" + urlValues[0]);
+            final jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
+
+            rtmp.setPlayPath(Encoding.htmlDecode("mp4:" + urlValues[0]));
+            rtmp.setApp(new Regex(urlValues[1], ".+://[\\w\\.]+/(.*?)$").getMatch(0));
+            rtmp.setUrl(urlValues[1]);
+            rtmp.setResume(true);
+            rtmp.setSwfVfy("http://parconassets.s3.amazonaws.com/1308985315/flash/player-licensed.swf");
+
+            ((RTMPDownload) dl).startDownload();
+
+        } else {
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+            if (dl.getConnection().getContentType().contains("html")) {
+                br.followConnection();
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            dl.startDownload();
+        }
+    }
+
+    private boolean isStableEnviroment() {
+        String prev = JDUtilities.getRevision();
+        if (prev == null || prev.length() < 3) {
+            prev = "0";
+        } else {
+            prev = prev.replaceAll(",|\\.", "");
+        }
+        final int rev = Integer.parseInt(prev);
+        if (rev < 10000) { return true; }
+        return false;
     }
 
     @SuppressWarnings("unchecked")
-    private void login(Account account, boolean force) throws Exception {
+    private void login(final Account account, final boolean force) throws Exception {
         synchronized (LOCK) {
             // Load cookies
             br.setCookiesExclusive(false);
             final Object ret = account.getProperty("cookies", null);
             boolean acmatch = Encoding.urlEncode(account.getUser()).matches(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-            if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).matches(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+            if (acmatch) {
+                acmatch = Encoding.urlEncode(account.getPass()).matches(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+            }
             if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
                 final HashMap<String, String> cookies = (HashMap<String, String>) ret;
                 if (cookies.containsKey("userName") && account.isValid()) {
                     for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
                         final String key = cookieEntry.getKey();
                         final String value = cookieEntry.getValue();
-                        this.br.setCookie(MAINPAGE, key, value);
+                        br.setCookie(MAINPAGE, key, value);
                     }
                     return;
                 }
             }
             br.setFollowRedirects(false);
             br.getPage("https://www.parellisavvyclub.com/login.faces");
-            String viewState = br.getRegex("id=\"javax\\.faces\\.ViewState\" value=\"(j_id\\d+)\"").getMatch(0);
-            if (viewState == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            final String viewState = br.getRegex("id=\"javax\\.faces\\.ViewState\" value=\"(j_id\\d+)\"").getMatch(0);
+            if (viewState == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
             br.postPage("https://www.parellisavvyclub.com/login.faces", "funid=funid&funid%3AusernameInput=" + Encoding.urlEncode(account.getUser()) + "&funid%3ApasswordInput=" + Encoding.urlEncode(account.getPass()) + "&funid%3AloginBut.x=0&funid%3AloginBut.y=0&javax.faces.ViewState=" + viewState);
-            if (br.getCookie(MAINPAGE, "userName") == null || br.getCookie(MAINPAGE, "email") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            if (br.getCookie(MAINPAGE, "userName") == null || br.getCookie(MAINPAGE, "email") == null) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE); }
             account.setValid(true);
             // Save cookies
             final HashMap<String, String> cookies = new HashMap<String, String>();
-            final Cookies add = this.br.getCookies(MAINPAGE);
+            final Cookies add = br.getCookies(MAINPAGE);
             for (final Cookie c : add.getCookies()) {
                 cookies.put(c.getKey(), c.getValue());
             }
@@ -143,37 +180,58 @@ public class ParelliSavvyClubCom extends PluginForHost {
     }
 
     @Override
-    public AccountInfo fetchAccountInfo(Account account) throws Exception {
-        AccountInfo ai = new AccountInfo();
-        try {
-            login(account, true);
-        } catch (PluginException e) {
-            account.setValid(false);
-            return ai;
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        setBrowserExclusive();
+        final Account aa = AccountController.getInstance().getValidAccount(this);
+        if (aa == null) {
+            link.getLinkStatus().setStatusText("Link only checkable if you have an account!");
+            return AvailableStatus.UNCHECKABLE;
         }
-        ai.setUnlimitedTraffic();
-        ai.setStatus("Premium User");
-        return ai;
-    }
-
-    @Override
-    public void handlePremium(DownloadLink link, Account account) throws Exception {
-        requestFileInformation(link);
-        login(account, false);
+        login(aa, false);
         br.getPage(link.getDownloadURL());
-        String dllink = getDllink();
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        final String dllink = getDllink();
+        if (dllink == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        String filename = new Regex(dllink, ".*?parelli\\.com/.{1,10}/(.*?)\\?Policy=").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("class=\"plWatchVideo playing\" rel=\"nofollow\" href=\"[^\"\\']+\">(.*?)<br>").getMatch(0);
         }
-        dl.startDownload();
-    }
-
-    @Override
-    public int getMaxSimultanPremiumDownloadNum() {
-        return -1;
+        if (filename == null) {
+            filename = br.getRegex("class=\"playing\">(.*?)<").getMatch(0);
+        }
+        if (filename == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        filename = filename.trim();
+        String ext = filename.substring(filename.lastIndexOf("."));
+        if (ext == null) {
+            ext = ".mov";
+        }
+        if (!filename.contains(ext)) {
+            filename += ext;
+        }
+        if (dllink.matches(".+&streamer=rtmp.+")) {
+            filename = filename.replaceAll("\\.mov$", ".flv");
+        } else {
+            link.setFinalFileName(filename);
+            final Browser br2 = br.cloneBrowser();
+            // In case the link redirects to the finallink
+            br2.setFollowRedirects(true);
+            URLConnectionAdapter con = null;
+            try {
+                con = br2.openGetConnection(dllink);
+                if (!con.getContentType().contains("html")) {
+                    link.setDownloadSize(con.getLongContentLength());
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                return AvailableStatus.TRUE;
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (final Throwable e) {
+                }
+            }
+        }
+        link.setFinalFileName(filename);
+        return AvailableStatus.TRUE;
     }
 
     @Override
@@ -181,12 +239,7 @@ public class ParelliSavvyClubCom extends PluginForHost {
     }
 
     @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
-    }
-
-    @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetDownloadlink(final DownloadLink link) {
     }
 
 }
