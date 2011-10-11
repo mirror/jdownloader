@@ -163,7 +163,7 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
 
         panel.add(createHeader(_GUI._.FilterRuleDialog_layoutDialogContent_if()), "gaptop 10,spanx,growx,pushx");
 
-        cobFilename = new JComboBox(new String[] { _GUI._.FilterRuleDialog_layoutDialogContent_equals(), _GUI._.FilterRuleDialog_layoutDialogContent_contains() });
+        cobFilename = new JComboBox(new String[] { _GUI._.FilterRuleDialog_layoutDialogContent_contains(), _GUI._.FilterRuleDialog_layoutDialogContent_equals() });
         txtFilename = new ExtTextField();
         txtFilename.setHelpText(_GUI._.FilterRuleDialog_layoutDialogContent_ht_filename());
 
@@ -308,7 +308,7 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
         }
         cbType.setDependencies(comp.toArray(new JComponent[] {}));
         // hoster
-        cobHoster = new JComboBox(new String[] { _GUI._.FilterRuleDialog_layoutDialogContent_equals(), _GUI._.FilterRuleDialog_layoutDialogContent_contains() });
+        cobHoster = new JComboBox(new String[] { _GUI._.FilterRuleDialog_layoutDialogContent_contains(), _GUI._.FilterRuleDialog_layoutDialogContent_equals() });
         txtHoster = new ExtTextField();
         txtHoster.setHelpText(_GUI._.FilterRuleDialog_layoutDialogContent_lbl_hoster_help());
 
@@ -330,7 +330,7 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
         panel.add(txtHoster);
         // crawler
 
-        cobSource = new JComboBox(new String[] { _GUI._.FilterRuleDialog_layoutDialogContent_equals(), _GUI._.FilterRuleDialog_layoutDialogContent_contains() });
+        cobSource = new JComboBox(new String[] { _GUI._.FilterRuleDialog_layoutDialogContent_contains(), _GUI._.FilterRuleDialog_layoutDialogContent_equals() });
         txtSource = new ExtTextField();
         txtSource.setHelpText(_GUI._.FilterRuleDialog_layoutDialogContent_lbl_source_help());
 
