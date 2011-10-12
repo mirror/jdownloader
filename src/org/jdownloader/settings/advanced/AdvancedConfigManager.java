@@ -13,6 +13,7 @@ import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.jdownloader.api.RemoteAPIConfig;
+import org.jdownloader.api.RemoteAPIController;
 import org.jdownloader.controlling.filter.LinkFilterSettings;
 import org.jdownloader.controlling.packagizer.PackagizerSettings;
 import org.jdownloader.gui.views.linkgrabber.addlinksdialog.LinkgrabberSettings;
@@ -46,7 +47,7 @@ public class AdvancedConfigManager {
         register(JsonConfig.create(ReconnectConfig.class));
         register(JsonConfig.create(RemoteAPIConfig.class));
         register(JsonConfig.create(PackagizerSettings.class));
-
+        RemoteAPIController.getInstance().register(new AdvancedConfigManagerAPIImpl());
     }
 
     public AdvancedConfigEventSender getEventSender() {
