@@ -74,6 +74,7 @@ public class AddAccountDialog extends AbstractDialog<Integer> {
         } catch (DialogClosedException e) {
             e.printStackTrace();
         } catch (DialogCanceledException e) {
+
             e.printStackTrace();
         }
 
