@@ -25,11 +25,11 @@ import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -46,7 +46,7 @@ public class ExtaBitCom extends PluginForHost {
 
     private static final String NOTAVAILABLETEXT = "(>File is temporary unavailable<|temporary unavailable<br/>)";
     private static final String NOMIRROR         = ">No download mirror<";
-    private static final String PREMIUMONLY      = ">Only premium users can download files of this size";
+    private static final String PREMIUMONLY      = ">Only premium users can download this file";
 
     @Override
     public String getAGBLink() {
@@ -75,8 +75,8 @@ public class ExtaBitCom extends PluginForHost {
         br.setCookie("http://extabit.com", "language", "en");
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("(File not found|Such file doesn't exsist)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<title>(.*?)download Extabit.com - file hosting</title>").getMatch(0);
+        if (br.containsHTML("(File not found|Such file doesn\\'t exsist)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("<title>(.*?)download Extabit.com \\- file hosting</title>").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("download_filename\".*?>(.*?)</div").getMatch(0);
             if (filename == null) {

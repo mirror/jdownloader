@@ -21,6 +21,7 @@ import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.http.RandomUserAgent;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
 import jd.plugins.Account;
@@ -79,6 +80,7 @@ public class ShareFlareNet extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
@@ -147,7 +149,8 @@ public class ShareFlareNet extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
-        if (dl.getConnection().getContentType().contains("html")) {
+        URLConnectionAdapter con = dl.getConnection();
+        if (con.getContentType().contains("html") && con.getContentLength() < (downloadLink.getDownloadSize() / 2)) {
             logger.warning("the dllink doesn't seem to be a file, following the connection...");
             br.followConnection();
             if (br.containsHTML(">404 Not Found<")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 20 * 60 * 1000l);

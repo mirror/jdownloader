@@ -27,11 +27,11 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -189,13 +189,13 @@ public class UgotFileCom extends PluginForHost {
                 for (DownloadLink dl : links) {
                     String fileid = new Regex(dl.getDownloadURL(), "ugotfile.com/file/(\\d+)/").getMatch(0);
                     if (fileid == null) {
-                        logger.warning("Ugotfile availablecheck is broken!");
+                        logger.warning(this.getHost() + " availablecheck is broken!");
                         return false;
                     }
                     String regexForThisLink = "(class=\\'(green|red) (odd|even)\\'><td>http://ugotfile\\.com/file/" + fileid + "/.*?</td><td align=\\'right\\'>.*?</td><td align=\\'center\\'>(Alive|Dead)</td>)";
                     String theData = br.getRegex(regexForThisLink).getMatch(0);
                     if (theData == null) {
-                        logger.warning("Ugotfile availablecheck is broken!");
+                        logger.warning(this.getHost() + " availablecheck is broken!");
                         return false;
                     }
                     String classx = new Regex(theData, "class=\\'(.*?)\\'").getMatch(0);
@@ -203,7 +203,7 @@ public class UgotFileCom extends PluginForHost {
                     String filename = new Regex(theData, "ugotfile\\.com/file/\\d+/(.*?)</td>").getMatch(0);
                     String filesize = new Regex(theData, "<td align=\\'right\\'>(.*?)</td>").getMatch(0);
                     if (filename == null || filesize == null) {
-                        logger.warning("Ugotfile availablecheck is broken!");
+                        logger.warning(this.getHost() + " availablecheck is broken!");
                         dl.setAvailable(false);
                         continue;
                     } else if (classx.contains("red") || !status.matches("Alive")) {
