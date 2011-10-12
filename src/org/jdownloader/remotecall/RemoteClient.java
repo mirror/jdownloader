@@ -7,8 +7,10 @@ import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 
 import org.appwork.net.protocol.http.HTTPConstants;
+import org.appwork.remotecall.RemoteCallInterface;
 import org.appwork.remotecall.client.RemoteCallClient;
 import org.appwork.remotecall.client.RemoteCallCommunicationException;
+import org.appwork.remotecall.server.ParsingException;
 import org.appwork.remotecall.server.Requestor;
 import org.appwork.remotecall.server.ServerInvokationException;
 import org.appwork.utils.logging.Log;
@@ -52,5 +54,15 @@ public class RemoteClient extends RemoteCallClient {
             throw new RuntimeException(e);
         }
 
+    }
+
+    public <T extends RemoteCallInterface> T create(Class<T> class1) {
+        try {
+            return getFactory().newInstance(class1);
+        } catch (IllegalArgumentException e) {
+            throw new RuntimeException(e);
+        } catch (ParsingException e) {
+            throw new RuntimeException(e);
+        }
     }
 }
