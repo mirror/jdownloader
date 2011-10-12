@@ -35,11 +35,11 @@ import jd.parser.html.HTMLParser;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
@@ -68,8 +68,8 @@ public class IFileIt extends PluginForHost {
         br.setFollowRedirects(true);
         // generating first request
         final String c = br.getRegex("eval(.*?)\n").getMatch(0);
-        final String fnName = br.getRegex("url:\\s+(.*?)\\(").getMatch(0);
-        final String dec = br.getRegex(fnName + "\\( \'(.*?)\' \\),").getMatch(0);
+        final String fnName = br.getRegex("url\\s+=\\s+([0-9a-z]+)\\(").getMatch(0);
+        final String dec = br.getRegex(fnName + "\\( \'(.*?)\' \\)").getMatch(0);
         Object result = new Object();
         final ScriptEngineManager manager = new ScriptEngineManager();
         final ScriptEngine engine = manager.getEngineByName("javascript");
@@ -213,20 +213,22 @@ public class IFileIt extends PluginForHost {
     }
 
     @SuppressWarnings("unchecked")
-    public void login(final Account account, boolean force) throws Exception {
+    public void login(final Account account, final boolean force) throws Exception {
         synchronized (LOCK) {
             // Load cookies
             br.setCookiesExclusive(false);
             final Object ret = account.getProperty("cookies", null);
             boolean acmatch = Encoding.urlEncode(account.getUser()).matches(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-            if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).matches(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+            if (acmatch) {
+                acmatch = Encoding.urlEncode(account.getPass()).matches(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+            }
             if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
                 final HashMap<String, String> cookies = (HashMap<String, String>) ret;
                 if (cookies.containsKey(COOKIENAME) && account.isValid()) {
                     for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
                         final String key = cookieEntry.getKey();
                         final String value = cookieEntry.getValue();
-                        this.br.setCookie(MAINPAGE, key, value);
+                        br.setCookie(MAINPAGE, key, value);
                     }
                     return;
                 }
@@ -243,7 +245,7 @@ public class IFileIt extends PluginForHost {
             if (br.getCookie(MAINPAGE, COOKIENAME) == null) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE); }
             // Save cookies
             final HashMap<String, String> cookies = new HashMap<String, String>();
-            final Cookies add = this.br.getCookies(MAINPAGE);
+            final Cookies add = br.getCookies(MAINPAGE);
             for (final Cookie c : add.getCookies()) {
                 cookies.put(c.getKey(), c.getValue());
             }
