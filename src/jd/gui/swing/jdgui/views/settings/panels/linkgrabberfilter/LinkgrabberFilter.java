@@ -67,7 +67,7 @@ public class LinkgrabberFilter extends JPanel implements SettingsComponent {
 
     public String getConstraints() {
 
-        return "gapleft 37,spanx,growx,pushx,height 60:n:n,pushy,growy";
+        return "height 60:n:n,pushy,growy";
     }
 
     public boolean isMultiline() {

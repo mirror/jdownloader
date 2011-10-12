@@ -30,7 +30,7 @@ public class PackagizerFilter extends JPanel implements SettingsComponent {
     private ExtButton             btExport;
 
     public PackagizerFilter() {
-        super(new MigLayout("ins 0,wrap 1", "[grow,fill]", "[][grow,fill]"));
+        super(new MigLayout("ins 0,wrap 1", "[grow,fill]", "[grow,fill][]"));
         tb = new MigPanel("ins 0", "[][][grow,fill][][]", "[]");
         table = new PackagizerFilterTable();
         tb.add(btAdd = new JButton(new NewAction(table)), "height 26!,sg 1");
@@ -66,7 +66,7 @@ public class PackagizerFilter extends JPanel implements SettingsComponent {
 
     public String getConstraints() {
 
-        return "gapleft 37,spanx,growx,pushx,height 60:n:n,pushy,growy";
+        return "height 60:n:n,pushy,growy";
     }
 
     public boolean isMultiline() {

@@ -16,11 +16,14 @@
 
 package jd.gui.swing;
 
+import java.awt.Toolkit;
+import java.awt.Window;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowFocusListener;
 import java.awt.event.WindowListener;
 import java.awt.event.WindowStateListener;
 
+import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
 
@@ -29,6 +32,9 @@ import jd.controlling.JDLogger;
 import jd.event.ControlListener;
 import jd.gui.UserIF;
 import jd.gui.swing.jdgui.interfaces.View;
+
+import org.appwork.app.gui.ActiveDialogException;
+import org.appwork.utils.logging.Log;
 
 public abstract class SwingGui extends UserIF implements ControlListener, WindowListener, WindowStateListener, WindowFocusListener {
     protected JFrame mainFrame;
@@ -101,10 +107,34 @@ public abstract class SwingGui extends UserIF implements ControlListener, Window
 
     private static final long serialVersionUID = 7164420260634468080L;
 
-    private static SwingGui INSTANCE = null;
+    private static SwingGui   INSTANCE         = null;
 
     public SwingGui(final String string) {
-        mainFrame = new JFrame(string);
+        mainFrame = new JFrame(string) {
+            public void setVisible(boolean b) {
+                // if we hide a frame which is locked by an active modal dialog,
+                // we get in problems. avoid this!
+                if (!b) {
+                    for (Window w : getOwnedWindows()) {
+
+                        if (w instanceof JDialog) {
+                            boolean mod = ((JDialog) w).isModal();
+                            boolean v = w.isVisible();
+
+                            if (mod && v) {
+                                Toolkit.getDefaultToolkit().beep();
+                                Log.exception(new ActiveDialogException(((JDialog) w)));
+                                w.requestFocus();
+                                w.toFront();
+                                return;
+                            }
+                        }
+
+                    }
+                }
+                super.setVisible(b);
+            }
+        };
     }
 
     /**

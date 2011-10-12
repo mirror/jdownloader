@@ -44,7 +44,7 @@ public class RegexFilter extends Filter implements Storable {
     }
 
     public static enum MatchType {
-        EQUALS, CONTAINS
+        CONTAINS, EQUALS
     }
 
     public int calcPlaceholderCount() {

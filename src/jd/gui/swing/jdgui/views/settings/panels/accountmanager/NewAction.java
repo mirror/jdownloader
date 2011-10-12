@@ -2,7 +2,7 @@ package jd.gui.swing.jdgui.views.settings.panels.accountmanager;
 
 import java.awt.event.ActionEvent;
 
-import jd.gui.swing.dialog.AccountDialog;
+import jd.gui.swing.dialog.AddAccountDialog;
 import jd.plugins.PluginForHost;
 
 import org.jdownloader.gui.translate._GUI;
@@ -24,9 +24,9 @@ public class NewAction extends AbstractAddAction {
          * EDT anyway
          */
         if (e.getSource() instanceof PluginForHost) {
-            AccountDialog.showDialog((PluginForHost) e.getSource(), null);
+            AddAccountDialog.showDialog((PluginForHost) e.getSource(), null);
         } else {
-            AccountDialog.showDialog(null, null);
+            AddAccountDialog.showDialog(null, null);
         }
     }
 

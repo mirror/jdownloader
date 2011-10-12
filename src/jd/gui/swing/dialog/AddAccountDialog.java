@@ -56,12 +56,12 @@ import org.jdownloader.DomainInfo;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 
-public class AccountDialog extends AbstractDialog<Integer> {
+public class AddAccountDialog extends AbstractDialog<Integer> {
 
     private static final long serialVersionUID = -2099080199110932990L;
 
     public static void showDialog(final PluginForHost pluginForHost, Account acc) {
-        final AccountDialog dialog = new AccountDialog(pluginForHost, acc);
+        final AddAccountDialog dialog = new AddAccountDialog(pluginForHost, acc);
 
         try {
             Dialog.getInstance().showDialog(dialog);
@@ -156,7 +156,7 @@ public class AccountDialog extends AbstractDialog<Integer> {
     private Account                           defaultAccount;
     private static String                     EMPTYPW = "                 ";
 
-    private AccountDialog(final PluginForHost plugin, Account acc) {
+    private AddAccountDialog(final PluginForHost plugin, Account acc) {
         super(UserIO.NO_ICON, _GUI._.jd_gui_swing_components_AccountDialog_title(), null, null, null);
         this.defaultAccount = acc;
         this.plugin = plugin;

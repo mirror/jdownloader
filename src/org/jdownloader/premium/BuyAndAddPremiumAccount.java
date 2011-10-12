@@ -12,7 +12,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 
 import jd.Main;
-import jd.gui.swing.dialog.AccountDialog;
+import jd.gui.swing.dialog.AddAccountDialog;
 import jd.gui.swing.laf.LookAndFeelController;
 import jd.plugins.Account;
 
@@ -54,7 +54,7 @@ public class BuyAndAddPremiumAccount extends AbstractDialog<Boolean> implements 
             Account ac = new Account(user.getText(), new String(pass.getPassword()));
             ac.setHoster(info.getTld());
             try {
-                if (!AccountDialog.addAccount(ac)) {
+                if (!AddAccountDialog.addAccount(ac)) {
                     user.requestFocus();
                     user.selectAll();
                     return;
