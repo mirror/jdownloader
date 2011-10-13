@@ -30,6 +30,7 @@ import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.RandomUserAgent;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.parser.html.HTMLParser;
 import jd.plugins.Account;
@@ -67,7 +68,8 @@ public class IFileIt extends PluginForHost {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(true);
         // generating first request
-        final String c = br.getRegex("eval(.*?)\n").getMatch(0);
+        String c = br.getRegex("<script type=\"text/javascript\">(.*?)</script>").getMatch(0, 4);
+        c = new Regex(c, "(.*?)//onload").getMatch(0);
         final String fnName = br.getRegex("url\\s+=\\s+([0-9a-z]+)\\(").getMatch(0);
         final String dec = br.getRegex(fnName + "\\( \'(.*?)\' \\)").getMatch(0);
         Object result = new Object();
@@ -75,15 +77,20 @@ public class IFileIt extends PluginForHost {
         final ScriptEngine engine = manager.getEngineByName("javascript");
         final Invocable inv = (Invocable) engine;
         try {
-            engine.eval(engine.eval(c).toString());
-            result = inv.invokeFunction(fnName, dec);
+            if (fnName == null || dec == null) {
+                engine.eval(c);
+                result = engine.get("__rurl");
+            } else {
+                engine.eval(c);
+                result = inv.invokeFunction(fnName, dec);
+            }
         } catch (final Throwable e) {
             result = "";
         }
         final String finaldownlink = result.toString();
         if (finaldownlink == null || finaldownlink.equals("") || !finaldownlink.startsWith("http")) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
 
-        final String downlink = br.getRegex("var _url = \'(.*?)\';").getMatch(0);
+        final String downlink = br.getRegex("var _url\\s+\\t+=\\s+\\t+\'(.*?)\';").getMatch(0);
         String type = null, extra = null;
         if (downlink == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
 
