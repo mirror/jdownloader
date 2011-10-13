@@ -96,7 +96,9 @@ public class Zevera extends PluginForHost {
                 // 4 OronDayTrafficLimit:5120
                 ai.setStatus("Premium");
                 String infos[] = br.getRegex("(.*?)(,|$)").getColumn(0);
-
+                if (infos == null || infos.length != 6) {
+                    logger.info(br.toString());
+                }
                 String EndSubscriptionDate = new Regex(infos[1], "EndSubscriptionDate:(.+)").getMatch(0);
                 ai.setValidUntil(TimeFormatter.getMilliSeconds(EndSubscriptionDate, "yyyy/MM/dd HH:mm:ss", null));
 

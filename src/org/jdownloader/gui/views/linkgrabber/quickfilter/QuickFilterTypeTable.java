@@ -104,7 +104,6 @@ public class QuickFilterTypeTable extends FilterTable<CrawledPackage, CrawledLin
         };
         LinkFilterSettings.LG_QUICKFILTER_TYPE_VISIBLE.getEventSender().addListener(this);
         LinkCollector.getInstance().addListener(this);
-        table2Filter.getPackageControllerTableModel().addFilter(this);
         onConfigValueModified(null, LinkFilterSettings.LG_QUICKFILTER_TYPE_VISIBLE.getValue());
     }
 
@@ -159,7 +158,7 @@ public class QuickFilterTypeTable extends FilterTable<CrawledPackage, CrawledLin
         if (Boolean.TRUE.equals(newValue)) {
             enabled = true;
             /* filter is enabled, add listener and run again */
-
+            table2Filter.getPackageControllerTableModel().addFilter(this);
             updateQuickFilerTableData();
             setVisible(true);
         } else {
@@ -169,6 +168,7 @@ public class QuickFilterTypeTable extends FilterTable<CrawledPackage, CrawledLin
             // table2Filter.getPackageControllerTableModel().removeFilter(this);
             // LinkCollector.getInstance().removeListener(this);
             setVisible(false);
+            table2Filter.getPackageControllerTableModel().removeFilter(this);
         }
         table2Filter.getPackageControllerTableModel().recreateModel(false);
     }

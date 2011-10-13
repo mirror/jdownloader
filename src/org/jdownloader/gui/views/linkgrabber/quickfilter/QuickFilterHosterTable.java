@@ -56,9 +56,7 @@ public class QuickFilterHosterTable extends FilterTable<CrawledPackage, CrawledL
         LinkFilterSettings.LG_QUICKFILTER_HOSTER_VISIBLE.getEventSender().addListener(this);
 
         LinkCollector.getInstance().addListener(this);
-        table2Filter.getPackageControllerTableModel().addFilter(this);
         onConfigValueModified(null, LinkFilterSettings.LG_QUICKFILTER_HOSTER_VISIBLE.getValue());
-
     }
 
     @Override
@@ -177,7 +175,7 @@ public class QuickFilterHosterTable extends FilterTable<CrawledPackage, CrawledL
     public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
         if (Boolean.TRUE.equals(newValue)) {
             enabled = true;
-
+            table2Filter.getPackageControllerTableModel().addFilter(this);
             updateQuickFilerTableData();
             setVisible(true);
         } else {
@@ -185,7 +183,7 @@ public class QuickFilterHosterTable extends FilterTable<CrawledPackage, CrawledL
             enabled = false;
             /* filter disabled */
             old = -1;
-
+            table2Filter.getPackageControllerTableModel().removeFilter(this);
         }
         table2Filter.getPackageControllerTableModel().recreateModel(false);
     }

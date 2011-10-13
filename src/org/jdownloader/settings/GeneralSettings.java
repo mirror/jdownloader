@@ -11,6 +11,7 @@ import org.appwork.storage.config.annotations.DefaultEnumValue;
 import org.appwork.storage.config.annotations.DefaultFactory;
 import org.appwork.storage.config.annotations.DefaultIntValue;
 import org.appwork.storage.config.annotations.Description;
+import org.appwork.storage.config.annotations.RequiresRestart;
 import org.appwork.storage.config.annotations.SpinnerValidator;
 import org.appwork.storage.config.defaults.AbstractDefaultFactory;
 import org.appwork.storage.config.handler.BooleanKeyHandler;
@@ -220,6 +221,7 @@ public interface GeneralSettings extends ConfigInterface {
     @Description("Timeout for connecting to a httpserver")
     @SpinnerValidator(min = 0, max = 300000)
     @DefaultIntValue(10000)
+    @RequiresRestart
     int getHttpConnectTimeout();
 
     void setHttpConnectTimeout(int seconds);
@@ -228,6 +230,7 @@ public interface GeneralSettings extends ConfigInterface {
     @Description("Timeout for reading to a httpserver")
     @SpinnerValidator(min = 0, max = 300000)
     @DefaultIntValue(10000)
+    @RequiresRestart
     int getHttpReadTimeout();
 
     void setHttpReadTimeout(int seconds);
