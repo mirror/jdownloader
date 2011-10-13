@@ -43,7 +43,7 @@ public class TriLuLiLuRo extends PluginForHost {
     }
 
     private String              DLLINK       = null;
-    private static final String VIDEOPLAYER  = "videoplayer2010HDmp4";
+    private static final String VIDEOPLAYER  = "(video_player|\"video_player_swf\"|static\\.trilulilu\\.ro/swfobject/expressInstall\\.swf)";
     private static final String LIMITREACHED = ">Ai atins limita de 5 ascultări de piese audio pe zi. Te rugăm să intri in cont ca să poţi";
 
     @Override
@@ -95,11 +95,12 @@ public class TriLuLiLuRo extends PluginForHost {
         Browser br2 = br.cloneBrowser();
         DLLINK = br.getRegex("<param name=\"flashvars\" value=\"song=(http.*?\\.mp3)").getMatch(0);
         if (DLLINK == null) {
-            String server = br.getRegex("server=(\\d+)\\&").getMatch(0);
+            String server = br.getRegex("server\":\"(\\d+)\"").getMatch(0);
+            String hash = br.getRegex("\"hash\":\"(.*?)\"").getMatch(0);
             Regex authorAndFileid = new Regex(downloadLink.getDownloadURL(), "trilulilu\\.ro/(.*?)/(.+)");
             String fileID = authorAndFileid.getMatch(1);
             String username = authorAndFileid.getMatch(0);
-            if (fileID == null || username == null || server == null) {
+            if (fileID == null || username == null || server == null || hash == null) {
                 logger.warning("fileID or username or server is null!");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -118,7 +119,7 @@ public class TriLuLiLuRo extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 if (br2.containsHTML("mp4-720p")) format = "mp4-720p";
-                DLLINK = "http://fs" + server + ".trilulilu.ro/stream.php?type=video&source=site&hash=" + fileID + "&username=" + username + "&key=ministhebest&format=" + format + "&start=";
+                DLLINK = "http://fs" + server + ".trilulilu.ro/stream.php?type=video&source=site&hash=" + hash + "&username=" + username + "&key=ministhebest&format=" + format + "y&start=";
             }
         }
         if (DLLINK != null) DLLINK = Encoding.htmlDecode(DLLINK);

@@ -72,7 +72,7 @@ public class OtrDatenkellerAt extends PluginForHost {
             dllink = getDllink();
         } else {
             downloadLink.getLinkStatus().setStatusText("Waiting for ticket...");
-            for (int i = 0; i <= 50; i++) {
+            for (int i = 0; i <= 410; i++) {
                 sleep(28 * 1000l, downloadLink);
                 String position = br.getRegex("<td>Deine Position in der Warteschlange: </td><td>~(\\d+)</td></tr>").getMatch(0);
                 if (position != null) downloadLink.getLinkStatus().setStatusText("Waiting for ticket...Position in der Warteschlange: " + position);
@@ -83,7 +83,7 @@ public class OtrDatenkellerAt extends PluginForHost {
                     break;
                 }
                 lowSpeedLink = br.getRegex("\"(\\?lowSpeed=[^<>\\'\"]+)\"").getMatch(0);
-                if (i > 40 && lowSpeedLink != null) {
+                if (i > 400 && lowSpeedLink != null) {
                     br2.getPage("http://otr.datenkeller.at/" + lowSpeedLink);
                     dllink = br2.getRegex(">Dein Download Link:<br>[\t\n\r ]+<a href=\"(http://[^<>\\'\"]+)\"").getMatch(0);
                     if (dllink == null) dllink = br2.getRegex("\"(http://\\d+\\.\\d+\\.\\d+\\.\\d+/low/[a-z0-9]+/[^<>\\'\"]+)\"").getMatch(0);
@@ -94,7 +94,7 @@ public class OtrDatenkellerAt extends PluginForHost {
                         logger.warning("Failed to find low speed link, continuing to look for downloadticket...");
                     }
                 }
-                if (i > 45) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Didn't get a ticket");
+                if (i > 403) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Didn't get a ticket");
                 logger.info("Didn't get a ticket on try " + i + ". Retrying...Position: " + position);
             }
         }

@@ -108,12 +108,11 @@ public class MegaShareCom extends PluginForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         br.forceDebug(true);
-        final String reconnectWaittime = br.getRegex("var c = (\\d+);").getMatch(0);
+        final String reconnectWaittime = br.getRegex("var cTmr = (\\d+);").getMatch(0);
         final String cDelay = br.getRegex("(var )?cDly ?= ?(\\d+);").getMatch(1);
         if (reconnectWaittime != null) {
             if (Integer.parseInt(reconnectWaittime) >= 299) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(reconnectWaittime) * 1001l); }
         }
-
         /* FORM_POST_1 */
         final List<String> remove = new ArrayList<String>();
         remove.add("submit");
@@ -210,14 +209,17 @@ public class MegaShareCom extends PluginForHost {
         requestFileInformation(downloadLink);
         login(account);
         br.getPage(downloadLink.getDownloadURL());
-        br.postPage(br.getURL(), "PremDz.x=" + new Random().nextInt(100) + "&PremDz.y=" + new Random().nextInt(100) + "&PremDz=PREMIUM");
-        if (br.containsHTML("This File has been DELETED")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        final String id = new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
+        String damnPrz = br.getRegex("name=\"" + id + "prZVal\" value=\"(.*?)\"").getMatch(0);
+        if (damnPrz == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        br.postPage(br.getURL(), "PremDz.x=" + new Random().nextInt(100) + "&PremDz.y=" + new Random().nextInt(100) + "&" + id + "prZVal=" + damnPrz);
+        if (br.containsHTML("This File has been DELETED")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         final Form form = br.getFormbyProperty("name", "downloader");
-        if (form == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-        final String id = form.getVarsMap().get("id");
+        damnPrz = br.getRegex("name=\"" + id + "prZVal\" value=\"(.*?)\"").getMatch(0);
+        if (form == null || damnPrz == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         final String timeDiff = form.getVarsMap().get("time_diff");
-        if (id == null || timeDiff == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-        String post = "yesss.x=" + new Random().nextInt(100) + "&yesss.y=" + new Random().nextInt(100) + "&yesss=Download&id=" + id + "&time_diff=" + timeDiff + "&req_auth=n";
+        if (timeDiff == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        String post = "wComp=&" + id + "prZVal=" + damnPrz + "&captcha_code=&yesss.x=" + new Random().nextInt(100) + "&yesss.y=" + new Random().nextInt(100) + "&h_yesss=Download&id=" + id + "&time_diff=" + timeDiff + "&req_auth=n";
         String passCode = null;
         // This password handling is probably broken
         if (br.containsHTML("This file is password protected.")) {
