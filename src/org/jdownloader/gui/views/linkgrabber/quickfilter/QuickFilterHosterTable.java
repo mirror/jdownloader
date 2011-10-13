@@ -23,6 +23,7 @@ import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.swing.exttable.ExtColumn;
 import org.jdownloader.controlling.filter.LinkFilterSettings;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTable;
+import org.jdownloader.gui.views.linkgrabber.Header;
 import org.jdownloader.gui.views.linkgrabber.sidebar.actions.DropHosterAction;
 import org.jdownloader.gui.views.linkgrabber.sidebar.actions.KeepOnlyAction;
 
@@ -38,9 +39,11 @@ public class QuickFilterHosterTable extends FilterTable<CrawledPackage, CrawledL
     private DelayedRunnable                                            delayedRefresh;
     private PackageControllerTable<CrawledPackage, CrawledLink>        table2Filter     = null;
     private final Object                                               LOCK             = new Object();
+    private Header                                                     header;
 
-    public QuickFilterHosterTable(PackageControllerTable<CrawledPackage, CrawledLink> table2Filter) {
+    public QuickFilterHosterTable(Header hosterFilter, PackageControllerTable<CrawledPackage, CrawledLink> table2Filter) {
         super();
+        header = hosterFilter;
         this.table2Filter = table2Filter;
         delayedRefresh = new DelayedRunnable(IOEQ.TIMINGQUEUE, 100l, 1000l) {
 
@@ -51,7 +54,11 @@ public class QuickFilterHosterTable extends FilterTable<CrawledPackage, CrawledL
 
         };
         LinkFilterSettings.LG_QUICKFILTER_HOSTER_VISIBLE.getEventSender().addListener(this);
+
+        LinkCollector.getInstance().addListener(this);
+        table2Filter.getPackageControllerTableModel().addFilter(this);
         onConfigValueModified(null, LinkFilterSettings.LG_QUICKFILTER_HOSTER_VISIBLE.getValue());
+
     }
 
     @Override
@@ -70,7 +77,7 @@ public class QuickFilterHosterTable extends FilterTable<CrawledPackage, CrawledL
         switch (event.getType()) {
         case REMOVE_CONTENT:
         case REFRESH_STRUCTURE:
-            if (Boolean.TRUE.equals(LinkFilterSettings.LG_QUICKFILTER_HOSTER_VISIBLE.getValue()) && old != LinkCollector.getInstance().getChildrenChanges()) {
+            if (old != LinkCollector.getInstance().getChildrenChanges()) {
                 old = LinkCollector.getInstance().getChildrenChanges();
                 delayedRefresh.run();
             }
@@ -152,8 +159,10 @@ public class QuickFilterHosterTable extends FilterTable<CrawledPackage, CrawledL
                 newfilters.add(value);
             }
             filters = newfilters;
+
         }
-        QuickFilterHosterTable.this.getExtTableModel()._fireTableStructureChanged(newTableData, true);
+        header.setFilterCount(filters.size());
+        if (LinkFilterSettings.LG_QUICKFILTER_HOSTER_VISIBLE.getValue()) QuickFilterHosterTable.this.getExtTableModel()._fireTableStructureChanged(newTableData, true);
     }
 
     @Override
@@ -168,16 +177,15 @@ public class QuickFilterHosterTable extends FilterTable<CrawledPackage, CrawledL
     public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
         if (Boolean.TRUE.equals(newValue)) {
             enabled = true;
-            /* filter is enabled, add listener and run again */
-            LinkCollector.getInstance().addListener(this);
-            table2Filter.getPackageControllerTableModel().addFilter(this);
+
             updateQuickFilerTableData();
+            setVisible(true);
         } else {
+            setVisible(false);
             enabled = false;
-            /* filter disabled, remove listener */
+            /* filter disabled */
             old = -1;
-            table2Filter.getPackageControllerTableModel().removeFilter(this);
-            LinkCollector.getInstance().removeListener(this);
+
         }
         table2Filter.getPackageControllerTableModel().recreateModel(false);
     }

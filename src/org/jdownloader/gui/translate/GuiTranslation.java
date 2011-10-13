@@ -2161,7 +2161,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Click here to add this link or package to your download list." })
     String ConfirmAction_ConfirmAction_tooltip();
 
-    @Default(lngs = { "en" }, values = { "Quick Filter" })
+    @Default(lngs = { "en" }, values = { "Views" })
     String LinkGrabberSideBarHeader_LinkGrabberSideBarHeader();
 
     @Default(lngs = { "en" }, values = { "Add Downloads" })
@@ -2173,13 +2173,13 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Add to Download List" })
     String ConfirmAction_ConfirmAction_();
 
-    @Default(lngs = { "en" }, values = { "Hoster Filter" })
+    @Default(lngs = { "en" }, values = { "Hoster" })
     String LinkGrabberSidebar_LinkGrabberSidebar_hosterfilter();
 
-    @Default(lngs = { "en" }, values = { "File Type Filter" })
+    @Default(lngs = { "en" }, values = { "File Types" })
     String LinkGrabberSidebar_LinkGrabberSidebar_extensionfilter();
 
-    @Default(lngs = { "en" }, values = { "Customized Filter" })
+    @Default(lngs = { "en" }, values = { "Customized" })
     String LinkGrabberSidebar_LinkGrabberSidebar_customfilter();
 
     @Default(lngs = { "en" }, values = { "Quick Settings" })

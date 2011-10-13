@@ -7,6 +7,9 @@ import javax.swing.Box;
 import jd.gui.swing.laf.LookAndFeelController;
 
 import org.appwork.app.gui.MigPanel;
+import org.appwork.storage.config.ValidationException;
+import org.appwork.storage.config.events.GenericConfigEventListener;
+import org.appwork.storage.config.handler.KeyHandler;
 import org.jdownloader.controlling.filter.LinkFilterSettings;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.linkgrabber.quickfilter.QuickFilterHosterTable;
@@ -33,10 +36,15 @@ public class LinkGrabberSidebar extends MigPanel {
             setBackground(new Color(c));
             setOpaque(true);
         }
+        // header
+        hosterFilter = new Header(LinkFilterSettings.LG_QUICKFILTER_HOSTER_VISIBLE, _GUI._.LinkGrabberSidebar_LinkGrabberSidebar_hosterfilter());
+        filetypeFilter = new Header(LinkFilterSettings.LG_QUICKFILTER_TYPE_VISIBLE, _GUI._.LinkGrabberSidebar_LinkGrabberSidebar_extensionfilter());
+        quickSettingsHeader = new Header(LinkFilterSettings.LG_QUICKSETTINGS_VISIBLE, _GUI._.LinkGrabberSidebar_LinkGrabberSidebar_settings());
 
-        hosterFilterTable = new QuickFilterHosterTable(table);
+        //
+        hosterFilterTable = new QuickFilterHosterTable(hosterFilter, table);
         hosterFilterTable.setVisible(LinkFilterSettings.LG_QUICKFILTER_HOSTER_VISIBLE.getValue());
-        filetypeFilterTable = new QuickFilterTypeTable(table);
+        filetypeFilterTable = new QuickFilterTypeTable(filetypeFilter, table);
         filetypeFilterTable.setVisible(LinkFilterSettings.LG_QUICKFILTER_TYPE_VISIBLE.getValue());
 
         quicksettings = new MigPanel("ins 0,wrap 1", "[grow,fill]", "[]0[]0[]");
@@ -46,48 +54,16 @@ public class LinkGrabberSidebar extends MigPanel {
         quicksettings.add(new Checkbox(LinkFilterSettings.AUTO_START_ENABLED, _GUI._.LinkGrabberSidebar_LinkGrabberSidebar_autostart(), _GUI._.LinkGrabberSidebar_LinkGrabberSidebar_autostart_tt()));
 
         quicksettings.add(new Checkbox(LinkFilterSettings.LINK_FILTER_ENABLED, _GUI._.LinkGrabberSidebar_LinkGrabberSidebar_globfilter(), _GUI._.LinkGrabberSidebar_LinkGrabberSidebar_globfilter_tt()));
-        hosterFilter = new Header(LinkFilterSettings.LG_QUICKFILTER_HOSTER_VISIBLE, _GUI._.LinkGrabberSidebar_LinkGrabberSidebar_hosterfilter()) {
 
-            /**
-             * 
-             */
-            private static final long serialVersionUID = 1488271787955778046L;
+        LinkFilterSettings.LG_QUICKSETTINGS_VISIBLE.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
 
-            @Override
-            protected void setContentsVisible(boolean selected) {
-                hosterFilterTable.setVisible(selected);
+            public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
+                quicksettings.setVisible(newValue);
             }
 
-        };
-
-        filetypeFilter = new Header(LinkFilterSettings.LG_QUICKFILTER_TYPE_VISIBLE, _GUI._.LinkGrabberSidebar_LinkGrabberSidebar_extensionfilter()) {
-
-            /**
-             * 
-             */
-            private static final long serialVersionUID = 2113097293812798851L;
-
-            @Override
-            protected void setContentsVisible(boolean selected) {
-                filetypeFilterTable.setVisible(selected);
+            public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
             }
-
-        };
-
-        quickSettingsHeader = new Header(LinkFilterSettings.LG_QUICKSETTINGS_VISIBLE, _GUI._.LinkGrabberSidebar_LinkGrabberSidebar_settings()) {
-
-            /**
-             * 
-             */
-            private static final long serialVersionUID = 1847991962274945882L;
-
-            @Override
-            protected void setContentsVisible(boolean selected) {
-                quicksettings.setVisible(selected);
-            }
-
-        };
-
+        });
         add(hosterFilter, "gaptop 7");
         add(hosterFilterTable, "hidemode 2");
         add(filetypeFilter, "gaptop 7");

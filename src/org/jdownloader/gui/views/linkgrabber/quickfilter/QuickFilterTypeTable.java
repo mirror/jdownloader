@@ -21,6 +21,7 @@ import org.jdownloader.controlling.filter.CompiledFiletypeFilter.VideoExtensions
 import org.jdownloader.controlling.filter.LinkFilterSettings;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTable;
+import org.jdownloader.gui.views.linkgrabber.Header;
 import org.jdownloader.images.NewTheme;
 
 public class QuickFilterTypeTable extends FilterTable<CrawledPackage, CrawledLink> implements LinkCollectorListener, GenericConfigEventListener<Boolean> {
@@ -29,10 +30,12 @@ public class QuickFilterTypeTable extends FilterTable<CrawledPackage, CrawledLin
     private DelayedRunnable                                     delayedRefresh;
     private final Object                                        LOCK             = new Object();
     private long                                                old              = -1;
+    private Header                                              header;
 
-    public QuickFilterTypeTable(PackageControllerTable<CrawledPackage, CrawledLink> table2Filter) {
+    public QuickFilterTypeTable(Header filetypeFilter, PackageControllerTable<CrawledPackage, CrawledLink> table2Filter) {
         super();
         this.table2Filter = table2Filter;
+        header = filetypeFilter;
         final ArrayList<ExtensionFilter<CrawledPackage, CrawledLink>> knownExtensionFilters = new ArrayList<ExtensionFilter<CrawledPackage, CrawledLink>>();
         ExtensionFilter<CrawledPackage, CrawledLink> filter;
         filters.add(filter = new ExtensionFilter<CrawledPackage, CrawledLink>(AudioExtensions.AA) {
@@ -100,6 +103,8 @@ public class QuickFilterTypeTable extends FilterTable<CrawledPackage, CrawledLin
 
         };
         LinkFilterSettings.LG_QUICKFILTER_TYPE_VISIBLE.getEventSender().addListener(this);
+        LinkCollector.getInstance().addListener(this);
+        table2Filter.getPackageControllerTableModel().addFilter(this);
         onConfigValueModified(null, LinkFilterSettings.LG_QUICKFILTER_TYPE_VISIBLE.getValue());
     }
 
@@ -142,7 +147,9 @@ public class QuickFilterTypeTable extends FilterTable<CrawledPackage, CrawledLin
                 }
             }
         }
-        QuickFilterTypeTable.this.getExtTableModel()._fireTableStructureChanged(newTableData, true);
+
+        header.setFilterCount(newTableData.size());
+        if (LinkFilterSettings.LG_QUICKFILTER_TYPE_VISIBLE.getValue()) QuickFilterTypeTable.this.getExtTableModel()._fireTableStructureChanged(newTableData, true);
     }
 
     public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
@@ -152,15 +159,16 @@ public class QuickFilterTypeTable extends FilterTable<CrawledPackage, CrawledLin
         if (Boolean.TRUE.equals(newValue)) {
             enabled = true;
             /* filter is enabled, add listener and run again */
-            LinkCollector.getInstance().addListener(this);
-            table2Filter.getPackageControllerTableModel().addFilter(this);
+
             updateQuickFilerTableData();
+            setVisible(true);
         } else {
             enabled = false;
             /* filter disabled, remove listener */
             old = -1;
-            table2Filter.getPackageControllerTableModel().removeFilter(this);
-            LinkCollector.getInstance().removeListener(this);
+            // table2Filter.getPackageControllerTableModel().removeFilter(this);
+            // LinkCollector.getInstance().removeListener(this);
+            setVisible(false);
         }
         table2Filter.getPackageControllerTableModel().recreateModel(false);
     }
@@ -169,7 +177,7 @@ public class QuickFilterTypeTable extends FilterTable<CrawledPackage, CrawledLin
         switch (event.getType()) {
         case REMOVE_CONTENT:
         case REFRESH_STRUCTURE:
-            if (Boolean.TRUE.equals(LinkFilterSettings.LG_QUICKFILTER_TYPE_VISIBLE.getValue()) && old != LinkCollector.getInstance().getChildrenChanges()) {
+            if (old != LinkCollector.getInstance().getChildrenChanges()) {
                 old = LinkCollector.getInstance().getChildrenChanges();
                 delayedRefresh.run();
             }
