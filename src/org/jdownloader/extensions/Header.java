@@ -1,8 +1,5 @@
 package org.jdownloader.extensions;
 
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-
 import javax.swing.ImageIcon;
 import javax.swing.JCheckBox;
 import javax.swing.JLabel;
@@ -12,6 +9,8 @@ import javax.swing.SwingConstants;
 
 import net.miginfocom.swing.MigLayout;
 
+import org.appwork.storage.config.handler.BooleanKeyHandler;
+import org.appwork.swing.components.ExtCheckBox;
 import org.jdownloader.translate._JDT;
 
 public class Header extends JPanel {
@@ -37,7 +36,7 @@ public class Header extends JPanel {
         setOpaque(false);
     }
 
-    public Header(String name, ImageIcon icon, ActionListener listener) {
+    public Header(String name, ImageIcon icon, BooleanKeyHandler listener) {
         super(new MigLayout("ins 0", "[35!]5[]10[grow,fill]10[]2[]"));
         iconLabel = new JLabel(icon);
         add(iconLabel, "alignx right");
@@ -47,17 +46,12 @@ public class Header extends JPanel {
 
         add(label);
         add(new JSeparator());
-        enabled = new JCheckBox(_JDT._.configheader_enabled());
-        enabled.addActionListener(listener);
+        add(new JLabel(_JDT._.configheader_enabled()));
+        enabled = new ExtCheckBox(listener, label, iconLabel);
         enabled.setHorizontalTextPosition(SwingConstants.LEFT);
-        enabled.addActionListener(new ActionListener() {
 
-            public void actionPerformed(ActionEvent e) {
-                label.setEnabled(enabled.isSelected());
-            }
-        });
         add(enabled);
-        add(new JSeparator(), "width 3!");
+        // add(new JSeparator(), "width 3!");
         setOpaque(false);
     }
 

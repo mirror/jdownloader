@@ -260,4 +260,8 @@ public class ExtensionController {
         return ret;
     }
 
+    public <T extends AbstractExtension<?>> AbstractExtensionWrapper getExtension(Class<T> class1) {
+        return map.get(class1);
+    }
+
 }

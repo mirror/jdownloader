@@ -17,7 +17,6 @@ import jd.gui.swing.laf.LookAndFeelController;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.utils.ColorUtils;
-import org.jdownloader.extensions.AbstractExtensionWrapper;
 import org.jdownloader.images.NewTheme;
 
 public class ExtensionPanelListRenderer extends JPanel implements ListCellRenderer {
@@ -31,7 +30,7 @@ public class ExtensionPanelListRenderer extends JPanel implements ListCellRender
     private JCheckBox         cb;
 
     public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
-        AbstractExtensionWrapper ext = (AbstractExtensionWrapper) value;
+        CheckBoxedEntry ext = (CheckBoxedEntry) value;
         // AddonConfig.getInstance(plg.getSettings(), "", true)
 
         setText(ext.getName());

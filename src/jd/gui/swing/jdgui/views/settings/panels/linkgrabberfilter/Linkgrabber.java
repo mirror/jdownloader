@@ -19,15 +19,20 @@ package jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter;
 import javax.swing.ImageIcon;
 
 import jd.controlling.IOEQ;
+import jd.gui.swing.jdgui.views.settings.sidebar.CheckBoxedEntry;
 
 import org.appwork.storage.config.JsonConfig;
 import org.jdownloader.controlling.filter.LinkFilterController;
+import org.jdownloader.controlling.filter.LinkFilterSettings;
+import org.jdownloader.extensions.Header;
+import org.jdownloader.extensions.StartException;
+import org.jdownloader.extensions.StopException;
 import org.jdownloader.gui.settings.AbstractConfigPanel;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.translate._JDT;
 
-public class Linkgrabber extends AbstractConfigPanel {
+public class Linkgrabber extends AbstractConfigPanel implements CheckBoxedEntry {
 
     private static final long serialVersionUID = 1L;
     // private Checkbox checkLinks;
@@ -39,11 +44,14 @@ public class Linkgrabber extends AbstractConfigPanel {
         return _JDT._.gui_settings_linkgrabber_title();
     }
 
+    public String getName() {
+        return getTitle();
+    }
+
     public Linkgrabber() {
         super();
 
-        this.addHeader(getTitle(), NewTheme.I().getIcon("linkgrabber", 32));
-
+        add(new Header(getTitle(), NewTheme.I().getIcon("linkgrabber", 32), LinkFilterSettings.LINK_FILTER_ENABLED), "spanx,newline,growx,pushx");
         this.addDescriptionPlain(_JDT._.gui_settings_linkgrabber_filter_description());
         filter = new LinkgrabberFilter();
 
@@ -74,4 +82,21 @@ public class Linkgrabber extends AbstractConfigPanel {
         }, true);
 
     }
+
+    public ImageIcon _getIcon(int size) {
+        return getIcon();
+    }
+
+    public boolean _isEnabled() {
+        return LinkFilterSettings.LINK_FILTER_ENABLED.getValue();
+    }
+
+    public String getDescription() {
+        return _JDT._.gui_settings_linkgrabber_filter_description();
+    }
+
+    public void _setEnabled(boolean b) throws StartException, StopException {
+        LinkFilterSettings.LINK_FILTER_ENABLED.setValue(b);
+    }
+
 }

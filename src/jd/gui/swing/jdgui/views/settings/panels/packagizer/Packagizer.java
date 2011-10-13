@@ -19,16 +19,19 @@ package jd.gui.swing.jdgui.views.settings.panels.packagizer;
 import javax.swing.ImageIcon;
 
 import jd.controlling.IOEQ;
+import jd.gui.swing.jdgui.views.settings.sidebar.CheckBoxedEntry;
 
-import org.appwork.storage.config.JsonConfig;
 import org.jdownloader.controlling.packagizer.PackagizerController;
+import org.jdownloader.controlling.packagizer.PackagizerSettings;
+import org.jdownloader.extensions.Header;
+import org.jdownloader.extensions.StartException;
+import org.jdownloader.extensions.StopException;
 import org.jdownloader.gui.settings.AbstractConfigPanel;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
-import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.translate._JDT;
 
-public class Packagizer extends AbstractConfigPanel {
+public class Packagizer extends AbstractConfigPanel implements CheckBoxedEntry {
 
     private static final long serialVersionUID = 1L;
 
@@ -41,7 +44,8 @@ public class Packagizer extends AbstractConfigPanel {
     public Packagizer() {
         super();
 
-        this.addHeader(getTitle(), NewTheme.I().getIcon("packagizer", 32));
+        add(new Header(getTitle(), NewTheme.I().getIcon("packagizer", 32), PackagizerSettings.ENABLED), "spanx,newline,growx,pushx");
+
         this.addDescriptionPlain(_JDT._.gui_settings_linkgrabber_packagizer_description());
         packagizer = new PackagizerFilter();
         add(packagizer);
@@ -59,7 +63,6 @@ public class Packagizer extends AbstractConfigPanel {
 
     @Override
     public void updateContents() {
-        GeneralSettings st = JsonConfig.create(GeneralSettings.class);
 
         IOEQ.add(new Runnable() {
 
@@ -69,5 +72,25 @@ public class Packagizer extends AbstractConfigPanel {
 
         }, true);
 
+    }
+
+    public String getName() {
+        return getTitle();
+    }
+
+    public ImageIcon _getIcon(int size) {
+        return getIcon();
+    }
+
+    public boolean _isEnabled() {
+        return PackagizerSettings.ENABLED.getValue();
+    }
+
+    public String getDescription() {
+        return _JDT._.gui_settings_linkgrabber_packagizer_description();
+    }
+
+    public void _setEnabled(boolean b) throws StartException, StopException {
+        PackagizerSettings.ENABLED.setValue(b);
     }
 }

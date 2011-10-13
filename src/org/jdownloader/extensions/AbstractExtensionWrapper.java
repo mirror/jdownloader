@@ -6,6 +6,7 @@ import java.io.IOException;
 import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
 
+import jd.gui.swing.jdgui.views.settings.sidebar.CheckBoxedEntry;
 import jd.plugins.ExtensionConfigInterface;
 
 import org.appwork.storage.Storable;
@@ -21,7 +22,7 @@ import org.jdownloader.translate._JDT;
  * @author thomas
  * 
  */
-public class AbstractExtensionWrapper implements Storable {
+public class AbstractExtensionWrapper implements Storable, CheckBoxedEntry {
 
     private Class<AbstractExtension<?>> clazz;
 

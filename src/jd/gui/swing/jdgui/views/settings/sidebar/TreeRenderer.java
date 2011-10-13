@@ -34,7 +34,6 @@ import jd.gui.swing.laf.LookAndFeelController;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.utils.ColorUtils;
-import org.jdownloader.extensions.AbstractExtensionWrapper;
 import org.jdownloader.gui.settings.AbstractConfigPanel;
 
 public class TreeRenderer extends JPanel implements ListCellRenderer {
@@ -94,7 +93,7 @@ public class TreeRenderer extends JPanel implements ListCellRenderer {
 
     public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
         this.setBorder(null);
-        if (value instanceof AbstractExtensionWrapper) {
+        if (value instanceof CheckBoxedEntry) {
             return extension.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
         } else if (value instanceof AdvancedSettings) {
             AbstractConfigPanel te = (AbstractConfigPanel) value;

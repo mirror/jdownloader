@@ -135,7 +135,7 @@ public class ConfigSidebar extends JPanel implements ControlListener, MouseMotio
             @Override
             public void mouseMoved(MouseEvent e) {
                 int index = list.locationToIndex(e.getPoint());
-                if (list.getModel().getElementAt(index) instanceof AbstractExtensionWrapper) {
+                if (list.getModel().getElementAt(index) instanceof CheckBoxedEntry) {
                     Point point = list.indexToLocation(index);
                     int x = e.getPoint().x - point.x;
                     int y = e.getPoint().y - point.y;
@@ -145,8 +145,8 @@ public class ConfigSidebar extends JPanel implements ControlListener, MouseMotio
                         list.setToolTipText(_JDT._.settings_sidebar_tooltip_enable_extension());
                     } else {
                         list.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
-                        if (list.getModel().getElementAt(index) instanceof AbstractExtensionWrapper) {
-                            list.setToolTipText(((AbstractExtensionWrapper) list.getModel().getElementAt(index)).getDescription());
+                        if (list.getModel().getElementAt(index) instanceof CheckBoxedEntry) {
+                            list.setToolTipText(((CheckBoxedEntry) list.getModel().getElementAt(index)).getDescription());
 
                         } else {
                             list.setToolTipText(null);
@@ -247,29 +247,30 @@ public class ConfigSidebar extends JPanel implements ControlListener, MouseMotio
     public void mousePressed(MouseEvent e) {
 
         int index = list.locationToIndex(e.getPoint());
-        if (list.getModel().getElementAt(index) instanceof AbstractExtensionWrapper) {
+        if (list.getModel().getElementAt(index) instanceof CheckBoxedEntry) {
             Point point = list.indexToLocation(index);
             int x = e.getPoint().x - point.x;
             int y = e.getPoint().y - point.y;
             if (x > 3 && x < 18) {
                 if (y > 3 && y < 18) {
 
-                    AbstractExtensionWrapper object = ((AbstractExtensionWrapper) list.getModel().getElementAt(index));
-                    boolean value = !((AbstractExtensionWrapper) list.getModel().getElementAt(index))._isEnabled();
+                    CheckBoxedEntry object = ((CheckBoxedEntry) list.getModel().getElementAt(index));
+                    boolean value = !((CheckBoxedEntry) list.getModel().getElementAt(index))._isEnabled();
                     if (value == object._isEnabled()) return;
                     if (value) {
                         try {
                             object._setEnabled(true);
+                            if (object instanceof AbstractExtensionWrapper) {
+                                if (((AbstractExtensionWrapper) object)._getExtension().getGUI() != null) {
+                                    int ret = UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN, object.getName(), _JDT._.gui_settings_extensions_show_now(object.getName()));
 
-                            if (object._getExtension().getGUI() != null) {
-                                int ret = UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN, object.getName(), _JDT._.gui_settings_extensions_show_now(object.getName()));
+                                    if (UserIO.isOK(ret)) {
+                                        // activate panel
+                                        ((AbstractExtensionWrapper) object)._getExtension().getGUI().setActive(true);
+                                        // bring panel to front
+                                        ((AbstractExtensionWrapper) object)._getExtension().getGUI().toFront();
 
-                                if (UserIO.isOK(ret)) {
-                                    // activate panel
-                                    object._getExtension().getGUI().setActive(true);
-                                    // bring panel to front
-                                    object._getExtension().getGUI().toFront();
-
+                                    }
                                 }
                             }
                         } catch (StartException e1) {

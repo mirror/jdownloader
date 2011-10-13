@@ -1,13 +1,13 @@
 package org.jdownloader.extensions;
 
 import java.awt.Component;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 
 import javax.swing.ImageIcon;
 
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.ConfigEventListener;
+import org.appwork.storage.config.events.GenericConfigEventListener;
+import org.appwork.storage.config.handler.BooleanKeyHandler;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.gui.settings.AbstractConfigPanel;
@@ -20,26 +20,35 @@ public abstract class ExtensionConfigPanel<T extends AbstractExtension> extends 
 
     private Header            header;
 
+    private BooleanKeyHandler keyHandlerEnabled;
+
     public void onConfigValidatorError(KeyHandler<Object> keyHandler, Object invalidValue, ValidationException validateException) {
     }
 
     public ExtensionConfigPanel(T plg, boolean clean) {
         super();
         this.extension = plg;
+        keyHandlerEnabled = plg.getSettings().getStorageHandler().getKeyHandler("enabled", BooleanKeyHandler.class);
+        keyHandlerEnabled.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
+
+            public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
+
+                try {
+                    extension.setEnabled(header.isHeaderEnabled());
+                    updateHeaders(header.isHeaderEnabled());
+                } catch (Exception e1) {
+                    e1.printStackTrace();
+                    Dialog.getInstance().showExceptionDialog("Error", e1.getMessage(), e1);
+                }
+            }
+
+            public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
+            }
+        });
         plg.getSettings().getStorageHandler().getEventSender().addListener(this);
         if (!clean) {
-            header = new Header(plg.getName(), plg.getIcon(32), new ActionListener() {
+            header = new Header(plg.getName(), plg.getIcon(32), keyHandlerEnabled);
 
-                public void actionPerformed(ActionEvent e) {
-                    try {
-                        extension.setEnabled(header.isHeaderEnabled());
-                        updateHeaders(header.isHeaderEnabled());
-                    } catch (Exception e1) {
-                        e1.printStackTrace();
-                        Dialog.getInstance().showExceptionDialog("Error", e1.getMessage(), e1);
-                    }
-                }
-            });
             add(header, "spanx,growx,pushx");
 
             header.setEnabled(plg.isEnabled());
@@ -51,10 +60,7 @@ public abstract class ExtensionConfigPanel<T extends AbstractExtension> extends 
     }
 
     public void onConfigValueModified(KeyHandler<Object> keyHandler, Object newValue) {
-        if ("enabled".equals(keyHandler)) {
-            updateHeaders((Boolean) newValue);
 
-        }
     }
 
     public ExtensionConfigPanel(T plg) {

@@ -2,7 +2,6 @@ package jd.gui.swing.jdgui.views.settings.panels.packagizer;
 
 import javax.swing.Box;
 import javax.swing.JButton;
-import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.event.TableModelEvent;
@@ -14,16 +13,13 @@ import net.miginfocom.swing.MigLayout;
 
 import org.appwork.app.gui.MigPanel;
 import org.appwork.swing.components.ExtButton;
-import org.appwork.swing.components.ExtCheckBox;
 import org.appwork.swing.exttable.utils.MinimumSelectionObserver;
-import org.jdownloader.controlling.packagizer.PackagizerSettings;
-import org.jdownloader.gui.translate._GUI;
 
 public class PackagizerFilter extends JPanel implements SettingsComponent {
     private static final long     serialVersionUID = 6070464296168772795L;
     private MigPanel              tb;
     private PackagizerFilterTable table;
-    private ExtCheckBox           enable;
+
     private JButton               btAdd;
     private JButton               btRemove;
     private ExtButton             btImport;
@@ -41,7 +37,7 @@ public class PackagizerFilter extends JPanel implements SettingsComponent {
 
         tb.add(btImport = new ExtButton(new ImportAction(table)), "height 26!,sg 2");
 
-        tb.add(btExport = new ExtButton(new ExportAction()), "height 26!,sg 2,gapright 15");
+        tb.add(btExport = new ExtButton(new ExportAction()), "height 26!,sg 2");
 
         table.getExtTableModel().addTableModelListener(new TableModelListener() {
 
@@ -49,9 +45,6 @@ public class PackagizerFilter extends JPanel implements SettingsComponent {
                 btExport.setEnabled(table.getRowCount() > 0);
             }
         });
-        tb.add(new JLabel(_GUI._.PackagizerFilter_PackagizerFilter_enable()));
-        enable = new ExtCheckBox(PackagizerSettings.ENABLED, table, btAdd, btRemove);
-        tb.add(enable);
 
         table.getSelectionModel().addListSelectionListener(new MinimumSelectionObserver(table, ra, 1));
 
