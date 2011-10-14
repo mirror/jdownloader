@@ -39,6 +39,7 @@ public class SrBoxCom extends PluginForDecrypt {
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+        // Logger logDebug = JDLogger.getLogger();
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.setFollowRedirects(false);
@@ -71,6 +72,7 @@ public class SrBoxCom extends PluginForDecrypt {
 
         String strLink = null;
         String[] linksTemp = new String[TabTemp.length];
+
         ArrayList<HostPluginWrapper> AllHosts = new ArrayList<HostPluginWrapper>(HostPluginWrapper.getHostWrapper());
 
         // We look if the link in the array is supported by a hoster plug-in
@@ -78,7 +80,6 @@ public class SrBoxCom extends PluginForDecrypt {
         for (int iIndex = 0; iIndex < TabTemp.length; iIndex++) {
             strLink = TabTemp[iIndex];
             for (HostPluginWrapper wrapper : AllHosts) {
-
                 if (wrapper.canHandle(strLink)) {
                     linksTemp[iLink] = strLink;
                     iLink++;
@@ -87,12 +88,13 @@ public class SrBoxCom extends PluginForDecrypt {
             }
         }
 
-        // We look if the link in the array is supported by a decrypter plug-in
+        // We look if the link in the array is supported by a decrypter
+        // plug-in
         ArrayList<DecryptPluginWrapper> AllDecrypter = new ArrayList<DecryptPluginWrapper>(DecryptPluginWrapper.getDecryptWrapper());
         for (int iIndex = 0; iIndex < TabTemp.length; iIndex++) {
             strLink = TabTemp[iIndex];
             for (DecryptPluginWrapper wrapper : AllDecrypter) {
-                if (wrapper.compareTo(this.getWrapper()) != 0) {
+                if (!this.getHost().equals(wrapper.getHost())) {
                     if (wrapper.canHandle(strLink)) {
                         linksTemp[iLink] = strLink;
                         iLink++;
