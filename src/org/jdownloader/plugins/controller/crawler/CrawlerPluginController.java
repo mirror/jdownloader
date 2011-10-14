@@ -10,6 +10,7 @@ import jd.PluginWrapper;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.PluginForDecrypt;
 
+import org.appwork.exceptions.WTFException;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.Application;
@@ -32,7 +33,7 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
         return CrawlerPluginController.INSTANCE;
     }
 
-    private HashMap<String, LazyCrawlerPlugin> map;
+    private HashMap<String, LazyCrawlerPlugin> classNameMap;
     private ArrayList<LazyCrawlerPlugin>       list;
 
     /**
@@ -40,7 +41,7 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
      * Access the only existing instance by using {@link #getInstance()}.
      */
     private CrawlerPluginController() {
-        this.map = new HashMap<String, LazyCrawlerPlugin>();
+        this.classNameMap = new HashMap<String, LazyCrawlerPlugin>();
         this.list = new ArrayList<LazyCrawlerPlugin>();
     }
 
@@ -69,6 +70,10 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
                 }
                 System.out.println("Crawler Plugin Scanner Loader: " + (System.currentTimeMillis() - t));
             }
+        }
+
+        for (LazyCrawlerPlugin l : list) {
+            classNameMap.put(l.getClassname(), l);
         }
         System.out.println(list);
 
@@ -104,6 +109,7 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
                     }
                 }
 
+                if (names.length > 0) { throw new WTFException(); }
                 for (int i = 0; i < names.length; i++) {
                     try {
                         AbstractCrawlerPlugin ap = new AbstractCrawlerPlugin(c.getClazz().getSimpleName());
@@ -140,5 +146,27 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
     }
 
     private static final String PLUGIN_FOLDER_PATH = "jd/plugins/decrypter";
+
+    public ArrayList<LazyCrawlerPlugin> list() {
+        return list;
+    }
+
+    public LazyCrawlerPlugin get(Class<? extends PluginForDecrypt> class1) {
+        return classNameMap.get(class1.getName());
+    }
+
+    @SuppressWarnings("unchecked")
+    public <T extends PluginForDecrypt> T newInstance(Class<T> class1) {
+
+        return (T) get(class1).newInstance();
+    }
+
+    public boolean canHandle(String data) {
+        ArrayList<LazyCrawlerPlugin> list = this.list;
+        for (LazyCrawlerPlugin l : list) {
+            if (l.canHandle(data)) return true;
+        }
+        return false;
+    }
 
 }

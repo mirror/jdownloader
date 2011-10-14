@@ -51,7 +51,6 @@ import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 import org.appwork.storage.JSonStorage;
-import org.appwork.storage.config.test.PerformanceObserver;
 import org.appwork.storage.jackson.JacksonMapper;
 import org.appwork.utils.Application;
 import org.appwork.utils.os.CrossSystem;
@@ -431,7 +430,7 @@ public class Main {
         }
         if (JDInitFlags.SWITCH_DEBUG) {
             Main.LOG.info("DEBUG MODE ACTIVATED");
-            new PerformanceObserver().start();
+            // new PerformanceObserver().start();
             Main.LOG.setLevel(Level.ALL);
         } else {
             JDLogger.removeConsoleHandler();

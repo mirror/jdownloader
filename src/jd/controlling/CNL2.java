@@ -16,27 +16,19 @@
 
 package jd.controlling;
 
-import java.net.URL;
 import java.util.ArrayList;
 
 import javax.crypto.Cipher;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
-import jd.DecryptPluginWrapper;
-import jd.PluginWrapper;
-import jd.config.SubConfiguration;
-import jd.gui.swing.components.Balloon;
 import jd.nutils.encoding.Base64;
 import jd.nutils.encoding.Encoding;
-import jd.nutils.nativeintegration.LocalBrowser;
-import jd.parser.html.HTMLParser;
 import jd.plugins.DownloadLink;
 import jd.utils.JDHexUtils;
 
 import org.appwork.utils.Regex;
 import org.jdownloader.extensions.ExtensionController;
-import org.jdownloader.translate._JDT;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.ContextFactory;
 import org.mozilla.javascript.Scriptable;
@@ -47,41 +39,6 @@ public final class CNL2 {
      * Don't let anyone instantiate this class.
      */
     private CNL2() {
-    }
-
-    /**
-     * runs through all decrypter and checks if cnl2 is enabled and if text
-     * equals a handleable link. if yes, the defaultbrowser opens.
-     * 
-     * @param text
-     * @return
-     */
-    public static boolean checkText(String text) {
-        if (text == null) return false;
-        text = text.trim();
-        if (!isExternInterfaceActive()) return false;
-        if (!SubConfiguration.getConfig(LinkGrabberController.CONFIG).getBooleanProperty(LinkGrabberController.PARAM_USE_CNL2, true)) return false;
-        try {
-            for (final DecryptPluginWrapper plg : DecryptPluginWrapper.getDecryptWrapper()) {
-                if ((plg.getFlags() & PluginWrapper.CNL_2) > 0) {
-                    if (plg.canHandle(text)) {
-                        final String links[] = HTMLParser.getHttpLinks(text, null);
-                        if (links.length == 1) {
-                            /* only single links should open in browser */
-                            if (text.contains("?")) {
-                                LocalBrowser.openDefaultURL(new URL(text + "&jd=1"));
-                            } else {
-                                LocalBrowser.openDefaultURL(new URL(text + "?jd=1"));
-                            }
-                            Balloon.show(_JDT._.jd_controlling_CNL2_checkText_title(), null, _JDT._.jd_controlling_CNL2_checkText_message());
-                            return true;
-                        }
-                    }
-                }
-            }
-        } catch (final Exception e) {
-        }
-        return false;
     }
 
     private static boolean isExternInterfaceActive() {

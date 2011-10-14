@@ -202,21 +202,21 @@ public final class ClipboardHandler extends Thread implements ControlListener {
                                 /* check if we have unhandled uri */
                                 if (sb.length() > 0) {
                                     final String parse = sb.toString();
-                                    if (!CNL2.checkText(parse)) {
-                                        new DistributeData(parse).start();
-                                    }
+
+                                    new DistributeData(parse).start();
+
                                 }
                             } else if (what == urlFlavor || what == stringFlavor) {
                                 /* parse plaintext content */
-                                if (!CNL2.checkText(currentString)) {
-                                    System.out.println("parse");
-                                    new DistributeData(currentString).start();
-                                }
+
+                                System.out.println("parse");
+                                new DistributeData(currentString).start();
+
                             } else if (what == htmlFlavor) {
                                 /* parse html content, get all links */
-                                if (!CNL2.checkText(currentString)) {
-                                    new DistributeData(currentString).start();
-                                }
+
+                                new DistributeData(currentString).start();
+
                             }
                             lastString = currentString;
                         } else {

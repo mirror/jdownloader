@@ -26,7 +26,6 @@ import java.io.StringWriter;
 import java.net.URL;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
-import java.util.Locale;
 import java.util.logging.Logger;
 
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -38,7 +37,6 @@ import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
 import jd.CPluginWrapper;
-import jd.DecryptPluginWrapper;
 import jd.HostPluginWrapper;
 import jd.Main;
 import jd.config.Configuration;
@@ -51,7 +49,6 @@ import jd.nutils.Executer;
 import jd.nutils.Formatter;
 import jd.nutils.io.JDIO;
 import jd.plugins.DownloadLink;
-import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginsC;
 
@@ -292,21 +289,6 @@ public class JDUtilities {
             }
         }
         return sb.toString();
-    }
-
-    /**
-     * Sucht ein passendes Plugin fuer einen Anbieter Please dont use the
-     * returned Plugin to start any function
-     * 
-     * @param host
-     *            Der Host, von dem das Plugin runterladen kann
-     * @return Ein passendes Plugin oder null
-     */
-    public static PluginForDecrypt getPluginForDecrypt(final String host) {
-        for (final DecryptPluginWrapper pHost : DecryptPluginWrapper.getDecryptWrapper()) {
-            if (pHost.getHost().equals(host.toLowerCase(Locale.getDefault()))) return pHost.getPlugin();
-        }
-        return null;
     }
 
     public static PluginForHost getPluginForHost(final String host) {

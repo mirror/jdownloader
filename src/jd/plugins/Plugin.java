@@ -140,17 +140,17 @@ public abstract class Plugin implements ActionListener {
         return password;
     }
 
-    protected final ConfigContainer config;
+    protected ConfigContainer config;
 
-    protected final PluginWrapper   wrapper;
+    protected PluginWrapper   wrapper;
 
-    protected Browser               br = null;
+    protected Browser         br = null;
     /**
      * returns the init time of this plugin. this can be used, for example to
      * ignore further captcha questions if the user decided not to continue
      * decrypting
      */
-    private long                    initTime;
+    private long              initTime;
 
     public void setInitTime(long initTime) {
         System.out.println("Set " + this + " " + initTime);
@@ -184,8 +184,6 @@ public abstract class Plugin implements ActionListener {
                     return ((HostPluginWrapper) wrapper).getIcon();
                 }
             };
-        } else {
-            this.config = new ConfigContainer(this.getHost());
         }
     }
 
@@ -206,8 +204,6 @@ public abstract class Plugin implements ActionListener {
                     return ((HostPluginWrapper) wrapper).getIcon();
                 }
             };
-        } else {
-            this.config = new ConfigContainer(this.getHost());
         }
     }
 

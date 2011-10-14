@@ -10,7 +10,6 @@ import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JPanel;
 
-import jd.DecryptPluginWrapper;
 import jd.HostPluginWrapper;
 import jd.PluginWrapper;
 import jd.gui.swing.jdgui.views.settings.components.SettingsComponent;
@@ -78,11 +77,7 @@ public class PluginSettingsPanel extends JPanel implements SettingsComponent, Ac
                 list.add(plg);
             }
         }
-        for (DecryptPluginWrapper plg : DecryptPluginWrapper.getDecryptWrapper()) {
-            if (plg.hasConfig()) {
-                list.add(plg);
-            }
-        }
+
         Collections.sort(list, new Comparator<PluginWrapper>() {
 
             public int compare(PluginWrapper o1, PluginWrapper o2) {

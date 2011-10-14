@@ -64,19 +64,14 @@ public abstract class PluginForHost extends Plugin {
 
     private IOPermission ioPermission = null;
 
-    public PluginForHost() {
-        super();
+    @Deprecated
+    public PluginForHost(final PluginWrapper wrapper) {
+        super(wrapper);
         /* defaultPlugin does not need any Browser instance */
         br = null;
         dl = null;
         /* defaultPlugins do not have any working logger */
         setLogger(JDPluginLogger.Trash);
-    }
-
-    @Deprecated
-    public PluginForHost(final PluginWrapper wrapper) {
-        super(wrapper);
-
     }
 
     public void setLogger(JDPluginLogger logger) {

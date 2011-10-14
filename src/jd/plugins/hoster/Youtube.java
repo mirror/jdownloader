@@ -39,8 +39,9 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.decrypter.TbCm;
 import jd.plugins.decrypter.TbCm.DestinationFormat;
-import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
+
+import org.jdownloader.plugins.controller.crawler.CrawlerPluginController;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "youtube.com" }, urls = { "httpJDYoutube://[\\w\\.\\-]*?youtube\\.com/(videoplayback\\?.+|get_video\\?.*?video_id=.+&.+(&fmt=\\d+)?)" }, flags = { 2 })
 public class Youtube extends PluginForHost {
@@ -306,7 +307,7 @@ public class Youtube extends PluginForHost {
         } else {
             downloadLink.setFinalFileName(downloadLink.getStringProperty("name", "video.tmp"));
             downloadLink.setDownloadSize((Long) downloadLink.getProperty("size", Long.valueOf(0l)));
-            final PluginForDecrypt plugin = JDUtilities.getPluginForDecrypt("youtube.com");
+            final PluginForDecrypt plugin = CrawlerPluginController.getInstance().newInstance(TbCm.class);
             if (plugin == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "cannot decrypt videolink"); }
             if (downloadLink.getStringProperty("fmtNew", null) == null) { throw new PluginException(LinkStatus.ERROR_FATAL, "You have to add link again"); }
             if (downloadLink.getStringProperty("videolink", null) == null) { throw new PluginException(LinkStatus.ERROR_FATAL, "You have to add link again"); }

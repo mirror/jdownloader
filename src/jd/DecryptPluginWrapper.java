@@ -18,60 +18,39 @@ package jd;
 
 import java.util.ArrayList;
 
-import jd.controlling.JDLogger;
-import jd.nutils.JDFlags;
 import jd.plugins.PluginForDecrypt;
 
-public class DecryptPluginWrapper extends PluginWrapper {
-    private static final ArrayList<DecryptPluginWrapper> DECRYPT_WRAPPER = new ArrayList<DecryptPluginWrapper>();
-    public static final Object LOCK = new Object();
+import org.appwork.exceptions.WTFException;
 
-    static {
-        try {
-            JDInit.loadPluginForDecrypt();
-        } catch (Throwable e) {
-            JDLogger.exception(e);
-        }
-    }
+@Deprecated
+public class DecryptPluginWrapper extends PluginWrapper {
 
     public static ArrayList<DecryptPluginWrapper> getDecryptWrapper() {
-        return DECRYPT_WRAPPER;
+        throw new WTFException();
     }
 
     public static boolean hasPlugin(final String data) {
-        for (DecryptPluginWrapper w : getDecryptWrapper()) {
-            if (w.canHandle(data)) return true;
-        }
-        return false;
+        throw new WTFException();
     }
 
     public DecryptPluginWrapper(final String host, final String classNamePrefix, final String className, final String patternSupported, final int flags, final String revision) {
         super(host, classNamePrefix, className, patternSupported, flags, revision);
-        synchronized (LOCK) {
-            for (DecryptPluginWrapper plugin : DECRYPT_WRAPPER) {
-                if (plugin.getID().equalsIgnoreCase(this.getID()) && plugin.getPattern().equals(this.getPattern())) {
-                    if (JDFlags.hasNoFlags(flags, ALLOW_DUPLICATE)) {
-                        logger.severe("Cannot add DecryptPlugin!DecryptPluginID " + getID() + " already exists!");
-                        return;
-                    }
-                }
-            }
-            DECRYPT_WRAPPER.add(this);
-        }
+        throw new WTFException();
     }
 
     public DecryptPluginWrapper(final String host, final String className, final String patternSupported, final int flags, final String revision) {
         this(host, "jd.plugins.decrypter.", className, patternSupported, flags, revision);
+        throw new WTFException();
     }
 
     @Override
     public PluginForDecrypt getPlugin() {
-        return (PluginForDecrypt) super.getPlugin();
+        throw new WTFException();
     }
 
     @Override
     public PluginForDecrypt getNewPluginInstance() {
-        return (PluginForDecrypt) super.getNewPluginInstance();
+        throw new WTFException();
     }
 
 }

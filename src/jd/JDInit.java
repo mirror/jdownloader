@@ -47,10 +47,8 @@ import jd.nutils.ClassFinder;
 import jd.nutils.OSDetector;
 import jd.nutils.encoding.Encoding;
 import jd.nutils.io.JDIO;
-import jd.pluginloader.DecrypterPluginCache;
 import jd.pluginloader.HosterPluginCache;
 import jd.pluginloader.VirtualClass;
-import jd.pluginloader.VirtualDecrypterClass;
 import jd.pluginloader.VirtualHosterClass;
 import jd.utils.JDUtilities;
 
@@ -112,33 +110,6 @@ public class JDInit {
             }
         }
         return JDInit.CL;
-    }
-
-    public static void loadPluginForDecrypt() {
-
-        try {
-            for (final VirtualClass c : ClassFinder.getClasses("jd.plugins.decrypter", JDInit.getPluginClassLoader())) {
-                try {
-                    VirtualDecrypterClass vc = VirtualDecrypterClass.create(c);
-                    if (!vc.isValid()) {
-                        continue;
-                    }
-
-                    vc.initWrapper();
-
-                } catch (final Throwable e) {
-                    JDLogger.exception(e);
-                }
-            }
-        } catch (final Throwable e) {
-            JDLogger.exception(e);
-        } finally {
-            try {
-                DecrypterPluginCache.getInstance().save();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
     }
 
     public static void loadPluginForHost() {

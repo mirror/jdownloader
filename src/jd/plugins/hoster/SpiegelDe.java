@@ -30,14 +30,13 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.decrypter.TbCm;
 import jd.plugins.decrypter.TbCm.DestinationFormat;
-import jd.utils.JDUtilities;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "spiegel.de" }, urls = { "http://video\\.spiegel\\.de/flash/.+?\\.flv|http://video\\.promobil2spiegel\\.netbiscuits\\.com/.+?\\.(3gp|mp4)|http://www.spiegel.de/img/.+?(\\.\\w+)" }, flags = { 0 })
 public class SpiegelDe extends PluginForHost {
 
-    private static final String AGB_LINK = "http://www.spiegel.de/agb";
+    private static final String  AGB_LINK                      = "http://www.spiegel.de/agb";
     private static final Pattern PATTERN_SUPPORTED_FOTOSTRECKE = Pattern.compile("http://www.spiegel.de/img/.+?(\\.\\w+)");
-    private static final Pattern PATTERN_SUPPORTED_VIDEO = Pattern.compile("http://video\\.spiegel\\.de/flash/.+?\\.flv|http://video\\.promobil2spiegel\\.netbiscuits\\.com/.+?\\.(3gp|mp4)");
+    private static final Pattern PATTERN_SUPPORTED_VIDEO       = Pattern.compile("http://video\\.spiegel\\.de/flash/.+?\\.flv|http://video\\.promobil2spiegel\\.netbiscuits\\.com/.+?\\.(3gp|mp4)");
 
     public SpiegelDe(final PluginWrapper wrapper) {
         super(wrapper);
@@ -68,7 +67,7 @@ public class SpiegelDe extends PluginForHost {
                         inType = DestinationFormat.VIDEOFLV;
                     }
                     /* to load the TbCm plugin */
-                    JDUtilities.getPluginForDecrypt("youtube.com");
+                    // JDUtilities.getPluginForDecrypt("youtube.com");
                     if (!TbCm.ConvertFile(downloadLink, inType, convertTo)) {
                         logger.severe("Video-Convert failed!");
                     }

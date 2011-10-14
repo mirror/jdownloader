@@ -1,7 +1,5 @@
 package org.jdownloader.plugins.controller;
 
-import java.io.File;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
 
@@ -39,10 +37,15 @@ public class PluginClassLoader extends URLClassLoader {
     // parentClassLoader.getResources(name);
     // return ret;
     // }
+    private static final PluginClassLoader INSTANCE = new PluginClassLoader();
 
-    public PluginClassLoader() throws MalformedURLException {
-        super(new URL[] { new File(Application.getRoot()).toURI().toURL() }, PluginClassLoader.class.getClassLoader());
-        // parentClassLoader = PluginClassLoader.class.getClassLoader();
+    public static PluginClassLoader getInstance() {
+        return INSTANCE;
+    }
+
+    public PluginClassLoader() {
+        super(new URL[] { Application.getRootURL() }, PluginClassLoader.class.getClassLoader());
+
     }
 
 }

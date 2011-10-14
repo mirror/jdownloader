@@ -11,7 +11,6 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import jd.DecryptPluginWrapper;
 import jd.HostPluginWrapper;
 import jd.config.Property;
 import jd.controlling.IOPermission;
@@ -25,25 +24,26 @@ import jd.plugins.PluginForHost;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Regex;
 import org.appwork.utils.logging.Log;
+import org.jdownloader.plugins.controller.crawler.CrawlerPluginController;
+import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin;
 
 public class LinkCrawler implements IOPermission {
 
-    private static ArrayList<DecryptPluginWrapper> pDecrypts;
-    private static ArrayList<HostPluginWrapper>    pHosts;
-    private static PluginForHost                   directHTTP           = null;
-    private ArrayList<CrawledLink>                 crawledLinks         = new ArrayList<CrawledLink>();
-    private AtomicInteger                          crawledLinksCounter  = new AtomicInteger(0);
-    private ArrayList<CrawledLink>                 filteredLinks        = new ArrayList<CrawledLink>();
-    private AtomicInteger                          filteredLinksCounter = new AtomicInteger(0);
-    private AtomicInteger                          crawler              = new AtomicInteger(0);
-    private HashSet<String>                        duplicateFinder      = new HashSet<String>();
-    private LinkCrawlerHandler                     handler              = null;
-    private long                                   createdDate          = -1;
-    private static ThreadPoolExecutor              threadPool           = null;
+    private static ArrayList<HostPluginWrapper> pHosts;
+    private static PluginForHost                directHTTP           = null;
+    private ArrayList<CrawledLink>              crawledLinks         = new ArrayList<CrawledLink>();
+    private AtomicInteger                       crawledLinksCounter  = new AtomicInteger(0);
+    private ArrayList<CrawledLink>              filteredLinks        = new ArrayList<CrawledLink>();
+    private AtomicInteger                       filteredLinksCounter = new AtomicInteger(0);
+    private AtomicInteger                       crawler              = new AtomicInteger(0);
+    private HashSet<String>                     duplicateFinder      = new HashSet<String>();
+    private LinkCrawlerHandler                  handler              = null;
+    private long                                createdDate          = -1;
+    private static ThreadPoolExecutor           threadPool           = null;
 
-    private HashSet<String>                        captchaBlockedHoster = new HashSet<String>();
-    private boolean                                captchaBlockedAll    = false;
-    private LinkCrawlerFilter                      filter               = null;
+    private HashSet<String>                     captchaBlockedHoster = new HashSet<String>();
+    private boolean                             captchaBlockedAll    = false;
+    private LinkCrawlerFilter                   filter               = null;
 
     static {
         int maxThreads = Math.max(JsonConfig.create(LinkCrawlerConfig.class).getMaxThreads(), 1);
@@ -83,7 +83,7 @@ public class LinkCrawler implements IOPermission {
 
         };
         threadPool.allowCoreThreadTimeOut(true);
-        pDecrypts = DecryptPluginWrapper.getDecryptWrapper();
+
         pHosts = HostPluginWrapper.getHostWrapper();
         for (HostPluginWrapper pHost : pHosts) {
             if ("http links".equals(pHost.getHost())) {
@@ -362,10 +362,10 @@ public class LinkCrawler implements IOPermission {
                      * first we will walk through all available decrypter
                      * plugins
                      */
-                    for (final DecryptPluginWrapper pDecrypt : pDecrypts) {
+                    for (final LazyCrawlerPlugin pDecrypt : CrawlerPluginController.getInstance().list()) {
                         if (pDecrypt.canHandle(url)) {
                             try {
-                                PluginForDecrypt plg = pDecrypt.getPlugin();
+                                PluginForDecrypt plg = pDecrypt.newInstance();
                                 if (plg != null) {
                                     ArrayList<CrawledLink> allPossibleCryptedLinks = plg.getCrawlableLinks(url);
                                     if (allPossibleCryptedLinks != null) {
@@ -538,7 +538,7 @@ public class LinkCrawler implements IOPermission {
             }
             if (cryptedLink == null || cryptedLink.getdPlugin() == null || cryptedLink.getCryptedLink() == null) return;
             /* we have to create new plugin instance here */
-            PluginForDecrypt plg = cryptedLink.getdPlugin().getWrapper().getNewPluginInstance();
+            PluginForDecrypt plg = CrawlerPluginController.getInstance().newInstance(cryptedLink.getdPlugin().getClass());
             plg.setIOPermission(this);
             plg.setBrowser(new Browser());
             /* now we run the plugin and let it find some links */

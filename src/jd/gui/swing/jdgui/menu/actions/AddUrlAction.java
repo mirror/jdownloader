@@ -19,7 +19,6 @@ package jd.gui.swing.jdgui.menu.actions;
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 
-import jd.controlling.CNL2;
 import jd.controlling.ClipboardHandler;
 import jd.controlling.IOEQ;
 import jd.controlling.linkcrawler.LinkCrawler;
@@ -63,7 +62,7 @@ public class AddUrlAction extends ToolBarAction {
                 }
                 final String text = UserIO.getInstance().requestInputDialog(UserIO.NO_COUNTDOWN | UserIO.STYLE_LARGE, _GUI._.gui_dialog_addurl_title(), _GUI._.gui_dialog_addurl_message(), def.toString(), NewTheme.I().getIcon("linkgrabber", 32), _GUI._.gui_dialog_addurl_okoption_parse(), null);
                 if (text == null || text.length() == 0) return;
-                if (CNL2.checkText(text)) return;
+
                 Thread addThread = new Thread(new Runnable() {
 
                     public void run() {
