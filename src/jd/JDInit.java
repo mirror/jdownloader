@@ -43,13 +43,9 @@ import jd.gui.swing.jdgui.events.EDTEventQueue;
 import jd.gui.swing.laf.LookAndFeelController;
 import jd.http.Browser;
 import jd.http.ext.security.JSPermissionRestricter;
-import jd.nutils.ClassFinder;
 import jd.nutils.OSDetector;
 import jd.nutils.encoding.Encoding;
 import jd.nutils.io.JDIO;
-import jd.pluginloader.HosterPluginCache;
-import jd.pluginloader.VirtualClass;
-import jd.pluginloader.VirtualHosterClass;
 import jd.utils.JDUtilities;
 
 import org.appwork.storage.config.JsonConfig;
@@ -110,37 +106,6 @@ public class JDInit {
             }
         }
         return JDInit.CL;
-    }
-
-    public static void loadPluginForHost() {
-        try {
-            // find all classfiles in package jd.plugins.hoster
-            for (final VirtualClass c : ClassFinder.getClasses("jd.plugins.hoster", JDInit.getPluginClassLoader())) {
-                try {
-                    // create a virtualhoster classfile.
-                    VirtualHosterClass vc = VirtualHosterClass.create(c);
-                    // ignore it if it is not valid. outdated or anything like
-                    // hits
-                    if (!vc.isValid()) {
-                        continue;
-                    }
-
-                    // initclass. create Hostwrapper
-                    vc.initWrapper();
-
-                } catch (final Throwable e) {
-                    JDLogger.exception(e);
-                }
-            }
-        } catch (final Throwable e) {
-            JDLogger.exception(e);
-        } finally {
-            try {
-                HosterPluginCache.getInstance().save();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
     }
 
     public JDInit() {

@@ -30,8 +30,6 @@ import javax.swing.JPanel;
 import javax.swing.JPasswordField;
 import javax.swing.JTextField;
 
-import jd.HostPluginWrapper;
-import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.accountchecker.AccountChecker;
 import jd.controlling.accountchecker.AccountChecker.AccountCheckJob;
@@ -40,7 +38,6 @@ import jd.gui.swing.jdgui.views.settings.panels.accountmanager.BuyAction;
 import jd.plugins.Account;
 import jd.plugins.PluginForHost;
 import jd.plugins.hoster.FileSonicCom;
-import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.swing.components.searchcombo.SearchComboBox;
@@ -55,6 +52,8 @@ import org.appwork.utils.swing.dialog.ProgressDialog.ProgressGetter;
 import org.jdownloader.DomainInfo;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.plugins.controller.host.HostPluginController;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 
 public class AddAccountDialog extends AbstractDialog<Integer> {
 
@@ -66,10 +65,10 @@ public class AddAccountDialog extends AbstractDialog<Integer> {
         try {
             Dialog.getInstance().showDialog(dialog);
             final Account ac = new Account(dialog.getUsername(), dialog.getPassword());
-            ac.setHoster(dialog.getHoster().getHost());
+            ac.setHoster(dialog.getHoster().getDisplayName());
 
             if (!addAccount(ac)) {
-                showDialog(dialog.getHoster().getPlugin(), ac);
+                showDialog(dialog.getHoster().getPrototype(), ac);
             }
         } catch (DialogClosedException e) {
             e.printStackTrace();
@@ -147,15 +146,15 @@ public class AddAccountDialog extends AbstractDialog<Integer> {
         return pd;
     }
 
-    private SearchComboBox<HostPluginWrapper> hoster;
+    private SearchComboBox<LazyHostPlugin> hoster;
 
-    private JTextField                        name;
+    private JTextField                     name;
 
-    JPasswordField                            pass;
-    private final PluginForHost               plugin;
+    JPasswordField                         pass;
+    private final PluginForHost            plugin;
 
-    private Account                           defaultAccount;
-    private static String                     EMPTYPW = "                 ";
+    private Account                        defaultAccount;
+    private static String                  EMPTYPW = "                 ";
 
     private AddAccountDialog(final PluginForHost plugin, Account acc) {
         super(UserIO.NO_ICON, _GUI._.jd_gui_swing_components_AccountDialog_title(), null, null, null);
@@ -168,8 +167,8 @@ public class AddAccountDialog extends AbstractDialog<Integer> {
         return this.getReturnmask();
     }
 
-    public HostPluginWrapper getHoster() {
-        return (HostPluginWrapper) this.hoster.getSelectedItem();
+    public LazyHostPlugin getHoster() {
+        return (LazyHostPlugin) this.hoster.getSelectedItem();
     }
 
     public String getPassword() {
@@ -185,37 +184,37 @@ public class AddAccountDialog extends AbstractDialog<Integer> {
 
     @Override
     public JComponent layoutDialogContent() {
-        final ArrayList<HostPluginWrapper> plugins = JDUtilities.getPremiumPluginsForHost();
-        Collections.sort(plugins, new Comparator<HostPluginWrapper>() {
-            public int compare(final HostPluginWrapper a, final HostPluginWrapper b) {
-                return a.getHost().compareToIgnoreCase(b.getHost());
+        final ArrayList<LazyHostPlugin> plugins = HostPluginController.getInstance().list();
+        Collections.sort(plugins, new Comparator<LazyHostPlugin>() {
+            public int compare(final LazyHostPlugin a, final LazyHostPlugin b) {
+                return a.getDisplayName().compareToIgnoreCase(b.getDisplayName());
             }
         });
         // final HostPluginWrapper[] array = plugins.toArray(new
         // HostPluginWrapper[plugins.size()]);
 
-        hoster = new SearchComboBox<HostPluginWrapper>(plugins) {
+        hoster = new SearchComboBox<LazyHostPlugin>(plugins) {
 
             @Override
-            protected Icon getIconForValue(HostPluginWrapper value) {
+            protected Icon getIconForValue(LazyHostPlugin value) {
                 if (value == null) return null;
-                return value.getIcon();
+                return DomainInfo.getInstance(value.getDisplayName()).getFavIcon();
             }
 
             @Override
-            protected String getTextForValue(HostPluginWrapper value) {
+            protected String getTextForValue(LazyHostPlugin value) {
                 if (value == null) return "";
-                return value.getHost();
+                return value.getDisplayName();
             }
         };
 
         if (this.plugin != null) {
             try {
-                this.hoster.setSelectedItem(this.plugin.getWrapper());
+                this.hoster.setSelectedItem(HostPluginController.getInstance().newInstance(plugin.getClass()));
             } catch (final Exception e) {
             }
         } else {
-            PluginWrapper plg = HostPluginWrapper.getWrapper(FileSonicCom.class.getName());
+            LazyHostPlugin plg = HostPluginController.getInstance().get(FileSonicCom.class);
             if (plg != null) {
                 try {
                     hoster.setSelectedItem(plg);

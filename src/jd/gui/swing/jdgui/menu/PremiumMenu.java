@@ -27,7 +27,6 @@ import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 import javax.swing.Timer;
 
-import jd.HostPluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.AccountControllerEvent;
 import jd.controlling.AccountControllerListener;
@@ -36,6 +35,8 @@ import jd.gui.swing.jdgui.actions.ActionController;
 import jd.plugins.PluginForHost;
 
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.plugins.controller.host.HostPluginController;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 
 public class PremiumMenu extends JMenu implements ActionListener, AccountControllerListener {
 
@@ -73,18 +74,18 @@ public class PremiumMenu extends JMenu implements ActionListener, AccountControl
         PluginForHost plugin;
         JMenu pluginPopup;
         JMenuItem mi;
-        ArrayList<HostPluginWrapper> hosts = new ArrayList<HostPluginWrapper>(HostPluginWrapper.getHostWrapper());
-        Collections.sort(hosts, new Comparator<HostPluginWrapper>() {
+        ArrayList<LazyHostPlugin> hosts = new ArrayList<LazyHostPlugin>(HostPluginController.getInstance().list());
+        Collections.sort(hosts, new Comparator<LazyHostPlugin>() {
 
-            public int compare(HostPluginWrapper o1, HostPluginWrapper o2) {
+            public int compare(LazyHostPlugin o1, LazyHostPlugin o2) {
                 return o1.getHost().compareToIgnoreCase(o2.getHost());
             }
 
         });
 
-        for (HostPluginWrapper wrapper : hosts) {
-            if (!wrapper.isLoaded() || !wrapper.isPremiumEnabled() || !AccountController.getInstance().hasAccounts(wrapper.getHost())) continue;
-            plugin = wrapper.getPlugin();
+        for (LazyHostPlugin wrapper : hosts) {
+            if (!wrapper.isLoaded() || !wrapper.isPremium() || !AccountController.getInstance().hasAccounts(wrapper.getHost())) continue;
+            plugin = wrapper.getPrototype();
             pluginPopup = new JMenu(wrapper.getHost());
             pluginPopup.setIcon(plugin.getHosterIcon());
             ArrayList<MenuAction> nexts = plugin.createMenuitems();
@@ -106,8 +107,8 @@ public class PremiumMenu extends JMenu implements ActionListener, AccountControl
         JMenu[] jmenus = new JMenu[menus];
         JMenu num = new JMenu(_GUI._.jd_gui_swing_menu_HosterMenu("0 - 9"));
         this.add(num);
-        for (HostPluginWrapper wrapper : hosts) {
-            if (!wrapper.isLoaded() || !wrapper.isPremiumEnabled()) continue;
+        for (LazyHostPlugin wrapper : hosts) {
+            if (!wrapper.isLoaded() || !wrapper.isPremium()) continue;
             char ccv = wrapper.getHost().toLowerCase().charAt(0);
             JMenu menu = null;
             if (ccv >= '0' && ccv <= '9') {
@@ -123,7 +124,7 @@ public class PremiumMenu extends JMenu implements ActionListener, AccountControl
                 menu = jmenus[index];
             }
 
-            plugin = wrapper.getPlugin();
+            plugin = wrapper.getPrototype();
             pluginPopup = new JMenu(wrapper.getHost());
             pluginPopup.setIcon(plugin.getHosterIcon());
             ArrayList<MenuAction> nexts = plugin.createMenuitems();

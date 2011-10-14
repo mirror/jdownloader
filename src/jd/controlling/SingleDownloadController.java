@@ -51,6 +51,7 @@ import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Regex;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.settings.IfFileExistsAction;
 import org.jdownloader.translate._JDT;
@@ -686,7 +687,7 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
              * we are going to download this link, create new liveplugin
              * instance here
              */
-            downloadLink.setLivePlugin(downloadLink.getDefaultPlugin().getWrapper().getNewPluginInstance());
+            downloadLink.setLivePlugin(HostPluginController.getInstance().newInstance(downloadLink.getDefaultPlugin().getClass()));
             currentPlugin = downloadLink.getLivePlugin();
             currentPlugin.setIOPermission(ioP);
             currentPlugin.setLogger(logger = new JDPluginLogger(downloadLink.getHost() + ":" + downloadLink.getName()));

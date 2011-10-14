@@ -23,12 +23,14 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map.Entry;
+import java.util.regex.Pattern;
 
 import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
 
 import jd.HostPluginWrapper;
 import jd.PluginWrapper;
+import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
 import jd.controlling.IOPermission;
 import jd.controlling.JDLogger;
@@ -46,11 +48,13 @@ import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.download.DownloadInterface;
 
+import org.appwork.exceptions.WTFException;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Regex;
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.DomainInfo;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.translate._JDT;
 
@@ -64,6 +68,12 @@ public abstract class PluginForHost extends Plugin {
 
     private IOPermission ioPermission = null;
 
+    private String       host;
+
+    private Pattern      pattern;
+
+    private long         revision;
+
     @Deprecated
     public PluginForHost(final PluginWrapper wrapper) {
         super(wrapper);
@@ -72,6 +82,16 @@ public abstract class PluginForHost extends Plugin {
         dl = null;
         /* defaultPlugins do not have any working logger */
         setLogger(JDPluginLogger.Trash);
+
+        initD();
+
+    }
+
+    private void initD() {
+
+        revision = Formatter.getRevision(getClass().getAnnotation(HostPlugin.class).revision());
+        host = HostPluginController.getInstance().get(getClass()).getDisplayName();
+        pattern = HostPluginController.getInstance().get(getClass()).getPattern();
     }
 
     public void setLogger(JDPluginLogger logger) {
@@ -93,7 +113,7 @@ public abstract class PluginForHost extends Plugin {
 
     @Override
     public long getVersion() {
-        return wrapper.getVersion();
+        return revision;
     }
 
     protected String getCaptchaCode(final String method, final String captchaAddress, final DownloadLink downloadLink) throws IOException, PluginException {
@@ -166,7 +186,15 @@ public abstract class PluginForHost extends Plugin {
 
     @Override
     public HostPluginWrapper getWrapper() {
-        return (HostPluginWrapper) super.getWrapper();
+        throw new WTFException();
+    }
+
+    public String getHost() {
+        return host;
+    }
+
+    public SubConfiguration getPluginConfig() {
+        return null;
     }
 
     @Override

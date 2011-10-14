@@ -253,11 +253,11 @@ public class PremiumCompoundExtension extends AbstractExtension<PremiumCompoundC
 
         public PremShareHost(String host, String className, String patternSupported, int flags) {
             super(host, "org.jdownloader.extensions.jdpremclient.", className, patternSupported, flags, "$Revision$");
-            for (HostPluginWrapper wrapper : HostPluginWrapper.getHostWrapper()) {
+            for (HostPluginWrapper wrapper : HostPluginController.getInstance()) {
                 if (wrapper.getPattern().toString().equalsIgnoreCase(patternSupported) && wrapper != this) replacedone = wrapper;
             }
             if (replacedone != null) {
-                HostPluginWrapper.getHostWrapper().remove(replacedone);
+                HostPluginController.getInstance().remove(replacedone);
             }
         }
 

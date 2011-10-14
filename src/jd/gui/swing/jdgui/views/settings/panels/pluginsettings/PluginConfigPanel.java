@@ -3,10 +3,11 @@ package jd.gui.swing.jdgui.views.settings.panels.pluginsettings;
 import javax.swing.JSeparator;
 import javax.swing.JTextArea;
 
-import jd.PluginWrapper;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.gui.swing.jdgui.views.settings.sidebar.AddonConfig;
 import net.miginfocom.swing.MigLayout;
+
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 public class PluginConfigPanel extends SwitchPanel {
     /**
@@ -26,8 +27,8 @@ public class PluginConfigPanel extends SwitchPanel {
     protected void onHide() {
     }
 
-    public static PluginConfigPanel create(PluginWrapper selectedItem) {
-        final AddonConfig cp = AddonConfig.getInstance(selectedItem.getPlugin().getConfig(), "", false);
+    public static PluginConfigPanel create(LazyPlugin<?> selectedItem) {
+        final AddonConfig cp = AddonConfig.getInstance(selectedItem.getPrototype().getConfig(), "", false);
 
         // ImageIcon icon = null;
         // if (selectedItem instanceof HostPluginWrapper) {
@@ -56,7 +57,7 @@ public class PluginConfigPanel extends SwitchPanel {
                 cp.setHidden();
             }
         };
-        String desc = selectedItem.getPlugin().getDescription();
+        String desc = selectedItem.getPrototype().getDescription();
         if (desc != null) {
             JTextArea txt = new JTextArea();
             txt.setEditable(false);

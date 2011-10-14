@@ -19,6 +19,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.logging.Log;
+import org.jdownloader.plugins.controller.host.HostPluginController;
 
 public class LinkChecker<E extends CheckableLink> {
 
@@ -230,7 +231,7 @@ public class LinkChecker<E extends CheckableLink> {
                                     /* now we check the links */
                                     if (plg == null) {
                                         /* create plugin if not done yet */
-                                        plg = linksList[0].getDefaultPlugin().getWrapper().getNewPluginInstance();
+                                        plg = HostPluginController.getInstance().newInstance(linksList[0].getDefaultPlugin().getClass());
                                         plg.setBrowser(br);
                                         plg.init();
                                     }

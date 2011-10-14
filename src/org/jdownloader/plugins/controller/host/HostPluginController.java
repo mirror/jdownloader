@@ -4,11 +4,11 @@ import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import jd.HostPluginWrapper;
 import jd.JDInitFlags;
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.HostPlugin;
+import jd.plugins.PluginForHost;
 import jd.plugins.PluginForHost;
 
 import org.appwork.storage.JSonStorage;
@@ -33,7 +33,7 @@ public class HostPluginController extends PluginController<PluginForHost> {
         return HostPluginController.INSTANCE;
     }
 
-    private HashMap<String, LazyHostPlugin> map;
+    private HashMap<String, LazyHostPlugin> classNameMap;
     private ArrayList<LazyHostPlugin>       list;
 
     /**
@@ -41,7 +41,7 @@ public class HostPluginController extends PluginController<PluginForHost> {
      * Access the only existing instance by using {@link #getInstance()}.
      */
     private HostPluginController() {
-        this.map = new HashMap<String, LazyHostPlugin>();
+        this.classNameMap = new HashMap<String, LazyHostPlugin>();
         this.list = new ArrayList<LazyHostPlugin>();
     }
 
@@ -70,6 +70,10 @@ public class HostPluginController extends PluginController<PluginForHost> {
                 }
                 System.out.println("Plugin Scanner Loader: " + (System.currentTimeMillis() - t));
             }
+        }
+
+        for (LazyHostPlugin l : list) {
+            classNameMap.put(l.getClassname(), l);
         }
         System.out.println(list);
 
@@ -112,7 +116,7 @@ public class HostPluginController extends PluginController<PluginForHost> {
                         try {
                             plg = (PluginForHost) c.getClazz().newInstance();
                         } catch (java.lang.InstantiationException e) {
-                            plg = (PluginForHost) c.getClazz().getConstructor(new Class[] { PluginWrapper.class }).newInstance(new HostPluginWrapper(names[i], c.getClazz().getSimpleName(), patterns[i], 0, a.revision()));
+                            plg = (PluginForHost) c.getClazz().getConstructor(new Class[] { PluginWrapper.class }).newInstance(null);
                         }
                         ap.setPremium(plg.isPremiumEnabled());
                         String purl = plg.getBuyPremiumUrl();
@@ -141,6 +145,28 @@ public class HostPluginController extends PluginController<PluginForHost> {
 
     private void save(ArrayList<AbstractHostPlugin> save) {
         JSonStorage.saveTo(Application.getResource(TMP_HOSTS_JSON), save);
+    }
+
+    public ArrayList<LazyHostPlugin> list() {
+        return list;
+    }
+
+    public LazyHostPlugin get(Class<? extends PluginForHost> class1) {
+        return classNameMap.get(class1.getName());
+    }
+
+    @SuppressWarnings("unchecked")
+    public <T extends PluginForHost> T newInstance(Class<T> class1) {
+
+        return (T) get(class1).newInstance();
+    }
+
+    public boolean canHandle(String data) {
+        ArrayList<LazyHostPlugin> list = this.list;
+        for (LazyHostPlugin l : list) {
+            if (l.canHandle(data)) return true;
+        }
+        return false;
     }
 
     private static final String HOSTERPATH = "jd/plugins/hoster";

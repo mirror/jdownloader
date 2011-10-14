@@ -25,7 +25,6 @@ import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 
-import jd.HostPluginWrapper;
 import jd.Main;
 import jd.config.Configuration;
 import jd.controlling.AccountController;
@@ -48,6 +47,8 @@ import net.miginfocom.swing.MigLayout;
 
 import org.appwork.scheduler.DelayedRunnable;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.plugins.controller.host.HostPluginController;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 
 public class PremiumStatus extends JPanel implements MouseListener, ControlListener {
 
@@ -108,20 +109,20 @@ public class PremiumStatus extends JPanel implements MouseListener, ControlListe
     }
 
     private void refreshAccountStats() {
-        for (HostPluginWrapper wrapper : HostPluginWrapper.getHostWrapper()) {
-            String host = wrapper.getHost();
-            if (wrapper.isLoaded()) {
-                ArrayList<Account> accs = new ArrayList<Account>(AccountController.getInstance().getAllAccounts(host));
-                for (Account acc : accs) {
-                    if (acc.isEnabled()) {
-                        /*
-                         * we do not force update here, the internal timeout
-                         * will make sure accounts get fresh checked from time
-                         * to time
-                         */
-                        AccountChecker.getInstance().check(acc, false);
-                    }
+
+        for (LazyHostPlugin wrapper : HostPluginController.getInstance().list()) {
+            String host = wrapper.getDisplayName();
+            // if (wrapper.isLoaded()) {
+            ArrayList<Account> accs = new ArrayList<Account>(AccountController.getInstance().getAllAccounts(host));
+            for (Account acc : accs) {
+                if (acc.isEnabled()) {
+                    /*
+                     * we do not force update here, the internal timeout will
+                     * make sure accounts get fresh checked from time to time
+                     */
+                    AccountChecker.getInstance().check(acc, false);
                 }
+                // }
             }
         }
     }
@@ -136,77 +137,77 @@ public class PremiumStatus extends JPanel implements MouseListener, ControlListe
                         bars[i].setVisible(false);
                     }
                     boolean enabled = false;
-                    for (HostPluginWrapper wrapper : HostPluginWrapper.getHostWrapper()) {
-                        String host = wrapper.getHost();
-                        if (wrapper.isLoaded()) {
-                            ArrayList<Account> accs = AccountController.getInstance().getAllAccounts(host);
-                            if (accs.size() > 0) {
-                                PluginForHost plugin = wrapper.getPlugin();
-                                long max = 0l;
-                                long left = 0l;
-                                enabled = false;
-                                boolean special = false;
-                                for (Account a : accs) {
-                                    if (a.isEnabled()) {
-                                        enabled = true;
-                                        AccountInfo ai = a.getAccountInfo();
-                                        if (ai == null) continue;
-                                        if (ai.isExpired()) continue;
-                                        if (!ai.isUnlimitedTraffic()) {
-                                            /* no unlimited traffic */
-                                            if (!a.isTempDisabled()) {
-                                                /*
-                                                 * only increase data if not
-                                                 * temp. disabled
-                                                 */
-                                                max += ai.getTrafficMax();
-                                                if (left != -1) {
-                                                    /*
-                                                     * only add TrafficLeft if
-                                                     * no unlimted account
-                                                     * available TODO: seperate
-                                                     * normal and premium accs
-                                                     */
-                                                    left += ai.getTrafficLeft();
-                                                    if (ai.isSpecialTraffic()) special = true;
-                                                }
-                                            }
-                                        } else {
-                                            /* left < 0 for unlimited */
-                                            left = -1;
-                                        }
-                                    }
-                                }
-                                if (!enabled) continue;
-                                bars[ii].setVisible(true);
-                                bars[ii].setIcon(plugin.getHosterIcon());
-                                bars[ii].setPlugin(plugin);
+                    for (LazyHostPlugin wrapper : HostPluginController.getInstance().list()) {
+                        String host = wrapper.getDisplayName();
 
-                                if (left == 0) {
-                                    bars[ii].setMaximum(10);
-                                    bars[ii].setValue(0);
-                                    if (special) {
-                                        bars[ii].setToolTipText(_GUI._.gui_premiumstatus_expired_maybetraffic_tooltip(host, accs.size()));
+                        ArrayList<Account> accs = AccountController.getInstance().getAllAccounts(host);
+                        if (accs.size() > 0) {
+                            PluginForHost plugin = wrapper.getPrototype();
+                            long max = 0l;
+                            long left = 0l;
+                            enabled = false;
+                            boolean special = false;
+                            for (Account a : accs) {
+                                if (a.isEnabled()) {
+                                    enabled = true;
+                                    AccountInfo ai = a.getAccountInfo();
+                                    if (ai == null) continue;
+                                    if (ai.isExpired()) continue;
+                                    if (!ai.isUnlimitedTraffic()) {
+                                        /* no unlimited traffic */
+                                        if (!a.isTempDisabled()) {
+                                            /*
+                                             * only increase data if not temp.
+                                             * disabled
+                                             */
+                                            max += ai.getTrafficMax();
+                                            if (left != -1) {
+                                                /*
+                                                 * only add TrafficLeft if no
+                                                 * unlimted account available
+                                                 * TODO: seperate normal and
+                                                 * premium accs
+                                                 */
+                                                left += ai.getTrafficLeft();
+                                                if (ai.isSpecialTraffic()) special = true;
+                                            }
+                                        }
                                     } else {
-                                        bars[ii].setToolTipText(_GUI._.gui_premiumstatus_expired_traffic_tooltip(host, accs.size()));
+                                        /* left < 0 for unlimited */
+                                        left = -1;
                                     }
-                                } else if (left > 0) {
-                                    bars[ii].setMaximum(max);
-                                    bars[ii].setValue(left);
-                                    bars[ii].setToolTipText(_GUI._.gui_premiumstatus_traffic_tooltip(host, accs.size(), Formatter.formatReadable(left)));
-                                } else {
-                                    /* left < 0 for unlimited */
-                                    bars[ii].setMaximum(10);
-                                    bars[ii].setValue(10);
-                                    bars[ii].setToolTipText(_GUI._.gui_premiumstatus_unlimited_traffic_tooltip(host));
-                                }
-                                ii++;
-                                if (ii >= BARCOUNT) {
-                                    invalidate();
-                                    return null;
                                 }
                             }
+                            if (!enabled) continue;
+                            bars[ii].setVisible(true);
+                            bars[ii].setIcon(plugin.getHosterIcon());
+                            bars[ii].setPlugin(plugin);
+
+                            if (left == 0) {
+                                bars[ii].setMaximum(10);
+                                bars[ii].setValue(0);
+                                if (special) {
+                                    bars[ii].setToolTipText(_GUI._.gui_premiumstatus_expired_maybetraffic_tooltip(host, accs.size()));
+                                } else {
+                                    bars[ii].setToolTipText(_GUI._.gui_premiumstatus_expired_traffic_tooltip(host, accs.size()));
+                                }
+                            } else if (left > 0) {
+                                bars[ii].setMaximum(max);
+                                bars[ii].setValue(left);
+                                bars[ii].setToolTipText(_GUI._.gui_premiumstatus_traffic_tooltip(host, accs.size(), Formatter.formatReadable(left)));
+                            } else {
+                                /* left < 0 for unlimited */
+                                bars[ii].setMaximum(10);
+                                bars[ii].setValue(10);
+                                bars[ii].setToolTipText(_GUI._.gui_premiumstatus_unlimited_traffic_tooltip(host));
+                            }
+                            ii++;
+                            if (ii >= BARCOUNT) {
+                                invalidate();
+                                return null;
+                            }
                         }
+
                     }
                     invalidate();
                 } catch (final Throwable e) {

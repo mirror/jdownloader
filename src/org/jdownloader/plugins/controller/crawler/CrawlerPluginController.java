@@ -4,7 +4,6 @@ import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import jd.HostPluginWrapper;
 import jd.JDInitFlags;
 import jd.PluginWrapper;
 import jd.plugins.DecrypterPlugin;
@@ -119,7 +118,7 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
                         try {
                             plg = (PluginForDecrypt) c.getClazz().newInstance();
                         } catch (java.lang.InstantiationException e) {
-                            plg = (PluginForDecrypt) c.getClazz().getConstructor(new Class[] { PluginWrapper.class }).newInstance(new HostPluginWrapper(names[i], c.getClazz().getSimpleName(), patterns[i], 0, a.revision()));
+                            plg = (PluginForDecrypt) c.getClazz().getConstructor(new Class[] { PluginWrapper.class }).newInstance(new Object[] { null });
                         }
 
                         LazyCrawlerPlugin l = new LazyCrawlerPlugin(ap, c.getClazz(), plg);

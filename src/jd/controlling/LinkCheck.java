@@ -32,6 +32,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForHost;
 
 import org.appwork.utils.event.Eventsender;
+import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.translate._JDT;
 
 class LinkCheckBroadcaster extends Eventsender<LinkCheckListener, LinkCheckEvent> {
@@ -141,7 +142,7 @@ public class LinkCheck implements ActionListener, ProgressControllerListener {
     private void checkHosterList(ArrayList<DownloadLink> hosterList) {
         if (hosterList.size() != 0) {
             DownloadLink link = hosterList.get(0);
-            PluginForHost plg = link.getDefaultPlugin().getWrapper().getNewPluginInstance();
+            PluginForHost plg = HostPluginController.getInstance().newInstance(link.getDefaultPlugin().getClass());
             plg.setBrowser(new Browser());
             plg.init();
             try {

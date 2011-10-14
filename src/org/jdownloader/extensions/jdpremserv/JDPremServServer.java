@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import jd.HostPluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.DownloadWatchDog;
 import jd.controlling.JDController;
@@ -15,7 +14,6 @@ import jd.event.ControlListener;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
 
 import org.appwork.utils.Regex;
 import org.jdownloader.extensions.interfaces.Handler;
@@ -24,6 +22,8 @@ import org.jdownloader.extensions.interfaces.Request;
 import org.jdownloader.extensions.interfaces.Response;
 import org.jdownloader.extensions.jdpremserv.controlling.UserController;
 import org.jdownloader.extensions.jdpremserv.model.PremServUser;
+import org.jdownloader.plugins.controller.host.HostPluginController;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 
 public class JDPremServServer implements Handler, ControlListener {
 
@@ -92,7 +92,7 @@ public class JDPremServServer implements Handler, ControlListener {
             /* build user info for fetchaccountinfo */
             response.setReturnStatus(Response.OK);
             StringBuilder sb = new StringBuilder("OK: USER || HOSTS: ");
-            for (HostPluginWrapper plugin : JDUtilities.getPremiumPluginsForHost()) {
+            for (LazyHostPlugin plugin : HostPluginController.getInstance().list()) {
                 if (AccountController.getInstance().getValidAccount(plugin.getHost()) != null) {
                     sb.append(plugin.getHost() + "||");
                 }

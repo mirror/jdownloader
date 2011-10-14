@@ -11,7 +11,6 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import jd.HostPluginWrapper;
 import jd.config.Property;
 import jd.controlling.IOPermission;
 import jd.http.Browser;
@@ -26,24 +25,25 @@ import org.appwork.utils.Regex;
 import org.appwork.utils.logging.Log;
 import org.jdownloader.plugins.controller.crawler.CrawlerPluginController;
 import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin;
+import org.jdownloader.plugins.controller.host.HostPluginController;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 
 public class LinkCrawler implements IOPermission {
 
-    private static ArrayList<HostPluginWrapper> pHosts;
-    private static PluginForHost                directHTTP           = null;
-    private ArrayList<CrawledLink>              crawledLinks         = new ArrayList<CrawledLink>();
-    private AtomicInteger                       crawledLinksCounter  = new AtomicInteger(0);
-    private ArrayList<CrawledLink>              filteredLinks        = new ArrayList<CrawledLink>();
-    private AtomicInteger                       filteredLinksCounter = new AtomicInteger(0);
-    private AtomicInteger                       crawler              = new AtomicInteger(0);
-    private HashSet<String>                     duplicateFinder      = new HashSet<String>();
-    private LinkCrawlerHandler                  handler              = null;
-    private long                                createdDate          = -1;
-    private static ThreadPoolExecutor           threadPool           = null;
+    private static PluginForHost      directHTTP           = null;
+    private ArrayList<CrawledLink>    crawledLinks         = new ArrayList<CrawledLink>();
+    private AtomicInteger             crawledLinksCounter  = new AtomicInteger(0);
+    private ArrayList<CrawledLink>    filteredLinks        = new ArrayList<CrawledLink>();
+    private AtomicInteger             filteredLinksCounter = new AtomicInteger(0);
+    private AtomicInteger             crawler              = new AtomicInteger(0);
+    private HashSet<String>           duplicateFinder      = new HashSet<String>();
+    private LinkCrawlerHandler        handler              = null;
+    private long                      createdDate          = -1;
+    private static ThreadPoolExecutor threadPool           = null;
 
-    private HashSet<String>                     captchaBlockedHoster = new HashSet<String>();
-    private boolean                             captchaBlockedAll    = false;
-    private LinkCrawlerFilter                   filter               = null;
+    private HashSet<String>           captchaBlockedHoster = new HashSet<String>();
+    private boolean                   captchaBlockedAll    = false;
+    private LinkCrawlerFilter         filter               = null;
 
     static {
         int maxThreads = Math.max(JsonConfig.create(LinkCrawlerConfig.class).getMaxThreads(), 1);
@@ -84,11 +84,10 @@ public class LinkCrawler implements IOPermission {
         };
         threadPool.allowCoreThreadTimeOut(true);
 
-        pHosts = HostPluginWrapper.getHostWrapper();
-        for (HostPluginWrapper pHost : pHosts) {
-            if ("http links".equals(pHost.getHost())) {
+        for (LazyHostPlugin pHost : HostPluginController.getInstance().list()) {
+            if ("http links".equals(pHost.getDisplayName())) {
                 /* for direct access to the directhttp plugin */
-                directHTTP = pHost.getNewPluginInstance();
+                directHTTP = pHost.newInstance();
                 break;
             }
         }
@@ -425,10 +424,10 @@ public class LinkCrawler implements IOPermission {
                     }
                 }
                 /* now we will walk through all available hoster plugins */
-                for (final HostPluginWrapper pHost : pHosts) {
+                for (final LazyHostPlugin pHost : HostPluginController.getInstance().list()) {
                     if (pHost.canHandle(url)) {
                         try {
-                            PluginForHost plg = pHost.getPlugin();
+                            PluginForHost plg = pHost.getPrototype();
                             if (plg != null) {
                                 FilePackage sourcePackage = null;
                                 if (possibleCryptedLink.getDownloadLink() != null) {

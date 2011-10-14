@@ -2,10 +2,9 @@ package jd.gui.swing.jdgui.views.settings.panels.pluginsettings;
 
 import javax.swing.ImageIcon;
 
-import jd.HostPluginWrapper;
-
 import org.jdownloader.gui.settings.AbstractConfigPanel;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.translate._JDT;
 
 public class PluginSettings extends AbstractConfigPanel {
@@ -19,7 +18,7 @@ public class PluginSettings extends AbstractConfigPanel {
     public PluginSettings() {
         super();
         this.addHeader(getTitle(), NewTheme.I().getIcon("plugin", 32));
-        this.addDescriptionPlain(_JDT._.gui_settings_plugins_description(HostPluginWrapper.getHostWrapper().size()));
+        this.addDescriptionPlain(_JDT._.gui_settings_plugins_description(HostPluginController.getInstance().list().size()));
 
         add(psp = new PluginSettingsPanel());
 

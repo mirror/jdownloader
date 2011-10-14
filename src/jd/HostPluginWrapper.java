@@ -23,12 +23,10 @@ import java.util.concurrent.locks.ReentrantReadWriteLock.WriteLock;
 
 import javax.swing.ImageIcon;
 
-import jd.controlling.JDLogger;
 import jd.gui.swing.components.JDLabelContainer;
-import jd.nutils.JDFlags;
 import jd.plugins.PluginForHost;
 
-import org.jdownloader.DomainInfo;
+import org.appwork.exceptions.WTFException;
 
 public class HostPluginWrapper extends PluginWrapper implements JDLabelContainer {
     private static final ArrayList<HostPluginWrapper> HOST_WRAPPER = new ArrayList<HostPluginWrapper>();
@@ -37,87 +35,59 @@ public class HostPluginWrapper extends PluginWrapper implements JDLabelContainer
     public static final ReadLock                      readLock     = lock.readLock();
     public static final WriteLock                     writeLock    = lock.writeLock();
 
-    static {
-        try {
-            writeLock.lock();
-            JDInit.loadPluginForHost();
-        } catch (Throwable e) {
-            JDLogger.exception(e);
-        } finally {
-            writeLock.unlock();
-        }
-    }
-
     public static ArrayList<HostPluginWrapper> getHostWrapper() {
-        return HOST_WRAPPER;
+        throw new WTFException();
     }
 
     public static boolean hasPlugin(final String data) {
-        for (HostPluginWrapper w : getHostWrapper()) {
-            if (w.canHandle(data)) return true;
-        }
-        return false;
+        throw new WTFException();
     }
 
     public HostPluginWrapper(final String host, final String classNamePrefix, final String className, final String patternSupported, final int flags, final String revision) {
         super(host, classNamePrefix, className, patternSupported, flags, revision);
-        try {
-            writeLock.lock();
-            for (HostPluginWrapper plugin : HOST_WRAPPER) {
-                if (plugin.getID().equalsIgnoreCase(this.getID()) && plugin.getPattern().equals(this.getPattern())) {
-                    if (JDFlags.hasNoFlags(flags, ALLOW_DUPLICATE)) {
-                        logger.severe("Cannot add HostPlugin! HostPluginID " + getID() + " already exists!");
-                        return;
-                    }
-                }
-            }
-            HOST_WRAPPER.add(this);
-        } finally {
-            writeLock.unlock();
-        }
+        throw new WTFException();
     }
 
     public HostPluginWrapper(final String host, final String simpleName, final String pattern, final int flags, final String revision) {
         this(host, "jd.plugins.hoster.", simpleName, pattern, flags, revision);
+        throw new WTFException();
     }
 
     @Override
     public PluginForHost getPlugin() {
-        return (PluginForHost) super.getPlugin();
+        throw new WTFException();
     }
 
     @Override
     public PluginForHost getNewPluginInstance() {
-        return (PluginForHost) super.getNewPluginInstance();
+        throw new WTFException();
     }
 
     public boolean isPremiumEnabled() {
-        return this.isLoaded() && this.getPlugin().isPremiumEnabled();
+        throw new WTFException();
     }
 
     @Override
     public String toString() {
-        return getHost();
+        throw new WTFException();
     }
 
     public ImageIcon getIcon() {
-        return DomainInfo.getInstance(getHost()).getFavIcon();
+        throw new WTFException();
     }
 
     public String getLabel() {
-        return toString();
+        throw new WTFException();
     }
 
     @Override
     public boolean equals(Object obj) {
-        if (obj == null || !(obj instanceof HostPluginWrapper)) return false;
-        return this.getID().equalsIgnoreCase(((HostPluginWrapper) obj).getID());
+        throw new WTFException();
     }
 
     @Override
     public int hashCode() {
-        final String id = this.getID();
-        return id == null ? 0 : id.hashCode();
+        throw new WTFException();
     }
 
 }

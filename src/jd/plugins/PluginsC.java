@@ -21,7 +21,6 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Iterator;
 
-import jd.HostPluginWrapper;
 import jd.PluginWrapper;
 import jd.controlling.DistributeData;
 import jd.controlling.JDLogger;
@@ -38,6 +37,8 @@ import jd.utils.JDUtilities;
 import jd.utils.WebUpdate;
 
 import org.appwork.utils.Regex;
+import org.jdownloader.plugins.controller.host.HostPluginController;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.translate._JDT;
 
 /**
@@ -302,8 +303,8 @@ public abstract class PluginsC extends Plugin {
      * @return Das gefundene Plugin oder null
      */
     protected PluginForHost findHostPlugin(final String data) {
-        for (final HostPluginWrapper pHost : HostPluginWrapper.getHostWrapper()) {
-            if (pHost.canHandle(data)) return pHost.getPlugin();
+        for (final LazyHostPlugin pHost : HostPluginController.getInstance().list()) {
+            if (pHost.canHandle(data)) return pHost.getPrototype();
         }
         return null;
     }

@@ -27,6 +27,10 @@ public abstract class LazyPlugin<T extends Plugin> {
         this.displayName = displayName;
     }
 
+    public boolean isLoaded() {
+        return pluginClass != null;
+    }
+
     public String getDisplayName() {
         return displayName;
     }
@@ -103,7 +107,8 @@ public abstract class LazyPlugin<T extends Plugin> {
             if (pluginClass != null) return pluginClass;
             try {
                 System.out.println("Load Plugin:" + classname);
-                pluginClass = (Class<T>) Class.forName(classname);
+
+                pluginClass = (Class<T>) PluginClassLoader.getInstance().loadClass(classname);
             } catch (ClassNotFoundException e) {
                 throw new WTFException(e);
             }

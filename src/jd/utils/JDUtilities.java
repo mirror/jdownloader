@@ -26,6 +26,7 @@ import java.io.StringWriter;
 import java.net.URL;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.Locale;
 import java.util.logging.Logger;
 
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -37,7 +38,6 @@ import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
 import jd.CPluginWrapper;
-import jd.HostPluginWrapper;
 import jd.Main;
 import jd.config.Configuration;
 import jd.config.DatabaseConnector;
@@ -49,11 +49,17 @@ import jd.nutils.Executer;
 import jd.nutils.Formatter;
 import jd.nutils.io.JDIO;
 import jd.plugins.DownloadLink;
+import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginsC;
 
+import org.appwork.exceptions.TODOException;
 import org.appwork.utils.Application;
 import org.appwork.utils.Regex;
+import org.jdownloader.plugins.controller.crawler.CrawlerPluginController;
+import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin;
+import org.jdownloader.plugins.controller.host.HostPluginController;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.translate._JDT;
 import org.jdownloader.update.JDUpdater;
 import org.w3c.dom.Document;
@@ -291,49 +297,47 @@ public class JDUtilities {
         return sb.toString();
     }
 
-    public static PluginForHost getPluginForHost(final String host) {
-        try {
-            HostPluginWrapper.readLock.lock();
-            for (final HostPluginWrapper pHost : HostPluginWrapper.getHostWrapper()) {
-                if (pHost.getHost().equalsIgnoreCase(host)) { return pHost.getPlugin(); }
-            }
-        } finally {
-            HostPluginWrapper.readLock.unlock();
+    /**
+     * Sucht ein passendes Plugin fuer einen Anbieter Please dont use the
+     * returned Plugin to start any function
+     * 
+     * @param host
+     *            Der Host, von dem das Plugin runterladen kann
+     * @return Ein passendes Plugin oder null
+     */
+    public static PluginForDecrypt getPluginForDecrypt(final String host) {
+
+        for (LazyCrawlerPlugin l : CrawlerPluginController.getInstance().list()) {
+            if (l.getDisplayName().equals(host.toLowerCase(Locale.getDefault()))) return l.getPrototype();
         }
         return null;
     }
 
-    public static PluginForHost replacePluginForHost(final DownloadLink link) {
-        try {
-            HostPluginWrapper.readLock.lock();
-            for (final HostPluginWrapper pHost : HostPluginWrapper.getHostWrapper()) {
-                if (pHost.getPlugin().rewriteHost(link)) return pHost.getPlugin();
-            }
-        } finally {
-            HostPluginWrapper.readLock.unlock();
+    public static PluginForHost getPluginForHost(final String host) {
+
+        for (final LazyHostPlugin pHost : HostPluginController.getInstance().list()) {
+            if (pHost.getHost().equalsIgnoreCase(host)) { return pHost.getPrototype(); }
         }
+
         return null;
     }
+
+    // public static PluginForHost replacePluginForHost(final DownloadLink link)
+    // {
+    //
+    // for (final LazyHostPlugin pHost :
+    // HostPluginController.getInstance().list()) {
+    // if (pHost.getPlugin().rewriteHost(link)) return pHost.getPlugin();
+    // }
+    //
+    // return null;
+    // }
 
     public static PluginForHost getNewPluginForHostInstance(final String host) {
-        PluginForHost plugin = getPluginForHost(host);
-        if (plugin != null) return plugin.getWrapper().getNewPluginInstance();
-        return null;
-    }
 
-    public static ArrayList<HostPluginWrapper> getPremiumPluginsForHost() {
-        try {
-            HostPluginWrapper.readLock.lock();
-            final ArrayList<HostPluginWrapper> plugins = new ArrayList<HostPluginWrapper>(HostPluginWrapper.getHostWrapper());
-            for (int i = plugins.size() - 1; i >= 0; --i) {
-                if (!plugins.get(i).isPremiumEnabled()) {
-                    plugins.remove(i);
-                }
-            }
-            return plugins;
-        } finally {
-            HostPluginWrapper.readLock.unlock();
-        }
+        PluginForHost plugin = getPluginForHost(host);
+        if (plugin != null) return HostPluginController.getInstance().newInstance(plugin.getClass());
+        return null;
     }
 
     /**
@@ -520,6 +524,10 @@ public class JDUtilities {
         final NamedNodeMap att = childNode.getAttributes();
         if (att == null || att.getNamedItem(key) == null) { return null; }
         return att.getNamedItem(key).getNodeValue();
+    }
+
+    public static PluginForHost replacePluginForHost(DownloadLink localLink) {
+        throw new TODOException();
     }
 
 }

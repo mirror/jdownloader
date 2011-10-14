@@ -28,7 +28,6 @@ import java.util.regex.Pattern;
 
 import javax.swing.ImageIcon;
 
-import jd.HostPluginWrapper;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.SubConfiguration;
@@ -42,6 +41,7 @@ import jd.nutils.encoding.Encoding;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.net.httpconnection.HTTPConnectionUtils;
+import org.jdownloader.images.NewTheme;
 import org.jdownloader.translate._JDT;
 
 /**
@@ -172,19 +172,17 @@ public abstract class Plugin implements ActionListener {
         this.wrapper = null;
         initTime = System.currentTimeMillis();
 
-        if (wrapper instanceof HostPluginWrapper) {
-            this.config = new ConfigContainer(this.getHost()) {
-                private static final long serialVersionUID = -30947319320765343L;
+        this.config = new ConfigContainer(this.getHost()) {
+            private static final long serialVersionUID = -30947319320765343L;
 
-                /**
-                 * we dont have to catch icon until it is really needed
-                 */
-                @Override
-                public ImageIcon getIcon() {
-                    return ((HostPluginWrapper) wrapper).getIcon();
-                }
-            };
-        }
+            /**
+             * we dont have to catch icon until it is really needed
+             */
+            @Override
+            public ImageIcon getIcon() {
+                return NewTheme.I().getIcon("warning", 16);
+            }
+        };
     }
 
     @Deprecated
@@ -192,19 +190,18 @@ public abstract class Plugin implements ActionListener {
         this.wrapper = wrapper;
         initTime = System.currentTimeMillis();
 
-        if (wrapper instanceof HostPluginWrapper) {
-            this.config = new ConfigContainer(this.getHost()) {
-                private static final long serialVersionUID = -30947319320765343L;
+        this.config = new ConfigContainer(this.getHost()) {
+            private static final long serialVersionUID = -30947319320765343L;
 
-                /**
-                 * we dont have to catch icon until it is really needed
-                 */
-                @Override
-                public ImageIcon getIcon() {
-                    return ((HostPluginWrapper) wrapper).getIcon();
-                }
-            };
-        }
+            /**
+             * we dont have to catch icon until it is really needed
+             */
+            @Override
+            public ImageIcon getIcon() {
+                return NewTheme.I().getIcon("warning", 16);
+            }
+        };
+
     }
 
     public void actionPerformed(final ActionEvent e) {

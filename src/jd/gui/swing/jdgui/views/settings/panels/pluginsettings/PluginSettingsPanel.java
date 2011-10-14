@@ -10,8 +10,6 @@ import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JPanel;
 
-import jd.HostPluginWrapper;
-import jd.PluginWrapper;
 import jd.gui.swing.jdgui.views.settings.components.SettingsComponent;
 import jd.gui.swing.jdgui.views.settings.components.StateUpdateListener;
 import net.miginfocom.swing.MigLayout;
@@ -20,13 +18,16 @@ import org.appwork.app.gui.MigPanel;
 import org.appwork.swing.components.searchcombo.SearchComboBox;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.plugins.controller.host.HostPluginController;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 
 public class PluginSettingsPanel extends JPanel implements SettingsComponent, ActionListener {
     /**
      * 
      */
     private static final long             serialVersionUID = 1L;
-    private SearchComboBox<PluginWrapper> selector;
+    private SearchComboBox<LazyPlugin<?>> selector;
     private ImageIcon                     decryterIcon;
     private MigPanel                      card;
     protected PluginConfigPanel           configPanel;
@@ -38,7 +39,7 @@ public class PluginSettingsPanel extends JPanel implements SettingsComponent, Ac
     public PluginSettingsPanel() {
         super(new MigLayout("ins 0,wrap 1", "[grow,fill]", "[]15[grow,fill][]"));
         decryterIcon = NewTheme.I().getIcon("linkgrabber", 20);
-        selector = new SearchComboBox<PluginWrapper>() {
+        selector = new SearchComboBox<LazyPlugin<?>>() {
 
             /**
              * 
@@ -46,19 +47,19 @@ public class PluginSettingsPanel extends JPanel implements SettingsComponent, Ac
             private static final long serialVersionUID = 1L;
 
             @Override
-            protected Icon getIconForValue(PluginWrapper value) {
+            protected Icon getIconForValue(LazyPlugin<?> value) {
                 if (value == null) return null;
-                if (value instanceof HostPluginWrapper) {
-                    return (((HostPluginWrapper) value).getIcon());
+                if (value instanceof LazyHostPlugin) {
+                    return (((LazyHostPlugin) value).getIcon());
                 } else {
                     return (decryterIcon);
                 }
             }
 
             @Override
-            protected String getTextForValue(PluginWrapper value) {
+            protected String getTextForValue(LazyPlugin<?> value) {
                 if (value == null) return null;
-                return value.getHost();
+                return value.getDisplayName();
             }
 
         };
@@ -71,17 +72,17 @@ public class PluginSettingsPanel extends JPanel implements SettingsComponent, Ac
     }
 
     private void fill() {
-        ArrayList<PluginWrapper> list = new ArrayList<PluginWrapper>();
-        for (HostPluginWrapper plg : HostPluginWrapper.getHostWrapper()) {
+        ArrayList<LazyPlugin<?>> list = new ArrayList<LazyPlugin<?>>();
+        for (LazyHostPlugin plg : HostPluginController.getInstance().list()) {
             if (plg.hasConfig()) {
                 list.add(plg);
             }
         }
 
-        Collections.sort(list, new Comparator<PluginWrapper>() {
+        Collections.sort(list, new Comparator<LazyPlugin<?>>() {
 
-            public int compare(PluginWrapper o1, PluginWrapper o2) {
-                return o1.getHost().compareTo(o2.getHost());
+            public int compare(LazyPlugin<?> o1, LazyPlugin<?> o2) {
+                return o1.getDisplayName().compareTo(o2.getDisplayName());
             }
         });
         selector.setList(list);
@@ -97,10 +98,10 @@ public class PluginSettingsPanel extends JPanel implements SettingsComponent, Ac
     }
 
     public void actionPerformed(ActionEvent e) {
-        show((PluginWrapper) selector.getSelectedItem());
+        show((LazyPlugin<?>) selector.getSelectedItem());
     }
 
-    private void show(final PluginWrapper selectedItem) {
+    private void show(final LazyPlugin<?> selectedItem) {
 
         new EDTRunner() {
 

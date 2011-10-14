@@ -5,7 +5,6 @@ import java.util.ArrayList;
 
 import javax.swing.AbstractAction;
 
-import jd.HostPluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.IOEQ;
 import jd.controlling.accountchecker.AccountChecker;
@@ -13,6 +12,8 @@ import jd.plugins.Account;
 
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.plugins.controller.host.HostPluginController;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 
 public class RefreshAction extends AbstractAction {
     /**
@@ -39,13 +40,13 @@ public class RefreshAction extends AbstractAction {
             public void run() {
                 if (selection == null) {
                     selection = new ArrayList<Account>();
-                    final ArrayList<HostPluginWrapper> plugins = HostPluginWrapper.getHostWrapper();
-                    for (HostPluginWrapper plugin : plugins) {
-                        ArrayList<Account> accs = AccountController.getInstance().getAllAccounts(plugin.getHost());
+                    final ArrayList<LazyHostPlugin> plugins = HostPluginController.getInstance().list();
+                    for (LazyHostPlugin plugin : plugins) {
+                        ArrayList<Account> accs = AccountController.getInstance().getAllAccounts(plugin.getDisplayName());
                         if (accs != null) {
                             for (Account acc : accs) {
                                 selection.add(acc);
-                                acc.setHoster(plugin.getHost());
+                                acc.setHoster(plugin.getDisplayName());
                             }
                         }
                     }

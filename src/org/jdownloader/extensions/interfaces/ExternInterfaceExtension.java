@@ -54,6 +54,7 @@ import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
 import org.jdownloader.extensions.interfaces.translate.T;
+import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.update.JDUpdater;
 import org.mozilla.javascript.ClassShutter;
 import org.mozilla.javascript.Context;
@@ -432,7 +433,7 @@ public class ExternInterfaceExtension extends AbstractExtension<ExternInterfaceC
                             } else {
                                 /* directlinks here */
                                 PluginForHost defaultplg = JDUtilities.getPluginForHost("DirectHTTP");
-                                PluginForHost liveplg = defaultplg.getWrapper().getNewPluginInstance();
+                                PluginForHost liveplg = HostPluginController.getInstance().newInstance(defaultplg.getClass());
                                 String name = Plugin.getFileNameFromURL(new URL(url));
                                 DownloadLink direct = new DownloadLink(defaultplg, name, "DirectHTTP", url, true);
                                 direct.setBrowserUrl(referer);

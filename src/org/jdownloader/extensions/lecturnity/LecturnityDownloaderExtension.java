@@ -5,7 +5,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
 
-import jd.HostPluginWrapper;
 import jd.controlling.JDLogger;
 import jd.controlling.LinkGrabberController;
 import jd.controlling.ProgressController;
@@ -22,6 +21,8 @@ import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
+import org.jdownloader.plugins.controller.host.HostPluginController;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.settings.GeneralSettings;
 
 @OptionalPlugin(rev = "$Revision$", id = "lecturnity", interfaceversion = 7)
@@ -33,7 +34,7 @@ public class LecturnityDownloaderExtension extends AbstractExtension<LecturnityD
 
     private MenuAction         inputAction;
 
-    private HostPluginWrapper  hpw                  = null;
+    private LazyHostPlugin     hpw                  = null;
 
     private Browser            br;
 
@@ -158,16 +159,16 @@ public class LecturnityDownloaderExtension extends AbstractExtension<LecturnityD
 
     @Override
     protected void stop() throws StopException {
-        HostPluginWrapper.writeLock.lock();
-        HostPluginWrapper.getHostWrapper().remove(hpw);
-        HostPluginWrapper.writeLock.unlock();
+        LazyHostPlugin.writeLock.lock();
+        HostPluginController.getInstance().remove(hpw);
+        LazyHostPlugin.writeLock.unlock();
         hpw = null;
         logger.finest("Lecturnity: Unloaded Host-Plugin!");
     }
 
     @Override
     protected void start() throws StartException {
-        hpw = new HostPluginWrapper("lecturnity-loader", "jd.plugins.optional.lecturnity.", "LecturnityLoader", "HIDE_ME", 0, "$Revision$");
+        hpw = new LazyHostPlugin("lecturnity-loader", "jd.plugins.optional.lecturnity.", "LecturnityLoader", "HIDE_ME", 0, "$Revision$");
         logger.finest("Lecturnity: Loaded Host-Plugin!");
 
         inputAction = new MenuAction("Lecturnity", "lecturnity", 0) {

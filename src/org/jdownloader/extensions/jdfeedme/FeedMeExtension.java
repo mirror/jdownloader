@@ -3,7 +3,6 @@ package org.jdownloader.extensions.jdfeedme;
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 
-import jd.HostPluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.DistributeData;
 import jd.controlling.DownloadWatchDog;
@@ -27,6 +26,8 @@ import org.jdownloader.extensions.interfaces.RemoteSupport;
 import org.jdownloader.extensions.jdfeedme.posts.JDFeedMePost;
 import org.jdownloader.extensions.remotecontrol.helppage.HelpPage;
 import org.jdownloader.extensions.remotecontrol.helppage.Table;
+import org.jdownloader.plugins.controller.host.HostPluginController;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 
 // notes: this module lets you download content automatically from RSS feeds
 // the module was developed after stable JDownloader 0.9.580 was released (SVN revision 9580)
@@ -353,7 +354,7 @@ public class FeedMeExtension extends AbstractExtension<FeedMeConfig> implements 
             // go over all host plugins
             try {
                 // HostPluginWrapper.readLock.lock();
-                for (final HostPluginWrapper pHost : HostPluginWrapper.getHostWrapper()) {
+                for (final LazyHostPlugin pHost : HostPluginController.getInstance().list()) {
 
                     // check if we need to ignore certain hosters
                     if (exclude_hosters != null) {
@@ -370,8 +371,8 @@ public class FeedMeExtension extends AbstractExtension<FeedMeConfig> implements 
                             // make sure we have a premium account for this
                             // hoster
 
-                            if (!pHost.isPremiumEnabled()) continue;
-                            Account account = AccountController.getInstance().getValidAccount(pHost.getPlugin());
+                            if (!pHost.isPremium()) continue;
+                            Account account = AccountController.getInstance().getValidAccount(pHost.getPrototype());
                             if (account == null) continue;
                         } else // regular hoster limit
                         {

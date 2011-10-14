@@ -8,7 +8,6 @@ import javax.swing.Icon;
 import javax.swing.JTable;
 import javax.swing.table.JTableHeader;
 
-import jd.HostPluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.AccountControllerEvent;
 import jd.controlling.AccountControllerListener;
@@ -31,6 +30,8 @@ import org.appwork.swing.exttable.columns.ExtTextColumn;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.plugins.controller.host.HostPluginController;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 
 public class PremiumAccountTableModel extends ExtTableModel<Account> implements AccountCheckerEventListener {
 
@@ -392,11 +393,11 @@ public class PremiumAccountTableModel extends ExtTableModel<Account> implements 
     protected void _refill() {
         if (accountManagerSettings.isShown()) {
             final ArrayList<Account> newtableData = new ArrayList<Account>(tableData.size());
-            for (HostPluginWrapper plugin : HostPluginWrapper.getHostWrapper()) {
-                ArrayList<Account> accs = AccountController.getInstance().getAllAccounts(plugin.getHost());
+            for (LazyHostPlugin plugin : HostPluginController.getInstance().list()) {
+                ArrayList<Account> accs = AccountController.getInstance().getAllAccounts(plugin.getDisplayName());
                 for (Account acc : accs) {
                     newtableData.add(acc);
-                    acc.setHoster(plugin.getHost());
+                    acc.setHoster(plugin.getDisplayName());
                 }
             }
             PremiumAccountTableModel.this.refreshSort(newtableData);

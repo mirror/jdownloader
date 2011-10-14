@@ -24,7 +24,6 @@ import java.util.Comparator;
 import javax.swing.ImageIcon;
 import javax.swing.JComboBox;
 
-import jd.HostPluginWrapper;
 import jd.gui.swing.components.JDLabelContainer;
 import jd.gui.swing.components.table.JDTableColumn;
 import jd.gui.swing.components.table.JDTableModel;
@@ -32,43 +31,43 @@ import jd.gui.swing.jdgui.views.settings.JDLabelListRenderer;
 
 import org.jdesktop.swingx.renderer.JRendererLabel;
 import org.jdownloader.extensions.jdfeedme.JDFeedMeFeed;
+import org.jdownloader.plugins.controller.host.HostPluginController;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 
 public class HosterColumn extends JDTableColumn {
 
-    private static final long serialVersionUID = 4660856288527573254L;
-    private JRendererLabel jlr;
-    private JComboBox hosters;
-    private static ArrayList<HosterLabel> labels = null;
+    private static final long             serialVersionUID = 4660856288527573254L;
+    private JRendererLabel                jlr;
+    private JComboBox                     hosters;
+    private static ArrayList<HosterLabel> labels           = null;
 
     public HosterColumn(String name, JDTableModel table) {
         super(name, table);
-        
+
         this.setClickstoEdit(2);
-        
+
         jlr = new JRendererLabel();
         jlr.setBorder(null);
-        
-        if (labels == null)
-        {
-        	ArrayList<HostPluginWrapper> plugins = HostPluginWrapper.getHostWrapper();
-            Collections.sort(plugins, new Comparator<HostPluginWrapper>() {
-                public int compare(HostPluginWrapper a, HostPluginWrapper b) {
+
+        if (labels == null) {
+            ArrayList<LazyHostPlugin> plugins = HostPluginController.getInstance().list();
+            Collections.sort(plugins, new Comparator<LazyHostPlugin>() {
+                public int compare(LazyHostPlugin a, LazyHostPlugin b) {
                     return a.getHost().compareToIgnoreCase(b.getHost());
                 }
             });
-            
-	        labels = new ArrayList<HosterLabel>();
-	        labels.add(new HosterLabel(JDFeedMeFeed.HOSTER_ANY_HOSTER,null));
-	        labels.add(new HosterLabel(JDFeedMeFeed.HOSTER_ANY_PREMIUM,null));
-	        for (final HostPluginWrapper plugin : plugins)
-	        {
-	        	labels.add(new HosterLabel(plugin.getLabel(),plugin.getIcon()));
-	        }
+
+            labels = new ArrayList<HosterLabel>();
+            labels.add(new HosterLabel(JDFeedMeFeed.HOSTER_ANY_HOSTER, null));
+            labels.add(new HosterLabel(JDFeedMeFeed.HOSTER_ANY_PREMIUM, null));
+            for (final LazyHostPlugin plugin : plugins) {
+                labels.add(new HosterLabel(plugin.getDisplayName(), plugin.getIcon()));
+            }
         }
-        
+
         hosters = new JComboBox(labels.toArray());
         hosters.setRenderer(new JDLabelListRenderer());
-        //hosters.setBorder(null);
+        // hosters.setBorder(null);
     }
 
     @Override
@@ -93,15 +92,13 @@ public class HosterColumn extends JDTableColumn {
 
     @Override
     public Component myTableCellEditorComponent(JDTableModel table, Object value, boolean isSelected, int row, int column) {
-        for (final HosterLabel label : labels)
-        {
-        	if (label.toString().equalsIgnoreCase(((JDFeedMeFeed) value).getHoster()))
-        	{
-        		hosters.setSelectedItem(label);
-        		return hosters;
-        	}
+        for (final HosterLabel label : labels) {
+            if (label.toString().equalsIgnoreCase(((JDFeedMeFeed) value).getHoster())) {
+                hosters.setSelectedItem(label);
+                return hosters;
+            }
         }
-    	hosters.setSelectedIndex(0);
+        hosters.setSelectedIndex(0);
         return hosters;
     }
 
@@ -122,25 +119,23 @@ public class HosterColumn extends JDTableColumn {
 
 }
 
-class HosterLabel implements JDLabelContainer
-{
-	private ImageIcon icon;
-	private String label;
-	
-	public HosterLabel(String label, ImageIcon icon)
-	{
-		this.label = label;
-		this.icon = icon;
-	}
-	
-	public ImageIcon getIcon() {
+class HosterLabel implements JDLabelContainer {
+    private ImageIcon icon;
+    private String    label;
+
+    public HosterLabel(String label, ImageIcon icon) {
+        this.label = label;
+        this.icon = icon;
+    }
+
+    public ImageIcon getIcon() {
         return icon;
     }
 
     public String getLabel() {
         return label;
     }
-    
+
     @Override
     public String toString() {
         return label;
