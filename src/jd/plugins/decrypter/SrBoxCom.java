@@ -18,8 +18,6 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
-import jd.DecryptPluginWrapper;
-import jd.HostPluginWrapper;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -70,45 +68,8 @@ public class SrBoxCom extends PluginForDecrypt {
         String[] TabTemp = br.getRegex("<a href=\"(.*?)\"").getColumn(0);
         if (TabTemp == null || TabTemp.length == 0) return null;
 
-        String strLink = null;
-        String[] linksTemp = new String[TabTemp.length];
-
-        ArrayList<HostPluginWrapper> AllHosts = new ArrayList<HostPluginWrapper>(HostPluginWrapper.getHostWrapper());
-
-        // We look if the link in the array is supported by a hoster plug-in
-        int iLink = 0;
-        for (int iIndex = 0; iIndex < TabTemp.length; iIndex++) {
-            strLink = TabTemp[iIndex];
-            for (HostPluginWrapper wrapper : AllHosts) {
-                if (wrapper.canHandle(strLink)) {
-                    linksTemp[iLink] = strLink;
-                    iLink++;
-                    break;
-                }
-            }
-        }
-
-        // We look if the link in the array is supported by a decrypter
-        // plug-in
-        ArrayList<DecryptPluginWrapper> AllDecrypter = new ArrayList<DecryptPluginWrapper>(DecryptPluginWrapper.getDecryptWrapper());
-        for (int iIndex = 0; iIndex < TabTemp.length; iIndex++) {
-            strLink = TabTemp[iIndex];
-            for (DecryptPluginWrapper wrapper : AllDecrypter) {
-                if (!this.getHost().equals(wrapper.getHost())) {
-                    if (wrapper.canHandle(strLink)) {
-                        linksTemp[iLink] = strLink;
-                        iLink++;
-                        break;
-                    }
-                }
-            }
-        }
-
         // Creation of the array of link that is supported by all plug-in
-        String[] links = new String[iLink];
-        for (int iIndex = 0; iIndex < links.length; iIndex++) {
-            links[iIndex] = linksTemp[iIndex];
-        }
+        String[] links = TabTemp;
 
         // Number of picture
         int iImage = TabImage == null ? 0 : TabImage.length;
