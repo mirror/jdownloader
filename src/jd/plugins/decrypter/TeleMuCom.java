@@ -99,7 +99,7 @@ public class TeleMuCom extends PluginForDecrypt {
         for (int iIndex = 0; iIndex < TabTemp.length; iIndex++) {
             strLink = TabTemp[iIndex];
             for (DecryptPluginWrapper wrapper : AllDecrypter) {
-                if (wrapper.compareTo(this.getWrapper()) != 0) {
+                if (!this.getHost().equals(wrapper.getHost())) {
                     if (wrapper.canHandle(strLink)) {
                         linksTemp[iLink] = strLink;
                         iLink++;
