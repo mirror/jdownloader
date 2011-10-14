@@ -34,11 +34,32 @@ import org.appwork.utils.formatter.SizeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "jumbofiles.com" }, urls = { "http://[\\w\\.]*?jumbofiles\\.com/[0-9a-z]+{12}" }, flags = { 2 })
 public class JumboFilesCom extends PluginForHost {
 
-    public JumboFilesCom(PluginWrapper wrapper) {
+    private String brbefore = "";
+
+    public JumboFilesCom(final PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private String brbefore = "";
+    // Removed fake messages which can kill the plugin
+    public void doSomething() throws NumberFormatException, PluginException {
+        brbefore = br.toString();
+        final ArrayList<String> someStuff = new ArrayList<String>();
+        final ArrayList<String> regexStuff = new ArrayList<String>();
+        regexStuff.add("<!(--.*?--)>");
+        regexStuff.add("(display: none;\">.*?</div>)");
+        regexStuff.add("(visibility:hidden>.*?<)");
+        for (final String aRegex : regexStuff) {
+            final String lolz[] = br.getRegex(aRegex).getColumn(0);
+            if (lolz != null) {
+                for (final String dingdang : lolz) {
+                    someStuff.add(dingdang);
+                }
+            }
+        }
+        for (final String fun : someStuff) {
+            brbefore = brbefore.replace(fun, "");
+        }
+    }
 
     @Override
     public String getAGBLink() {
@@ -46,42 +67,17 @@ public class JumboFilesCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.setCookie("http://www.jumbofiles.com", "lang", "english");
-        br.getPage(link.getDownloadURL());
-        doSomething();
-        if (brbefore.contains("No such file") || brbefore.contains("No such user exist") || brbefore.contains("File not found") || brbefore.contains(">File Not Found<")) {
-            logger.warning("file is 99,99% offline, throwing \"file not found\" now...");
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        String filename = new Regex(brbefore, "Filename:.*?</TD><TD>(.*?)</TD>").getMatch(0);
-        String filesize = new Regex(brbefore, "Filesize:.*?</TD><TD>(.*?)</TD>").getMatch(0);
-        // They got different pages for stream, normal and pw-protected files so
-        // we need special handling
-        if (filesize == null) {
-            filesize = new Regex(brbefore, "<small>\\((.*?)\\)</small>").getMatch(0);
-            if (filesize == null) filesize = new Regex(brbefore, "F<TD><center>.*?<br>(.*?)<br>").getMatch(0);
-        }
-        if (filename == null) {
-            filename = new Regex(brbefore, "down_direct\" value=.*?<input type=\"image\" src=.*?</TD></TR>.*?<TR><TD>(.*?)<small").getMatch(0);
-            if (filename == null) filename = new Regex(brbefore, "<TD><center>(.*?)<br>").getMatch(0);
-        }
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        filename = filename.replace("&nbsp;", "");
-        filename = filename.trim();
-        link.setName(filename);
-        if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize));
-        return AvailableStatus.TRUE;
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(true);
         // Form um auf "Datei herunterladen" zu klicken
-        Form dlForm = br.getFormbyProperty("name", "F1");
-        if (dlForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        final Form dlForm = br.getFormbyProperty("name", "F1");
+        if (dlForm == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         String passCode = null;
         if (brbefore.contains("<b>Password:</b>")) {
             if (downloadLink.getStringProperty("pass", null) == null) {
@@ -103,31 +99,48 @@ public class JumboFilesCom extends PluginForHost {
             downloadLink.setProperty("pass", passCode);
         }
         String dllink = new Regex(brbefore, "SRC=\"http://jumbofiles\\.com/images/dd\\.gif\" WIDTH=\"5\" HEIGHT=\"5\"><BR> <form name=\".*?\" action=\"(.*?)\"").getMatch(0);
-        if (dllink == null) dllink = new Regex(brbefore, "\"(http://www\\d+\\.jumbofiles\\.com:\\d+/d/[a-z0-9]+/.*?)\"").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink == null) {
+            dllink = new Regex(brbefore, "\"(http://(www\\d+|[a-z0-9]+)\\.jumbofiles\\.com:\\d+/d/[a-z0-9]+/.*?)\"").getMatch(0);
+        }
+        if (dllink == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         dl.startDownload();
     }
 
-    // Removed fake messages which can kill the plugin
-    public void doSomething() throws NumberFormatException, PluginException {
-        brbefore = br.toString();
-        ArrayList<String> someStuff = new ArrayList<String>();
-        ArrayList<String> regexStuff = new ArrayList<String>();
-        regexStuff.add("<!(--.*?--)>");
-        regexStuff.add("(display: none;\">.*?</div>)");
-        regexStuff.add("(visibility:hidden>.*?<)");
-        for (String aRegex : regexStuff) {
-            String lolz[] = br.getRegex(aRegex).getColumn(0);
-            if (lolz != null) {
-                for (String dingdang : lolz) {
-                    someStuff.add(dingdang);
-                }
+    @Override
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        setBrowserExclusive();
+        br.setCookie("http://www.jumbofiles.com", "lang", "english");
+        br.getPage(link.getDownloadURL());
+        doSomething();
+        if (brbefore.contains("No such file") || brbefore.contains("No such user exist") || brbefore.contains("File not found") || brbefore.contains(">File Not Found<")) {
+            logger.warning("file is 99,99% offline, throwing \"file not found\" now...");
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        String filename = new Regex(brbefore, "Filename:.*?</TD><TD>(.*?)</TD>").getMatch(0);
+        String filesize = new Regex(brbefore, "Filesize:.*?</TD><TD>(.*?)</TD>").getMatch(0);
+        // They got different pages for stream, normal and pw-protected files so
+        // we need special handling
+        if (filesize == null) {
+            filesize = new Regex(brbefore, "<small>\\((.*?)\\)</small>").getMatch(0);
+            if (filesize == null) {
+                filesize = new Regex(brbefore, "F<TD><center>.*?<br>(.*?)<br>").getMatch(0);
             }
         }
-        for (String fun : someStuff) {
-            brbefore = brbefore.replace(fun, "");
+        if (filename == null) {
+            filename = new Regex(brbefore, "down_direct\" value=.*?<input type=\"image\" src=.*?</TD></TR>.*?<TR><TD>(.*?)<small").getMatch(0);
+            if (filename == null) {
+                filename = new Regex(brbefore, "<TD><center>(.*?)<br>").getMatch(0);
+            }
         }
+        if (filename == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        filename = filename.replace("&nbsp;", "");
+        filename = filename.trim();
+        link.setName(filename);
+        if (filesize != null) {
+            link.setDownloadSize(SizeFormatter.getSize(filesize));
+        }
+        return AvailableStatus.TRUE;
     }
 
     @Override
@@ -135,12 +148,7 @@ public class JumboFilesCom extends PluginForHost {
     }
 
     @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
-    }
-
-    @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetDownloadlink(final DownloadLink link) {
     }
 
 }
