@@ -365,7 +365,7 @@ public class LinkCrawler implements IOPermission {
                     for (final LazyCrawlerPlugin pDecrypt : CrawlerPluginController.getInstance().list()) {
                         if (pDecrypt.canHandle(url)) {
                             try {
-                                PluginForDecrypt plg = pDecrypt.newInstance();
+                                PluginForDecrypt plg = pDecrypt.getPrototype();
                                 if (plg != null) {
                                     ArrayList<CrawledLink> allPossibleCryptedLinks = plg.getCrawlableLinks(url);
                                     if (allPossibleCryptedLinks != null) {

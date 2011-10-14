@@ -16,9 +16,10 @@ public abstract class LazyPlugin<T extends Plugin> {
     private Pattern               pattern;
     private String                classname;
     private String                displayName;
-    private Class<T>              pluginClass;
+    protected Class<T>            pluginClass;
     private Constructor<T>        constructor;
     private Object[]              constructorParameters;
+    protected T                   prototypeInstance;
 
     public LazyPlugin(String patternString, String classname, String displayName) {
         pattern = Pattern.compile(patternString, Pattern.CASE_INSENSITIVE);
@@ -43,6 +44,15 @@ public abstract class LazyPlugin<T extends Plugin> {
         } else {
             return false;
         }
+    }
+
+    public T getPrototype() {
+        if (prototypeInstance != null) return prototypeInstance;
+        synchronized (this) {
+            if (prototypeInstance != null) return prototypeInstance;
+            prototypeInstance = newInstance();
+        }
+        return prototypeInstance;
     }
 
     public T newInstance() {
@@ -92,6 +102,7 @@ public abstract class LazyPlugin<T extends Plugin> {
             // try again synched
             if (pluginClass != null) return pluginClass;
             try {
+                System.out.println("Load Plugin:" + classname);
                 pluginClass = (Class<T>) Class.forName(classname);
             } catch (ClassNotFoundException e) {
                 throw new WTFException(e);
