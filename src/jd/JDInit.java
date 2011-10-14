@@ -61,11 +61,8 @@ import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
-import org.appwork.utils.swing.dialog.ProgressDialog;
-import org.appwork.utils.swing.dialog.ProgressDialog.ProgressGetter;
 import org.jdownloader.api.RemoteAPIController;
 import org.jdownloader.extensions.ExtensionController;
-import org.jdownloader.plugins.scanner.PluginScanner;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.translate._JDT;
 import org.lobobrowser.util.OS;
@@ -291,30 +288,6 @@ public class JDInit {
 
     public void initPlugins() {
 
-        if (JDInitFlags.REFRESH_CACHE) {
-
-            ProgressDialog dialog = new ProgressDialog(new ProgressGetter() {
-
-                public void run() throws Exception {
-                    PluginScanner.getInstance().updateCache();
-                }
-
-                public String getString() {
-                    return "Please wait...";
-                }
-
-                public int getProgress() {
-                    return -1;
-                }
-            }, Dialog.BUTTONS_HIDE_CANCEL, "Refresh Plugincache", "JDownloader updates it's plugin cache. This may take a few minutes.", null, null, null);
-            try {
-                Dialog.getInstance().showDialog(dialog);
-            } catch (DialogClosedException e) {
-                e.printStackTrace();
-            } catch (DialogCanceledException e) {
-                e.printStackTrace();
-            }
-        }
         try {
             this.loadCPlugins();
             // init Extensioncontroller

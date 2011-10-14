@@ -168,6 +168,28 @@ public abstract class Plugin implements ActionListener {
         return initTime;
     }
 
+    public Plugin() {
+        this.wrapper = null;
+        initTime = System.currentTimeMillis();
+
+        if (wrapper instanceof HostPluginWrapper) {
+            this.config = new ConfigContainer(this.getHost()) {
+                private static final long serialVersionUID = -30947319320765343L;
+
+                /**
+                 * we dont have to catch icon until it is really needed
+                 */
+                @Override
+                public ImageIcon getIcon() {
+                    return ((HostPluginWrapper) wrapper).getIcon();
+                }
+            };
+        } else {
+            this.config = new ConfigContainer(this.getHost());
+        }
+    }
+
+    @Deprecated
     public Plugin(final PluginWrapper wrapper) {
         this.wrapper = wrapper;
         initTime = System.currentTimeMillis();

@@ -1,4 +1,4 @@
-package org.jdownloader.plugins.scanner;
+package org.jdownloader.plugins.controller;
 
 import org.appwork.storage.Storable;
 
