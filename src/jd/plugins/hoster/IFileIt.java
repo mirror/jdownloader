@@ -68,7 +68,7 @@ public class IFileIt extends PluginForHost {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(true);
         // generating first request
-        String c = br.getRegex("<script type=\"text/javascript\">(.*?)</script>").getMatch(0, 4);
+        String c = br.getRegex("<script type=\"text/javascript\">\r\n\r\n(.*?)</script>").getMatch(0);
         c = new Regex(c, "(.*?)//onload").getMatch(0);
         final String fnName = br.getRegex("url\\s+=\\s+([0-9a-z]+)\\(").getMatch(0);
         final String dec = br.getRegex(fnName + "\\( \'(.*?)\' \\)").getMatch(0);
