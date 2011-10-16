@@ -28,7 +28,6 @@ import java.util.regex.Pattern;
 import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
 
-import jd.HostPluginWrapper;
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
@@ -48,13 +47,12 @@ import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.download.DownloadInterface;
 
-import org.appwork.exceptions.WTFException;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Regex;
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.DomainInfo;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.plugins.controller.host.HostPluginController;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.translate._JDT;
 
@@ -66,13 +64,17 @@ import org.jdownloader.translate._JDT;
  */
 public abstract class PluginForHost extends Plugin {
 
-    private IOPermission ioPermission = null;
+    private IOPermission   ioPermission = null;
 
-    private String       host;
+    private LazyHostPlugin lazyP        = null;
 
-    private Pattern      pattern;
+    public LazyHostPlugin getLazyP() {
+        return lazyP;
+    }
 
-    private long         revision;
+    public void setLazyP(LazyHostPlugin lazyP) {
+        this.lazyP = lazyP;
+    }
 
     @Deprecated
     public PluginForHost(final PluginWrapper wrapper) {
@@ -81,17 +83,8 @@ public abstract class PluginForHost extends Plugin {
         br = null;
         dl = null;
         /* defaultPlugins do not have any working logger */
-        setLogger(JDPluginLogger.Trash);
-
-        initD();
-
-    }
-
-    private void initD() {
-
-        revision = Formatter.getRevision(getClass().getAnnotation(HostPlugin.class).revision());
-        host = HostPluginController.getInstance().get(getClass()).getDisplayName();
-        pattern = HostPluginController.getInstance().get(getClass()).getPattern();
+        /* workaround for all the lazy init issues */
+        this.lazyP = (LazyHostPlugin) wrapper.getLazy();
     }
 
     public void setLogger(JDPluginLogger logger) {
@@ -113,7 +106,12 @@ public abstract class PluginForHost extends Plugin {
 
     @Override
     public long getVersion() {
-        return revision;
+        return 0;
+    }
+
+    @Override
+    public Pattern getSupportedLinks() {
+        return lazyP.getPattern();
     }
 
     protected String getCaptchaCode(final String method, final String captchaAddress, final DownloadLink downloadLink) throws IOException, PluginException {
@@ -185,16 +183,13 @@ public abstract class PluginForHost extends Plugin {
     }
 
     @Override
-    public HostPluginWrapper getWrapper() {
-        throw new WTFException();
-    }
-
     public String getHost() {
-        return host;
+        return lazyP.getDisplayName();
     }
 
+    @Override
     public SubConfiguration getPluginConfig() {
-        return null;
+        return SubConfiguration.getConfig(lazyP.getHost());
     }
 
     @Override
@@ -218,7 +213,7 @@ public abstract class PluginForHost extends Plugin {
     public void actionPerformed(final ActionEvent e) {
         final int eID = e.getID();
         if (eID == 1) {
-            UserIF.getInstance().requestPanel(UserIF.Panels.CONFIGPANEL, config);
+            UserIF.getInstance().requestPanel(UserIF.Panels.CONFIGPANEL, getConfig());
             return;
         }
         if (eID == 2) {
@@ -266,7 +261,7 @@ public abstract class PluginForHost extends Plugin {
         MenuAction account;
         MenuAction m;
 
-        if (config != null && config.getEntries().size() > 0) {
+        if (getConfig() != null && getConfig().getEntries().size() > 0) {
             m = new MenuAction(_GUI._.action_plugin_config(), "plugins.configs", 1) {
 
                 private static final long serialVersionUID = -5376242428242330373L;

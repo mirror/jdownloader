@@ -21,13 +21,10 @@ import java.util.ArrayList;
 import jd.CPluginWrapper;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.LinkCrawler;
-import jd.nutils.encoding.Encoding;
 import jd.parser.html.HTMLParser;
 import jd.plugins.DownloadLink;
 
 import org.appwork.utils.Regex;
-import org.jdownloader.plugins.controller.crawler.CrawlerPluginController;
-import org.jdownloader.plugins.controller.host.HostPluginController;
 
 /**
  * Diese Klasse läuft in einem Thread und verteilt den Inhalt der Zwischenablage
@@ -80,24 +77,7 @@ public class DistributeData extends Thread {
 
     @Deprecated
     public static boolean hasPluginFor(final String tmp, final boolean filterNormalHTTP) {
-
-        String data = tmp;
-        data = data.replaceAll("jd://", "http://");
-
-        if (CrawlerPluginController.getInstance().canHandle(data)) return true;
-
-        if (HostPluginController.getInstance().canHandle(data)) return true;
-        data = Encoding.urlDecode(data, true);
-        if (CrawlerPluginController.getInstance().canHandle(data)) return true;
-        if (HostPluginController.getInstance().canHandle(data)) return true;
-        if (!filterNormalHTTP) {
-            data = data.replaceAll("http://", "httpviajd://");
-            data = data.replaceAll("https://", "httpsviajd://");
-            if (CrawlerPluginController.getInstance().canHandle(data)) return true;
-            if (HostPluginController.getInstance().canHandle(data)) return true;
-        }
-
-        return false;
+        return true;
     }
 
     @Deprecated

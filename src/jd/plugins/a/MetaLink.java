@@ -18,6 +18,7 @@ package jd.plugins.a;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.nutils.io.JDIO;
@@ -71,6 +72,16 @@ public class MetaLink extends PluginsC {
     @Override
     public boolean hideLinks() {
         return false;
+    }
+
+    @Override
+    public String getHost() {
+        return null;
+    }
+
+    @Override
+    public Pattern getSupportedLinks() {
+        return null;
     }
 
 }

@@ -16,12 +16,10 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.OptionalPlugin;
 
-import org.appwork.utils.Regex;
 import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
-import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.settings.GeneralSettings;
 
@@ -122,16 +120,18 @@ public class LecturnityDownloaderExtension extends AbstractExtension<LecturnityD
                  * time! We know the filename and the filesize and so it is
                  * currently available.
                  */
-                dLink = new DownloadLink(hpw.getPlugin(), link, hpw.getHost(), source + link, true);
-                dLink.setFinalFileName(link);
-                dLink.setDownloadSize(getSize(new Regex(page, link + "</a>[ ]+.*?[ ].*?[ ]+(\\d+\\.?\\d?[K|M|G]?)").getMatch(0)));
-                dLink.setBrowserUrl(source);
-                dLink.setAvailable(true);
-                dLink.setProperty(PROPERTY_DOWNLOADDIR, downloadDir);
-
-                fp.add(dLink);
-
-                result.add(dLink);
+                // dLink = new DownloadLink(hpw.getPlugin(), link,
+                // hpw.getHost(), source + link, true);
+                // dLink.setFinalFileName(link);
+                // dLink.setDownloadSize(getSize(new Regex(page, link +
+                // "</a>[ ]+.*?[ ].*?[ ]+(\\d+\\.?\\d?[K|M|G]?)").getMatch(0)));
+                // dLink.setBrowserUrl(source);
+                // dLink.setAvailable(true);
+                // dLink.setProperty(PROPERTY_DOWNLOADDIR, downloadDir);
+                //
+                // fp.add(dLink);
+                //
+                // result.add(dLink);
             }
         }
 
@@ -159,16 +159,18 @@ public class LecturnityDownloaderExtension extends AbstractExtension<LecturnityD
 
     @Override
     protected void stop() throws StopException {
-        LazyHostPlugin.writeLock.lock();
-        HostPluginController.getInstance().remove(hpw);
-        LazyHostPlugin.writeLock.unlock();
-        hpw = null;
-        logger.finest("Lecturnity: Unloaded Host-Plugin!");
+        // LazyHostPlugin.writeLock.lock();
+        // HostPluginController.getInstance().remove(hpw);
+        // LazyHostPlugin.writeLock.unlock();
+        // hpw = null;
+        // logger.finest("Lecturnity: Unloaded Host-Plugin!");
     }
 
     @Override
     protected void start() throws StartException {
-        hpw = new LazyHostPlugin("lecturnity-loader", "jd.plugins.optional.lecturnity.", "LecturnityLoader", "HIDE_ME", 0, "$Revision$");
+        // hpw = new LazyHostPlugin("lecturnity-loader",
+        // "jd.plugins.optional.lecturnity.", "LecturnityLoader", "HIDE_ME", 0,
+        // "$Revision$");
         logger.finest("Lecturnity: Loaded Host-Plugin!");
 
         inputAction = new MenuAction("Lecturnity", "lecturnity", 0) {

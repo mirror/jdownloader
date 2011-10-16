@@ -60,8 +60,6 @@ import org.appwork.utils.singleapp.SingleAppInstance;
 import org.jdownloader.gui.uiserio.JDSwingUserIO;
 import org.jdownloader.gui.uiserio.NewUIO;
 import org.jdownloader.images.NewTheme;
-import org.jdownloader.plugins.controller.crawler.CrawlerPluginController;
-import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.translate._JDT;
 import org.jdownloader.update.JDUpdater;
 
@@ -444,8 +442,6 @@ public class Main {
                 return null;
             }
         }.waitForEDT();
-        CrawlerPluginController.getInstance().init();
-        HostPluginController.getInstance().init();
 
         init.initPlugins();
 

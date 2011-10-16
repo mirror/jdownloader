@@ -39,7 +39,7 @@ public class ModDbCom extends PluginForHost {
         setConfigElements();
     }
 
-    private static final String moddbservers = "moddbservers";
+    private static final String   moddbservers = "moddbservers";
 
     /** The list of server values displayed to the user */
     private static final String[] servers;
@@ -49,7 +49,7 @@ public class ModDbCom extends PluginForHost {
     }
 
     private void setConfigElements() {
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(), moddbservers, servers, JDL.L("plugins.host.L4dMapsCom.servers", "Use this server:")).setDefaultValue(0));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(), moddbservers, servers, JDL.L("plugins.host.L4dMapsCom.servers", "Use this server:")).setDefaultValue(0));
     }
 
     private int getConfiguredServer() {
@@ -99,12 +99,12 @@ public class ModDbCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    private String FDCCDNREGEX1 = "Mirror provided by FDCCDN.*?<a href=\"(.*?)\"";
-    private String FDCCDNREGEX2 = "http://www\\.fdcservers\\.net.*?<a href=\"(.*?)\"";
-    private String SERVER4REGEX = "Mirror provided by Mod DB #4.*?<a href=\"(.*?)\"";
-    private String SERVER5REGEX = "Mirror provided by Mod DB #5.*?<a href=\"(.*?)\"";
-    private String SERVER6REGEX = "Mirror provided by Mod DB #6.*?<a href=\"(.*?)\"";
-    private String SERVER8REGEX = "Mirror provided by Mod DB #8.*?<a href=\"(.*?)\"";
+    private String FDCCDNREGEX1  = "Mirror provided by FDCCDN.*?<a href=\"(.*?)\"";
+    private String FDCCDNREGEX2  = "http://www\\.fdcservers\\.net.*?<a href=\"(.*?)\"";
+    private String SERVER4REGEX  = "Mirror provided by Mod DB #4.*?<a href=\"(.*?)\"";
+    private String SERVER5REGEX  = "Mirror provided by Mod DB #5.*?<a href=\"(.*?)\"";
+    private String SERVER6REGEX  = "Mirror provided by Mod DB #6.*?<a href=\"(.*?)\"";
+    private String SERVER8REGEX  = "Mirror provided by Mod DB #8.*?<a href=\"(.*?)\"";
     private String SERVER10REGEX = "Mirror provided by Mod DB #10.*?<a href=\"(.*?)\"";
     private String SERVER11REGEX = "Mirror provided by Mod DB #11.*?<a href=\"(.*?)\"";
     private String SERVER13REGEX = "Mirror provided by Mod DB #13.*?<a href=\"(.*?)\"";

@@ -1009,7 +1009,7 @@ public class Megauploadcom extends PluginForHost {
     }
 
     private void setConfigElements() {
-        this.config.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, this.getPluginConfig(), Megauploadcom.MU_PARAM_PORT, Megauploadcom.ports, JDL.L("plugins.host.megaupload.ports", "Use this port:")).setDefaultValue(0));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, this.getPluginConfig(), Megauploadcom.MU_PARAM_PORT, Megauploadcom.ports, JDL.L("plugins.host.megaupload.ports", "Use this port:")).setDefaultValue(0));
     }
 
     public int usePort(final DownloadLink link) {

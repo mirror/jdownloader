@@ -13,7 +13,6 @@ import javax.swing.JComboBox;
 
 import jd.controlling.IOEQ;
 import jd.plugins.Account;
-import jd.plugins.hoster.FileSonicCom;
 
 import org.appwork.swing.components.searchcombo.SearchComboBox;
 import org.appwork.utils.os.CrossSystem;
@@ -54,7 +53,7 @@ public class BuyAction extends AbstractAction {
     public void actionPerformed(ActionEvent e) {
         IOEQ.add(new Runnable() {
             public void run() {
-                final ArrayList<LazyHostPlugin> plugins = HostPluginController.getInstance().list();
+                final ArrayList<LazyHostPlugin> plugins = new ArrayList<LazyHostPlugin>(HostPluginController.getInstance().list());
                 Collections.sort(plugins, new Comparator<LazyHostPlugin>() {
                     public int compare(final LazyHostPlugin a, final LazyHostPlugin b) {
                         return a.getDisplayName().compareToIgnoreCase(b.getDisplayName());
@@ -76,7 +75,7 @@ public class BuyAction extends AbstractAction {
                     }
                 }
                 if (plg == null) {
-                    plg = HostPluginController.getInstance().get(FileSonicCom.class);
+                    plg = HostPluginController.getInstance().get("filesonic.com");
                 }
                 final LazyHostPlugin defaultSelection = plg;
                 try {

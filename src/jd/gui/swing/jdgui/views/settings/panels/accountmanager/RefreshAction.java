@@ -2,6 +2,7 @@ package jd.gui.swing.jdgui.views.settings.panels.accountmanager;
 
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
+import java.util.List;
 
 import javax.swing.AbstractAction;
 
@@ -40,7 +41,7 @@ public class RefreshAction extends AbstractAction {
             public void run() {
                 if (selection == null) {
                     selection = new ArrayList<Account>();
-                    final ArrayList<LazyHostPlugin> plugins = HostPluginController.getInstance().list();
+                    final List<LazyHostPlugin> plugins = HostPluginController.getInstance().list();
                     for (LazyHostPlugin plugin : plugins) {
                         ArrayList<Account> accs = AccountController.getInstance().getAllAccounts(plugin.getDisplayName());
                         if (accs != null) {

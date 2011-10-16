@@ -55,6 +55,7 @@ import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
 import org.jdownloader.extensions.interfaces.translate.T;
 import org.jdownloader.plugins.controller.host.HostPluginController;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.update.JDUpdater;
 import org.mozilla.javascript.ClassShutter;
 import org.mozilla.javascript.Context;
@@ -353,12 +354,6 @@ public class ExternInterfaceExtension extends AbstractExtension<ExternInterfaceC
 
                                 response.addContent(addJSONPCallback("failed " + e.getMessage(), request.getParameters().get("callback")));
                             }
-                        } else if (splitPath[1].equalsIgnoreCase("checkSupportForUrl")) {
-
-                            // TODO: Bugtracker Issue #1729
-                            String url = Encoding.htmlDecode(request.getParameters().get("url"));
-                            String urlSupported = Boolean.valueOf(DistributeData.hasPluginFor(url, true)).toString();
-                            response.addContent(addJSONPCallback(urlSupported, request.getParameters().get("callback")));
                         } else {
                             response.addContent(addJSONPCallback("unknowncommand", request.getParameters().get("callback")));
                         }
@@ -432,8 +427,8 @@ public class ExternInterfaceExtension extends AbstractExtension<ExternInterfaceC
                                 links.addAll(foundlinks);
                             } else {
                                 /* directlinks here */
-                                PluginForHost defaultplg = JDUtilities.getPluginForHost("DirectHTTP");
-                                PluginForHost liveplg = HostPluginController.getInstance().newInstance(defaultplg.getClass());
+                                LazyHostPlugin lazyp = HostPluginController.getInstance().get("DirectHTTP");
+                                PluginForHost defaultplg = lazyp.getPrototype();
                                 String name = Plugin.getFileNameFromURL(new URL(url));
                                 DownloadLink direct = new DownloadLink(defaultplg, name, "DirectHTTP", url, true);
                                 direct.setBrowserUrl(referer);
@@ -442,7 +437,7 @@ public class ExternInterfaceExtension extends AbstractExtension<ExternInterfaceC
                                 direct.setProperty("post", post);
                                 direct.setProperty("referer", referer);
                                 direct.setProperty("fixName", fnames[i]);
-                                liveplg.correctDownloadLink(direct);
+                                defaultplg.correctDownloadLink(direct);
                                 links.add(direct);
                             }
                         }

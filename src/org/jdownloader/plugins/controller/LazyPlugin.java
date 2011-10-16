@@ -1,7 +1,6 @@
 package org.jdownloader.plugins.controller;
 
 import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -60,17 +59,10 @@ public abstract class LazyPlugin<T extends Plugin> {
     }
 
     public T newInstance() {
-
         try {
             getConstructor();
             return constructor.newInstance(constructorParameters);
-        } catch (InstantiationException e) {
-            throw new WTFException(e);
-        } catch (IllegalAccessException e) {
-            throw new WTFException(e);
-        } catch (IllegalArgumentException e) {
-            throw new WTFException(e);
-        } catch (InvocationTargetException e) {
+        } catch (final Throwable e) {
             throw new WTFException(e);
         }
 
@@ -83,17 +75,15 @@ public abstract class LazyPlugin<T extends Plugin> {
             try {
                 constructor = getPluginClass().getConstructor(new Class[] {});
                 constructorParameters = EMPTY;
-            } catch (NoSuchMethodException e) {
+            } catch (Throwable e) {
                 try {
                     constructor = getPluginClass().getConstructor(new Class[] { PluginWrapper.class });
-                    constructorParameters = OLD;
-                } catch (NoSuchMethodException e1) {
-                    throw new WTFException(e1);
-                } catch (SecurityException e1) {
-                    throw new WTFException(e1);
+                    constructorParameters = new Object[] { new PluginWrapper(this) {
+
+                    } };
+                } catch (final Throwable e2) {
+                    throw new WTFException(e2);
                 }
-            } catch (SecurityException e) {
-                throw new WTFException(e);
             }
             return constructor;
         }
@@ -103,13 +93,10 @@ public abstract class LazyPlugin<T extends Plugin> {
     protected Class<T> getPluginClass() {
         if (pluginClass != null) return pluginClass;
         synchronized (this) {
-            // try again synched
             if (pluginClass != null) return pluginClass;
             try {
-                System.out.println("Load Plugin:" + classname);
-
                 pluginClass = (Class<T>) PluginClassLoader.getInstance().loadClass(classname);
-            } catch (ClassNotFoundException e) {
+            } catch (Throwable e) {
                 throw new WTFException(e);
             }
             return pluginClass;

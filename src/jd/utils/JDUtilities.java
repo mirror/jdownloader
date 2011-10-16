@@ -314,12 +314,10 @@ public class JDUtilities {
     }
 
     public static PluginForHost getPluginForHost(final String host) {
-
-        for (final LazyHostPlugin pHost : HostPluginController.getInstance().list()) {
-            if (pHost.getHost().equalsIgnoreCase(host)) { return pHost.getPrototype(); }
-        }
-
+        LazyHostPlugin lplugin = HostPluginController.getInstance().get(host);
+        if (lplugin != null) return lplugin.getPrototype();
         return null;
+
     }
 
     // public static PluginForHost replacePluginForHost(final DownloadLink link)
@@ -334,9 +332,8 @@ public class JDUtilities {
     // }
 
     public static PluginForHost getNewPluginForHostInstance(final String host) {
-
-        PluginForHost plugin = getPluginForHost(host);
-        if (plugin != null) return HostPluginController.getInstance().newInstance(plugin.getClass());
+        LazyHostPlugin lplugin = HostPluginController.getInstance().get(host);
+        if (lplugin != null) return lplugin.newInstance();
         return null;
     }
 

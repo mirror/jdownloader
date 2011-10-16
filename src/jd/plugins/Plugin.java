@@ -142,8 +142,6 @@ public abstract class Plugin implements ActionListener {
 
     protected ConfigContainer config;
 
-    protected PluginWrapper   wrapper;
-
     protected Browser         br = null;
     /**
      * returns the init time of this plugin. this can be used, for example to
@@ -169,38 +167,13 @@ public abstract class Plugin implements ActionListener {
     }
 
     public Plugin() {
-        this.wrapper = null;
         initTime = System.currentTimeMillis();
 
-        this.config = new ConfigContainer(this.getHost()) {
-            private static final long serialVersionUID = -30947319320765343L;
-
-            /**
-             * we dont have to catch icon until it is really needed
-             */
-            @Override
-            public ImageIcon getIcon() {
-                return NewTheme.I().getIcon("warning", 16);
-            }
-        };
     }
 
     @Deprecated
     public Plugin(final PluginWrapper wrapper) {
-        this.wrapper = wrapper;
         initTime = System.currentTimeMillis();
-
-        this.config = new ConfigContainer(this.getHost()) {
-            private static final long serialVersionUID = -30947319320765343L;
-
-            /**
-             * we dont have to catch icon until it is really needed
-             */
-            @Override
-            public ImageIcon getIcon() {
-                return NewTheme.I().getIcon("warning", 16);
-            }
-        };
 
     }
 
@@ -269,7 +242,27 @@ public abstract class Plugin implements ActionListener {
      * @return gibt die aktuelle Configuration Instanz zurück
      */
     public ConfigContainer getConfig() {
-        return this.config;
+        if (this.config != null) return config;
+        synchronized (this) {
+            if (this.config != null) return config;
+            this.config = new ConfigContainer(null) {
+                private static final long serialVersionUID = -30947319320765343L;
+
+                /**
+                 * we dont have to catch icon until it is really needed
+                 */
+                @Override
+                public ImageIcon getIcon() {
+                    return NewTheme.I().getIcon("warning", 16);
+                }
+
+                @Override
+                public String getTitle() {
+                    return getHost();
+                }
+            };
+        }
+        return config;
     }
 
     /**
@@ -277,9 +270,7 @@ public abstract class Plugin implements ActionListener {
      * 
      * @return Der unterstützte Anbieter
      */
-    public String getHost() {
-        return this.wrapper.getHost();
-    }
+    public abstract String getHost();
 
     protected File getLocalCaptchaFile() {
         return this.getLocalCaptchaFile(".jpg");
@@ -310,18 +301,7 @@ public abstract class Plugin implements ActionListener {
      * 
      * @return internes property objekt
      */
-    public SubConfiguration getPluginConfig() {
-        return SubConfiguration.getConfig(this.wrapper.getConfigName());
-    }
-
-    /**
-     * Liefert eine einmalige ID des Plugins zurück
-     * 
-     * @return Plugin ID
-     */
-    public String getPluginID() {
-        return this.getHost() + "-" + this.getVersion();
-    }
+    public abstract SubConfiguration getPluginConfig();
 
     /**
      * Ein regulärer Ausdruck, der anzeigt, welche Links von diesem Plugin
@@ -330,9 +310,7 @@ public abstract class Plugin implements ActionListener {
      * @return Ein regulärer Ausdruck
      * @see Pattern
      */
-    public Pattern getSupportedLinks() {
-        return this.wrapper.getPattern();
-    }
+    public abstract Pattern getSupportedLinks();
 
     /**
      * Liefert die Versionsbezeichnung dieses Plugins zurück
@@ -343,10 +321,6 @@ public abstract class Plugin implements ActionListener {
 
     protected long getVersion(final String revision) {
         return Formatter.getRevision(revision);
-    }
-
-    public PluginWrapper getWrapper() {
-        return this.wrapper;
     }
 
     /**

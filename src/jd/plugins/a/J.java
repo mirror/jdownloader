@@ -20,6 +20,7 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.ObjectInputStream;
 import java.util.ArrayList;
+import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
@@ -147,7 +148,7 @@ public class J extends PluginsC {
                     // logger.info("pHost: "+pHost);
                     if (pHost != null) {
 
-                        DownloadLink dl = new DownloadLink((PluginForHost) pHost.getWrapper().getPlugin(), l.getName(), l.getHost(), l.getDownloadURL(), l.isEnabled());
+                        DownloadLink dl = new DownloadLink(pHost, l.getName(), l.getHost(), l.getDownloadURL(), l.isEnabled());
 
                         dl.setDownloadSize(l.getDownloadSize());
                         dl.setBrowserUrl(l.getBrowserUrl());
@@ -196,6 +197,16 @@ public class J extends PluginsC {
     public long getVersion() {
         // TODO Auto-generated method stub
         return 1;
+    }
+
+    @Override
+    public String getHost() {
+        return null;
+    }
+
+    @Override
+    public Pattern getSupportedLinks() {
+        return null;
     }
 
 }

@@ -537,7 +537,8 @@ public class LinkCrawler implements IOPermission {
             }
             if (cryptedLink == null || cryptedLink.getdPlugin() == null || cryptedLink.getCryptedLink() == null) return;
             /* we have to create new plugin instance here */
-            PluginForDecrypt plg = CrawlerPluginController.getInstance().newInstance(cryptedLink.getdPlugin().getClass());
+            LazyCrawlerPlugin lazyC = CrawlerPluginController.getInstance().get(cryptedLink.getdPlugin().getHost());
+            PluginForDecrypt plg = lazyC.newInstance();
             plg.setIOPermission(this);
             plg.setBrowser(new Browser());
             /* now we run the plugin and let it find some links */

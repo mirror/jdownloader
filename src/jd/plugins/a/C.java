@@ -28,6 +28,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.Vector;
+import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.controlling.JDLogger;
@@ -191,6 +192,16 @@ public class C extends PluginsC {
     // @Override
     public void initContainer(final String filename) {
         callDecryption(new File(filename));
+    }
+
+    @Override
+    public String getHost() {
+        return null;
+    }
+
+    @Override
+    public Pattern getSupportedLinks() {
+        return null;
     }
 
 }

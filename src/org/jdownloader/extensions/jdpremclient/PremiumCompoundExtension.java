@@ -62,7 +62,9 @@ public class PremiumCompoundExtension extends AbstractExtension<PremiumCompoundC
         PluginForHost old = JDUtilities.getPluginForHost(host);
         if (old != null) {
             logger.info("Replacing " + host + " Plugin with JDPremium: " + with);
-            new PremShareHost(old.getHost(), with, old.getWrapper().getPattern().toString(), old.getWrapper().getFlags() + PluginWrapper.ALLOW_DUPLICATE);
+            // new PremShareHost(old.getHost(), with,
+            // old.getWrapper().getPattern().toString(),
+            // old.getWrapper().getFlags() + PluginWrapper.ALLOW_DUPLICATE);
         }
     }
 
@@ -143,28 +145,33 @@ public class PremiumCompoundExtension extends AbstractExtension<PremiumCompoundC
             }
             if (!replaced) {
                 /* get all current PremiumPlugins */
-                ArrayList<HostPluginWrapper> all = JDUtilities.getPremiumPluginsForHost();
-                for (String key : premShareHosts.keySet()) {
-                    if (AccountController.getInstance().hasAccounts(key)) {
-                        for (HostPluginWrapper plugin : all) {
-                            /* we do not replace youtube */
-                            if (plugin.getHost().contains("youtube")) continue;
-                            /* and no DIRECTHTTP */
-                            if (plugin.getHost().contains("DIRECTHTTP") || plugin.getHost().contains("http links")) continue;
-                            /* and no ftp */
-                            if (plugin.getHost().contains("ftp")) continue;
-                            /* do not replace the premshare plugins ;) */
-                            if (premShareHosts.containsKey(plugin.getHost()) && plugin.getPattern().pattern().startsWith("NEVERUSETHISREGEX" + plugin.getHost())) {
-                                continue;
-                            }
-                            replaceHosterPlugin(plugin.getHost(), premShareHosts.get(key));
-                        }
-                        PluginForHost ret = JDUtilities.getPluginForHost(key);
-                        if (ret != null && ret instanceof JDPremInterface) {
-                            ((JDPremInterface) ret).enablePlugin();
-                        }
-                    }
-                }
+                // ArrayList<HostPluginWrapper> all =
+                // JDUtilities.getPremiumPluginsForHost();
+                // for (String key : premShareHosts.keySet()) {
+                // if (AccountController.getInstance().hasAccounts(key)) {
+                // for (HostPluginWrapper plugin : all) {
+                // /* we do not replace youtube */
+                // if (plugin.getHost().contains("youtube")) continue;
+                // /* and no DIRECTHTTP */
+                // if (plugin.getHost().contains("DIRECTHTTP") ||
+                // plugin.getHost().contains("http links")) continue;
+                // /* and no ftp */
+                // if (plugin.getHost().contains("ftp")) continue;
+                // /* do not replace the premshare plugins ;) */
+                // if (premShareHosts.containsKey(plugin.getHost()) &&
+                // plugin.getPattern().pattern().startsWith("NEVERUSETHISREGEX"
+                // + plugin.getHost())) {
+                // continue;
+                // }
+                // replaceHosterPlugin(plugin.getHost(),
+                // premShareHosts.get(key));
+                // }
+                // PluginForHost ret = JDUtilities.getPluginForHost(key);
+                // if (ret != null && ret instanceof JDPremInterface) {
+                // ((JDPremInterface) ret).enablePlugin();
+                // }
+                // }
+                // }
                 replaced = true;
             }
             if (replaced) {
@@ -253,12 +260,15 @@ public class PremiumCompoundExtension extends AbstractExtension<PremiumCompoundC
 
         public PremShareHost(String host, String className, String patternSupported, int flags) {
             super(host, "org.jdownloader.extensions.jdpremclient.", className, patternSupported, flags, "$Revision$");
-            for (HostPluginWrapper wrapper : HostPluginController.getInstance()) {
-                if (wrapper.getPattern().toString().equalsIgnoreCase(patternSupported) && wrapper != this) replacedone = wrapper;
-            }
-            if (replacedone != null) {
-                HostPluginController.getInstance().remove(replacedone);
-            }
+            // for (HostPluginWrapper wrapper :
+            // HostPluginController.getInstance()) {
+            // if
+            // (wrapper.getPattern().toString().equalsIgnoreCase(patternSupported)
+            // && wrapper != this) replacedone = wrapper;
+            // }
+            // if (replacedone != null) {
+            // HostPluginController.getInstance().remove(replacedone);
+            // }
         }
 
         public HostPluginWrapper getReplacedPlugin() {

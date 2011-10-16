@@ -33,6 +33,8 @@ import jd.nutils.JDFlags;
 import jd.plugins.Plugin;
 import jd.utils.JDUtilities;
 
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 /**
  * A Container for {@link Plugin Plugins}. Plugins usually do not get
  * instantiated after program start. {@link JDInit#initPlugins()} reads all
@@ -73,17 +75,17 @@ public abstract class PluginWrapper implements Comparable<PluginWrapper> {
      * The Regular expression pattern. This pattern defines which urls can be
      * handeled by this plugin
      */
-    private final Pattern                               pattern;
+    private Pattern                                     pattern;
 
     /**
      * The domain of this plugin, which is the plugin's name, too
      */
-    private final String                                host;
+    private String                                      host;
 
     /**
      * Full qualified classname
      */
-    private final String                                className;
+    private String                                      className;
 
     /**
      * internal logger instance
@@ -105,9 +107,11 @@ public abstract class PluginWrapper implements Comparable<PluginWrapper> {
      * {@link PluginWrapper#DEBUG_ONLY} <br> {@link PluginWrapper#LOAD_ON_INIT} <br>
      * {@link PluginWrapper#PATTERN_ACCEPTS_INVALID_URI}
      */
-    private final int                                   flags;
+    private int                                         flags;
 
-    private final long                                  revision;
+    private long                                        revision;
+
+    private transient LazyPlugin                        lazy;
 
     /**
      * Static classloader. gets created when the first plugin should be
@@ -141,6 +145,14 @@ public abstract class PluginWrapper implements Comparable<PluginWrapper> {
      * @param revision
      *            String that contains the revision of the plugin
      */
+    public PluginWrapper(final LazyPlugin<?> lazy) {
+        this.lazy = lazy;
+    }
+
+    public LazyPlugin getLazy() {
+        return lazy;
+    }
+
     public PluginWrapper(final String host, final String classNamePrefix, final String className, final String pattern, final int flags, final String revision) {
         this.pattern = (pattern != null) ? Pattern.compile(pattern, Pattern.CASE_INSENSITIVE) : null;
         this.host = host.toLowerCase(Locale.ENGLISH);
@@ -166,6 +178,9 @@ public abstract class PluginWrapper implements Comparable<PluginWrapper> {
             WRAPPER.put(classn, this);
 
         }
+    }
+
+    public PluginWrapper() {
     }
 
     /**

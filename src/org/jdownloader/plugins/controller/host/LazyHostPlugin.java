@@ -57,4 +57,11 @@ public class LazyHostPlugin extends LazyPlugin<PluginForHost> {
         return DomainInfo.getInstance(getDisplayName()).getFavIcon();
     }
 
+    @Override
+    public PluginForHost newInstance() {
+        PluginForHost ret = super.newInstance();
+        ret.setLazyP(this);
+        return ret;
+    }
+
 }

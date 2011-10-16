@@ -4,6 +4,7 @@ import java.io.File;
 import java.security.spec.AlgorithmParameterSpec;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.regex.Pattern;
 
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
@@ -93,6 +94,16 @@ public class AMZ extends PluginsC {
     @Override
     public long getVersion() {
         return 1;
+    }
+
+    @Override
+    public String getHost() {
+        return null;
+    }
+
+    @Override
+    public Pattern getSupportedLinks() {
+        return null;
     }
 
 }

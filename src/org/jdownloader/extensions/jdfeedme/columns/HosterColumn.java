@@ -50,7 +50,7 @@ public class HosterColumn extends JDTableColumn {
         jlr.setBorder(null);
 
         if (labels == null) {
-            ArrayList<LazyHostPlugin> plugins = HostPluginController.getInstance().list();
+            ArrayList<LazyHostPlugin> plugins = new ArrayList<LazyHostPlugin>(HostPluginController.getInstance().list());
             Collections.sort(plugins, new Comparator<LazyHostPlugin>() {
                 public int compare(LazyHostPlugin a, LazyHostPlugin b) {
                     return a.getHost().compareToIgnoreCase(b.getHost());

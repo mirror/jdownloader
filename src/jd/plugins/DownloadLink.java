@@ -51,6 +51,7 @@ import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.DomainInfo;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.plugins.controller.host.HostPluginController;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.settings.GeneralSettings;
 
 /**
@@ -62,7 +63,10 @@ import org.jdownloader.settings.GeneralSettings;
 public class DownloadLink extends Property implements Serializable, Comparable<DownloadLink>, AbstractPackageChildrenNode<FilePackage>, CheckableLink {
 
     public static enum AvailableStatus {
-        UNCHECKED, FALSE, UNCHECKABLE, TRUE;
+        UNCHECKED,
+        FALSE,
+        UNCHECKABLE,
+        TRUE;
     }
 
     public static final int                    LINKTYPE_CONTAINER       = 1;
@@ -588,7 +592,8 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
             PluginForHost plg = plgToUse;
             /* we need extra plugin instance and browser instance too here */
             if (plg == null) {
-                plg = HostPluginController.getInstance().newInstance(getDefaultPlugin().getClass());
+                LazyHostPlugin lazyp = HostPluginController.getInstance().get(getHost());
+                plg = lazyp.newInstance();
             }
             if (plg.getBrowser() == null) {
                 plg.setBrowser(new Browser());
@@ -671,7 +676,8 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         finalFileName = null;
         PluginForHost plg = liveplugin;
         if (plg == null) {
-            plg = HostPluginController.getInstance().newInstance(defaultplugin.getClass());
+            LazyHostPlugin lazyp = HostPluginController.getInstance().get(getHost());
+            plg = lazyp.newInstance();
         }
         if (plg.getBrowser() == null) {
             plg.setBrowser(new Browser());

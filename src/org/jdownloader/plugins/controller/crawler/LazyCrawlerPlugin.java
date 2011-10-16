@@ -20,4 +20,10 @@ public class LazyCrawlerPlugin extends LazyPlugin<PluginForDecrypt> {
         super(ap.getPattern(), JD_PLUGINS_DECRYPTER + ap.getClassname(), ap.getDisplayName());
     }
 
+    @Override
+    public PluginForDecrypt newInstance() {
+        PluginForDecrypt ret = super.newInstance();
+        ret.setLazyC(this);
+        return ret;
+    }
 }

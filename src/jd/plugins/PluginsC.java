@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 
 import jd.PluginWrapper;
+import jd.config.SubConfiguration;
 import jd.controlling.DistributeData;
 import jd.controlling.JDLogger;
 import jd.controlling.JDPluginLogger;
@@ -36,6 +37,7 @@ import jd.nutils.io.JDIO;
 import jd.utils.JDUtilities;
 import jd.utils.WebUpdate;
 
+import org.appwork.exceptions.WTFException;
 import org.appwork.utils.Regex;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
@@ -85,6 +87,11 @@ public abstract class PluginsC extends Plugin {
 
     public String createContainerString(ArrayList<DownloadLink> downloadLinks) {
         return null;
+    }
+
+    @Override
+    public SubConfiguration getPluginConfig() {
+        throw new WTFException("WW");
     }
 
     // @Override

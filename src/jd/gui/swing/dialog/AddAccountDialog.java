@@ -37,7 +37,6 @@ import jd.gui.UserIO;
 import jd.gui.swing.jdgui.views.settings.panels.accountmanager.BuyAction;
 import jd.plugins.Account;
 import jd.plugins.PluginForHost;
-import jd.plugins.hoster.FileSonicCom;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.swing.components.searchcombo.SearchComboBox;
@@ -184,7 +183,7 @@ public class AddAccountDialog extends AbstractDialog<Integer> {
 
     @Override
     public JComponent layoutDialogContent() {
-        final ArrayList<LazyHostPlugin> plugins = HostPluginController.getInstance().list();
+        final ArrayList<LazyHostPlugin> plugins = new ArrayList<LazyHostPlugin>(HostPluginController.getInstance().list());
         Collections.sort(plugins, new Comparator<LazyHostPlugin>() {
             public int compare(final LazyHostPlugin a, final LazyHostPlugin b) {
                 return a.getDisplayName().compareToIgnoreCase(b.getDisplayName());
@@ -210,11 +209,12 @@ public class AddAccountDialog extends AbstractDialog<Integer> {
 
         if (this.plugin != null) {
             try {
-                this.hoster.setSelectedItem(HostPluginController.getInstance().newInstance(plugin.getClass()));
+                LazyHostPlugin lazyp = HostPluginController.getInstance().get(plugin.getHost());
+                if (lazyp != null) this.hoster.setSelectedItem(lazyp);
             } catch (final Exception e) {
             }
         } else {
-            LazyHostPlugin plg = HostPluginController.getInstance().get(FileSonicCom.class);
+            LazyHostPlugin plg = HostPluginController.getInstance().get("filesonic.com");
             if (plg != null) {
                 try {
                     hoster.setSelectedItem(plg);

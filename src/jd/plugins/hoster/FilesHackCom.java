@@ -40,25 +40,25 @@ import org.appwork.utils.formatter.SizeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fileshack.com" }, urls = { "http://[\\w\\.]*?fileshack\\.com/(file|file_download)\\.x/[0-9]+" }, flags = { 2 })
 public class FilesHackCom extends PluginForHost {
 
-    private static final String fileshackservers = "fileshackservers";
+    private static final String   fileshackservers        = "fileshackservers";
 
     /** The list of servers displayed in the plugin configuration pane */
-    private static final String[] FILESHACK_SERVERS = new String[] { "Public Central USA", "Public Eastern USA", "Public Europe", "Public Western USA" };
+    private static final String[] FILESHACK_SERVERS       = new String[] { "Public Central USA", "Public Eastern USA", "Public Europe", "Public Western USA" };
 
     /**
      * The number of the default server [used if no server is configured or if
      * the configured server was not found in the list of obtained servers]
      */
-    private static final int DEFAULT_SERVER_NUMBER = 2;
+    private static final int      DEFAULT_SERVER_NUMBER   = 2;
 
     /**
      * The name of the default server [used if no server is configured or if the
      * configured server was not found in the list of obtained servers]
      */
-    private static final String DEFAULT_SERVER_NAME = FILESHACK_SERVERS[DEFAULT_SERVER_NUMBER];
+    private static final String   DEFAULT_SERVER_NAME     = FILESHACK_SERVERS[DEFAULT_SERVER_NUMBER];
 
     /** The {@link Pattern} used to get the server strings from the HTML page */
-    private static final Pattern SERVERS_STRINGS_PATTERN = Pattern.compile("'(/popup\\..*?(central|east|europe|west)\\.public.*?pay=0)'");
+    private static final Pattern  SERVERS_STRINGS_PATTERN = Pattern.compile("'(/popup\\..*?(central|east|europe|west)\\.public.*?pay=0)'");
 
     public FilesHackCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -76,7 +76,7 @@ public class FilesHackCom extends PluginForHost {
     }
 
     private void setConfigElements() {
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(), fileshackservers, FILESHACK_SERVERS, JDL.L("plugins.host.FilesHackCom.servers", "Use this server:")).setDefaultValue(0));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(), fileshackservers, FILESHACK_SERVERS, JDL.L("plugins.host.FilesHackCom.servers", "Use this server:")).setDefaultValue(0));
     }
 
     // thx to jiaz & bogdan.solga for the help ;)

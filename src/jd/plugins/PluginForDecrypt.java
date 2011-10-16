@@ -23,9 +23,9 @@ import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.regex.Pattern;
 
-import jd.DecryptPluginWrapper;
 import jd.PluginWrapper;
 import jd.captcha.easy.load.LoadImage;
+import jd.config.SubConfiguration;
 import jd.controlling.IOPermission;
 import jd.controlling.JDLogger;
 import jd.controlling.JDPluginLogger;
@@ -38,9 +38,8 @@ import jd.http.Browser;
 import jd.nutils.Formatter;
 import jd.nutils.encoding.Encoding;
 
-import org.appwork.exceptions.WTFException;
 import org.appwork.utils.Regex;
-import org.jdownloader.plugins.controller.crawler.CrawlerPluginController;
+import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin;
 import org.jdownloader.translate._JDT;
 
 /**
@@ -52,15 +51,19 @@ public abstract class PluginForDecrypt extends Plugin {
 
     private IOPermission           ioPermission = null;
     private LinkCrawlerDistributer distributer  = null;
-    private long                   revision;
-    private String                 host;
-    private Pattern                pattern;
+
+    private LazyCrawlerPlugin      lazyC        = null;
 
     /**
      * @return the distributer
      */
     public LinkCrawlerDistributer getDistributer() {
         return distributer;
+    }
+
+    @Override
+    public SubConfiguration getPluginConfig() {
+        return null;
     }
 
     /**
@@ -87,32 +90,20 @@ public abstract class PluginForDecrypt extends Plugin {
     }
 
     public PluginForDecrypt() {
-        super();
-
-        initD();
-
-    }
-
-    private void initD() {
-        logger = new JDPluginLogger(getClass().getSimpleName() + System.currentTimeMillis());
-        revision = Formatter.getRevision(getClass().getAnnotation(DecrypterPlugin.class).revision());
-        host = CrawlerPluginController.getInstance().get(getClass()).getDisplayName();
-        pattern = CrawlerPluginController.getInstance().get(getClass()).getPattern();
     }
 
     public Pattern getSupportedLinks() {
-        return pattern;
+        return lazyC.getPattern();
     }
 
     public String getHost() {
-        return host;
+        return lazyC.getDisplayName();
     }
 
     @Deprecated
     public PluginForDecrypt(PluginWrapper wrapper) {
         super(wrapper);
-        initD();
-
+        this.lazyC = (LazyCrawlerPlugin) wrapper.getLazy();
     }
 
     public void setBrowser(Browser br) {
@@ -120,14 +111,8 @@ public abstract class PluginForDecrypt extends Plugin {
     }
 
     @Override
-    public DecryptPluginWrapper getWrapper() {
-        throw new WTFException();
-
-    }
-
-    @Override
     public long getVersion() {
-        return revision;
+        return 0;
     }
 
     public void sleep(long i, CryptedLink link) throws InterruptedException {
@@ -393,6 +378,21 @@ public abstract class PluginForDecrypt extends Plugin {
      */
     protected String getInitials() {
         return null;
+    }
+
+    /**
+     * @param lazyC
+     *            the lazyC to set
+     */
+    public void setLazyC(LazyCrawlerPlugin lazyC) {
+        this.lazyC = lazyC;
+    }
+
+    /**
+     * @return the lazyC
+     */
+    public LazyCrawlerPlugin getLazyC() {
+        return lazyC;
     }
 
 }

@@ -44,17 +44,17 @@ public class CreaFileCom extends PluginForHost {
         setConfigElements();
     }
 
-    private static final String WAIT1 = "WAIT1";
-    private static final String WAIT2 = "WAIT2";
+    private static final String WAIT1  = "WAIT1";
+    private static final String WAIT2  = "WAIT2";
     private static final String CHUNKS = "CHUNKS2";
 
     private void setConfigElements() {
         ConfigEntry cond = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), WAIT1, "Activate waittime1").setDefaultValue(false);
         ConfigEntry cond1 = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), WAIT2, "Activate waittime2").setDefaultValue(false);
         ConfigEntry cond2 = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), CHUNKS, "Activate unlimited Max.Con. (speeds up the downloads but may causes errors)").setDefaultValue(false);
-        config.addEntry(cond);
-        config.addEntry(cond1);
-        config.addEntry(cond2);
+        getConfig().addEntry(cond);
+        getConfig().addEntry(cond1);
+        getConfig().addEntry(cond2);
     }
 
     @Override

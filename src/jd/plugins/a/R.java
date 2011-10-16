@@ -21,6 +21,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.controlling.JDLogger;
@@ -87,7 +88,7 @@ public class R extends PluginsC {
                     // logger.info("pHost: "+pHost);
                     if (pHost != null) {
 
-                        newLink = new DownloadLink((PluginForHost) pHost.getWrapper().getPlugin(), element.substring(element.lastIndexOf("/") + 1), pHost.getHost(), null, true);
+                        newLink = new DownloadLink(pHost, element.substring(element.lastIndexOf("/") + 1), pHost.getHost(), null, true);
                         newLink.setLoadedPluginForContainer(this);
                         newLink.setContainerFile(lc.getAbsolutePath());
                         newLink.setContainerIndex(c);
@@ -313,6 +314,16 @@ public class R extends PluginsC {
 
             JDLogger.exception(e);
         }
+        return null;
+    }
+
+    @Override
+    public String getHost() {
+        return null;
+    }
+
+    @Override
+    public Pattern getSupportedLinks() {
         return null;
     }
 

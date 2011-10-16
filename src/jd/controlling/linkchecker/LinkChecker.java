@@ -20,6 +20,7 @@ import jd.plugins.PluginForHost;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.logging.Log;
 import org.jdownloader.plugins.controller.host.HostPluginController;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 
 public class LinkChecker<E extends CheckableLink> {
 
@@ -231,7 +232,8 @@ public class LinkChecker<E extends CheckableLink> {
                                     /* now we check the links */
                                     if (plg == null) {
                                         /* create plugin if not done yet */
-                                        plg = HostPluginController.getInstance().newInstance(linksList[0].getDefaultPlugin().getClass());
+                                        LazyHostPlugin lazyp = HostPluginController.getInstance().get(linksList[0].getDefaultPlugin().getHost());
+                                        plg = lazyp.newInstance();
                                         plg.setBrowser(br);
                                         plg.init();
                                     }

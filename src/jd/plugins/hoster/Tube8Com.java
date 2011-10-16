@@ -49,7 +49,7 @@ public class Tube8Com extends PluginForHost {
 
     private void setConfigElements() {
         ConfigEntry cond = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), mobile, JDL.L("plugins.hoster.Tube8Com.setting.preferVideosForMobilePhones", "Prefer videos for mobile phones (3gp format)")).setDefaultValue(false);
-        config.addEntry(cond);
+        getConfig().addEntry(cond);
     }
 
     public String dllink = null;

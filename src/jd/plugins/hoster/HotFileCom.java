@@ -601,11 +601,11 @@ public class HotFileCom extends PluginForHost {
     @SuppressWarnings("deprecation")
     private void setConfigElements() {
         ConfigEntry cond = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), HotFileCom.TRY_IWL_BYPASS, JDL.L("plugins.hoster.HotFileCom.TRYIWLBYPASS", "Try IWL-Filter list bypass?")).setDefaultValue(false);
-        config.addEntry(cond);
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), HotFileCom.CAPTCHARETRIES, JDL.L("plugins.hoster.HotFileCom.captcharetries", "Captcha retries"), 1, 86400).setDefaultValue(60).setStep(20));
+        getConfig().addEntry(cond);
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), HotFileCom.CAPTCHARETRIES, JDL.L("plugins.hoster.HotFileCom.captcharetries", "Captcha retries"), 1, 86400).setDefaultValue(60).setStep(20));
 
         cond = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), HotFileCom.UNLIMITEDMAXCON, JDL.L("plugins.hoster.HotFileCom.SetUnlimitedConnectionsForPremium", "Allow more than 5 connections per file for premium (default maximum = 5). Enabling this can cause errors!!")).setDefaultValue(false);
-        config.addEntry(cond);
+        getConfig().addEntry(cond);
     }
 
     private void submit(final Browser br, final Form form) throws Exception {
