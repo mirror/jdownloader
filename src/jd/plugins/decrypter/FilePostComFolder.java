@@ -43,9 +43,9 @@ public class FilePostComFolder extends PluginForDecrypt {
         br.getPage(parameter);
         if (br.containsHTML(">This folder is empty<")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the folder no longer exists."));
         String fpName = br.getRegex("<h1>(.*?)</h1>").getMatch(0);
-        String[] links = br.getRegex("<div class=\"file archive\"><a href=\"(https?://.*?)\"").getColumn(0);
+        String[] links = br.getRegex("<div class=\"file (archive|rar)\"><a href=\"(https?://.*?)/?\"").getColumn(1);
         String[] folders = br.getRegex("\"(https?://filepost\\.com/folder/[a-z0-9]+)\"").getColumn(0);
-        if (links == null || links.length == 0) links = br.getRegex("\"(https?://filepost\\.com/files/[a-z0-9]+)\"").getColumn(0);
+        if (links == null || links.length == 0) links = br.getRegex("\"(https?://filepost\\.com/files/[a-z0-9]+(/\\w+)?)\"").getColumn(0);
         if ((links == null || links.length == 0) && (folders == null || folders.length == 0)) return null;
         if (links != null && links.length != 0) {
             for (String dl : links)
