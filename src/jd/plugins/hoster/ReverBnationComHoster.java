@@ -69,7 +69,7 @@ public class ReverBnationComHoster extends PluginForHost {
     private String getDllink(final DownloadLink link) throws IOException, PluginException {
         final Regex infoRegex = new Regex(link.getDownloadURL(), "reverbnationcomid(\\d+)reverbnationcomartist(\\d+)");
         br.postPage("http://www.reverbnation.com/audio_player/add_to_beginning/" + infoRegex.getMatch(0) + "?from_page_object=artist_" + infoRegex.getMatch(1), "");
-        final String damnString = br.getRegex("from_page_object=String_-?(\\d+)\\\\\"").getMatch(0);
+        final String damnString = br.getRegex("from_page_object=(String_)?-?(.*?)\\\\\"").getMatch(1);
         if (damnString == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         // folgender Request macht unten den redirect
         br.postPage("http://www.reverbnation.com/audio_player/set_now_playing_index/0", "");
