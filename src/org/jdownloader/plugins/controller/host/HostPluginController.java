@@ -7,7 +7,6 @@ import java.util.HashMap;
 import java.util.List;
 
 import jd.JDInitFlags;
-import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.HostPlugin;
 import jd.plugins.PluginForHost;
@@ -78,7 +77,7 @@ public class HostPluginController extends PluginController<PluginForHost> {
                 }
             }
         } finally {
-            System.out.println("@HostPluginController: init " + (System.currentTimeMillis() - t));
+            System.out.println("@HostPluginController: init " + (System.currentTimeMillis() - t) + " :" + plugins.size());
         }
         if (plugins.size() == 0) {
             Log.L.severe("@HostPluginController: WTF, no plugins!");
@@ -103,6 +102,7 @@ public class HostPluginController extends PluginController<PluginForHost> {
         List<LazyHostPlugin> ret = new ArrayList<LazyHostPlugin>();
         ArrayList<AbstractHostPlugin> save = new ArrayList<AbstractHostPlugin>();
         for (PluginInfo<PluginForHost> c : scan(HOSTERPATH)) {
+            String simpleName = c.getClazz().getSimpleName();
             HostPlugin a = c.getClazz().getAnnotation(HostPlugin.class);
             if (a != null) {
                 try {
@@ -120,33 +120,31 @@ public class HostPluginController extends PluginController<PluginForHost> {
                             AbstractHostPlugin ap = new AbstractHostPlugin(c.getClazz().getSimpleName());
                             ap.setDisplayName(names[i]);
                             ap.setPattern(patterns[i]);
-                            PluginForHost plg;
-                            try {
-                                plg = (PluginForHost) c.getClazz().newInstance();
-                            } catch (java.lang.InstantiationException e) {
-                                plg = (PluginForHost) c.getClazz().getConstructor(new Class[] { PluginWrapper.class }).newInstance(null);
-                            }
+                            LazyHostPlugin l = new LazyHostPlugin(ap);
+                            PluginForHost plg = l.getPrototype();
                             ap.setPremium(plg.isPremiumEnabled());
                             String purl = plg.getBuyPremiumUrl();
                             if (purl != null && purl.startsWith(HTTP_JDOWNLOADER_ORG_R_PHP_U)) {
+                                /* need to modify buy url */
                                 purl = Encoding.urlDecode(purl.substring(HTTP_JDOWNLOADER_ORG_R_PHP_U.length()), false);
                             }
                             ap.setPremiumUrl(purl);
-                            LazyHostPlugin l = new LazyHostPlugin(ap, c.getClazz(), plg);
-                            list.add(l);
+                            ap.setHasConfig(plg.hasConfig());
+                            l.setHasConfig(plg.hasConfig());
+                            ret.add(l);
                             save.add(ap);
-                            Log.L.severe("@HostPlugin ok:" + c);
+                            Log.L.severe("@HostPlugin ok:" + simpleName + " " + names[i]);
                         } catch (Throwable e) {
-                            Log.L.severe("@HostPlugin failed:" + c + ":" + names[i]);
+                            Log.L.severe("@HostPlugin failed:" + simpleName + " " + names[i]);
                             Log.exception(e);
                         }
                     }
                 } catch (final Throwable e) {
-                    Log.L.severe("@HostPlugin failed:" + c);
+                    Log.L.severe("@HostPlugin failed:" + simpleName);
                     Log.exception(e);
                 }
             } else {
-                Log.L.severe("@HostPlugin missing:" + c);
+                Log.L.severe("@HostPlugin missing:" + simpleName);
             }
         }
         save(save);

@@ -234,7 +234,9 @@ public class PremiumStatus extends JPanel implements MouseListener, ControlListe
                 }
                 popup.show(tpb, e.getPoint().x, e.getPoint().y);
             } else {
-                UserIF.getInstance().requestPanel(UserIF.Panels.CONFIGPANEL, tpb.getPlugin().getConfig());
+                if (tpb.getPlugin().hasConfig()) {
+                    UserIF.getInstance().requestPanel(UserIF.Panels.CONFIGPANEL, tpb.getPlugin().getConfig());
+                }
             }
         }
 

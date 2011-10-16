@@ -59,7 +59,7 @@ public class SoftPediaCom extends PluginForHost {
     }
 
     private void setConfigElements() {
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(), SOFTPEDIASERVERS, servers, JDL.L("plugins.host.SoftPediaCom.servers", "Use this server:")).setDefaultValue(0));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(), SOFTPEDIASERVERS, servers, JDL.L("plugins.host.SoftPediaCom.servers", "Use this server:")).setDefaultValue(0));
     }
 
     private int getConfiguredServer() {

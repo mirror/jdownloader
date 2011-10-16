@@ -45,7 +45,6 @@ public class PluginClassLoader extends URLClassLoader {
 
     public PluginClassLoader() {
         super(new URL[] { Application.getRootURL() }, PluginClassLoader.class.getClassLoader());
-
     }
 
 }

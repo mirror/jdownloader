@@ -11,6 +11,15 @@ public class LazyHostPlugin extends LazyPlugin<PluginForHost> {
 
     private static final String JD_PLUGINS_HOSTER = "jd.plugins.hoster.";
     private String              premiumUrl;
+    private boolean             hasConfig         = false;
+
+    public boolean isHasConfig() {
+        return hasConfig;
+    }
+
+    protected void setHasConfig(boolean hasConfig) {
+        this.hasConfig = hasConfig;
+    }
 
     public String getHost() {
         return getDisplayName();
@@ -20,7 +29,7 @@ public class LazyHostPlugin extends LazyPlugin<PluginForHost> {
         return premiumUrl;
     }
 
-    public void setPremiumUrl(String premiumUrl) {
+    protected void setPremiumUrl(String premiumUrl) {
         this.premiumUrl = premiumUrl;
     }
 
@@ -28,29 +37,17 @@ public class LazyHostPlugin extends LazyPlugin<PluginForHost> {
         return premium;
     }
 
-    public void setPremium(boolean premium) {
+    protected void setPremium(boolean premium) {
         this.premium = premium;
     }
 
     private boolean premium;
 
-    public LazyHostPlugin(AbstractHostPlugin ap, Class<PluginForHost> plgClass, PluginForHost prototype) {
-        super(ap.getPattern(), JD_PLUGINS_HOSTER + ap.getClassname(), ap.getDisplayName());
-        premiumUrl = ap.getPremiumUrl();
-        premium = ap.isPremium();
-
-        this.pluginClass = plgClass;
-        this.prototypeInstance = prototype;
-    }
-
     public LazyHostPlugin(AbstractHostPlugin ap) {
         super(ap.getPattern(), JD_PLUGINS_HOSTER + ap.getClassname(), ap.getDisplayName());
         premiumUrl = ap.getPremiumUrl();
         premium = ap.isPremium();
-    }
-
-    public boolean hasConfig() {
-        return false;
+        hasConfig = ap.isHasConfig();
     }
 
     public ImageIcon getIcon() {

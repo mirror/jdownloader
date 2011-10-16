@@ -168,6 +168,8 @@ public class AccountController implements AccountControllerListener {
             logger.severe("Cannot update AccountInfo, no HosterPlugin available!");
             return null;
         }
+        JDPluginLogger jlog;
+        plugin.setLogger(jlog = new JDPluginLogger("AccountCheck:" + hostname));
         plugin.setBrowser(new Browser());
         AccountInfo ai = account.getAccountInfo();
         if (!forceupdate) {

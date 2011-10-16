@@ -16,155 +16,24 @@
 
 package jd.gui.swing.jdgui.menu;
 
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-
-import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JMenu;
-import javax.swing.JMenuItem;
-import javax.swing.Timer;
-
-import jd.controlling.AccountController;
-import jd.controlling.AccountControllerEvent;
-import jd.controlling.AccountControllerListener;
-import jd.gui.swing.GuiRunnable;
-import jd.gui.swing.jdgui.actions.ActionController;
-import jd.plugins.PluginForHost;
 
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.plugins.controller.host.HostPluginController;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 
-public class PremiumMenu extends JMenu implements ActionListener, AccountControllerListener {
+public class PremiumMenu extends JMenu {
 
     private static final long  serialVersionUID = 5075413754334671773L;
 
     private static PremiumMenu INSTANCE;
 
-    private Timer              updateAsync;
-
     private PremiumMenu() {
         super(_GUI._.gui_menu_premium());
 
-        updateAsync = new Timer(250, this);
-        updateAsync.setInitialDelay(250);
-        updateAsync.setRepeats(false);
-        updateMenu();
-        AccountController.getInstance().addListener(this);
     }
 
     public static PremiumMenu getInstance() {
         if (INSTANCE == null) INSTANCE = new PremiumMenu();
         return INSTANCE;
-    }
-
-    private void updateMenu() {
-        this.add(new JCheckBoxMenuItem(ActionController.getToolBarAction("premiumMenu.toggle")));
-        this.add(ActionController.getToolBarAction("premiumMenu.configuration"));
-        this.addSeparator();
-        this.updateHosts();
-    }
-
-    private void updateHosts() {
-        boolean addedEntry = false;
-
-        PluginForHost plugin;
-        JMenu pluginPopup;
-        JMenuItem mi;
-        ArrayList<LazyHostPlugin> hosts = new ArrayList<LazyHostPlugin>(HostPluginController.getInstance().list());
-        Collections.sort(hosts, new Comparator<LazyHostPlugin>() {
-
-            public int compare(LazyHostPlugin o1, LazyHostPlugin o2) {
-                return o1.getHost().compareToIgnoreCase(o2.getHost());
-            }
-
-        });
-
-        for (LazyHostPlugin wrapper : hosts) {
-            if (!wrapper.isLoaded() || !wrapper.isPremium() || !AccountController.getInstance().hasAccounts(wrapper.getHost())) continue;
-            plugin = wrapper.getPrototype();
-            pluginPopup = new JMenu(wrapper.getHost());
-            pluginPopup.setIcon(plugin.getHosterIcon());
-            ArrayList<MenuAction> nexts = plugin.createMenuitems();
-            for (MenuAction next : nexts) {
-                mi = next.toJMenuItem();
-                if (mi == null) {
-                    pluginPopup.addSeparator();
-                } else {
-                    pluginPopup.add(mi);
-                }
-            }
-            this.add(pluginPopup);
-            addedEntry = true;
-        }
-
-        if (addedEntry) this.addSeparator();
-        int entries = 6;
-        int menus = ('z' - 'a') / entries + 1;
-        JMenu[] jmenus = new JMenu[menus];
-        JMenu num = new JMenu(_GUI._.jd_gui_swing_menu_HosterMenu("0 - 9"));
-        this.add(num);
-        for (LazyHostPlugin wrapper : hosts) {
-            if (!wrapper.isLoaded() || !wrapper.isPremium()) continue;
-            char ccv = wrapper.getHost().toLowerCase().charAt(0);
-            JMenu menu = null;
-            if (ccv >= '0' && ccv <= '9') {
-                menu = num;
-            } else {
-                int index = ((ccv - 'a')) / entries;
-                if (jmenus[index] == null) {
-                    int start = 'a' + index * entries;
-                    int end = Math.min('a' + ((1 + index) * entries) - 1, 'z');
-                    jmenus[index] = new JMenu(_GUI._.jd_gui_swing_menu_HosterMenu(new String(new byte[] { (byte) (start) }).toUpperCase() + " - " + new String(new byte[] { (byte) (end) }).toUpperCase()));
-                    this.add(jmenus[index]);
-                }
-                menu = jmenus[index];
-            }
-
-            plugin = wrapper.getPrototype();
-            pluginPopup = new JMenu(wrapper.getHost());
-            pluginPopup.setIcon(plugin.getHosterIcon());
-            ArrayList<MenuAction> nexts = plugin.createMenuitems();
-
-            for (MenuAction next : nexts) {
-                mi = next.toJMenuItem();
-                if (mi == null) {
-                    pluginPopup.addSeparator();
-                } else {
-                    pluginPopup.add(mi);
-                }
-            }
-            menu.add(pluginPopup);
-        }
-    }
-
-    public void actionPerformed(ActionEvent e) {
-        if (e.getSource() == updateAsync) {
-            new GuiRunnable<Object>() {
-                @Override
-                public Object runSave() {
-                    update();
-                    return null;
-                }
-            }.start();
-        }
-    }
-
-    public void update() {
-        this.removeAll();
-        updateMenu();
-    }
-
-    public void onAccountControllerEvent(AccountControllerEvent event) {
-        switch (event.getEventID()) {
-        case AccountControllerEvent.ACCOUNT_ADDED:
-        case AccountControllerEvent.ACCOUNT_REMOVED:
-            updateAsync.restart();
-            break;
-        }
     }
 
 }

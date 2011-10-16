@@ -7,6 +7,15 @@ public class AbstractHostPlugin implements Storable {
     }
 
     private boolean premium;
+    private boolean hasConfig;
+
+    public boolean isHasConfig() {
+        return hasConfig;
+    }
+
+    public void setHasConfig(boolean hasConfig) {
+        this.hasConfig = hasConfig;
+    }
 
     public boolean isPremium() {
         return premium;

@@ -74,7 +74,7 @@ public class PluginSettingsPanel extends JPanel implements SettingsComponent, Ac
     private void fill() {
         ArrayList<LazyPlugin<?>> list = new ArrayList<LazyPlugin<?>>();
         for (LazyHostPlugin plg : HostPluginController.getInstance().list()) {
-            if (plg.hasConfig()) {
+            if (plg.isHasConfig()) {
                 list.add(plg);
             }
         }
@@ -107,7 +107,6 @@ public class PluginSettingsPanel extends JPanel implements SettingsComponent, Ac
 
             @Override
             protected void runInEDT() {
-                System.out.println("SWITCH");
                 card.removeAll();
                 if (configPanel != null) {
                     configPanel.setHidden();

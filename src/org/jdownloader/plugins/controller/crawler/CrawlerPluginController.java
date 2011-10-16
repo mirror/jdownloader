@@ -6,9 +6,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 
-import jd.DecryptPluginWrapper;
 import jd.JDInitFlags;
-import jd.PluginWrapper;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.PluginForDecrypt;
 
@@ -78,7 +76,7 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
                 }
             }
         } finally {
-            System.out.println("@CrawlerPluginController: init " + (System.currentTimeMillis() - t));
+            System.out.println("@CrawlerPluginController: init " + (System.currentTimeMillis() - t) + " :" + plugins.size());
         }
         if (plugins.size() == 0) {
             Log.L.severe("@CrawlerPluginController: WTF, no plugins!");
@@ -105,6 +103,7 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
         List<LazyCrawlerPlugin> ret = new ArrayList<LazyCrawlerPlugin>();
         ArrayList<AbstractCrawlerPlugin> save = new ArrayList<AbstractCrawlerPlugin>();
         for (PluginInfo<PluginForDecrypt> c : scan(PLUGIN_FOLDER_PATH)) {
+            String simpleName = c.getClazz().getSimpleName();
             DecrypterPlugin a = c.getClazz().getAnnotation(DecrypterPlugin.class);
             if (a != null) {
                 try {
@@ -122,27 +121,22 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
                             AbstractCrawlerPlugin ap = new AbstractCrawlerPlugin(c.getClazz().getSimpleName());
                             ap.setDisplayName(names[i]);
                             ap.setPattern(patterns[i]);
-                            PluginForDecrypt plg = null;
-                            try {
-                                plg = (PluginForDecrypt) c.getClazz().newInstance();
-                            } catch (java.lang.InstantiationException e) {
-                                plg = (PluginForDecrypt) c.getClazz().getConstructor(new Class[] { PluginWrapper.class }).newInstance(new DecryptPluginWrapper(names[i], c.getClazz().getSimpleName(), patterns[i], 0, a.revision()));
-                            }
-                            LazyCrawlerPlugin l = new LazyCrawlerPlugin(ap, c.getClazz(), plg);
+                            LazyCrawlerPlugin l = new LazyCrawlerPlugin(ap);
+                            l.getPrototype();
                             ret.add(l);
                             save.add(ap);
-                            Log.L.severe("@CrawlerPlugin ok:" + c);
+                            Log.L.severe("@CrawlerPlugin ok:" + simpleName + " " + names[i]);
                         } catch (Throwable e) {
-                            Log.L.severe("@CrawlerPlugin failed:" + c + ":" + names[i]);
+                            Log.L.severe("@CrawlerPlugin failed:" + simpleName + " " + names[i]);
                             Log.exception(e);
                         }
                     }
                 } catch (final Throwable e) {
-                    Log.L.severe("@CrawlerPlugin failed:" + c);
+                    Log.L.severe("@CrawlerPlugin failed:" + simpleName);
                     Log.exception(e);
                 }
             } else {
-                Log.L.severe("@CrawlerPlugin missing:" + c);
+                Log.L.severe("@CrawlerPlugin missing:" + simpleName);
             }
         }
         save(save);

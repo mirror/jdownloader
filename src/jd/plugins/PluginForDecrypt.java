@@ -110,6 +110,11 @@ public abstract class PluginForDecrypt extends Plugin {
         this.br = br;
     }
 
+    public PluginForDecrypt getNewInstance() {
+        if (lazyC == null) return null;
+        return lazyC.newInstance();
+    }
+
     @Override
     public long getVersion() {
         return 0;

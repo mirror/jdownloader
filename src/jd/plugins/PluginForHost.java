@@ -209,11 +209,18 @@ public abstract class PluginForHost extends Plugin {
         br.clearCookies(getHost());
     }
 
+    public PluginForHost getNewInstance() {
+        if (lazyP == null) return null;
+        return lazyP.newInstance();
+    }
+
     @Override
     public void actionPerformed(final ActionEvent e) {
         final int eID = e.getID();
         if (eID == 1) {
-            UserIF.getInstance().requestPanel(UserIF.Panels.CONFIGPANEL, getConfig());
+            if (hasConfig()) {
+                UserIF.getInstance().requestPanel(UserIF.Panels.CONFIGPANEL, getConfig());
+            }
             return;
         }
         if (eID == 2) {
@@ -261,7 +268,7 @@ public abstract class PluginForHost extends Plugin {
         MenuAction account;
         MenuAction m;
 
-        if (getConfig() != null && getConfig().getEntries().size() > 0) {
+        if (hasConfig()) {
             m = new MenuAction(_GUI._.action_plugin_config(), "plugins.configs", 1) {
 
                 private static final long serialVersionUID = -5376242428242330373L;

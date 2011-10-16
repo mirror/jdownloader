@@ -140,15 +140,15 @@ public abstract class Plugin implements ActionListener {
         return password;
     }
 
-    protected ConfigContainer config;
+    private ConfigContainer config;
 
-    protected Browser         br = null;
+    protected Browser       br = null;
     /**
      * returns the init time of this plugin. this can be used, for example to
      * ignore further captcha questions if the user decided not to continue
      * decrypting
      */
-    private long              initTime;
+    private long            initTime;
 
     public void setInitTime(long initTime) {
         System.out.println("Set " + this + " " + initTime);
@@ -263,6 +263,11 @@ public abstract class Plugin implements ActionListener {
             };
         }
         return config;
+    }
+
+    public boolean hasConfig() {
+        if (config != null && config.getEntries() != null && config.getEntries().size() > 0) return true;
+        return false;
     }
 
     /**
