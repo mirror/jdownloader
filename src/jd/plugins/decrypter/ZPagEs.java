@@ -30,7 +30,6 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.hoster.DirectHTTP;
 import jd.utils.JDUtilities;
-import jd.utils.locale.JDL;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "zpag.es" }, urls = { "http://(www\\.)?zpag\\.es/(\\d+/int/protect\\-my\\-links\\.com/\\?id=[a-z0-9]+|[A-Za-z0-9]+)" }, flags = { 0 })
 public class ZPagEs extends PluginForDecrypt {
@@ -52,7 +51,7 @@ public class ZPagEs extends PluginForDecrypt {
         br.setFollowRedirects(true);
         synchronized (LOCK) {
             br.getPage(parameter);
-            if (br.containsHTML(">zPag\\.es \\- Invalid Page<")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+            if (br.containsHTML(">zPag\\.es \\- Invalid Page<")) return decryptedLinks;
             if (br.containsHTML(CAPTCHATEXT) || br.getURL().contains(CAPTCHATEXT2)) {
                 for (int i = 0; i <= 5; i++) {
                     PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
