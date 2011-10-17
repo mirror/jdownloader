@@ -26,11 +26,11 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -102,8 +102,9 @@ public class TurboBitNet extends PluginForHost {
         if (id == null) id = new Regex(downloadLink.getDownloadURL(), "turbobit\\.net/(.*?)\\.html").getMatch(0);
         if (id == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.getPage("http://turbobit.net/download/free/" + id);
-        if (br.containsHTML("(Попробуйте повторить через|The limit of connection was succeeded for your|Try to repeat after)")) {
+        if (br.containsHTML("(Попробуйте повторить через|The limit of connection was succeeded for your|Try to repeat after|the limit of connections is reached)")) {
             String waittime = br.getRegex("<span id=\\'timeout\\'>(\\d+)</span></h1>").getMatch(0);
+            if (waittime == null) waittime = br.getRegex("limit: (\\d+),").getMatch(0);
             int wait = 0;
             if (waittime != null) wait = Integer.parseInt(waittime);
             if (wait < 31) {
@@ -157,7 +158,7 @@ public class TurboBitNet extends PluginForHost {
             if (br.getRegex(CAPTCHAREGEX).getMatch(0) != null || br.containsHTML(RECAPTCHATEXT)) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         }
         // Ticket Time
-        String ttt = new Regex(br.toString(), "limit: (\\d+),").getMatch(0);
+        String ttt = new Regex(br.toString(), "limit\\s?:\\s?(\\d+),").getMatch(0);
         int tt = 60;
         if (ttt != null) {
             logger.info(" Waittime detected, waiting " + ttt + " seconds from now on...");
@@ -171,7 +172,9 @@ public class TurboBitNet extends PluginForHost {
             maxtime = br.getRegex("var Timeout.*?maxLimit: (\\d+)").getMatch(0);
             if (maxtime == null) maxtime = Encoding.Base64Decode("NjA=");
         }
-        String finalPage = "http://turbobit.net/download/getLinkAfterTimeout/" + new Regex(downloadLink.getDownloadURL(), "turbobit\\.net/([^/]+)/").getMatch(0) + "/" + Integer.parseInt(maxtime) * 2;
+        String tBitch = new Regex(downloadLink.getDownloadURL(), "turbobit\\.net/([^/]+)/").getMatch(0);
+        tBitch = tBitch == null ? id : tBitch;
+        String finalPage = "http://turbobit.net/download/getLinkAfterTimeout/" + tBitch + "/" + Integer.parseInt(maxtime) * 2;
         sleep(tt * 1001, downloadLink);
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         br.getPage(finalPage);
