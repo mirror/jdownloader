@@ -27,19 +27,18 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {"1gabba.com"}, urls = {"http://[\\w\\.]*?1gabba\\.com/node/[\\d]{4}"}, flags = {0})
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "1gabba.in" }, urls = { "http://[\\w\\.]*?1gabba\\.in/node/\\d+" }, flags = { 0 })
 public class NGbbCm extends PluginForDecrypt {
 
     public NGbbCm(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.getPage(parameter);
-        String linkHMTL = br.getRegex(Pattern.compile("Download links:.*?<div class=\"codeblock\"><pre>(.*?)(</a>)?</pre></div>", Pattern.DOTALL)).getMatch(0);
+        String linkHMTL = br.getRegex(Pattern.compile("<br />  <p><a href=\"(.*?)<div id=\"comments\">", Pattern.DOTALL)).getMatch(0);
         String links[] = new Regex(linkHMTL, Pattern.compile("(http://.+)")).getColumn(0);
         progress.setRange(links.length);
         for (String element : links) {
