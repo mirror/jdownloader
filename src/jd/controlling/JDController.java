@@ -18,15 +18,17 @@ package jd.controlling;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.logging.Logger;
 
-import jd.CPluginWrapper;
 import jd.Main;
 import jd.config.Configuration;
 import jd.config.DatabaseConnector;
 import jd.config.SubConfiguration;
+import jd.controlling.linkcollector.LinkCollectingJob;
+import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.LinkCrawler;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.gui.UserIO;
@@ -40,6 +42,9 @@ import jd.plugins.PluginsC;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.event.Eventsender;
+import org.jdownloader.controlling.filter.LinkFilterController;
+import org.jdownloader.plugins.controller.container.ContainerPluginController;
+import org.jdownloader.plugins.controller.container.LazyContainerPlugin;
 import org.jdownloader.translate._JDT;
 import org.jdownloader.update.RestartController;
 
@@ -240,12 +245,16 @@ public class JDController implements ControlListener {
             break;
         case ControlEvent.CONTROL_ON_FILEOUTPUT:
             final File[] list = (File[]) event.getParameter();
-            for (final File file : list) {
-                if (isContainerFile(file)) {
-                    if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_RELOADCONTAINER, true)) {
-                        loadContainerFile(file);
+            if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_RELOADCONTAINER, true)) {
+                StringBuilder sb = new StringBuilder();
+                for (final File file : list) {
+                    if (sb.length() > 0) {
+                        sb.append("\r\n");
                     }
+                    sb.append("file://");
+                    sb.append(file.getPath());
                 }
+                LinkCollector.getInstance().addCrawlerJob(new LinkCollectingJob(sb.toString()));
             }
             break;
         case ControlEvent.CONTROL_PLUGIN_INACTIVE:
@@ -270,8 +279,9 @@ public class JDController implements ControlListener {
         }
     }
 
-    public String encryptDLC(String xml) {
-        final String[] encrypt = JDUtilities.encrypt(xml, "dlc");
+    public String encryptDLC(PluginsC plg, String xml) {
+        if (xml == null || plg == null) return null;
+        final String[] encrypt = plg.encrypt(xml);
         if (encrypt == null) {
             LOGGER.severe("Container Encryption failed.");
             return null;
@@ -452,45 +462,17 @@ public class JDController implements ControlListener {
         return JDUtilities.getDownloadController().getPackages();
     }
 
-    public static boolean isContainerFile(final File file) {
-        final ArrayList<CPluginWrapper> pluginsForContainer = CPluginWrapper.getCWrapper();
-        for (final CPluginWrapper pContainer : pluginsForContainer) {
-            if (pContainer.canHandle(file.getName())) return true;
-        }
-        return false;
-    }
-
     public ArrayList<DownloadLink> getContainerLinks(final File file) {
-        final ArrayList<CPluginWrapper> pluginsForContainer = CPluginWrapper.getCWrapper();
-        ArrayList<DownloadLink> downloadLinks = new ArrayList<DownloadLink>();
-        PluginsC pContainer;
-        final ProgressController progress = new ProgressController("Containerloader", pluginsForContainer.size(), null);
-        LOGGER.info("load Container: " + file);
-        for (final CPluginWrapper wrapper : pluginsForContainer) {
-            progress.setStatusText("Containerplugin: " + wrapper.getHost());
-            if (wrapper.canHandle(file.getName())) {
-                // es muss jeweils eine neue plugininstanz erzeugt
-                // werden
-                pContainer = (PluginsC) wrapper.getNewPluginInstance();
-                try {
-                    progress.setSource(pContainer);
-                    pContainer.initContainer(file.getAbsolutePath());
-                    final ArrayList<DownloadLink> links = pContainer.getContainedDownloadlinks();
-                    if (links == null || links.size() == 0) {
-                        LOGGER.severe("Container Decryption failed (1)");
-                    } else {
-                        downloadLinks = links;
-                        break;
-                    }
-                } catch (final Throwable e) {
-                    JDLogger.exception(e);
-                }
-            }
-            progress.increase(1);
+        LinkCrawler lc = new LinkCrawler();
+        lc.setFilter(LinkFilterController.getInstance());
+        lc.crawlNormal("file://" + file.getAbsolutePath());
+        lc.waitForCrawling();
+        ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        for (CrawledLink link : lc.getCrawledLinks()) {
+            if (link.getDownloadLink() == null) continue;
+            ret.add(link.getDownloadLink());
         }
-        progress.setStatusText(downloadLinks.size() + " links found");
-        progress.doFinalize();
-        return downloadLinks;
+        return ret;
     }
 
     /**
@@ -504,75 +486,7 @@ public class JDController implements ControlListener {
     }
 
     public static void loadContainerFile(final File file) {
-        loadContainerFile(file, false, false);
-    }
-
-    /**
-     * Hiermit wird eine Containerdatei geöffnet. Dazu wird zuerst ein passendes
-     * Plugin gesucht und danach alle DownloadLinks interpretiert
-     * 
-     * @param file
-     *            Die Containerdatei
-     */
-    public static void loadContainerFile(final File file, final boolean hideGrabber, final boolean autostart) {
-        System.out.println("load container");
-        new Thread() {
-            @Override
-            public void run() {
-                final ArrayList<CPluginWrapper> pluginsForContainer = CPluginWrapper.getCWrapper();
-                ArrayList<DownloadLink> downloadLinks = new ArrayList<DownloadLink>();
-                final ProgressController progress = new ProgressController("Containerloader", pluginsForContainer.size(), null);
-                LOGGER.info("load Container: " + file);
-                for (final CPluginWrapper wrapper : pluginsForContainer) {
-                    progress.setStatusText("Containerplugin: " + wrapper.getHost());
-                    if (wrapper.canHandle(file.getName())) {
-                        // es muss jeweils eine neue plugininstanz erzeugt
-                        // werden
-                        final PluginsC pContainer = (PluginsC) wrapper.getNewPluginInstance();
-                        try {
-                            progress.setSource(pContainer);
-                            pContainer.initContainer(file.getAbsolutePath());
-                            final ArrayList<DownloadLink> links = pContainer.getContainedDownloadlinks();
-                            if (links == null || links.size() == 0) {
-                                LOGGER.severe("Container Decryption failed (1)");
-                            } else {
-                                downloadLinks = links;
-                                break;
-                            }
-                        } catch (final Throwable e) {
-                            JDLogger.exception(e);
-                        }
-                    }
-                    progress.increase(1);
-                }
-                progress.setStatusText(downloadLinks.size() + " links found");
-                if (downloadLinks.size() > 0) {
-                    if (SubConfiguration.getConfig("GUI").getBooleanProperty(Configuration.PARAM_SHOW_CONTAINER_ONLOAD_OVERVIEW, false)) {
-                        final String html = "<style>p { font-size:9px;margin:1px; padding:0px;}div {font-family:Geneva, Arial, Helvetica, sans-serif; width:400px;background-color:#ffffff; padding:2px;}h1 { vertical-align:top; text-align:left;font-size:10px; margin:0px; display:block;font-weight:bold; padding:0px;}</style><div> <div align='center'> <p><img src='http://jdownloader.org/img/%s.gif'> </p> </div> <h1>%s</h1><hr> <table width='100%%' border='0' cellspacing='5'> <tr> <td><p>%s</p></td> <td style='width:100%%'><p>%s</p></td> </tr> <tr> <td><p>%s</p></td> <td style='width:100%%'><p>%s</p></td> </tr> <tr> <td><p>%s</p></td> <td style='width:100%%'><p>%s</p></td> </tr> <tr> <td><p>%s</p></td> <td style='width:100%%'><p>%s</p></td> </tr> </table> </div>";
-                        String app;
-                        String uploader;
-                        FilePackage filePackage = downloadLinks.get(0).getFilePackage();
-                        if (filePackage.getProperty("header", null) != null) {
-                            final HashMap<String, String> header = filePackage.getGenericProperty("header", new HashMap<String, String>());
-                            uploader = header.get("tribute");
-                            app = header.get("generator.app") + " v." + header.get("generator.version") + " (" + header.get("generator.url") + ")";
-                        } else {
-                            app = "n.A.";
-                            uploader = "n.A";
-                        }
-                        String comment = filePackage.getComment();
-                        if (comment == null) comment = "";
-                        String password = filePackage.getPassword();
-                        if (password == null) password = "";
-                        JDFlags.hasAllFlags(UserIO.getInstance().requestConfirmDialog(UserIO.NO_COUNTDOWN | UserIO.STYLE_HTML, _JDT._.container_message_title(), String.format(html, JDIO.getFileExtension(file).toLowerCase(), _JDT._.container_message_title(), _JDT._.container_message_uploaded(), uploader, _JDT._.container_message_created(), app, _JDT._.container_message_comment(), comment, _JDT._.container_message_password(), password)), UserIO.RETURN_OK);
-
-                    }
-                    // schickt die Links zuerst mal zum Linkgrabber
-                    LinkGrabberController.getInstance().addLinks(downloadLinks, hideGrabber, autostart);
-                }
-                progress.doFinalize();
-            }
-        }.start();
+        LinkCollector.getInstance().addCrawlerJob(new LinkCollectingJob("file://" + file.getAbsolutePath()));
     }
 
     /**
@@ -587,20 +501,29 @@ public class JDController implements ControlListener {
         if (!file.getAbsolutePath().endsWith("dlc")) {
             file = new File(file.getAbsolutePath() + ".dlc");
         }
-
-        final String xml = JDUtilities.createContainerString(links, "dlc");
-        final String cipher = encryptDLC(xml);
-        if (cipher != null) {
-            final SubConfiguration cfg = SubConfiguration.getConfig("DLCrypt");
-            JDIO.writeLocalFile(file, cipher);
-            if (cfg.getBooleanProperty("SHOW_INFO_AFTER_CREATE", false)) {
-                // Nur Falls Die Meldung nicht deaktiviert wurde {
-                if (JDFlags.hasSomeFlags(UserIO.getInstance().requestConfirmDialog(UserIO.NO_COUNTDOWN, _JDT._.sys_dlc_success()), UserIO.RETURN_OK)) {
-                    loadContainerFile(file);
-                    return;
-                }
+        String xml = null;
+        PluginsC plg = null;
+        for (LazyContainerPlugin p : ContainerPluginController.getInstance().list()) {
+            if ("DLC".equalsIgnoreCase(p.getDisplayName())) {
+                plg = p.newInstance();
+                xml = plg.createContainerString(links);
+                break;
             }
-            return;
+        }
+        if (xml != null) {
+            final String cipher = encryptDLC(plg, xml);
+            if (cipher != null) {
+                final SubConfiguration cfg = SubConfiguration.getConfig("DLCrypt");
+                JDIO.writeLocalFile(file, cipher);
+                if (cfg.getBooleanProperty("SHOW_INFO_AFTER_CREATE", false)) {
+                    // Nur Falls Die Meldung nicht deaktiviert wurde {
+                    if (JDFlags.hasSomeFlags(UserIO.getInstance().requestConfirmDialog(UserIO.NO_COUNTDOWN, _JDT._.sys_dlc_success()), UserIO.RETURN_OK)) {
+                        loadContainerFile(file);
+                        return;
+                    }
+                }
+                return;
+            }
         }
         LOGGER.severe("Container creation failed");
         UserIO.getInstance().requestMessageDialog("Container encryption failed");
@@ -655,10 +578,6 @@ public class JDController implements ControlListener {
 
     public LinkedList<DownloadLink> getDownloadLinksByPathPattern(final String matcher) {
         return DownloadController.getInstance().getDownloadLinksByPathPattern(matcher);
-    }
-
-    public static void distributeLinks(final String data) {
-        new DistributeData(data).start();
     }
 
 }

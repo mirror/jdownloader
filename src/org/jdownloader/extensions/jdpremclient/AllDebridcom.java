@@ -36,7 +36,7 @@ public class AllDebridcom extends PluginForHost implements JDPremInterface {
     public AllDebridcom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.alldebrid.com/");
-        infostring = "Alldebrid.com @ " + wrapper.getHost();
+        infostring = "Alldebrid.com @ " + wrapper.getLazy().getDisplayName();
     }
 
     @Override

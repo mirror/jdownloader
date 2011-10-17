@@ -34,7 +34,7 @@ public class LeechIo extends PluginForHost implements JDPremInterface {
     public LeechIo(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://leech.io/");
-        infostring = "leech.io @ " + wrapper.getHost();
+        infostring = "leech.io @ " + wrapper.getLazy().getDisplayName();
     }
 
     @Override

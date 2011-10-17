@@ -225,7 +225,6 @@ public class JDInit {
     public void initPlugins() {
 
         try {
-            this.loadCPlugins();
             // init Extensioncontroller
             ExtensionController.getInstance().load();
         } catch (final Throwable e) {
@@ -295,39 +294,6 @@ public class JDInit {
             JDUtilities.getConfiguration().setProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY, Property.NULL);
         }
         JDUtilities.getConfiguration().save();
-    }
-
-    public void loadCPlugins() {
-        try {
-            new CPluginWrapper("ccf", "C", ".+\\.ccf");
-        } catch (final Throwable e) {
-            e.printStackTrace();
-        }
-        try {
-            new CPluginWrapper("rsdf", "R", ".+\\.rsdf");
-        } catch (final Throwable e) {
-            e.printStackTrace();
-        }
-        try {
-            new CPluginWrapper("dlc", "D", ".+\\.dlc");
-        } catch (final Throwable e) {
-            e.printStackTrace();
-        }
-        try {
-            new CPluginWrapper("jdc", "J", ".+\\.jdc");
-        } catch (final Throwable e) {
-            e.printStackTrace();
-        }
-        try {
-            new CPluginWrapper("metalink", "MetaLink", ".+\\.metalink");
-        } catch (final Throwable e) {
-            e.printStackTrace();
-        }
-        try {
-            new CPluginWrapper("Amazon MP3", "AMZ", ".+\\.amz");
-        } catch (final Throwable e) {
-            e.printStackTrace();
-        }
     }
 
     private void submitVersion() {

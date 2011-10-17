@@ -1,9 +1,9 @@
-package org.jdownloader.plugins.controller.crawler;
+package org.jdownloader.plugins.controller.container;
 
 import org.appwork.storage.Storable;
 
-public class AbstractCrawlerPlugin implements Storable {
-    public AbstractCrawlerPlugin(/* STorable */) {
+public class AbstractContainerPlugin implements Storable {
+    public AbstractContainerPlugin(/* storable */) {
     }
 
     private String  classname;
@@ -44,7 +44,7 @@ public class AbstractCrawlerPlugin implements Storable {
 
     private String pattern;
 
-    public AbstractCrawlerPlugin(String className) {
+    public AbstractContainerPlugin(String className) {
         this.classname = className;
     }
 

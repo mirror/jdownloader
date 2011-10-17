@@ -29,7 +29,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
-import jd.plugins.PluginsC;
 import jd.utils.JDUtilities;
 
 import org.appwork.scheduler.DelayedRunnable;
@@ -39,6 +38,9 @@ import org.appwork.utils.Exceptions;
 import org.appwork.utils.event.Eventsender;
 import org.appwork.utils.event.queue.Queue.QueuePriority;
 import org.appwork.utils.event.queue.QueueAction;
+import org.appwork.utils.logging.Log;
+import org.jdownloader.plugins.controller.host.HostPluginController;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 
 public class DownloadController extends PackageController<FilePackage, DownloadLink> {
 
@@ -152,8 +154,6 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
             final Iterator<FilePackage> iterator = packages.iterator();
             DownloadLink localLink;
             PluginForHost pluginForHost = null;
-            PluginsC pluginForContainer = null;
-            // String tmp2 = null;
             Iterator<DownloadLink> it;
             FilePackage fp;
             while (iterator.hasNext()) {
@@ -187,28 +187,16 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                         } catch (final Throwable e) {
                             JDLogger.exception(e);
                         }
-                        // Gibt es einen Names für ein Containerformat,
-                        // wird ein passendes Plugin gesucht
-                        try {
-                            if (localLink.getContainer() != null) {
-                                pluginForContainer = JDUtilities.getPluginForContainer(localLink.getContainer());
-                                if (pluginForContainer == null) {
-                                    localLink.setEnabled(false);
-                                }
-                            }
-                        } catch (final NullPointerException e) {
-                            JDLogger.exception(e);
-                        }
                         if (pluginForHost == null) {
                             try {
-                                pluginForHost = JDUtilities.replacePluginForHost(localLink);
+                                pluginForHost = replacePluginForHost(localLink);
                             } catch (final Throwable e) {
-                                JDLogger.exception(e);
+                                Log.exception(e);
                             }
                             if (pluginForHost != null) {
-                                JDLogger.getLogger().info("plugin " + pluginForHost.getHost() + " now handles " + localLink.getName());
+                                Log.L.info("plugin " + pluginForHost.getHost() + " now handles " + localLink.getName());
                             } else {
-                                JDLogger.getLogger().severe("could not find plugin " + localLink.getHost() + " for " + localLink.getName());
+                                Log.L.severe("could not find plugin " + localLink.getHost() + " for " + localLink.getName());
                             }
                         }
                         if (pluginForHost != null) {
@@ -218,16 +206,19 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                              */
                             localLink.setDefaultPlugin(pluginForHost);
                         }
-                        if (pluginForContainer != null) {
-                            localLink.setLoadedPluginForContainer(pluginForContainer);
-                        }
-
                     }
                 }
             }
             return new LinkedList<FilePackage>(packages);
         }
         throw new Exception("Linklist incompatible");
+    }
+
+    private PluginForHost replacePluginForHost(DownloadLink localLink) {
+        for (LazyHostPlugin p : HostPluginController.getInstance().list()) {
+            if (p.getPrototype().rewriteHost(localLink)) return p.getPrototype();
+        }
+        return null;
     }
 
     public LinkedList<FilePackage> getPackages() {

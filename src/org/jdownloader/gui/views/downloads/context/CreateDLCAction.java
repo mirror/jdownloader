@@ -11,6 +11,7 @@ import jd.plugins.DownloadLink;
 import jd.utils.JDUtilities;
 
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.plugins.controller.container.ContainerPluginController;
 
 public class CreateDLCAction extends ContextMenuAction {
 
@@ -35,7 +36,7 @@ public class CreateDLCAction extends ContextMenuAction {
     }
 
     public void actionPerformed(ActionEvent e) {
-        File[] files = UserIO.getInstance().requestFileChooser("_LOADSAVEDLC", null, null, new JDFileFilter(null, JDUtilities.getContainerExtensions("dlc"), true), null, null, UserIO.SAVE_DIALOG);
+        File[] files = UserIO.getInstance().requestFileChooser("_LOADSAVEDLC", null, null, new JDFileFilter(null, ContainerPluginController.getInstance().getContainerExtensions("dlc"), true), null, null, UserIO.SAVE_DIALOG);
         if (files == null) return;
 
         JDUtilities.getController().saveDLC(files[0], links);

@@ -13,16 +13,20 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.config.Property;
 import jd.controlling.IOPermission;
+import jd.controlling.JDPluginLogger;
 import jd.http.Browser;
 import jd.parser.html.HTMLParser;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
+import jd.plugins.PluginsC;
 
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Regex;
 import org.appwork.utils.logging.Log;
+import org.jdownloader.plugins.controller.container.ContainerPluginController;
+import org.jdownloader.plugins.controller.container.LazyContainerPlugin;
 import org.jdownloader.plugins.controller.crawler.CrawlerPluginController;
 import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin;
 import org.jdownloader.plugins.controller.host.HostPluginController;
@@ -358,6 +362,71 @@ public class LinkCrawler implements IOPermission {
                 if (url == null) continue;
                 if (!url.startsWith("directhttp")) {
                     /*
+                     * first we will walk through all available container
+                     * plugins
+                     */
+                    for (final LazyContainerPlugin pCon : ContainerPluginController.getInstance().list()) {
+                        if (pCon.canHandle(url)) {
+                            try {
+                                PluginsC plg = pCon.getPrototype();
+                                if (plg != null) {
+                                    ArrayList<CrawledLink> allPossibleCryptedLinks = plg.getContainerLinks(url);
+                                    if (allPossibleCryptedLinks != null) {
+                                        for (final CrawledLink decryptThis : allPossibleCryptedLinks) {
+                                            /*
+                                             * forward important data to new
+                                             * ones
+                                             */
+                                            forwardCrawledLinkInfos(possibleCryptedLink, decryptThis);
+                                            if (possibleCryptedLink.getCryptedLink() != null) {
+                                                /*
+                                                 * source contains CryptedLink,
+                                                 * so lets forward important
+                                                 * infos
+                                                 */
+                                                HashMap<String, Object> props = possibleCryptedLink.getCryptedLink().getProperties();
+                                                if (props != null && !props.isEmpty()) {
+                                                    decryptThis.getCryptedLink().setProperties(new HashMap<String, Object>(props));
+                                                }
+                                                decryptThis.getCryptedLink().setDecrypterPassword(possibleCryptedLink.getCryptedLink().getDecrypterPassword());
+                                            }
+
+                                            if (insideDecrypterPlugin()) {
+                                                /*
+                                                 * direct decrypt this link
+                                                 * because we are already inside
+                                                 * a LinkCrawlerThread and this
+                                                 * avoids deadlocks on plugin
+                                                 * waiting for linkcrawler
+                                                 * results
+                                                 */
+                                                container(decryptThis);
+                                            } else {
+                                                /*
+                                                 * enqueue this cryptedLink for
+                                                 * decrypting
+                                                 */
+                                                checkStartNotify();
+                                                threadPool.execute(new LinkCrawlerRunnable(LinkCrawler.this) {
+                                                    public void run() {
+                                                        try {
+                                                            container(decryptThis);
+                                                        } finally {
+                                                            checkFinishNotify();
+                                                        }
+                                                    }
+                                                });
+                                            }
+                                        }
+                                    }
+                                }
+                            } catch (Throwable e) {
+                                Log.exception(e);
+                            }
+                            continue mainloop;
+                        }
+                    }
+                    /*
                      * first we will walk through all available decrypter
                      * plugins
                      */
@@ -524,6 +593,82 @@ public class LinkCrawler implements IOPermission {
         return crawler.get() == 0;
     }
 
+    protected void container(final CrawledLink cryptedLink) {
+        checkStartNotify();
+        try {
+            synchronized (duplicateFinder) {
+                /* did we already decrypt this crypted link? */
+                if (!duplicateFinder.add(cryptedLink.getURL())) { return; }
+            }
+            if (this.isCrawledLinkFiltered(cryptedLink)) {
+                /* link is filtered, stop here */
+                return;
+            }
+            if (cryptedLink == null || cryptedLink.getcPlugin() == null || cryptedLink.getURL() == null) return;
+            PluginsC plg = cryptedLink.getcPlugin().getNewInstance();
+            plg.setBrowser(new Browser());
+            plg.setLogger(new JDPluginLogger(cryptedLink.getURL()));
+            /* now we run the plugin and let it find some links */
+            LinkCrawlerThread lct = null;
+            if (Thread.currentThread() instanceof LinkCrawlerThread) {
+                lct = (LinkCrawlerThread) Thread.currentThread();
+            }
+            boolean lctb = false;
+            LinkCrawlerDistributer dist = null;
+            ArrayList<DownloadLink> decryptedPossibleLinks = null;
+            try {
+                /*
+                 * set LinkCrawlerDistributer in case the plugin wants to add
+                 * links in realtime
+                 */
+                dist = new LinkCrawlerDistributer() {
+
+                    public void distribute(DownloadLink... links) {
+                        if (links == null || links.length == 0) return;
+                        final ArrayList<CrawledLink> possibleCryptedLinks = new ArrayList<CrawledLink>(links.length);
+                        for (DownloadLink link : links) {
+                            /*
+                             * we set source url here to hide the original link
+                             * if needed
+                             */
+                            link.setBrowserUrl(cryptedLink.getURL());
+                            CrawledLink ret;
+                            possibleCryptedLinks.add(ret = new CrawledLink(link));
+                            forwardCrawledLinkInfos(cryptedLink, ret);
+                        }
+                        checkStartNotify();
+                        /* enqueue distributing of the links */
+                        threadPool.execute(new LinkCrawlerRunnable(LinkCrawler.this) {
+                            public void run() {
+                                try {
+                                    LinkCrawler.this.distribute(possibleCryptedLinks);
+                                } finally {
+                                    checkFinishNotify();
+                                }
+                            }
+                        });
+                    }
+                };
+                if (lct != null) {
+                    /* mark thread to be used by decrypter plugin */
+                    lctb = lct.isLinkCrawlerThreadUsedbyDecrypter();
+                    lct.setLinkCrawlerThreadUsedbyDecrypter(true);
+                }
+                decryptedPossibleLinks = plg.decryptContainer(cryptedLink);
+            } finally {
+                if (lct != null) {
+                    /* reset thread to last known used state */
+                    lct.setLinkCrawlerThreadUsedbyDecrypter(lctb);
+                }
+            }
+            if (decryptedPossibleLinks != null) {
+                dist.distribute(decryptedPossibleLinks.toArray(new DownloadLink[decryptedPossibleLinks.size()]));
+            }
+        } finally {
+            checkFinishNotify();
+        }
+    }
+
     protected void crawl(final CrawledLink cryptedLink) {
         checkStartNotify();
         try {
@@ -536,11 +681,10 @@ public class LinkCrawler implements IOPermission {
                 return;
             }
             if (cryptedLink == null || cryptedLink.getdPlugin() == null || cryptedLink.getCryptedLink() == null) return;
-            /* we have to create new plugin instance here */
-            LazyCrawlerPlugin lazyC = CrawlerPluginController.getInstance().get(cryptedLink.getdPlugin().getHost());
-            PluginForDecrypt plg = lazyC.newInstance();
+            PluginForDecrypt plg = cryptedLink.getdPlugin().getNewInstance();
             plg.setIOPermission(this);
             plg.setBrowser(new Browser());
+            plg.setLogger(new JDPluginLogger(cryptedLink.getURL()));
             /* now we run the plugin and let it find some links */
             LinkCrawlerThread lct = null;
             if (Thread.currentThread() instanceof LinkCrawlerThread) {

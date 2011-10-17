@@ -18,13 +18,13 @@ package jd.controlling;
 
 import java.util.ArrayList;
 
-import jd.CPluginWrapper;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.LinkCrawler;
 import jd.parser.html.HTMLParser;
 import jd.plugins.DownloadLink;
 
 import org.appwork.utils.Regex;
+import org.jdownloader.controlling.filter.LinkFilterController;
 
 /**
  * Diese Klasse läuft in einem Thread und verteilt den Inhalt der Zwischenablage
@@ -68,14 +68,6 @@ public class DistributeData extends Thread {
     }
 
     @Deprecated
-    public static boolean hasContainerPluginFor(final String tmp) {
-        for (CPluginWrapper cDecrypt : CPluginWrapper.getCWrapper()) {
-            if (cDecrypt.canHandle(tmp)) return true;
-        }
-        return false;
-    }
-
-    @Deprecated
     public static boolean hasPluginFor(final String tmp, final boolean filterNormalHTTP) {
         return true;
     }
@@ -84,6 +76,7 @@ public class DistributeData extends Thread {
     public ArrayList<DownloadLink> findLinks() {
         foundPasswords.addAll(HTMLParser.findPasswords(data));
         LinkCrawler lf = new LinkCrawler();
+        lf.setFilter(LinkFilterController.getInstance());
         lf.crawlNormal(data);
         lf.waitForCrawling();
         ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>(lf.getCrawledLinks().size());

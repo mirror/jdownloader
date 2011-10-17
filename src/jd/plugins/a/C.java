@@ -28,7 +28,6 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.Vector;
-import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.controlling.JDLogger;
@@ -37,11 +36,13 @@ import jd.http.requests.FormData;
 import jd.http.requests.PostFormDataRequest;
 import jd.nutils.io.JDIO;
 import jd.parser.Regex;
+import jd.plugins.ContainerPlugin;
 import jd.plugins.ContainerStatus;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginsC;
 import jd.utils.JDUtilities;
 
+@ContainerPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "CCF" }, urls = { "file://.+\\.ccf" })
 public class C extends PluginsC {
 
     public C(PluginWrapper wrapper) {
@@ -178,11 +179,6 @@ public class C extends PluginsC {
         return new ArrayList<DownloadLink>();
     }
 
-    // @Override
-    public long getVersion() {
-        return 4;
-    }
-
     /*
      * (non-Javadoc)
      * 
@@ -192,16 +188,6 @@ public class C extends PluginsC {
     // @Override
     public void initContainer(final String filename) {
         callDecryption(new File(filename));
-    }
-
-    @Override
-    public String getHost() {
-        return null;
-    }
-
-    @Override
-    public Pattern getSupportedLinks() {
-        return null;
     }
 
 }

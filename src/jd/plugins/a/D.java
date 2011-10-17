@@ -15,7 +15,6 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.regex.Pattern;
 
 import javax.crypto.Cipher;
 import javax.crypto.spec.IvParameterSpec;
@@ -37,6 +36,7 @@ import jd.nutils.encoding.Base64;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.HTMLParser;
+import jd.plugins.ContainerPlugin;
 import jd.plugins.ContainerStatus;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
@@ -54,6 +54,7 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
+@ContainerPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "DLC" }, urls = { "file://.+\\.dlc" })
 public class D extends PluginsC {
 
     private byte[]                  b3;
@@ -358,11 +359,6 @@ public class D extends PluginsC {
     public String getCoder() {
         // TODO Auto-generated method stub
         return "JD-DLC-Team";
-    }
-
-    // //@Override
-    public long getVersion() {
-        return 1;
     }
 
     private String b(File fu) {
@@ -1067,16 +1063,6 @@ public class D extends PluginsC {
         } catch (Exception e) {
             jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
         }
-        return null;
-    }
-
-    @Override
-    public String getHost() {
-        return null;
-    }
-
-    @Override
-    public Pattern getSupportedLinks() {
         return null;
     }
 

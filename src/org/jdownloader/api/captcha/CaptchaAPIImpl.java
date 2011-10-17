@@ -11,7 +11,6 @@ import jd.controlling.captcha.CaptchaDialogQueue;
 import jd.controlling.captcha.CaptchaDialogQueueEntry;
 import jd.controlling.captcha.CaptchaEventListener;
 import jd.controlling.captcha.CaptchaEventSender;
-import jd.controlling.linkcrawler.LinkCrawler;
 
 import org.appwork.net.protocol.http.HTTPConstants.ResponseCode;
 import org.appwork.remoteapi.EventsAPIEvent;
@@ -99,9 +98,4 @@ public class CaptchaAPIImpl implements CaptchaAPI, CaptchaEventListener {
         }
     }
 
-    public boolean captcha() {
-        LinkCrawler lc = new LinkCrawler();
-
-        return true;
-    }
 }

@@ -41,7 +41,7 @@ public class LinkSnappycom extends PluginForHost implements JDPremInterface {
     public LinkSnappycom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.linksnappy.com/members/index.php?act=register");
-        infostring = "LinkSnappy.com @ " + wrapper.getHost();
+        infostring = "LinkSnappy.com @ " + wrapper.getLazy().getDisplayName();
     }
 
     @Override

@@ -776,10 +776,6 @@ public abstract class PluginForHost extends Plugin {
         return;
     }
 
-    public boolean isAGBChecked() {
-        return true;
-    }
-
     /**
      * Stellt das Plugin in den Ausgangszustand zurueck (variablen intialisieren
      * etc)

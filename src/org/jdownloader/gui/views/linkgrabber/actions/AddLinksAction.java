@@ -2,6 +2,7 @@ package org.jdownloader.gui.views.linkgrabber.actions;
 
 import java.awt.event.ActionEvent;
 
+import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcrawler.LinkCrawler;
 
@@ -10,7 +11,6 @@ import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.linkgrabber.addlinksdialog.AddLinksDialog;
-import org.jdownloader.gui.views.linkgrabber.addlinksdialog.CrawlerJob;
 
 public class AddLinksAction extends AppAction {
     public AddLinksAction() {
@@ -22,7 +22,7 @@ public class AddLinksAction extends AppAction {
     public void actionPerformed(ActionEvent e) {
         try {
             AddLinksDialog dialog = new AddLinksDialog();
-            final CrawlerJob crawljob = Dialog.getInstance().showDialog(dialog);
+            final LinkCollectingJob crawljob = Dialog.getInstance().showDialog(dialog);
             new Thread("AddLinksDialog") {
                 public void run() {
                     LinkCrawler lc = LinkCollector.getInstance().addCrawlerJob(crawljob);

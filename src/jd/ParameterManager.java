@@ -21,10 +21,9 @@ import java.util.Vector;
 import java.util.logging.Logger;
 
 import jd.captcha.JACController;
-import jd.controlling.DistributeData;
-import jd.controlling.DownloadWatchDog;
-import jd.controlling.JDController;
 import jd.controlling.PasswordListController;
+import jd.controlling.linkcollector.LinkCollectingJob;
+import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.reconnect.Reconnecter;
 import jd.gui.UIConstants;
 import jd.gui.UserIF;
@@ -32,9 +31,7 @@ import jd.utils.JDUtilities;
 
 public class ParameterManager {
 
-    private static final Logger LOG              = jd.controlling.JDLogger.getLogger();
-    private static boolean      startDownload    = false;
-    private static final long   serialVersionUID = 1L;
+    private static final Logger LOG = jd.controlling.JDLogger.getLogger();
 
     public static void processParameters(final String[] input) {
 
@@ -44,8 +41,6 @@ public class ParameterManager {
 
         final Vector<String> linksToAdd = new Vector<String>();
         final Vector<String> containersToAdd = new Vector<String>();
-
-        boolean hideGrabber = false;
 
         for (final String currentArg : input) {
 
@@ -77,24 +72,6 @@ public class ParameterManager {
                 addLinksSwitch = false;
                 addPasswordsSwitch = true;
                 ParameterManager.LOG.info(currentArg + " parameter");
-            } else if (currentArg.equals("--start-download") || currentArg.equals("-d")) {
-
-                addLinksSwitch = false;
-                addContainersSwitch = false;
-                addPasswordsSwitch = false;
-
-                ParameterManager.LOG.info(currentArg + " parameter");
-                ParameterManager.startDownload = true;
-
-            } else if (currentArg.equals("--stop-download") || currentArg.equals("-D")) {
-
-                addLinksSwitch = false;
-                addContainersSwitch = false;
-                addPasswordsSwitch = false;
-
-                ParameterManager.LOG.info(currentArg + " parameter");
-
-                DownloadWatchDog.getInstance().stopDownloads();
 
             } else if (currentArg.equals("--show") || currentArg.equals("-s")) {
 
@@ -133,14 +110,6 @@ public class ParameterManager {
                 // addPasswordsSwitch = false;
                 // ParameterManager.LOG.info(currentArg + " parameter");
                 // UserIF.getInstance().setFrameStatus(UIConstants.WINDOW_STATUS_FOREGROUND);
-
-            } else if (currentArg.equals("--hide") || currentArg.equals("-H")) {
-
-                addLinksSwitch = false;
-                addContainersSwitch = false;
-                addPasswordsSwitch = false;
-                ParameterManager.LOG.info(currentArg + " parameter");
-                hideGrabber = true;
 
             } else if (currentArg.equals("--reconnect") || currentArg.equals("-r")) {
 
@@ -198,27 +167,21 @@ public class ParameterManager {
             ParameterManager.LOG.info("Containers to add: " + containersToAdd.toString());
         }
 
-        final int size = containersToAdd.size();
-        for (int i = 0; i < size; i++) {
-            JDController.loadContainerFile(new File(containersToAdd.get(i)), hideGrabber, ParameterManager.startDownload);
-        }
         final StringBuilder adder = new StringBuilder();
         for (final String string : linksToAdd) {
+            if (adder.length() > 0) adder.append("\r\n");
             adder.append(string);
-            adder.append('\n');
         }
-        final String linksToAddString = adder.toString().trim();
-        if (!linksToAddString.equals("")) {
-            new DistributeData(linksToAddString, hideGrabber).start();
+        for (final String string : containersToAdd) {
+            if (adder.length() > 0) adder.append("\r\n");
+            adder.append("file://");
+            adder.append(string);
         }
-        if (ParameterManager.startDownload) {
-            DownloadWatchDog.getInstance().startDownloads();
-        }
+        LinkCollector.getInstance().addCrawlerJob(new LinkCollectingJob(adder.toString()));
     }
 
     public static void showCmdHelp() {
-        final String[][] help = new String[][] { { JDUtilities.getJDTitle(), "JD-Team" }, { "http://jdownloader.org/\t\t", "http://board.jdownloader.org" + System.getProperty("line.separator") }, { "-h/--help\t", "Show this help message" }, { "-a/--add-link(s)", "Add links" }, { "-co/--add-container(s)", "Add containers" }, { "-d/--start-download", "Start download" }, { "-D/--stop-download", "Stop download" }, { "-H/--hide\t", "Don't open Linkgrabber when adding Links" }, { "-m/--minimize\t", "Minimize download window" }, { "-f/--focus\t", "Get jD to foreground/focus" }, { "-s/--show\t", "Show JAC prepared captchas" }, { "-t/--train\t", "Train a JAC method" }, { "-r/--reconnect\t", "Perform a Reconnect" }, { "-C/--captcha <filepath or url> <method>", "Get code from image using JAntiCaptcha" }, { "-p/--add-password(s)", "Add passwords" },
-                { "-n --new-instance", "Force new instance if another jD is running" } };
+        final String[][] help = new String[][] { { JDUtilities.getJDTitle(), "JD-Team" }, { "http://jdownloader.org/\t\t", "http://board.jdownloader.org" + System.getProperty("line.separator") }, { "-h/--help\t", "Show this help message" }, { "-a/--add-link(s)", "Add links" }, { "-co/--add-container(s)", "Add containers" }, { "-m/--minimize\t", "Minimize download window" }, { "-f/--focus\t", "Get jD to foreground/focus" }, { "-s/--show\t", "Show JAC prepared captchas" }, { "-t/--train\t", "Train a JAC method" }, { "-r/--reconnect\t", "Perform a Reconnect" }, { "-C/--captcha <filepath or url> <method>", "Get code from image using JAntiCaptcha" }, { "-p/--add-password(s)", "Add passwords" }, { "-n --new-instance", "Force new instance if another jD is running" } };
         for (final String helpLine[] : help) {
             System.out.println(helpLine[0] + "\t" + helpLine[1]);
         }

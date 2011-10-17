@@ -1,11 +1,19 @@
-package org.jdownloader.gui.views.linkgrabber.addlinksdialog;
+package jd.controlling.linkcollector;
 
 import java.io.File;
 
-public class CrawlerJob {
+public class LinkCollectingJob {
     private String  text;
     private boolean autoExtract;
     private boolean deepAnalyse;
+
+    public LinkCollectingJob() {
+        this(null);
+    }
+
+    public LinkCollectingJob(String text) {
+        this.text = text;
+    }
 
     public String getText() {
         return text;

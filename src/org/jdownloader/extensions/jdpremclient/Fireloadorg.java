@@ -37,7 +37,7 @@ public class Fireloadorg extends PluginForHost implements JDPremInterface {
     public Fireloadorg(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://fireload.org");
-        infostring = "Fireload.org @ " + wrapper.getHost();
+        infostring = "Fireload.org @ " + wrapper.getLazy().getDisplayName();
     }
 
     @Override

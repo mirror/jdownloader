@@ -39,7 +39,6 @@ public abstract class LazyPlugin<T extends Plugin> {
     }
 
     public boolean canHandle(String url) {
-
         final Pattern pattern = this.getPattern();
         if (pattern != null) {
             final Matcher matcher = pattern.matcher(url);

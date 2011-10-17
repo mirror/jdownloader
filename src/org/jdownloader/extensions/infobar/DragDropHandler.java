@@ -57,7 +57,7 @@ public class DragDropHandler extends TransferHandler {
                         JDController.loadContainerFile(new File(file.trim()));
                     }
                 } else {
-                    JDController.distributeLinks(files);
+                    // JDController.distributeLinks(files);
                 }
 
                 return true;

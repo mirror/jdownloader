@@ -187,9 +187,7 @@ public final class ClipboardHandler extends Thread implements ControlListener {
                                     // is it better than File f = new File(fi)?
                                     final File f = new File(fi.getPath());
                                     if (f.exists()) {
-                                        if (DistributeData.hasContainerPluginFor(fi.getPath())) {
-                                            JDController.loadContainerFile(f);
-                                        }
+                                        sb.append("file://" + fi.getPath());
                                     } else if (what == uriListFlavor) {
                                         if (fi.getScheme() != null && (fi.getScheme().contains("http") || fi.getScheme().contains("ftp"))) {
                                             sb.append(fi.toString());
@@ -285,10 +283,8 @@ public final class ClipboardHandler extends Thread implements ControlListener {
                             // }
                             final StringBuilder sb = new StringBuilder("");
                             for (final File f : list) {
-                                if (DistributeData.hasContainerPluginFor(f.toString())) {
-                                    sb.append(f.toString());
-                                    sb.append("\r\n");
-                                }
+                                sb.append("file://" + f.getPath());
+                                sb.append("\r\n");
                             }
                             currentString = sb.toString();
                         } else if (what == uriListFlavor) {

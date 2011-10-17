@@ -41,7 +41,7 @@ public class FastDebridcom extends PluginForHost implements JDPremInterface {
     public FastDebridcom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://www.fast-debrid.com/");
-        infostring = "Fast-Debrid.com @ " + wrapper.getHost();
+        infostring = "Fast-Debrid.com @ " + wrapper.getLazy().getDisplayName();
     }
 
     @Override

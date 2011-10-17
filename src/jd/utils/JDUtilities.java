@@ -25,7 +25,6 @@ import java.io.StringReader;
 import java.io.StringWriter;
 import java.net.URL;
 import java.text.DecimalFormat;
-import java.util.ArrayList;
 import java.util.Locale;
 import java.util.logging.Logger;
 
@@ -37,7 +36,6 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
-import jd.CPluginWrapper;
 import jd.Main;
 import jd.config.Configuration;
 import jd.config.DatabaseConnector;
@@ -48,14 +46,10 @@ import jd.gui.UserIO;
 import jd.nutils.Executer;
 import jd.nutils.Formatter;
 import jd.nutils.io.JDIO;
-import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
-import jd.plugins.PluginsC;
 
-import org.appwork.exceptions.TODOException;
 import org.appwork.utils.Application;
-import org.appwork.utils.Regex;
 import org.jdownloader.plugins.controller.crawler.CrawlerPluginController;
 import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin;
 import org.jdownloader.plugins.controller.host.HostPluginController;
@@ -140,52 +134,6 @@ public class JDUtilities {
         cont.add(comp, cons);
     }
 
-    public static String convertExceptionReadable(final Throwable e) {
-        String s = e.getClass().getName().replaceAll("Exception", "");
-        s = s.substring(s.lastIndexOf('.') + 1);
-        final StringBuilder ret = new StringBuilder();
-        String letter = null;
-        final int sLength = s.length();
-        for (int i = 0; i < sLength; i++) {
-            if ((letter = s.substring(i, i + 1)).equals(letter.toUpperCase())) {
-                ret.append(' ');
-                ret.append(letter);
-            } else {
-                ret.append(letter);
-            }
-        }
-        final String message = e.getLocalizedMessage();
-        final String rets = ret.toString().trim();
-        return message != null ? rets + ": " + message : rets;
-    }
-
-    public static String createContainerString(final ArrayList<DownloadLink> downloadLinks, final String encryption) {
-        final ArrayList<CPluginWrapper> pfc = CPluginWrapper.getCWrapper();
-        final int size = pfc.size();
-        for (int i = 0; i < size; i++) {
-            final String pn = pfc.get(i).getHost();
-            if (pn.equalsIgnoreCase(encryption)) return pfc.get(i).getPlugin().createContainerString(downloadLinks);
-        }
-        return null;
-    }
-
-    /**
-     * verschluesselt string mit der uebergebenen encryption
-     * (Containerpluginname
-     * 
-     * @param string
-     * @param encryption
-     * @return ciphertext
-     */
-    public static String[] encrypt(final String string, final String encryption) {
-        final ArrayList<CPluginWrapper> pfc = CPluginWrapper.getCWrapper();
-        final int size = pfc.size();
-        for (int i = 0; i < size; i++) {
-            if (pfc.get(i).getHost().equalsIgnoreCase(encryption)) { return pfc.get(i).getPlugin().encrypt(string); }
-        }
-        return null;
-    }
-
     /**
      * @return Configuration instanz
      */
@@ -266,35 +214,6 @@ public class JDUtilities {
 
     public static String getPercent(final long downloadCurrent, final long downloadMax) {
         return (new DecimalFormat("0.00")).format(100.0 * downloadCurrent / downloadMax) + "%";
-    }
-
-    /**
-     * Sucht ein passendes Plugin fuer ein Containerfile
-     * 
-     * @param container
-     *            Der Host, von dem das Plugin runterladen kann
-     * @param containerPath
-     * @return Ein passendes Plugin oder null
-     */
-    public static PluginsC getPluginForContainer(final String container) {
-        if (container == null) return null;
-        for (final CPluginWrapper act : CPluginWrapper.getCWrapper()) {
-            if (act.getHost().equalsIgnoreCase(container)) return (PluginsC) act.getNewPluginInstance();
-        }
-        return null;
-    }
-
-    public static String getContainerExtensions(final String filter) {
-        StringBuilder sb = new StringBuilder("");
-        for (final CPluginWrapper act : CPluginWrapper.getCWrapper()) {
-            if (filter != null && !new Regex(act.getHost(), filter).matches()) continue;
-            String exs[] = new Regex(act.getPattern().pattern(), "\\.([a-zA-Z0-9]+)").getColumn(0);
-            for (String ex : exs) {
-                if (sb.length() > 0) sb.append("|");
-                sb.append(".").append(ex);
-            }
-        }
-        return sb.toString();
     }
 
     /**
@@ -521,10 +440,6 @@ public class JDUtilities {
         final NamedNodeMap att = childNode.getAttributes();
         if (att == null || att.getNamedItem(key) == null) { return null; }
         return att.getNamedItem(key).getNodeValue();
-    }
-
-    public static PluginForHost replacePluginForHost(DownloadLink localLink) {
-        throw new TODOException();
     }
 
 }

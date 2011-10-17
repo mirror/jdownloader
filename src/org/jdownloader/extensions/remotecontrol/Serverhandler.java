@@ -36,11 +36,13 @@ import jd.config.SubConfiguration;
 import jd.controlling.DistributeData;
 import jd.controlling.DownloadController;
 import jd.controlling.DownloadWatchDog;
-import jd.controlling.JDController;
 import jd.controlling.JDLogger;
 import jd.controlling.LinkGrabberController;
 import jd.controlling.captcha.CaptchaDialogQueue;
 import jd.controlling.captcha.CaptchaDialogQueueEntry;
+import jd.controlling.linkcollector.LinkCollectingJob;
+import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcrawler.LinkCrawler;
 import jd.controlling.reconnect.ReconnectConfig;
 import jd.controlling.reconnect.Reconnecter;
 import jd.controlling.reconnect.ipcheck.IPController;
@@ -595,21 +597,16 @@ public class Serverhandler implements Handler {
 
                 try {
                     Browser.download(container, dlcfilestr);
-                    JDController.loadContainerFile(container, false, false);
-
-                    try {
-                        Thread.sleep(3000);
-                    } catch (final Exception e) {
-                        JDLogger.exception(e);
-                    }
-
+                    container.deleteOnExit();
+                    LinkCrawler lc = LinkCollector.getInstance().addCrawlerJob(new LinkCollectingJob("file://" + container));
+                    lc.waitForCrawling();
                     container.delete();
-                } catch (final Exception e) {
+                } catch (final Throwable e) {
                     JDLogger.exception(e);
                 }
             } else {
                 // local container file
-                JDController.loadContainerFile(new File(dlcfilestr), false, false);
+                LinkCollector.getInstance().addCrawlerJob(new LinkCollectingJob("file://" + dlcfilestr));
             }
 
             response.addContent("Container opened. (" + dlcfilestr + ")");

@@ -33,7 +33,7 @@ public class ReHostto extends PluginForHost implements JDPremInterface {
     public ReHostto(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://rehost.to/index.php?page=download");
-        infostring = "rehost.to @ " + wrapper.getHost();
+        infostring = "rehost.to @ " + wrapper.getLazy().getDisplayName();
     }
 
     @Override

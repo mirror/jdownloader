@@ -35,7 +35,7 @@ public class MultiShare extends PluginForHost implements JDPremInterface {
     public MultiShare(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.multishare.cz/cenik/");
-        infostring = "MultishareCz @ " + wrapper.getHost();
+        infostring = "MultishareCz @ " + wrapper.getLazy().getDisplayName();
     }
 
     public void setReplacedPlugin(PluginForHost plugin) {

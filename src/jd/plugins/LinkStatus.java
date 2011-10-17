@@ -28,8 +28,8 @@ import jd.controlling.proxy.ProxyController;
 import jd.nutils.Formatter;
 import jd.nutils.JDFlags;
 import jd.plugins.download.DownloadInterface;
-import jd.utils.JDUtilities;
 
+import org.appwork.utils.Exceptions;
 import org.appwork.utils.formatter.StringFormatter;
 import org.jdownloader.translate._JDT;
 
@@ -221,7 +221,7 @@ public class LinkStatus implements Serializable {
     }
 
     public void exceptionToErrorMessage(Exception e) {
-        setErrorMessage(JDUtilities.convertExceptionReadable(e));
+        setErrorMessage(Exceptions.getStackTrace(e));
     }
 
     private String getDefaultErrorMessage() {

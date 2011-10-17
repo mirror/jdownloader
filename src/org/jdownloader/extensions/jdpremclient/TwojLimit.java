@@ -50,7 +50,7 @@ public class TwojLimit extends PluginForHost implements JDPremInterface {
     public TwojLimit(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.twojlimit.pl/");
-        infostring = "TwojLimit.pl @ " + wrapper.getHost();
+        infostring = "TwojLimit.pl @ " + wrapper.getLazy().getDisplayName();
     }
 
     @Override

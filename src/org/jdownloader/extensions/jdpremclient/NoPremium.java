@@ -50,7 +50,7 @@ public class NoPremium extends PluginForHost implements JDPremInterface {
     public NoPremium(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.nopremium.pl/offer.php");
-        infostring = "NoPremium.pl @ " + wrapper.getHost();
+        infostring = "NoPremium.pl @ " + wrapper.getLazy().getDisplayName();
     }
 
     @Override

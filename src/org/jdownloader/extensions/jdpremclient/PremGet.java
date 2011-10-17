@@ -50,7 +50,7 @@ public class PremGet extends PluginForHost implements JDPremInterface {
     public PremGet(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.premget.pl/packages.php");
-        infostring = "PremGet.pl @ " + wrapper.getHost();
+        infostring = "PremGet.pl @ " + wrapper.getLazy().getDisplayName();
     }
 
     @Override

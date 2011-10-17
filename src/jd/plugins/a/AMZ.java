@@ -4,7 +4,6 @@ import java.io.File;
 import java.security.spec.AlgorithmParameterSpec;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.regex.Pattern;
 
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
@@ -17,6 +16,7 @@ import jd.nutils.encoding.Base64;
 import jd.nutils.encoding.Encoding;
 import jd.nutils.io.JDIO;
 import jd.parser.Regex;
+import jd.plugins.ContainerPlugin;
 import jd.plugins.ContainerStatus;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
@@ -26,6 +26,7 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
+@ContainerPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "Amazon MP3" }, urls = { "file://.+\\.amz" })
 public class AMZ extends PluginsC {
 
     public AMZ(PluginWrapper wrapper) {
@@ -88,21 +89,6 @@ public class AMZ extends PluginsC {
 
     @Override
     public String[] encrypt(String plain) {
-        return null;
-    }
-
-    @Override
-    public long getVersion() {
-        return 1;
-    }
-
-    @Override
-    public String getHost() {
-        return null;
-    }
-
-    @Override
-    public Pattern getSupportedLinks() {
         return null;
     }
 

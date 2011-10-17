@@ -3,23 +3,24 @@ package jd.controlling.linkcrawler;
 import javax.swing.ImageIcon;
 
 import jd.controlling.captcha.CaptchaController;
+import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
+import jd.plugins.PluginsC;
 
 import org.jdownloader.controlling.filter.FilterRule;
-import org.jdownloader.gui.views.linkgrabber.addlinksdialog.CrawlerJob;
 
 public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>, CheckableLink {
 
-    private CrawledPackage   parent      = null;
-    private PluginForDecrypt dPlugin     = null;
-    private CrawlerJob       sourceJob   = null;
-    private long             created     = -1;
-    private boolean          isDupeAllow = false;
-    private String           realHost    = null;
+    private CrawledPackage    parent      = null;
+    private PluginForDecrypt  dPlugin     = null;
+    private LinkCollectingJob sourceJob   = null;
+    private long              created     = -1;
+    private boolean           isDupeAllow = false;
+    private String            realHost    = null;
 
     /**
      * @return the isDupeAllow
@@ -39,7 +40,7 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
     /**
      * @return the sourceJob
      */
-    public CrawlerJob getSourceJob() {
+    public LinkCollectingJob getSourceJob() {
         return sourceJob;
     }
 
@@ -47,7 +48,7 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
      * @param sourceJob
      *            the sourceJob to set
      */
-    public void setSourceJob(CrawlerJob sourceJob) {
+    public void setSourceJob(LinkCollectingJob sourceJob) {
         this.sourceJob = sourceJob;
     }
 
@@ -89,7 +90,17 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
     }
 
     private PluginForHost hPlugin = null;
-    private DownloadLink  dlLink  = null;
+    private PluginsC      cPlugin = null;
+
+    public PluginsC getcPlugin() {
+        return cPlugin;
+    }
+
+    public void setcPlugin(PluginsC cPlugin) {
+        this.cPlugin = cPlugin;
+    }
+
+    private DownloadLink dlLink = null;
 
     /**
      * @return the dlLink

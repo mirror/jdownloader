@@ -21,7 +21,6 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.controlling.JDLogger;
@@ -31,11 +30,13 @@ import jd.crypt.BaseDecoder.IllegalAlphabetException;
 import jd.nutils.encoding.Base64;
 import jd.parser.Regex;
 import jd.parser.html.HTMLParser;
+import jd.plugins.ContainerPlugin;
 import jd.plugins.ContainerStatus;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginsC;
 
+@ContainerPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "RSDF" }, urls = { "file://.+\\.rsdf" })
 public class R extends PluginsC {
     public R(PluginWrapper wrapper) {
         super(wrapper);
@@ -294,11 +295,6 @@ public class R extends PluginsC {
         return "";
     }
 
-    // @Override
-    public long getVersion() {
-        return 1002;
-    }
-
     private String[] loadFileContent(String filename) {
 
         String rsdf = filterRSDF(getLocalFile(new File(filename)).trim());
@@ -314,16 +310,6 @@ public class R extends PluginsC {
 
             JDLogger.exception(e);
         }
-        return null;
-    }
-
-    @Override
-    public String getHost() {
-        return null;
-    }
-
-    @Override
-    public Pattern getSupportedLinks() {
         return null;
     }
 

@@ -36,7 +36,7 @@ public class Multihosters extends PluginForHost implements JDPremInterface {
     public Multihosters(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://multihosters.com");
-        infostring = "multihosters.com @ " + wrapper.getHost();
+        infostring = "multihosters.com @ " + wrapper.getLazy().getDisplayName();
     }
 
     @Override

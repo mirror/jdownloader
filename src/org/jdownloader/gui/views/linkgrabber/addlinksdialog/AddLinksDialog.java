@@ -27,6 +27,7 @@ import javax.swing.SwingUtilities;
 
 import jd.controlling.ClipboardHandler;
 import jd.controlling.IOEQ;
+import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.gui.swing.laf.LookAndFeelController;
 import jd.parser.html.HTMLParser;
 import net.miginfocom.swing.MigLayout;
@@ -52,7 +53,7 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.GeneralSettings;
 
-public class AddLinksDialog extends AbstractDialog<CrawlerJob> {
+public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
 
     private ExtTextArea            input;
 
@@ -135,8 +136,8 @@ public class AddLinksDialog extends AbstractDialog<CrawlerJob> {
     }
 
     @Override
-    protected CrawlerJob createReturnValue() {
-        CrawlerJob ret = new CrawlerJob();
+    protected LinkCollectingJob createReturnValue() {
+        LinkCollectingJob ret = new LinkCollectingJob();
         ret.setText(input.getText());
         ret.setOutputFolder(new File(destination.getText()));
         ret.setDeepAnalyse(isDeepAnalyse());

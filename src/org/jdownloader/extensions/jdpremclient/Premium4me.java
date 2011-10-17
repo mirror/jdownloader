@@ -34,7 +34,7 @@ public class Premium4me extends PluginForHost implements JDPremInterface {
     public Premium4me(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://premium4.me/");
-        infostring = "Premium4.me @ " + wrapper.getHost();
+        infostring = "Premium4.me @ " + wrapper.getLazy().getDisplayName();
     }
 
     @Override

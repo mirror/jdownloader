@@ -50,7 +50,7 @@ public class Ssacz extends PluginForHost implements JDPremInterface {
     public Ssacz(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.ssacz.net/offer");
-        infostring = "Ssacz.net @ " + wrapper.getHost();
+        infostring = "Ssacz.net @ " + wrapper.getLazy().getDisplayName();
     }
 
     @Override

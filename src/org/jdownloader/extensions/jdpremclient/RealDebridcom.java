@@ -36,7 +36,7 @@ public class RealDebridcom extends PluginForHost implements JDPremInterface {
     public RealDebridcom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://real-debrid.com/");
-        infostring = "Real-Debrid.com @ " + wrapper.getHost();
+        infostring = "Real-Debrid.com @ " + wrapper.getLazy().getDisplayName();
     }
 
     @Override

@@ -35,7 +35,7 @@ public class Zevera extends PluginForHost implements JDPremInterface {
     public Zevera(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://zevera.com");
-        infostring = "zevera.com @ " + wrapper.getHost();
+        infostring = "zevera.com @ " + wrapper.getLazy().getDisplayName();
     }
 
     @Override

@@ -676,8 +676,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         finalFileName = null;
         PluginForHost plg = liveplugin;
         if (plg == null) {
-            LazyHostPlugin lazyp = HostPluginController.getInstance().get(getHost());
-            plg = lazyp.newInstance();
+            plg = this.defaultplugin.getNewInstance();
         }
         if (plg.getBrowser() == null) {
             plg.setBrowser(new Browser());

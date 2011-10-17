@@ -30,10 +30,10 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
 
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Application;
+import org.appwork.utils.Exceptions;
 import org.appwork.utils.Hash;
 import org.appwork.utils.IO;
 import org.appwork.utils.Regex;
@@ -312,7 +312,7 @@ public class RAFDownload extends DownloadInterface {
             }
         } catch (Exception e) {
             JDLogger.exception(e);
-            error(LinkStatus.ERROR_LOCAL_IO, JDUtilities.convertExceptionReadable(e));
+            error(LinkStatus.ERROR_LOCAL_IO, Exceptions.getStackTrace(e));
             addException(e);
             return false;
         }

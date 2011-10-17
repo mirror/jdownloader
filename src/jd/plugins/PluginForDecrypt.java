@@ -150,6 +150,10 @@ public abstract class PluginForDecrypt extends Plugin {
         return null;
     }
 
+    public void setLogger(JDPluginLogger logger) {
+        this.logger = logger;
+    }
+
     /**
      * Die Methode entschlüsselt einen einzelnen Link.
      */
@@ -226,8 +230,7 @@ public abstract class PluginForDecrypt extends Plugin {
                  * null as return value? something must have happened, do not
                  * clear log
                  */
-                logger.severe("Decrypter out of date: " + this);
-                logger.severe("Decrypter out of date: " + getVersion());
+                logger.severe("CrawlerPlugin out of date: " + this + " :" + getVersion());
                 progress.setStatusText(_JDT._.jd_plugins_PluginForDecrypt_error_outOfDate(this.getHost()));
                 color = Color.RED;
                 progressShow = 15000;

@@ -34,7 +34,7 @@ public class Streammaniacom extends PluginForHost implements JDPremInterface {
     public Streammaniacom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.streammania.com/");
-        infostring = "Streammania.com @ " + wrapper.getHost();
+        infostring = "Streammania.com @ " + wrapper.getLazy().getDisplayName();
     }
 
     @Override

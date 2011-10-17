@@ -19,14 +19,11 @@ package org.jdownloader.extensions.jdpremclient;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import jd.HostPluginWrapper;
 import jd.Main;
-import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.ConfigEntry.PropertyType;
 import jd.config.ConfigGroup;
-import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
 import jd.controlling.accountchecker.AccountChecker;
 import jd.controlling.accountchecker.AccountChecker.AccountCheckJob;
@@ -137,7 +134,9 @@ public class PremiumCompoundExtension extends AbstractExtension<PremiumCompoundC
                         if (key.equalsIgnoreCase("multishare.cz")) continue;
                         if (key.equalsIgnoreCase("zevera.com")) continue;
                         /* the premshareplugins never can be disabled */
-                        new PremShareHost(key, premShareHosts.get(key), "NEVERUSETHISREGEX" + key + replaceIndex++ + ":\\)", 2 + PluginWrapper.ALWAYS_ENABLED);
+                        // new PremShareHost(key, premShareHosts.get(key),
+                        // "NEVERUSETHISREGEX" + key + replaceIndex++ + ":\\)",
+                        // 2 + PluginWrapper.ALWAYS_ENABLED);
                     } catch (Throwable e) {
                     }
                 }
@@ -254,94 +253,99 @@ public class PremiumCompoundExtension extends AbstractExtension<PremiumCompoundC
         return null;
     }
 
-    static class PremShareHost extends HostPluginWrapper {
+    static class PremShareHost {
 
-        private HostPluginWrapper replacedone = null;
-
-        public PremShareHost(String host, String className, String patternSupported, int flags) {
-            super(host, "org.jdownloader.extensions.jdpremclient.", className, patternSupported, flags, "$Revision$");
-            // for (HostPluginWrapper wrapper :
-            // HostPluginController.getInstance()) {
-            // if
-            // (wrapper.getPattern().toString().equalsIgnoreCase(patternSupported)
-            // && wrapper != this) replacedone = wrapper;
-            // }
-            // if (replacedone != null) {
-            // HostPluginController.getInstance().remove(replacedone);
-            // }
-        }
-
-        public HostPluginWrapper getReplacedPlugin() {
-            return replacedone;
-        }
-
-        @Override
-        public synchronized PluginForHost getPlugin() {
-            PluginForHost tmp = super.getPlugin();
-            if (replacedone != null) {
-                ((JDPremInterface) tmp).setReplacedPlugin(replacedone.getPlugin());
-            }
-            return tmp;
-        }
-
-        @Override
-        public PluginForHost getNewPluginInstance() {
-            PluginForHost tmp = super.getNewPluginInstance();
-            if (replacedone != null) {
-                ((JDPremInterface) tmp).setReplacedPlugin(replacedone.getNewPluginInstance());
-            }
-            return tmp;
-        }
-
-        @Override
-        public long getVersion() {
-            if (replacedone != null) return replacedone.getVersion();
-            return super.getVersion();
-        }
-
-        @Override
-        public boolean isEnabled() {
-            if (replacedone != null) return replacedone.isEnabled();
-            return super.isEnabled();
-        }
-
-        @Override
-        public void setEnabled(final boolean bool) {
-            if (replacedone != null) {
-                replacedone.setEnabled(bool);
-            } else {
-                super.setEnabled(bool);
-            }
-        }
-
-        @Override
-        public SubConfiguration getPluginConfig() {
-
-            if (replacedone != null) {
-                return replacedone.getPluginConfig();
-            } else {
-                return super.getPluginConfig();
-            }
-
-        }
-
-        @Override
-        public boolean hasConfig() {
-            if (replacedone != null) {
-                return replacedone.hasConfig();
-            } else {
-                return super.hasConfig();
-            }
-        }
-
-        @Override
-        public String getConfigName() {
-            if (replacedone != null) {
-                return replacedone.getConfigName();
-            } else {
-                return super.getConfigName();
-            }
-        }
+        // private HostPluginWrapper replacedone = null;
+        //
+        // public PremShareHost(String host, String className, String
+        // patternSupported, int flags) {
+        // //super(host, "org.jdownloader.extensions.jdpremclient.", className,
+        // patternSupported, flags, "$Revision$");
+        // // for (HostPluginWrapper wrapper :
+        // // HostPluginController.getInstance()) {
+        // // if
+        // //
+        // (wrapper.getPattern().toString().equalsIgnoreCase(patternSupported)
+        // // && wrapper != this) replacedone = wrapper;
+        // // }
+        // // if (replacedone != null) {
+        // // HostPluginController.getInstance().remove(replacedone);
+        // // }
+        // }
+        //
+        // public HostPluginWrapper getReplacedPlugin() {
+        // return replacedone;
+        // }
+        //
+        //
+        // public synchronized PluginForHost getPlugin() {
+        // // PluginForHost tmp = super.getPlugin();
+        // // if (replacedone != null) {
+        // // ((JDPremInterface)
+        // tmp).setReplacedPlugin(replacedone.getPlugin());
+        // // }
+        // // return tmp;
+        // }
+        //
+        // @Override
+        // public PluginForHost getNewPluginInstance() {
+        // PluginForHost tmp = super.getNewPluginInstance();
+        // if (replacedone != null) {
+        // ((JDPremInterface)
+        // tmp).setReplacedPlugin(replacedone.getNewPluginInstance());
+        // }
+        // return tmp;
+        // }
+        //
+        // @Override
+        // public long getVersion() {
+        // if (replacedone != null) return replacedone.getVersion();
+        // return super.getVersion();
+        // }
+        //
+        // @Override
+        // public boolean isEnabled() {
+        // if (replacedone != null) return replacedone.isEnabled();
+        // return super.isEnabled();
+        // }
+        //
+        // @Override
+        // public void setEnabled(final boolean bool) {
+        // if (replacedone != null) {
+        // replacedone.setEnabled(bool);
+        // } else {
+        // super.setEnabled(bool);
+        // }
+        // }
+        //
+        // @Override
+        // public SubConfiguration getPluginConfig() {
+        //
+        // if (replacedone != null) {
+        // return replacedone.getPluginConfig();
+        // } else {
+        // return super.getPluginConfig();
+        // }
+        //
+        // }
+        //
+        // @Override
+        // public boolean hasConfig() {
+        // if (replacedone != null) {
+        // return replacedone.hasConfig();
+        // } else {
+        // return super.hasConfig();
+        // }
+        // }
+        //
+        // @Override
+        // public String getConfigName() {
+        // if (replacedone != null) {
+        // return replacedone.getConfigName();
+        // } else {
+        // return super.getConfigName();
+        // }
+        // }
 
     }
 }

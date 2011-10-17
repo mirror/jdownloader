@@ -20,7 +20,6 @@ import org.appwork.utils.event.Eventsender;
 import org.appwork.utils.event.queue.Queue.QueuePriority;
 import org.appwork.utils.event.queue.QueueAction;
 import org.jdownloader.controlling.filter.LinkFilterController;
-import org.jdownloader.gui.views.linkgrabber.addlinksdialog.CrawlerJob;
 
 public class LinkCollector extends PackageController<CrawledPackage, CrawledLink> implements LinkCheckerHandler<CrawledLink>, LinkCrawlerHandler {
 
@@ -130,7 +129,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         return lc;
     }
 
-    public LinkCrawler addCrawlerJob(final CrawlerJob job) {
+    public LinkCrawler addCrawlerJob(final LinkCollectingJob job) {
         if (job == null) throw new IllegalArgumentException("job is null");
         LinkCrawler lc = new LinkCrawler() {
 

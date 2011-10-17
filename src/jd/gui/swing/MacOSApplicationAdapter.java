@@ -24,6 +24,8 @@ import javax.swing.JFrame;
 import jd.Main;
 import jd.controlling.JDController;
 import jd.controlling.JDLogger;
+import jd.controlling.linkcollector.LinkCollectingJob;
+import jd.controlling.linkcollector.LinkCollector;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.gui.swing.dialog.AboutDialog;
@@ -103,7 +105,7 @@ public class MacOSApplicationAdapter implements QuitHandler, AboutHandler, Prefe
         } else if (event.getEventID() == ControlEvent.CONTROL_INIT_COMPLETE && openURIlinks != null) {
             JDController.getInstance().removeControlListener(this);
             LOG.info("Distribute links: " + openURIlinks);
-            JDController.distributeLinks(openURIlinks);
+            LinkCollector.getInstance().addCrawlerJob(new LinkCollectingJob(openURIlinks));
             openURIlinks = null;
         }
     }
@@ -111,12 +113,15 @@ public class MacOSApplicationAdapter implements QuitHandler, AboutHandler, Prefe
     public void openFiles(OpenFilesEvent e) {
         appReOpened(null);
         LOG.info("Handle open files from Dock " + e.getFiles().toString());
-        for (File file : e.getFiles()) {
-            if (JDController.isContainerFile(file)) {
-                LOG.info("Processing Container file: " + file.getAbsolutePath());
-                JDController.loadContainerFile(file);
+        StringBuilder sb = new StringBuilder();
+        for (final File file : e.getFiles()) {
+            if (sb.length() > 0) {
+                sb.append("\r\n");
             }
+            sb.append("file://");
+            sb.append(file.getPath());
         }
+        LinkCollector.getInstance().addCrawlerJob(new LinkCollectingJob(sb.toString()));
     }
 
     public void openURI(AppEvent.OpenURIEvent e) {
@@ -125,7 +130,7 @@ public class MacOSApplicationAdapter implements QuitHandler, AboutHandler, Prefe
         String links = e.getURI().toString();
         if (Main.isInitComplete()) {
             LOG.info("Distribute links: " + links);
-            JDController.distributeLinks(links);
+            LinkCollector.getInstance().addCrawlerJob(new LinkCollectingJob(links));
         } else {
             openURIlinks = links;
             JDController.getInstance().addControlListener(this);

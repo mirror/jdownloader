@@ -18,16 +18,17 @@ package jd.plugins.a;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.nutils.io.JDIO;
+import jd.plugins.ContainerPlugin;
 import jd.plugins.ContainerStatus;
 import jd.plugins.DownloadLink;
+import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginsC;
-import jd.plugins.decrypter.MtLnk;
 import jd.utils.JDUtilities;
 
+@ContainerPlugin(revision = "$Revision: 13393 $", interfaceVersion = 2, names = { "MetaLink" }, urls = { "file://.+\\.metalink" })
 public class MetaLink extends PluginsC {
 
     public MetaLink(PluginWrapper wrapper) {
@@ -39,14 +40,14 @@ public class MetaLink extends PluginsC {
         String linkContent = JDIO.readFileToString(lc);
 
         /* load plugin first, then we can include it */
-        MtLnk decrypter = (MtLnk) JDUtilities.getPluginForDecrypt("metalinker.org");
+        PluginForDecrypt decrypter = JDUtilities.getPluginForDecrypt("metalinker.org");
 
         if (decrypter == null) {
             cs.setStatus(ContainerStatus.STATUS_FAILED);
             return cs;
         }
-
-        ArrayList<DownloadLink> links = decrypter.decryptString(linkContent);
+        jd.plugins.decrypter.MtLnk d = (jd.plugins.decrypter.MtLnk) decrypter;
+        ArrayList<DownloadLink> links = d.decryptString(linkContent);
         cls = links;
         dlU = new ArrayList<String>();
         for (DownloadLink l : links) {
@@ -61,27 +62,12 @@ public class MetaLink extends PluginsC {
         return null;
     }
 
-    @Override
-    public long getVersion() {
-        return 1;
-    }
-
     /*
      * we dont have to hide metalink container links
      */
     @Override
     public boolean hideLinks() {
         return false;
-    }
-
-    @Override
-    public String getHost() {
-        return null;
-    }
-
-    @Override
-    public Pattern getSupportedLinks() {
-        return null;
     }
 
 }

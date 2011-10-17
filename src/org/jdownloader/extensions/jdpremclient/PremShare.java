@@ -40,7 +40,7 @@ public class PremShare extends PluginForHost implements JDPremInterface {
     public PremShare(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium();
-        infostring = "JDPremium @ " + wrapper.getHost();
+        infostring = "JDPremium @ " + wrapper.getLazy().getDisplayName();
     }
 
     @Override

@@ -44,6 +44,7 @@ import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
 import org.appwork.storage.config.JsonConfig;
+import org.appwork.utils.Exceptions;
 import org.appwork.utils.Regex;
 import org.appwork.utils.ReusableByteArrayOutputStreamPool;
 import org.appwork.utils.ReusableByteArrayOutputStreamPool.ReusableByteArrayOutputStream;
@@ -243,7 +244,7 @@ abstract public class DownloadInterface {
                 return con;
             } catch (Exception e) {
                 addException(e);
-                error(LinkStatus.ERROR_RETRY, JDUtilities.convertExceptionReadable(e));
+                error(LinkStatus.ERROR_RETRY, Exceptions.getStackTrace(e));
                 JDLogger.exception(e);
             }
             return null;
@@ -400,7 +401,7 @@ abstract public class DownloadInterface {
                 }
             } catch (Exception e) {
                 JDLogger.exception(e);
-                error(LinkStatus.ERROR_RETRY, JDUtilities.convertExceptionReadable(e));
+                error(LinkStatus.ERROR_RETRY, Exceptions.getStackTrace(e));
                 addException(e);
             } finally {
                 ReusableByteArrayOutputStreamPool.reuseReusableByteArrayOutputStream(buffer);

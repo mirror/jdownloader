@@ -20,13 +20,13 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.ObjectInputStream;
 import java.util.ArrayList;
-import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.crypt.JDCrypt;
 import jd.gui.UserIO;
 import jd.nutils.JDHash;
+import jd.plugins.ContainerPlugin;
 import jd.plugins.ContainerStatus;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
@@ -37,6 +37,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.IO;
 
+@ContainerPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "JDC" }, urls = { "file://.+\\.jdc" })
 public class J extends PluginsC {
     public J(PluginWrapper wrapper) {
         super(wrapper);
@@ -185,27 +186,6 @@ public class J extends PluginsC {
     @Override
     public String[] encrypt(String plain) {
         // TODO Auto-generated method stub
-        return null;
-    }
-
-    /*
-     * (non-Javadoc)
-     * 
-     * @see jd.plugins.Plugin#getVersion()
-     */
-    @Override
-    public long getVersion() {
-        // TODO Auto-generated method stub
-        return 1;
-    }
-
-    @Override
-    public String getHost() {
-        return null;
-    }
-
-    @Override
-    public Pattern getSupportedLinks() {
         return null;
     }
 

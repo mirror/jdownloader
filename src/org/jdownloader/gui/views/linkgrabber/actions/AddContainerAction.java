@@ -5,7 +5,6 @@ import java.io.File;
 
 import jd.controlling.JDController;
 import jd.nutils.io.JDFileFilter;
-import jd.utils.JDUtilities;
 
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.Dialog.FileChooserSelectionMode;
@@ -15,6 +14,7 @@ import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.plugins.controller.container.ContainerPluginController;
 
 public class AddContainerAction extends AppAction {
     {
@@ -30,7 +30,7 @@ public class AddContainerAction extends AppAction {
         // true);
         File[] ret;
         try {
-            ret = Dialog.getInstance().showFileChooser("loaddlc", _GUI._.AddContainerAction_actionPerformed_(), FileChooserSelectionMode.FILES_ONLY, new JDFileFilter(_GUI._.AddContainerAction_actionPerformed_extensions(JDUtilities.getContainerExtensions(null)), JDUtilities.getContainerExtensions(null), true), false, FileChooserType.OPEN_DIALOG, null);
+            ret = Dialog.getInstance().showFileChooser("loaddlc", _GUI._.AddContainerAction_actionPerformed_(), FileChooserSelectionMode.FILES_ONLY, new JDFileFilter(_GUI._.AddContainerAction_actionPerformed_extensions(ContainerPluginController.getInstance().getContainerExtensions(null)), ContainerPluginController.getInstance().getContainerExtensions(null), true), false, FileChooserType.OPEN_DIALOG, null);
 
             if (ret == null) return;
             for (File r : ret) {

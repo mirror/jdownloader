@@ -18,27 +18,34 @@ package jd.plugins;
 
 import java.awt.Color;
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.logging.Level;
+import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
-import jd.controlling.DistributeData;
 import jd.controlling.JDLogger;
 import jd.controlling.JDPluginLogger;
 import jd.controlling.ProgressController;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.LinkCrawler;
 import jd.event.ControlEvent;
 import jd.gui.UserIO;
 import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.http.Browser;
 import jd.nutils.JDFlags;
-import jd.nutils.JDHash;
-import jd.nutils.io.JDIO;
+import jd.nutils.encoding.Encoding;
 import jd.utils.JDUtilities;
-import jd.utils.WebUpdate;
 
-import org.appwork.exceptions.WTFException;
+import org.appwork.utils.Files;
+import org.appwork.utils.Hash;
+import org.appwork.utils.IO;
 import org.appwork.utils.Regex;
+import org.appwork.utils.logging.Log;
+import org.jdownloader.controlling.filter.LinkFilterController;
+import org.jdownloader.plugins.controller.container.LazyContainerPlugin;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.translate._JDT;
@@ -51,12 +58,26 @@ import org.jdownloader.translate._JDT;
 
 public abstract class PluginsC extends Plugin {
 
-    protected JDPluginLogger logger = null;
+    protected JDPluginLogger    logger = null;
+
+    private LazyContainerPlugin lazyCo = null;
+
+    public LazyContainerPlugin getLazyCo() {
+        return lazyCo;
+    }
+
+    public void setLazyCo(LazyContainerPlugin lazyCo) {
+        this.lazyCo = lazyCo;
+    }
 
     public PluginsC(final PluginWrapper wrapper) {
         super(wrapper);
-        br = new Browser();
-        logger = new JDPluginLogger(wrapper.getHost() + System.currentTimeMillis());
+        this.lazyCo = (LazyContainerPlugin) wrapper.getLazy();
+    }
+
+    @Override
+    public SubConfiguration getPluginConfig() {
+        return SubConfiguration.getConfig(lazyCo.getDisplayName());
     }
 
     private static final int          STATUS_NOTEXTRACTED     = 0;
@@ -73,8 +94,6 @@ public abstract class PluginsC extends Plugin {
     protected byte[]                  k;
 
     private int                       status                  = STATUS_NOTEXTRACTED;
-    private static final Object       LOCK                    = new Object();
-    private static long               lastUpdateRequest       = 0;
 
     public abstract ContainerStatus callDecryption(File file);
 
@@ -90,11 +109,21 @@ public abstract class PluginsC extends Plugin {
     }
 
     @Override
-    public SubConfiguration getPluginConfig() {
-        throw new WTFException("WW");
+    public Pattern getSupportedLinks() {
+        return lazyCo.getPattern();
     }
 
-    // @Override
+    @Override
+    public String getHost() {
+        return lazyCo.getDisplayName();
+    }
+
+    @Override
+    public long getVersion() {
+        return 0;
+    }
+
+    @Override
     public ArrayList<MenuAction> createMenuitems() {
         return null;
     }
@@ -112,17 +141,21 @@ public abstract class PluginsC extends Plugin {
         for (String string : dlU) {
             progress.increase(1);
             progress.setStatusText(_JDT._.plugins_container_decrypt(i));
-
-            final DistributeData distributeData = new DistributeData(string);
-            final ArrayList<DownloadLink> links = distributeData.findLinks();
+            LinkCrawler lc = new LinkCrawler();
+            lc.setFilter(LinkFilterController.getInstance());
+            lc.crawlNormal(string);
+            lc.waitForCrawling();
+            final ArrayList<CrawledLink> links = lc.getCrawledLinks();
 
             final DownloadLink srcLink = cls.get(i);
-            final Iterator<DownloadLink> it = links.iterator();
+            final Iterator<CrawledLink> it = links.iterator();
             progress.addToMax(links.size());
 
             while (it.hasNext()) {
                 progress.increase(1);
-                final DownloadLink next = it.next();
+                final CrawledLink nextc = it.next();
+                DownloadLink next = nextc.getDownloadLink();
+                if (next == null) continue;
                 tmpDlink.add(next);
                 tmpURL.add(next.getDownloadURL());
 
@@ -183,8 +216,10 @@ public abstract class PluginsC extends Plugin {
 
     /**
      * Erstellt eine Kopie des Containers im Homedir.
+     * 
+     * @throws IOException
      */
-    public synchronized void doDecryption(final String parameter) {
+    private synchronized void doDecryption(final String parameter) throws IOException {
         logger.info("DO STEP");
         final String file = parameter;
         if (status == STATUS_ERROR_EXTRACTING) {
@@ -197,14 +232,14 @@ public abstract class PluginsC extends Plugin {
         }
         final File f = JDUtilities.getResourceFile(file);
         if (md5 == null) {
-            md5 = JDHash.getMD5(f);
+            md5 = Hash.getMD5(f);
         }
 
-        final String extension = JDIO.getFileExtension(f);
+        final String extension = Files.getExtension(f.getAbsolutePath());
         if (f.exists()) {
             final File res = JDUtilities.getResourceFile("container/" + md5 + "." + extension, true);
             if (!res.exists()) {
-                JDIO.copyFile(f, res);
+                IO.copyFile(f, res);
             }
             if (!res.exists()) {
                 logger.severe("Could not copy file to homedir");
@@ -225,14 +260,18 @@ public abstract class PluginsC extends Plugin {
      * @return Die URL als String
      */
     public synchronized String extractDownloadURL(final DownloadLink downloadLink) {
-        // logger.info("EXTRACT " + downloadLink);
-        if (dlU == null) {
-            initContainer(downloadLink.getContainerFile(), downloadLink.getGenericProperty("k", new byte[] {}));
+        try {
+            if (dlU == null) {
+                initContainer(downloadLink.getContainerFile(), downloadLink.getGenericProperty("k", new byte[] {}));
+            }
+            checkWorkaround(downloadLink);
+            if (dlU == null || dlU.size() <= downloadLink.getContainerIndex()) { return null; }
+            downloadLink.setProperty("k", k);
+            return dlU.get(downloadLink.getContainerIndex());
+        } catch (final Throwable e) {
+            Log.exception(e);
+            return null;
         }
-        checkWorkaround(downloadLink);
-        if (dlU == null || dlU.size() <= downloadLink.getContainerIndex()) { return null; }
-        downloadLink.setProperty("k", k);
-        return dlU.get(downloadLink.getContainerIndex());
     }
 
     /**
@@ -264,7 +303,7 @@ public abstract class PluginsC extends Plugin {
                 }
             }
             if (JDFlags.hasAllFlags(UserIO.getInstance().requestConfirmDialog(UserIO.NO_COUNTDOWN | UserIO.STYLE_HTML, "DLC Missmatch", "<b>JD discovered an error while downloading DLC links.</b> <br>The following files may have errors:<br>" + ren + "<br><u> Do you want JD to try to correct them?</u>"), UserIO.RETURN_OK)) {
-                int ffailed = 0;
+
                 ren = "";
                 for (final DownloadLink l : rename) {
                     String name = l.getName();
@@ -279,7 +318,7 @@ public abstract class PluginsC extends Plugin {
                                 File newFile = new File(new File(l.getFileOutput()).getParent() + "/restore/" + newName);
                                 newFile.mkdirs();
                                 if (newFile.exists()) {
-                                    ffailed++;
+
                                     ren += l.getFileOutput() + " -> RENAME TO " + newFile + " FAILED<br>";
                                 } else {
                                     if (new File(l.getFileOutput()).renameTo(newFile)) {
@@ -328,18 +367,18 @@ public abstract class PluginsC extends Plugin {
         return cls == null ? new ArrayList<DownloadLink>() : cls;
     }
 
-    public synchronized void initContainer(String filename, final byte[] bs) {
+    public synchronized void initContainer(String filename, final byte[] bs) throws IOException {
         if (filename == null) return;
         final File rel = JDUtilities.getResourceFile(filename);
         final File ab = new File(filename);
         final String md;
 
         if (!rel.exists() && ab.exists()) {
-            final String extension = JDIO.getFileExtension(ab);
-            md = JDHash.getMD5(ab);
+            final String extension = Files.getExtension(filename);
+            md = Hash.getMD5(ab);
             final File newFile = JDUtilities.getResourceFile("container/" + md + "." + extension, true);
             if (!newFile.exists()) {
-                JDIO.copyFile(ab, newFile);
+                IO.copyFile(ab, newFile);
             }
             filename = "container/" + md + "." + extension;
         }
@@ -359,7 +398,7 @@ public abstract class PluginsC extends Plugin {
                 try {
                     doDecryption(filename);
                 } catch (Throwable e) {
-                    JDLogger.exception(e);
+                    logger.severe(e.toString());
                 }
                 progress.increase(1);
 
@@ -382,12 +421,6 @@ public abstract class PluginsC extends Plugin {
                     color = Color.RED;
                     errorTxt = _JDT._.plugins_container_exit_error(containerStatus.getStatusText());
                     wait = 1000;
-                    synchronized (LOCK) {
-                        if (System.currentTimeMillis() - PluginsC.lastUpdateRequest > 10 * 60 * 1000) {
-                            PluginsC.lastUpdateRequest = System.currentTimeMillis();
-                            WebUpdate.doUpdateCheck(false);
-                        }
-                    }
                 }
             } finally {
                 fireControlEvent(ControlEvent.CONTROL_PLUGIN_INACTIVE, this);
@@ -405,8 +438,118 @@ public abstract class PluginsC extends Plugin {
         }
     }
 
-    public void initContainer(final String absolutePath) {
-        this.initContainer(absolutePath, null);
+    public ArrayList<CrawledLink> getContainerLinks(String data) {
+        /*
+         * we dont need memory optimization here as downloadlink, crypted link
+         * itself take care of this
+         */
+        String[] hits = new Regex(data, getSupportedLinks()).setMemoryOptimized(false).getColumn(-1);
+        ArrayList<CrawledLink> chits = null;
+        if (hits != null && hits.length > 0) {
+            chits = new ArrayList<CrawledLink>(hits.length);
+        } else {
+            chits = new ArrayList<CrawledLink>();
+        }
+        if (hits != null && hits.length > 0) {
+            for (String hit : hits) {
+                String file = hit;
+                file = file.trim();
+                /* cut of any unwanted chars */
+                while (file.length() > 0 && file.charAt(0) == '"') {
+                    file = file.substring(1);
+                }
+                while (file.length() > 0 && file.charAt(file.length() - 1) == '"') {
+                    file = file.substring(0, file.length() - 1);
+                }
+                file = file.trim();
+
+                CrawledLink cli;
+                chits.add(cli = new CrawledLink(file));
+                cli.setcPlugin(this);
+            }
+        }
+        return chits;
+    }
+
+    public PluginsC getNewInstance() {
+        if (lazyCo == null) return null;
+        return lazyCo.newInstance();
+    }
+
+    public void setBrowser(Browser br) {
+        this.br = br;
+    }
+
+    public void setLogger(JDPluginLogger logger) {
+        this.logger = logger;
+    }
+
+    public ArrayList<DownloadLink> decryptContainer(CrawledLink source) {
+        ProgressController progress = null;
+        int progressShow = 0;
+        Color color = null;
+        try {
+            if (source.getURL() == null) return null;
+            progress = new ProgressController(_JDT._.jd_plugins_PluginForDecrypt_decrypting(getHost()), null);
+            ArrayList<DownloadLink> tmpLinks = null;
+            boolean showException = true;
+            try {
+                /*
+                 * we now lets log into plugin specific loggers with all
+                 * verbose/debug on
+                 */
+                br.setLogger(logger);
+                br.setVerbose(true);
+                br.setDebug(true);
+                /* extract filename from url */
+                String file = new Regex(source.getURL(), "file://(.+)").getMatch(0);
+                file = Encoding.urlDecode(file, false);
+                if (file != null && new File(file).exists()) {
+                    initContainer(file, null);
+                    tmpLinks = getContainedDownloadlinks();
+                } else {
+                    throw new Throwable("Invalid Container: " + source.getURL());
+                }
+            } catch (Throwable e) {
+                /*
+                 * damn, something must have gone really really bad, lets keep
+                 * the log
+                 */
+                progress.setStatusText(this.getHost() + ": " + e.getMessage());
+                logger.log(Level.SEVERE, "Exception", e);
+                color = Color.RED;
+                progressShow = 15000;
+            }
+            if (tmpLinks == null && showException) {
+                /*
+                 * null as return value? something must have happened, do not
+                 * clear log
+                 */
+                logger.severe("ContainerPlugin out of date: " + this + " :" + getVersion());
+                progress.setStatusText(_JDT._.jd_plugins_PluginForDecrypt_error_outOfDate(this.getHost()));
+                color = Color.RED;
+                progressShow = 15000;
+
+                /* lets forward the log */
+                if (logger instanceof JDPluginLogger) {
+                    /* make sure we use the right logger */
+                    ((JDPluginLogger) logger).logInto(JDLogger.getLogger());
+                }
+            }
+            return tmpLinks;
+        } finally {
+            try {
+                if (progressShow > 0) {
+                    if (color != null) {
+                        progress.setColor(color);
+                    }
+                    progress.doFinalize(progressShow);
+                } else {
+                    progress.doFinalize();
+                }
+            } catch (Throwable e) {
+            }
+        }
     }
 
 }

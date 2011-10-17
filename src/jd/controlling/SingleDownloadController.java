@@ -26,6 +26,8 @@ import java.util.logging.Logger;
 
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
+import jd.controlling.linkcollector.LinkCollectingJob;
+import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.proxy.ProxyController;
 import jd.controlling.proxy.ProxyInfo;
 import jd.event.ControlEvent;
@@ -48,11 +50,10 @@ import org.appwork.controlling.StateMachine;
 import org.appwork.controlling.StateMachineInterface;
 import org.appwork.controlling.StateMonitor;
 import org.appwork.storage.config.JsonConfig;
+import org.appwork.utils.Exceptions;
 import org.appwork.utils.Regex;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.jdownloader.images.NewTheme;
-import org.jdownloader.plugins.controller.host.HostPluginController;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.settings.IfFileExistsAction;
 import org.jdownloader.translate._JDT;
@@ -226,12 +227,12 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
                     long rev = downloadLink.getLivePlugin() == null ? -1 : downloadLink.getLivePlugin().getVersion();
                     logger.finest("Hoster Plugin Version: " + rev);
                     linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    linkStatus.setErrorMessage(_JDT._.plugins_errors_error() + JDUtilities.convertExceptionReadable(e));
+                    linkStatus.setErrorMessage(_JDT._.plugins_errors_error() + Exceptions.getStackTrace(e));
                 } catch (Throwable e) {
                     logger.finest("Hoster Plugin Version: " + downloadLink.getLivePlugin().getVersion());
                     JDLogger.exception(e);
                     linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    linkStatus.setErrorMessage(_JDT._.plugins_errors_error() + JDUtilities.convertExceptionReadable(e));
+                    linkStatus.setErrorMessage(_JDT._.plugins_errors_error() + Exceptions.getStackTrace(e));
                 }
             } else {
                 /* TODO: */
@@ -386,10 +387,8 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
         }
 
         if (SwingGui.getInstance() != null) DownloadController.getInstance().fireDataUpdate(downloadLink);
-        if (JDController.isContainerFile(new File(downloadLink.getFileOutput()))) {
-            if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_RELOADCONTAINER, true)) {
-                JDController.loadContainerFile(new File(downloadLink.getFileOutput()));
-            }
+        if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_RELOADCONTAINER, true)) {
+            LinkCollector.getInstance().addCrawlerJob(new LinkCollectingJob("file://" + downloadLink.getFileOutput()));
         }
 
     }
@@ -688,8 +687,7 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
              * we are going to download this link, create new liveplugin
              * instance here
              */
-            LazyHostPlugin lazyp = HostPluginController.getInstance().get(downloadLink.getDefaultPlugin().getHost());
-            downloadLink.setLivePlugin(lazyp.newInstance());
+            downloadLink.setLivePlugin(downloadLink.getDefaultPlugin().getNewInstance());
             currentPlugin = downloadLink.getLivePlugin();
             currentPlugin.setIOPermission(ioP);
             currentPlugin.setLogger(logger = new JDPluginLogger(downloadLink.getHost() + ":" + downloadLink.getName()));
