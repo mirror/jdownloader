@@ -43,8 +43,8 @@ public class PluginClassLoader extends URLClassLoader {
         return INSTANCE;
     }
 
-    public PluginClassLoader() {
-        super(new URL[] { Application.getRootURL() }, PluginClassLoader.class.getClassLoader());
+    private PluginClassLoader() {
+        super(new URL[] { Application.getRootUrlByClass(jd.Main.class, null) }, PluginClassLoader.class.getClassLoader());
     }
 
 }

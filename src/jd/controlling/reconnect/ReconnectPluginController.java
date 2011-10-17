@@ -19,11 +19,12 @@ import java.util.regex.Pattern;
 import jd.config.Configuration;
 import jd.controlling.CodeVerifier;
 import jd.controlling.JDLogger;
+import jd.controlling.reconnect.batch.ExternBatchReconnectPlugin;
+import jd.controlling.reconnect.extern.ExternReconnectPlugin;
 import jd.controlling.reconnect.ipcheck.IPController;
-import jd.controlling.reconnect.plugins.batch.ExternBatchReconnectPlugin;
-import jd.controlling.reconnect.plugins.extern.ExternReconnectPlugin;
-import jd.controlling.reconnect.plugins.liveheader.CLRConverter;
-import jd.controlling.reconnect.plugins.liveheader.LiveHeaderReconnect;
+import jd.controlling.reconnect.liveheader.CLRConverter;
+import jd.controlling.reconnect.liveheader.LiveHeaderReconnect;
+import jd.controlling.reconnect.upnp.UPNPRouterPlugin;
 import jd.nutils.io.JDFileFilter;
 import jd.utils.JDUtilities;
 
@@ -275,9 +276,13 @@ public class ReconnectPluginController {
      */
     private void scan() {
         try {
-            final File[] files = JDUtilities.getResourceFile("reconnect").listFiles(new JDFileFilter(null, ".rec", false));
+            final File[] files = JDUtilities.getResourceFile("reconnect").listFiles(new JDFileFilter(null, ".reconnect", false));
             this.plugins = new ArrayList<RouterPlugin>();
             this.plugins.add(DummyRouterPlugin.getInstance());
+            plugins.add(new ExternBatchReconnectPlugin());
+            plugins.add(new ExternReconnectPlugin());
+            plugins.add(new LiveHeaderReconnect());
+            plugins.add(new UPNPRouterPlugin());
             final ArrayList<URL> urls = new ArrayList<URL>();
             if (files != null) {
                 final int length = files.length;
@@ -310,7 +315,6 @@ public class ReconnectPluginController {
                     JarEntry e;
 
                     while ((e = jis.getNextJarEntry()) != null) {
-                        System.out.println(e.getName());
 
                         // try {
                         Matcher matcher = pattern.matcher(e.getName());

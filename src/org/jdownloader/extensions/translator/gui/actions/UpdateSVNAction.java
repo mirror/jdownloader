@@ -26,7 +26,7 @@ public class UpdateSVNAction extends AbstractAction {
 
                 gui.setSvnBusy(true);
 
-                File wd = new File(Application.getRoot());
+                File wd = new File(Application.getHome());
                 if (!wd.exists()) wd.mkdirs();
                 Subversion svn = null;
                 try {

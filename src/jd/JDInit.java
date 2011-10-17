@@ -19,9 +19,6 @@ package jd;
 import java.awt.event.ActionEvent;
 import java.io.File;
 import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.net.URLClassLoader;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -81,32 +78,35 @@ public class JDInit {
 
     private static ClassLoader   CL;
 
-    /**
-     * Returns a classloader to load plugins (class files); Depending on runtype
-     * (dev or local jared) a different classoader is used to load plugins
-     * either from installdirectory or from rundirectory
-     * 
-     * @return
-     */
-    public static ClassLoader getPluginClassLoader() {
-        if (JDInit.CL == null) {
-            try {
-                if (JDUtilities.getRunType() == JDUtilities.RUNTYPE_LOCAL_JARED) {
-                    try {
-                        System.out.println(JDUtilities.getResourceFile("java").toURI().toURL());
-                    } catch (final Throwable e) {
-                        e.printStackTrace();
-                    }
-                    JDInit.CL = new URLClassLoader(new URL[] { JDUtilities.getJDHomeDirectoryFromEnvironment().toURI().toURL() }, Thread.currentThread().getContextClassLoader());
-                } else {
-                    JDInit.CL = Thread.currentThread().getContextClassLoader();
-                }
-            } catch (final MalformedURLException e) {
-                JDLogger.exception(e);
-            }
-        }
-        return JDInit.CL;
-    }
+    // /**
+    // * Returns a classloader to load plugins (class files); Depending on
+    // runtype
+    // * (dev or local jared) a different classoader is used to load plugins
+    // * either from installdirectory or from rundirectory
+    // *
+    // * @return
+    // */
+    // public static ClassLoader getPluginClassLoader() {
+    // if (JDInit.CL == null) {
+    // try {
+    // if (JDUtilities.getRunType() == JDUtilities.RUNTYPE_LOCAL_JARED) {
+    // try {
+    // System.out.println(JDUtilities.getResourceFile("java").toURI().toURL());
+    // } catch (final Throwable e) {
+    // e.printStackTrace();
+    // }
+    // JDInit.CL = new URLClassLoader(new URL[] {
+    // JDUtilities.getJDHomeDirectoryFromEnvironment().toURI().toURL() },
+    // Thread.currentThread().getContextClassLoader());
+    // } else {
+    // JDInit.CL = Thread.currentThread().getContextClassLoader();
+    // }
+    // } catch (final MalformedURLException e) {
+    // JDLogger.exception(e);
+    // }
+    // }
+    // return JDInit.CL;
+    // }
 
     public JDInit() {
     }

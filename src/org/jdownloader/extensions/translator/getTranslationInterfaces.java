@@ -29,7 +29,7 @@ public class getTranslationInterfaces {
 
         getSVNTranslations();
 
-        String wd = Application.getRoot();
+        String wd = Application.getHome();
 
         File ojt = new File(wd);
 

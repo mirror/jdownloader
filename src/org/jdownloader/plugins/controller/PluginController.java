@@ -2,12 +2,9 @@ package org.jdownloader.plugins.controller;
 
 import java.io.File;
 import java.io.FilenameFilter;
-import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
-import java.util.Enumeration;
 
-import jd.JDInit;
 import jd.plugins.Plugin;
 
 import org.appwork.utils.Application;
@@ -19,31 +16,10 @@ public class PluginController<T extends Plugin> {
     public ArrayList<PluginInfo<T>> scan(String hosterpath) {
         File path = null;
         URLClassLoader cl = null;
-        if (Application.isJared(PluginController.class)) {
-            /* this is jared version */
-            path = Application.getResource(hosterpath);
-            cl = new PluginClassLoader();
-        } else {
-            /* this is non jared version */
-            try {
-                cl = (URLClassLoader) JDInit.getPluginClassLoader();
-                String modifiedHosterPath = hosterpath.replace('.', '/');
-                final Enumeration<URL> resources = cl.getResources(modifiedHosterPath);
 
-                while (resources.hasMoreElements()) {
-                    try {
-                        URL dd = resources.nextElement();
-                        path = new File(dd.toURI().getPath());
-                        break;
-                    } catch (Throwable e) {
-                        Log.exception(e);
-                    }
-                }
-            } catch (final Throwable e) {
-                Log.exception(e);
-                return null;
-            }
-        }
+        path = Application.getRootByClass(jd.Main.class, hosterpath);
+        cl = PluginClassLoader.getInstance();
+
         final File[] files = path.listFiles(new FilenameFilter() {
             public boolean accept(final File dir, final String name) {
                 return name.endsWith(".class") && !name.contains("$");

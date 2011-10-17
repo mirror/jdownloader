@@ -354,7 +354,7 @@
 		<sequential>
 			<echo message="Creating @{name}" />
 			<mkdir dir="${dist}/reconnect/" />
-			<jar jarfile="${dist}/reconnect/@{name}.rec" manifest="${dist}/Manifest.MF">
+			<jar jarfile="${dist}/reconnect/@{name}.reconnect" manifest="${dist}/Manifest.MF">
 				<fileset dir="${cls}">
 					<include name="jd/controlling/reconnect/plugins/@{name}/**" />
 				</fileset>

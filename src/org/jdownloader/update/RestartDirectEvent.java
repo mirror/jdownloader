@@ -59,7 +59,7 @@ public class RestartDirectEvent extends ShutdownEvent {
          */
         File pbroot = null;
 
-        pbroot = new File(Application.getRoot());
+        pbroot = new File(Application.getHome());
 
         System.out.println("Root: " + pbroot);
         pb.directory(pbroot);
