@@ -25,41 +25,42 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "easy-share.com2" }, urls = { "http://[\\w\\d\\.]*?(easy\\-share|crocko)\\.com/([A-Z0-9]+/.{1}|\\d+)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "easy-share.com2" }, urls = { "dfsgherh457z3587jnrjUNUSED-EASYSHARE-REGEX4759nETUJTUK" }, flags = { 0 })
 public class EasyShareCom extends PluginForHost {
 
-    public EasyShareCom(PluginWrapper wrapper) {
-        super(wrapper);
-    }
+	public EasyShareCom(PluginWrapper wrapper) {
+		super(wrapper);
+	}
 
-    @Override
-    public String getAGBLink() {
-        return "http://www.easy-share.com/tos.html";
-    }
+	@Override
+	public String getAGBLink() {
+		return "http://www.easy-share.com/tos.html";
+	}
 
-    @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
-        return AvailableStatus.TRUE;
-    }
+	@Override
+	public AvailableStatus requestFileInformation(DownloadLink downloadLink)
+			throws IOException, PluginException {
+		return AvailableStatus.TRUE;
+	}
 
-    @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
-    }
+	@Override
+	public void handleFree(DownloadLink downloadLink) throws Exception {
+	}
 
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return 1;
-    }
+	@Override
+	public int getMaxSimultanFreeDownloadNum() {
+		return 1;
+	}
 
-    @Override
-    public void reset() {
-    }
+	@Override
+	public void reset() {
+	}
 
-    @Override
-    public void resetPluginGlobals() {
-    }
+	@Override
+	public void resetPluginGlobals() {
+	}
 
-    @Override
-    public void resetDownloadlink(DownloadLink link) {
-    }
+	@Override
+	public void resetDownloadlink(DownloadLink link) {
+	}
 }
