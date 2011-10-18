@@ -3,10 +3,11 @@ package org.jdownloader.plugins.controller.host;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
+import java.util.Comparator;
 import java.util.List;
 
 import jd.JDInitFlags;
+import jd.nutils.Formatter;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.HostPlugin;
 import jd.plugins.PluginForHost;
@@ -21,7 +22,7 @@ import org.jdownloader.plugins.controller.PluginInfo;
 
 public class HostPluginController extends PluginController<PluginForHost> {
     private static final String               HTTP_JDOWNLOADER_ORG_R_PHP_U = "http://jdownloader.org/r.php?u=";
-    private static final String               TMP_HOSTS_JSON               = "tmp/hosts.json";
+
     private static final HostPluginController INSTANCE                     = new HostPluginController();
 
     /**
@@ -34,15 +35,17 @@ public class HostPluginController extends PluginController<PluginForHost> {
         return HostPluginController.INSTANCE;
     }
 
-    private HashMap<String, LazyHostPlugin> hosterPluginMap;
-    private List<LazyHostPlugin>            list;
+    private List<LazyHostPlugin> list;
+
+    private String getCache() {
+        return "tmp/hosts.json";
+    }
 
     /**
      * Create a new instance of HostPluginController. This is a singleton class.
      * Access the only existing instance by using {@link #getInstance()}.
      */
     private HostPluginController() {
-        this.hosterPluginMap = new HashMap<String, LazyHostPlugin>();
         this.list = null;
     }
 
@@ -83,17 +86,14 @@ public class HostPluginController extends PluginController<PluginForHost> {
             Log.L.severe("@HostPluginController: WTF, no plugins!");
         }
         list = Collections.unmodifiableList(plugins);
-        for (LazyHostPlugin l : list) {
-            hosterPluginMap.put(l.getDisplayName(), l);
-        }
     }
 
     private List<LazyHostPlugin> loadFromCache() {
-        List<LazyHostPlugin> ret = new ArrayList<LazyHostPlugin>();
-        for (AbstractHostPlugin ap : JSonStorage.restoreFrom(Application.getResource(TMP_HOSTS_JSON), true, null, new TypeRef<ArrayList<AbstractHostPlugin>>() {
-        }, new ArrayList<AbstractHostPlugin>())) {
-            LazyHostPlugin l = new LazyHostPlugin(ap);
-            ret.add(l);
+        ArrayList<AbstractHostPlugin> l = JSonStorage.restoreFrom(Application.getResource(getCache()), true, null, new TypeRef<ArrayList<AbstractHostPlugin>>() {
+        }, new ArrayList<AbstractHostPlugin>());
+        List<LazyHostPlugin> ret = new ArrayList<LazyHostPlugin>(l.size());
+        for (AbstractHostPlugin ap : l) {
+            ret.add(new LazyHostPlugin(ap));
         }
         return ret;
     }
@@ -101,11 +101,12 @@ public class HostPluginController extends PluginController<PluginForHost> {
     private List<LazyHostPlugin> update() throws MalformedURLException {
         List<LazyHostPlugin> ret = new ArrayList<LazyHostPlugin>();
         ArrayList<AbstractHostPlugin> save = new ArrayList<AbstractHostPlugin>();
-        for (PluginInfo<PluginForHost> c : scan(HOSTERPATH)) {
+        for (PluginInfo<PluginForHost> c : scan("jd/plugins/hoster")) {
             String simpleName = c.getClazz().getSimpleName();
             HostPlugin a = c.getClazz().getAnnotation(HostPlugin.class);
             if (a != null) {
                 try {
+                    long revision = Formatter.getRevision(a.revision());
                     String[] names = a.names();
                     String[] patterns = a.urls();
                     if (names.length == 0) {
@@ -120,6 +121,7 @@ public class HostPluginController extends PluginController<PluginForHost> {
                             AbstractHostPlugin ap = new AbstractHostPlugin(c.getClazz().getSimpleName());
                             ap.setDisplayName(names[i]);
                             ap.setPattern(patterns[i]);
+                            ap.setVersion(revision);
                             LazyHostPlugin l = new LazyHostPlugin(ap);
                             PluginForHost plg = l.getPrototype();
                             ap.setPremium(plg.isPremiumEnabled());
@@ -147,12 +149,18 @@ public class HostPluginController extends PluginController<PluginForHost> {
                 Log.L.severe("@HostPlugin missing:" + simpleName);
             }
         }
+        /* sort after displayName */
+        Collections.sort(ret, new Comparator<LazyHostPlugin>() {
+            public int compare(final LazyHostPlugin a, final LazyHostPlugin b) {
+                return a.getDisplayName().compareToIgnoreCase(b.getDisplayName());
+            }
+        });
         save(save);
         return ret;
     }
 
     private void save(List<AbstractHostPlugin> save) {
-        JSonStorage.saveTo(Application.getResource(TMP_HOSTS_JSON), save);
+        JSonStorage.saveTo(Application.getResource(getCache()), save);
     }
 
     public List<LazyHostPlugin> list() {
@@ -170,9 +178,10 @@ public class HostPluginController extends PluginController<PluginForHost> {
 
     public LazyHostPlugin get(String displayName) {
         lazyInit();
-        return hosterPluginMap.get(displayName);
+        for (LazyHostPlugin p : list) {
+            if (p.getDisplayName().equals(displayName)) return p;
+        }
+        return null;
     }
-
-    private static final String HOSTERPATH = "jd/plugins/hoster";
 
 }

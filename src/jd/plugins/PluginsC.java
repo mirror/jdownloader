@@ -120,7 +120,7 @@ public abstract class PluginsC extends Plugin {
 
     @Override
     public long getVersion() {
-        return 0;
+        return lazyCo.getVersion();
     }
 
     @Override

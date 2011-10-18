@@ -60,11 +60,13 @@ import org.jdownloader.translate._JDT;
 
 public class ConfigSidebar extends JPanel implements ControlListener, MouseMotionListener, MouseListener, ConfigEventListener {
 
-    private static final long serialVersionUID = 6456662020047832983L;
+    private static final long    serialVersionUID = 6456662020047832983L;
 
-    private JList             list;
+    private JList                list;
 
-    private Point             mouse;
+    private Point                mouse;
+
+    private SettingsSidebarModel treemodel        = null;
 
     public ConfigSidebar() {
         super(new MigLayout("ins 0", "[grow,fill]", "[grow,fill]"));
@@ -124,7 +126,7 @@ public class ConfigSidebar extends JPanel implements ControlListener, MouseMotio
         };
         list.addMouseMotionListener(this);
         list.addMouseListener(this);
-        list.setModel(new SettingsSidebarModel());
+        list.setModel(treemodel = new SettingsSidebarModel());
         list.setCellRenderer(new TreeRenderer());
 
         list.setOpaque(false);
@@ -172,12 +174,10 @@ public class ConfigSidebar extends JPanel implements ControlListener, MouseMotio
             public void valueChanged(ListSelectionEvent e) {
                 SwitchPanel op = getSelectedPanel();
                 if (op instanceof ExtensionConfigPanel) {
-                    ((ExtensionConfigPanel<?>) op).getExtension().getSettings().getStorageHandler().getEventSender().removeListener(ConfigSidebar.this);
                     ((ExtensionConfigPanel<?>) op).getExtension().getSettings().getStorageHandler().getEventSender().addListener(ConfigSidebar.this);
                 }
             }
         });
-
     }
 
     public void addListener(ListSelectionListener x) {
@@ -194,6 +194,19 @@ public class ConfigSidebar extends JPanel implements ControlListener, MouseMotio
     // }
 
     public void controlEvent(ControlEvent event) {
+        if (event.getEventID() == ControlEvent.CONTROL_GUI_COMPLETE) {
+            new Thread() {
+                @Override
+                public void run() {
+                    /*
+                     * extra thread, because we dont want to block the
+                     * eventsender
+                     */
+                    treemodel.fill();
+                }
+
+            }.start();
+        }
         if (event.getEventID() == ControlEvent.CONTROL_SYSTEM_EXIT) {
             saveCurrentState();
         }
@@ -225,7 +238,11 @@ public class ConfigSidebar extends JPanel implements ControlListener, MouseMotio
      * Updates the Addon subtree
      */
     public void updateAddons() {
+        treemodel.fill();
+    }
 
+    public boolean treeInitiated() {
+        return treemodel.getSize() > 0;
     }
 
     public void mouseDragged(MouseEvent e) {

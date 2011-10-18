@@ -11,7 +11,7 @@ import org.appwork.exceptions.WTFException;
 
 public abstract class LazyPlugin<T extends Plugin> {
     private static final Object[] EMPTY = new Object[] {};
-    private static final Object[] OLD   = new Object[] { null };
+    private long                  version;
     private Pattern               pattern;
     private String                classname;
     private String                displayName;
@@ -20,14 +20,15 @@ public abstract class LazyPlugin<T extends Plugin> {
     private Object[]              constructorParameters;
     protected T                   prototypeInstance;
 
-    public LazyPlugin(String patternString, String classname, String displayName) {
+    public LazyPlugin(String patternString, String classname, String displayName, long version) {
         pattern = Pattern.compile(patternString, Pattern.CASE_INSENSITIVE);
         this.classname = classname;
         this.displayName = displayName;
+        this.version = version;
     }
 
-    public boolean isLoaded() {
-        return pluginClass != null;
+    public long getVersion() {
+        return version;
     }
 
     public String getDisplayName() {
@@ -60,7 +61,6 @@ public abstract class LazyPlugin<T extends Plugin> {
     public T newInstance() {
         try {
             getConstructor();
-            System.out.println("@LazyPlugin: newInstance " + this.classname + ":" + this.displayName);
             return constructor.newInstance(constructorParameters);
         } catch (final Throwable e) {
             throw new WTFException(e);

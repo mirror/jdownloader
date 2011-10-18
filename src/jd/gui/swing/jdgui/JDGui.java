@@ -46,7 +46,6 @@ import javax.swing.ToolTipManager;
 import javax.swing.WindowConstants;
 
 import jd.config.ConfigContainer;
-import jd.controlling.ClipboardHandler;
 import jd.controlling.DownloadController;
 import jd.controlling.DownloadWatchDog;
 import jd.controlling.JDController;
@@ -136,11 +135,8 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
 
     private JDGui() {
         super("");
-        // disable Clipboard while gui is loading
-        ClipboardHandler.getClipboard().setTempDisabled(true);
         // Important for unittests
         this.mainFrame.setName("MAINFRAME");
-
         this.initDefaults();
         this.initComponents();
 
@@ -155,7 +151,7 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
         if (this.mainFrame.getRootPane().getUI().toString().contains("SyntheticaRootPaneUI")) {
             ((de.javasoft.plaf.synthetica.SyntheticaRootPaneUI) this.mainFrame.getRootPane().getUI()).setMaximizedBounds(this.mainFrame);
         }
-        ClipboardHandler.getClipboard().setTempDisabled(false);
+
         LinkGrabberController.getInstance().setDistributer(this);
         KeyboardFocusManager.getCurrentKeyboardFocusManager().addKeyEventPostProcessor(new KeyEventPostProcessor() {
 
@@ -180,7 +176,6 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
                 return false;
             }
         });
-
     }
 
     public void addLinks(final ArrayList<DownloadLink> links, final boolean hidegrabber, final boolean autostart) {
@@ -306,7 +301,7 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
         this.downloadView = new DownloadsView();
         this.linkgrabberView = new LinkGrabberView();
 
-        this.mainTabbedPane.addTab(new DownloadsView());
+        this.mainTabbedPane.addTab(downloadView);
         this.mainTabbedPane.addTab(this.linkgrabberView);
         this.mainTabbedPane.addTab(LinkgrabberView.getInstance());
 

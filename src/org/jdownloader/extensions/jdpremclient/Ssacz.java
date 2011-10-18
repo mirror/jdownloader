@@ -10,6 +10,7 @@ import jd.controlling.AccountController;
 import jd.controlling.JDPluginLogger;
 import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.http.Browser;
+import jd.nutils.Formatter;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
@@ -61,7 +62,7 @@ public class Ssacz extends PluginForHost implements JDPremInterface {
 
     @Override
     public long getVersion() {
-        if (plugin == null) return getVersion("$Revision: 00001 $");
+        if (plugin == null) return Formatter.getRevision("$Revision: 00001 $");
         return plugin.getVersion();
     }
 

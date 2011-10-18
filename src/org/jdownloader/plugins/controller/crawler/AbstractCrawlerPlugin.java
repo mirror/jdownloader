@@ -8,6 +8,7 @@ public class AbstractCrawlerPlugin implements Storable {
 
     private String  classname;
     private String  displayName;
+    private long    version;
     private boolean hasConfig;
 
     public boolean isHasConfig() {
@@ -46,6 +47,21 @@ public class AbstractCrawlerPlugin implements Storable {
 
     public AbstractCrawlerPlugin(String className) {
         this.classname = className;
+    }
+
+    /**
+     * @param version
+     *            the version to set
+     */
+    public void setVersion(long version) {
+        this.version = version;
+    }
+
+    /**
+     * @return the version
+     */
+    public long getVersion() {
+        return version;
     }
 
 }

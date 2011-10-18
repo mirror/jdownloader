@@ -23,6 +23,7 @@ import java.util.Locale;
 import java.util.SimpleTimeZone;
 
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 
 import org.appwork.utils.formatter.StringFormatter;
 
@@ -110,7 +111,9 @@ public class Formatter {
     }
 
     /**
-     * @deprecated Use {@link StringFormatter#fillString(String,String,String,int)} instead
+     * @deprecated Use
+     *             {@link StringFormatter#fillString(String,String,String,int)}
+     *             instead
      */
     public static String fillString(String binaryString, String pre, String post, int length) {
         return StringFormatter.fillString(binaryString, pre, post, length);
@@ -181,11 +184,11 @@ public class Formatter {
     public static long getRevision(String rev) {
         if (rev == null) return -1;
         try {
-            int start = rev.indexOf("Revision: ") + 10;
-            return Long.parseLong(rev.substring(start, rev.indexOf(" ", start + 1)));
-        } catch (Exception e) {
-            return -1;
+            String number = new Regex(rev, "Revision:.*?(\\d+)").getMatch(0);
+            if (number != null) return Long.parseLong(number);
+        } catch (Throwable e) {
         }
+        return -1;
     }
 
 }

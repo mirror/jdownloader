@@ -69,7 +69,7 @@ public class PluginUtils {
     }
 
     public static String askPassword(final String message, final String defaultmessage) {
-        synchronized (JDUtilities.USERIO_LOCK) {
+        synchronized (JDUtilities.LOCK) {
             return UserIO.getInstance().requestInputDialog(0, message, defaultmessage);
         }
     }

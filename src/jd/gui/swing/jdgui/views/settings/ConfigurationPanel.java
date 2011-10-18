@@ -5,6 +5,7 @@ import java.awt.Component;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
+import jd.Main;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.gui.swing.jdgui.views.settings.panels.ConfigPanelGeneral;
 import jd.gui.swing.jdgui.views.settings.sidebar.ConfigSidebar;
@@ -29,17 +30,6 @@ public class ConfigurationPanel extends SwitchPanel implements ListSelectionList
         cfg = JsonConfig.create(GraphicalUserInterfaceSettings.class);
         // add(viewport);
         sidebar.addListener(this);
-        Class<?> selected = null;
-        try {
-            selected = Class.forName(cfg.getActiveConfigPanel());
-        } catch (Throwable e) {
-
-        }
-        if (selected != null) {
-            sidebar.setSelectedTreeEntry(selected);
-        } else {
-            sidebar.setSelectedTreeEntry(ConfigPanelGeneral.class);
-        }
         // int c =
         // LookAndFeelController.getInstance().getLAFOptions().getPanelBackgroundColor();
         // if (c >= 0) {
@@ -54,6 +44,22 @@ public class ConfigurationPanel extends SwitchPanel implements ListSelectionList
 
     @Override
     protected void onShow() {
+        if (Main.isGuiComplete() && sidebar.treeInitiated() == false) {
+            sidebar.updateAddons();
+        }
+        if (sidebar.getSelectedPanel() == null) {
+            Class<?> selected = null;
+            try {
+                selected = Class.forName(cfg.getActiveConfigPanel());
+            } catch (Throwable e) {
+
+            }
+            if (selected != null) {
+                sidebar.setSelectedTreeEntry(selected);
+            } else {
+                sidebar.setSelectedTreeEntry(ConfigPanelGeneral.class);
+            }
+        }
     }
 
     @Override

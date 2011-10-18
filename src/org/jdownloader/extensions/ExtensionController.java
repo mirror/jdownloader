@@ -57,7 +57,7 @@ public class ExtensionController {
         JDController.getInstance().addControlListener(new ControlListener() {
 
             public void controlEvent(ControlEvent event) {
-                if (event.getEventID() == ControlEvent.CONTROL_INIT_COMPLETE) {
+                if (event.getEventID() == ControlEvent.CONTROL_GUI_COMPLETE) {
                     JDController.getInstance().removeControlListener(this);
 
                     for (AbstractExtensionWrapper plg : list) {
@@ -75,11 +75,18 @@ public class ExtensionController {
     }
 
     public void load() {
-        cacheChanged = false;
-        loadUnpacked();
-        loadJared();
-        if (cacheChanged) {
-            JSonStorage.saveTo(cacheFile, cache);
+        try {
+            cacheChanged = false;
+            if (Application.isJared(ExtensionController.class)) {
+                loadJared();
+            } else {
+                loadUnpacked();
+            }
+            if (cacheChanged) {
+                JSonStorage.saveTo(cacheFile, cache);
+            }
+        } catch (final Throwable e) {
+            Log.exception(e);
         }
     }
 
@@ -236,7 +243,7 @@ public class ExtensionController {
         return cached;
     }
 
-    public boolean isExtensionActive(Class<? extends AbstractExtension> class1) {
+    public boolean isExtensionActive(Class<? extends AbstractExtension<?>> class1) {
         AbstractExtensionWrapper plg = map.get(class1);
         if (plg != null && plg._getExtension() != null && plg._getExtension().isEnabled()) return true;
         return false;
@@ -254,7 +261,8 @@ public class ExtensionController {
      */
     public ArrayList<AbstractExtension<?>> getEnabledExtensions() {
         ArrayList<AbstractExtension<?>> ret = new ArrayList<AbstractExtension<?>>();
-        for (AbstractExtensionWrapper aew : list) {
+        ArrayList<AbstractExtensionWrapper> llist = list;
+        for (AbstractExtensionWrapper aew : llist) {
             if (aew._getExtension() != null && aew._getExtension().isEnabled()) ret.add(aew._getExtension());
         }
         return ret;

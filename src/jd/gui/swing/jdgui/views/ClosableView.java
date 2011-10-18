@@ -28,8 +28,8 @@ import jd.gui.swing.jdgui.interfaces.View;
 public abstract class ClosableView extends View {
 
     private static final long serialVersionUID = 8698758386841005256L;
-    private JMenuBar menubar;
-    private JDCloseButton closeButton;
+    private JMenuBar          menubar;
+    private JDCloseButton     closeButton;
 
     public ClosableView() {
         super();
@@ -47,6 +47,7 @@ public abstract class ClosableView extends View {
 
             public void actionPerformed(ActionEvent e) {
                 MainTabbedPane.getInstance().remove(ClosableView.this);
+                onClosed();
             }
         };
         if (menubar.getComponentCount() > count) {
@@ -79,6 +80,9 @@ public abstract class ClosableView extends View {
             }
 
         }.start();
+    }
+
+    public void onClosed() {
     }
 
 }

@@ -36,7 +36,6 @@ import jd.event.ControlEvent;
 import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
-import jd.nutils.Formatter;
 import jd.nutils.encoding.Encoding;
 import jd.utils.JDUtilities;
 
@@ -143,38 +142,12 @@ public abstract class Plugin implements ActionListener {
     private ConfigContainer config;
 
     protected Browser       br = null;
-    /**
-     * returns the init time of this plugin. this can be used, for example to
-     * ignore further captcha questions if the user decided not to continue
-     * decrypting
-     */
-    private long            initTime;
-
-    public void setInitTime(long initTime) {
-        System.out.println("Set " + this + " " + initTime);
-        this.initTime = initTime;
-    }
-
-    /**
-     * returns the init time of this plugin. this can be used, for example to
-     * ignore further captcha questions if the user decided not to continue
-     * decrypting
-     * 
-     * @return
-     */
-    public long getInitTime() {
-        return initTime;
-    }
 
     public Plugin() {
-        initTime = System.currentTimeMillis();
-
     }
 
     @Deprecated
     public Plugin(final PluginWrapper wrapper) {
-        initTime = System.currentTimeMillis();
-
     }
 
     public void actionPerformed(final ActionEvent e) {
@@ -211,19 +184,6 @@ public abstract class Plugin implements ActionListener {
      * haben kann. MenuItems sind Datenmodelle für ein TreeMenü.
      */
     public abstract ArrayList<MenuAction> createMenuitems();
-
-    /**
-     * Diese Funktion schneidet alle Vorkommnisse des vom Plugin unterstützten
-     * Pattern aus
-     * 
-     * @param data
-     *            Text, aus dem das Pattern ausgeschnitter werden soll
-     * @return Der resultierende String
-     */
-    public String cutMatches(final String data) {
-        /* case insensitive pattern */
-        return data.replaceAll("(?i)" + this.getSupportedLinks().pattern(), "--CUT--");
-    }
 
     /**
      * Verwendet den JDController um ein ControlEvent zu broadcasten
@@ -323,10 +283,6 @@ public abstract class Plugin implements ActionListener {
      * @return Versionsbezeichnung
      */
     public abstract long getVersion();
-
-    protected long getVersion(final String revision) {
-        return Formatter.getRevision(revision);
-    }
 
     /**
      * Initialisiert das Plugin vor dem ersten Gebrauch

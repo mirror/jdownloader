@@ -45,7 +45,7 @@ public class PremShare extends PluginForHost implements JDPremInterface {
 
     @Override
     public long getVersion() {
-        if (plugin == null) return getVersion("$Revision$");
+        if (plugin == null) return Formatter.getRevision("$Revision$");
         return plugin.getVersion();
     }
 

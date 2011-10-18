@@ -117,7 +117,7 @@ public abstract class PluginForDecrypt extends Plugin {
 
     @Override
     public long getVersion() {
-        return 0;
+        return lazyC.getVersion();
     }
 
     public void sleep(long i, CryptedLink link) throws InterruptedException {

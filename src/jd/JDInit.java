@@ -26,11 +26,10 @@ import javax.swing.AbstractAction;
 
 import jd.config.Configuration;
 import jd.config.Property;
-import jd.controlling.DownloadController;
-import jd.controlling.GarbageController;
 import jd.controlling.JDController;
 import jd.controlling.JDLogger;
 import jd.controlling.JSonWrapper;
+import jd.event.ControlEvent;
 import jd.gui.UserIF;
 import jd.gui.UserIO;
 import jd.gui.swing.SwingGui;
@@ -47,13 +46,12 @@ import jd.utils.JDUtilities;
 
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.update.updateclient.UpdaterConstants;
+import org.appwork.utils.logging.Log;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
-import org.jdownloader.api.RemoteAPIController;
-import org.jdownloader.extensions.ExtensionController;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.translate._JDT;
 import org.lobobrowser.util.OS;
@@ -75,38 +73,6 @@ public class JDInit {
     private static final boolean TEST_INSTALLER = false;
 
     private static final Logger  LOG            = JDLogger.getLogger();
-
-    private static ClassLoader   CL;
-
-    // /**
-    // * Returns a classloader to load plugins (class files); Depending on
-    // runtype
-    // * (dev or local jared) a different classoader is used to load plugins
-    // * either from installdirectory or from rundirectory
-    // *
-    // * @return
-    // */
-    // public static ClassLoader getPluginClassLoader() {
-    // if (JDInit.CL == null) {
-    // try {
-    // if (JDUtilities.getRunType() == JDUtilities.RUNTYPE_LOCAL_JARED) {
-    // try {
-    // System.out.println(JDUtilities.getResourceFile("java").toURI().toURL());
-    // } catch (final Throwable e) {
-    // e.printStackTrace();
-    // }
-    // JDInit.CL = new URLClassLoader(new URL[] {
-    // JDUtilities.getJDHomeDirectoryFromEnvironment().toURI().toURL() },
-    // Thread.currentThread().getContextClassLoader());
-    // } else {
-    // JDInit.CL = Thread.currentThread().getContextClassLoader();
-    // }
-    // } catch (final MalformedURLException e) {
-    // JDLogger.exception(e);
-    // }
-    // }
-    // return JDInit.CL;
-    // }
 
     public JDInit() {
     }
@@ -200,16 +166,6 @@ public class JDInit {
     }
 
     public void initControllers() {
-        new Thread() {
-
-            @Override
-            public void run() {
-                GarbageController.getInstance();
-                DownloadController.getInstance();
-                RemoteAPIController.getInstance();
-            }
-
-        }.start();
 
     }
 
@@ -220,16 +176,12 @@ public class JDInit {
         SwingGui.setInstance(JDGui.getInstance());
         UserIF.setInstance(SwingGui.getInstance());
         controller.addControlListener(SwingGui.getInstance());
+        Log.L.info("GUIDONE->" + (System.currentTimeMillis() - Main.startup));
+        controller.fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_GUI_COMPLETE, null));
     }
 
     public void initPlugins() {
 
-        try {
-            // init Extensioncontroller
-            ExtensionController.getInstance().load();
-        } catch (final Throwable e) {
-            JDLogger.exception(e);
-        }
     }
 
     public Configuration loadConfiguration() {

@@ -8,7 +8,7 @@ public class LazyContainerPlugin extends LazyPlugin<PluginsC> {
     private static final String JD_PLUGINS_DECRYPTER = "jd.plugins.a.";
 
     public LazyContainerPlugin(AbstractContainerPlugin ap) {
-        super(ap.getPattern(), JD_PLUGINS_DECRYPTER + ap.getClassname(), ap.getDisplayName());
+        super(ap.getPattern(), JD_PLUGINS_DECRYPTER + ap.getClassname(), ap.getDisplayName(), ap.getVersion());
     }
 
     @Override

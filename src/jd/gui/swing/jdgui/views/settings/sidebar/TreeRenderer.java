@@ -93,6 +93,7 @@ public class TreeRenderer extends JPanel implements ListCellRenderer {
 
     public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
         this.setBorder(null);
+        if (value == null) return this;
         if (value instanceof CheckBoxedEntry) {
             return extension.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
         } else if (value instanceof AdvancedSettings) {
@@ -119,7 +120,6 @@ public class TreeRenderer extends JPanel implements ListCellRenderer {
             return ((ExtensionHeader) value);
         } else {
             ConfigPanel te = (ConfigPanel) value;
-
             setText(te.getTitle());
             setIcon(te.getIcon());
             lbl.setVerticalTextPosition(JLabel.BOTTOM);

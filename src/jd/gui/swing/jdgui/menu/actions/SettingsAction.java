@@ -36,7 +36,6 @@ public class SettingsAction extends ToolBarAction {
 
     @Override
     public void onAction(ActionEvent e) {
-
         JsonConfig.create(GraphicalUserInterfaceSettings.class).setConfigViewVisible(true);
         SwingGui.getInstance().setContent(ConfigurationView.getInstance(), true);
     }

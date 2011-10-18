@@ -84,7 +84,7 @@ public class JDUtilities {
     /**
      * nur 1 UserIO Dialog gleichzeitig (z.b. PW, Captcha)
      */
-    public static final Object       USERIO_LOCK         = new Object();
+    public static final Object       LOCK                = new Object();
 
     private static String            REVISION;
 
@@ -354,27 +354,30 @@ public class JDUtilities {
         return ret;
     }
 
-    public synchronized static DatabaseConnector getDatabaseConnector() {
-        if (DB_CONNECT == null) {
-            try {
-                DB_CONNECT = new DatabaseConnector();
-            } catch (Exception e) {
-                JDLogger.exception(e);
-                final String configpath = JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath() + "/config/";
-                if (e.getMessage().equals("Database broken!")) {
-                    LOGGER.severe("Database broken! Creating fresh Database");
-                    if (!new File(configpath + "database.script").delete() || !new File(configpath + "database.properties").delete()) {
-                        LOGGER.severe("Could not delete broken Database");
-                        UserIO.getInstance().requestMessageDialog("Could not delete broken database. Please remove the JD_HOME/config directory and restart JD");
-                    }
-                }
+    public static DatabaseConnector getDatabaseConnector() {
+        if (DB_CONNECT != null) return DB_CONNECT;
+        synchronized (LOCK) {
+            if (DB_CONNECT == null) {
                 try {
                     DB_CONNECT = new DatabaseConnector();
-                } catch (Exception e1) {
-                    JDLogger.exception(e1);
-                    UserIO.getInstance().requestMessageDialog("Could not create database. Please remove the JD_HOME/config directory and restart JD");
+                } catch (Exception e) {
+                    JDLogger.exception(e);
+                    final String configpath = JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath() + "/config/";
+                    if (e.getMessage().equals("Database broken!")) {
+                        LOGGER.severe("Database broken! Creating fresh Database");
+                        if (!new File(configpath + "database.script").delete() || !new File(configpath + "database.properties").delete()) {
+                            LOGGER.severe("Could not delete broken Database");
+                            UserIO.getInstance().requestMessageDialog("Could not delete broken database. Please remove the JD_HOME/config directory and restart JD");
+                        }
+                    }
+                    try {
+                        DB_CONNECT = new DatabaseConnector();
+                    } catch (Exception e1) {
+                        JDLogger.exception(e1);
+                        UserIO.getInstance().requestMessageDialog("Could not create database. Please remove the JD_HOME/config directory and restart JD");
 
-                    System.exit(1);
+                        System.exit(1);
+                    }
                 }
             }
         }

@@ -14,6 +14,7 @@ import jd.gui.swing.jdgui.views.settings.panels.ReconnectSettings;
 import jd.gui.swing.jdgui.views.settings.panels.accountmanager.AccountManagerSettings;
 import jd.gui.swing.jdgui.views.settings.panels.advanced.AdvancedSettings;
 import jd.gui.swing.jdgui.views.settings.panels.downloadandnetwork.ProxyConfig;
+import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.Linkgrabber;
 import jd.gui.swing.jdgui.views.settings.panels.packagizer.Packagizer;
 import jd.gui.swing.jdgui.views.settings.panels.pluginsettings.PluginSettings;
 
@@ -28,63 +29,88 @@ import org.jdownloader.extensions.ExtensionController;
 import org.jdownloader.extensions.extraction.ExtractionExtension;
 import org.jdownloader.extensions.jdtrayicon.TrayExtension;
 
-public class SettingsSidebarModel extends DefaultListModel implements GenericConfigEventListener<Boolean> {
+public class SettingsSidebarModel extends DefaultListModel<Object> implements GenericConfigEventListener<Boolean> {
 
-    private static final long serialVersionUID = -204494527404304349L;
+    private static final long      serialVersionUID = -204494527404304349L;
+    private Object                 LOCK             = new Object();
+    private ConfigPanelGeneral     cfg;
+    private DownloadControll       dlc;
+    private ReconnectSettings      rcs;
+    private ProxyConfig            pc;
+    private AccountManagerSettings ams;
+    private BasicAuthentication    ba;
+    private PluginSettings         ps;
+    private GUISettings            gs;
+    private Packagizer             pz;
+    private AdvancedSettings       ads;
+    private Linkgrabber            lg;
+    private ExtensionHeader        eh;
 
     public SettingsSidebarModel() {
         super();
-        fill();
-    }
-
-    private void fill() {
-        removeAllElements();
-        AbstractExtensionWrapper extract = ExtensionController.getInstance().getExtension(ExtractionExtension.class);
-        AbstractExtensionWrapper tray = ExtensionController.getInstance().getExtension(TrayExtension.class);
-        addElement(new ConfigPanelGeneral());
-        addElement(new DownloadControll());
-
-        // addElement(new ToolbarController());
-
-        addElement(new ReconnectSettings());
-        addElement(new ProxyConfig());
-        addElement(new AccountManagerSettings());
-        addElement(new BasicAuthentication());
-
-        // addElement(new Premium());
-
-        addElement(new PluginSettings());
-        // addElement(new ExtensionManager());
-        addElement(new GUISettings());
-        // modules
-        addElement(new jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.Linkgrabber());
-        addElement(new Packagizer());
-        addElement(extract);
-        addElement(tray);
-        addElement(new AdvancedSettings());
-
         LinkFilterSettings.LINK_FILTER_ENABLED.getEventSender().addListener(this);
         PackagizerSettings.ENABLED.getEventSender().addListener(this);
-        boolean first = true;
-        ArrayList<AbstractExtensionWrapper> pluginsOptional = ExtensionController.getInstance().getExtensions();
-        Collections.sort(pluginsOptional, new Comparator<AbstractExtensionWrapper>() {
+    }
 
-            public int compare(AbstractExtensionWrapper o1, AbstractExtensionWrapper o2) {
-                return o1.getName().compareTo(o2.getName());
+    public void fill() {
+        synchronized (LOCK) {
+            removeAllElements();
+            AbstractExtensionWrapper extract = ExtensionController.getInstance().getExtension(ExtractionExtension.class);
+            AbstractExtensionWrapper tray = ExtensionController.getInstance().getExtension(TrayExtension.class);
+
+            if (cfg == null) cfg = new ConfigPanelGeneral();
+            addElement(cfg);
+            if (dlc == null) dlc = new DownloadControll();
+            addElement(dlc);
+
+            // addElement(new ToolbarController());
+            if (rcs == null) rcs = new ReconnectSettings();
+            addElement(rcs);
+            if (pc == null) pc = new ProxyConfig();
+            addElement(pc);
+            if (ams == null) ams = new AccountManagerSettings();
+            addElement(ams);
+            if (ba == null) ba = new BasicAuthentication();
+            addElement(ba);
+
+            // addElement(new Premium());
+            if (ps == null) ps = new PluginSettings();
+            addElement(ps);
+            // addElement(new ExtensionManager());
+            if (gs == null) gs = new GUISettings();
+            addElement(gs);
+            // modules
+
+            if (lg == null) lg = new jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.Linkgrabber();
+            addElement(lg);
+            if (pz == null) pz = new Packagizer();
+            addElement(pz);
+            if (extract != null) addElement(extract);
+            if (tray != null) addElement(tray);
+            if (ads == null) ads = new AdvancedSettings();
+            addElement(ads);
+
+            boolean first = true;
+            ArrayList<AbstractExtensionWrapper> pluginsOptional = ExtensionController.getInstance().getExtensions();
+            Collections.sort(pluginsOptional, new Comparator<AbstractExtensionWrapper>() {
+
+                public int compare(AbstractExtensionWrapper o1, AbstractExtensionWrapper o2) {
+                    return o1.getName().compareTo(o2.getName());
+                }
+            });
+            for (final AbstractExtensionWrapper plg : pluginsOptional) {
+                if (contains(plg)) continue;
+                if (CrossSystem.isWindows() && !plg.isWindowsRunnable()) continue;
+                if (CrossSystem.isLinux() && !plg.isLinuxRunnable()) continue;
+                if (CrossSystem.isMac() && !plg.isMacRunnable()) continue;
+
+                if (first) {
+                    if (eh == null) eh = new ExtensionHeader();
+                    addElement(eh);
+                }
+                first = false;
+                addElement(plg);
             }
-        });
-        for (final AbstractExtensionWrapper plg : pluginsOptional) {
-            if (plg == extract || plg == tray) continue;
-            if (CrossSystem.isWindows() && !plg.isWindowsRunnable()) continue;
-            if (CrossSystem.isLinux() && !plg.isLinuxRunnable()) continue;
-            if (CrossSystem.isMac() && !plg.isMacRunnable()) continue;
-
-            if (first) {
-                addElement(new ExtensionHeader());
-            }
-            first = false;
-            addElement(plg);
-
         }
     }
 

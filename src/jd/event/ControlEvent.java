@@ -71,6 +71,8 @@ public class ControlEvent extends DefaultIntEvent {
 
     public static final int   CONTROL_INIT_COMPLETE            = 30;
 
+    public static final int   CONTROL_GUI_COMPLETE             = 300;
+
     /**
      * Wird verwendet wenn eine datei verarbeitet wurde.z.B. eine datei entpackt
      * wurde. Andere plugins und addons können dieses event abrufen und

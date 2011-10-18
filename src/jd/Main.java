@@ -17,7 +17,6 @@
 
 package jd;
 
-import java.awt.EventQueue;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
@@ -36,12 +35,15 @@ import java.util.logging.Logger;
 
 import jd.captcha.JACController;
 import jd.captcha.JAntiCaptcha;
+import jd.controlling.ClipboardHandler;
+import jd.controlling.DownloadController;
 import jd.controlling.DynamicPluginInterface;
+import jd.controlling.GarbageController;
 import jd.controlling.JDController;
 import jd.controlling.JDLogger;
 import jd.event.ControlEvent;
+import jd.event.ControlListener;
 import jd.gui.UserIO;
-import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.MacOSApplicationAdapter;
 import jd.gui.swing.laf.LookAndFeelController;
 import jd.http.Browser;
@@ -57,6 +59,9 @@ import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.singleapp.AnotherInstanceRunningException;
 import org.appwork.utils.singleapp.InstanceMessageListener;
 import org.appwork.utils.singleapp.SingleAppInstance;
+import org.appwork.utils.swing.EDTHelper;
+import org.jdownloader.api.RemoteAPIController;
+import org.jdownloader.extensions.ExtensionController;
 import org.jdownloader.gui.uiserio.JDSwingUserIO;
 import org.jdownloader.gui.uiserio.NewUIO;
 import org.jdownloader.images.NewTheme;
@@ -75,6 +80,7 @@ public class Main {
     public static SingleAppInstance SINGLE_INSTANCE_CONTROLLER = null;
 
     private static boolean          Init_Complete              = false;
+    private static boolean          Gui_Complete               = false;
     public final static long        startup                    = System.currentTimeMillis();
 
     // private static JSonWrapper webConfig;
@@ -143,11 +149,15 @@ public class Main {
         return Main.Init_Complete;
     }
 
+    public static boolean isGuiComplete() {
+        return Main.Gui_Complete;
+    }
+
     /**
      * Checks if the user uses a correct java version
      */
     private static void javaCheck() {
-        if (Application.getJavaVersion() < 15000000l) {
+        if (Application.getJavaVersion() < Application.JAVA15) {
             Main.LOG.warning("Javacheck: Wrong Java Version! JDownloader needs at least Java 1.5 or higher!");
             System.exit(0);
         }
@@ -374,8 +384,6 @@ public class Main {
             Main.instanceStarted = true;
         }
 
-        JDController.getInstance();
-
         if (Main.instanceStarted || JDInitFlags.SWITCH_NEW_INSTANCE) {
 
             Main.start(args);
@@ -401,31 +409,22 @@ public class Main {
 
     private static void start(final String args[]) {
         if (!JDInitFlags.STOP) {
-            final Main main = new Main();
-            EventQueue.invokeLater(new Runnable() {
-                public void run() {
-
-                    main.go();
-                    for (final String p : args) {
-                        Main.LOG.finest("Param: " + p);
-                    }
-                    ParameterManager.processParameters(args);
-                }
-            });
+            Main main = new Main();
+            main.go();
+            for (final String p : args) {
+                Main.LOG.finest("Param: " + p);
+            }
+            ParameterManager.processParameters(args);
         }
     }
 
     private void go() {
         final JDInit init = new JDInit();
         final JDController controller = JDController.getInstance();
-        init.init();
 
         Main.LOG.info(new Date().toString());
         Main.LOG.info("init Configuration");
 
-        if (init.loadConfiguration() == null) {
-            UserIO.getInstance().requestMessageDialog("JDownloader cannot create the config files. Make sure, that JD_HOME/config/ exists and is writeable");
-        }
         if (JDInitFlags.SWITCH_DEBUG) {
             Main.LOG.info("DEBUG MODE ACTIVATED");
             // new PerformanceObserver().start();
@@ -433,25 +432,62 @@ public class Main {
         } else {
             JDLogger.removeConsoleHandler();
         }
-
-        new GuiRunnable<Object>() {
+        /* these can be initiated without a gui */
+        new Thread() {
             @Override
-            public Object runSave() {
+            public void run() {
+                /*
+                 * TODO: this just sets the browser settings and needs to load
+                 * database for this
+                 */
+                init.init();
+                if (init.loadConfiguration() == null) {
+                    /* TODO: we load database just to check an entry?! */
+                    UserIO.getInstance().requestMessageDialog("JDownloader cannot create the config files. Make sure, that JD_HOME/config/ exists and is writeable");
+                }
+            }
+
+        }.start();
+        new Thread() {
+            @Override
+            public void run() {
+                /* extra thread as loading of linklist can take a moment */
+                DownloadController.getInstance();
+            }
+        }.start();
+        new EDTHelper<Void>() {
+            @Override
+            public Void edtRun() {
                 LookAndFeelController.getInstance().setUIManager();
-                // SyntheticaLookAndFeel.setLookAndFeel();
                 return null;
             }
         }.waitForEDT();
 
-        init.initPlugins();
-
         Locale.setDefault(Locale.ENGLISH);
+        controller.addControlListener(new ControlListener() {
 
-        init.initControllers();
+            public void controlEvent(ControlEvent event) {
+                if (event.getEventID() == ControlEvent.CONTROL_GUI_COMPLETE) {
+                    controller.removeControlListener(this);
+                    Gui_Complete = true;
+                    /* we dont want to block the eventsender */
+                    new Thread() {
+                        @Override
+                        public void run() {
+                            RemoteAPIController.getInstance();
+                            GarbageController.getInstance();
+                            ExtensionController.getInstance().load();
+                            JDUpdater.getInstance().startChecker();
+                            ClipboardHandler.getClipboard().setTempDisabled(false);
+                        }
+                    }.start();
+                }
+            }
 
-        new GuiRunnable<Object>() {
+        });
+        new EDTHelper<Void>() {
             @Override
-            public Object runSave() {
+            public Void edtRun() {
                 init.initGUI(controller);
                 return null;
             }
@@ -475,37 +511,9 @@ public class Main {
         Main.LOG.finer("Runtype: " + JDUtilities.getRunType());
 
         init.checkUpdate();
-        JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_INIT_COMPLETE, null));
+        controller.fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_INIT_COMPLETE, null));
         Main.Init_Complete = true;
 
-        try {
-            Thread.sleep(3000);
-        } catch (final InterruptedException e) {
-            JDLogger.exception(e);
-        }
-        JDUpdater.getInstance().startChecker();
-        // /*
-        // * Keeps the home working directory for developers up2date
-        // */
-        // Main.LOG.info("update start");
-        //
-        // new Thread("Update and dynamics") {
-        // @Override
-        // public void run() {
-        // try {
-        // Thread.sleep(5000);
-        // // WebUpdate.doUpdateCheck(false);
-        //
-        // Main.loadDynamics();
-        // //
-        // // WebUpdate.dynamicPluginsFinished();
-        // } catch (final Exception e) {
-        // e.printStackTrace();
-        // }
-        // }
-        // }.start();
-        //
-        // Main.LOG.info("update end");
     }
 
 }

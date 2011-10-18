@@ -3,10 +3,10 @@ package org.jdownloader.plugins.controller.container;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 
 import jd.JDInitFlags;
+import jd.nutils.Formatter;
 import jd.plugins.ContainerPlugin;
 import jd.plugins.PluginsC;
 
@@ -20,19 +20,21 @@ import org.jdownloader.plugins.controller.PluginController;
 import org.jdownloader.plugins.controller.PluginInfo;
 
 public class ContainerPluginController extends PluginController<PluginsC> {
-    private static final String                    CACHE_PATH = "tmp/container.ejs";
-    private static final ContainerPluginController INSTANCE   = new ContainerPluginController();
+
+    private static final ContainerPluginController INSTANCE = new ContainerPluginController();
 
     public static ContainerPluginController getInstance() {
         return ContainerPluginController.INSTANCE;
     }
 
-    private HashMap<String, LazyContainerPlugin> containerPluginMap;
-    private List<LazyContainerPlugin>            list;
+    private List<LazyContainerPlugin> list;
 
     private ContainerPluginController() {
-        containerPluginMap = new HashMap<String, LazyContainerPlugin>();
         list = null;
+    }
+
+    private String getCache() {
+        return "tmp/container.ejs";
     }
 
     public void init() {
@@ -72,14 +74,11 @@ public class ContainerPluginController extends PluginController<PluginsC> {
             Log.L.severe("@ContainerPluginController: WTF, no plugins!");
         }
         list = Collections.unmodifiableList(plugins);
-        for (LazyContainerPlugin l : list) {
-            containerPluginMap.put(l.getDisplayName(), l);
-        }
     }
 
     private List<LazyContainerPlugin> loadFromCache() {
         List<LazyContainerPlugin> ret = new ArrayList<LazyContainerPlugin>();
-        for (AbstractContainerPlugin ap : JSonStorage.restoreFrom(Application.getResource(CACHE_PATH), false, KEY, new TypeRef<ArrayList<AbstractContainerPlugin>>() {
+        for (AbstractContainerPlugin ap : JSonStorage.restoreFrom(Application.getResource(getCache()), false, KEY, new TypeRef<ArrayList<AbstractContainerPlugin>>() {
         }, new ArrayList<AbstractContainerPlugin>())) {
             LazyContainerPlugin l = new LazyContainerPlugin(ap);
             ret.add(l);
@@ -92,11 +91,12 @@ public class ContainerPluginController extends PluginController<PluginsC> {
     private List<LazyContainerPlugin> update() throws MalformedURLException {
         List<LazyContainerPlugin> ret = new ArrayList<LazyContainerPlugin>();
         ArrayList<AbstractContainerPlugin> save = new ArrayList<AbstractContainerPlugin>();
-        for (PluginInfo<PluginsC> c : scan(PLUGIN_FOLDER_PATH)) {
+        for (PluginInfo<PluginsC> c : scan("jd/plugins/a")) {
             String simpleName = c.getClazz().getSimpleName();
             ContainerPlugin a = c.getClazz().getAnnotation(ContainerPlugin.class);
             if (a != null) {
                 try {
+                    long revision = Formatter.getRevision(a.revision());
                     String[] names = a.names();
                     String[] patterns = a.urls();
                     if (names.length == 0) {
@@ -111,6 +111,7 @@ public class ContainerPluginController extends PluginController<PluginsC> {
                             AbstractContainerPlugin ap = new AbstractContainerPlugin(c.getClazz().getSimpleName());
                             ap.setDisplayName(names[i]);
                             ap.setPattern(patterns[i]);
+                            ap.setVersion(revision);
                             LazyContainerPlugin l = new LazyContainerPlugin(ap);
                             l.getPrototype();
                             ret.add(l);
@@ -134,10 +135,8 @@ public class ContainerPluginController extends PluginController<PluginsC> {
     }
 
     private void save(List<AbstractContainerPlugin> save) {
-        JSonStorage.saveTo(Application.getResource(CACHE_PATH), false, KEY, JSonStorage.serializeToJson(save));
+        JSonStorage.saveTo(Application.getResource(getCache()), false, KEY, JSonStorage.serializeToJson(save));
     }
-
-    private static final String PLUGIN_FOLDER_PATH = "jd/plugins/a";
 
     public List<LazyContainerPlugin> list() {
         lazyInit();
@@ -154,7 +153,10 @@ public class ContainerPluginController extends PluginController<PluginsC> {
 
     public LazyContainerPlugin get(String displayName) {
         lazyInit();
-        return containerPluginMap.get(displayName);
+        for (LazyContainerPlugin p : list) {
+            if (p.getDisplayName().equals(displayName)) return p;
+        }
+        return null;
     }
 
     public String getContainerExtensions(final String filter) {

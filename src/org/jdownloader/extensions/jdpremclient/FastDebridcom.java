@@ -15,6 +15,7 @@ import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
+import jd.nutils.Formatter;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
@@ -52,7 +53,7 @@ public class FastDebridcom extends PluginForHost implements JDPremInterface {
 
     @Override
     public long getVersion() {
-        if (plugin == null) return getVersion("$Revision$");
+        if (plugin == null) return Formatter.getRevision("$Revision$");
         return plugin.getVersion();
     }
 

@@ -8,6 +8,15 @@ public class AbstractHostPlugin implements Storable {
 
     private boolean premium;
     private boolean hasConfig;
+    private long    version;
+
+    public long getVersion() {
+        return version;
+    }
+
+    public void setVersion(long version) {
+        this.version = version;
+    }
 
     public boolean isHasConfig() {
         return hasConfig;

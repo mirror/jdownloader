@@ -173,11 +173,9 @@ public class JDUpdater extends Updater implements Runnable, ControlListener {
 
     public void run() {
         synchronized (this) {
-
             final Updater updater = JDUpdater.getInstance();
             try {
                 updater.reset();
-
                 if (silentCheck) {
                     runSilent(updater);
                 } else {
@@ -185,7 +183,6 @@ public class JDUpdater extends Updater implements Runnable, ControlListener {
                 }
 
             } finally {
-
                 updateRunning = false;
             }
         }

@@ -8,6 +8,7 @@ import jd.config.ConfigContainer;
 import jd.controlling.AccountController;
 import jd.controlling.JDPluginLogger;
 import jd.http.Browser;
+import jd.nutils.Formatter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
 import jd.plugins.Account;
@@ -44,7 +45,7 @@ public class MultiShare extends PluginForHost implements JDPremInterface {
 
     @Override
     public long getVersion() {
-        if (plugin == null) return getVersion("$Revision: 12739 $");
+        if (plugin == null) return Formatter.getRevision("$Revision: 12739 $");
         return plugin.getVersion();
     }
 

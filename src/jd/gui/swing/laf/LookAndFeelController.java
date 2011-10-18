@@ -25,9 +25,7 @@ import javax.swing.plaf.FontUIResource;
 
 import jd.JDInitFlags;
 import jd.controlling.JDLogger;
-import jd.crypt.JDCrypt;
 import jd.nutils.OSDetector;
-import jd.utils.JDHexUtils;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
@@ -55,9 +53,9 @@ public class LookAndFeelController {
     }
 
     private LookAndFeelWrapper[]           supportedLookAndFeels;
-    private boolean                        defaultLAF;
     private LAFOptions                     lafOptions;
     private GraphicalUserInterfaceSettings config;
+    private String                         laf = null;
 
     /**
      * Create a new instance of LookAndFeelController. This is a singleton
@@ -65,11 +63,14 @@ public class LookAndFeelController {
      */
     private LookAndFeelController() {
         config = JsonConfig.create(GraphicalUserInterfaceSettings.class);
-        this.supportedLookAndFeels = collectSupportedLookAndFeels();
-
     }
 
     public LookAndFeelWrapper[] getSupportedLookAndFeels() {
+        if (supportedLookAndFeels != null) return supportedLookAndFeels;
+        synchronized (this) {
+            if (supportedLookAndFeels != null) return supportedLookAndFeels;
+            this.supportedLookAndFeels = collectSupportedLookAndFeels();
+        }
         return supportedLookAndFeels;
     }
 
@@ -179,23 +180,9 @@ public class LookAndFeelController {
         uiInitated = true;
         long t = System.currentTimeMillis();
         try {
-            String laf = getPlaf().getClassName();
+            laf = getPlaf().getClassName();
             Log.L.info("Use Look & Feel: " + laf);
             preSetup(laf);
-            String str = null;
-            try {
-                str = NewTheme.I().getText("lafoptions/" + laf + ".json");
-            } catch (final Throwable e) {
-                Log.exception(e);
-            }
-            if (str != null) {
-                lafOptions = JSonStorage.restoreFromString(str, new TypeRef<LAFOptions>() {
-                }, new LAFOptions());
-            } else {
-                Log.L.warning("Not LAF Options found: " + laf + ".json");
-                lafOptions = new LAFOptions();
-            }
-            defaultLAF = laf.equals(DE_JAVASOFT_PLAF_SYNTHETICA_SYNTHETICA_SIMPLE2D_LOOK_AND_FEEL);
             if (laf.contains("Synthetica")) {
                 try {
                     /* special init for Synthetica */
@@ -217,11 +204,24 @@ public class LookAndFeelController {
     }
 
     public LAFOptions getLAFOptions() {
+        if (lafOptions != null) return lafOptions;
+        synchronized (this) {
+            if (lafOptions != null) return lafOptions;
+            String str = null;
+            try {
+                if (laf != null) str = NewTheme.I().getText("lafoptions/" + laf + ".json");
+            } catch (final Throwable e) {
+                Log.exception(e);
+            }
+            if (str != null) {
+                lafOptions = JSonStorage.restoreFromString(str, new TypeRef<LAFOptions>() {
+                }, new LAFOptions());
+            } else {
+                Log.L.warning("Not LAF Options found: " + laf + ".json");
+                lafOptions = new LAFOptions();
+            }
+        }
         return lafOptions;
-    }
-
-    public boolean isDefaultLAF() {
-        return defaultLAF;
     }
 
     /**
@@ -230,12 +230,14 @@ public class LookAndFeelController {
      * 
      * @return
      */
-    public static boolean isSubstance() {
+    public boolean isSubstance() {
+        if (isSynthetica()) return false;
         return UIManager.getLookAndFeel().getName().toLowerCase().contains("substance");
     }
 
-    public static boolean isSynthetica() {
-        return UIManager.getLookAndFeel().getName().toLowerCase().contains("synthetica");
+    public boolean isSynthetica() {
+        if (laf == null) return false;
+        return laf.contains("Synthetica");
     }
 
     /**
@@ -309,7 +311,8 @@ public class LookAndFeelController {
          * of synthetica found on javasoft.de
          */
         try {
-            String key = JDCrypt.decrypt(JDHexUtils.getByteArray("4a94286634a203ada63b87c54662227252490d6f10e421b7239c610138c53e4c51fc7c0a2a8a18a0a2c0a40191b1186f"), new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 11, 12, 13, 14, 15, 16 });
+            /* we save around 200-400 ms here by not using AES */
+            String key = new String(new byte[] { 67, 49, 52, 49, 48, 50, 57, 52, 45, 54, 49, 66, 54, 52, 65, 65, 67, 45, 52, 66, 55, 68, 51, 48, 51, 57, 45, 56, 51, 52, 65, 56, 50, 65, 49, 45, 51, 55, 69, 53, 68, 54, 57, 53 }, "UTF-8");
             if (key != null) {
                 String[] li = { "Licensee=AppWork UG", "LicenseRegistrationNumber=289416475", "Product=Synthetica", "LicenseType=Small Business License", "ExpireDate=--.--.----", "MaxVersion=2.999.999" };
                 UIManager.put("Synthetica.license.info", li);

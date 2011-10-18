@@ -106,7 +106,7 @@ public abstract class PluginForHost extends Plugin {
 
     @Override
     public long getVersion() {
-        return 0;
+        return lazyP.getVersion();
     }
 
     @Override

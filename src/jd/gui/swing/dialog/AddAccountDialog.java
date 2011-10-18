@@ -18,9 +18,7 @@ package jd.gui.swing.dialog;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
+import java.util.List;
 
 import javax.swing.Icon;
 import javax.swing.JButton;
@@ -183,12 +181,8 @@ public class AddAccountDialog extends AbstractDialog<Integer> {
 
     @Override
     public JComponent layoutDialogContent() {
-        final ArrayList<LazyHostPlugin> plugins = new ArrayList<LazyHostPlugin>(HostPluginController.getInstance().list());
-        Collections.sort(plugins, new Comparator<LazyHostPlugin>() {
-            public int compare(final LazyHostPlugin a, final LazyHostPlugin b) {
-                return a.getDisplayName().compareToIgnoreCase(b.getDisplayName());
-            }
-        });
+        final List<LazyHostPlugin> plugins = HostPluginController.getInstance().list();
+
         // final HostPluginWrapper[] array = plugins.toArray(new
         // HostPluginWrapper[plugins.size()]);
 
@@ -209,7 +203,7 @@ public class AddAccountDialog extends AbstractDialog<Integer> {
 
         if (this.plugin != null) {
             try {
-                LazyHostPlugin lazyp = HostPluginController.getInstance().get(plugin.getHost());
+                LazyHostPlugin lazyp = plugin.getLazyP();
                 if (lazyp != null) this.hoster.setSelectedItem(lazyp);
             } catch (final Exception e) {
             }

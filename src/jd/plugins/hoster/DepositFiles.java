@@ -224,16 +224,22 @@ public class DepositFiles extends PluginForHost {
         } else {
             return null;
         }
-        crap = crap.replaceAll("(\\'| |;|\\+|\\(|\\)|\t|\r|\n)", "");
-        final String[] lol = HTMLParser.getHttpLinks(crap, "");
-        if (lol == null || lol.length == 0) {
-            if (!crap.contains("depositfiles") && crap.contains("php?")) {
-                return MAINPAGE + crap;
-            } else {
-                return null;
+        if (crap != null) {
+            crap = crap.replaceAll("(\\'| |;|\\+|\\(|\\)|\t|\r|\n)", "");
+            final String[] lol = HTMLParser.getHttpLinks(crap, "");
+            if (lol == null || lol.length == 0) {
+                if (!crap.contains("depositfiles") && crap.contains("php?")) {
+                    return MAINPAGE + crap;
+                } else {
+                    return null;
+                }
             }
+            return lol[0];
+        } else {
+            String fid = br.getRegex("var fid = '(.*?)'").getMatch(0);
+            if (fid != null) { return "http://depositfiles.com/get_file.php?fid=" + fid; }
         }
-        return lol[0];
+        return null;
     }
 
     @Override

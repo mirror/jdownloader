@@ -69,9 +69,13 @@ public class ConfigurationView extends ClosableView {
     @Override
     protected void onShow() {
         JsonConfig.create(GraphicalUserInterfaceSettings.class).setConfigViewVisible(true);
-
         SwitchPanel panel = this.getContent();
         if (panel != null) panel.setShown();
+    }
+
+    @Override
+    public void onClosed() {
+        JsonConfig.create(GraphicalUserInterfaceSettings.class).setConfigViewVisible(false);
     }
 
     /**

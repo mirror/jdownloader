@@ -9,6 +9,7 @@ public class AbstractContainerPlugin implements Storable {
     private String  classname;
     private String  displayName;
     private boolean hasConfig;
+    private long    version;
 
     public boolean isHasConfig() {
         return hasConfig;
@@ -46,6 +47,21 @@ public class AbstractContainerPlugin implements Storable {
 
     public AbstractContainerPlugin(String className) {
         this.classname = className;
+    }
+
+    /**
+     * @param version
+     *            the version to set
+     */
+    public void setVersion(long version) {
+        this.version = version;
+    }
+
+    /**
+     * @return the version
+     */
+    public long getVersion() {
+        return version;
     }
 
 }

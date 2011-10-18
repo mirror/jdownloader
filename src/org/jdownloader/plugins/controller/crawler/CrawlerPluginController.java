@@ -3,10 +3,10 @@ package org.jdownloader.plugins.controller.crawler;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 
 import jd.JDInitFlags;
+import jd.nutils.Formatter;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.PluginForDecrypt;
 
@@ -20,8 +20,7 @@ import org.jdownloader.plugins.controller.PluginInfo;
 
 public class CrawlerPluginController extends PluginController<PluginForDecrypt> {
 
-    private static final String                  CACHE_PATH = "tmp/crawler.ejs";
-    private static final CrawlerPluginController INSTANCE   = new CrawlerPluginController();
+    private static final CrawlerPluginController INSTANCE = new CrawlerPluginController();
 
     /**
      * get the only existing instance of HostPluginController. This is a
@@ -33,15 +32,17 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
         return CrawlerPluginController.INSTANCE;
     }
 
-    private HashMap<String, LazyCrawlerPlugin> crawlerPluginMap;
-    private List<LazyCrawlerPlugin>            list;
+    private List<LazyCrawlerPlugin> list;
+
+    private String getCache() {
+        return "tmp/crawler.ejs";
+    }
 
     /**
      * Create a new instance of HostPluginController. This is a singleton class.
      * Access the only existing instance by using {@link #getInstance()}.
      */
     private CrawlerPluginController() {
-        crawlerPluginMap = new HashMap<String, LazyCrawlerPlugin>();
         list = null;
     }
 
@@ -82,17 +83,14 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
             Log.L.severe("@CrawlerPluginController: WTF, no plugins!");
         }
         list = Collections.unmodifiableList(plugins);
-        for (LazyCrawlerPlugin l : list) {
-            crawlerPluginMap.put(l.getDisplayName(), l);
-        }
     }
 
     private List<LazyCrawlerPlugin> loadFromCache() {
-        List<LazyCrawlerPlugin> ret = new ArrayList<LazyCrawlerPlugin>();
-        for (AbstractCrawlerPlugin ap : JSonStorage.restoreFrom(Application.getResource(CACHE_PATH), false, KEY, new TypeRef<ArrayList<AbstractCrawlerPlugin>>() {
-        }, new ArrayList<AbstractCrawlerPlugin>())) {
-            LazyCrawlerPlugin l = new LazyCrawlerPlugin(ap);
-            ret.add(l);
+        ArrayList<AbstractCrawlerPlugin> l = JSonStorage.restoreFrom(Application.getResource(getCache()), false, KEY, new TypeRef<ArrayList<AbstractCrawlerPlugin>>() {
+        }, new ArrayList<AbstractCrawlerPlugin>());
+        List<LazyCrawlerPlugin> ret = new ArrayList<LazyCrawlerPlugin>(l.size());
+        for (AbstractCrawlerPlugin ap : l) {
+            ret.add(new LazyCrawlerPlugin(ap));
         }
         return ret;
     }
@@ -102,11 +100,12 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
     private List<LazyCrawlerPlugin> update() throws MalformedURLException {
         List<LazyCrawlerPlugin> ret = new ArrayList<LazyCrawlerPlugin>();
         ArrayList<AbstractCrawlerPlugin> save = new ArrayList<AbstractCrawlerPlugin>();
-        for (PluginInfo<PluginForDecrypt> c : scan(PLUGIN_FOLDER_PATH)) {
+        for (PluginInfo<PluginForDecrypt> c : scan("jd/plugins/decrypter")) {
             String simpleName = c.getClazz().getSimpleName();
             DecrypterPlugin a = c.getClazz().getAnnotation(DecrypterPlugin.class);
             if (a != null) {
                 try {
+                    long revision = Formatter.getRevision(a.revision());
                     String[] names = a.names();
                     String[] patterns = a.urls();
                     if (names.length == 0) {
@@ -121,6 +120,7 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
                             AbstractCrawlerPlugin ap = new AbstractCrawlerPlugin(c.getClazz().getSimpleName());
                             ap.setDisplayName(names[i]);
                             ap.setPattern(patterns[i]);
+                            ap.setVersion(revision);
                             LazyCrawlerPlugin l = new LazyCrawlerPlugin(ap);
                             l.getPrototype();
                             ret.add(l);
@@ -144,10 +144,8 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
     }
 
     private void save(List<AbstractCrawlerPlugin> save) {
-        JSonStorage.saveTo(Application.getResource(CACHE_PATH), false, KEY, JSonStorage.serializeToJson(save));
+        JSonStorage.saveTo(Application.getResource(getCache()), false, KEY, JSonStorage.serializeToJson(save));
     }
-
-    private static final String PLUGIN_FOLDER_PATH = "jd/plugins/decrypter";
 
     public List<LazyCrawlerPlugin> list() {
         lazyInit();
@@ -164,7 +162,10 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
 
     public LazyCrawlerPlugin get(String displayName) {
         lazyInit();
-        return crawlerPluginMap.get(displayName);
+        for (LazyCrawlerPlugin p : list) {
+            if (p.getDisplayName().equals(displayName)) return p;
+        }
+        return null;
     }
 
 }
