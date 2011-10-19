@@ -33,101 +33,136 @@ import org.appwork.utils.formatter.SizeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "otr.datenkeller.at" }, urls = { "http://(www\\.)?otr\\.datenkeller\\.at/\\?(file|getFile)=.+" }, flags = { 0 })
 public class OtrDatenkellerAt extends PluginForHost {
 
-    public OtrDatenkellerAt(PluginWrapper wrapper) {
-        super(wrapper);
-    }
+	public OtrDatenkellerAt(PluginWrapper wrapper) {
+		super(wrapper);
+	}
 
-    @Override
-    public String getAGBLink() {
-        return "http://otr.datenkeller.at";
-    }
+	@Override
+	public String getAGBLink() {
+		return "http://otr.datenkeller.at";
+	}
 
-    public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("getFile", "file"));
-    }
+	public void correctDownloadLink(DownloadLink link) {
+		link.setUrlDownload(link.getDownloadURL().replace("getFile", "file")
+				.replaceAll("\\&referer=otrkeyfinder\\&lang=[a-z]+", ""));
+	}
 
-    @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.setCustomCharset("utf-8");
-        br.getPage(link.getDownloadURL());
-        if (!br.containsHTML("id=\"reqFile\"")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = new Regex(link.getDownloadURL(), "otr\\.datenkeller\\.at/\\?file=(.+)").getMatch(0);
-        String filesize = br.getRegex("Größe: </td><td  align=\\'center\\'> (.*?) <td").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        link.setName(filename.trim().replaceAll("\\&referer=.*?", ""));
-        if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize.replace("i", "")));
-        return AvailableStatus.TRUE;
-    }
+	@Override
+	public AvailableStatus requestFileInformation(DownloadLink link)
+			throws IOException, PluginException {
+		this.setBrowserExclusive();
+		br.setCustomCharset("utf-8");
+		br.getPage(link.getDownloadURL());
+		if (!br.containsHTML("id=\"reqFile\""))
+			throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+		String filename = new Regex(link.getDownloadURL(),
+				"otr\\.datenkeller\\.at/\\?file=(.+)").getMatch(0);
+		String filesize = br.getRegex(
+				"Größe: </td><td  align=\\'center\\'> (.*?) <td").getMatch(0);
+		if (filename == null)
+			throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+		link.setName(filename.trim().replaceAll("\\&referer=.*?", ""));
+		if (filesize != null)
+			link.setDownloadSize(SizeFormatter.getSize(filesize
+					.replace("i", "")));
+		return AvailableStatus.TRUE;
+	}
 
-    @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        String dlPage = downloadLink.getDownloadURL().replace("?file=", "?getFile=");
-        br.getPage(dlPage);
-        String dllink = null;
-        String lowSpeedLink;
-        Browser br2 = br.cloneBrowser();
-        if (br.containsHTML("klicken um den Download zu starten")) {
-            dllink = getDllink();
-        } else {
-            downloadLink.getLinkStatus().setStatusText("Waiting for ticket...");
-            for (int i = 0; i <= 410; i++) {
-                sleep(28 * 1000l, downloadLink);
-                String position = br.getRegex("<td>Deine Position in der Warteschlange: </td><td>~(\\d+)</td></tr>").getMatch(0);
-                if (position != null) downloadLink.getLinkStatus().setStatusText("Waiting for ticket...Position in der Warteschlange: " + position);
-                br.getPage(dlPage);
-                if (br.containsHTML("klicken um den Download zu starten")) {
-                    br.getPage(dlPage);
-                    dllink = getDllink();
-                    break;
-                }
-                lowSpeedLink = br.getRegex("\"(\\?lowSpeed=[^<>\\'\"]+)\"").getMatch(0);
-                if (i > 400 && lowSpeedLink != null) {
-                    br2.getPage("http://otr.datenkeller.at/" + lowSpeedLink);
-                    dllink = br2.getRegex(">Dein Download Link:<br>[\t\n\r ]+<a href=\"(http://[^<>\\'\"]+)\"").getMatch(0);
-                    if (dllink == null) dllink = br2.getRegex("\"(http://\\d+\\.\\d+\\.\\d+\\.\\d+/low/[a-z0-9]+/[^<>\\'\"]+)\"").getMatch(0);
-                    if (dllink != null) {
-                        logger.info("Using lowspeed link for downloadlink: " + downloadLink.getDownloadURL());
-                        break;
-                    } else {
-                        logger.warning("Failed to find low speed link, continuing to look for downloadticket...");
-                    }
-                }
-                if (i > 403) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Didn't get a ticket");
-                logger.info("Didn't get a ticket on try " + i + ". Retrying...Position: " + position);
-            }
-        }
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -6);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
-    }
+	@Override
+	public void handleFree(DownloadLink downloadLink) throws Exception,
+			PluginException {
+		requestFileInformation(downloadLink);
+		String dlPage = downloadLink.getDownloadURL().replace("?file=",
+				"?getFile=");
+		br.getPage(dlPage);
+		String dllink = null;
+		String lowSpeedLink;
+		Browser br2 = br.cloneBrowser();
+		if (br.containsHTML("klicken um den Download zu starten")) {
+			dllink = getDllink();
+		} else {
+			downloadLink.getLinkStatus().setStatusText("Waiting for ticket...");
+			for (int i = 0; i <= 410; i++) {
+				sleep(28 * 1000l, downloadLink);
+				String position = br
+						.getRegex(
+								"<td>Deine Position in der Warteschlange: </td><td>~(\\d+)</td></tr>")
+						.getMatch(0);
+				if (position != null)
+					downloadLink.getLinkStatus().setStatusText(
+							"Waiting for ticket...Position in der Warteschlange: "
+									+ position);
+				br.getPage(dlPage);
+				if (br.containsHTML("klicken um den Download zu starten")) {
+					br.getPage(dlPage);
+					dllink = getDllink();
+					break;
+				}
+				lowSpeedLink = br.getRegex("\"(\\?lowSpeed=[^<>\\'\"]+)\"")
+						.getMatch(0);
+				if (i > 400 && lowSpeedLink != null) {
+					br2.getPage("http://otr.datenkeller.at/" + lowSpeedLink);
+					dllink = br2
+							.getRegex(
+									">Dein Download Link:<br>[\t\n\r ]+<a href=\"(http://[^<>\\'\"]+)\"")
+							.getMatch(0);
+					if (dllink == null)
+						dllink = br2
+								.getRegex(
+										"\"(http://\\d+\\.\\d+\\.\\d+\\.\\d+/low/[a-z0-9]+/[^<>\\'\"]+)\"")
+								.getMatch(0);
+					if (dllink != null) {
+						logger.info("Using lowspeed link for downloadlink: "
+								+ downloadLink.getDownloadURL());
+						break;
+					} else {
+						logger
+								.warning("Failed to find low speed link, continuing to look for downloadticket...");
+					}
+				}
+				if (i > 403)
+					throw new PluginException(
+							LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE,
+							"Didn't get a ticket");
+				logger.info("Didn't get a ticket on try " + i
+						+ ". Retrying...Position: " + position);
+			}
+		}
+		if (dllink == null)
+			throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+		dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink,
+				true, -6);
+		if (dl.getConnection().getContentType().contains("html")) {
+			br.followConnection();
+			throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+		}
+		dl.startDownload();
+	}
 
-    public String getDllink() throws Exception, PluginException {
-        Regex allMatches = br.getRegex("onclick=\"startCount\\([0-9]{1}, [0-9]{1}, \\'(.*?)\\', \\'(.*?)\\', \\'(.*?)\\'\\)");
-        String firstPart = allMatches.getMatch(1);
-        String secondPart = allMatches.getMatch(0);
-        String thirdPart = allMatches.getMatch(2);
-        if (firstPart == null || secondPart == null || thirdPart == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        String dllink = "http://" + firstPart + "/" + secondPart + "/" + thirdPart;
-        return dllink;
-    }
+	public String getDllink() throws Exception, PluginException {
+		Regex allMatches = br
+				.getRegex("onclick=\"startCount\\([0-9]{1}, [0-9]{1}, \\'(.*?)\\', \\'(.*?)\\', \\'(.*?)\\'\\)");
+		String firstPart = allMatches.getMatch(1);
+		String secondPart = allMatches.getMatch(0);
+		String thirdPart = allMatches.getMatch(2);
+		if (firstPart == null || secondPart == null || thirdPart == null)
+			throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+		String dllink = "http://" + firstPart + "/" + secondPart + "/"
+				+ thirdPart;
+		return dllink;
+	}
 
-    @Override
-    public void reset() {
-    }
+	@Override
+	public void reset() {
+	}
 
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return 1;
-    }
+	@Override
+	public int getMaxSimultanFreeDownloadNum() {
+		return 1;
+	}
 
-    @Override
-    public void resetDownloadlink(DownloadLink link) {
-    }
+	@Override
+	public void resetDownloadlink(DownloadLink link) {
+	}
 
 }
