@@ -158,6 +158,7 @@ public class VeohCom extends PluginForHost {
         downloadLink.getLinkStatus().setStatusText("download to initialize ...");
         downloadLink.requestGuiUpdate();
         br.getPage("http://content.veoh.com" + path + "?version=3&ct=" + cryptedToken + xor(cryptedToken.substring(p, p + 8), hexTime));
+        if (br.getHttpConnection().getResponseCode() == 404) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         // parse piece eids and decrypt it
         sTime = br.getRegex("time=\'(\\d+)\'").getMatch(0);
         if (sTime == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
