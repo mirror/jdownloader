@@ -57,10 +57,17 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
     }
 
     private LinkCollector() {
-        linkChecker = new LinkChecker<CrawledLink>();
-        linkChecker.setLinkCheckHandler(this);
-        setCrawlerFilter(LinkCrawler.defaultFilterFactory());
-        this.setCrawlerFilter(LinkFilterController.getInstance());
+    }
+
+    private void lazyInit() {
+        if (linkChecker != null) return;
+        synchronized (this) {
+            if (linkChecker != null) return;
+            linkChecker = new LinkChecker<CrawledLink>();
+            linkChecker.setLinkCheckHandler(this);
+            setCrawlerFilter(LinkCrawler.defaultFilterFactory());
+            this.setCrawlerFilter(LinkFilterController.getInstance());
+        }
     }
 
     public boolean isRunning() {
@@ -110,6 +117,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
     public LinkCrawler addCrawlerJob(final ArrayList<CrawledLink> links) {
         if (links == null || links.size() == 0) throw new IllegalArgumentException("no links");
+        lazyInit();
         LinkCrawler lc = new LinkCrawler();
         lc.setFilter(crawlerFilter);
         lc.setHandler(this);
@@ -131,6 +139,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
     public LinkCrawler addCrawlerJob(final LinkCollectingJob job) {
         if (job == null) throw new IllegalArgumentException("job is null");
+        lazyInit();
         LinkCrawler lc = new LinkCrawler() {
 
             @Override

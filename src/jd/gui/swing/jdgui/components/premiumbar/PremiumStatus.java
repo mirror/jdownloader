@@ -25,7 +25,6 @@ import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 
-import jd.Main;
 import jd.config.Configuration;
 import jd.controlling.AccountController;
 import jd.controlling.AccountControllerEvent;
@@ -79,26 +78,6 @@ public class PremiumStatus extends JPanel implements MouseListener, ControlListe
 
         JDUtilities.getController().addControlListener(this);
 
-        IOEQ.TIMINGQUEUE.scheduleWithFixedDelay(new Runnable() {
-
-            public void run() {
-                /* this scheduleritem checks all enabled accounts every 30 mins */
-                try {
-                    refreshAccountStats();
-                } catch (Throwable e) {
-                    JDLogger.exception(e);
-                }
-            }
-
-        }, 1, 30, TimeUnit.MINUTES);
-        redrawTimer = new DelayedRunnable(IOEQ.TIMINGQUEUE, 5000) {
-
-            @Override
-            public void delayedrun() {
-                if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true)) redraw();
-            }
-
-        };
     }
 
     public void updateGUI(boolean enabled) {
@@ -255,26 +234,57 @@ public class PremiumStatus extends JPanel implements MouseListener, ControlListe
     }
 
     public void controlEvent(ControlEvent event) {
-        if (event.getEventID() == ControlEvent.CONTROL_INIT_COMPLETE && event.getCaller() instanceof Main) {
+        if (event.getEventID() == ControlEvent.CONTROL_GUI_COMPLETE) {
             JDUtilities.getController().removeControlListener(this);
             /* once gui init is complete we can add the listener */
-            AccountController.getInstance().addListener(new AccountControllerListener() {
+            new Thread() {
 
-                public void onAccountControllerEvent(AccountControllerEvent event) {
-                    switch (event.getEventID()) {
-                    case AccountControllerEvent.ACCOUNT_ADDED:
-                    case AccountControllerEvent.ACCOUNT_UPDATE:
-                    case AccountControllerEvent.ACCOUNT_REMOVED:
-                    case AccountControllerEvent.ACCOUNT_EXPIRED:
-                    case AccountControllerEvent.ACCOUNT_INVALID:
-                        redrawTimer.run();
-                        break;
-                    default:
-                        break;
-                    }
+                @Override
+                public void run() {
+                    IOEQ.TIMINGQUEUE.scheduleWithFixedDelay(new Runnable() {
+
+                        public void run() {
+                            /*
+                             * this scheduleritem checks all enabled accounts
+                             * every 30 mins
+                             */
+                            try {
+                                refreshAccountStats();
+                            } catch (Throwable e) {
+                                JDLogger.exception(e);
+                            }
+                        }
+
+                    }, 1, 30, TimeUnit.MINUTES);
+                    redrawTimer = new DelayedRunnable(IOEQ.TIMINGQUEUE, 5000) {
+
+                        @Override
+                        public void delayedrun() {
+                            if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true)) redraw();
+                        }
+
+                    };
+                    AccountController.getInstance().addListener(new AccountControllerListener() {
+
+                        public void onAccountControllerEvent(AccountControllerEvent event) {
+                            switch (event.getEventID()) {
+                            case AccountControllerEvent.ACCOUNT_ADDED:
+                            case AccountControllerEvent.ACCOUNT_UPDATE:
+                            case AccountControllerEvent.ACCOUNT_REMOVED:
+                            case AccountControllerEvent.ACCOUNT_EXPIRED:
+                            case AccountControllerEvent.ACCOUNT_INVALID:
+                                if (redrawTimer != null) redrawTimer.run();
+                                break;
+                            default:
+                                break;
+                            }
+                        }
+
+                    });
                 }
 
-            });
+            }.start();
+
         }
     }
 

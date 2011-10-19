@@ -78,7 +78,7 @@ public final class ClipboardHandler extends Thread implements ControlListener {
      */
     private ClipboardHandler() {
         clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
-        JDUtilities.getController().addControlListener(this);
+        if (Main.isGuiComplete() == false) JDUtilities.getController().addControlListener(this);
         this.enabled = false;
         initDataFlavors();
         this.setName("ClipboardHandler");
@@ -389,9 +389,9 @@ public final class ClipboardHandler extends Thread implements ControlListener {
     }
 
     public void controlEvent(final ControlEvent event) {
-        if (event.getEventID() == ControlEvent.CONTROL_INIT_COMPLETE && event.getCaller() instanceof Main) {
-            setEnabled(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_CLIPBOARD_ALWAYS_ACTIVE, true));
+        if (event.getEventID() == ControlEvent.CONTROL_GUI_COMPLETE) {
             JDUtilities.getController().removeControlListener(this);
+            setEnabled(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_CLIPBOARD_ALWAYS_ACTIVE, true));
         }
     }
 

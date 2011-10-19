@@ -37,7 +37,6 @@ import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
 import javax.swing.Timer;
 
-import jd.Main;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.ConfigGroup;
@@ -238,7 +237,7 @@ public class TrayExtension extends AbstractExtension<TrayConfig> implements Mous
     }
 
     public void controlEvent(ControlEvent event) {
-        if (event.getEventID() == ControlEvent.CONTROL_INIT_COMPLETE && event.getCaller() instanceof Main) {
+        if (event.getEventID() == ControlEvent.CONTROL_GUI_COMPLETE) {
             logger.info("JDLightTrayIcon Init complete");
             guiFrame = JDGui.getInstance().getMainFrame();
             if (guiFrame != null) {
@@ -263,7 +262,7 @@ public class TrayExtension extends AbstractExtension<TrayConfig> implements Mous
                             JDGui.getInstance().setWindowTitle("JD AC: " + DownloadWatchDog.getInstance().getActiveDownloads() + " DL: " + Formatter.formatReadable(DownloadWatchDog.getInstance().getConnectionManager().getIncommingBandwidthUsage()));
                         } else {
                             if (needupdate) {
-                                JDGui.getInstance().setWindowTitle(JDUtilities.getJDTitle());
+                                JDGui.getInstance().setWindowTitle(JDUtilities.getJDTitle(0));
                                 needupdate = false;
                             }
                         }
@@ -272,13 +271,13 @@ public class TrayExtension extends AbstractExtension<TrayConfig> implements Mous
                         } catch (Exception e) {
                         }
                     }
-                    JDGui.getInstance().setWindowTitle(JDUtilities.getJDTitle());
+                    JDGui.getInstance().setWindowTitle(JDUtilities.getJDTitle(0));
                 }
             };
             updateThread.start();
         } else if (event.getEventID() == ControlEvent.CONTROL_DOWNLOAD_STOP) {
             if (updateThread != null) updateThread.interrupt();
-            JDGui.getInstance().setWindowTitle(JDUtilities.getJDTitle());
+            JDGui.getInstance().setWindowTitle(JDUtilities.getJDTitle(0));
         }
     }
 

@@ -27,7 +27,6 @@ import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.reconnect.Reconnecter;
 import jd.gui.UIConstants;
 import jd.gui.UserIF;
-import jd.utils.JDUtilities;
 
 public class ParameterManager {
 
@@ -177,11 +176,13 @@ public class ParameterManager {
             adder.append("file://");
             adder.append(string);
         }
-        LinkCollector.getInstance().addCrawlerJob(new LinkCollectingJob(adder.toString()));
+        String job = adder.toString().trim();
+        if (job.length() == 0) return;
+        LinkCollector.getInstance().addCrawlerJob(new LinkCollectingJob(job));
     }
 
     public static void showCmdHelp() {
-        final String[][] help = new String[][] { { JDUtilities.getJDTitle(), "JD-Team" }, { "http://jdownloader.org/\t\t", "http://board.jdownloader.org" + System.getProperty("line.separator") }, { "-h/--help\t", "Show this help message" }, { "-a/--add-link(s)", "Add links" }, { "-co/--add-container(s)", "Add containers" }, { "-m/--minimize\t", "Minimize download window" }, { "-f/--focus\t", "Get jD to foreground/focus" }, { "-s/--show\t", "Show JAC prepared captchas" }, { "-t/--train\t", "Train a JAC method" }, { "-r/--reconnect\t", "Perform a Reconnect" }, { "-C/--captcha <filepath or url> <method>", "Get code from image using JAntiCaptcha" }, { "-p/--add-password(s)", "Add passwords" }, { "-n --new-instance", "Force new instance if another jD is running" } };
+        final String[][] help = new String[][] { { "JDownloader", "JD-Team" }, { "http://jdownloader.org/\t\t", "http://board.jdownloader.org" + System.getProperty("line.separator") }, { "-h/--help\t", "Show this help message" }, { "-a/--add-link(s)", "Add links" }, { "-co/--add-container(s)", "Add containers" }, { "-m/--minimize\t", "Minimize download window" }, { "-f/--focus\t", "Get jD to foreground/focus" }, { "-s/--show\t", "Show JAC prepared captchas" }, { "-t/--train\t", "Train a JAC method" }, { "-r/--reconnect\t", "Perform a Reconnect" }, { "-C/--captcha <filepath or url> <method>", "Get code from image using JAntiCaptcha" }, { "-p/--add-password(s)", "Add passwords" }, { "-n --new-instance", "Force new instance if another jD is running" } };
         for (final String helpLine[] : help) {
             System.out.println(helpLine[0] + "\t" + helpLine[1]);
         }

@@ -829,7 +829,7 @@ public class ChatExtension extends AbstractExtension<ChatConfig> {
 
             } else if (org.appwork.utils.Regex.matches(cmd, ChatExtension.CMD_VERSION)) {
 
-                final String msg = " is using " + JDUtilities.getJDTitle() + " with Java " + Application.getJavaVersion() + " on a " + CrossSystem.getOSString() + " system";
+                final String msg = " is using " + JDUtilities.getJDTitle(0) + " with Java " + Application.getJavaVersion() + " on a " + CrossSystem.getOSString() + " system";
                 this.conn.doPrivmsg(channel2, new String(new byte[] { 1 }) + "ACTION " + this.prepareToSend(msg) + new String(new byte[] { 1 }));
                 this.addToText(null, ChatExtension.STYLE_ACTION, this.conn.getNick() + " " + Utils.prepareMsg(msg));
             } else if (org.appwork.utils.Regex.matches(cmd, ChatExtension.CMD_MODE)) {

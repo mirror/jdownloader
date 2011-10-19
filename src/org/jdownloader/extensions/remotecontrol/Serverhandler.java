@@ -199,7 +199,7 @@ public class Serverhandler implements Handler {
         } else if (requestUrl.equals("/get/version")) {
             // Get version
 
-            response.addContent(JDUtilities.getJDTitle());
+            response.addContent(JDUtilities.getJDTitle(0));
         } else if (requestUrl.equals("/get/config")) {
             // Get config
 

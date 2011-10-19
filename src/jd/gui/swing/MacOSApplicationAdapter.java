@@ -102,7 +102,7 @@ public class MacOSApplicationAdapter implements QuitHandler, AboutHandler, Prefe
         if (event.getEventID() == ControlEvent.CONTROL_SYSTEM_SHUTDOWN_PREPARED) {
             JDController.getInstance().removeControlListener(this);
             quitResponse.performQuit();
-        } else if (event.getEventID() == ControlEvent.CONTROL_INIT_COMPLETE && openURIlinks != null) {
+        } else if (event.getEventID() == ControlEvent.CONTROL_GUI_COMPLETE && openURIlinks != null) {
             JDController.getInstance().removeControlListener(this);
             LOG.info("Distribute links: " + openURIlinks);
             LinkCollector.getInstance().addCrawlerJob(new LinkCollectingJob(openURIlinks));

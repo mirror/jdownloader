@@ -51,7 +51,6 @@ import jd.controlling.DownloadWatchDog;
 import jd.controlling.JDController;
 import jd.controlling.JDLogger;
 import jd.controlling.LinkCheck;
-import jd.controlling.LinkGrabberController;
 import jd.controlling.LinkGrabberDistributeEvent;
 import jd.event.ControlEvent;
 import jd.gui.UIConstants;
@@ -85,6 +84,7 @@ import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Application;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.EDTHelper;
+import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
@@ -141,7 +141,7 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
         this.initComponents();
 
         this.setWindowIcon();
-        this.setWindowTitle(JDUtilities.getJDTitle());
+        this.setWindowTitle("JDownloader");
         this.layoutComponents();
 
         this.mainFrame.pack();
@@ -152,7 +152,6 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
             ((de.javasoft.plaf.synthetica.SyntheticaRootPaneUI) this.mainFrame.getRootPane().getUI()).setMaximizedBounds(this.mainFrame);
         }
 
-        LinkGrabberController.getInstance().setDistributer(this);
         KeyboardFocusManager.getCurrentKeyboardFocusManager().addKeyEventPostProcessor(new KeyEventPostProcessor() {
 
             public boolean postProcessKeyEvent(final KeyEvent e) {
@@ -227,15 +226,15 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
 
     public void controlEvent(final ControlEvent event) {
         switch (event.getEventID()) {
-        case ControlEvent.CONTROL_INIT_COMPLETE:
+        case ControlEvent.CONTROL_GUI_COMPLETE:
             JDLogger.getLogger().info("Init complete");
-            new GuiRunnable<Object>() {
+            new EDTRunner() {
+
                 @Override
-                public Object runSave() {
+                protected void runInEDT() {
                     JDGui.this.mainFrame.setEnabled(true);
-                    return null;
                 }
-            }.start();
+            };
             if (JsonConfig.create(GeneralSettings.class).isAutoStartDownloadsOnStartupEnabled()) {
                 /* autostart downloads when no autoupdate is enabled */
                 JDController.getInstance().autostartDownloadsonStartup();

@@ -26,7 +26,6 @@ import java.util.regex.Pattern;
 import jd.config.ConfigPropertyListener;
 import jd.config.Property;
 import jd.config.SubConfiguration;
-import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkGrabberFilePackage;
@@ -78,8 +77,6 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
     private static LinkGrabberController             INSTANCE                   = null;
 
     private LinkGrabberControllerBroadcaster         broadcaster;
-
-    private static String[]                          filter;
 
     private ConfigPropertyListener                   cpl;
     private LinkGrabberFilePackage                   FP_UNSORTED;
@@ -151,16 +148,6 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
         logger = jd.controlling.JDLogger.getLogger();
         broadcaster = new LinkGrabberControllerBroadcaster();
         broadcaster.addListener(this);
-
-        filter = getLinkFilterPattern();
-        JDController.getInstance().addControlListener(this.cpl = new ConfigPropertyListener(IGNORE_LIST) {
-
-            @Override
-            public void onPropertyChanged(Property source, String propertyName) {
-                filter = getLinkFilterPattern();
-            }
-
-        });
 
         FP_UNSORTED = new LinkGrabberFilePackage(_JDT._.gui_linkgrabber_package_unsorted(), this);
         FP_UNCHECKED = new LinkGrabberFilePackage(_JDT._.gui_linkgrabber_package_unchecked(), this);
@@ -574,40 +561,6 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
             break;
         default:
             break;
-        }
-    }
-
-    /**
-     * example how to use filter to block ALL except one hoster
-     * http://(?!.*?megaupload.com).*?/.+
-     * 
-     * @param element
-     * @return
-     */
-    public static boolean isFiltered(DownloadLink element) {
-        if (filter == null || filter.length == 0) return false;
-        synchronized (filter) {
-            for (String f : filter) {
-                if (element.getDownloadURL().matches(f) || element.getName().matches(f)) {
-                    JDLogger.getLogger().finer("Filtered link: " + element.getName() + " due to filter entry " + f);
-                    return true;
-                }
-            }
-            return false;
-        }
-    }
-
-    public static boolean isFiltered(CryptedLink element) {
-        if (filter == null || filter.length == 0) return false;
-        synchronized (filter) {
-            for (String f : filter) {
-                String t = element.getCryptedUrl().replaceAll("httpviajd://", "http://").replaceAll("httpsviajd://", "https://");
-                if (t.matches(f)) {
-                    JDLogger.getLogger().finer("Filtered link: due to filter entry " + f);
-                    return true;
-                }
-            }
-            return false;
         }
     }
 

@@ -39,21 +39,11 @@ public class LinkgrabberView extends View {
         return INSTANCE;
     }
 
+    private boolean init = false;
+
     private LinkgrabberView() {
 
         super();
-        this.setContent(LinkGrabberPanel.getLinkGrabber());
-        this.setDefaultInfoPanel(new LinkGrabberInfoPanel());
-
-        LinkGrabberController.getInstance().addListener(new LinkGrabberControllerListener() {
-            public void onLinkGrabberControllerEvent(LinkGrabberControllerEvent event) {
-                switch (event.getEventID()) {
-                case LinkGrabberControllerEvent.ADDED:
-                    JDGui.getInstance().requestPanel(UserIF.Panels.DOWNLOADLIST, null);
-                    break;
-                }
-            }
-        });
     }
 
     @Override
@@ -76,8 +66,29 @@ public class LinkgrabberView extends View {
         setActionStatus(false);
     }
 
+    private void lazyInit() {
+        if (init) return;
+        synchronized (this) {
+            if (init) return;
+            init = true;
+            this.setContent(LinkGrabberPanel.getLinkGrabber());
+            this.setDefaultInfoPanel(new LinkGrabberInfoPanel());
+
+            LinkGrabberController.getInstance().addListener(new LinkGrabberControllerListener() {
+                public void onLinkGrabberControllerEvent(LinkGrabberControllerEvent event) {
+                    switch (event.getEventID()) {
+                    case LinkGrabberControllerEvent.ADDED:
+                        JDGui.getInstance().requestPanel(UserIF.Panels.DOWNLOADLIST, null);
+                        break;
+                    }
+                }
+            });
+        }
+    }
+
     @Override
     protected void onShow() {
+        lazyInit();
         setActionStatus(true);
         JDGui.help("Linkgrabber", "This is the linkgrabber. Add Links, create packages, blbla..", NewTheme.getInstance().getIcon("linkgrabber", 24));
     }

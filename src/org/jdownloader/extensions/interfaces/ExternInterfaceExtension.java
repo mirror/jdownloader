@@ -358,7 +358,7 @@ public class ExternInterfaceExtension extends AbstractExtension<ExternInterfaceC
                             response.addContent(addJSONPCallback("unknowncommand", request.getParameters().get("callback")));
                         }
                     } else {
-                        response.addContent(addJSONPCallback(JDUtilities.getJDTitle(), request.getParameters().get("callback")));
+                        response.addContent(addJSONPCallback("JDownloader", request.getParameters().get("callback")));
                     }
                 } else if (request.getRequestUrl().equalsIgnoreCase("/jdcheck.js")) {
 

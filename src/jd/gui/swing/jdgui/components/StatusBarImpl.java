@@ -108,7 +108,7 @@ public class StatusBarImpl extends JPanel {
 
         reconnectIndicator = new IconedProcessIndicator(NewTheme.I().getIcon("reconnect", 16));
         reconnectIndicator.setTitle(_GUI._.StatusBarImpl_initGUI_reconnect());
-        boolean running = Reconnecter.getInstance().isReconnectInProgress();
+        boolean running = false;
         reconnectIndicator.setIndeterminate(running);
         reconnectIndicator.setEnabled(running);
         Reconnecter.getInstance().getStateMachine().addListener(new StateEventListener() {
@@ -139,7 +139,6 @@ public class StatusBarImpl extends JPanel {
 
         linkGrabberIndicator = new IconedProcessIndicator(NewTheme.I().getIcon("linkgrabber", 16));
         linkGrabberIndicator.setTitle(_GUI._.StatusBarImpl_initGUI_linkgrabber());
-        running = LinkCollector.getInstance().isRunning();
         linkGrabberIndicator.setDescription(_GUI._.StatusBarImpl_initGUI_linkgrabber_desc_inactive());
         linkGrabberIndicator.setIndeterminate(running);
         linkGrabberIndicator.setEnabled(running);

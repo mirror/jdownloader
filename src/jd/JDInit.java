@@ -77,45 +77,45 @@ public class JDInit {
     public JDInit() {
     }
 
-    public void checkUpdate() {
+    public static void checkUpdate() {
+        new Thread(new Runnable() {
 
-        if (JDUtilities.getRunType() == JDUtilities.RUNTYPE_LOCAL_JARED) {
-            final String old = JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_UPDATE_VERSION, "");
-            if (!old.equals(JDUtilities.getRevision())) {
-                JDInit.LOG.info("Detected that JD just got updated");
+            public void run() {
+                if (JDUtilities.getRunType() == JDUtilities.RUNTYPE_LOCAL_JARED) {
+                    final String old = JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_UPDATE_VERSION, "");
+                    if (!old.equals(JDUtilities.getRevision())) {
+                        JDInit.LOG.info("Detected that JD just got updated");
 
-                final ConfirmDialog dialog = new ConfirmDialog(Dialog.BUTTONS_HIDE_CANCEL, _JDT._.system_update_message_title(JDUtilities.getRevision()), _JDT._.system_update_message(), null, null, null);
-                dialog.setLeftActions(new AbstractAction(_JDT._.system_update_showchangelogv2()) {
+                        final ConfirmDialog dialog = new ConfirmDialog(Dialog.BUTTONS_HIDE_CANCEL, _JDT._.system_update_message_title(JDUtilities.getRevision()), _JDT._.system_update_message(), null, null, null);
+                        dialog.setLeftActions(new AbstractAction(_JDT._.system_update_showchangelogv2()) {
 
-                    private static final long serialVersionUID = 1L;
+                            private static final long serialVersionUID = 1L;
 
-                    public void actionPerformed(final ActionEvent e) {
+                            public void actionPerformed(final ActionEvent e) {
+                                try {
+                                    OS.launchBrowser("http://jdownloader.org/changes/index");
+                                } catch (final IOException e1) {
+                                    e1.printStackTrace();
+                                }
+                            }
+
+                        });
                         try {
-                            OS.launchBrowser("http://jdownloader.org/changes/index");
-                        } catch (final IOException e1) {
-                            e1.printStackTrace();
+                            Dialog.getInstance().showDialog(dialog);
+                        } catch (DialogClosedException e1) {
+
+                        } catch (DialogCanceledException e1) {
+
                         }
                     }
-
-                });
-                try {
-                    Dialog.getInstance().showDialog(dialog);
-                } catch (DialogClosedException e1) {
-
-                } catch (DialogCanceledException e1) {
-
                 }
+                submitVersion();
             }
-        }
-        this.submitVersion();
+
+        }).start();
     }
 
-    public void init() {
-        this.initBrowser();
-
-    }
-
-    public void initBrowser() {
+    public static void initBrowser() {
         Browser.setGlobalLogger(JDLogger.getLogger());
 
         /* init default global Timeouts */
@@ -165,26 +165,17 @@ public class JDInit {
 
     }
 
-    public void initControllers() {
-
-    }
-
-    public void initGUI(final JDController controller) {
-
+    public static void initGUI(final JDController controller) {
         EDTEventQueue.initEventQueue();
         ActionController.initActions();
         SwingGui.setInstance(JDGui.getInstance());
         UserIF.setInstance(SwingGui.getInstance());
         controller.addControlListener(SwingGui.getInstance());
         Log.L.info("GUIDONE->" + (System.currentTimeMillis() - Main.startup));
-        controller.fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_GUI_COMPLETE, null));
+        controller.fireControlEvent(new ControlEvent(new Object(), ControlEvent.CONTROL_GUI_COMPLETE, null));
     }
 
-    public void initPlugins() {
-
-    }
-
-    public Configuration loadConfiguration() {
+    public static Configuration loadConfiguration() {
         final Object obj = JDUtilities.getDatabaseConnector().getData(Configuration.NAME);
 
         if (obj == null) {
@@ -234,12 +225,11 @@ public class JDInit {
             }
             return JDUtilities.getConfiguration();
         } finally {
-
             convert();
         }
     }
 
-    private void convert() {
+    private static void convert() {
         String ddl = JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY, null);
         if (JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder() == null) {
             JsonConfig.create(GeneralSettings.class).setDefaultDownloadFolder(ddl);
@@ -248,7 +238,7 @@ public class JDInit {
         JDUtilities.getConfiguration().save();
     }
 
-    private void submitVersion() {
+    private static void submitVersion() {
         new Thread(new Runnable() {
             public void run() {
                 if (JDUtilities.getRunType() == JDUtilities.RUNTYPE_LOCAL_JARED) {

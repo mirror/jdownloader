@@ -173,7 +173,7 @@ public class DomainInfo implements FavIconRequestor {
         if (NewTheme.I().hasIcon("fav/" + getTld())) {
             ret = NewTheme.I().getIcon("fav/" + getTld(), -1);
         }
-        ;
+
         if (ret != null && ret.getIconHeight() >= size && ret.getIconWidth() >= size) {
 
         return new ImageIcon(IconIO.getScaledInstance((BufferedImage) ret.getImage(), size, size));

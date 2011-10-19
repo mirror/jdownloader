@@ -258,7 +258,7 @@ public class JDUpdater extends Updater implements Runnable, ControlListener {
 
     }
 
-    private void setWaitingUpdates(int size) {
+    private void setWaitingUpdates(final int size) {
         if (size == waitingUpdates) return;
         waitingUpdates = size;
         new EDTRunner() {
@@ -266,7 +266,7 @@ public class JDUpdater extends Updater implements Runnable, ControlListener {
             @Override
             protected void runInEDT() {
 
-                SwingGui.getInstance().getMainFrame().setTitle(JDUtilities.getJDTitle());
+                SwingGui.getInstance().getMainFrame().setTitle(JDUtilities.getJDTitle(size));
 
             }
         };

@@ -91,7 +91,7 @@ public final class TrayIconPopup extends JWindow implements MouseListener, Chang
         initExitPanel();
         JPanel content = new JPanel(new MigLayout("ins 5, wrap 1", "[]", "[]5[]5[]5[]5[]"));
         add(content);
-        content.add(new JLabel("<html><b>" + JDUtilities.getJDTitle() + "</b></html>"), "align center");
+        content.add(new JLabel("<html><b>" + JDUtilities.getJDTitle(0) + "</b></html>"), "align center");
         content.add(new JSeparator(), "growx, spanx");
         content.add(entryPanel);
         content.add(new JSeparator(), "growx, spanx");

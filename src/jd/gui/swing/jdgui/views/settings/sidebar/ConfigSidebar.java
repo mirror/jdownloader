@@ -45,6 +45,7 @@ import jd.gui.swing.jdgui.views.settings.panels.advanced.AdvancedSettings;
 import jd.gui.swing.laf.LookAndFeelController;
 import net.miginfocom.swing.MigLayout;
 
+import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.ConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
@@ -56,6 +57,7 @@ import org.jdownloader.extensions.AbstractExtensionWrapper;
 import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
+import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 import org.jdownloader.translate._JDT;
 
 public class ConfigSidebar extends JPanel implements ControlListener, MouseMotionListener, MouseListener, ConfigEventListener {
@@ -202,7 +204,9 @@ public class ConfigSidebar extends JPanel implements ControlListener, MouseMotio
                      * extra thread, because we dont want to block the
                      * eventsender
                      */
-                    treemodel.fill();
+                    if (JsonConfig.create(GraphicalUserInterfaceSettings.class).isConfigViewVisible()) {
+                        treemodel.fill();
+                    }
                 }
 
             }.start();

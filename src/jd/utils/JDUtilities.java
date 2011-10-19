@@ -55,7 +55,6 @@ import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.translate._JDT;
-import org.jdownloader.update.JDUpdater;
 import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
@@ -200,12 +199,12 @@ public class JDUtilities {
         }
     }
 
-    public static String getJDTitle() {
+    public static String getJDTitle(int waitingupdates) {
         final StringBuilder ret = new StringBuilder("JDownloader");
 
-        if (JDUpdater.getInstance().getWaitingUpdates() > 0) {
+        if (waitingupdates > 0) {
             ret.append(new char[] { ' ', '(' });
-            ret.append(_JDT._.gui_mainframe_title_updatemessage2(JDUpdater.getInstance().getWaitingUpdates()));
+            ret.append(_JDT._.gui_mainframe_title_updatemessage2(waitingupdates));
             ret.append(')');
         }
 

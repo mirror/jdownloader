@@ -38,13 +38,14 @@ import jd.captcha.JAntiCaptcha;
 import jd.controlling.ClipboardHandler;
 import jd.controlling.DownloadController;
 import jd.controlling.DynamicPluginInterface;
-import jd.controlling.GarbageController;
 import jd.controlling.JDController;
 import jd.controlling.JDLogger;
+import jd.controlling.LinkGrabberController;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.gui.UserIO;
 import jd.gui.swing.MacOSApplicationAdapter;
+import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.laf.LookAndFeelController;
 import jd.http.Browser;
 import jd.nutils.JDImage;
@@ -409,8 +410,7 @@ public class Main {
 
     private static void start(final String args[]) {
         if (!JDInitFlags.STOP) {
-            Main main = new Main();
-            main.go();
+            go();
             for (final String p : args) {
                 Main.LOG.finest("Param: " + p);
             }
@@ -418,8 +418,7 @@ public class Main {
         }
     }
 
-    private void go() {
-        final JDInit init = new JDInit();
+    private static void go() {
         final JDController controller = JDController.getInstance();
 
         Main.LOG.info(new Date().toString());
@@ -440,8 +439,8 @@ public class Main {
                  * TODO: this just sets the browser settings and needs to load
                  * database for this
                  */
-                init.init();
-                if (init.loadConfiguration() == null) {
+                JDInit.initBrowser();
+                if (JDInit.loadConfiguration() == null) {
                     /* TODO: we load database just to check an entry?! */
                     UserIO.getInstance().requestMessageDialog("JDownloader cannot create the config files. Make sure, that JD_HOME/config/ exists and is writeable");
                 }
@@ -475,10 +474,13 @@ public class Main {
                         @Override
                         public void run() {
                             RemoteAPIController.getInstance();
-                            GarbageController.getInstance();
+                            // GarbageController.getInstance();
                             ExtensionController.getInstance().load();
-                            JDUpdater.getInstance().startChecker();
+                            // JDUpdater.getInstance().startChecker();
+                            LinkGrabberController.getInstance().setDistributer(JDGui.getInstance());
                             ClipboardHandler.getClipboard().setTempDisabled(false);
+                            JDInit.checkUpdate();
+                            DownloadController.getInstance().ll();
                         }
                     }.start();
                 }
@@ -488,32 +490,25 @@ public class Main {
         new EDTHelper<Void>() {
             @Override
             public Void edtRun() {
-                init.initGUI(controller);
+                JDInit.initGUI(controller);
                 return null;
             }
         }.waitForEDT();
 
         Main.LOG.info("Initialisation finished");
-
         final HashMap<String, String> head = new HashMap<String, String>();
         head.put("rev", JDUtilities.getRevision());
         JDUtilities.getConfiguration().setProperty("head", head);
-
         final Properties pr = System.getProperties();
         final TreeSet<Object> propKeys = new TreeSet<Object>(pr.keySet());
-
         for (final Object it : propKeys) {
             final String key = it.toString();
             Main.LOG.finer(key + "=" + pr.get(key));
         }
-
         Main.LOG.info("Revision: " + JDUtilities.getRevision());
         Main.LOG.finer("Runtype: " + JDUtilities.getRunType());
-
-        init.checkUpdate();
-        controller.fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_INIT_COMPLETE, null));
+        controller.fireControlEvent(new ControlEvent(new Object(), ControlEvent.CONTROL_INIT_COMPLETE, null));
         Main.Init_Complete = true;
-
     }
 
 }

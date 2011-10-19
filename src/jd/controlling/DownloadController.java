@@ -74,7 +74,7 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
     }
 
     private DownloadController() {
-        initDownloadLinks();
+        // initDownloadLinks();
         ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
 
             @Override
@@ -96,6 +96,11 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
 
         };
 
+    }
+
+    public void ll() {
+        initDownloadLinks();
+        broadcaster.fireEvent(new DownloadControllerEvent(this, DownloadControllerEvent.TYPE.REFRESH_STRUCTURE));
     }
 
     public void addListener(final DownloadControllerListener l) {
@@ -135,8 +140,8 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
             readUnlock(readL);
         }
         if (packages != null) {
-            JDUtilities.getDatabaseConnector().saveLinks(packages);
-            JDUtilities.getDatabaseConnector().save();
+            // JDUtilities.getDatabaseConnector().saveLinks(packages);
+            // JDUtilities.getDatabaseConnector().save();
         }
     }
 
