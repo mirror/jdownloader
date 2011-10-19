@@ -27,10 +27,7 @@ import java.net.URL;
 import java.util.List;
 import java.util.StringTokenizer;
 
-import jd.Main;
 import jd.config.Configuration;
-import jd.event.ControlEvent;
-import jd.event.ControlListener;
 import jd.nutils.OSDetector;
 import jd.utils.JDUtilities;
 
@@ -43,7 +40,7 @@ import org.appwork.utils.Regex;
  */
 // final, because the constructor calls Thread.start(),
 // see http://findbugs.sourceforge.net/bugDescriptions.html#SC_START_IN_CTOR
-public final class ClipboardHandler extends Thread implements ControlListener {
+public final class ClipboardHandler extends Thread {
     private static ClipboardHandler INSTANCE = null;
 
     public synchronized static ClipboardHandler getClipboard() {
@@ -78,7 +75,6 @@ public final class ClipboardHandler extends Thread implements ControlListener {
      */
     private ClipboardHandler() {
         clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
-        if (Main.isGuiComplete() == false) JDUtilities.getController().addControlListener(this);
         this.enabled = false;
         initDataFlavors();
         this.setName("ClipboardHandler");
@@ -386,13 +382,6 @@ public final class ClipboardHandler extends Thread implements ControlListener {
 
     public void toggleActivation() {
         setEnabled(!isEnabled());
-    }
-
-    public void controlEvent(final ControlEvent event) {
-        if (event.getEventID() == ControlEvent.CONTROL_GUI_COMPLETE) {
-            JDUtilities.getController().removeControlListener(this);
-            setEnabled(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_CLIPBOARD_ALWAYS_ACTIVE, true));
-        }
     }
 
 }

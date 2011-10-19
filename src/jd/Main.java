@@ -35,6 +35,7 @@ import java.util.logging.Logger;
 
 import jd.captcha.JACController;
 import jd.captcha.JAntiCaptcha;
+import jd.config.Configuration;
 import jd.controlling.ClipboardHandler;
 import jd.controlling.DownloadController;
 import jd.controlling.DynamicPluginInterface;
@@ -478,6 +479,7 @@ public class Main {
                             ExtensionController.getInstance().load();
                             // JDUpdater.getInstance().startChecker();
                             LinkGrabberController.getInstance().setDistributer(JDGui.getInstance());
+                            ClipboardHandler.getClipboard().setEnabled(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_CLIPBOARD_ALWAYS_ACTIVE, true));
                             ClipboardHandler.getClipboard().setTempDisabled(false);
                             JDInit.checkUpdate();
                             DownloadController.getInstance().ll();
