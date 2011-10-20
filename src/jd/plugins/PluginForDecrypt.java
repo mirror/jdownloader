@@ -63,7 +63,7 @@ public abstract class PluginForDecrypt extends Plugin {
 
     @Override
     public SubConfiguration getPluginConfig() {
-        return null;
+        return SubConfiguration.getConfig(lazyC.getDisplayName());
     }
 
     /**
