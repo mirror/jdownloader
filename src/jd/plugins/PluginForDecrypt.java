@@ -231,7 +231,6 @@ public abstract class PluginForDecrypt extends Plugin {
                  * clear log
                  */
                 logger.severe("CrawlerPlugin out of date: " + this + " :" + getVersion());
-                progress.setStatusText(_JDT._.jd_plugins_PluginForDecrypt_error_outOfDate(this.getHost()));
                 color = Color.RED;
                 progressShow = 15000;
 
