@@ -45,15 +45,15 @@ import jd.utils.locale.JDL;
 public class VKontakteRu extends PluginForDecrypt implements ProgressControllerListener {
 
     /* must be static so all plugins share same lock */
-    private static final Object LOCK = new Object();
-    private boolean abort = false;
+    private static final Object LOCK  = new Object();
+    private boolean             abort = false;
 
     public VKontakteRu(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     private static final String POSTPAGE = "http://vkontakte.ru/login.php";
-    private static final String DOMAIN = "vkontakte.ru";
+    private static final String DOMAIN   = "vkontakte.ru";
 
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
