@@ -51,8 +51,8 @@ public class CZShareCom extends PluginForHost {
         this.enablePremium("http://czshare.com/create_user.php");
     }
 
-    private static final Object LOCK        = new Object();
-    private static final String MAINPAGE    = "http://czshare.com/";
+    private static final Object LOCK = new Object();
+    private static final String MAINPAGE = "http://czshare.com/";
     private static final String CAPTCHATEXT = "captcha\\.php";
 
     public void correctDownloadLink(DownloadLink link) {
@@ -169,8 +169,9 @@ public class CZShareCom extends PluginForHost {
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         requestFileInformation(downloadLink);
         login(account, false);
-        br.setFollowRedirects(false);
+        br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
+        br.setFollowRedirects(false);
         String code = br.getRegex("<input type=\"hidden\" name=\"code\" value=\"(.*?)\"").getMatch(0);
         if (code == null) code = br.getRegex("\\&amp;code=(.*?)\"").getMatch(0);
         String linkID = new Regex(downloadLink.getDownloadURL(), "czshare\\.com/(\\d+)/").getMatch(0);

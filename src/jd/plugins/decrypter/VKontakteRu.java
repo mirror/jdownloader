@@ -45,15 +45,15 @@ import jd.utils.locale.JDL;
 public class VKontakteRu extends PluginForDecrypt implements ProgressControllerListener {
 
     /* must be static so all plugins share same lock */
-    private static final Object LOCK  = new Object();
-    private boolean             abort = false;
+    private static final Object LOCK = new Object();
+    private boolean abort = false;
 
     public VKontakteRu(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     private static final String POSTPAGE = "http://vkontakte.ru/login.php";
-    private static final String DOMAIN   = "vkontakte.ru";
+    private static final String DOMAIN = "vkontakte.ru";
 
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
@@ -100,7 +100,7 @@ public class VKontakteRu extends PluginForDecrypt implements ProgressControllerL
             } else if (parameter.matches(".*?vkontakte\\.ru/video(\\-)?\\d+_\\d+")) {
                 // Single video
                 br.getPage(parameter);
-                if (br.containsHTML("class=\"button_blue\"><button id=\"msg_back_button\">Wr\\&#243;\\&#263;</button>")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+                if (br.containsHTML("class=\"button_blue\"><button id=\"msg_back_button\">Wr\\&#243;\\&#263;</button>")) return decryptedLinks;
                 DownloadLink finallink = findVideolink(parameter);
                 if (finallink == null) {
                     logger.warning("Decrypter broken for link: " + parameter + "\n");
@@ -154,9 +154,10 @@ public class VKontakteRu extends PluginForDecrypt implements ProgressControllerL
                 fp.addLinks(decryptedLinks);
             } else {
                 // Video-Playlists
+                // Example: http://vkontakte.ru/videos575934598
                 br.getPage(parameter);
-                String[] allVideos = br.getRegex("<div class=\"video_name\"><a href=\"(video.*?)\"").getColumn(0);
-                if (allVideos == null || allVideos.length == 0) allVideos = br.getRegex("style=\"position:relative;\">[\t\n\r ]+<a href=\"(video.*?)\"").getColumn(0);
+                String[] allVideos = br.getRegex("<td class=\"video_thumb\"><a href=\"/video(\\d+_\\d+)\"").getColumn(0);
+                if (allVideos == null || allVideos.length == 0) allVideos = br.getRegex("<div class=\"video_info_cont\">[\t\n\r ]+<a href=\"/video(\\d+_\\d+)\"").getColumn(0);
                 if (allVideos == null || allVideos.length == 0) {
                     logger.warning("Couldn't find any videos for link: " + parameter);
                     return null;
@@ -173,11 +174,12 @@ public class VKontakteRu extends PluginForDecrypt implements ProgressControllerL
                         return new ArrayList<DownloadLink>();
                     }
                     logger.info("Decrypting video " + counter + " / " + allVideos.length);
-                    String completeVideolink = "http://vkontakte.ru/" + singleVideo;
+                    String completeVideolink = "http://vkontakte.ru/video" + singleVideo;
                     br.getPage(completeVideolink);
                     DownloadLink finallink = findVideolink(completeVideolink);
                     if (finallink == null) {
-                        logger.warning("Decrypter broken for link: " + parameter);
+                        logger.warning("Decrypter broken for link: " + parameter + "\n");
+                        logger.warning("stopped at: " + completeVideolink);
                         return null;
                     }
                     decryptedLinks.add(finallink);
@@ -193,11 +195,13 @@ public class VKontakteRu extends PluginForDecrypt implements ProgressControllerL
 
     private DownloadLink findVideolink(String parameter) throws IOException {
         String correctedBR = br.toString().replace("\\", "");
-        String videoEmbedded = new Regex(correctedBR, "youtube\\.com/embed/(.*?)\\?autoplay=").getMatch(0);
-        if (videoEmbedded != null) { return createDownloadlink("http://www.youtube.com/watch?v=" + videoEmbedded); }
-        videoEmbedded = new Regex(correctedBR, "video\\.rutube\\.ru/(.*?)\\'").getMatch(0);
-        if (videoEmbedded != null) {
-            br.getPage("http://rutube.ru/trackinfo/" + videoEmbedded + ".html");
+        // Find youtube.com link if it exists
+        String embeddedVideo = new Regex(correctedBR, "youtube\\.com/embed/(.*?)\\?autoplay=").getMatch(0);
+        if (embeddedVideo != null) { return createDownloadlink("http://www.youtube.com/watch?v=" + embeddedVideo); }
+        // Find rutube.ru link if it exists
+        embeddedVideo = new Regex(correctedBR, "video\\.rutube\\.ru/(.*?)\\'").getMatch(0);
+        if (embeddedVideo != null) {
+            br.getPage("http://rutube.ru/trackinfo/" + embeddedVideo + ".html");
             String finalID = br.getRegex("<track_id>(\\d+)</track_id>").getMatch(0);
             if (finalID == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
@@ -205,6 +209,9 @@ public class VKontakteRu extends PluginForDecrypt implements ProgressControllerL
             }
             return createDownloadlink("http://rutube.ru/tracks/" + finalID + ".html");
         }
+        // Find vimeo.com link if it exists
+        embeddedVideo = new Regex(correctedBR, "player\\.vimeo\\.com/video/(\\d+)").getMatch(0);
+        if (embeddedVideo != null) { return createDownloadlink("http://vimeo.com/" + embeddedVideo); }
         // No external video found, try finding a hosted video
         String additionalStuff = "video/";
         String urlPart = new Regex(correctedBR, "\"thumb\":\"(http:.{10,100})/video").getMatch(0);

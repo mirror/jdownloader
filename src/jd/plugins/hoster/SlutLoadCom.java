@@ -76,7 +76,7 @@ public class SlutLoadCom extends PluginForHost {
         requestFileInformation(downloadLink);
         String dllink = br.getRegex("class=\"download\" href=\"(.*?)\"").getMatch(0);
         if (dllink == null) {
-            dllink = br.getRegex("\"(http://v-ec\\.slutload-media\\.com/.*?\\.flv\\?.*?)\"").getMatch(0);
+            dllink = br.getRegex("\"(http://v\\-ec\\.slutload\\-media\\.com/.*?\\.flv\\?.*?)\"").getMatch(0);
         }
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
