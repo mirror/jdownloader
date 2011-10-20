@@ -75,9 +75,7 @@ public abstract class AbstractExtension<T extends ExtensionConfigInterface> {
         if (enabled) {
             start();
             store.setEnabled(true);
-
         } else {
-
             stop();
             store.setEnabled(false);
             if (getGUI() != null) {

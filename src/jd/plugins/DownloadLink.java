@@ -1060,7 +1060,6 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      * @return
      */
     public ImageIcon getIcon() {
-        if (true) return null;
         if (icon == null) {
             String ext = JDIO.getFileExtension(getFileOutput());
             if (ext != null) {
@@ -1082,7 +1081,6 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      * @return
      */
     public ImageIcon getHosterIcon() {
-        if (true) return null;
         PluginForHost plugin = this.liveplugin;
         if (plugin != null) {
             /* live plugin available, lets use its icon */

@@ -64,7 +64,27 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                                                                                                    };
 
     private DelayedRunnable                                                            asyncSaving = null;
-    private static DownloadController                                                  INSTANCE    = new DownloadController();
+    private boolean                                                                    allowSave   = false;
+
+    public boolean isAllowSave() {
+        return allowSave;
+    }
+
+    public void setAllowSave(boolean allowSave) {
+        this.allowSave = allowSave;
+    }
+
+    private boolean allowLoad = true;
+
+    public boolean isAllowLoad() {
+        return allowLoad;
+    }
+
+    public void setAllowLoad(boolean allowLoad) {
+        this.allowLoad = allowLoad;
+    }
+
+    private static DownloadController INSTANCE = new DownloadController();
 
     /**
      * darf erst nachdem der JDController init wurde, aufgerufen werden
@@ -98,11 +118,6 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
 
     }
 
-    public void ll() {
-        initDownloadLinks();
-        broadcaster.fireEvent(new DownloadControllerEvent(this, DownloadControllerEvent.TYPE.REFRESH_STRUCTURE));
-    }
-
     public void addListener(final DownloadControllerListener l) {
         broadcaster.addListener(l);
     }
@@ -114,16 +129,42 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
     /**
      * load all FilePackages/DownloadLinks from Database
      */
-    private void initDownloadLinks() {
+    public synchronized void initDownloadLinks() {
+        if (isAllowLoad() == false) {
+            /* loading is not allowed */
+            return;
+        }
+        LinkedList<FilePackage> lpackages;
         try {
-            packages = loadDownloadLinks();
+            lpackages = loadDownloadLinks();
         } catch (final Throwable e) {
             JDLogger.getLogger().severe(Exceptions.getStackTrace(e));
-            packages = new LinkedList<FilePackage>();
+            lpackages = new LinkedList<FilePackage>();
         }
-        for (final FilePackage filePackage : packages) {
+        final LinkedList<FilePackage> lpackages2 = lpackages;
+        for (final FilePackage filePackage : lpackages2) {
             filePackage.setControlledBy(this);
         }
+        IOEQ.getQueue().add(new QueueAction<Void, RuntimeException>() {
+
+            @Override
+            protected Void run() throws RuntimeException {
+                if (isAllowLoad() == true) {
+                    writeLock();
+                    try {
+                        packages.addAll(0, lpackages2);
+                    } finally {
+                        /* loaded, we no longer allow loading */
+                        setAllowLoad(false);
+                        /* now we allow saving */
+                        setAllowSave(true);
+                        writeUnlock();
+                    }
+                    broadcaster.fireEvent(new DownloadControllerEvent(DownloadController.this, DownloadControllerEvent.TYPE.REFRESH_STRUCTURE));
+                }
+                return null;
+            }
+        });
         return;
     }
 
@@ -132,6 +173,7 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
      * DownloadController
      */
     public void saveDownloadLinks() {
+        if (allowSave == false) return;
         ArrayList<FilePackage> packages = null;
         final boolean readL = this.readLock();
         try {
@@ -140,8 +182,8 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
             readUnlock(readL);
         }
         if (packages != null) {
-            // JDUtilities.getDatabaseConnector().saveLinks(packages);
-            // JDUtilities.getDatabaseConnector().save();
+            JDUtilities.getDatabaseConnector().saveLinks(packages);
+            JDUtilities.getDatabaseConnector().save();
         }
     }
 

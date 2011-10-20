@@ -38,14 +38,16 @@ import jd.captcha.JAntiCaptcha;
 import jd.config.Configuration;
 import jd.controlling.ClipboardHandler;
 import jd.controlling.DownloadController;
+import jd.controlling.DownloadWatchDog;
 import jd.controlling.DynamicPluginInterface;
 import jd.controlling.JDController;
 import jd.controlling.JDLogger;
 import jd.controlling.LinkGrabberController;
 import jd.event.ControlEvent;
-import jd.event.ControlListener;
+import jd.gui.UserIF;
 import jd.gui.UserIO;
 import jd.gui.swing.MacOSApplicationAdapter;
+import jd.gui.swing.SwingGui;
 import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.laf.LookAndFeelController;
 import jd.http.Browser;
@@ -54,16 +56,17 @@ import jd.nutils.OSDetector;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
+import org.appwork.controlling.SingleReachableState;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.jackson.JacksonMapper;
 import org.appwork.utils.Application;
+import org.appwork.utils.logging.Log;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.singleapp.AnotherInstanceRunningException;
 import org.appwork.utils.singleapp.InstanceMessageListener;
 import org.appwork.utils.singleapp.SingleAppInstance;
 import org.appwork.utils.swing.EDTHelper;
 import org.jdownloader.api.RemoteAPIController;
-import org.jdownloader.extensions.ExtensionController;
 import org.jdownloader.gui.uiserio.JDSwingUserIO;
 import org.jdownloader.gui.uiserio.NewUIO;
 import org.jdownloader.images.NewTheme;
@@ -77,13 +80,13 @@ public class Main {
     static {
         statics();
     }
-    private static Logger           LOG;
-    private static boolean          instanceStarted            = false;
-    public static SingleAppInstance SINGLE_INSTANCE_CONTROLLER = null;
+    private static Logger              LOG;
+    private static boolean             instanceStarted            = false;
+    public static SingleAppInstance    SINGLE_INSTANCE_CONTROLLER = null;
 
-    private static boolean          Init_Complete              = false;
-    private static boolean          Gui_Complete               = false;
-    public final static long        startup                    = System.currentTimeMillis();
+    private static boolean             Init_Complete              = false;
+    public static SingleReachableState GUI_COMPLETE               = new SingleReachableState("GUI_COMPLETE");
+    public final static long           startup                    = System.currentTimeMillis();
 
     // private static JSonWrapper webConfig;
 
@@ -149,10 +152,6 @@ public class Main {
 
     public static boolean isInitComplete() {
         return Main.Init_Complete;
-    }
-
-    public static boolean isGuiComplete() {
-        return Main.Gui_Complete;
     }
 
     /**
@@ -420,11 +419,8 @@ public class Main {
     }
 
     private static void go() {
-        final JDController controller = JDController.getInstance();
-
         Main.LOG.info(new Date().toString());
         Main.LOG.info("init Configuration");
-
         if (JDInitFlags.SWITCH_DEBUG) {
             Main.LOG.info("DEBUG MODE ACTIVATED");
             // new PerformanceObserver().start();
@@ -436,6 +432,7 @@ public class Main {
         new Thread() {
             @Override
             public void run() {
+                JDController.getInstance();
                 /*
                  * TODO: this just sets the browser settings and needs to load
                  * database for this
@@ -448,13 +445,6 @@ public class Main {
             }
 
         }.start();
-        new Thread() {
-            @Override
-            public void run() {
-                /* extra thread as loading of linklist can take a moment */
-                DownloadController.getInstance();
-            }
-        }.start();
         new EDTHelper<Void>() {
             @Override
             public Void edtRun() {
@@ -464,39 +454,46 @@ public class Main {
         }.waitForEDT();
 
         Locale.setDefault(Locale.ENGLISH);
-        controller.addControlListener(new ControlListener() {
+        GUI_COMPLETE.executeWhenReached(new Runnable() {
 
-            public void controlEvent(ControlEvent event) {
-                if (event.getEventID() == ControlEvent.CONTROL_GUI_COMPLETE) {
-                    controller.removeControlListener(this);
-                    Gui_Complete = true;
-                    /* we dont want to block the eventsender */
-                    new Thread() {
-                        @Override
-                        public void run() {
-                            RemoteAPIController.getInstance();
-                            // GarbageController.getInstance();
-                            ExtensionController.getInstance().load();
-                            // JDUpdater.getInstance().startChecker();
-                            LinkGrabberController.getInstance().setDistributer(JDGui.getInstance());
-                            ClipboardHandler.getClipboard().setEnabled(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_CLIPBOARD_ALWAYS_ACTIVE, true));
-                            ClipboardHandler.getClipboard().setTempDisabled(false);
-                            JDInit.checkUpdate();
-                            DownloadController.getInstance().ll();
-                        }
-                    }.start();
-                }
+            public void run() {
+                new Thread() {
+                    @Override
+                    public void run() {
+                        /* load links */
+                        DownloadController.getInstance().initDownloadLinks();
+                        /* start remote api */
+                        RemoteAPIController.getInstance();
+                        // GarbageController.getInstance();
+                        /* load extensions */
+                        // ExtensionController.getInstance().load();
+                        /* init linkgrabber */
+                        LinkGrabberController.getInstance().setDistributer(JDGui.getInstance());
+                        ClipboardHandler.getClipboard().setEnabled(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_CLIPBOARD_ALWAYS_ACTIVE, true));
+                        ClipboardHandler.getClipboard().setTempDisabled(false);
+                        /* check for available updates */
+                        JDInit.checkUpdate();
+                        // JDUpdater.getInstance().startChecker();
+                        /* start downloadwatchdog */
+                        DownloadWatchDog.getInstance();
+                    }
+                }.start();
             }
 
         });
         new EDTHelper<Void>() {
             @Override
             public Void edtRun() {
-                JDInit.initGUI(controller);
+                JDInit.initGUI(JDController.getInstance());
+                Log.L.info("GUIDONE->" + (System.currentTimeMillis() - Main.startup));
                 return null;
             }
         }.waitForEDT();
-
+        /* this stuff can happen outside edt */
+        SwingGui.setInstance(JDGui.getInstance());
+        UserIF.setInstance(SwingGui.getInstance());
+        JDController.getInstance().addControlListener(SwingGui.getInstance());
+        Main.GUI_COMPLETE.setReached();
         Main.LOG.info("Initialisation finished");
         final HashMap<String, String> head = new HashMap<String, String>();
         head.put("rev", JDUtilities.getRevision());
@@ -509,8 +506,7 @@ public class Main {
         }
         Main.LOG.info("Revision: " + JDUtilities.getRevision());
         Main.LOG.finer("Runtype: " + JDUtilities.getRunType());
-        controller.fireControlEvent(new ControlEvent(new Object(), ControlEvent.CONTROL_INIT_COMPLETE, null));
+        JDController.getInstance().fireControlEvent(new ControlEvent(new Object(), ControlEvent.CONTROL_INIT_COMPLETE, null));
         Main.Init_Complete = true;
     }
-
 }

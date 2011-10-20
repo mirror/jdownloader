@@ -50,13 +50,24 @@ public class MacOSApplicationAdapter implements QuitHandler, AboutHandler, Prefe
 
     public static void enableMacSpecial() {
         Application macApplication = Application.getApplication();
-        MacOSApplicationAdapter adapter = new MacOSApplicationAdapter();
+        final MacOSApplicationAdapter adapter = new MacOSApplicationAdapter();
         macApplication.setAboutHandler(adapter);
         macApplication.setPreferencesHandler(adapter);
         macApplication.setQuitHandler(adapter);
         macApplication.addAppEventListener(adapter);
         macApplication.setOpenFileHandler(adapter);
         macApplication.setOpenURIHandler(adapter);
+        Main.GUI_COMPLETE.executeWhenReached(new Runnable() {
+
+            public void run() {
+                if (adapter.openURIlinks != null) {
+                    LOG.info("Distribute links: " + adapter.openURIlinks);
+                    LinkCollector.getInstance().addCrawlerJob(new LinkCollectingJob(adapter.openURIlinks));
+                    adapter.openURIlinks = null;
+                }
+            }
+
+        });
     }
 
     private QuitResponse        quitResponse;
@@ -102,11 +113,6 @@ public class MacOSApplicationAdapter implements QuitHandler, AboutHandler, Prefe
         if (event.getEventID() == ControlEvent.CONTROL_SYSTEM_SHUTDOWN_PREPARED) {
             JDController.getInstance().removeControlListener(this);
             quitResponse.performQuit();
-        } else if (event.getEventID() == ControlEvent.CONTROL_GUI_COMPLETE && openURIlinks != null) {
-            JDController.getInstance().removeControlListener(this);
-            LOG.info("Distribute links: " + openURIlinks);
-            LinkCollector.getInstance().addCrawlerJob(new LinkCollectingJob(openURIlinks));
-            openURIlinks = null;
         }
     }
 

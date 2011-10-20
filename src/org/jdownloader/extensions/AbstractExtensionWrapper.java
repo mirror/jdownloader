@@ -242,7 +242,9 @@ public class AbstractExtensionWrapper implements Storable, CheckBoxedEntry {
     public boolean _isEnabled() {
         if (extension == null) {
             // not init yet. check storage to return if we have to init it
-            return _getSettings().isEnabled();
+            ExtensionConfigInterface ret = _getSettings();
+            if (ret == null) return false;
+            return ret.isEnabled();
         } else {
             return extension.isEnabled();
         }
@@ -275,7 +277,9 @@ public class AbstractExtensionWrapper implements Storable, CheckBoxedEntry {
     public void _setEnabled(boolean b) throws StartException, StopException {
 
         if (extension == null) {
-            _getSettings().setEnabled(b);
+            ExtensionConfigInterface ret = _getSettings();
+            if (ret == null) return;
+            ret.setEnabled(b);
             if (b) {
                 try {
                     init();
@@ -294,6 +298,7 @@ public class AbstractExtensionWrapper implements Storable, CheckBoxedEntry {
         try {
             return AbstractExtension.createStore((Class<? extends AbstractExtension<?>>) _getClazz(), (Class<? extends ExtensionConfigInterface>) Class.forName(this.getConfigInterface()));
         } catch (Throwable e) {
+            e.printStackTrace();
             return null;
         }
     }

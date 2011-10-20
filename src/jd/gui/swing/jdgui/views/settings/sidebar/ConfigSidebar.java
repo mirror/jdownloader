@@ -34,6 +34,7 @@ import javax.swing.ScrollPaneConstants;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
+import jd.Main;
 import jd.controlling.JDController;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
@@ -180,6 +181,25 @@ public class ConfigSidebar extends JPanel implements ControlListener, MouseMotio
                 }
             }
         });
+        Main.GUI_COMPLETE.executeWhenReached(new Runnable() {
+
+            public void run() {
+                new Thread() {
+                    @Override
+                    public void run() {
+                        /*
+                         * extra thread, because we dont want to block the
+                         * eventsender
+                         */
+                        if (JsonConfig.create(GraphicalUserInterfaceSettings.class).isConfigViewVisible()) {
+                            treemodel.fill();
+                        }
+                    }
+
+                }.start();
+            }
+
+        });
     }
 
     public void addListener(ListSelectionListener x) {
@@ -196,21 +216,6 @@ public class ConfigSidebar extends JPanel implements ControlListener, MouseMotio
     // }
 
     public void controlEvent(ControlEvent event) {
-        if (event.getEventID() == ControlEvent.CONTROL_GUI_COMPLETE) {
-            new Thread() {
-                @Override
-                public void run() {
-                    /*
-                     * extra thread, because we dont want to block the
-                     * eventsender
-                     */
-                    if (JsonConfig.create(GraphicalUserInterfaceSettings.class).isConfigViewVisible()) {
-                        treemodel.fill();
-                    }
-                }
-
-            }.start();
-        }
         if (event.getEventID() == ControlEvent.CONTROL_SYSTEM_EXIT) {
             saveCurrentState();
         }

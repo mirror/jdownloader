@@ -29,12 +29,8 @@ import jd.config.Property;
 import jd.controlling.JDController;
 import jd.controlling.JDLogger;
 import jd.controlling.JSonWrapper;
-import jd.event.ControlEvent;
-import jd.gui.UserIF;
 import jd.gui.UserIO;
-import jd.gui.swing.SwingGui;
 import jd.gui.swing.jdgui.JDGui;
-import jd.gui.swing.jdgui.actions.ActionController;
 import jd.gui.swing.jdgui.events.EDTEventQueue;
 import jd.gui.swing.laf.LookAndFeelController;
 import jd.http.Browser;
@@ -46,7 +42,6 @@ import jd.utils.JDUtilities;
 
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.update.updateclient.UpdaterConstants;
-import org.appwork.utils.logging.Log;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.appwork.utils.swing.dialog.Dialog;
@@ -166,13 +161,9 @@ public class JDInit {
     }
 
     public static void initGUI(final JDController controller) {
+        /* only do EDT stuff here to speedup the startup */
         EDTEventQueue.initEventQueue();
-        ActionController.initActions();
-        SwingGui.setInstance(JDGui.getInstance());
-        UserIF.setInstance(SwingGui.getInstance());
-        controller.addControlListener(SwingGui.getInstance());
-        Log.L.info("GUIDONE->" + (System.currentTimeMillis() - Main.startup));
-        controller.fireControlEvent(new ControlEvent(new Object(), ControlEvent.CONTROL_GUI_COMPLETE, null));
+        JDGui.getInstance();
     }
 
     public static Configuration loadConfiguration() {

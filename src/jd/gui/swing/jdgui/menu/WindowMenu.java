@@ -25,6 +25,8 @@ import java.util.Comparator;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JMenu;
 
+import jd.Main;
+import jd.controlling.IOEQ;
 import jd.gui.swing.jdgui.actions.ToolBarAction;
 
 import org.appwork.utils.Application;
@@ -39,13 +41,24 @@ public class WindowMenu extends JMenu {
 
     private WindowMenu() {
         super(_JDT._.gui_menu_windows());
-        updateMenu();
+        Main.GUI_COMPLETE.executeWhenReached(new Runnable() {
+
+            public void run() {
+                update();
+            }
+
+        });
     }
 
     public void update() {
-        this.removeAll();
-        updateMenu();
+        IOEQ.add(new Runnable() {
 
+            public void run() {
+                removeAll();
+                updateMenu();
+            }
+
+        }, true);
     }
 
     public static WindowMenu getInstance() {

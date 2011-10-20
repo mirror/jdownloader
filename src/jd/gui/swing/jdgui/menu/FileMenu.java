@@ -3,6 +3,7 @@ package jd.gui.swing.jdgui.menu;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 
+import jd.Main;
 import jd.gui.swing.jdgui.menu.actions.ExitAction;
 import jd.gui.swing.jdgui.menu.actions.RestartAction;
 import jd.nutils.OSDetector;
@@ -16,18 +17,25 @@ public class FileMenu extends JMenu {
     public FileMenu() {
         super(_GUI._.jd_gui_skins_simple_simplegui_menubar_filemenu());
 
-        add(new SaveMenu());
+        Main.GUI_COMPLETE.executeWhenReached(new Runnable() {
 
-        addSeparator();
+            public void run() {
+                add(new SaveMenu());
 
-        add(new RestartAction());
+                addSeparator();
 
-        // add exit action, used by tray extension
-        JMenuItem exitItem = add(new ExitAction());
-        // but hide it from menu action list in case we are on Mac
-        if (OSDetector.isMac()) {
-            exitItem.setVisible(false);
-        }
+                add(new RestartAction());
+
+                // add exit action, used by tray extension
+                JMenuItem exitItem = add(new ExitAction());
+                // but hide it from menu action list in case we are on Mac
+                if (OSDetector.isMac()) {
+                    exitItem.setVisible(false);
+                }
+            }
+
+        });
+
     }
 
 }

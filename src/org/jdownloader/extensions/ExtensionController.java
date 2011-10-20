@@ -9,16 +9,16 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.List;
 import java.util.jar.JarEntry;
 import java.util.jar.JarInputStream;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import jd.controlling.JDController;
-import jd.event.ControlEvent;
-import jd.event.ControlListener;
+import jd.Main;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
@@ -41,7 +41,7 @@ public class ExtensionController {
     }
 
     private HashMap<Class<AbstractExtension<?>>, AbstractExtensionWrapper> map;
-    private ArrayList<AbstractExtensionWrapper>                            list;
+    private List<AbstractExtensionWrapper>                                 list;
     private HashMap<String, AbstractExtensionWrapper>                      cache;
     private File                                                           cacheFile;
     private boolean                                                        cacheChanged;
@@ -53,25 +53,29 @@ public class ExtensionController {
     private ExtensionController() {
 
         map = new HashMap<Class<AbstractExtension<?>>, AbstractExtensionWrapper>();
-        list = new ArrayList<AbstractExtensionWrapper>();
-        JDController.getInstance().addControlListener(new ControlListener() {
-
-            public void controlEvent(ControlEvent event) {
-                if (event.getEventID() == ControlEvent.CONTROL_GUI_COMPLETE) {
-                    JDController.getInstance().removeControlListener(this);
-
-                    for (AbstractExtensionWrapper plg : list) {
-                        if (plg._getExtension() != null && plg._getExtension().getGUI() != null) {
-
-                            plg._getExtension().getGUI().restore();
-                        }
-                    }
-                }
-            }
-        });
         cacheFile = Application.getResource("tmp/extensioncache/cache.json");
         cache = JSonStorage.restoreFrom(cacheFile, true, null, new TypeRef<HashMap<String, AbstractExtensionWrapper>>() {
         }, new HashMap<String, AbstractExtensionWrapper>());
+        list = Collections.unmodifiableList(new ArrayList<AbstractExtensionWrapper>(cache.values()));
+        Main.GUI_COMPLETE.executeWhenReached(new Runnable() {
+
+            public void run() {
+                for (AbstractExtensionWrapper plg : list) {
+                    if (plg._getExtension() != null && plg._getExtension().getGUI() != null) {
+                        plg._getExtension().getGUI().restore();
+                    }
+                }
+            }
+
+        });
+        // Collections.sort(pluginsOptional, new
+        // Comparator<AbstractExtensionWrapper>() {
+        //
+        // public int compare(AbstractExtensionWrapper o1,
+        // AbstractExtensionWrapper o2) {
+        // return o1.getName().compareTo(o2.getName());
+        // }
+        // });
     }
 
     public void load() {
@@ -249,8 +253,7 @@ public class ExtensionController {
         return false;
     }
 
-    public ArrayList<AbstractExtensionWrapper> getExtensions() {
-
+    public List<AbstractExtensionWrapper> getExtensions() {
         return list;
     }
 
@@ -261,7 +264,7 @@ public class ExtensionController {
      */
     public ArrayList<AbstractExtension<?>> getEnabledExtensions() {
         ArrayList<AbstractExtension<?>> ret = new ArrayList<AbstractExtension<?>>();
-        ArrayList<AbstractExtensionWrapper> llist = list;
+        List<AbstractExtensionWrapper> llist = list;
         for (AbstractExtensionWrapper aew : llist) {
             if (aew._getExtension() != null && aew._getExtension().isEnabled()) ret.add(aew._getExtension());
         }

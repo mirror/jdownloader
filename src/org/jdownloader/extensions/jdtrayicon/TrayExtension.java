@@ -37,6 +37,7 @@ import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
 import javax.swing.Timer;
 
+import jd.Main;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.ConfigGroup;
@@ -237,19 +238,7 @@ public class TrayExtension extends AbstractExtension<TrayConfig> implements Mous
     }
 
     public void controlEvent(ControlEvent event) {
-        if (event.getEventID() == ControlEvent.CONTROL_GUI_COMPLETE) {
-            logger.info("JDLightTrayIcon Init complete");
-            guiFrame = JDGui.getInstance().getMainFrame();
-            if (guiFrame != null) {
-                guiFrame.removeWindowListener(TrayExtension.this);
-                guiFrame.addWindowListener(TrayExtension.this);
-                guiFrame.removeWindowStateListener(TrayExtension.this);
-                guiFrame.addWindowStateListener(TrayExtension.this);
-            }
-            if (subConfig.getBooleanProperty(PROPERTY_START_MINIMIZED, false)) {
-                miniIt(true);
-            }
-        } else if (event.getEventID() == ControlEvent.CONTROL_SYSTEM_EXIT) {
+        if (event.getEventID() == ControlEvent.CONTROL_SYSTEM_EXIT) {
             shutdown = true;
         } else if (event.getEventID() == ControlEvent.CONTROL_DOWNLOAD_START) {
             updateThread = new Thread("Tray Icon Updater") {
@@ -303,6 +292,24 @@ public class TrayExtension extends AbstractExtension<TrayConfig> implements Mous
         } catch (Exception e) {
             JDLogger.exception(e);
         }
+        Main.GUI_COMPLETE.executeWhenReached(new Runnable() {
+
+            public void run() {
+                logger.info("JDLightTrayIcon Init complete");
+                guiFrame = JDGui.getInstance().getMainFrame();
+                if (guiFrame != null) {
+                    guiFrame.removeWindowListener(TrayExtension.this);
+                    guiFrame.addWindowListener(TrayExtension.this);
+                    guiFrame.removeWindowStateListener(TrayExtension.this);
+                    guiFrame.addWindowStateListener(TrayExtension.this);
+                }
+                if (subConfig.getBooleanProperty(PROPERTY_START_MINIMIZED, false)) {
+                    miniIt(true);
+                }
+            }
+
+        });
+
     }
 
     public void mouseClicked(MouseEvent e) {

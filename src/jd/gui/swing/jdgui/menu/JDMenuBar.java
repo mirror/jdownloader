@@ -8,7 +8,6 @@ public class JDMenuBar extends JMenuBar {
 
     public JDMenuBar() {
         super();
-
         add(new FileMenu());
         // add(new EditMenu());
         add(new SettingsMenu());

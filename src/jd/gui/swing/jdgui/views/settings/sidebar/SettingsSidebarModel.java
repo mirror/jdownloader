@@ -1,8 +1,6 @@
 package jd.gui.swing.jdgui.views.settings.sidebar;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
+import java.util.List;
 
 import javax.swing.DefaultListModel;
 
@@ -91,13 +89,8 @@ public class SettingsSidebarModel extends DefaultListModel<Object> implements Ge
             addElement(ads);
 
             boolean first = true;
-            ArrayList<AbstractExtensionWrapper> pluginsOptional = ExtensionController.getInstance().getExtensions();
-            Collections.sort(pluginsOptional, new Comparator<AbstractExtensionWrapper>() {
+            List<AbstractExtensionWrapper> pluginsOptional = ExtensionController.getInstance().getExtensions();
 
-                public int compare(AbstractExtensionWrapper o1, AbstractExtensionWrapper o2) {
-                    return o1.getName().compareTo(o2.getName());
-                }
-            });
             for (final AbstractExtensionWrapper plg : pluginsOptional) {
                 if (contains(plg)) continue;
                 if (CrossSystem.isWindows() && !plg.isWindowsRunnable()) continue;

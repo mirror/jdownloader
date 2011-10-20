@@ -45,6 +45,7 @@ import javax.swing.Timer;
 import javax.swing.ToolTipManager;
 import javax.swing.WindowConstants;
 
+import jd.Main;
 import jd.config.ConfigContainer;
 import jd.controlling.DownloadController;
 import jd.controlling.DownloadWatchDog;
@@ -175,6 +176,23 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
                 return false;
             }
         });
+        Main.GUI_COMPLETE.executeWhenReached(new Runnable() {
+
+            public void run() {
+                new EDTRunner() {
+
+                    @Override
+                    protected void runInEDT() {
+                        JDGui.this.mainFrame.setEnabled(true);
+                    }
+                };
+                if (JsonConfig.create(GeneralSettings.class).isAutoStartDownloadsOnStartupEnabled()) {
+                    /* autostart downloads when no autoupdate is enabled */
+                    JDController.getInstance().autostartDownloadsonStartup();
+                }
+            }
+
+        });
     }
 
     public void addLinks(final ArrayList<DownloadLink> links, final boolean hidegrabber, final boolean autostart) {
@@ -226,20 +244,6 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
 
     public void controlEvent(final ControlEvent event) {
         switch (event.getEventID()) {
-        case ControlEvent.CONTROL_GUI_COMPLETE:
-            JDLogger.getLogger().info("Init complete");
-            new EDTRunner() {
-
-                @Override
-                protected void runInEDT() {
-                    JDGui.this.mainFrame.setEnabled(true);
-                }
-            };
-            if (JsonConfig.create(GeneralSettings.class).isAutoStartDownloadsOnStartupEnabled()) {
-                /* autostart downloads when no autoupdate is enabled */
-                JDController.getInstance().autostartDownloadsonStartup();
-            }
-            break;
         case ControlEvent.CONTROL_SYSTEM_EXIT:
             this.exitRequested = true;
             final String id = JDController.requestDelayExit("JDGUI");
@@ -314,7 +318,7 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
         // TODO
         // this.toolBar.setList(GUIUtils.getConfig().getGenericProperty("TOOLBAR",
         // ToolBar.DEFAULT_LIST).toArray(new String[] {}));
-        this.toolBar.setList(ToolBar.DEFAULT_LIST.toArray(new String[] {}));
+        toolBar.setList(ToolBar.DEFAULT_LIST.toArray(new String[] {}));
         if (OSDetector.isMac()) {
             // add handling for Command+W for closing window on Mac OS
             KeyStroke closeKey = KeyStroke.getKeyStroke(KeyEvent.VK_W, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask());
@@ -542,20 +546,26 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
      * {@link JFrame#setIconImage(Image)}
      */
     private void setWindowIcon() {
-        if (Application.getJavaVersion() >= 16000000) {
-            final ArrayList<Image> list = new ArrayList<Image>();
-            list.add(JDImage.getImage("logo/logo_14_14"));
-            list.add(JDImage.getImage("logo/logo_15_15"));
-            list.add(JDImage.getImage("logo/logo_16_16"));
-            list.add(JDImage.getImage("logo/logo_17_17"));
-            list.add(JDImage.getImage("logo/logo_18_18"));
-            list.add(JDImage.getImage("logo/logo_19_19"));
-            list.add(JDImage.getImage("logo/logo_20_20"));
-            list.add(JDImage.getImage("logo/jd_logo_64_64"));
-            this.mainFrame.setIconImages(list);
-        } else {
-            this.mainFrame.setIconImage(JDImage.getImage("logo/logo_17_17"));
-        }
+        Main.GUI_COMPLETE.executeWhenReached(new Runnable() {
+
+            public void run() {
+                if (Application.getJavaVersion() >= 16000000) {
+                    final ArrayList<Image> list = new ArrayList<Image>();
+                    list.add(JDImage.getImage("logo/logo_14_14"));
+                    list.add(JDImage.getImage("logo/logo_15_15"));
+                    list.add(JDImage.getImage("logo/logo_16_16"));
+                    list.add(JDImage.getImage("logo/logo_17_17"));
+                    list.add(JDImage.getImage("logo/logo_18_18"));
+                    list.add(JDImage.getImage("logo/logo_19_19"));
+                    list.add(JDImage.getImage("logo/logo_20_20"));
+                    list.add(JDImage.getImage("logo/jd_logo_64_64"));
+                    mainFrame.setIconImages(list);
+                } else {
+                    mainFrame.setIconImage(JDImage.getImage("logo/logo_17_17"));
+                }
+            }
+
+        });
     }
 
     public void setWindowTitle(final String msg) {

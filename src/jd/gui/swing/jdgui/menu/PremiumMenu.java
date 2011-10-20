@@ -19,6 +19,7 @@ package jd.gui.swing.jdgui.menu;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JMenu;
 
+import jd.Main;
 import jd.gui.swing.jdgui.actions.ActionController;
 
 import org.jdownloader.gui.translate._GUI;
@@ -31,9 +32,14 @@ public class PremiumMenu extends JMenu {
 
     private PremiumMenu() {
         super(_GUI._.gui_menu_premium());
-        this.add(new JCheckBoxMenuItem(ActionController.getToolBarAction("premiumMenu.toggle")));
-        this.add(ActionController.getToolBarAction("premiumMenu.configuration"));
+        Main.GUI_COMPLETE.executeWhenReached(new Runnable() {
 
+            public void run() {
+                add(new JCheckBoxMenuItem(ActionController.getToolBarAction("premiumMenu.toggle")));
+                add(ActionController.getToolBarAction("premiumMenu.configuration"));
+            }
+
+        });
     }
 
     public static PremiumMenu getInstance() {

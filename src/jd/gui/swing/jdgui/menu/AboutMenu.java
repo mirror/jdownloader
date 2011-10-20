@@ -18,6 +18,7 @@ package jd.gui.swing.jdgui.menu;
 
 import javax.swing.JMenu;
 
+import jd.Main;
 import jd.gui.swing.jdgui.menu.actions.AboutAction;
 import jd.gui.swing.jdgui.menu.actions.KnowledgeAction;
 import jd.gui.swing.jdgui.menu.actions.LatestChangesAction;
@@ -32,12 +33,18 @@ public class AboutMenu extends JMenu {
     public AboutMenu() {
         super(_GUI._.gui_menu_about());
 
-        this.add(new LogAction());
-        this.addSeparator();
-        this.add(new LatestChangesAction());
-        this.add(new KnowledgeAction());
-        this.addSeparator();
-        this.add(new AboutAction());
+        Main.GUI_COMPLETE.executeWhenReached(new Runnable() {
+
+            public void run() {
+                add(new LogAction());
+                addSeparator();
+                add(new LatestChangesAction());
+                add(new KnowledgeAction());
+                addSeparator();
+                add(new AboutAction());
+            }
+
+        });
 
     }
 }

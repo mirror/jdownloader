@@ -44,7 +44,7 @@ public class ConfigurationPanel extends SwitchPanel implements ListSelectionList
 
     @Override
     protected void onShow() {
-        if (Main.isGuiComplete() && sidebar.treeInitiated() == false) {
+        if (Main.GUI_COMPLETE.isReached() && sidebar.treeInitiated() == false) {
             sidebar.updateAddons();
         }
         if (sidebar.getSelectedPanel() == null) {

@@ -240,16 +240,6 @@ public class JDController implements ControlListener {
             return;
         }
         switch (event.getEventID()) {
-        case ControlEvent.CONTROL_GUI_COMPLETE:
-            new Thread() {
-
-                @Override
-                public void run() {
-                    DownloadWatchDog.getInstance();
-                }
-
-            }.start();
-            break;
         case ControlEvent.CONTROL_ON_FILEOUTPUT:
             final File[] list = (File[]) event.getParameter();
             if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_RELOADCONTAINER, true)) {

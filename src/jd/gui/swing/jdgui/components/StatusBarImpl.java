@@ -22,6 +22,7 @@ import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.JPanel;
 
+import jd.Main;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcollector.LinkCollectorEvent;
 import jd.controlling.linkcollector.LinkCollectorListener;
@@ -108,27 +109,32 @@ public class StatusBarImpl extends JPanel {
 
         reconnectIndicator = new IconedProcessIndicator(NewTheme.I().getIcon("reconnect", 16));
         reconnectIndicator.setTitle(_GUI._.StatusBarImpl_initGUI_reconnect());
-        boolean running = false;
-        reconnectIndicator.setIndeterminate(running);
-        reconnectIndicator.setEnabled(running);
-        Reconnecter.getInstance().getStateMachine().addListener(new StateEventListener() {
+        reconnectIndicator.setIndeterminate(false);
+        reconnectIndicator.setEnabled(false);
+        Main.GUI_COMPLETE.executeWhenReached(new Runnable() {
 
-            public void onStateChange(StateEvent event) {
-                boolean r = false;
-                if (event.getNewState() == Reconnecter.RECONNECT_RUNNING) {
-                    r = true;
-                }
-                final boolean running = r;
-                new EDTRunner() {
-                    @Override
-                    protected void runInEDT() {
-                        reconnectIndicator.setEnabled(running);
-                        reconnectIndicator.setIndeterminate(running);
+            public void run() {
+                Reconnecter.getInstance().getStateMachine().addListener(new StateEventListener() {
+
+                    public void onStateChange(StateEvent event) {
+                        boolean r = false;
+                        if (event.getNewState() == Reconnecter.RECONNECT_RUNNING) {
+                            r = true;
+                        }
+                        final boolean running = r;
+                        new EDTRunner() {
+                            @Override
+                            protected void runInEDT() {
+                                reconnectIndicator.setEnabled(running);
+                                reconnectIndicator.setIndeterminate(running);
+                            }
+                        };
                     }
-                };
-            }
 
-            public void onStateUpdate(StateEvent event) {
+                    public void onStateUpdate(StateEvent event) {
+                    }
+
+                });
             }
 
         });
@@ -140,35 +146,42 @@ public class StatusBarImpl extends JPanel {
         linkGrabberIndicator = new IconedProcessIndicator(NewTheme.I().getIcon("linkgrabber", 16));
         linkGrabberIndicator.setTitle(_GUI._.StatusBarImpl_initGUI_linkgrabber());
         linkGrabberIndicator.setDescription(_GUI._.StatusBarImpl_initGUI_linkgrabber_desc_inactive());
-        linkGrabberIndicator.setIndeterminate(running);
-        linkGrabberIndicator.setEnabled(running);
-        LinkCollector.getInstance().addListener(new LinkCollectorListener() {
+        linkGrabberIndicator.setIndeterminate(false);
+        linkGrabberIndicator.setEnabled(false);
+        Main.GUI_COMPLETE.executeWhenReached(new Runnable() {
 
-            public void onLinkCollectorEvent(LinkCollectorEvent event) {
-                switch (event.getType()) {
-                case COLLECTOR_START:
-                    new EDTRunner() {
-                        @Override
-                        protected void runInEDT() {
-                            linkGrabberIndicator.setEnabled(true);
-                            linkGrabberIndicator.setIndeterminate(true);
-                            linkGrabberIndicator.setDescription(_GUI._.StatusBarImpl_initGUI_linkgrabber_desc());
+            public void run() {
+                LinkCollector.getInstance().addListener(new LinkCollectorListener() {
+
+                    public void onLinkCollectorEvent(LinkCollectorEvent event) {
+                        switch (event.getType()) {
+                        case COLLECTOR_START:
+                            new EDTRunner() {
+                                @Override
+                                protected void runInEDT() {
+                                    linkGrabberIndicator.setEnabled(true);
+                                    linkGrabberIndicator.setIndeterminate(true);
+                                    linkGrabberIndicator.setDescription(_GUI._.StatusBarImpl_initGUI_linkgrabber_desc());
+                                }
+                            };
+                            break;
+                        case COLLECTOR_STOP:
+                            new EDTRunner() {
+                                @Override
+                                protected void runInEDT() {
+                                    linkGrabberIndicator.setEnabled(false);
+                                    linkGrabberIndicator.setIndeterminate(false);
+                                    linkGrabberIndicator.setDescription(_GUI._.StatusBarImpl_initGUI_linkgrabber_desc_inactive());
+                                }
+                            };
+                            break;
                         }
-                    };
-                    break;
-                case COLLECTOR_STOP:
-                    new EDTRunner() {
-                        @Override
-                        protected void runInEDT() {
-                            linkGrabberIndicator.setEnabled(false);
-                            linkGrabberIndicator.setIndeterminate(false);
-                            linkGrabberIndicator.setDescription(_GUI._.StatusBarImpl_initGUI_linkgrabber_desc_inactive());
-                        }
-                    };
-                    break;
-                }
+                    }
+                });
             }
+
         });
+
         // linkGrabberIndicator.setToolTipText("<html><img src=\"" +
         // NewTheme.I().getImageUrl("linkgrabber") +
         // "\"></img>Crawling for Downloads</html>");

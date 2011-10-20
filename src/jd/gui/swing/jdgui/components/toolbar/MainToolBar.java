@@ -20,20 +20,22 @@ import java.awt.Component;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 
+import jd.Main;
 import jd.controlling.JDController;
 import jd.event.ControlEvent;
 import jd.event.ControlIDListener;
 import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.jdgui.components.speedmeter.SpeedMeterPanel;
 
+import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.gui.views.downloads.QuickSettingsPopup;
 
 public class MainToolBar extends ToolBar {
 
-    private static final long     serialVersionUID = 922971719957349497L;
-    private static MainToolBar    INSTANCE         = null;
+    private static final long  serialVersionUID = 922971719957349497L;
+    private static MainToolBar INSTANCE         = null;
 
-    private final SpeedMeterPanel speedmeter;
+    private SpeedMeterPanel    speedmeter;
 
     public static synchronized MainToolBar getInstance() {
         if (INSTANCE == null) INSTANCE = new MainToolBar();
@@ -42,39 +44,54 @@ public class MainToolBar extends ToolBar {
 
     private MainToolBar() {
         super();
-        speedmeter = new SpeedMeterPanel(true, false);
-        speedmeter.addMouseListener(new MouseAdapter() {
+        Main.GUI_COMPLETE.executeWhenReached(new Runnable() {
 
-            @Override
-            public void mouseClicked(MouseEvent e) {
-                if (e.isPopupTrigger() || e.getButton() == MouseEvent.BUTTON3) {
-                    QuickSettingsPopup pu = new QuickSettingsPopup();
-                    pu.show((Component) e.getSource(), e.getX(), e.getY());
-
-                }
-            }
-
-        });
-        JDController.getInstance().addControlListener(new ControlIDListener(ControlEvent.CONTROL_DOWNLOAD_START, ControlEvent.CONTROL_DOWNLOAD_STOP) {
-            @Override
-            public void controlIDEvent(final ControlEvent event) {
-                new GuiRunnable<Object>() {
+            public void run() {
+                new EDTRunner() {
 
                     @Override
-                    public Object runSave() {
-                        switch (event.getEventID()) {
-                        case ControlEvent.CONTROL_DOWNLOAD_START:
-                            speedmeter.start();
-                            break;
-                        case ControlEvent.CONTROL_DOWNLOAD_STOP:
-                            speedmeter.stop();
-                            break;
-                        }
-                        return null;
+                    protected void runInEDT() {
+                        speedmeter = new SpeedMeterPanel(true, false);
+                        speedmeter.addMouseListener(new MouseAdapter() {
+
+                            @Override
+                            public void mouseClicked(MouseEvent e) {
+                                if (e.isPopupTrigger() || e.getButton() == MouseEvent.BUTTON3) {
+                                    QuickSettingsPopup pu = new QuickSettingsPopup();
+                                    pu.show((Component) e.getSource(), e.getX(), e.getY());
+
+                                }
+                            }
+
+                        });
+                        updateToolbar();
                     }
-                }.start();
+                };
+
+                JDController.getInstance().addControlListener(new ControlIDListener(ControlEvent.CONTROL_DOWNLOAD_START, ControlEvent.CONTROL_DOWNLOAD_STOP) {
+                    @Override
+                    public void controlIDEvent(final ControlEvent event) {
+                        new GuiRunnable<Object>() {
+
+                            @Override
+                            public Object runSave() {
+                                switch (event.getEventID()) {
+                                case ControlEvent.CONTROL_DOWNLOAD_START:
+                                    if (speedmeter != null) speedmeter.start();
+                                    break;
+                                case ControlEvent.CONTROL_DOWNLOAD_STOP:
+                                    if (speedmeter != null) speedmeter.stop();
+                                    break;
+                                }
+                                return null;
+                            }
+                        }.start();
+                    }
+                });
             }
+
         });
+
     }
 
     @Override
@@ -89,7 +106,7 @@ public class MainToolBar extends ToolBar {
 
     @Override
     protected void updateSpecial() {
-        add(speedmeter, "hidemode 3, width 32:300:300");
+        if (speedmeter != null) add(speedmeter, "hidemode 3, width 32:300:300");
     }
 
 }

@@ -17,13 +17,14 @@
 package jd.gui.swing.jdgui.menu;
 
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
+import java.util.List;
 
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 
+import jd.Main;
+import jd.controlling.IOEQ;
 import jd.gui.swing.jdgui.actions.ActionController;
 import jd.gui.swing.jdgui.actions.ToolBarAction.Types;
 
@@ -40,13 +41,24 @@ public class AddonsMenu extends JMenu {
 
     private AddonsMenu() {
         super(_JDT._.gui_menu_extensions());
-        updateMenu();
+        Main.GUI_COMPLETE.executeWhenReached(new Runnable() {
+
+            public void run() {
+                update();
+            }
+
+        });
     }
 
     public void update() {
-        this.removeAll();
-        updateMenu();
+        IOEQ.add(new Runnable() {
 
+            public void run() {
+                removeAll();
+                updateMenu();
+            }
+
+        }, true);
     }
 
     public static AddonsMenu getInstance() {
@@ -60,13 +72,7 @@ public class AddonsMenu extends JMenu {
         ArrayList<JMenuItem> itemsWithSubmenu = new ArrayList<JMenuItem>();
         ArrayList<JMenuItem> itemsToggle = new ArrayList<JMenuItem>();
         ArrayList<JMenuItem> itemsPress = new ArrayList<JMenuItem>();
-        ArrayList<AbstractExtensionWrapper> pluginsOptional = ExtensionController.getInstance().getExtensions();
-        Collections.sort(pluginsOptional, new Comparator<AbstractExtensionWrapper>() {
-
-            public int compare(AbstractExtensionWrapper o1, AbstractExtensionWrapper o2) {
-                return o1.getName().compareTo(o2.getName());
-            }
-        });
+        List<AbstractExtensionWrapper> pluginsOptional = ExtensionController.getInstance().getExtensions();
 
         for (final AbstractExtensionWrapper wrapper : pluginsOptional) {
 
