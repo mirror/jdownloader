@@ -296,6 +296,7 @@ public class AbstractExtensionWrapper implements Storable, CheckBoxedEntry {
     @SuppressWarnings("unchecked")
     public ExtensionConfigInterface _getSettings() {
         try {
+            if (_getClazz() == null) return null;
             return AbstractExtension.createStore((Class<? extends AbstractExtension<?>>) _getClazz(), (Class<? extends ExtensionConfigInterface>) Class.forName(this.getConfigInterface()));
         } catch (Throwable e) {
             e.printStackTrace();

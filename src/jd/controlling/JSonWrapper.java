@@ -37,13 +37,12 @@ public class JSonWrapper extends Property implements DefaultEventListener<Storag
     private static final long                    serialVersionUID = 1L;
     private static HashMap<Storage, JSonWrapper> MAP              = new HashMap<Storage, JSonWrapper>();
     private Storage                              storage;
-    private JDController                         jdController;
+
     private String                               path;
     private boolean                              plain;
 
     private JSonWrapper(Storage json) {
         this.storage = json;
-        jdController = JDController.getInstance();
         storage.getEventSender().addListener(this);
         String str = ((JsonKeyValueStorage) storage).getFile().getAbsolutePath();
         path = str.substring(0, str.length() - (str.endsWith(".json") ? 5 : 4));
@@ -256,15 +255,15 @@ public class JSonWrapper extends Property implements DefaultEventListener<Storag
     public void onEvent(StorageEvent<?> event) {
         // delegate events
         if (event instanceof StorageKeyAddedEvent) {
-            jdController.fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_JDPROPERTY_CHANGED, event.getKey()));
+            JDController.getInstance().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_JDPROPERTY_CHANGED, event.getKey()));
         } else if (event instanceof StorageValueChangeEvent) {
             if (((StorageValueChangeEvent<?>) event).hasChanged()) {
                 changes = true;
-                jdController.fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_JDPROPERTY_CHANGED, event.getKey()));
+                JDController.getInstance().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_JDPROPERTY_CHANGED, event.getKey()));
             }
         } else if (event instanceof StorageKeyRemovedEvent) {
             changes = true;
-            jdController.fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_JDPROPERTY_CHANGED, event.getKey()));
+            JDController.getInstance().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_JDPROPERTY_CHANGED, event.getKey()));
 
         }
     }

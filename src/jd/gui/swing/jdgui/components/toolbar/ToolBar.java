@@ -223,7 +223,7 @@ public class ToolBar extends JToolBar {
     /**
      * Updates the toolbar
      */
-    protected final void updateToolbar() {
+    public final void updateToolbar() {
         synchronized (ToolBar.UPDATELOCK) {
             new EDTRunner() {
 

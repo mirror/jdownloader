@@ -63,7 +63,6 @@ import jd.gui.swing.components.Balloon;
 import jd.gui.swing.components.JDCollapser;
 import jd.gui.swing.jdgui.components.StatusBarImpl;
 import jd.gui.swing.jdgui.components.toolbar.MainToolBar;
-import jd.gui.swing.jdgui.components.toolbar.ToolBar;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.gui.swing.jdgui.interfaces.View;
 import jd.gui.swing.jdgui.menu.JDMenuBar;
@@ -114,7 +113,11 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
             JDGui.INSTANCE = new GuiRunnable<JDGui>() {
                 @Override
                 public JDGui runSave() {
-                    return new JDGui();
+                    try {
+                        return new JDGui();
+                    } finally {
+
+                    }
                 }
 
             }.getReturnValue();
@@ -140,11 +143,9 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
         this.mainFrame.setName("MAINFRAME");
         this.initDefaults();
         this.initComponents();
-
         this.setWindowIcon();
         this.setWindowTitle("JDownloader");
         this.layoutComponents();
-
         this.mainFrame.pack();
         Dialog.getInstance().setParentOwner(this.mainFrame);
         this.initLocationAndDimension();
@@ -152,7 +153,6 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
         if (this.mainFrame.getRootPane().getUI().toString().contains("SyntheticaRootPaneUI")) {
             ((de.javasoft.plaf.synthetica.SyntheticaRootPaneUI) this.mainFrame.getRootPane().getUI()).setMaximizedBounds(this.mainFrame);
         }
-
         KeyboardFocusManager.getCurrentKeyboardFocusManager().addKeyEventPostProcessor(new KeyEventPostProcessor() {
 
             public boolean postProcessKeyEvent(final KeyEvent e) {
@@ -303,7 +303,6 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
         this.toolBar.registerAccelerators(this);
         this.downloadView = new DownloadsView();
         this.linkgrabberView = new LinkGrabberView();
-
         this.mainTabbedPane.addTab(downloadView);
         this.mainTabbedPane.addTab(this.linkgrabberView);
         this.mainTabbedPane.addTab(LinkgrabberView.getInstance());
@@ -318,7 +317,14 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
         // TODO
         // this.toolBar.setList(GUIUtils.getConfig().getGenericProperty("TOOLBAR",
         // ToolBar.DEFAULT_LIST).toArray(new String[] {}));
-        toolBar.setList(ToolBar.DEFAULT_LIST.toArray(new String[] {}));
+        Main.GUI_COMPLETE.executeWhenReached(new Runnable() {
+
+            public void run() {
+                toolBar.updateToolbar();
+            }
+
+        });
+
         if (OSDetector.isMac()) {
             // add handling for Command+W for closing window on Mac OS
             KeyStroke closeKey = KeyStroke.getKeyStroke(KeyEvent.VK_W, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask());
@@ -337,6 +343,7 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
                 }
             });
         }
+
     }
 
     private void initDefaults() {

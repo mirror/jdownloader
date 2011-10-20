@@ -11,6 +11,7 @@ import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 import javax.swing.Timer;
 
+import jd.Main;
 import jd.controlling.ProgressController;
 import jd.controlling.ProgressController.Type;
 import jd.event.ControlEvent;
@@ -47,43 +48,49 @@ public final class ModuleStatus extends JPanel implements ControlListener, Mouse
             add(circles[i], "dock east, hidemode 3, hmax 20, gapleft 3");
         }
         setOpaque(false);
+        Main.GUI_COMPLETE.executeWhenReached(new Runnable() {
 
-        updateThread = new Thread("StatusBarPremiumUpdateThread") {
-            @Override
             public void run() {
-                int activecontrollers = 0;
-                while (true) {
-                    activecontrollers = controllers.size();
-                    updateControllers();
-                    if (controllers.size() != 0 || activecontrollers != 0) {
-                        /* only gui update if controllers changed */
-                        SwingUtilities.invokeLater(new Runnable() {
-                            public void run() {
-                                update();
-                            }
-                        });
-                    } else {
-                        updateThreadWaiting = true;
-                        synchronized (this) {
-                            while (addcontrollers.size() == 0) {
-                                try {
-                                    wait();
-                                } catch (InterruptedException e) {
+                updateThread = new Thread("StatusBarPremiumUpdateThread") {
+                    @Override
+                    public void run() {
+                        int activecontrollers = 0;
+                        while (true) {
+                            activecontrollers = controllers.size();
+                            updateControllers();
+                            if (controllers.size() != 0 || activecontrollers != 0) {
+                                /* only gui update if controllers changed */
+                                SwingUtilities.invokeLater(new Runnable() {
+                                    public void run() {
+                                        update();
+                                    }
+                                });
+                            } else {
+                                updateThreadWaiting = true;
+                                synchronized (this) {
+                                    while (addcontrollers.size() == 0) {
+                                        try {
+                                            wait();
+                                        } catch (InterruptedException e) {
+                                        }
+                                    }
                                 }
+                                updateThreadWaiting = false;
+                            }
+                            try {
+                                /* 4 updates per second is enough */
+                                sleep(UPDATE_PAUSE);
+                            } catch (InterruptedException e) {
                             }
                         }
-                        updateThreadWaiting = false;
                     }
-                    try {
-                        /* 4 updates per second is enough */
-                        sleep(UPDATE_PAUSE);
-                    } catch (InterruptedException e) {
-                    }
-                }
+                };
+                updateThread.start();
+                JDUtilities.getController().addControlListener(ModuleStatus.this);
             }
-        };
-        updateThread.start();
-        JDUtilities.getController().addControlListener(this);
+
+        });
+
     }
 
     private void addController(ProgressController source) {

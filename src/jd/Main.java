@@ -386,7 +386,6 @@ public class Main {
         }
 
         if (Main.instanceStarted || JDInitFlags.SWITCH_NEW_INSTANCE) {
-
             Main.start(args);
         } else {
             if (args.length > 0) {
@@ -432,11 +431,6 @@ public class Main {
         new Thread() {
             @Override
             public void run() {
-                JDController.getInstance();
-                /*
-                 * TODO: this just sets the browser settings and needs to load
-                 * database for this
-                 */
                 JDInit.initBrowser();
                 if (JDInit.loadConfiguration() == null) {
                     /* TODO: we load database just to check an entry?! */
@@ -472,7 +466,7 @@ public class Main {
                         ClipboardHandler.getClipboard().setEnabled(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_CLIPBOARD_ALWAYS_ACTIVE, true));
                         ClipboardHandler.getClipboard().setTempDisabled(false);
                         /* check for available updates */
-                        JDInit.checkUpdate();
+                        // JDInit.checkUpdate();
                         // JDUpdater.getInstance().startChecker();
                         /* start downloadwatchdog */
                         DownloadWatchDog.getInstance();
@@ -484,8 +478,9 @@ public class Main {
         new EDTHelper<Void>() {
             @Override
             public Void edtRun() {
-                JDInit.initGUI(JDController.getInstance());
+                JDInit.initGUI();
                 Log.L.info("GUIDONE->" + (System.currentTimeMillis() - Main.startup));
+                // System.exit(0);
                 return null;
             }
         }.waitForEDT();

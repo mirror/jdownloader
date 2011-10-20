@@ -26,7 +26,6 @@ import javax.swing.AbstractAction;
 
 import jd.config.Configuration;
 import jd.config.Property;
-import jd.controlling.JDController;
 import jd.controlling.JDLogger;
 import jd.controlling.JSonWrapper;
 import jd.gui.UserIO;
@@ -160,10 +159,10 @@ public class JDInit {
 
     }
 
-    public static void initGUI(final JDController controller) {
+    public static void initGUI() {
         /* only do EDT stuff here to speedup the startup */
-        EDTEventQueue.initEventQueue();
         JDGui.getInstance();
+        EDTEventQueue.initEventQueue();
     }
 
     public static Configuration loadConfiguration() {

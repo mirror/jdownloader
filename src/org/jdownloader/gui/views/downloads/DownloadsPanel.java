@@ -5,12 +5,14 @@ import java.util.concurrent.TimeUnit;
 
 import javax.swing.JScrollPane;
 
+import jd.Main;
 import jd.controlling.DownloadController;
 import jd.controlling.DownloadControllerEvent;
 import jd.controlling.DownloadControllerListener;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import net.miginfocom.swing.MigLayout;
 
+import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.gui.views.downloads.table.DownloadsTable;
 import org.jdownloader.gui.views.downloads.table.DownloadsTableModel;
 
@@ -33,8 +35,21 @@ public class DownloadsPanel extends SwitchPanel implements DownloadControllerLis
         tableScrollPane = new JScrollPane(table);
         tableScrollPane.setBorder(null);
         this.add(tableScrollPane, "cell 0 0");
-        this.bottomBar = new BottomBar(table);
-        add(bottomBar, "dock south,hidemode 3");
+        Main.GUI_COMPLETE.executeWhenReached(new Runnable() {
+
+            public void run() {
+                new EDTRunner() {
+
+                    @Override
+                    protected void runInEDT() {
+                        bottomBar = new BottomBar(table);
+                        add(bottomBar, "dock south,hidemode 3");
+                    }
+                };
+            }
+
+        });
+
     }
 
     @Override

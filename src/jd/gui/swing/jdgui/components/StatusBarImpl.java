@@ -47,8 +47,21 @@ public class StatusBarImpl extends JPanel {
     private IconedProcessIndicator extractIndicator;
 
     public StatusBarImpl() {
+        Main.GUI_COMPLETE.executeWhenReached(new Runnable() {
 
-        initGUI();
+            public void run() {
+                new EDTRunner() {
+
+                    @Override
+                    protected void runInEDT() {
+                        initGUI();
+                    }
+                };
+
+            }
+
+        });
+
     }
 
     private void initGUI() {
