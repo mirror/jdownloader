@@ -121,6 +121,7 @@ public class CrockoCom extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+        correctDownloadLink(downloadLink);
         this.setBrowserExclusive();
         br.getHeaders().put("User-Agent", RandomUserAgent.generate());
         URLConnectionAdapter con = null;
@@ -136,9 +137,10 @@ public class CrockoCom extends PluginForHost {
             }
         }
         if (br.containsHTML("Requested file is deleted")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("Download:<.*?strong>(.*?)<").getMatch(0);
+        String filename = br.getRegex("Download:<.*?strong>(.*?)</strong").getMatch(0);
         String filesize = br.getRegex("Download:<.*?inner\">(.*?)<").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        filename = filename.replaceAll("<br>", "");
         downloadLink.setName(Encoding.htmlDecode(filename.trim()));
         downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.trim() + "b"));
         return AvailableStatus.TRUE;
