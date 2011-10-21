@@ -46,6 +46,7 @@ import jd.plugins.DownloadLink;
 import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
 
+import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.StartException;
@@ -539,7 +540,14 @@ public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig> i
 
         History.setEntries(getHistoryEntriesFromConfig());
         historyCleanup(null);
-        initGUI();
+        new EDTRunner() {
+
+            @Override
+            protected void runInEDT() {
+                initGUI();
+            }
+        }.waitForEDT();
+
     }
 
     private void initGUI() {

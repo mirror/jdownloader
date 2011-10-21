@@ -24,6 +24,7 @@ import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.plugins.AddonPanel;
 
+import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.StartException;
@@ -36,8 +37,6 @@ public class PremServExtension extends AbstractExtension<PremServConfig> impleme
 
     private ExtensionConfigPanel<PremServExtension> configPanel;
 
-    private JDPremServGui                           gui;
-
     public ExtensionConfigPanel<PremServExtension> getConfigPanel() {
         return configPanel;
     }
@@ -48,8 +47,6 @@ public class PremServExtension extends AbstractExtension<PremServConfig> impleme
 
     public PremServExtension() throws StartException {
         super(null);
-
-        gui = new JDPremServGui(this);
 
     }
 
@@ -98,7 +95,13 @@ public class PremServExtension extends AbstractExtension<PremServConfig> impleme
         // this method is called ones after the addon has been loaded
 
         if (Main.isInitComplete()) startServer();
+        new EDTRunner() {
 
+            @Override
+            protected void runInEDT() {
+                initGUI();
+            }
+        };
         JDController.getInstance().addControlListener(this);
     }
 
@@ -124,7 +127,7 @@ public class PremServExtension extends AbstractExtension<PremServConfig> impleme
 
     @Override
     public AddonPanel<PremServExtension> getGUI() {
-        return gui;
+        return tab;
     }
 
     @Override

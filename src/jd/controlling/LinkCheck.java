@@ -145,6 +145,7 @@ public class LinkCheck implements ActionListener, ProgressControllerListener {
             DownloadLink link = hosterList.get(0);
             LazyHostPlugin lazyp = HostPluginController.getInstance().get(link.getHost());
             PluginForHost plg = lazyp.newInstance();
+            plg.setLogger(new JDPluginLogger("würg"));
             plg.setBrowser(new Browser());
             plg.init();
             try {

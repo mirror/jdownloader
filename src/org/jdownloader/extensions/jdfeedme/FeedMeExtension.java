@@ -18,6 +18,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
 import org.appwork.utils.Regex;
+import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.StartException;
@@ -612,9 +613,16 @@ public class FeedMeExtension extends AbstractExtension<FeedMeConfig> implements 
 
     @Override
     protected void initExtension() throws StartException {
-        view = new JDFeedMeView(this);
-        gui = new JDFeedMeGui();
-        view.setContent(gui);
+        new EDTRunner() {
+
+            @Override
+            protected void runInEDT() {
+                view = new JDFeedMeView(FeedMeExtension.this);
+                gui = new JDFeedMeGui();
+                view.setContent(gui);
+            }
+        }.waitForEDT();
+
     }
 
 }

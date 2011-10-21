@@ -9,7 +9,6 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
@@ -56,7 +55,7 @@ public class ExtensionController {
         cacheFile = Application.getResource("tmp/extensioncache/cache.json");
         cache = JSonStorage.restoreFrom(cacheFile, true, null, new TypeRef<HashMap<String, AbstractExtensionWrapper>>() {
         }, new HashMap<String, AbstractExtensionWrapper>());
-        list = Collections.unmodifiableList(new ArrayList<AbstractExtensionWrapper>(cache.values()));
+        list = new ArrayList<AbstractExtensionWrapper>(cache.values());
         Main.GUI_COMPLETE.executeWhenReached(new Runnable() {
 
             public void run() {

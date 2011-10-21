@@ -1090,8 +1090,13 @@ public class ChatExtension extends AbstractExtension<ChatConfig> {
                 }
             }
         });
+        new EDTRunner() {
 
-        this.initGUI();
+            @Override
+            protected void runInEDT() {
+                initGUI();
+            }
+        };
 
     }
 

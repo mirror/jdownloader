@@ -101,7 +101,7 @@ public class PremiumCompoundExtension extends AbstractExtension<PremiumCompoundC
         synchronized (LOCK) {
             if (Main.isInitComplete() && replaced == false) {
                 logger.info("JDPremium: cannot be initiated during runtime. JDPremium must be enabled at startup!");
-                throw new StartException("Restart needed!");
+                return;
 
             }
             if (!init) {
