@@ -24,11 +24,11 @@ import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yobt.tv" }, urls = { "http://(www\\.)?yobt\\.tv/content/\\d+/.*?\\.html" }, flags = { 0 })
 public class YobtTv extends PluginForHost {
@@ -41,20 +41,13 @@ public class YobtTv extends PluginForHost {
 
     private String decryptTheSecret(final String bismarkishID) {
         int i = 0;
-        String a = "";
-        String b = "";
-        int c = 0;
-        int d = 0;
-        String e = "";
+        String dec = "", plain = "";
         while (i < bismarkishID.length()) {
-            a = String.valueOf(bismarkishID.charAt(i));
-            b = String.valueOf(bismarkishID.charAt(i + 1));
-            c = (a.codePointAt(0) - 65) * 16;
-            d = b.codePointAt(0) - 65;
-            e = e + String.valueOf((char) c + d);
+            dec = bismarkishID.substring(i, i + 2);
+            plain += String.valueOf((char) ((dec.codePointAt(0) - 65) * 16 + dec.codePointAt(1) - 65));
             i += 2;
         }
-        return e;
+        return plain;
     }
 
     @Override
@@ -91,11 +84,9 @@ public class YobtTv extends PluginForHost {
         if (filename == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         br.getPage("http://www.yobt.tv/freeporn/" + new Regex(downloadLink.getDownloadURL(), "yobt\\.tv/content/(\\d+)/").getMatch(0) + ".xml");
         final String bismarkishID = br.getRegex("file=\\'(.*?)\\'").getMatch(0);
-        final String urlPart = br.getRegex("file_screencast=(\\'|\")(.*?)(\\'|\")").getMatch(1);
-        if (bismarkishID == null || urlPart == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        if (bismarkishID == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         DLLINK = decryptTheSecret(bismarkishID);
-        if (DLLINK == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-        DLLINK = urlPart + DLLINK;
+        if (DLLINK == null || !DLLINK.startsWith("http")) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         DLLINK = Encoding.htmlDecode(DLLINK);
         filename = filename.trim();
         String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
