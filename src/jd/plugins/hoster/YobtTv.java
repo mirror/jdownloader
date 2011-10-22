@@ -24,11 +24,11 @@ import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yobt.tv" }, urls = { "http://(www\\.)?yobt\\.tv/content/\\d+/.*?\\.html" }, flags = { 0 })
 public class YobtTv extends PluginForHost {
@@ -91,7 +91,7 @@ public class YobtTv extends PluginForHost {
         if (filename == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         br.getPage("http://www.yobt.tv/freeporn/" + new Regex(downloadLink.getDownloadURL(), "yobt\\.tv/content/(\\d+)/").getMatch(0) + ".xml");
         final String bismarkishID = br.getRegex("file=\\'(.*?)\\'").getMatch(0);
-        final String urlPart = br.getRegex("file_screencast=\\'(.*?)\\'").getMatch(0);
+        final String urlPart = br.getRegex("file_screencast=(\\'|\")(.*?)(\\'|\")").getMatch(1);
         if (bismarkishID == null || urlPart == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         DLLINK = decryptTheSecret(bismarkishID);
         if (DLLINK == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
