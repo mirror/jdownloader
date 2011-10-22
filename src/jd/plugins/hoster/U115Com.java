@@ -86,7 +86,7 @@ public class U115Com extends PluginForHost {
             }
             br.getPage(br.getRedirectLocation());
         }
-        if (br.containsHTML("id=\"pickcode_error\">很抱歉，文件不存在。</div>") || br.containsHTML("很抱歉，文件不存在。")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("(id=\"pickcode_error\">很抱歉，文件不存在。</div>|很抱歉，文件不存在。|>很抱歉，该文件提取码不存在。<|<title>115网盘\\|网盘\\|115,我的网盘\\|免费网络硬盘 \\- 爱分享，云生活</title>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<title>(.*?)下载\\|115网盘|网盘|115网络U盘-我的网盘|免费网络硬盘</title>").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("id=\"Download\"></a><a id=\"Download(.*?)\"></a>").getMatch(0);
@@ -97,7 +97,10 @@ public class U115Com extends PluginForHost {
         String filesize = br.getRegex("文件大小：(.*?)<div class=\"share-url\"").getMatch(0);
         if (filesize == null) {
             filesize = br.getRegex("u6587\\\\u4ef6\\\\u5927\\\\u5c0f\\\\uff1a(.*?)\\\\r\\\\n\\\\").getMatch(0);
-            if (filesize == null) filesize = br.getRegex("file_size: \\'(.*?)\\'").getMatch(0);
+            if (filesize == null) {
+                filesize = br.getRegex("file_size: \\'(.*?)\\'").getMatch(0);
+                if (filesize == null) filesize = br.getRegex("<li>文件大小：(.*?)</li>").getMatch(0);
+            }
         }
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         filesize = filesize.replace(",", "");
