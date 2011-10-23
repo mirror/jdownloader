@@ -219,11 +219,9 @@ public class HellShareCom extends PluginForHost {
             if (captchalink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             String captcha = "http://www.hellshare.com/captcha?sv=FreeDown" + fileId;
             String code = getCaptchaCode(captcha, downloadLink);
-            br.getPage(action + "?captcha=" + Encoding.urlEncode(code) + "&submit=Download");
-            String redirect = br.getRedirectLocation();
-            if (redirect == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            if (redirect.contains("error=405")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, redirect, false, 1);
+            br.setFollowRedirects(true);
+            br.setReadTimeout(120 * 1000);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, action + "?captcha=" + Encoding.urlEncode(code) + "&submit=Download", false, 1);
         } else {
             Form form = br.getForm(1);
             if (form == null) form = br.getForm(0);
@@ -240,7 +238,7 @@ public class HellShareCom extends PluginForHost {
                 logger.info(JDL.L("plugins.hoster.HellShareCom.error.ServerUnterMaximumLoad", "Server is under maximum load"));
                 throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.HellShareCom.error.ServerUnterMaximumLoad", "Server is under maximum load"), 10 * 60 * 1000l);
             }
-            if (br.containsHTML("(Incorrectly copied code from the image|Opište barevný kód z obrázku)")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            if (br.containsHTML("(Incorrectly copied code from the image|Opište barevný kód z obrázku)") || br.getURL().contains("error=405")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             if (br.containsHTML("You are exceeding the limitations on this download")) {
                 logger.info("You are exceeding the limitations on this download");
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1000l);
@@ -252,6 +250,7 @@ public class HellShareCom extends PluginForHost {
 
     private String getDownloadOverview(String fileID) {
         String freePage = br.getRegex("\"(/[^/\"\\'<>]+/" + fileID + "/\\?do=relatedFileDownloadButton\\-" + fileID + "\\-showDownloadWindow)\"").getMatch(0);
+        if (freePage == null) freePage = br.getRegex("\"(/[^/\"\\'<>]+/" + fileID + "/\\?do=fileDownloadButton\\-showDownloadWindow)\"").getMatch(0);
         if (freePage != null) if (!freePage.startsWith("http")) freePage = "http://download.hellshare.com" + freePage;
         return freePage;
     }

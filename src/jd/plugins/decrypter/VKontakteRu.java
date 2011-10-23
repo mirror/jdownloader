@@ -41,7 +41,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vkontakte.ru" }, urls = { "http://(www\\.)?(vkontakte\\.ru|vk\\.com)/(audio(\\.php)?(\\?album_id=\\d+\\&id=|\\?id=)\\d+|video\\-?\\d+_\\d+|videos\\d+|([A-Za-z0-9_\\-]+#/)?album\\d+_\\d+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vkontakte.ru" }, urls = { "http://(www\\.)?(vkontakte\\.ru|vk\\.com)/(audio(\\.php)?(\\?album_id=\\d+\\&id=|\\?id=)\\d+|(video\\-?\\d+_\\d+|videos\\d+|video\\?section=tagged\\&id=\\d+)|photos\\d+|([A-Za-z0-9_\\-]+#/)?album\\d+_\\d+)" }, flags = { 0 })
 public class VKontakteRu extends PluginForDecrypt implements ProgressControllerListener {
 
     /* must be static so all plugins share same lock */
@@ -52,8 +52,9 @@ public class VKontakteRu extends PluginForDecrypt implements ProgressControllerL
         super(wrapper);
     }
 
-    private static final String POSTPAGE = "http://vkontakte.ru/login.php";
-    private static final String DOMAIN   = "vkontakte.ru";
+    private static final String  POSTPAGE     = "http://vkontakte.ru/login.php";
+    private static final String  DOMAIN       = "vkontakte.ru";
+    private static final Integer MAXCOOKIEUSE = 50;
 
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
@@ -107,9 +108,12 @@ public class VKontakteRu extends PluginForDecrypt implements ProgressControllerL
                     return null;
                 }
                 decryptedLinks.add(finallink);
-            } else if (parameter.matches(".*?album\\d+_\\d+")) {
+            } else if (parameter.matches(".*?(album\\d+_\\d+|photos\\d+)")) {
                 // Photo albums
-                if (parameter.contains("#/album")) parameter = "http://vk.com/album" + new Regex(parameter, "#/album(\\d+_\\d+)").getMatch(0);
+                // Example: http://vkontakte.ru/photos575934598
+                if (parameter.contains("#/album"))
+                    parameter = "http://vkontakte.ru/album" + new Regex(parameter, "#/album(\\d+_\\d+)").getMatch(0);
+                else if (parameter.matches(".*?vkontakte.ru/photos\\d+")) parameter = parameter.replace("vkontakte.ru/photos", "vkontakte.ru/album") + "_0";
                 br.getPage(parameter);
                 String[] photoIDs = br.getRegex("class=\"photo_row\" id=\"photo_row(\\d+_\\d+)\"").getColumn(0);
                 if (photoIDs == null || photoIDs.length == 0) {
@@ -155,6 +159,8 @@ public class VKontakteRu extends PluginForDecrypt implements ProgressControllerL
             } else {
                 // Video-Playlists
                 // Example: http://vkontakte.ru/videos575934598
+                // Example2:
+                // http://vkontakte.ru/video?section=tagged&id=46468795637
                 br.getPage(parameter);
                 String[] allVideos = br.getRegex("<td class=\"video_thumb\"><a href=\"/video(\\d+_\\d+)\"").getColumn(0);
                 if (allVideos == null || allVideos.length == 0) allVideos = br.getRegex("<div class=\"video_info_cont\">[\t\n\r ]+<a href=\"/video(\\d+_\\d+)\"").getColumn(0);
@@ -176,6 +182,11 @@ public class VKontakteRu extends PluginForDecrypt implements ProgressControllerL
                     logger.info("Decrypting video " + counter + " / " + allVideos.length);
                     String completeVideolink = "http://vkontakte.ru/video" + singleVideo;
                     br.getPage(completeVideolink);
+                    // Invalid link
+                    if (br.containsHTML("(id=\"msg_back_button\">Wr\\&#243;\\&#263;</button|B\\&#322;\\&#261;d dost\\&#281;pu)")) {
+                        logger.info("Found an invalid link: " + completeVideolink);
+                        continue;
+                    }
                     DownloadLink finallink = findVideolink(completeVideolink);
                     if (finallink == null) {
                         logger.warning("Decrypter broken for link: " + parameter + "\n");
@@ -265,9 +276,9 @@ public class VKontakteRu extends PluginForDecrypt implements ProgressControllerL
         String password = null;
         synchronized (LOCK) {
             int loginCounter = this.getPluginConfig().getIntegerProperty("logincounter");
-            // Only login every 20th time to prevent getting banned | else just
+            // Only login every x th time to prevent getting banned | else just
             // set cookies (re-use them)
-            if (loginCounter > 20 || loginCounter == -1) {
+            if (loginCounter > MAXCOOKIEUSE || loginCounter == -1) {
                 username = this.getPluginConfig().getStringProperty("user", null);
                 password = this.getPluginConfig().getStringProperty("pass", null);
                 for (int i = 0; i < 3; i++) {
@@ -280,7 +291,7 @@ public class VKontakteRu extends PluginForDecrypt implements ProgressControllerL
                     if (!loginSite(username, password)) {
                         break;
                     } else {
-                        if (loginCounter > 20) {
+                        if (loginCounter > MAXCOOKIEUSE) {
                             loginCounter = 0;
                         } else {
                             loginCounter++;
