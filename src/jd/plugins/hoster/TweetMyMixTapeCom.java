@@ -27,7 +27,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tweetmymixtape.com" }, urls = { "http://(www\\.)?tweetmymixtape\\.com/[a-z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tweetmymixtape.com", "tweetmysong.com" }, urls = { "http://(www\\.)?tweetmymixtape\\.com/[a-z0-9]+", "http://(www\\.)?tweetmysong\\.com/[a-z0-9]+" }, flags = { 0, 0 })
 public class TweetMyMixTapeCom extends PluginForHost {
 
     public TweetMyMixTapeCom(PluginWrapper wrapper) {
@@ -53,7 +53,7 @@ public class TweetMyMixTapeCom extends PluginForHost {
             }
         }
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        if (br.containsHTML("(/playvideo\\.aspx\\?videokey|swfobject\\.getFlashPlayerVersion)"))
+        if (br.containsHTML("(/playvideo\\.aspx\\?videokey|>Loading the video player<)"))
             link.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".mp4");
         else
             link.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".mp3");
