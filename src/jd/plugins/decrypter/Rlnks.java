@@ -38,7 +38,7 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "relink.us", "relink.us" }, urls = { "http://[\\w\\.]*?relink\\.us/(go\\.php\\?id=[\\w]+|f/[\\w]+)", "http://[\\w\\.]*?relink\\.us/view\\.php\\?id=\\w+" }, flags = { PluginWrapper.CNL_2, PluginWrapper.CNL_2 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "relink.us" }, urls = { "http://(www\\.)?relink\\.us/(f/|(go|view|container_captcha)\\.php\\?id=)[0-9a-f]+" }, flags = { PluginWrapper.CNL_2 })
 public class Rlnks extends PluginForDecrypt {
 
     ProgressController          PROGRESS;
@@ -48,6 +48,10 @@ public class Rlnks extends PluginForDecrypt {
 
     public Rlnks(final PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    private String correctCryptedLink(final String input) {
+        return input.replaceAll("(go|view|container_captcha)\\.php\\?id=", "f/");
     }
 
     private boolean decryptContainer(final String page, final String cryptedLink, final String containerFormat, final ArrayList<DownloadLink> decryptedLinks) throws IOException {
@@ -69,7 +73,7 @@ public class Rlnks extends PluginForDecrypt {
         synchronized (LOCK) {
             PROGRESS = progress;
             final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-            final String parameter = param.toString();
+            final String parameter = correctCryptedLink(param.toString());
             setBrowserExclusive();
             br.setFollowRedirects(true);
             br.getHeaders().put("User-Agent", UA);

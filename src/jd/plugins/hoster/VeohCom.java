@@ -145,13 +145,12 @@ public class VeohCom extends PluginForHost {
         String sTime = br.getRegex("timestamp=\"(\\d+)\"").getMatch(0);
         if (fHash == null || fHash.length() < 32 || sTime == null || videoId == null || fileSize == null || ext == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
 
-        downloadLink.setDownloadSize(SizeFormatter.getSize(fileSize));
         downloadLink.setName(downloadLink.getName() + ext);
         downloadLink.getTransferStatus().setResumeSupport(true);
         br.setFollowRedirects(true);
 
         // prepareBrowser("veohplugin-1.3.6 service (NT 6.1; IE 7.0; en-US Windows)");
-        // generate crypted token (ct=)
+        /* generate crypted token (ct=) */
         final String path = "/veoh/" + permaLinkID + "/" + fHash + ".eveoh";
         final String cryptedToken = Hash.getSHA1(sTime + "VT Copyright 2008 Veoh" + path);
         final int p = Integer.parseInt(cryptedToken.substring(0, 1), 16);
@@ -165,7 +164,8 @@ public class VeohCom extends PluginForHost {
             oldDlHandling = true;
         }
         if (!oldDlHandling) {
-            // parse piece eids and decrypt it
+            downloadLink.setDownloadSize(SizeFormatter.getSize(fileSize));
+            /* parse piece eids and decrypt it */
             sTime = br.getRegex("time=\'(\\d+)\'").getMatch(0);
             if (sTime == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
 
@@ -180,12 +180,12 @@ public class VeohCom extends PluginForHost {
             prepareBrowser("veoh-1.3.6 service (NT 6.1; IE 9.0.8112.16421; en-US Windows)");
 
             final File tmpFile = new File(downloadLink.getFileOutput() + ".part");
-            // reset
+            /* reset */
             if (!tmpFile.exists()) {
                 downloadLink.setProperty("bytes_loaded", Long.valueOf(0l));
                 downloadLink.setProperty("parts_finished", Long.valueOf(0l));
             }
-            // resuming
+            /* resuming */
             BYTESLOADED = (Long) downloadLink.getProperty("bytes_loaded", Long.valueOf(0l));
             final int resume = Math.round((Long) downloadLink.getProperty("parts_finished", Long.valueOf(0l)));
             if (resume > 0) {
@@ -344,29 +344,29 @@ public class VeohCom extends PluginForHost {
             downloadLink.setDownloadInstance(null);
         } else {
             requestFileInformation(downloadLink);
-            // decrase Browserrequests
+            /* decrase Browserrequests */
             final Browser br2 = br.cloneBrowser();
-            // Webplayerrequest
+            /* webplayer request */
             br2.getPage("http://www.veoh.com/static/swf/webplayer/VWPBeacon.swf?port=50246&version=1.2.2.1112");
 
             final String videoID = new Regex(downloadLink.getDownloadURL(), "/watch/(.+)").getMatch(0);
             br.getPage("http://www.veoh.com/rest/v2/execute.xml?apiKey=" + Encoding.Base64Decode("NTY5Nzc4MUUtMUM2MC02NjNCLUZGRDgtOUI0OUQyQjU2RDM2") + "&method=veoh.video.findByPermalink&permalink=" + videoID + "&");
             if (br.containsHTML("(<rsp stat=\"fail\"|\"The video does not exist\"|name=\"YouTube\\.com\" type=\"\")")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-            // Fileextension
+            /* fileextension */
             if (!downloadLink.getName().matches(".+\\.[\\w]{1,3}$")) {
                 final String extension = br.getRegex("extension=\"(.*?)\"").getMatch(0);
                 downloadLink.setName(downloadLink.getName() + extension);
             }
-            // Finallinkparameter
+            /* finallinkparameter */
             final String fHashPath = br.getRegex("fullHashPath=\"(.*?)\"").getMatch(0);
             String fHashToken = br.getRegex("fullHashPathToken=\"(.*?)\"").getMatch(0);
-            // Decrypt fHashToken
+            /* decrypt fHashToken */
             try {
                 fHashToken = JDCrypt.decrypt(JDHexUtils.getByteArray(JDHexUtils.getHexString(Base64.decode(fHashToken))), JDHexUtils.getByteArray(Encoding.Base64Decode("ODY5NGRmY2RkODY0Y2FhYWM4OTAyZDdlYmQwNGVkYWU=")), JDHexUtils.getByteArray(Encoding.Base64Decode("ZmY1N2NlYzMwYWVlYTg5YTBmNTBkYjQxNjRhMWRhNzI=")));
             } catch (final Throwable e) {
             }
             if (fHashPath == null || fHashToken == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-            // I am a flashplayer
+
             br.getHeaders().put("Referer", "http://www.veoh.com/static/swf/veoh/VeohMediaPlayer.swf?v=2011-09-15.3");
             br.getHeaders().put("x-flash-version", "10,3,183,7");
 

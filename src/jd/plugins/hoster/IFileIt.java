@@ -17,21 +17,17 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
 
 import javax.script.Invocable;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
 import jd.PluginWrapper;
+import jd.gui.UserIO;
 import jd.http.Browser;
-import jd.http.Cookie;
-import jd.http.Cookies;
 import jd.http.RandomUserAgent;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
-import jd.parser.html.Form;
 import jd.parser.html.HTMLParser;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
@@ -56,8 +52,9 @@ public class IFileIt extends PluginForHost {
     private static final String SERVER              = "server[ ]+:[ ]+\\'(.*?)\\'";
     private static final String RECAPTCHPUBLICREGEX = "recaptcha_public.*?=.*?\\'(.*?)\\'";
     private static final String RECAPTCHAIMAGEPART  = "image?c=";
-    private static final String COOKIENAME          = "if_akey";
-    private static final String MAINPAGE            = "http://ifile.it/";
+    private boolean             showDialog          = false;
+    private boolean             RESUMING            = false;
+    private int                 MAXSIMDOWNLOADS     = 1;
 
     public IFileIt(final PluginWrapper wrapper) {
         super(wrapper);
@@ -165,7 +162,7 @@ public class IFileIt extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         br.setFollowRedirects(false);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, RESUMING, MAXSIMDOWNLOADS);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 503) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l); }
             br.followConnection();
@@ -177,14 +174,38 @@ public class IFileIt extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
+        showDialog = true;
         try {
-            login(account, true);
+            loginAPI(account, ai);
         } catch (final PluginException e) {
             account.setValid(false);
             return ai;
         }
-        ai.setStatus("Registered account ok");
+        /* account info */
+        br.postPage("http://ifile.it/api-fetch_account_info.api", "akey=" + account.getProperty("akey", null));
+        final String[] response = br.getRegex("\\{\"status\":\"(.*?)\",\"num_files\":\"?(\\d+)\"?,\"num_folders\":\"?(\\d+)\"?,\"storage_used\":\"?(\\d+)\"?,\"bw_used_24hrs\":\"?(\\d+)\"?,\"user_id\":\"(.*?)\",\"user_name\":\"(.*?)\",\"user_group\":\"(.*?)\"\\}").getRow(0);
+        if (response == null || response.length != 8 || response[0].equals("error")) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE); }
+
         account.setValid(true);
+        account.setProperty("typ", "unknown");
+        if (response[7].equals("vip")) {
+            ai.setStatus("VIP User");
+            account.setProperty("typ", "vip");
+        } else if (response[7].equals("premium")) {
+            ai.setStatus("Premium User");
+            account.setProperty("typ", "premium");
+        } else if (response[7].equals("unverified")) {
+            if (showDialog) {
+                UserIO.getInstance().requestMessageDialog(0, "ifile.it Premium Error", "Account '" + account.getUser() + "' is not verified.\r\nPlease activate your Account!");
+            }
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        } else if (response[7].equals("normal")) {
+            ai.setStatus("Normal User");
+            account.setProperty("typ", "free");
+        } else {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        }
+        ai.setUnlimitedTraffic();
         return ai;
     }
 
@@ -195,12 +216,12 @@ public class IFileIt extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 18;
+        return 1;
     }
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return 18;
+        return 10;
     }
 
     @Override
@@ -213,52 +234,57 @@ public class IFileIt extends PluginForHost {
     @Override
     public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
         requestFileInformation(downloadLink);
-        login(account, false);
-        br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL());
-        doFree(downloadLink);
+        showDialog = false;
+        loginAPI(account, null);
+        if (account.getProperty("typ", null).equals("free")) {
+            MAXSIMDOWNLOADS = 2;
+            RESUMING = true;
+            doFree(downloadLink);
+        } else {
+            final String ukey = new Regex(downloadLink.getDownloadURL(), "http://.*?/(.*?)(/.*?)?$").getMatch(0);
+
+            br.postPage("http://ifile.it/api-fetch_download_url.api", "akey=" + account.getProperty("akey", null) + "&ukey=" + ukey);
+            final String[] response = br.getRegex("\\{\"status\":\"(.*?)\",\"(.*?)\":\"(.*?)\"\\}").getRow(0);
+            if (response == null || response.length != 3 || response[0].equals("error")) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+
+            final String dllink = response[2].replace("\\", "");
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -1);
+            if (dl.getConnection().getContentType().contains("html")) {
+                if (dl.getConnection().getResponseCode() == 503) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l); }
+                br.followConnection();
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            dl.startDownload();
+        }
     }
 
-    @SuppressWarnings("unchecked")
-    public void login(final Account account, final boolean force) throws Exception {
+    public void loginAPI(final Account account, AccountInfo ai) throws Exception {
         synchronized (LOCK) {
-            // Load cookies
-            br.setCookiesExclusive(false);
-            final Object ret = account.getProperty("cookies", null);
-            boolean acmatch = Encoding.urlEncode(account.getUser()).matches(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-            if (acmatch) {
-                acmatch = Encoding.urlEncode(account.getPass()).matches(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
-            }
-            if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
-                final HashMap<String, String> cookies = (HashMap<String, String>) ret;
-                if (cookies.containsKey(COOKIENAME) && account.isValid()) {
-                    for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
-                        final String key = cookieEntry.getKey();
-                        final String value = cookieEntry.getValue();
-                        br.setCookie(MAINPAGE, key, value);
-                    }
-                    return;
+            if (ai == null) {
+                ai = account.getAccountInfo();
+                if (ai == null) {
+                    ai = new AccountInfo();
+                    account.setAccountInfo(ai);
                 }
             }
-            br.getHeaders().put("User-Agent", useragent);
-            final Form loginForm = br.getForm(0);
-            if (loginForm != null) {
-                loginForm.put("username", Encoding.urlEncode(account.getUser()));
-                loginForm.put("password", Encoding.urlEncode(account.getPass()));
-                br.submitForm(loginForm);
-            } else {
-                br.postPage("https://secure.ifile.it/account-signin_p.html", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-            }
-            if (br.getCookie(MAINPAGE, COOKIENAME) == null) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE); }
-            // Save cookies
-            final HashMap<String, String> cookies = new HashMap<String, String>();
-            final Cookies add = br.getCookies(MAINPAGE);
-            for (final Cookie c : add.getCookies()) {
-                cookies.put(c.getKey(), c.getValue());
+            if (account.getProperty("akey", null) != null) { return; }
+            /* login get apikey */
+            br.postPage("https://secure.ifile.it/api-fetch_apikey.api", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+            final String[] response = br.getRegex("\\{\"status\":\"(.*?)\",\"(.*?)\":\"(.*?)\"\\}").getRow(0);
+            if (response == null || response.length != 3 || response[0].equals("error")) {
+                if (response[1].equals("message")) {
+                    if (response[2].equals("invalid username and\\/or password")) {
+                        if (showDialog) {
+                            UserIO.getInstance().requestMessageDialog(0, "ifile.it Account Error", "Invalid username '" + account.getUser() + "' and/or password.\r\nPlease check your Account!");
+                        }
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
+                }
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
             account.setProperty("name", Encoding.urlEncode(account.getUser()));
             account.setProperty("pass", Encoding.urlEncode(account.getPass()));
-            account.setProperty("cookies", cookies);
+            account.setProperty("akey", response[2]);
         }
     }
 
