@@ -184,13 +184,12 @@ public class ExtaBitCom extends PluginForHost {
         // old + new
         String expire = br.getRegex("Premium is active till <span class=\"green\"><strong>(.*?)</strong>").getMatch(0);
         if (expire == null) expire = br.getRegex("Premium is active till (.*?) ").getMatch(0);
-        // old + new ?? new not tested only guessing, test account was
-        // unlimited.
-        String downloadsLeft = br.getRegex("You have <span class=\"green\"><strong>(\\d+) downloads</strong>").getMatch(0);
-        if (downloadsLeft == null) downloadsLeft = br.getRegex("You have (\\d+) downloads").getMatch(0);
+        // new, now tested.
+        String downloadsLeft = br.getRegex("You have <strong>(\\d+)</strong> downloads").getMatch(0);
         if (downloadsLeft != null) {
-            ai.setStatus("Premium User" + downloadsLeft);
-        } else if (expire != null) {
+            ai.setStatus("Downloads left: " + downloadsLeft);
+        }
+        else if (expire != null) {
             ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd.MM.yyyy", null));
             ai.setStatus("Premium User");
         } else {
