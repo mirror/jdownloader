@@ -1,8 +1,6 @@
 package org.jdownloader.gui.views.linkgrabber;
 
 import java.awt.Color;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 
 import javax.swing.Box;
 import javax.swing.JButton;
@@ -25,7 +23,7 @@ import org.jdownloader.gui.views.linkgrabber.actions.AddOptionsAction;
 import org.jdownloader.gui.views.linkgrabber.actions.ClearAction;
 import org.jdownloader.gui.views.linkgrabber.actions.ConfirmAllAction;
 import org.jdownloader.gui.views.linkgrabber.actions.ConfirmOptionsAction;
-import org.jdownloader.images.NewTheme;
+import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 
 public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListener {
     private LinkGrabberTableModel tableModel;
@@ -45,62 +43,35 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
         table = new LinkGrabberTable(tableModel);
         tableScrollPane = new JScrollPane(table);
         // tableScrollPane.setBorder(null);
-        sidebar = new LinkGrabberSidebar(table);
 
-        this.add(tableScrollPane, "pushx,growx");
-        HeaderScrollPane sp = new HeaderScrollPane(sidebar) {
-            // protected int getHeaderHeight() {
-            // return (int)
-            // table.getTableHeader().getPreferredSize().getHeight();
-            // }
-        };
+        if (GraphicalUserInterfaceSettings.CFG.isLinkgrabberSidebarEnabled()) {
+            this.add(tableScrollPane, "pushx,growx");
+            sidebar = new LinkGrabberSidebar(table);
 
-        close = new ExtButton() {
-            {
-                setRolloverEffectEnabled(true);
-                addActionListener(new ActionListener() {
+            HeaderScrollPane sp = new HeaderScrollPane(sidebar) {
+                // protected int getHeaderHeight() {
+                // return (int)
+                // table.getTableHeader().getPreferredSize().getHeight();
+                // }
+            };
 
-                    public void actionPerformed(ActionEvent e) {
+            // ScrollPaneUI udi = sp.getUI();
+            int c = LookAndFeelController.getInstance().getLAFOptions().getPanelBackgroundColor();
+            // LayoutManager lm = sp.getLayout();
 
-                        onRollOut();
-                    }
-                });
+            if (c >= 0) {
+                sp.setBackground(new Color(c));
+                sp.setOpaque(true);
+
             }
-
-            /**
-             * 
-             */
-            private static final long serialVersionUID = 1L;
-
-            protected void onRollOut() {
-                setContentAreaFilled(false);
-                setIcon(NewTheme.I().getIcon("close", 11));
-            }
-
-            /**
-             * 
-             */
-            protected void onRollOver() {
-                setIcon(NewTheme.I().getIcon("close.on", 11));
-            }
-
-        };
-
-        sp.setCorner(ScrollPaneConstants.UPPER_RIGHT_CORNER, close);
-
-        // ScrollPaneUI udi = sp.getUI();
-        int c = LookAndFeelController.getInstance().getLAFOptions().getPanelBackgroundColor();
-        // LayoutManager lm = sp.getLayout();
-
-        if (c >= 0) {
-            sp.setBackground(new Color(c));
-            sp.setOpaque(true);
+            sp.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
+            sp.setColumnHeaderView(new LinkGrabberSideBarHeader(table));
+            // sp.setColumnHeaderView(new LinkGrabberSideBarHeader(table));
+            add(sp, "width 240!");
+        } else {
+            this.add(tableScrollPane, "pushx,growx,spanx");
 
         }
-        sp.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
-        sp.setColumnHeaderView(new LinkGrabberSideBarHeader(table));
-        // sp.setColumnHeaderView(new LinkGrabberSideBarHeader(table));
-        add(sp, "width 240!");
         addLinks = new JButton(new AddLinksAction());
         confirmAll = new JButton(new ConfirmAllAction());
         clearAll = new JButton(new ClearAction());

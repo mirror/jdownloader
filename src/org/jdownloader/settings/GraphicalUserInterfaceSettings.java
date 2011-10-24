@@ -177,4 +177,12 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
     void setWindowOpaque(boolean b);
 
+    @AboutConfig
+    @Description("Enable/Disable the Linkgrabber Sidebar")
+    @DefaultBooleanValue(true)
+    @RequiresRestart
+    boolean isLinkgrabberSidebarEnabled();
+
+    void setLinkgrabberSidebarEnabled(boolean b);
+
 }
