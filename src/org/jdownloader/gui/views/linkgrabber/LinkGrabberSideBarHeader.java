@@ -1,9 +1,15 @@
 package org.jdownloader.gui.views.linkgrabber;
 
+import java.awt.Color;
+
+import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.JLabel;
 
+import jd.gui.swing.laf.LookAndFeelController;
+
 import org.appwork.app.gui.MigPanel;
+import org.appwork.utils.swing.SwingUtils;
 import org.jdownloader.gui.translate._GUI;
 
 public class LinkGrabberSideBarHeader extends MigPanel {
@@ -17,6 +23,11 @@ public class LinkGrabberSideBarHeader extends MigPanel {
 
         add(lbl, "height 18!");
         add(Box.createHorizontalGlue());
+        setOpaque(true);
+        SwingUtils.setOpaque(lbl, false);
+        setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, new Color(LookAndFeelController.getInstance().getLAFOptions().getPanelHeaderLineColor())));
+
+        setBackground(new Color(LookAndFeelController.getInstance().getLAFOptions().getPanelHeaderColor()));
         // add(bt, "width 20!");
     }
 

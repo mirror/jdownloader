@@ -68,8 +68,6 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
 
     private static final long          serialVersionUID       = 1607433619381447389L;
 
-    public static final String         JDL_PREFIX             = "jd.gui.swing.jdgui.views.linkgrabberview";
-
     private ArrayList<DownloadLink>    waitingList            = new ArrayList<DownloadLink>();
 
     private LinkGrabberTable           internalTable;

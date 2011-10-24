@@ -1,6 +1,7 @@
 package org.jdownloader.gui.views.linkgrabber;
 
 import java.awt.Color;
+import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 
 import javax.swing.Box;
@@ -60,6 +61,7 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
 
             }
         };
+        close.setSize(new Dimension(16, 16));
         sp.setCorner(ScrollPaneConstants.UPPER_RIGHT_CORNER, close);
 
         // ScrollPaneUI udi = sp.getUI();
@@ -69,6 +71,7 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
         if (c >= 0) {
             sp.setBackground(new Color(c));
             sp.setOpaque(true);
+
         }
         sp.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
         sp.setColumnHeaderView(new LinkGrabberSideBarHeader(table));

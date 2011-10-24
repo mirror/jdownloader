@@ -54,7 +54,7 @@ public class ExtensionController {
     private ExtensionController() {
 
         map = new HashMap<Class<AbstractExtension<?>>, LazyExtension>();
-        cacheFile = Application.getResource("tmp/extensioncache/cache.json");
+        cacheFile = Application.getResource("tmp/extensioncache/extensionInfos.json");
         eventSender = new ExtensionControllerEventSender();
         // Collections.sort(pluginsOptional, new
         // Comparator<AbstractExtensionWrapper>() {

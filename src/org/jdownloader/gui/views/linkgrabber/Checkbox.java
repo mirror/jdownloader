@@ -21,6 +21,9 @@ public class Checkbox extends MigPanel {
         add(Box.createHorizontalGlue());
         add(lbl);
         add(checkbox);
+        checkbox.setOpaque(false);
+        lbl.setOpaque(false);
+        setOpaque(false);
 
     }
 
