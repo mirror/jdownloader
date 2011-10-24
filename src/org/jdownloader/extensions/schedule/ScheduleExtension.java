@@ -27,6 +27,7 @@ import jd.controlling.JDLogger;
 import jd.nutils.ClassFinder;
 import jd.pluginloader.VirtualClass;
 
+import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.StartException;
@@ -310,9 +311,15 @@ public class ScheduleExtension extends AbstractExtension<ScheduleConfig> {
 
     @Override
     protected void initExtension() throws StartException {
-        view = new SchedulerView(this);
-        gui = new MainGui(this);
-        view.setContent(gui);
+        new EDTRunner() {
+
+            @Override
+            protected void runInEDT() {
+                view = new SchedulerView(ScheduleExtension.this);
+                gui = new MainGui(ScheduleExtension.this);
+                view.setContent(gui);
+            }
+        };
 
     }
 }

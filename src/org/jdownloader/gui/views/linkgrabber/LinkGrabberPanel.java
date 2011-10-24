@@ -1,6 +1,7 @@
 package org.jdownloader.gui.views.linkgrabber;
 
 import java.awt.Color;
+import java.awt.event.ActionEvent;
 
 import javax.swing.Box;
 import javax.swing.JButton;
@@ -10,6 +11,7 @@ import javax.swing.ScrollPaneConstants;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcollector.LinkCollectorEvent;
 import jd.controlling.linkcollector.LinkCollectorListener;
+import jd.gui.swing.components.JDCloseButton;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.gui.swing.laf.LookAndFeelController;
 import net.miginfocom.swing.MigLayout;
@@ -33,6 +35,7 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
     private JButton               clearAll;
     private JButton               popup;
     private JButton               popupConfirm;
+    private JDCloseButton         close;
 
     public LinkGrabberPanel() {
         super(new MigLayout("ins 0, wrap 2", "[grow,fill]2[fill]", "[grow, fill]2[]"));
@@ -49,6 +52,16 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
             // table.getTableHeader().getPreferredSize().getHeight();
             // }
         };
+
+        close = new JDCloseButton() {
+            private static final long serialVersionUID = -8427069347798591918L;
+
+            public void actionPerformed(ActionEvent e) {
+
+            }
+        };
+        sp.setCorner(ScrollPaneConstants.UPPER_RIGHT_CORNER, close);
+
         // ScrollPaneUI udi = sp.getUI();
         int c = LookAndFeelController.getInstance().getLAFOptions().getPanelBackgroundColor();
         // LayoutManager lm = sp.getLayout();

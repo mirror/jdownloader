@@ -23,34 +23,34 @@ import jd.gui.swing.jdgui.menu.WindowMenu;
 import org.appwork.swing.exttable.ExtTableModel;
 import org.appwork.swing.exttable.columns.ExtCheckColumn;
 import org.appwork.utils.swing.dialog.Dialog;
-import org.jdownloader.extensions.AbstractExtensionWrapper;
+import org.jdownloader.extensions.LazyExtension;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
 import org.jdownloader.translate._JDT;
 
-public class ActivateColumn extends ExtCheckColumn<AbstractExtensionWrapper> {
+public class ActivateColumn extends ExtCheckColumn<LazyExtension> {
 
-    private static final long       serialVersionUID = 658156218405204887L;
+    private static final long      serialVersionUID = 658156218405204887L;
     private final ExtensionManager addons;
 
-    public ActivateColumn(String name, ExtTableModel<AbstractExtensionWrapper> table, ExtensionManager addons) {
+    public ActivateColumn(String name, ExtTableModel<LazyExtension> table, ExtensionManager addons) {
         super(name, table);
 
         this.addons = addons;
     }
 
     @Override
-    public boolean isEditable(AbstractExtensionWrapper obj) {
+    public boolean isEditable(LazyExtension obj) {
         return true;
     }
 
     @Override
-    protected boolean getBooleanValue(AbstractExtensionWrapper value) {
+    protected boolean getBooleanValue(LazyExtension value) {
         return value._isEnabled();
     }
 
     @Override
-    protected void setBooleanValue(boolean value, AbstractExtensionWrapper object) {
+    protected void setBooleanValue(boolean value, LazyExtension object) {
         if (value == object._isEnabled()) return;
         if (value) {
             try {
@@ -87,8 +87,8 @@ public class ActivateColumn extends ExtCheckColumn<AbstractExtensionWrapper> {
          * enabled
          */
 
-        AddonsMenu.getInstance().update();
-        WindowMenu.getInstance().update();
+        AddonsMenu.getInstance().onUpdated();
+        WindowMenu.getInstance().onUpdated();
         // ConfigSidebar.getInstance(null).updateAddons();
         addons.updateShowcase();
     }

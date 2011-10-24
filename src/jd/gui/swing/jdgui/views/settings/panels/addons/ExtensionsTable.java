@@ -25,15 +25,15 @@ import org.appwork.swing.exttable.columns.ExtCheckColumn;
 import org.appwork.swing.exttable.columns.ExtLongColumn;
 import org.appwork.swing.exttable.columns.ExtTextColumn;
 import org.appwork.utils.swing.dialog.Dialog;
-import org.jdownloader.extensions.AbstractExtensionWrapper;
 import org.jdownloader.extensions.ExtensionController;
+import org.jdownloader.extensions.LazyExtension;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.translate._JDT;
 
-public class ExtensionsTable extends BasicJDTable<AbstractExtensionWrapper> implements SettingsComponent {
+public class ExtensionsTable extends BasicJDTable<LazyExtension> implements SettingsComponent {
     private static final long serialVersionUID = 1L;
 
     public ExtensionsTable() {
@@ -47,27 +47,27 @@ public class ExtensionsTable extends BasicJDTable<AbstractExtensionWrapper> impl
         throw new IllegalStateException("Not implemented");
     }
 
-    private static class InternalTableModel extends ExtTableModel<AbstractExtensionWrapper> {
+    private static class InternalTableModel extends ExtTableModel<LazyExtension> {
 
-        private static final long                   serialVersionUID = 5847076032639053531L;
-        private ArrayList<AbstractExtensionWrapper> pluginsOptional;
+        private static final long        serialVersionUID = 5847076032639053531L;
+        private ArrayList<LazyExtension> pluginsOptional;
 
         public InternalTableModel() {
             super("addonTable");
-            pluginsOptional = new ArrayList<AbstractExtensionWrapper>(ExtensionController.getInstance().getExtensions());
-            Collections.sort(pluginsOptional, new Comparator<AbstractExtensionWrapper>() {
+            pluginsOptional = new ArrayList<LazyExtension>(ExtensionController.getInstance().getExtensions());
+            Collections.sort(pluginsOptional, new Comparator<LazyExtension>() {
 
-                public int compare(AbstractExtensionWrapper o1, AbstractExtensionWrapper o2) {
+                public int compare(LazyExtension o1, LazyExtension o2) {
                     return o1.getName().compareTo(o2.getName());
                 }
             });
-            tableData = new ArrayList<AbstractExtensionWrapper>(pluginsOptional);
+            tableData = new ArrayList<LazyExtension>(pluginsOptional);
         }
 
         @Override
         protected void initColumns() {
 
-            this.addColumn(new ExtCheckColumn<AbstractExtensionWrapper>(_GUI._.extensiontablemodel_column_enabled()) {
+            this.addColumn(new ExtCheckColumn<LazyExtension>(_GUI._.extensiontablemodel_column_enabled()) {
                 private static final long serialVersionUID = 1L;
 
                 public ExtTableHeaderRenderer getHeaderRenderer(final JTableHeader jTableHeader) {
@@ -100,12 +100,12 @@ public class ExtensionsTable extends BasicJDTable<AbstractExtensionWrapper> impl
                 }
 
                 @Override
-                protected boolean getBooleanValue(AbstractExtensionWrapper value) {
+                protected boolean getBooleanValue(LazyExtension value) {
                     return value._isEnabled();
                 }
 
                 @Override
-                protected void setBooleanValue(boolean value, AbstractExtensionWrapper object) {
+                protected void setBooleanValue(boolean value, LazyExtension object) {
                     if (value == object._isEnabled()) return;
                     if (value) {
                         try {
@@ -142,34 +142,34 @@ public class ExtensionsTable extends BasicJDTable<AbstractExtensionWrapper> impl
                      * running when enabled
                      */
 
-                    AddonsMenu.getInstance().update();
-                    WindowMenu.getInstance().update();
+                    AddonsMenu.getInstance().onUpdated();
+                    WindowMenu.getInstance().onUpdated();
                     // ConfigSidebar.getInstance(null).updateAddons();
                     // addons.updateShowcase();
                 }
             });
 
-            this.addColumn(new ExtTextColumn<AbstractExtensionWrapper>(_GUI._.gui_column_plugin(), this) {
+            this.addColumn(new ExtTextColumn<LazyExtension>(_GUI._.gui_column_plugin(), this) {
 
                 private static final long serialVersionUID = -3960914415647488335L;
 
                 @Override
-                protected Icon getIcon(AbstractExtensionWrapper value) {
+                protected Icon getIcon(LazyExtension value) {
                     return value._getIcon(16);
                 }
 
                 @Override
-                public String getStringValue(AbstractExtensionWrapper value) {
+                public String getStringValue(LazyExtension value) {
                     return value.getName();
                 }
 
             });
-            this.addColumn(new ExtLongColumn<AbstractExtensionWrapper>(_GUI._.gui_column_version(), this) {
+            this.addColumn(new ExtLongColumn<LazyExtension>(_GUI._.gui_column_version(), this) {
 
                 private static final long serialVersionUID = -7390851512040553114L;
 
                 @Override
-                protected long getLong(AbstractExtensionWrapper value) {
+                protected long getLong(LazyExtension value) {
                     return value.getVersion();
                 }
 

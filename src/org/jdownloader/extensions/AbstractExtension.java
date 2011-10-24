@@ -237,8 +237,8 @@ public abstract class AbstractExtension<T extends ExtensionConfigInterface> {
         }
     }
 
-    public static ExtensionConfigInterface createStore(Class<? extends AbstractExtension<?>> class1, Class<? extends ExtensionConfigInterface> interfaceClass) {
-        return JsonConfig.create(Application.getResource("cfg/" + class1.getName()), interfaceClass);
+    public static ExtensionConfigInterface createStore(String className, Class<? extends ExtensionConfigInterface> interfaceClass) {
+        return JsonConfig.create(Application.getResource("cfg/" + className), interfaceClass);
     }
 
     /**

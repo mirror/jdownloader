@@ -17,6 +17,7 @@ import java.util.jar.JarInputStream;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import jd.JDInitFlags;
 import jd.Main;
 
 import org.appwork.storage.JSonStorage;
@@ -39,11 +40,12 @@ public class ExtensionController {
         return ExtensionController.INSTANCE;
     }
 
-    private HashMap<Class<AbstractExtension<?>>, AbstractExtensionWrapper> map;
-    private List<AbstractExtensionWrapper>                                 list;
-    private HashMap<String, AbstractExtensionWrapper>                      cache;
-    private File                                                           cacheFile;
-    private boolean                                                        cacheChanged;
+    private HashMap<Class<AbstractExtension<?>>, LazyExtension> map;
+    private List<LazyExtension>                                 list;
+    private HashMap<String, LazyExtension>                      cache;
+    private File                                                cacheFile;
+    private boolean                                             cacheChanged;
+    private ExtensionControllerEventSender                      eventSender;
 
     /**
      * Create a new instance of ExtensionController. This is a singleton class.
@@ -51,22 +53,9 @@ public class ExtensionController {
      */
     private ExtensionController() {
 
-        map = new HashMap<Class<AbstractExtension<?>>, AbstractExtensionWrapper>();
+        map = new HashMap<Class<AbstractExtension<?>>, LazyExtension>();
         cacheFile = Application.getResource("tmp/extensioncache/cache.json");
-        cache = JSonStorage.restoreFrom(cacheFile, true, null, new TypeRef<HashMap<String, AbstractExtensionWrapper>>() {
-        }, new HashMap<String, AbstractExtensionWrapper>());
-        list = new ArrayList<AbstractExtensionWrapper>(cache.values());
-        Main.GUI_COMPLETE.executeWhenReached(new Runnable() {
-
-            public void run() {
-                for (AbstractExtensionWrapper plg : list) {
-                    if (plg._getExtension() != null && plg._getExtension().getGUI() != null) {
-                        plg._getExtension().getGUI().restore();
-                    }
-                }
-            }
-
-        });
+        eventSender = new ExtensionControllerEventSender();
         // Collections.sort(pluginsOptional, new
         // Comparator<AbstractExtensionWrapper>() {
         //
@@ -77,8 +66,74 @@ public class ExtensionController {
         // });
     }
 
-    public void load() {
+    public ExtensionControllerEventSender getEventSender() {
+        return eventSender;
+    }
+
+    public void init() {
+
+        final long t = System.currentTimeMillis();
         try {
+            if (JDInitFlags.REFRESH_CACHE || JDInitFlags.SWITCH_RETURNED_FROM_UPDATE) {
+                try {
+                    /* do a fresh scan */
+                    load();
+                } catch (Throwable e) {
+                    Log.L.severe("@ExtensionController: update failed!");
+                    Log.exception(e);
+                }
+            } else {
+                /* try to load from cache */
+                try {
+                    list = loadFromCache();
+                } catch (Throwable e) {
+                    Log.L.severe("@ExtensionController: cache failed!");
+                    Log.exception(e);
+                }
+                if (list.size() == 0) {
+                    try {
+                        /* do a fresh scan */
+                        load();
+                    } catch (Throwable e) {
+                        Log.L.severe("@ExtensionController: update failed!");
+                        e.printStackTrace();
+                    }
+                }
+            }
+        } finally {
+
+            System.out.println("@ExtensionController: init in" + (System.currentTimeMillis() - t) + "ms :" + list.size());
+
+        }
+        if (list.size() == 0) {
+            Log.L.severe("@ExtensionController: WTF, no extensions!");
+        }
+
+        Main.GUI_COMPLETE.executeWhenReached(new Runnable() {
+
+            public void run() {
+                for (LazyExtension plg : list) {
+                    if (plg._getExtension() != null && plg._getExtension().getGUI() != null) {
+                        plg._getExtension().getGUI().restore();
+                    }
+                }
+            }
+
+        });
+        getEventSender().fireEvent(new ExtensionControllerEvent(this, ExtensionControllerEvent.Type.UPDATED));
+    }
+
+    private List<LazyExtension> loadFromCache() {
+        cache = JSonStorage.restoreFrom(cacheFile, true, null, new TypeRef<HashMap<String, LazyExtension>>() {
+        }, new HashMap<String, LazyExtension>());
+
+        return new ArrayList<LazyExtension>(cache.values());
+    }
+
+    private void load() {
+        try {
+            cache = new HashMap<String, LazyExtension>();
+            list = new ArrayList<LazyExtension>();
             cacheChanged = false;
             if (Application.isJared(ExtensionController.class)) {
                 loadJared();
@@ -207,7 +262,7 @@ public class ExtensionController {
 
     private void initModule(Class<AbstractExtension<?>> cls) throws InstantiationException, IllegalAccessException, StartException, IOException, ClassNotFoundException {
 
-        AbstractExtensionWrapper cached = getCache(cls);
+        LazyExtension cached = getCache(cls);
 
         if (cached._isEnabled()) {
             cached.init();
@@ -218,18 +273,18 @@ public class ExtensionController {
 
     }
 
-    private AbstractExtensionWrapper getCache(Class<AbstractExtension<?>> cls) throws StartException, InstantiationException, IllegalAccessException, IOException {
+    private LazyExtension getCache(Class<AbstractExtension<?>> cls) throws StartException, InstantiationException, IllegalAccessException, IOException {
         String id = cls.getName().substring(27);
         // File cache = Application.getResource("tmp/extensioncache/" + id +
         // ".json");
         // AbstractExtensionWrapper cached = JSonStorage.restoreFrom(cache,
         // true, (byte[]) null, new TypeRef<AbstractExtensionWrapper>() {
 
-        AbstractExtensionWrapper cached = cache.get(id);
+        LazyExtension cached = cache.get(id);
 
         int v = AbstractExtension.readVersion(cls);
         if (cached != null) {
-            cached._setClazz(cls);
+            cached._setPluginClass(cls);
             if (cached.getVersion() != v || !cached.getLng().equals(_JDT.getLanguage()) || cached._getSettings() == null) {
                 // update cache
                 cached = null;
@@ -237,22 +292,22 @@ public class ExtensionController {
         }
         if (cached == null) {
             Log.L.info("Update Cache " + cache);
-            cached = AbstractExtensionWrapper.create(id, cls);
+            cached = LazyExtension.create(id, cls);
             cache.put(id, cached);
             cacheChanged = true;
         } else {
-            cached._setClazz(cls);
+            cached._setPluginClass(cls);
         }
         return cached;
     }
 
     public boolean isExtensionActive(Class<? extends AbstractExtension<?>> class1) {
-        AbstractExtensionWrapper plg = map.get(class1);
+        LazyExtension plg = map.get(class1);
         if (plg != null && plg._getExtension() != null && plg._getExtension().isEnabled()) return true;
         return false;
     }
 
-    public List<AbstractExtensionWrapper> getExtensions() {
+    public List<LazyExtension> getExtensions() {
         return list;
     }
 
@@ -263,15 +318,25 @@ public class ExtensionController {
      */
     public ArrayList<AbstractExtension<?>> getEnabledExtensions() {
         ArrayList<AbstractExtension<?>> ret = new ArrayList<AbstractExtension<?>>();
-        List<AbstractExtensionWrapper> llist = list;
-        for (AbstractExtensionWrapper aew : llist) {
+        List<LazyExtension> llist = list;
+        for (LazyExtension aew : llist) {
             if (aew._getExtension() != null && aew._getExtension().isEnabled()) ret.add(aew._getExtension());
         }
         return ret;
     }
 
-    public <T extends AbstractExtension<?>> AbstractExtensionWrapper getExtension(Class<T> class1) {
-        return map.get(class1);
+    public <T extends AbstractExtension<?>> LazyExtension getExtension(Class<T> class1) {
+        LazyExtension ret = map.get(class1);
+        if (ret == null) {
+            for (LazyExtension l : list) {
+                if (class1.getName().equals(l.getClassname())) {
+                    map.put(l._getPluginClass(), l);
+                    ret = l;
+                    break;
+                }
+            }
+        }
+        return ret;
     }
 
 }

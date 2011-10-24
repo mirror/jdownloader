@@ -9,7 +9,7 @@ import jd.gui.UserIO;
 
 import org.appwork.utils.Application;
 import org.appwork.utils.swing.dialog.Dialog;
-import org.jdownloader.extensions.AbstractExtensionWrapper;
+import org.jdownloader.extensions.LazyExtension;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
 import org.jdownloader.images.NewTheme;
@@ -17,13 +17,13 @@ import org.jdownloader.translate._JDT;
 
 public class ExtensionEnableAction extends AbstractAction {
 
-    private static final long        serialVersionUID = 6997360773808826159L;
-    private AbstractExtensionWrapper plg;
-    private ImageIcon                icon16Enabled;
-    private ImageIcon                icon16Disabled;
-    private boolean                  java15;
+    private static final long serialVersionUID = 6997360773808826159L;
+    private LazyExtension     plg;
+    private ImageIcon         icon16Enabled;
+    private ImageIcon         icon16Disabled;
+    private boolean           java15;
 
-    public ExtensionEnableAction(AbstractExtensionWrapper plg) {
+    public ExtensionEnableAction(LazyExtension plg) {
         super(plg.getName());
         this.plg = plg;
         java15 = Application.getJavaVersion() < 16000000;
@@ -78,8 +78,8 @@ public class ExtensionEnableAction extends AbstractAction {
                 Dialog.getInstance().showExceptionDialog(_JDT._.dialog_title_exception(), e1.getMessage(), e1);
             }
         }
-        AddonsMenu.getInstance().update();
-        WindowMenu.getInstance().update();
+        AddonsMenu.getInstance().onUpdated();
+        WindowMenu.getInstance().onUpdated();
 
     }
 

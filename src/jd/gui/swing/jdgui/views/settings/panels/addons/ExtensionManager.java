@@ -23,7 +23,7 @@ import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
 import org.appwork.swing.exttable.ExtTable;
-import org.jdownloader.extensions.AbstractExtensionWrapper;
+import org.jdownloader.extensions.LazyExtension;
 import org.jdownloader.gui.settings.AbstractConfigPanel;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
@@ -40,7 +40,7 @@ public class ExtensionManager extends AbstractConfigPanel {
 
     private static final long                  serialVersionUID = 4145243293360008779L;
 
-    private ExtTable<AbstractExtensionWrapper> table;
+    private ExtTable<LazyExtension> table;
 
     private JTextArea                          txtDescription;
 
@@ -78,7 +78,7 @@ public class ExtensionManager extends AbstractConfigPanel {
         if (row < 0) return;
 
         // table.getExtTableModel().fireTableRowsUpdated(row, row);
-        AbstractExtensionWrapper opw = table.getExtTableModel().getElementAt(row);
+        LazyExtension opw = table.getExtTableModel().getElementAt(row);
         // descHeader.setIcon(opw._getIcon(32));
         // descHeader.setText(opw.getName());
 

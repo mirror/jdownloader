@@ -23,42 +23,26 @@ import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 
-import jd.Main;
 import jd.controlling.IOEQ;
 import jd.gui.swing.jdgui.actions.ActionController;
 import jd.gui.swing.jdgui.actions.ToolBarAction.Types;
 
 import org.jdownloader.extensions.AbstractExtension;
-import org.jdownloader.extensions.AbstractExtensionWrapper;
+import org.jdownloader.extensions.LazyExtension;
 import org.jdownloader.extensions.ExtensionController;
+import org.jdownloader.extensions.ExtensionControllerListener;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.translate._JDT;
 
-public class AddonsMenu extends JMenu {
+public class AddonsMenu extends JMenu implements ExtensionControllerListener {
 
     private static final long serialVersionUID = 1019851981865519325L;
     private static AddonsMenu INSTANCE         = null;
 
     private AddonsMenu() {
         super(_JDT._.gui_menu_extensions());
-        Main.GUI_COMPLETE.executeWhenReached(new Runnable() {
+        ExtensionController.getInstance().getEventSender().addListener(this);
 
-            public void run() {
-                update();
-            }
-
-        });
-    }
-
-    public void update() {
-        IOEQ.add(new Runnable() {
-
-            public void run() {
-                removeAll();
-                updateMenu();
-            }
-
-        }, true);
     }
 
     public static AddonsMenu getInstance() {
@@ -72,9 +56,9 @@ public class AddonsMenu extends JMenu {
         ArrayList<JMenuItem> itemsWithSubmenu = new ArrayList<JMenuItem>();
         ArrayList<JMenuItem> itemsToggle = new ArrayList<JMenuItem>();
         ArrayList<JMenuItem> itemsPress = new ArrayList<JMenuItem>();
-        List<AbstractExtensionWrapper> pluginsOptional = ExtensionController.getInstance().getExtensions();
+        List<LazyExtension> pluginsOptional = ExtensionController.getInstance().getExtensions();
 
-        for (final AbstractExtensionWrapper wrapper : pluginsOptional) {
+        for (final LazyExtension wrapper : pluginsOptional) {
 
             if (wrapper._isEnabled()) {
                 final AbstractExtension<?> plg = wrapper._getExtension();
@@ -151,5 +135,16 @@ public class AddonsMenu extends JMenu {
             }
             add(jmi);
         }
+    }
+
+    public void onUpdated() {
+        IOEQ.add(new Runnable() {
+
+            public void run() {
+                removeAll();
+                updateMenu();
+            }
+
+        }, true);
     }
 }

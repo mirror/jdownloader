@@ -16,8 +16,6 @@
 
 package jd.gui.swing.jdgui.menu;
 
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -25,40 +23,21 @@ import java.util.Comparator;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JMenu;
 
-import jd.Main;
 import jd.controlling.IOEQ;
-import jd.gui.swing.jdgui.actions.ToolBarAction;
 
-import org.appwork.utils.Application;
 import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionController;
+import org.jdownloader.extensions.ExtensionControllerListener;
 import org.jdownloader.translate._JDT;
 
-public class WindowMenu extends JMenu {
+public class WindowMenu extends JMenu implements ExtensionControllerListener {
 
     private static final long serialVersionUID = 1019851981865519325L;
     private static WindowMenu INSTANCE         = null;
 
     private WindowMenu() {
         super(_JDT._.gui_menu_windows());
-        Main.GUI_COMPLETE.executeWhenReached(new Runnable() {
-
-            public void run() {
-                update();
-            }
-
-        });
-    }
-
-    public void update() {
-        IOEQ.add(new Runnable() {
-
-            public void run() {
-                removeAll();
-                updateMenu();
-            }
-
-        }, true);
+        ExtensionController.getInstance().getEventSender().addListener(this);
     }
 
     public static WindowMenu getInstance() {
@@ -81,22 +60,21 @@ public class WindowMenu extends JMenu {
 
             if (plg.getShowGuiAction() != null) {
 
-                if (Application.getJavaVersion() >= 16000000) {
-                    // Togglebuttons for 1.6
-                    add(new JCheckBoxMenuItem(plg.getShowGuiAction()));
+                add(new JCheckBoxMenuItem(plg.getShowGuiAction()));
 
-                } else {
-                    // 1.5 togle buttons need a changelistener in the menuitem
-                    final JCheckBoxMenuItem m2 = new JCheckBoxMenuItem(plg.getShowGuiAction());
-                    this.addPropertyChangeListener(new PropertyChangeListener() {
-                        public void propertyChange(final PropertyChangeEvent evt) {
-                            m2.setSelected(((ToolBarAction) evt.getSource()).isSelected());
-                        }
-                    });
-                    add(m2);
-                }
             }
         }
 
+    }
+
+    public void onUpdated() {
+        IOEQ.add(new Runnable() {
+
+            public void run() {
+                removeAll();
+                updateMenu();
+            }
+
+        }, true);
     }
 }

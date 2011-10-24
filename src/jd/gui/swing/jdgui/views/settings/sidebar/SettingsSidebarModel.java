@@ -16,18 +16,21 @@ import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.Linkgrabber;
 import jd.gui.swing.jdgui.views.settings.panels.packagizer.Packagizer;
 import jd.gui.swing.jdgui.views.settings.panels.pluginsettings.PluginSettings;
 
+import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.controlling.filter.LinkFilterSettings;
 import org.jdownloader.controlling.packagizer.PackagizerSettings;
-import org.jdownloader.extensions.AbstractExtensionWrapper;
 import org.jdownloader.extensions.ExtensionController;
+import org.jdownloader.extensions.ExtensionControllerListener;
+import org.jdownloader.extensions.LazyExtension;
 import org.jdownloader.extensions.extraction.ExtractionExtension;
 import org.jdownloader.extensions.jdtrayicon.TrayExtension;
+import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 
-public class SettingsSidebarModel extends DefaultListModel<Object> implements GenericConfigEventListener<Boolean> {
+public class SettingsSidebarModel extends DefaultListModel implements GenericConfigEventListener<Boolean>, ExtensionControllerListener {
 
     private static final long      serialVersionUID = -204494527404304349L;
     private Object                 LOCK             = new Object();
@@ -48,13 +51,14 @@ public class SettingsSidebarModel extends DefaultListModel<Object> implements Ge
         super();
         LinkFilterSettings.LINK_FILTER_ENABLED.getEventSender().addListener(this);
         PackagizerSettings.ENABLED.getEventSender().addListener(this);
+        ExtensionController.getInstance().getEventSender().addListener(this);
     }
 
     public void fill() {
         synchronized (LOCK) {
             removeAllElements();
-            AbstractExtensionWrapper extract = ExtensionController.getInstance().getExtension(ExtractionExtension.class);
-            AbstractExtensionWrapper tray = ExtensionController.getInstance().getExtension(TrayExtension.class);
+            LazyExtension extract = ExtensionController.getInstance().getExtension(ExtractionExtension.class);
+            LazyExtension tray = ExtensionController.getInstance().getExtension(TrayExtension.class);
 
             if (cfg == null) cfg = new ConfigPanelGeneral();
             addElement(cfg);
@@ -87,22 +91,22 @@ public class SettingsSidebarModel extends DefaultListModel<Object> implements Ge
             if (tray != null) addElement(tray);
             if (ads == null) ads = new AdvancedSettings();
             addElement(ads);
-
             boolean first = true;
-            List<AbstractExtensionWrapper> pluginsOptional = ExtensionController.getInstance().getExtensions();
+            List<LazyExtension> pluginsOptional = ExtensionController.getInstance().getExtensions();
+            if (pluginsOptional != null) {
+                for (final LazyExtension plg : pluginsOptional) {
+                    if (contains(plg)) continue;
+                    if (CrossSystem.isWindows() && !plg.isWindowsRunnable()) continue;
+                    if (CrossSystem.isLinux() && !plg.isLinuxRunnable()) continue;
+                    if (CrossSystem.isMac() && !plg.isMacRunnable()) continue;
 
-            for (final AbstractExtensionWrapper plg : pluginsOptional) {
-                if (contains(plg)) continue;
-                if (CrossSystem.isWindows() && !plg.isWindowsRunnable()) continue;
-                if (CrossSystem.isLinux() && !plg.isLinuxRunnable()) continue;
-                if (CrossSystem.isMac() && !plg.isMacRunnable()) continue;
-
-                if (first) {
-                    if (eh == null) eh = new ExtensionHeader();
-                    addElement(eh);
+                    if (first) {
+                        if (eh == null) eh = new ExtensionHeader();
+                        addElement(eh);
+                    }
+                    first = false;
+                    addElement(plg);
                 }
-                first = false;
-                addElement(plg);
             }
         }
     }
@@ -112,6 +116,22 @@ public class SettingsSidebarModel extends DefaultListModel<Object> implements Ge
 
     public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
         fireContentsChanged(this, 0, size() - 1);
+    }
+
+    public void onUpdated() {
+        new Thread() {
+            @Override
+            public void run() {
+                /*
+                 * extra thread, because we dont want to block the eventsender
+                 */
+                if (JsonConfig.create(GraphicalUserInterfaceSettings.class).isConfigViewVisible()) {
+                    fill();
+                }
+            }
+
+        }.start();
+
     }
 
 }

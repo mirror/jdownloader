@@ -12,6 +12,7 @@ import jd.plugins.AddonPanel;
 import org.appwork.txtresource.TranslateInterface;
 import org.appwork.txtresource.TranslationFactory;
 import org.appwork.utils.logging.Log;
+import org.appwork.utils.swing.EDTHelper;
 import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.StartException;
@@ -64,7 +65,15 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig> {
             }
         });
         // init extension GUI
-        gui = new TranslatorGui(this);
+        new EDTHelper<Object>() {
+
+            @Override
+            public Object edtRun() {
+                gui = new TranslatorGui(TranslatorExtension.this);
+                return null;
+            }
+        }.getReturnValue();
+
     }
 
     /**

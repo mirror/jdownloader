@@ -176,10 +176,14 @@ public class LookAndFeelController {
      * setups the correct Look and Feel
      */
     public void setUIManager() {
+
         if (uiInitated) return;
         uiInitated = true;
         long t = System.currentTimeMillis();
         try {
+            // de.javasoft.plaf.synthetica.SyntheticaLookAndFeel.setLookAndFeel("de.javasoft.plaf.synthetica.SyntheticaStandardLookAndFeel");
+            // if (true) return;
+
             laf = getPlaf().getClassName();
             Log.L.info("Use Look & Feel: " + laf);
             preSetup(laf);

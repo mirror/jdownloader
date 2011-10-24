@@ -164,20 +164,12 @@ public class HostPluginController extends PluginController<PluginForHost> {
     }
 
     public List<LazyHostPlugin> list() {
-        lazyInit();
+
         return list;
     }
 
-    private void lazyInit() {
-        if (list != null) return;
-        synchronized (this) {
-            if (list != null) return;
-            init();
-        }
-    }
-
     public LazyHostPlugin get(String displayName) {
-        lazyInit();
+
         for (LazyHostPlugin p : list) {
             if (p.getDisplayName().equals(displayName)) return p;
         }

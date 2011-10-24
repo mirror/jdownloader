@@ -67,9 +67,11 @@ import org.appwork.utils.singleapp.InstanceMessageListener;
 import org.appwork.utils.singleapp.SingleAppInstance;
 import org.appwork.utils.swing.EDTHelper;
 import org.jdownloader.api.RemoteAPIController;
+import org.jdownloader.extensions.ExtensionController;
 import org.jdownloader.gui.uiserio.JDSwingUserIO;
 import org.jdownloader.gui.uiserio.NewUIO;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.translate._JDT;
 import org.jdownloader.update.JDUpdater;
 
@@ -442,6 +444,7 @@ public class Main {
         new EDTHelper<Void>() {
             @Override
             public Void edtRun() {
+
                 LookAndFeelController.getInstance().setUIManager();
                 return null;
             }
@@ -454,13 +457,14 @@ public class Main {
                 new Thread() {
                     @Override
                     public void run() {
+                        HostPluginController.getInstance().init();
                         /* load links */
                         DownloadController.getInstance().initDownloadLinks();
                         /* start remote api */
                         RemoteAPIController.getInstance();
                         // GarbageController.getInstance();
                         /* load extensions */
-                        // ExtensionController.getInstance().load();
+                        ExtensionController.getInstance().init();
                         /* init linkgrabber */
                         LinkGrabberController.getInstance().setDistributer(JDGui.getInstance());
                         ClipboardHandler.getClipboard().setEnabled(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_CLIPBOARD_ALWAYS_ACTIVE, true));

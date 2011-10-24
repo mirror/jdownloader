@@ -34,7 +34,6 @@ import javax.swing.ScrollPaneConstants;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
-import jd.Main;
 import jd.controlling.JDController;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
@@ -46,7 +45,6 @@ import jd.gui.swing.jdgui.views.settings.panels.advanced.AdvancedSettings;
 import jd.gui.swing.laf.LookAndFeelController;
 import net.miginfocom.swing.MigLayout;
 
-import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.ConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
@@ -54,11 +52,10 @@ import org.appwork.utils.logging.Log;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.extensions.AbstractExtension;
-import org.jdownloader.extensions.AbstractExtensionWrapper;
 import org.jdownloader.extensions.ExtensionConfigPanel;
+import org.jdownloader.extensions.LazyExtension;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
-import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 import org.jdownloader.translate._JDT;
 
 public class ConfigSidebar extends JPanel implements ControlListener, MouseMotionListener, MouseListener, ConfigEventListener {
@@ -181,25 +178,7 @@ public class ConfigSidebar extends JPanel implements ControlListener, MouseMotio
                 }
             }
         });
-        Main.GUI_COMPLETE.executeWhenReached(new Runnable() {
 
-            public void run() {
-                new Thread() {
-                    @Override
-                    public void run() {
-                        /*
-                         * extra thread, because we dont want to block the
-                         * eventsender
-                         */
-                        if (JsonConfig.create(GraphicalUserInterfaceSettings.class).isConfigViewVisible()) {
-                            treemodel.fill();
-                        }
-                    }
-
-                }.start();
-            }
-
-        });
     }
 
     public void addListener(ListSelectionListener x) {
@@ -286,15 +265,15 @@ public class ConfigSidebar extends JPanel implements ControlListener, MouseMotio
                     if (value) {
                         try {
                             object._setEnabled(true);
-                            if (object instanceof AbstractExtensionWrapper) {
-                                if (((AbstractExtensionWrapper) object)._getExtension().getGUI() != null) {
+                            if (object instanceof LazyExtension) {
+                                if (((LazyExtension) object)._getExtension().getGUI() != null) {
                                     int ret = UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN, object.getName(), _JDT._.gui_settings_extensions_show_now(object.getName()));
 
                                     if (UserIO.isOK(ret)) {
                                         // activate panel
-                                        ((AbstractExtensionWrapper) object)._getExtension().getGUI().setActive(true);
+                                        ((LazyExtension) object)._getExtension().getGUI().setActive(true);
                                         // bring panel to front
-                                        ((AbstractExtensionWrapper) object)._getExtension().getGUI().toFront();
+                                        ((LazyExtension) object)._getExtension().getGUI().toFront();
 
                                     }
                                 }
@@ -319,8 +298,8 @@ public class ConfigSidebar extends JPanel implements ControlListener, MouseMotio
                      * running when enabled
                      */
 
-                    AddonsMenu.getInstance().update();
-                    WindowMenu.getInstance().update();
+                    AddonsMenu.getInstance().onUpdated();
+                    WindowMenu.getInstance().onUpdated();
                     // ConfigSidebar.getInstance(null).updateAddons();
                     // addons.updateShowcase();
 
@@ -344,12 +323,12 @@ public class ConfigSidebar extends JPanel implements ControlListener, MouseMotio
     }
 
     public synchronized SwitchPanel getSelectedPanel() {
-        if (list.getSelectedValue() instanceof AbstractExtensionWrapper) {
-            AbstractExtension<?> ext = ((AbstractExtensionWrapper) list.getSelectedValue())._getExtension();
+        if (list.getSelectedValue() instanceof LazyExtension) {
+            AbstractExtension<?> ext = ((LazyExtension) list.getSelectedValue())._getExtension();
             if (ext == null) {
                 try {
-                    ((AbstractExtensionWrapper) list.getSelectedValue()).init();
-                    ext = ((AbstractExtensionWrapper) list.getSelectedValue())._getExtension();
+                    ((LazyExtension) list.getSelectedValue()).init();
+                    ext = ((LazyExtension) list.getSelectedValue())._getExtension();
                 } catch (Exception e) {
                     Log.exception(e);
                     Dialog.getInstance().showExceptionDialog("Error", e.getMessage(), e);

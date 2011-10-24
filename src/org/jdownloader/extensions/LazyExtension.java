@@ -2,6 +2,7 @@ package org.jdownloader.extensions;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Constructor;
 
 import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
@@ -9,6 +10,7 @@ import javax.swing.ImageIcon;
 import jd.gui.swing.jdgui.views.settings.sidebar.CheckBoxedEntry;
 import jd.plugins.ExtensionConfigInterface;
 
+import org.appwork.exceptions.WTFException;
 import org.appwork.storage.Storable;
 import org.appwork.utils.Application;
 import org.appwork.utils.images.IconIO;
@@ -22,7 +24,7 @@ import org.jdownloader.translate._JDT;
  * @author thomas
  * 
  */
-public class AbstractExtensionWrapper implements Storable, CheckBoxedEntry {
+public class LazyExtension implements Storable, CheckBoxedEntry {
 
     private Class<AbstractExtension<?>> clazz;
 
@@ -30,8 +32,8 @@ public class AbstractExtensionWrapper implements Storable, CheckBoxedEntry {
 
     private String                      configInterface;
 
-    public static AbstractExtensionWrapper create(String id, Class<AbstractExtension<?>> cls) throws StartException, InstantiationException, IllegalAccessException, IOException {
-        AbstractExtensionWrapper ret = new AbstractExtensionWrapper();
+    public static LazyExtension create(String id, Class<AbstractExtension<?>> cls) throws StartException, InstantiationException, IllegalAccessException, IOException {
+        LazyExtension ret = new LazyExtension();
         AbstractExtension<?> plg = (AbstractExtension<?>) cls.newInstance();
 
         ret.clazz = cls;
@@ -49,6 +51,7 @@ public class AbstractExtensionWrapper implements Storable, CheckBoxedEntry {
         ret.lng = _JDT.getLanguage();
         ret.version = plg.getVersion();
         ret.windowsRunnable = plg.isWindowsRunnable();
+        ret.classname = cls.getName();
         ret.extension = plg;
         ret.configInterface = plg.getConfigClass().getName();
         ret.author = plg.getAuthor();
@@ -117,7 +120,7 @@ public class AbstractExtensionWrapper implements Storable, CheckBoxedEntry {
         this.quickToggleEnabled = quickToggleEnabled;
     }
 
-    public AbstractExtensionWrapper() {
+    public LazyExtension() {
         // required for Storable
     }
 
@@ -226,7 +229,7 @@ public class AbstractExtensionWrapper implements Storable, CheckBoxedEntry {
      */
     public void init() throws InstantiationException, IllegalAccessException, ClassNotFoundException, StartException {
         if (extension != null) return;
-        AbstractExtension<?> plg = (AbstractExtension<?>) _getClazz().newInstance();
+        AbstractExtension<?> plg = newInstance();
 
         plg.init();
         extension = plg;
@@ -248,19 +251,6 @@ public class AbstractExtensionWrapper implements Storable, CheckBoxedEntry {
         } else {
             return extension.isEnabled();
         }
-    }
-
-    /**
-     * returns the Class for this extension. <br>
-     * <b>do not remove the "_" in methodname. it is important to ignore this
-     * getter during Storable serialisation<b><br>
-     * 
-     * @return
-     */
-    private Class<? extends AbstractExtension<?>> _getClazz() {
-
-        return clazz;
-
     }
 
     /**
@@ -296,26 +286,75 @@ public class AbstractExtensionWrapper implements Storable, CheckBoxedEntry {
     @SuppressWarnings("unchecked")
     public ExtensionConfigInterface _getSettings() {
         try {
-            if (_getClazz() == null) return null;
-            return AbstractExtension.createStore((Class<? extends AbstractExtension<?>>) _getClazz(), (Class<? extends ExtensionConfigInterface>) Class.forName(this.getConfigInterface()));
+
+            return AbstractExtension.createStore(getClassname(), (Class<? extends ExtensionConfigInterface>) Class.forName(this.getConfigInterface()));
         } catch (Throwable e) {
             e.printStackTrace();
             return null;
         }
     }
 
-    /**
-     * <b>do not remove the "_" in methodname. it is important to ignore this
-     * getter during Storable serialisation<b><br>
-     * 
-     * @param cls
-     */
-    public void _setClazz(Class<AbstractExtension<?>> cls) {
-        clazz = cls;
-    }
-
     public boolean isQuickToggleEnabled() {
         return extension == null ? quickToggleEnabled : extension.isQuickToggleEnabled();
+    }
+
+    private String                        classname;
+
+    protected Class<AbstractExtension<?>> pluginClass;
+
+    public void _setPluginClass(Class<AbstractExtension<?>> pluginClass) {
+        this.pluginClass = pluginClass;
+    }
+
+    private Constructor<AbstractExtension<?>> constructor;
+
+    public String getClassname() {
+        return classname;
+    }
+
+    public void setClassname(String classname) {
+        this.classname = classname;
+    }
+
+    private AbstractExtension<?> newInstance() {
+        try {
+            _getConstructor();
+            return constructor.newInstance();
+        } catch (final Throwable e) {
+            throw new WTFException(e);
+        }
+
+    }
+
+    private Constructor<AbstractExtension<?>> _getConstructor() {
+        if (constructor != null) return constructor;
+        synchronized (this) {
+            if (constructor != null) return constructor;
+            try {
+                constructor = _getPluginClass().getConstructor(new Class[] {});
+
+            } catch (Throwable e) {
+
+                throw new WTFException(e);
+
+            }
+            return constructor;
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    protected Class<AbstractExtension<?>> _getPluginClass() {
+        if (pluginClass != null) return pluginClass;
+        synchronized (this) {
+            if (pluginClass != null) return pluginClass;
+            try {
+                pluginClass = (Class<AbstractExtension<?>>) Class.forName(classname);
+            } catch (Throwable e) {
+                throw new WTFException(e);
+            }
+            return pluginClass;
+        }
+
     }
 
 }
