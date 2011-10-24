@@ -40,7 +40,7 @@ public abstract class View extends SwitchPanel {
 
     private SwitchPanel       content;
     private JPanel            topContent;
-    private JPanel            bottomContent;
+
     private SwitchPanel       infoPanel;
     private SwitchPanel       defaultInfoPanel;
 
@@ -53,8 +53,6 @@ public abstract class View extends SwitchPanel {
         this.add(this.topContent = new JPanel(new MigLayout("ins 0", "[grow,fill]", "[]")), "gapbottom 3,dock NORTH,hidemode 3");
         this.topContent.setVisible(false);
 
-        this.add(this.bottomContent = new JPanel(new MigLayout("ins 0", "[grow,fill]", "[]")), "dock SOUTH,hidemode 3");
-        this.bottomContent.setVisible(false);
     }
 
     @Override
@@ -135,49 +133,6 @@ public abstract class View extends SwitchPanel {
         this.revalidate();
         if (this.content != null && this.isShown()) {
             this.content.setShown();
-        }
-    }
-
-    /**
-     * Sets the default infopanel
-     * 
-     * @param panel
-     */
-    protected void setDefaultInfoPanel(final DroppedPanel panel) {
-
-        this.defaultInfoPanel = panel;
-        if (this.getInfoPanel() == null) {
-            this.setInfoPanel(panel);
-        }
-    }
-
-    /**
-     * SOUTH CONTENT sets the south infopanel. if set to null, the default info
-     * panel is shown. of this is null, too the info area is hidden
-     * 
-     * @param infoPanel
-     */
-    public void setInfoPanel(SwitchPanel info) {
-        SwingGui.checkEDT();
-        if (info == null) {
-            info = this.defaultInfoPanel;
-        }
-        if (this.infoPanel == info) { return; }
-
-        if (info == null) {
-            this.bottomContent.setVisible(false);
-        } else {
-            this.bottomContent.setVisible(true);
-            this.bottomContent.removeAll();
-            this.bottomContent.add(info);
-        }
-        if (this.infoPanel != null && this.isShown()) {
-            this.infoPanel.setHidden();
-        }
-        this.revalidate();
-        this.infoPanel = info;
-        if (this.infoPanel != null && this.isShown()) {
-            this.infoPanel.setShown();
         }
     }
 

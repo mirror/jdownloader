@@ -67,6 +67,7 @@ import org.appwork.utils.Application;
 import org.appwork.utils.IO;
 import org.appwork.utils.Regex;
 import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.swing.EDTHelper;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionConfigPanel;
@@ -1090,13 +1091,14 @@ public class ChatExtension extends AbstractExtension<ChatConfig> {
                 }
             }
         });
-        new EDTRunner() {
+        new EDTHelper<Object>() {
 
             @Override
-            protected void runInEDT() {
+            public Object edtRun() {
                 initGUI();
+                return null;
             }
-        };
+        }.getReturnValue();
 
     }
 

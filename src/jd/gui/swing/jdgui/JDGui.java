@@ -60,7 +60,6 @@ import jd.gui.UserIO;
 import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.SwingGui;
 import jd.gui.swing.components.Balloon;
-import jd.gui.swing.components.JDCollapser;
 import jd.gui.swing.jdgui.components.StatusBarImpl;
 import jd.gui.swing.jdgui.components.toolbar.MainToolBar;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
@@ -610,42 +609,11 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
 
         final AddonConfig addonConfig = AddonConfig.getInstance(container, "_2", false);
 
-        final JDCollapser col = new JDCollapser() {
-
-            private static final long serialVersionUID = 1L;
-
-            @Override
-            public void onClosed() {
-                /*
-                 * Show the old info panel if it isn't a closable JDCollapser
-                 * (e.g. used for config panels)
-                 */
-                if (oldPanel != null && oldPanel instanceof JDCollapser) {
-                    JDGui.this.mainTabbedPane.getSelectedView().setInfoPanel(null);
-                } else {
-                    JDGui.this.mainTabbedPane.getSelectedView().setInfoPanel(oldPanel);
-                }
-                addonConfig.onHide();
-            }
-
-            @Override
-            protected void onHide() {
-            }
-
-            @Override
-            protected void onShow() {
-            }
-
-        };
-
         final JScrollPane scrollPane = new JScrollPane(addonConfig.getPanel());
         scrollPane.setBorder(null);
         scrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
 
-        col.getContent().add(scrollPane, "h min(300, pref)!");
-        col.setInfos(name, icon);
-
-        this.mainTabbedPane.getSelectedView().setInfoPanel(col);
+        // this.mainTabbedPane.getSelectedView().setInfoPanel(col);
     }
 
     @Override

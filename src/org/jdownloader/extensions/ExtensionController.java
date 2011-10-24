@@ -9,8 +9,11 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.jar.JarEntry;
 import java.util.jar.JarInputStream;
@@ -127,7 +130,27 @@ public class ExtensionController {
         cache = JSonStorage.restoreFrom(cacheFile, true, null, new TypeRef<HashMap<String, LazyExtension>>() {
         }, new HashMap<String, LazyExtension>());
 
-        return new ArrayList<LazyExtension>(cache.values());
+        ArrayList<LazyExtension> lst = new ArrayList<LazyExtension>(cache.values());
+        for (Iterator<LazyExtension> it = lst.iterator(); it.hasNext();) {
+            LazyExtension l = it.next();
+            if (l._isEnabled()) {
+
+                try {
+                    l.init();
+                } catch (Throwable e) {
+                    e.printStackTrace();
+                    it.remove();
+                }
+            }
+        }
+
+        Collections.sort(lst, new Comparator<LazyExtension>() {
+
+            public int compare(LazyExtension o1, LazyExtension o2) {
+                return o1.getName().compareTo(o2.getName());
+            }
+        });
+        return lst;
     }
 
     private void load() {

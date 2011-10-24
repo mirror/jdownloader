@@ -19,7 +19,6 @@ import javax.swing.SwingUtilities;
 import jd.controlling.DownloadInformations;
 import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.SwingGui;
-import jd.gui.swing.components.JDCloseAction;
 import jd.gui.swing.jdgui.GUIUtils;
 import jd.gui.swing.jdgui.components.JDProgressBar;
 import jd.gui.swing.jdgui.components.speedmeter.SpeedMeterPanel;
@@ -179,7 +178,7 @@ public class InfoDialog extends JWindow implements ActionListener, MouseListener
     public void mouseClicked(MouseEvent e) {
         if (e.isPopupTrigger() || e.getButton() == MouseEvent.BUTTON3) {
             JMenuItem mi = new JMenuItem(T._.jd_plugins_optional_infobar_InfoDialog_hideWindow());
-            mi.setIcon(JDCloseAction.getCloseIcon());
+            mi.setIcon(NewTheme.I().getIcon("close", 16));
             mi.addActionListener(this);
 
             JPopupMenu popup = new JPopupMenu();

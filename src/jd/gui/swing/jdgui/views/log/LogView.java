@@ -55,7 +55,7 @@ public class LogView extends ClosableView {
         super();
         LogPane lp = new LogPane();
         this.setContent(lp);
-        this.setDefaultInfoPanel(lip = new LogInfoPanel());
+        // this.setDefaultInfoPanel(lip = new LogInfoPanel());
         lip.addActionListener(lp);
         getBroadcaster().addListener(new SwitchPanelListener() {
             @Override

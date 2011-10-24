@@ -132,6 +132,7 @@ public class LazyExtension implements Storable, CheckBoxedEntry {
      * @return
      */
     public AbstractExtension<?> _getExtension() {
+
         return extension;
     }
 

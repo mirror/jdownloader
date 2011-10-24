@@ -1,8 +1,8 @@
 package org.jdownloader.gui.views.linkgrabber;
 
 import java.awt.Color;
-import java.awt.Dimension;
 import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 
 import javax.swing.Box;
 import javax.swing.JButton;
@@ -12,12 +12,12 @@ import javax.swing.ScrollPaneConstants;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcollector.LinkCollectorEvent;
 import jd.controlling.linkcollector.LinkCollectorListener;
-import jd.gui.swing.components.JDCloseButton;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.gui.swing.laf.LookAndFeelController;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.app.gui.MigPanel;
+import org.appwork.swing.components.ExtButton;
 import org.appwork.utils.event.queue.Queue.QueuePriority;
 import org.jdownloader.gui.views.components.HeaderScrollPane;
 import org.jdownloader.gui.views.linkgrabber.actions.AddLinksAction;
@@ -25,6 +25,7 @@ import org.jdownloader.gui.views.linkgrabber.actions.AddOptionsAction;
 import org.jdownloader.gui.views.linkgrabber.actions.ClearAction;
 import org.jdownloader.gui.views.linkgrabber.actions.ConfirmAllAction;
 import org.jdownloader.gui.views.linkgrabber.actions.ConfirmOptionsAction;
+import org.jdownloader.images.NewTheme;
 
 public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListener {
     private LinkGrabberTableModel tableModel;
@@ -36,7 +37,7 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
     private JButton               clearAll;
     private JButton               popup;
     private JButton               popupConfirm;
-    private JDCloseButton         close;
+    private ExtButton             close;
 
     public LinkGrabberPanel() {
         super(new MigLayout("ins 0, wrap 2", "[grow,fill]2[fill]", "[grow, fill]2[]"));
@@ -54,14 +55,37 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
             // }
         };
 
-        close = new JDCloseButton() {
-            private static final long serialVersionUID = -8427069347798591918L;
+        close = new ExtButton() {
+            {
+                setRolloverEffectEnabled(true);
+                addActionListener(new ActionListener() {
 
-            public void actionPerformed(ActionEvent e) {
+                    public void actionPerformed(ActionEvent e) {
 
+                        onRollOut();
+                    }
+                });
             }
+
+            /**
+             * 
+             */
+            private static final long serialVersionUID = 1L;
+
+            protected void onRollOut() {
+                setContentAreaFilled(false);
+                setIcon(NewTheme.I().getIcon("close", 11));
+            }
+
+            /**
+             * 
+             */
+            protected void onRollOver() {
+                setIcon(NewTheme.I().getIcon("close.on", 11));
+            }
+
         };
-        close.setSize(new Dimension(16, 16));
+
         sp.setCorner(ScrollPaneConstants.UPPER_RIGHT_CORNER, close);
 
         // ScrollPaneUI udi = sp.getUI();

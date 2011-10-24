@@ -17,19 +17,22 @@
 package jd.gui.swing.jdgui.views;
 
 import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 
 import javax.swing.JMenuBar;
 
-import jd.gui.swing.GuiRunnable;
-import jd.gui.swing.components.JDCloseButton;
 import jd.gui.swing.jdgui.MainTabbedPane;
 import jd.gui.swing.jdgui.interfaces.View;
+
+import org.appwork.swing.components.ExtButton;
+import org.appwork.utils.swing.EDTRunner;
+import org.jdownloader.images.NewTheme;
 
 public abstract class ClosableView extends View {
 
     private static final long serialVersionUID = 8698758386841005256L;
     private JMenuBar          menubar;
-    private JDCloseButton     closeButton;
+    private ExtButton         closeButton;
 
     public ClosableView() {
         super();
@@ -42,20 +45,44 @@ public abstract class ClosableView extends View {
         menubar = new JMenuBar();
         int count = menubar.getComponentCount();
         initMenu(menubar);
-        closeButton = new JDCloseButton() {
-            private static final long serialVersionUID = -8427069347798591918L;
+        closeButton = new ExtButton() {
+            {
+                setRolloverEffectEnabled(true);
+                addActionListener(new ActionListener() {
 
-            public void actionPerformed(ActionEvent e) {
-                MainTabbedPane.getInstance().remove(ClosableView.this);
-                onClosed();
+                    public void actionPerformed(ActionEvent e) {
+                        MainTabbedPane.getInstance().remove(ClosableView.this);
+                        onClosed();
+                        onRollOut();
+                    }
+                });
             }
+
+            /**
+             * 
+             */
+            private static final long serialVersionUID = 1L;
+
+            protected void onRollOut() {
+                setContentAreaFilled(false);
+                setIcon(NewTheme.I().getIcon("close", 11));
+            }
+
+            /**
+             * 
+             */
+            protected void onRollOver() {
+                setIcon(NewTheme.I().getIcon("close.on", 11));
+            }
+
         };
+
         if (menubar.getComponentCount() > count) {
             add(menubar, "dock NORTH,h pref!,gapbottom 2");
         }
     }
 
-    public JDCloseButton getCloseButton() {
+    public ExtButton getCloseButton() {
         return closeButton;
     }
 
@@ -71,15 +98,13 @@ public abstract class ClosableView extends View {
      * Closes this view
      */
     public void close() {
-        new GuiRunnable<Object>() {
+        new EDTRunner() {
 
             @Override
-            public Object runSave() {
-                closeButton.actionPerformed(null);
-                return null;
+            protected void runInEDT() {
+                closeButton.doClick();
             }
-
-        }.start();
+        };
     }
 
     public void onClosed() {

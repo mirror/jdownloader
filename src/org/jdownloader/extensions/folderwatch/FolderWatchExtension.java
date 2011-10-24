@@ -555,6 +555,7 @@ public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig> i
         view = new FolderWatchView(this);
         FolderWatchPanel panel = new FolderWatchPanel(subConfig, this);
         view.setContent(panel);
-        view.setInfoPanel(panel.getInfoPanel());
+        // TODO
+        // view.setInfoPanel(panel.getInfoPanel());
     }
 }

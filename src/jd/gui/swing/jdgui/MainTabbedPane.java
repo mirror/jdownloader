@@ -19,12 +19,8 @@ package jd.gui.swing.jdgui;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Graphics;
-import java.awt.Rectangle;
 import java.awt.event.KeyEvent;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
 
-import javax.swing.Icon;
 import javax.swing.JComponent;
 import javax.swing.JTabbedPane;
 import javax.swing.KeyStroke;
@@ -32,15 +28,12 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
 import jd.gui.swing.SwingGui;
-import jd.gui.swing.components.JDCloseAction;
 import jd.gui.swing.jdgui.interfaces.SwitchPanelEvent;
 import jd.gui.swing.jdgui.interfaces.View;
 import jd.gui.swing.jdgui.maintab.ClosableTabHeader;
 import jd.gui.swing.jdgui.views.ClosableView;
 
-import org.appwork.utils.Application;
-
-public class MainTabbedPane extends JTabbedPane implements MouseListener {
+public class MainTabbedPane extends JTabbedPane {
 
     private static final long     serialVersionUID = -1531827591735215594L;
     private static MainTabbedPane INSTANCE;
@@ -87,14 +80,11 @@ public class MainTabbedPane extends JTabbedPane implements MouseListener {
     }
 
     private void addClosableTab(ClosableView view) {
-        if (Application.getJavaVersion() >= 16000000) {
-            super.addTab(view.getTitle(), view.getIcon(), view, view.getTooltip());
-            view.getBroadcaster().fireEvent(new SwitchPanelEvent(view, SwitchPanelEvent.ON_ADD));
-            this.setTabComponentAt(this.getTabCount() - 1, new ClosableTabHeader(view));
-        } else {
-            super.addTab(view.getTitle(), new CloseTabIcon(view.getIcon()), view, view.getTooltip());
-            view.getBroadcaster().fireEvent(new SwitchPanelEvent(view, SwitchPanelEvent.ON_ADD));
-        }
+
+        super.addTab(view.getTitle(), view.getIcon(), view, view.getTooltip());
+        view.getBroadcaster().fireEvent(new SwitchPanelEvent(view, SwitchPanelEvent.ON_ADD));
+        this.setTabComponentAt(this.getTabCount() - 1, new ClosableTabHeader(view));
+
         this.setFocusable(false);
 
     }
@@ -103,9 +93,6 @@ public class MainTabbedPane extends JTabbedPane implements MouseListener {
         this.setMinimumSize(new Dimension(300, 100));
         this.setTabLayoutPolicy(JTabbedPane.WRAP_TAB_LAYOUT);
         this.setOpaque(false);
-        if (Application.getJavaVersion() < 16000000) {
-            addMouseListener(this);
-        }
 
         this.addChangeListener(new ChangeListener() {
 
@@ -184,68 +171,29 @@ public class MainTabbedPane extends JTabbedPane implements MouseListener {
         return false;
     }
 
-    public void mouseClicked(MouseEvent e) {
-        try {
-            int tabNumber = getUI().tabForCoordinate(this, e.getX(), e.getY());
-            if (tabNumber < 0) return;
-            Rectangle rect = ((CloseTabIcon) getIconAt(tabNumber)).getBounds();
-            if (rect.contains(e.getX(), e.getY())) {
-                // the tab is being closed
-                ((ClosableView) this.getComponentAt(tabNumber)).close();
-            }
-        } catch (ClassCastException e2) {
-        }
-    }
-
-    public void mouseEntered(MouseEvent e) {
-    }
-
-    public void mouseExited(MouseEvent e) {
-    }
-
-    public void mousePressed(MouseEvent e) {
-    }
-
-    public void mouseReleased(MouseEvent e) {
-    }
-
-    /**
-     * The class which generates the 'X' icon for the tabs. The constructor
-     * accepts an icon which is extra to the 'X' icon, so you can have tabs like
-     * in JBuilder. This value is null if no extra icon is required.
-     */
-    private static class CloseTabIcon implements Icon {
-        private int  x_pos;
-        private int  y_pos;
-        private int  width;
-        private int  height;
-        private Icon fileIcon;
-
-        public CloseTabIcon(Icon fileIcon) {
-            this.fileIcon = fileIcon;
-            width = 16;
-            height = 16;
-        }
-
-        public void paintIcon(Component c, Graphics g, int x, int y) {
-            this.x_pos = x;
-            this.y_pos = y;
-            Icon ic = JDCloseAction.getCloseIcon();
-            ic.paintIcon(c, g, x, y);
-            if (fileIcon != null) fileIcon.paintIcon(c, g, x + ic.getIconWidth() + 2, y);
-        }
-
-        public int getIconWidth() {
-            return width + (fileIcon != null ? fileIcon.getIconWidth() + 2 : 0);
-        }
-
-        public int getIconHeight() {
-            return height;
-        }
-
-        public Rectangle getBounds() {
-            return new Rectangle(x_pos, y_pos, width, height);
-        }
-    }
+    // public void mouseClicked(MouseEvent e) {
+    // try {
+    // int tabNumber = getUI().tabForCoordinate(this, e.getX(), e.getY());
+    // if (tabNumber < 0) return;
+    // Rectangle rect = ((CloseTabIcon) getIconAt(tabNumber)).getBounds();
+    // if (rect.contains(e.getX(), e.getY())) {
+    // // the tab is being closed
+    // ((ClosableView) this.getComponentAt(tabNumber)).close();
+    // }
+    // } catch (ClassCastException e2) {
+    // }
+    // }
+    //
+    // public void mouseEntered(MouseEvent e) {
+    // }
+    //
+    // public void mouseExited(MouseEvent e) {
+    // }
+    //
+    // public void mousePressed(MouseEvent e) {
+    // }
+    //
+    // public void mouseReleased(MouseEvent e) {
+    // }
 
 }

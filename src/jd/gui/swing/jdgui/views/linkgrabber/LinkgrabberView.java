@@ -72,7 +72,9 @@ public class LinkgrabberView extends View {
             if (init) return;
             init = true;
             this.setContent(LinkGrabberPanel.getLinkGrabber());
-            this.setDefaultInfoPanel(new LinkGrabberInfoPanel());
+            // byebye
+            // deprecated
+            // this.setDefaultInfoPanel(new LinkGrabberInfoPanel());
 
             LinkGrabberController.getInstance().addListener(new LinkGrabberControllerListener() {
                 public void onLinkGrabberControllerEvent(LinkGrabberControllerEvent event) {

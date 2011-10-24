@@ -28,9 +28,9 @@ import jd.gui.swing.jdgui.actions.ActionController;
 import jd.gui.swing.jdgui.actions.ToolBarAction.Types;
 
 import org.jdownloader.extensions.AbstractExtension;
-import org.jdownloader.extensions.LazyExtension;
 import org.jdownloader.extensions.ExtensionController;
 import org.jdownloader.extensions.ExtensionControllerListener;
+import org.jdownloader.extensions.LazyExtension;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.translate._JDT;
 
@@ -138,6 +138,7 @@ public class AddonsMenu extends JMenu implements ExtensionControllerListener {
     }
 
     public void onUpdated() {
+        System.out.println(1);
         IOEQ.add(new Runnable() {
 
             public void run() {
