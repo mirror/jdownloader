@@ -138,19 +138,20 @@ public class AccountController implements AccountControllerListener {
     }
 
     protected void save() {
-
         HashMap<String, ArrayList<AccountData>> ret = new HashMap<String, ArrayList<AccountData>>();
-        for (Iterator<Entry<String, ArrayList<Account>>> it = hosteraccounts.entrySet().iterator(); it.hasNext();) {
-            Entry<String, ArrayList<Account>> next = it.next();
-            if (next.getValue().size() > 0) {
-                ArrayList<AccountData> list = new ArrayList<AccountData>();
-                ret.put(next.getKey(), list);
-                for (Account a : next.getValue()) {
+        synchronized (hosteraccounts) {
+            for (Iterator<Entry<String, ArrayList<Account>>> it = hosteraccounts.entrySet().iterator(); it.hasNext();) {
+                Entry<String, ArrayList<Account>> next = it.next();
+                if (next.getValue().size() > 0) {
+                    ArrayList<AccountData> list = new ArrayList<AccountData>();
+                    ret.put(next.getKey(), list);
+                    for (Account a : next.getValue()) {
 
-                    list.add(AccountData.create(a));
+                        list.add(AccountData.create(a));
+                    }
                 }
-            }
 
+            }
         }
         config.setAccounts(ret);
     }
@@ -168,8 +169,7 @@ public class AccountController implements AccountControllerListener {
             logger.severe("Cannot update AccountInfo, no HosterPlugin available!");
             return null;
         }
-        JDPluginLogger jlog;
-        plugin.setLogger(jlog = new JDPluginLogger("AccountCheck:" + hostname));
+        plugin.setLogger(new JDPluginLogger("AccountCheck:" + hostname));
         plugin.setBrowser(new Browser());
         AccountInfo ai = account.getAccountInfo();
         if (!forceupdate) {
@@ -280,6 +280,12 @@ public class AccountController implements AccountControllerListener {
         return null;
     }
 
+    public HashMap<String, ArrayList<Account>> list() {
+        synchronized (hosteraccounts) {
+            return new HashMap<String, ArrayList<Account>>(hosteraccounts);
+        }
+    }
+
     public static AccountController getInstance() {
         return INSTANCE;
     }
@@ -293,7 +299,6 @@ public class AccountController implements AccountControllerListener {
     }
 
     private synchronized HashMap<String, ArrayList<Account>> loadAccounts() {
-
         HashMap<String, ArrayList<AccountData>> dat = config.getAccounts();
         if (dat == null) {
             dat = restore();

@@ -32,7 +32,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginsC;
-import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.IO;
@@ -50,7 +49,6 @@ public class J extends PluginsC {
         ContainerStatus cs = new ContainerStatus(lc);
         cls = new ArrayList<DownloadLink>();
         dlU = new ArrayList<String>();
-        if (JDUtilities.getRunType() != JDUtilities.RUNTYPE_LOCAL_JARED) return cs;
 
         try {
             byte[] array = IO.readFile(lc);

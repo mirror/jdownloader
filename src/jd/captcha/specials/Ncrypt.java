@@ -60,7 +60,7 @@ public class Ncrypt {
 
             // BasicWindow.showImage(frames[0].getImage(1));
             ImageIO.write(frames[0].getImage(1), "png", file);
-        } catch (final Exception e) {
+        } catch (final Throwable e) {
         }
     }
 
@@ -82,7 +82,7 @@ public class Ncrypt {
                 e.addFrame(frames[j]);
             }
             e.finish();
-        } catch (final Exception e) {
+        } catch (final Throwable e) {
         }
     }
 }

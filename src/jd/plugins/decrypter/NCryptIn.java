@@ -250,24 +250,28 @@ public class NCryptIn extends PluginForDecrypt {
         final String theID = theLink;
         theLink = "http://ncrypt.in/container/" + theLink;
         File file = null;
-        final URLConnectionAdapter con = brc.openGetConnection(theLink);
-        if (con.getResponseCode() == 200) {
-            file = JDUtilities.getResourceFile("tmp/ncryptin/" + theLink.replaceAll("(:|/)", "") + theID);
-            if (file == null) { return null; }
-            file.deleteOnExit();
-            brc.downloadConnection(file, con);
-            if (file != null && file.exists() && file.length() > 100) {
-                decryptedLinks = JDUtilities.getController().getContainerLinks(file);
+        URLConnectionAdapter con = null;
+        try {
+            con = brc.openGetConnection(theLink);
+            if (con.getResponseCode() == 200) {
+                file = JDUtilities.getResourceFile("tmp/ncryptin/" + theID);
+                if (file == null) { return null; }
+                file.getParentFile().mkdirs();
+                file.deleteOnExit();
+                brc.downloadConnection(file, con);
+                if (file != null && file.exists() && file.length() > 100) {
+                    decryptedLinks = JDUtilities.getController().getContainerLinks(file);
+                }
             }
-        } else {
-            con.disconnect();
-            return null;
+        } finally {
+            try {
+                con.disconnect();
+            } catch (final Throwable e) {
+            }
         }
 
         if (file != null && file.exists() && file.length() > 100) {
             if (decryptedLinks.size() > 0) { return decryptedLinks; }
-        } else {
-            return null;
         }
         return null;
     }

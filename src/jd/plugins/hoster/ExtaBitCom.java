@@ -25,11 +25,11 @@ import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -84,6 +84,7 @@ public class ExtaBitCom extends PluginForHost {
             }
         }
         String filesize = br.getRegex("class=\"download_filesize(_en)\">.*?\\[(.*?)\\]").getMatch(1);
+        if (filesize == null) filesize = br.getRegex("Size:.*?class=\"col-fileinfo\">(.*?)</").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(filename.trim());
         if (filesize != null) downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
@@ -188,8 +189,7 @@ public class ExtaBitCom extends PluginForHost {
         String downloadsLeft = br.getRegex("You have <strong>(\\d+)</strong> downloads").getMatch(0);
         if (downloadsLeft != null) {
             ai.setStatus("Downloads left: " + downloadsLeft);
-        }
-        else if (expire != null) {
+        } else if (expire != null) {
             ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd.MM.yyyy", null));
             ai.setStatus("Premium User");
         } else {
