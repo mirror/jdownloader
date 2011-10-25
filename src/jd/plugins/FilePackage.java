@@ -31,7 +31,6 @@ import jd.config.Property;
 import jd.controlling.UniqueID;
 import jd.controlling.packagecontroller.AbstractPackageNode;
 import jd.controlling.packagecontroller.PackageController;
-import jd.gui.swing.jdgui.views.downloads.DownloadTable;
 import jd.nutils.io.JDIO;
 import jd.utils.JDUtilities;
 
@@ -165,6 +164,7 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
 
     private transient PackageController<FilePackage, DownloadLink> controlledby         = null;
     private transient UniqueID                                     uniqueID             = null;
+    public transient static final String                           PROPERTY_EXPANDED    = "expanded";
 
     /**
      * @return the uniqueID
@@ -231,7 +231,7 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
     private void readObject(ObjectInputStream stream) throws IOException, ClassNotFoundException {
         /* deserialize object and then fill other stuff(transient..) */
         stream.defaultReadObject();
-        isExpanded = getBooleanProperty(DownloadTable.PROPERTY_EXPANDED, false);
+        isExpanded = getBooleanProperty(PROPERTY_EXPANDED, false);
         uniqueID = new UniqueID();
     }
 
@@ -614,7 +614,7 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
     public void setExpanded(boolean b) {
         if (this.isExpanded == b) return;
         this.isExpanded = b;
-        setProperty(DownloadTable.PROPERTY_EXPANDED, b);
+        setProperty(PROPERTY_EXPANDED, b);
     }
 
     public void updateCollectives() {

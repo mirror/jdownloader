@@ -24,7 +24,6 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
 
-import javax.swing.JViewport;
 import javax.swing.filechooser.FileFilter;
 
 import jd.controlling.DownloadController;
@@ -37,8 +36,6 @@ import jd.event.ControlListener;
 import jd.gui.UserIO;
 import jd.gui.swing.jdgui.actions.ToolBarAction.Types;
 import jd.gui.swing.jdgui.menu.MenuAction;
-import jd.gui.swing.jdgui.views.downloads.DownloadLinksPanel;
-import jd.gui.swing.jdgui.views.downloads.DownloadTable;
 import jd.nutils.jobber.Jobber;
 import jd.plugins.AddonPanel;
 import jd.plugins.DownloadLink;
@@ -695,7 +692,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
                             return null;
                         }
                     });
-                    m.setProperty(MENU_PACKAGES, ((DownloadTable) ((JViewport) DownloadLinksPanel.getDownloadLinksPanel().getScrollPane().getComponent(0)).getComponent(0)).getSelectedFilePackages());
+                    m.setProperty(MENU_PACKAGES, ((DownloadsTable) source).getSelectedPackages());
                     m.setIcon(getIconKey());
                     m.setActionListener(this);
                     container.addMenuItem(m = new MenuAction("Auto Extract Package", "optional.extraction.linkmenu.package.autoextract", SET_PACKAGE_AUTOEXTRACT) {
@@ -717,7 +714,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
                             return null;
                         }
                     });
-                    m.setProperty(MENU_PACKAGES, ((DownloadTable) ((JViewport) DownloadLinksPanel.getDownloadLinksPanel().getScrollPane().getComponent(0)).getComponent(0)).getSelectedFilePackages());
+                    m.setProperty(MENU_PACKAGES, ((DownloadsTable) source).getSelectedPackages());
                     m.setSelected(fp.isPostProcessing());
                     m.setActionListener(this);
                     if (!this.getPluginConfig().getBooleanProperty("ACTIVATED", true)) {

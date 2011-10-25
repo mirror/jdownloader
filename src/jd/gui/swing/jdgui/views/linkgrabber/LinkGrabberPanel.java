@@ -44,7 +44,6 @@ import jd.controlling.ProgressController;
 import jd.controlling.ProgressControllerEvent;
 import jd.controlling.ProgressControllerListener;
 import jd.gui.UserIO;
-import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.components.Balloon;
 import jd.gui.swing.jdgui.actions.ToolBarAction;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
@@ -66,37 +65,36 @@ import org.jdownloader.settings.GeneralSettings;
 
 public class LinkGrabberPanel extends SwitchPanel implements ActionListener, LinkCheckListener, ProgressControllerListener, LinkGrabberControllerListener {
 
-    private static final long          serialVersionUID       = 1607433619381447389L;
+    private static final long       serialVersionUID       = 1607433619381447389L;
 
-    private ArrayList<DownloadLink>    waitingList            = new ArrayList<DownloadLink>();
+    private ArrayList<DownloadLink> waitingList            = new ArrayList<DownloadLink>();
 
-    private LinkGrabberTable           internalTable;
+    private LinkGrabberTable        internalTable;
 
-    protected Logger                   logger                 = jd.controlling.JDLogger.getLogger();
+    protected Logger                logger                 = jd.controlling.JDLogger.getLogger();
 
-    private transient Thread           gatherer;
-    private boolean                    gatherer_running       = false;
-    private ProgressController         pc;
+    private transient Thread        gatherer;
+    private boolean                 gatherer_running       = false;
+    private ProgressController      pc;
 
-    private LinkGrabberFilePackageInfo filePackageInfo;
-    private Timer                      gathertimer;
+    private Timer                   gathertimer;
 
-    private Jobber                     checkJobbers           = new Jobber(4);
+    private Jobber                  checkJobbers           = new Jobber(4);
 
-    private LinkCheck                  lc                     = LinkCheck.getLinkChecker();
-    private Timer                      updateAsync;
-    private static LinkGrabberPanel    INSTANCE;
+    private LinkCheck               lc                     = LinkCheck.getLinkChecker();
+    private Timer                   updateAsync;
+    private static LinkGrabberPanel INSTANCE;
 
-    private LinkGrabberController      LGINSTANCE             = null;
+    private LinkGrabberController   LGINSTANCE             = null;
 
-    protected boolean                  tablerefreshinprogress = false;
-    protected boolean                  addinginprogress       = false;
+    protected boolean               tablerefreshinprogress = false;
+    protected boolean               addinginprogress       = false;
 
-    private JScrollPane                scrollPane;
+    private JScrollPane             scrollPane;
 
-    private ViewToolbar                toolbar;
+    private ViewToolbar             toolbar;
 
-    private boolean                    notvisible             = true;
+    private boolean                 notvisible             = true;
 
     public static synchronized LinkGrabberPanel getLinkGrabber() {
         if (INSTANCE == null) INSTANCE = new LinkGrabberPanel();
@@ -121,7 +119,6 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
         internalTable = new LinkGrabberTable(this);
         scrollPane = new JScrollPane(internalTable);
         toolbar = new LinkGrabberToolbar();
-        filePackageInfo = new LinkGrabberFilePackageInfo();
         updateAsync = new Timer(250, this);
         updateAsync.setInitialDelay(250);
         updateAsync.setRepeats(false);
@@ -172,13 +169,6 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
                                         fp2.setDownloadLinks(new ArrayList<DownloadLink>());
                                     }
 
-                                    new GuiRunnable<Object>() {
-                                        @Override
-                                        public Object runSave() {
-                                            LinkgrabberView.getInstance().setInfoPanel(null);
-                                            return null;
-                                        }
-                                    }.start();
                                 }
                             }
                         }
@@ -250,24 +240,11 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
     }
 
     public void showFilePackageInfo(LinkGrabberFilePackage fp) {
-        filePackageInfo.setPackage(fp);
-        new GuiRunnable<Object>() {
-            @Override
-            public Object runSave() {
-                LinkgrabberView.getInstance().setInfoPanel(filePackageInfo);
-                return null;
-            }
-        }.start();
+
     }
 
     public void hideFilePackageInfo() {
-        new GuiRunnable<Object>() {
-            @Override
-            public Object runSave() {
-                LinkgrabberView.getInstance().setInfoPanel(null);
-                return null;
-            }
-        }.start();
+
     }
 
     public void fireTableChanged() {
@@ -523,9 +500,7 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
 
     public void confirmPackage(LinkGrabberFilePackage fpv2, String host, int index) {
         if (fpv2 == null) return;
-        if (filePackageInfo.getPackage() != null && filePackageInfo.getPackage() == fpv2) {
-            filePackageInfo.onHideSave();
-        }
+
         ArrayList<DownloadLink> linkList = fpv2.getDownloadLinks();
         if (linkList.isEmpty()) return;
         for (DownloadLink link : linkList) {
@@ -640,13 +615,7 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
             updateAsync.restart();
             break;
         case LinkGrabberControllerEvent.REMOVE_FILEPACKAGE:
-            if (filePackageInfo.getPackage() != null && filePackageInfo.getPackage() == ((LinkGrabberFilePackage) event.getParameter())) {
-                if (!LGINSTANCE.getPackages().isEmpty()) {
-                    showFilePackageInfo(LGINSTANCE.getPackages().get(0));
-                } else {
-                    hideFilePackageInfo();
-                }
-            }
+
             updateAsync.restart();
             break;
         case LinkGrabberControllerEvent.REFRESH_STRUCTURE:
@@ -658,12 +627,7 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
     }
 
     public boolean isFilePackageInfoVisible(Object obj) {
-        boolean visible = LinkgrabberView.getInstance().getInfoPanel() == filePackageInfo;
-        if (obj != null) {
-            if (obj instanceof LinkGrabberFilePackage && filePackageInfo.getPackage() == obj && visible) return true;
-            return false;
-        }
-        return visible;
+        return false;
     }
 
 }

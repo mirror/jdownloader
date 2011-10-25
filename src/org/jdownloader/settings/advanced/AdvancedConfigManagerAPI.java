@@ -4,12 +4,10 @@ import java.util.ArrayList;
 
 import org.appwork.remoteapi.ApiDoc;
 import org.appwork.remoteapi.ApiNamespace;
-import org.appwork.remoteapi.ApiSessionRequired;
 import org.appwork.remoteapi.RemoteAPIInterface;
 import org.appwork.storage.config.annotations.AllowStorage;
 
 @ApiNamespace("config")
-@ApiSessionRequired
 public interface AdvancedConfigManagerAPI extends RemoteAPIInterface {
 
     @ApiDoc("list all available config entries")

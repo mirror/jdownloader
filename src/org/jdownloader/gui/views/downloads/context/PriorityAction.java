@@ -7,7 +7,6 @@ import javax.swing.JMenu;
 
 import jd.controlling.DownloadController;
 import jd.gui.swing.jdgui.interfaces.ContextMenuAction;
-import jd.gui.swing.jdgui.views.downloads.DownloadTable;
 import jd.plugins.DownloadLink;
 
 import org.jdownloader.gui.translate._GUI;
@@ -15,6 +14,7 @@ import org.jdownloader.images.NewTheme;
 
 public class PriorityAction extends ContextMenuAction {
 
+    public static String[]                PRIO_DESCS       = new String[] { _GUI._.gui_treetable_tooltip_priority_1(), _GUI._.gui_treetable_tooltip_priority0(), _GUI._.gui_treetable_tooltip_priority1(), _GUI._.gui_treetable_tooltip_priority2(), _GUI._.gui_treetable_tooltip_priority3() };
     private static final long             serialVersionUID = 4016589318975322111L;
 
     private final ArrayList<DownloadLink> links;
@@ -34,7 +34,7 @@ public class PriorityAction extends ContextMenuAction {
 
     @Override
     protected String getName() {
-        return DownloadTable.PRIO_DESCS[priority + 1];
+        return PRIO_DESCS[priority + 1];
     }
 
     @Override

@@ -4,9 +4,9 @@ import java.util.List;
 
 import javax.swing.DefaultListModel;
 
-import jd.gui.swing.jdgui.views.downloads.DownloadControll;
 import jd.gui.swing.jdgui.views.settings.panels.BasicAuthentication;
 import jd.gui.swing.jdgui.views.settings.panels.ConfigPanelGeneral;
+import jd.gui.swing.jdgui.views.settings.panels.DownloadControll;
 import jd.gui.swing.jdgui.views.settings.panels.GUISettings;
 import jd.gui.swing.jdgui.views.settings.panels.ReconnectSettings;
 import jd.gui.swing.jdgui.views.settings.panels.accountmanager.AccountManagerSettings;
