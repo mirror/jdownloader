@@ -32,7 +32,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nk.pl" }, urls = { "http://[\\w\\.]*?nk\\.pl/profile/\\d+/gallery(/album/\\d+|\\d+)" }, flags = { 0 })
+//                                                                                                             http://nk.pl/#profile/19768710/gallery#!q?album=2
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nk.pl" }, urls = { "http://(www\\.)?nk\\.pl/#?profile/\\d+/gallery(/album/\\d+|\\d+|#\\!q\\?album=\\d+)" }, flags = { 0 })
 public class NkPlGallery extends PluginForDecrypt {
 
     /* must be static so all plugins share same lock */
@@ -68,7 +69,7 @@ public class NkPlGallery extends PluginForDecrypt {
                 decryptedLinks.add(createDownloadlink("directhttp://" + finallink));
             } else {
                 br.setFollowRedirects(true);
-                String allLinks[] = br.getRegex("\"((/profile/\\d+)?/gallery/(\\d+|album/\\d+/\\d+))\"").getColumn(0);
+                String allLinks[] = br.getRegex("REGEXKAPUTT(.*?)REGEXKAPUTT").getColumn(0);
                 if (allLinks == null || allLinks.length == 0) return null;
                 progress.setRange(allLinks.length);
                 for (String singleLink : allLinks) {
@@ -102,7 +103,7 @@ public class NkPlGallery extends PluginForDecrypt {
             username = this.getPluginConfig().getStringProperty("user", null);
             password = this.getPluginConfig().getStringProperty("pass", null);
             if (username != null && password != null) {
-                br.postPage(POSTPAGE, "login=" + Encoding.urlEncode(username) + "&password=" + Encoding.urlEncode(password) + "&remember=1&ssl=1");
+                br.postPage(POSTPAGE, "login=" + Encoding.urlEncode(username) + "&password=" + Encoding.urlEncode(password) + "&remember=1&form_name=login_form&target=&manual=1");
             }
             for (int i = 0; i < 3; i++) {
                 if (br.getCookie(MAINPAGE, "remember_me") == null || br.getCookie(MAINPAGE, "lltkck") == null) {
@@ -112,7 +113,7 @@ public class NkPlGallery extends PluginForDecrypt {
                     if (username == null) return false;
                     password = UserIO.getInstance().requestInputDialog("Enter password for " + DOMAIN + " :");
                     if (password == null) return false;
-                    br.postPage(POSTPAGE, "login=" + Encoding.urlEncode(username) + "&password=" + Encoding.urlEncode(password) + "&remember=1&ssl=1");
+                    br.postPage(POSTPAGE, "login=" + Encoding.urlEncode(username) + "&password=" + Encoding.urlEncode(password) + "&remember=1&form_name=login_form&target=&manual=1");
                 } else {
                     this.getPluginConfig().setProperty("user", username);
                     this.getPluginConfig().setProperty("pass", password);
@@ -122,6 +123,10 @@ public class NkPlGallery extends PluginForDecrypt {
 
             }
         }
+        this.getPluginConfig().setProperty("user", Property.NULL);
+        this.getPluginConfig().setProperty("pass", Property.NULL);
+        this.getPluginConfig().setProperty("cookies", Property.NULL);
+        this.getPluginConfig().save();
         throw new DecrypterException("Login or/and password wrong");
     }
 

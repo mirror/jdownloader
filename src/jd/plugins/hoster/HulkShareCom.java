@@ -81,10 +81,29 @@ public class HulkShareCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setCookie(COOKIE_HOST, "lang", "english");
         br.getPage(link.getDownloadURL());
-        String newlink = br.getRegex("<p>The document has moved <a href=\"(http://.*?)\">here</a>").getMatch(0);
-        if (newlink != null) {
-            link.setUrlDownload(newlink);
-            br.getPage(newlink);
+        String argh = br.getRedirectLocation();
+        // Handling for direct links
+        if (argh != null) {
+            Browser br2 = br.cloneBrowser();
+            // In case the link redirects to the finallink
+            br2.setFollowRedirects(true);
+            URLConnectionAdapter con = null;
+            try {
+                con = br2.openGetConnection(argh);
+                if (!con.getContentType().contains("html")) {
+                    link.setDownloadSize(con.getLongContentLength());
+                    link.setFinalFileName(getFileNameFromHeader(con));
+                    link.setProperty("freelink", argh);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                return AvailableStatus.TRUE;
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (Throwable e) {
+                }
+            }
         }
         if (br.containsHTML("You have reached the download-limit")) {
             logger.warning("Waittime detected, please reconnect to make the linkchecker work!");
