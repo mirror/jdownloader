@@ -71,6 +71,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+import jd.utils.JDHexUtils;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
@@ -840,6 +841,73 @@ public class LnkCrptWs extends PluginForDecrypt {
             }
         }
 
+    }
+
+    public static class KeyCaptchaShowDialogTwo {
+        int    x;
+        int    y;
+        byte[] state = new byte[256];
+
+        final int A() {
+            int x;
+            int y;
+            int sx, sy;
+
+            x = this.x + 1 & 0xff;
+            sx = (int) state[x];
+            y = sx + this.y & 0xff;
+            sy = (int) state[y];
+            this.x = x;
+            this.y = y;
+            state[y] = (byte) (sx & 0xff);
+            state[x] = (byte) (sy & 0xff);
+            return (int) state[(sx + sy & 0xff)];
+        }
+
+        private void B(final byte[] b) {
+            int t, u;
+            int bindex;
+            int stateindex;
+            int counter;
+
+            for (counter = 0; counter < 256; counter++) {
+                state[counter] = (byte) counter;
+            }
+            bindex = 0;
+            stateindex = 0;
+            for (counter = 0; counter < 256; counter++) {
+                t = (int) state[counter];
+                stateindex = stateindex + b[bindex] + t & 0xff;
+                u = (int) state[stateindex];
+                state[stateindex] = (byte) (t & 0xff);
+                state[counter] = (byte) (u & 0xff);
+                if (++bindex >= b.length) {
+                    bindex = 0;
+                }
+            }
+        }
+
+        public synchronized void C(final byte[] src, final int srcOff, final byte[] dest, final int destOff, final int len) {
+            final int end = srcOff + len;
+            for (int si = srcOff, di = destOff; si < end; si++, di++) {
+                dest[di] = (byte) (((int) src[si] ^ A()) & 0xff);
+            }
+        }
+
+        public byte[] D(final byte[] key, final byte[] src) {
+            B(key);
+            final byte[] dest = new byte[src.length];
+            C(src, 0, dest, 0, src.length);
+            return dest;
+        }
+
+    }
+
+    public static String IMAGEREGEX = KeyCaptchaShowDialogOne();
+
+    public static String KeyCaptchaShowDialogOne() {
+        final KeyCaptchaShowDialogTwo v = new KeyCaptchaShowDialogTwo();
+        return new String(v.D(org.appwork.utils.Hash.getMD5(Encoding.Base64Decode("Yzg0MDdhMDhiM2M3MWVhNDE4ZWM5ZGM2NjJmMmE1NmU0MGNiZDZkNWExMTRhYTUwZmIxZTEwNzllMTdmMmI4Mw==") + org.appwork.utils.Hash.getMD5("V2UgZG8gbm90IGVuZG9yc2UgdGhlIHVzZSBvZiBKRG93bmxvYWRlci4=")).getBytes(), JDHexUtils.getByteArray("E3CEACB19040D08244C9E5C29D115AE220F83AB417")));
     }
 
     private final HashMap<String, String> map = new HashMap<String, String>();

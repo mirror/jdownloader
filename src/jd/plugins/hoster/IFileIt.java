@@ -211,7 +211,7 @@ public class IFileIt extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://ifile.it/tos";
+        return "http://ifile.it/help-tos.html";
     }
 
     @Override
