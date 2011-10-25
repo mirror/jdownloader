@@ -67,6 +67,7 @@ public class ConfigurationPanel extends SwitchPanel implements ListSelectionList
     }
 
     public void valueChanged(ListSelectionEvent e) {
+        System.out.println("SEL Change");
         new Thread() {
             public void run() {
                 final SwitchPanel p = sidebar.getSelectedPanel();
@@ -84,7 +85,7 @@ public class ConfigurationPanel extends SwitchPanel implements ListSelectionList
     }
 
     private void setContent(SwitchPanel selectedPanel) {
-        if (selectedPanel == null) return;
+        if (selectedPanel == null && selectedPanel == panel) return;
         if (panel != null) {
             panel.setHidden();
             panel.setVisible(false);
