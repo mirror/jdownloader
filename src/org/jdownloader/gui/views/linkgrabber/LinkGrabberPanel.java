@@ -9,6 +9,8 @@ import javax.swing.ScrollPaneConstants;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcollector.LinkCollectorEvent;
 import jd.controlling.linkcollector.LinkCollectorListener;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledPackage;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.gui.swing.laf.LookAndFeelController;
 import net.miginfocom.swing.MigLayout;
@@ -29,20 +31,20 @@ import org.jdownloader.gui.views.linkgrabber.actions.ConfirmOptionsAction;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 
 public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListener, GenericConfigEventListener<Boolean> {
-    private LinkGrabberTableModel tableModel;
-    private LinkGrabberTable      table;
-    private JScrollPane           tableScrollPane;
-    private LinkGrabberSidebar    sidebar;
-    private JButton               addLinks;
-    private JButton               confirmAll;
-    private JButton               clearAll;
-    private JButton               popup;
-    private JButton               popupConfirm;
-    private ExtButton             close;
-    private HeaderScrollPane      sidebarScrollPane;
-    private MigPanel              leftBar;
-    private MigPanel              rightBar;
-    private SearchField           searchField;
+    private LinkGrabberTableModel                    tableModel;
+    private LinkGrabberTable                         table;
+    private JScrollPane                              tableScrollPane;
+    private LinkGrabberSidebar                       sidebar;
+    private JButton                                  addLinks;
+    private JButton                                  confirmAll;
+    private JButton                                  clearAll;
+    private JButton                                  popup;
+    private JButton                                  popupConfirm;
+    private ExtButton                                close;
+    private HeaderScrollPane                         sidebarScrollPane;
+    private MigPanel                                 leftBar;
+    private MigPanel                                 rightBar;
+    private SearchField<CrawledPackage, CrawledLink> searchField;
 
     public LinkGrabberPanel() {
         super(new MigLayout("ins 0, wrap 2", "[grow,fill]2[fill]", "[grow, fill]2[]"));
@@ -73,11 +75,7 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
 
         leftBar.add(popup, "height 24!,width 12!");
         leftBar.add(clearAll, "width 24!,height 24!");
-        searchField = new SearchField() {
-            protected void onChanged() {
-                System.out.println("Filter: " + searchField.getText());
-            }
-        };
+        searchField = new SearchField<CrawledPackage, CrawledLink>(table);
         leftBar.add(searchField, "height 24!");
         // leftBar.add(Box.createGlue());
         rightBar.add(confirmAll, "height 24!");

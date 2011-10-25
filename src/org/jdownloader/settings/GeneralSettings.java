@@ -262,4 +262,11 @@ public interface GeneralSettings extends ConfigInterface {
     boolean isDownloadSpeedLimitEnabled();
 
     void setDownloadSpeedLimitEnabled(boolean b);
+
+    @AboutConfig
+    @DefaultBooleanValue(false)
+    boolean isFilterRegex();
+
+    void setFilterRegex(boolean b);
+
 }

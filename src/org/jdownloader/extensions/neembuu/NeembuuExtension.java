@@ -3,6 +3,7 @@ package org.jdownloader.extensions.neembuu;
 import javax.swing.ImageIcon;
 
 import org.appwork.utils.logging.Log;
+import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.StartException;
@@ -17,8 +18,13 @@ public class NeembuuExtension extends AbstractExtension<NeembuuConfig> {
 
     public NeembuuExtension() {
         super(_NT._.title());
+        new EDTRunner() {
 
-        tab = new NeembuuGui(this);
+            @Override
+            protected void runInEDT() {
+                tab = new NeembuuGui(NeembuuExtension.this);
+            }
+        }.waitForEDT();
     }
 
     /**
