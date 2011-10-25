@@ -12,16 +12,18 @@ import org.appwork.storage.config.annotations.Description;
 import org.appwork.storage.config.annotations.RequiresRestart;
 import org.appwork.storage.config.annotations.SpinnerValidator;
 import org.appwork.storage.config.annotations.ValidatorFactory;
+import org.appwork.storage.config.handler.BooleanKeyHandler;
 import org.appwork.storage.config.handler.IntegerKeyHandler;
 import org.appwork.storage.config.handler.StorageHandler;
 import org.appwork.utils.Application;
 
 public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
-    public static final GraphicalUserInterfaceSettings                 CFG           = JsonConfig.create(GraphicalUserInterfaceSettings.class);
+    public static final GraphicalUserInterfaceSettings                 CFG                         = JsonConfig.create(GraphicalUserInterfaceSettings.class);
     @SuppressWarnings("unchecked")
-    public static final StorageHandler<GraphicalUserInterfaceSettings> SH            = (StorageHandler<GraphicalUserInterfaceSettings>) CFG.getStorageHandler();
-    public static final IntegerKeyHandler                              CAPTCHA_SCALE = SH.getKeyHandler("CaptchaScaleFactor", IntegerKeyHandler.class);
+    public static final StorageHandler<GraphicalUserInterfaceSettings> SH                          = (StorageHandler<GraphicalUserInterfaceSettings>) CFG.getStorageHandler();
+    public static final IntegerKeyHandler                              CAPTCHA_SCALE               = SH.getKeyHandler("CaptchaScaleFactor", IntegerKeyHandler.class);
+    public static final BooleanKeyHandler                              LINKGRABBER_SIDEBAR_ENABLED = SH.getKeyHandler("LinkgrabberSidebarEnabled", BooleanKeyHandler.class);
 
     void setActiveConfigPanel(String name);
 

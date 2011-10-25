@@ -13,6 +13,7 @@ import net.miginfocom.swing.MigLayout;
 
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.swing.EDTRunner;
+import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 
 public class ConfigurationPanel extends SwitchPanel implements ListSelectionListener {
@@ -50,7 +51,8 @@ public class ConfigurationPanel extends SwitchPanel implements ListSelectionList
         if (sidebar.getSelectedPanel() == null) {
             Class<?> selected = null;
             try {
-                selected = Class.forName(cfg.getActiveConfigPanel());
+                String panelClass = cfg.getActiveConfigPanel();
+                selected = Class.forName(panelClass);
             } catch (Throwable e) {
 
             }
@@ -84,6 +86,7 @@ public class ConfigurationPanel extends SwitchPanel implements ListSelectionList
         // invalidate();
     }
 
+    @SuppressWarnings("rawtypes")
     private void setContent(SwitchPanel selectedPanel) {
         if (selectedPanel == null || selectedPanel == panel) return;
         if (panel != null) {
@@ -99,7 +102,12 @@ public class ConfigurationPanel extends SwitchPanel implements ListSelectionList
                 break;
             }
         }
-        cfg.setActiveConfigPanel(selectedPanel.getClass().getName());
+        if (selectedPanel instanceof ExtensionConfigPanel) {
+            cfg.setActiveConfigPanel(((ExtensionConfigPanel) selectedPanel).getExtension().getClass().getName());
+        } else {
+            cfg.setActiveConfigPanel(selectedPanel.getClass().getName());
+        }
+
         if (!found) {
             add(selectedPanel, "hidemode 3");
         } else {

@@ -964,6 +964,7 @@ public class ChatExtension extends AbstractExtension<ChatConfig> {
                         Thread.sleep(10000);
                     } catch (final InterruptedException e) {
                         JDLogger.exception(e);
+                        return;
                     }
                 }
             }

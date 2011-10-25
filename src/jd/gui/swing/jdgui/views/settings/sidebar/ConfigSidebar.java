@@ -202,11 +202,21 @@ public class ConfigSidebar extends JPanel implements ControlListener, MouseMotio
 
     public void setSelectedTreeEntry(Class<?> class1) {
         for (int i = 0; i < list.getModel().getSize(); i++) {
-            if (class1 == list.getModel().getElementAt(i).getClass()) {
-                list.setSelectedIndex(i);
-                break;
+            Object el = list.getModel().getElementAt(i);
+            if (el instanceof LazyExtension) {
+                if (class1.getName().equals(((LazyExtension) el).getClassname())) {
+                    list.setSelectedIndex(i);
+                    return;
+                }
+            } else {
+                Class<? extends Object> cl = el.getClass();
+                if (class1 == cl) {
+                    list.setSelectedIndex(i);
+                    return;
+                }
             }
         }
+        list.setSelectedIndex(0);
     }
 
     /**
