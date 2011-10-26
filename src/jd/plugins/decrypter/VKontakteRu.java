@@ -41,7 +41,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vkontakte.ru" }, urls = { "http://(www\\.)?(vkontakte\\.ru|vk\\.com)/(audio(\\.php)?(\\?album_id=\\d+\\&id=|\\?id=)\\d+|(video\\-?\\d+_\\d+|videos\\d+|video\\?section=tagged\\&id=\\d+)|photos\\d+|([A-Za-z0-9_\\-]+#/)?album\\d+_\\d+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vkontakte.ru" }, urls = { "http://(www\\.)?(vkontakte\\.ru|vk\\.com)/(audio(\\.php)?(\\?album_id=\\d+\\&id=|\\?id=)\\d+|(video\\-?\\d+_\\d+|videos\\d+|video\\?section=tagged\\&id=\\d+)|(photos|albums)\\d+|([A-Za-z0-9_\\-]+#/)?album\\d+_\\d+)" }, flags = { 0 })
 public class VKontakteRu extends PluginForDecrypt implements ProgressControllerListener {
 
     /* must be static so all plugins share same lock */
@@ -115,11 +115,13 @@ public class VKontakteRu extends PluginForDecrypt implements ProgressControllerL
                     parameter = "http://vkontakte.ru/album" + new Regex(parameter, "#/album(\\d+_\\d+)").getMatch(0);
                 else if (parameter.matches(".*?vkontakte.ru/photos\\d+")) parameter = parameter.replace("vkontakte.ru/photos", "vkontakte.ru/album") + "_0";
                 br.getPage(parameter);
-                String[] photoIDs = br.getRegex("class=\"photo_row\" id=\"photo_row(\\d+_\\d+)\"").getColumn(0);
+                String correctedBR = br.toString().replace("\\", "");
+                String[] photoIDs = new Regex(correctedBR, "class=\"photo_row\" id=\"photo_row(\\d+_\\d+)\"").getColumn(0);
+                photoIDs = null;
                 if (photoIDs == null || photoIDs.length == 0) {
-                    photoIDs = br.getRegex("><a href=\"/photo(\\d+_\\d+)\"").getColumn(0);
+                    photoIDs = new Regex(correctedBR, "><a href=\"/photo(\\d+_\\d+)\"").getColumn(0);
                     if (photoIDs == null || photoIDs.length == 0) {
-                        photoIDs = br.getRegex("showPhoto\\(\\'(\\d+_\\d+)\\'").getColumn(0);
+                        photoIDs = new Regex(correctedBR, "showPhoto\\(\\'(\\d+_\\d+)\\'").getColumn(0);
                     }
                 }
                 if (photoIDs == null || photoIDs.length == 0) {
@@ -131,7 +133,7 @@ public class VKontakteRu extends PluginForDecrypt implements ProgressControllerL
                 String albumID = new Regex(parameter, "/album(.+)").getMatch(0);
                 for (String photoID : photoIDs) {
                     br.postPage("http://vk.com/al_photos.php", "act=show&al=1&list=" + albumID + "&photo=" + photoID);
-                    String correctedBR = br.toString().replace("\\", "");
+                    correctedBR = br.toString().replace("\\", "");
                     // Try to get best quality
                     String finallink = new Regex(correctedBR, "\"id\":\"" + photoID + "\",\"w_src\":\"(http://.*?)\"").getMatch(0);
                     if (finallink == null) {
@@ -156,6 +158,18 @@ public class VKontakteRu extends PluginForDecrypt implements ProgressControllerL
                 FilePackage fp = FilePackage.getInstance();
                 fp.setName(new Regex(parameter, "/album(.+)").getMatch(0));
                 fp.addLinks(decryptedLinks);
+            } else if (parameter.matches(".*?vkontakte\\.ru/albums\\d+")) {
+                // Photo Album lists/overviews
+                // Example: http://vk.com/albums46486585
+                br.getPage(parameter);
+                String[] photoAlbums = br.getRegex("class=\"fl_l thumb\">[\t\n\r ]+<a href=\"(/album.*?)\"").getColumn(0);
+                if (photoAlbums == null || photoAlbums.length == 0) {
+                    logger.warning("Couldn't find any photo albums for link: " + parameter);
+                    return null;
+                }
+                for (String photoAlbum : photoAlbums) {
+                    decryptedLinks.add(createDownloadlink("http://vkontakte.ru" + photoAlbum));
+                }
             } else {
                 // Video-Playlists
                 // Example: http://vkontakte.ru/videos575934598

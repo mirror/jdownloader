@@ -29,11 +29,12 @@ import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -52,6 +53,7 @@ public class UploadingCom extends PluginForHost {
     private static final Object LOCK            = new Object();
     private static final String MAINPAGE        = "http://uploading.com/";
     private boolean             loginCaptcha    = false;
+    private static final String PASSWORDTEXT    = "Please Enter Password:<";
 
     public UploadingCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -216,6 +218,7 @@ public class UploadingCom extends PluginForHost {
         free = false;
         br.setDebug(true);
         requestFileInformation(link);
+        String passCode = link.getStringProperty("pass");
         synchronized (PREMLOCK) {
             synchronized (LOCK) {
                 login(account, false);
@@ -252,12 +255,17 @@ public class UploadingCom extends PluginForHost {
                 logger.warning("The first form equals null");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            redirect = getDownloadUrl(link, null, code);
+            if (br.containsHTML(PASSWORDTEXT)) {
+                if (passCode == null) passCode = Plugin.getUserInput("Password?", link);
+                passCode = Encoding.urlEncode(passCode);
+            }
+            redirect = getDownloadUrl(link, null, code, passCode);
         }
         br.setFollowRedirects(false);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, redirect, true, 0);
         handleDownloadErrors();
         dl.setFilenameFix(true);
+        if (passCode != null) link.setProperty("pass", passCode);
         dl.startDownload();
     }
 
@@ -274,6 +282,7 @@ public class UploadingCom extends PluginForHost {
             if (time != null) wait = Integer.parseInt(time.trim());
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, wait * 60 * 1000l);
         }
+        if (br.containsHTML("(>Server stopped<|Sorry, the server storing the file is currently unavailable|/> Please try again later\\.)")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.uploadingcom.errors.tempunavailable", "This file is temporary unavailable"), 60 * 60 * 1000l);
     }
 
     private void handleDownloadErrors() throws IOException, PluginException {
@@ -302,6 +311,7 @@ public class UploadingCom extends PluginForHost {
 
     public void handleFree0(DownloadLink link) throws Exception {
         checkErrors();
+        String passCode = link.getStringProperty("pass", null);
         String fileID = br.getRegex(FILEIDREGEX).getMatch(0);
         String code = new Regex(link.getDownloadURL(), CODEREGEX).getMatch(0);
         if (br.containsHTML("that only premium members are")) { throw new PluginException(LinkStatus.ERROR_FATAL, "Only for premium members"); }
@@ -317,19 +327,28 @@ public class UploadingCom extends PluginForHost {
         logger.info("Submitting form");
         try {
             // POSTing to the wrong link causes MAJOR issues...
-            br.postPage(link.getDownloadURL().replace("www.", "") + "/", "action=second_page&file_id=" + fileID + "&code=" + code + "&choose_payment_method=payment&LMI_PAYMENT_AMOUNT=%23amount%23&LMI_PAYMENT_DESC=Uploading.com+Premuim+Membership&LMI_PAYEE_PURSE=&LMI_SIM_MODE=0&user_id=%23user_id%23&proceed_without_registration=on");
+            String postData = "action=second_page&file_id=" + fileID + "&code=" + code + "&choose_payment_method=payment&LMI_PAYMENT_AMOUNT=%23amount%23&LMI_PAYMENT_DESC=Uploading.com+Premuim+Membership&LMI_PAYEE_PURSE=&LMI_SIM_MODE=0&user_id=%23user_id%23&proceed_without_registration=on";
+            if (br.containsHTML(PASSWORDTEXT)) {
+                if (passCode == null) passCode = Plugin.getUserInput("Password?", link);
+                passCode = Encoding.urlEncode(passCode);
+                postData += "&pass=" + passCode;
+            }
+            br.postPage(link.getDownloadURL().replace("www.", "") + "/", postData);
         } catch (Exception e) {
             // This is the "disconnected" error...
             logger.warning("FATAL error happened with link: " + link.getDownloadURL());
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        // First Password-Errorhandling
+        if (passCode != null && (br.containsHTML(PASSWORDTEXT) || "The%20entered%20password%20is%20incorrect".equals(br.getCookie(MAINPAGE, "error")))) throw new PluginException(LinkStatus.ERROR_RETRY, "Invalid password");
         checkErrors();
-        String redirect = getDownloadUrl(link, fileID, code);
+        String redirect = getDownloadUrl(link, fileID, code, passCode);
         br.setFollowRedirects(false);
         br.setDebug(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, redirect, true, 1);
         handleDownloadErrors();
         dl.setFilenameFix(true);
+        if (passCode != null) link.setProperty("pass", passCode);
         dl.startDownload();
     }
 
@@ -454,11 +473,7 @@ public class UploadingCom extends PluginForHost {
         handleFree0(downloadLink);
     }
 
-    public String getDownloadUrl(DownloadLink downloadLink, String fileID, String code) throws Exception {
-        // String timead = br.getRegex("timead_counter\">(\\d+)<").getMatch(0);
-        // if (timead == null) timead =
-        // br.getRegex("start_timer\\((\\d+)\\)").getMatch(0);
-        // sleep(Integer.parseInt(timead) * 1000l, downloadLink);
+    public String getDownloadUrl(DownloadLink downloadLink, String fileID, String code, String passCode) throws Exception {
         br.setDebug(true);
         String varLink = br.getRegex("var file_link = \\'(http://.*?)\\'").getMatch(0);
         /* captcha may occur here */
@@ -467,7 +482,7 @@ public class UploadingCom extends PluginForHost {
             String captchaUrl = "http://uploading.com/general/captcha/download" + fileID + "/?ts=" + System.currentTimeMillis();
             String captchaCode = getCaptchaCode(captchaUrl, downloadLink);
             captcha = "&captcha_code=" + Encoding.urlEncode(captchaCode);
-        }
+        } else if (passCode != null) captcha = passCode;
         if (varLink != null) {
             sleep(2000, downloadLink);
             return varLink;
@@ -484,10 +499,12 @@ public class UploadingCom extends PluginForHost {
         if (redirect != null) {
             redirect = redirect.replaceAll("\\\\/", "/");
         } else {
-            if (captcha.length() > 0) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             if (br.containsHTML("Please wait")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 1000l);
             if (br.containsHTML("Your download was not found or")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Your download was not found or has expired. Please try again later", 15 * 60 * 1000l);
             if (br.containsHTML("Your download has expired")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Your download was not found or has expired. Please try again later", 15 * 60 * 1000l);
+            // Second Password-Errorhandling
+            if (br.containsHTML("\"The entered password is incorrect\"")) throw new PluginException(LinkStatus.ERROR_RETRY, "Invalid password");
+            if (captcha.length() > 0) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         return redirect;
