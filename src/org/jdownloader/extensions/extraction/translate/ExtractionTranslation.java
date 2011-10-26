@@ -146,4 +146,22 @@ public interface ExtractionTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "files" })
     String files();
+
+    @Default(lngs = { "en" }, values = { "Don't unpack files matching the following conditions (One per line)" })
+    String settings_blacklist();
+
+    @Default(lngs = { "en" }, values = { "Special settings (Only for rar, 7z and zip. Not for split files)" })
+    String settings_multi();
+
+    @Default(lngs = { "en" }, values = { "CPU Priority" })
+    String settings_cpupriority();
+
+    @Default(lngs = { "en" }, values = { "High" })
+    String settings_cpupriority_high();
+
+    @Default(lngs = { "en" }, values = { "Middle" })
+    String settings_cpupriority_middle();
+
+    @Default(lngs = { "en" }, values = { "Low" })
+    String settings_cpupriority_low();
 }

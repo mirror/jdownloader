@@ -54,7 +54,7 @@ class MultiCallback implements ISequentialOutStream {
 
             if (priority != null) {
                 try {
-                    if (priority == CPUPriority.NORMAL) {
+                    if (priority == CPUPriority.MIDDLE) {
                         Thread.sleep(100);
                     } else if (priority == CPUPriority.LOW) {
                         Thread.sleep(200);
