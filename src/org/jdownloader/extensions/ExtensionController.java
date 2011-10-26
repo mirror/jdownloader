@@ -12,7 +12,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Enumeration;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.jar.JarEntry;
@@ -28,7 +27,6 @@ import org.appwork.storage.TypeRef;
 import org.appwork.utils.Application;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.swing.dialog.Dialog;
-import org.jdownloader.translate._JDT;
 
 public class ExtensionController {
     private static final ExtensionController INSTANCE = new ExtensionController();
@@ -43,30 +41,21 @@ public class ExtensionController {
         return ExtensionController.INSTANCE;
     }
 
-    private HashMap<Class<AbstractExtension<?>>, LazyExtension> map;
-    private List<LazyExtension>                                 list;
-    private HashMap<String, LazyExtension>                      cache;
-    private File                                                cacheFile;
-    private boolean                                             cacheChanged;
-    private ExtensionControllerEventSender                      eventSender;
+    private List<LazyExtension>            list;
+
+    private ExtensionControllerEventSender eventSender;
 
     /**
      * Create a new instance of ExtensionController. This is a singleton class.
      * Access the only existing instance by using {@link #getInstance()}.
      */
     private ExtensionController() {
-
-        map = new HashMap<Class<AbstractExtension<?>>, LazyExtension>();
-        cacheFile = Application.getResource("tmp/extensioncache/extensionInfos.json");
         eventSender = new ExtensionControllerEventSender();
-        // Collections.sort(pluginsOptional, new
-        // Comparator<AbstractExtensionWrapper>() {
-        //
-        // public int compare(AbstractExtensionWrapper o1,
-        // AbstractExtensionWrapper o2) {
-        // return o1.getName().compareTo(o2.getName());
-        // }
-        // });
+        list = Collections.unmodifiableList(new ArrayList<LazyExtension>());
+    }
+
+    private File getCache() {
+        return Application.getResource("tmp/extensioncache/extensionInfos.json");
     }
 
     public ExtensionControllerEventSender getEventSender() {
@@ -74,67 +63,74 @@ public class ExtensionController {
     }
 
     public void init() {
-
-        final long t = System.currentTimeMillis();
-        try {
-            if (JDInitFlags.REFRESH_CACHE || JDInitFlags.SWITCH_RETURNED_FROM_UPDATE) {
-                try {
-                    /* do a fresh scan */
-                    load();
-                } catch (Throwable e) {
-                    Log.L.severe("@ExtensionController: update failed!");
-                    Log.exception(e);
-                }
-            } else {
-                /* try to load from cache */
-                try {
-                    list = loadFromCache();
-                } catch (Throwable e) {
-                    Log.L.severe("@ExtensionController: cache failed!");
-                    Log.exception(e);
-                }
-                if (list.size() == 0) {
+        synchronized (this) {
+            ArrayList<LazyExtension> ret = new ArrayList<LazyExtension>();
+            final long t = System.currentTimeMillis();
+            try {
+                if (JDInitFlags.REFRESH_CACHE || JDInitFlags.SWITCH_RETURNED_FROM_UPDATE) {
                     try {
                         /* do a fresh scan */
-                        load();
+                        ret = load();
                     } catch (Throwable e) {
                         Log.L.severe("@ExtensionController: update failed!");
-                        e.printStackTrace();
+                        Log.exception(e);
+                    }
+                } else {
+                    /* try to load from cache */
+                    try {
+                        ret = loadFromCache();
+                    } catch (Throwable e) {
+                        Log.L.severe("@ExtensionController: cache failed!");
+                        Log.exception(e);
+                    }
+                    if (ret.size() == 0) {
+                        try {
+                            /* do a fresh scan */
+                            ret = load();
+                        } catch (Throwable e) {
+                            Log.L.severe("@ExtensionController: update failed!");
+                            Log.exception(e);
+                        }
                     }
                 }
+            } finally {
+                Log.L.info("@ExtensionController: init in" + (System.currentTimeMillis() - t) + "ms :" + ret.size());
             }
-        } finally {
+            if (ret.size() == 0) {
+                Log.L.severe("@ExtensionController: WTF, no extensions!");
+            }
 
-            System.out.println("@ExtensionController: init in" + (System.currentTimeMillis() - t) + "ms :" + list.size());
+            Collections.sort(ret, new Comparator<LazyExtension>() {
 
-        }
-        if (list.size() == 0) {
-            Log.L.severe("@ExtensionController: WTF, no extensions!");
-        }
+                public int compare(LazyExtension o1, LazyExtension o2) {
+                    return o1.getName().compareTo(o2.getName());
+                }
+            });
+            list = Collections.unmodifiableList(ret);
+            Main.GUI_COMPLETE.executeWhenReached(new Runnable() {
 
-        Main.GUI_COMPLETE.executeWhenReached(new Runnable() {
-
-            public void run() {
-                for (LazyExtension plg : list) {
-                    if (plg._getExtension() != null && plg._getExtension().getGUI() != null) {
-                        plg._getExtension().getGUI().restore();
+                public void run() {
+                    List<LazyExtension> llist = list;
+                    for (LazyExtension plg : llist) {
+                        if (plg._getExtension() != null && plg._getExtension().getGUI() != null) {
+                            plg._getExtension().getGUI().restore();
+                        }
                     }
                 }
-            }
 
-        });
+            });
+        }
         getEventSender().fireEvent(new ExtensionControllerEvent(this, ExtensionControllerEvent.Type.UPDATED));
     }
 
-    private List<LazyExtension> loadFromCache() {
-        cache = JSonStorage.restoreFrom(cacheFile, true, null, new TypeRef<HashMap<String, LazyExtension>>() {
-        }, new HashMap<String, LazyExtension>());
+    private ArrayList<LazyExtension> loadFromCache() {
+        ArrayList<LazyExtension> cache = JSonStorage.restoreFrom(getCache(), true, null, new TypeRef<ArrayList<LazyExtension>>() {
+        }, new ArrayList<LazyExtension>());
 
-        ArrayList<LazyExtension> lst = new ArrayList<LazyExtension>(cache.values());
+        ArrayList<LazyExtension> lst = new ArrayList<LazyExtension>(cache);
         for (Iterator<LazyExtension> it = lst.iterator(); it.hasNext();) {
             LazyExtension l = it.next();
             if (l._isEnabled()) {
-
                 try {
                     l.init();
                 } catch (Throwable e) {
@@ -143,190 +139,163 @@ public class ExtensionController {
                 }
             }
         }
-
-        Collections.sort(lst, new Comparator<LazyExtension>() {
-
-            public int compare(LazyExtension o1, LazyExtension o2) {
-                return o1.getName().compareTo(o2.getName());
-            }
-        });
         return lst;
     }
 
-    private void load() {
+    private synchronized ArrayList<LazyExtension> load() {
+        ArrayList<LazyExtension> ret = new ArrayList<LazyExtension>();
         try {
-            cache = new HashMap<String, LazyExtension>();
-            list = new ArrayList<LazyExtension>();
-            cacheChanged = false;
             if (Application.isJared(ExtensionController.class)) {
-                loadJared();
+                ret = loadJared();
             } else {
-                loadUnpacked();
+                ret = loadUnpacked();
             }
-            if (cacheChanged) {
-                JSonStorage.saveTo(cacheFile, cache);
-            }
+            JSonStorage.saveTo(getCache(), ret);
         } catch (final Throwable e) {
             Log.exception(e);
         }
+        return ret;
     }
 
     @SuppressWarnings("unchecked")
-    private void loadJared() {
-
+    private ArrayList<LazyExtension> loadJared() {
+        ArrayList<LazyExtension> ret = new ArrayList<LazyExtension>();
         File[] addons = Application.getResource("extensions").listFiles(new FilenameFilter() {
             public boolean accept(File dir, String name) {
                 return name.endsWith(".jar");
             }
         });
-        if (addons == null) return;
-        main: for (File jar : addons) {
-            try {
-                URLClassLoader cl = new URLClassLoader(new URL[] { jar.toURI().toURL() });
-
-                final Enumeration<URL> urls = cl.getResources(AbstractExtension.class.getPackage().getName().replace('.', '/'));
-                URL url;
-                while (urls.hasMoreElements()) {
-                    url = urls.nextElement();
-                    if (url.getProtocol().equalsIgnoreCase("jar")) {
-                        // jarred addon (JAR)
-                        File jarFile = new File(new URL(url.getPath().substring(4, url.toString().lastIndexOf('!'))).toURI());
-                        final JarInputStream jis = new JarInputStream(new FileInputStream(jarFile));
-                        JarEntry e;
-
-                        while ((e = jis.getNextJarEntry()) != null) {
+        if (addons != null) {
+            main: for (File jar : addons) {
+                try {
+                    URLClassLoader cl = new URLClassLoader(new URL[] { jar.toURI().toURL() });
+                    final Enumeration<URL> urls = cl.getResources(AbstractExtension.class.getPackage().getName().replace('.', '/'));
+                    URL url;
+                    while (urls.hasMoreElements()) {
+                        url = urls.nextElement();
+                        if ("jar".equalsIgnoreCase(url.getProtocol())) {
+                            // jarred addon (JAR)
+                            File jarFile = new File(new URL(url.getPath().substring(4, url.toString().lastIndexOf('!'))).toURI());
+                            FileInputStream fis = null;
+                            JarInputStream jis = null;
                             try {
-                                Matcher matcher = Pattern.compile(Pattern.quote(AbstractExtension.class.getPackage().getName().replace('.', '/')) + "/(\\w+)/(\\w+Extension)\\.class").matcher(e.getName());
-                                if (matcher.find()) {
-                                    String pkg = matcher.group(1);
-                                    String clazzName = matcher.group(2);
-                                    Class<?> clazz = cl.loadClass(AbstractExtension.class.getPackage().getName() + "." + pkg + "." + clazzName);
-
-                                    if (AbstractExtension.class.isAssignableFrom(clazz)) {
-
-                                        initModule((Class<AbstractExtension<?>>) clazz);
-                                        continue main;
+                                jis = new JarInputStream(fis = new FileInputStream(jarFile));
+                                JarEntry e;
+                                while ((e = jis.getNextJarEntry()) != null) {
+                                    try {
+                                        Matcher matcher = Pattern.compile(Pattern.quote(AbstractExtension.class.getPackage().getName().replace('.', '/')) + "/(\\w+)/(\\w+Extension)\\.class").matcher(e.getName());
+                                        if (matcher.find()) {
+                                            String pkg = matcher.group(1);
+                                            String clazzName = matcher.group(2);
+                                            Class<?> clazz = cl.loadClass(AbstractExtension.class.getPackage().getName() + "." + pkg + "." + clazzName);
+                                            if (AbstractExtension.class.isAssignableFrom(clazz)) {
+                                                initModule((Class<AbstractExtension<?>>) clazz, ret);
+                                                continue main;
+                                            }
+                                        }
+                                    } catch (Throwable e1) {
+                                        Log.exception(e1);
                                     }
-
                                 }
-                            } catch (Throwable e1) {
-                                Log.exception(e1);
+                            } finally {
+                                try {
+                                    jis.close();
+                                } catch (final Throwable e) {
+                                }
+                                try {
+                                    fis.close();
+                                } catch (final Throwable e) {
+                                }
                             }
-
                         }
                     }
+                } catch (Throwable e) {
+                    Log.exception(e);
                 }
-
-            } catch (Throwable e) {
-                Log.exception(e);
             }
-
         }
+        return ret;
 
     }
 
     @SuppressWarnings("unchecked")
-    private void loadUnpacked() {
+    private ArrayList<LazyExtension> loadUnpacked() {
+        ArrayList<LazyExtension> retl = new ArrayList<LazyExtension>();
         URL ret = getClass().getResource("/");
         File root;
-        if (ret.getProtocol().equalsIgnoreCase("file")) {
+        if ("file".equalsIgnoreCase(ret.getProtocol())) {
             try {
                 root = new File(ret.toURI());
             } catch (URISyntaxException e) {
                 Log.exception(e);
                 Log.L.finer("Did not load unpacked Extensions from " + ret);
-                return;
+                return retl;
             }
         } else {
             Log.L.finer("Did not load unpacked Extensions from " + ret);
-            return;
+            return retl;
         }
         root = new File(root, AbstractExtension.class.getPackage().getName().replace('.', '/'));
         Log.L.finer("Load Extensions from: " + root.getAbsolutePath());
         File[] folders = root.listFiles(new FileFilter() {
-
             public boolean accept(File pathname) {
                 return pathname.isDirectory();
             }
         });
-        ClassLoader cl = getClass().getClassLoader();
-        main: for (File f : folders) {
-            File[] modules = f.listFiles(new FilenameFilter() {
-
-                public boolean accept(File dir, String name) {
-                    return name.endsWith("Extension.class");
-                }
-            });
-            boolean loaded = false;
-            for (File module : modules) {
-
-                Class<?> cls;
-                try {
-                    cls = cl.loadClass(AbstractExtension.class.getPackage().getName() + "." + module.getParentFile().getName() + "." + module.getName().substring(0, module.getName().length() - 6));
-
-                    if (AbstractExtension.class.isAssignableFrom(cls)) {
-                        loaded = true;
-                        initModule((Class<AbstractExtension<?>>) cls);
-                        continue main;
+        if (folders != null) {
+            ClassLoader cl = getClass().getClassLoader();
+            main: for (File f : folders) {
+                File[] modules = f.listFiles(new FilenameFilter() {
+                    public boolean accept(File dir, String name) {
+                        return name.endsWith("Extension.class");
                     }
-                } catch (IllegalArgumentException e) {
-                    Log.L.warning("Did not init Extension " + module + " : " + e.getMessage());
-                } catch (Throwable e) {
-                    Log.exception(e);
-                    Dialog.getInstance().showExceptionDialog("Error", e.getMessage(), e);
+                });
+                boolean loaded = false;
+                if (modules != null) {
+                    for (File module : modules) {
+                        Class<?> cls;
+                        try {
+                            cls = cl.loadClass(AbstractExtension.class.getPackage().getName() + "." + module.getParentFile().getName() + "." + module.getName().substring(0, module.getName().length() - 6));
+                            if (AbstractExtension.class.isAssignableFrom(cls)) {
+                                initModule((Class<AbstractExtension<?>>) cls, retl);
+                                loaded = true;
+                                continue main;
+                            }
+                        } catch (IllegalArgumentException e) {
+                            Log.L.warning("Did not init Extension " + module + " : " + e.getMessage());
+                        } catch (Throwable e) {
+                            Log.exception(e);
+                            Dialog.getInstance().showExceptionDialog("Error", e.getMessage(), e);
+                        }
+                    }
+                    if (!loaded) {
+                        Log.L.warning("Could not load any Extension Module from " + f);
+                    }
                 }
             }
-            if (!loaded) {
-                Log.L.warning("Could not load any Extension Module from " + f);
-            }
         }
-
+        return retl;
     }
 
-    private void initModule(Class<AbstractExtension<?>> cls) throws InstantiationException, IllegalAccessException, StartException, IOException, ClassNotFoundException {
-
-        LazyExtension cached = getCache(cls);
-
-        if (cached._isEnabled()) {
-            cached.init();
-        }
-        map.put(cls, cached);
-
-        list.add(cached);
-
-    }
-
-    private LazyExtension getCache(Class<AbstractExtension<?>> cls) throws StartException, InstantiationException, IllegalAccessException, IOException {
+    private ArrayList<LazyExtension> initModule(Class<AbstractExtension<?>> cls, ArrayList<LazyExtension> list) throws InstantiationException, IllegalAccessException, StartException, IOException, ClassNotFoundException {
+        if (list == null) list = new ArrayList<LazyExtension>();
         String id = cls.getName().substring(27);
-        // File cache = Application.getResource("tmp/extensioncache/" + id +
-        // ".json");
-        // AbstractExtensionWrapper cached = JSonStorage.restoreFrom(cache,
-        // true, (byte[]) null, new TypeRef<AbstractExtensionWrapper>() {
-
-        LazyExtension cached = cache.get(id);
-
-        int v = AbstractExtension.readVersion(cls);
-        if (cached != null) {
-            cached._setPluginClass(cls);
-            if (cached.getVersion() != v || !cached.getLng().equals(_JDT.getLanguage()) || cached._getSettings() == null) {
-                // update cache
-                cached = null;
-            }
+        LazyExtension extension = LazyExtension.create(id, cls);
+        extension._setPluginClass(cls);
+        if (extension._isEnabled()) {
+            extension.init();
         }
-        if (cached == null) {
-            Log.L.info("Update Cache " + cache);
-            cached = LazyExtension.create(id, cls);
-            cache.put(id, cached);
-            cacheChanged = true;
-        } else {
-            cached._setPluginClass(cls);
-        }
-        return cached;
+        list.add(extension);
+        return list;
     }
 
     public boolean isExtensionActive(Class<? extends AbstractExtension<?>> class1) {
-        LazyExtension plg = map.get(class1);
-        if (plg != null && plg._getExtension() != null && plg._getExtension().isEnabled()) return true;
+        List<LazyExtension> llist = list;
+        for (LazyExtension l : llist) {
+            if (class1.getName().equals(l.getClassname())) {
+                if (l._getExtension() != null && l._getExtension().isEnabled()) return true;
+            }
+        }
         return false;
     }
 
@@ -349,17 +318,11 @@ public class ExtensionController {
     }
 
     public <T extends AbstractExtension<?>> LazyExtension getExtension(Class<T> class1) {
-        LazyExtension ret = map.get(class1);
-        if (ret == null) {
-            for (LazyExtension l : list) {
-                if (class1.getName().equals(l.getClassname())) {
-                    map.put(l._getPluginClass(), l);
-                    ret = l;
-                    break;
-                }
-            }
+        List<LazyExtension> llist = list;
+        for (LazyExtension l : llist) {
+            if (class1.getName().equals(l.getClassname())) { return l; }
         }
-        return ret;
+        return null;
     }
 
 }

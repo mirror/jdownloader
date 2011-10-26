@@ -75,12 +75,12 @@ public class HostPluginController extends PluginController<PluginForHost> {
                         plugins = update();
                     } catch (Throwable e) {
                         Log.L.severe("@HostPluginController: update failed!");
-                        e.printStackTrace();
+                        Log.exception(e);
                     }
                 }
             }
         } finally {
-            System.out.println("@HostPluginController: init " + (System.currentTimeMillis() - t) + " :" + plugins.size());
+            Log.L.info("@HostPluginController: init " + (System.currentTimeMillis() - t) + " :" + plugins.size());
         }
         if (plugins.size() == 0) {
             Log.L.severe("@HostPluginController: WTF, no plugins!");

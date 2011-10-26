@@ -17,7 +17,7 @@ public class AdvancedTable extends BasicJDTable<AdvancedConfigEntry> {
     }
 
     public void filter(String text) {
-        ((AdvancedTableModel) this.getExtTableModel()).filter(text);
+        ((AdvancedTableModel) this.getExtTableModel()).refresh(text);
     }
 
 }

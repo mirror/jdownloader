@@ -63,12 +63,12 @@ public class ContainerPluginController extends PluginController<PluginsC> {
                         plugins = update();
                     } catch (Throwable e) {
                         Log.L.severe("@ContainerPluginController: update failed!");
-                        e.printStackTrace();
+                        Log.exception(e);
                     }
                 }
             }
         } finally {
-            System.out.println("@ContainerPluginController: init " + (System.currentTimeMillis() - t) + " :" + plugins.size());
+            Log.L.info("@ContainerPluginController: init " + (System.currentTimeMillis() - t) + " :" + plugins.size());
         }
         if (plugins.size() == 0) {
             Log.L.severe("@ContainerPluginController: WTF, no plugins!");

@@ -16,6 +16,7 @@ import javax.swing.event.DocumentListener;
 import jd.controlling.IOEQ;
 import jd.gui.swing.jdgui.JDGui;
 
+import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.utils.swing.HelpNotifier;
 import org.appwork.utils.swing.HelpNotifierCallbackListener;
 import org.jdownloader.gui.settings.AbstractConfigPanel;
@@ -55,6 +56,7 @@ public class AdvancedSettings extends AbstractConfigPanel implements DocumentLis
     private JTextField        filterText;
     private String            filterHelp;
     private AdvancedTable     table;
+    private DelayedRunnable   delayedRefresh;
 
     public String getTitle() {
         return _GUI._.gui_settings_advanced_title();
@@ -99,6 +101,18 @@ public class AdvancedSettings extends AbstractConfigPanel implements DocumentLis
         add(filterText, "gapleft 37,spanx,growx,pushx");
         filterText.getDocument().addDocumentListener(this);
         add(new JScrollPane(table = new AdvancedTable()));
+        delayedRefresh = new DelayedRunnable(IOEQ.TIMINGQUEUE, 200, 1000) {
+
+            @Override
+            public void delayedrun() {
+                if (!filterText.getText().equals(filterHelp)) {
+                    table.filter(filterText.getText());
+                } else {
+                    table.filter(null);
+                }
+            }
+
+        };
     }
 
     @Override
@@ -113,42 +127,22 @@ public class AdvancedSettings extends AbstractConfigPanel implements DocumentLis
 
     @Override
     public void updateContents() {
-        IOEQ.add(new Runnable() {
-
-            public void run() {
-                table.getExtTableModel()._fireTableStructureChanged(AdvancedConfigManager.getInstance().list(), true);
-            }
-
-        }, true);
+        delayedRefresh.delayedrun();
     }
 
     public void insertUpdate(DocumentEvent e) {
-        filter();
-    }
-
-    private void filter() {
-        if (!this.filterText.getText().equals(filterHelp)) {
-            table.filter(filterText.getText());
-        } else {
-            table.filter(null);
-        }
+        delayedRefresh.run();
     }
 
     public void removeUpdate(DocumentEvent e) {
-        filter();
+        delayedRefresh.run();
     }
 
     public void changedUpdate(DocumentEvent e) {
-        filter();
+        delayedRefresh.run();
     }
 
     public void onAdvancedConfigUpdate() {
-        IOEQ.add(new Runnable() {
-
-            public void run() {
-                table.getExtTableModel()._fireTableStructureChanged(AdvancedConfigManager.getInstance().list(), true);
-            }
-
-        }, true);
+        delayedRefresh.run();
     }
 }

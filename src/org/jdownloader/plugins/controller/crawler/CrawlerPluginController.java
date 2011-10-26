@@ -72,12 +72,12 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
                         plugins = update();
                     } catch (Throwable e) {
                         Log.L.severe("@CrawlerPluginController: update failed!");
-                        e.printStackTrace();
+                        Log.exception(e);
                     }
                 }
             }
         } finally {
-            System.out.println("@CrawlerPluginController: init " + (System.currentTimeMillis() - t) + " :" + plugins.size());
+            Log.L.info("@CrawlerPluginController: init " + (System.currentTimeMillis() - t) + " :" + plugins.size());
         }
         if (plugins.size() == 0) {
             Log.L.severe("@CrawlerPluginController: WTF, no plugins!");
