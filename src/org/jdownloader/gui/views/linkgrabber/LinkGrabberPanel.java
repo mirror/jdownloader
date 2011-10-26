@@ -1,6 +1,8 @@
 package org.jdownloader.gui.views.linkgrabber;
 
 import java.awt.Color;
+import java.awt.event.ActionEvent;
+import java.util.ArrayList;
 
 import javax.swing.JButton;
 import javax.swing.JScrollPane;
@@ -22,6 +24,8 @@ import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.swing.components.ExtButton;
 import org.appwork.utils.event.queue.Queue.QueuePriority;
 import org.appwork.utils.swing.EDTRunner;
+import org.jdownloader.actions.AppAction;
+import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.components.HeaderScrollPane;
 import org.jdownloader.gui.views.linkgrabber.actions.AddLinksAction;
 import org.jdownloader.gui.views.linkgrabber.actions.AddOptionsAction;
@@ -40,11 +44,11 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
     private JButton                                  clearAll;
     private JButton                                  popup;
     private JButton                                  popupConfirm;
-    private ExtButton                                close;
     private HeaderScrollPane                         sidebarScrollPane;
     private MigPanel                                 leftBar;
     private MigPanel                                 rightBar;
     private SearchField<CrawledPackage, CrawledLink> searchField;
+    private ExtButton                                filteredAdd;
 
     public LinkGrabberPanel() {
         super(new MigLayout("ins 0, wrap 2", "[grow,fill]2[fill]", "[grow, fill]2[]"));
@@ -52,8 +56,33 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
         table = new LinkGrabberTable(tableModel);
         tableScrollPane = new JScrollPane(table);
         // tableScrollPane.setBorder(null);
-        GraphicalUserInterfaceSettings.LINKGRABBER_SIDEBAR_ENABLED.getEventSender().addListener(this);
+        filteredAdd = new ExtButton(new AppAction() {
+            {
+                setIconKey("filter");
+            }
 
+            public void actionPerformed(ActionEvent e) {
+                ArrayList<CrawledLink> filteredStuff = LinkCollector.getInstance().getFilteredStuff(true);
+                LinkCollector.getInstance().addCrawlerJob(filteredStuff);
+            }
+
+        });
+        filteredAdd.setVisible(false);
+        LinkCollector.getInstance().addListener(new LinkCollectorListener() {
+
+            public void onLinkCollectorEvent(LinkCollectorEvent event) {
+                LinkCollector caller = event.getCaller();
+                switch (event.getType()) {
+                case FILTERED_AVAILABLE:
+                    setFilteredAvailable(caller.getfilteredStuffSize());
+                    break;
+                case FILTERED_EMPTY:
+                    setFilteredAvailable(0);
+                    break;
+                }
+            }
+        });
+        setFilteredAvailable(LinkCollector.getInstance().getfilteredStuffSize());
         addLinks = new JButton(new AddLinksAction());
         confirmAll = new JButton(new ConfirmAllAction());
         clearAll = new JButton(new ClearAction());
@@ -68,7 +97,7 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
             }
         };
 
-        leftBar = new MigPanel("ins 0", "[]1[][][grow,fill]", "[]");
+        leftBar = new MigPanel("ins 0", "[]1[][][grow,fill][]", "[]");
         rightBar = new MigPanel("ins 0", "[grow,fill]1[]0", "[]");
 
         leftBar.add(addLinks, "height 24!");
@@ -77,11 +106,34 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
         leftBar.add(clearAll, "width 24!,height 24!");
         searchField = new SearchField<CrawledPackage, CrawledLink>(table);
         leftBar.add(searchField, "height 24!");
+        leftBar.add(filteredAdd, "height 24!,hidemode 3");
         // leftBar.add(Box.createGlue());
         rightBar.add(confirmAll, "height 24!");
         rightBar.add(popupConfirm, "height 24!,width 12!");
 
         layoutComponents();
+        GraphicalUserInterfaceSettings.LINKGRABBER_SIDEBAR_ENABLED.getEventSender().addListener(this);
+    }
+
+    private void setFilteredAvailable(final int size) {
+        if (size > 0) {
+            new EDTRunner() {
+
+                @Override
+                protected void runInEDT() {
+                    filteredAdd.setText(_GUI._.RestoreFilteredLinksAction_(size));
+                    filteredAdd.setVisible(true);
+                }
+            };
+        } else {
+            new EDTRunner() {
+
+                @Override
+                protected void runInEDT() {
+                    filteredAdd.setVisible(false);
+                }
+            };
+        }
     }
 
     private void layoutComponents() {
@@ -98,7 +150,6 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
         }
 
         add(leftBar);
-
         add(rightBar, "");
     }
 

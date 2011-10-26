@@ -17,6 +17,7 @@ import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.swing.components.ExtTextField;
 import org.appwork.utils.logging.Log;
+import org.jdownloader.controlling.filter.LinkgrabberFilterRuleWrapper;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTable;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTableModelFilter;
@@ -69,12 +70,7 @@ public class SearchField<PackageType extends AbstractPackageNode<ChildType, Pack
         boolean enabled = filterRegex.length() > 0;
         if (enabled) {
             try {
-                if (JsonConfig.create(GeneralSettings.class).isFilterRegex() == false) {
-                    filterRegex = filterRegex.replaceAll("(\\.)", "\\\\.");
-                    filterRegex = filterRegex.replaceAll("(\\.\\*|\\*)", ".*");
-                    filterRegex = ".*" + filterRegex + ".*";
-                }
-                filterPattern = Pattern.compile(filterRegex, Pattern.CASE_INSENSITIVE);
+                filterPattern = LinkgrabberFilterRuleWrapper.createPattern(filterRegex, (JsonConfig.create(GeneralSettings.class).isFilterRegex()));
                 table2Filter.getPackageControllerTableModel().addFilter(this);
             } catch (final Throwable e) {
                 Log.exception(e);
@@ -90,6 +86,6 @@ public class SearchField<PackageType extends AbstractPackageNode<ChildType, Pack
     }
 
     public boolean isFiltered(ChildType v) {
-        return !filterPattern.matcher(v.getName()).matches();
+        return !filterPattern.matcher(v.getName()).find();
     }
 }

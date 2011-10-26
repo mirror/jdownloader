@@ -76,19 +76,23 @@ public class LinkgrabberFilterRuleWrapper {
         }
     }
 
-    public static Pattern createPattern(String regex) {
-        if (JsonConfig.create(LinkFilterSettings.class).isRuleconditionsRegexEnabled()) {
+    public static Pattern createPattern(String regex, boolean simpleRegex) {
+        if (simpleRegex) {
             return Pattern.compile(regex, Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
         } else {
             String[] parts = regex.split("\\*+");
             StringBuilder sb = new StringBuilder();
             for (int i = 0; i < parts.length; i++) {
                 if (sb.length() > 0) sb.append("(.*)");
-                sb.append(Pattern.quote(parts[i]));
+                if (parts[i].length() != 0) sb.append(Pattern.quote(parts[i]));
             }
             if (sb.length() == 0) sb.append("(.*)");
             return Pattern.compile(sb.toString(), Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
         }
+    }
+
+    public static Pattern createPattern(String regex) {
+        return createPattern(regex, JsonConfig.create(LinkFilterSettings.class).isRuleconditionsRegexEnabled());
 
     }
 

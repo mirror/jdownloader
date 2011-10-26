@@ -23,6 +23,7 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTable;
 import org.jdownloader.gui.views.linkgrabber.Header;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 
 public class QuickFilterTypeTable extends FilterTable<CrawledPackage, CrawledLink> implements LinkCollectorListener, GenericConfigEventListener<Boolean> {
     private static final long                                   serialVersionUID = 2109715691047942399L;
@@ -36,6 +37,7 @@ public class QuickFilterTypeTable extends FilterTable<CrawledPackage, CrawledLin
         super();
         this.table2Filter = table2Filter;
         header = filetypeFilter;
+        header.setFilterCount(0);
         final ArrayList<ExtensionFilter<CrawledPackage, CrawledLink>> knownExtensionFilters = new ArrayList<ExtensionFilter<CrawledPackage, CrawledLink>>();
         ExtensionFilter<CrawledPackage, CrawledLink> filter;
         filters.add(filter = new ExtensionFilter<CrawledPackage, CrawledLink>(AudioExtensions.AA) {
@@ -102,6 +104,18 @@ public class QuickFilterTypeTable extends FilterTable<CrawledPackage, CrawledLin
             }
 
         };
+        GraphicalUserInterfaceSettings.LINKGRABBER_SIDEBAR_ENABLED.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
+
+            public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
+            }
+
+            public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
+                /* we call a different onConfigValueModified here */
+                QuickFilterTypeTable.this.onConfigValueModified(null, LinkFilterSettings.LG_QUICKFILTER_TYPE_VISIBLE.getValue());
+            }
+
+        });
+
         LinkFilterSettings.LG_QUICKFILTER_TYPE_VISIBLE.getEventSender().addListener(this);
         LinkCollector.getInstance().addListener(this);
         onConfigValueModified(null, LinkFilterSettings.LG_QUICKFILTER_TYPE_VISIBLE.getValue());
@@ -146,7 +160,6 @@ public class QuickFilterTypeTable extends FilterTable<CrawledPackage, CrawledLin
                 }
             }
         }
-
         header.setFilterCount(newTableData.size());
         if (LinkFilterSettings.LG_QUICKFILTER_TYPE_VISIBLE.getValue()) QuickFilterTypeTable.this.getExtTableModel()._fireTableStructureChanged(newTableData, true);
     }
@@ -155,7 +168,7 @@ public class QuickFilterTypeTable extends FilterTable<CrawledPackage, CrawledLin
     }
 
     public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
-        if (Boolean.TRUE.equals(newValue)) {
+        if (Boolean.TRUE.equals(newValue) && GraphicalUserInterfaceSettings.CFG.isLinkgrabberSidebarEnabled()) {
             enabled = true;
             /* filter is enabled, add listener and run again */
             table2Filter.getPackageControllerTableModel().addFilter(this);

@@ -2167,6 +2167,9 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Add Downloads" })
     String AddLinksAction_();
 
+    @Default(lngs = { "en" }, values = { "Restore %s1 filtered Links" })
+    String RestoreFilteredLinksAction_(int x);
+
     @Default(lngs = { "en" }, values = { "Clears the list" })
     String ClearAction_tt_();
 

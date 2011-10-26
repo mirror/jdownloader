@@ -439,4 +439,5 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
     public void handleFilteredLink(CrawledLink link) {
         addFilteredStuff(link);
     }
+
 }

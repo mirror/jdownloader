@@ -26,6 +26,7 @@ import org.jdownloader.gui.views.components.packagetable.PackageControllerTable;
 import org.jdownloader.gui.views.linkgrabber.Header;
 import org.jdownloader.gui.views.linkgrabber.sidebar.actions.DropHosterAction;
 import org.jdownloader.gui.views.linkgrabber.sidebar.actions.KeepOnlyAction;
+import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 
 public class QuickFilterHosterTable extends FilterTable<CrawledPackage, CrawledLink> implements LinkCollectorListener, GenericConfigEventListener<Boolean> {
 
@@ -44,6 +45,7 @@ public class QuickFilterHosterTable extends FilterTable<CrawledPackage, CrawledL
     public QuickFilterHosterTable(Header hosterFilter, PackageControllerTable<CrawledPackage, CrawledLink> table2Filter) {
         super();
         header = hosterFilter;
+        header.setFilterCount(0);
         this.table2Filter = table2Filter;
         delayedRefresh = new DelayedRunnable(IOEQ.TIMINGQUEUE, 100l, 1000l) {
 
@@ -53,8 +55,19 @@ public class QuickFilterHosterTable extends FilterTable<CrawledPackage, CrawledL
             }
 
         };
-        LinkFilterSettings.LG_QUICKFILTER_HOSTER_VISIBLE.getEventSender().addListener(this);
+        GraphicalUserInterfaceSettings.LINKGRABBER_SIDEBAR_ENABLED.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
 
+            public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
+            }
+
+            public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
+                /* we call a different onConfigValueModified here */
+                QuickFilterHosterTable.this.onConfigValueModified(null, LinkFilterSettings.LG_QUICKFILTER_HOSTER_VISIBLE.getValue());
+            }
+
+        });
+
+        LinkFilterSettings.LG_QUICKFILTER_HOSTER_VISIBLE.getEventSender().addListener(this);
         LinkCollector.getInstance().addListener(this);
         onConfigValueModified(null, LinkFilterSettings.LG_QUICKFILTER_HOSTER_VISIBLE.getValue());
     }
@@ -173,7 +186,7 @@ public class QuickFilterHosterTable extends FilterTable<CrawledPackage, CrawledL
     }
 
     public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
-        if (Boolean.TRUE.equals(newValue)) {
+        if (Boolean.TRUE.equals(newValue) && GraphicalUserInterfaceSettings.CFG.isLinkgrabberSidebarEnabled()) {
             enabled = true;
             table2Filter.getPackageControllerTableModel().addFilter(this);
             updateQuickFilerTableData();
