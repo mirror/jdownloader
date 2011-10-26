@@ -846,58 +846,58 @@ public class LnkCrptWs extends PluginForDecrypt {
     public static class KeyCaptchaShowDialogTwo {
         int    x;
         int    y;
-        byte[] state = new byte[256];
+        byte[] z = new byte[256];
 
         final int A() {
             int x;
             int y;
-            int sx, sy;
+            int zx, zy;
 
             x = this.x + 1 & 0xff;
-            sx = (int) state[x];
-            y = sx + this.y & 0xff;
-            sy = (int) state[y];
+            zx = (int) z[x];
+            y = zx + this.y & 0xff;
+            zy = (int) z[y];
             this.x = x;
             this.y = y;
-            state[y] = (byte) (sx & 0xff);
-            state[x] = (byte) (sy & 0xff);
-            return (int) state[(sx + sy & 0xff)];
+            z[y] = (byte) (zx & 0xff);
+            z[x] = (byte) (zy & 0xff);
+            return (int) z[(zx + zy & 0xff)];
         }
 
         private void B(final byte[] b) {
-            int t, u;
-            int bindex;
-            int stateindex;
-            int counter;
+            int p, o;
+            int w;
+            int m;
+            int n;
 
-            for (counter = 0; counter < 256; counter++) {
-                state[counter] = (byte) counter;
+            for (n = 0; n < 256; n++) {
+                z[n] = (byte) n;
             }
-            bindex = 0;
-            stateindex = 0;
-            for (counter = 0; counter < 256; counter++) {
-                t = (int) state[counter];
-                stateindex = stateindex + b[bindex] + t & 0xff;
-                u = (int) state[stateindex];
-                state[stateindex] = (byte) (t & 0xff);
-                state[counter] = (byte) (u & 0xff);
-                if (++bindex >= b.length) {
-                    bindex = 0;
+            w = 0;
+            m = 0;
+            for (n = 0; n < 256; n++) {
+                p = (int) z[n];
+                m = m + b[w] + p & 0xff;
+                o = (int) z[m];
+                z[m] = (byte) (p & 0xff);
+                z[n] = (byte) (o & 0xff);
+                if (++w >= b.length) {
+                    w = 0;
                 }
             }
         }
 
-        public synchronized void C(final byte[] src, final int srcOff, final byte[] dest, final int destOff, final int len) {
-            final int end = srcOff + len;
-            for (int si = srcOff, di = destOff; si < end; si++, di++) {
-                dest[di] = (byte) (((int) src[si] ^ A()) & 0xff);
+        public synchronized void C(final byte[] a, final int b, final byte[] c, final int d, final int e) {
+            final int end = b + e;
+            for (int si = b, di = d; si < end; si++, di++) {
+                c[di] = (byte) (((int) a[si] ^ A()) & 0xff);
             }
         }
 
-        public byte[] D(final byte[] key, final byte[] src) {
-            B(key);
-            final byte[] dest = new byte[src.length];
-            C(src, 0, dest, 0, src.length);
+        public byte[] D(final byte[] a, final byte[] b) {
+            B(a);
+            final byte[] dest = new byte[b.length];
+            C(b, 0, dest, 0, b.length);
             return dest;
         }
 

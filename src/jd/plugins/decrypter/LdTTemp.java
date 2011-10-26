@@ -132,7 +132,7 @@ public class LdTTemp extends PluginForDecrypt {
             if (br.getRegex(PATTERN_CAPTCHA).matches()) { throw new DecrypterException(DecrypterException.CAPTCHA); }
             if (br.getRegex(PATTERN_WAITTIME).matches()) { return null; }
             final Form allLinks = br.getForm(0);
-            String links[] = allLinks.getRegex("<a href=\"(http.*?)\" target=\"_blank\" onclick=").getColumn(0);
+            String links[] = allLinks.getRegex("<a href=\"(http.*?)\"").getColumn(0);
             if (links == null || links.length == 0) {
                 logger.warning("First LdTTemp regex failed, trying the second one...");
                 links = HTMLParser.getHttpLinks(br.toString(), "");
