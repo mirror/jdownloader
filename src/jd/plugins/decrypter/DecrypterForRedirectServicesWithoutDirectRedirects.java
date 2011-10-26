@@ -69,7 +69,7 @@ public class DecrypterForRedirectServicesWithoutDirectRedirects extends PluginFo
             if (finallink == null) {
                 finallink = br.getRegex("REFRESH.*?url=(http.*?)\"").getMatch(0);
             }
-        } else if (!parameter.contains("imageto.net/") && !parameter.contains("musicloud.fm/dl") && !parameter.contains("oneclickmoviez.com/dwnl/") && !parameter.contains("1tool.biz") && !parameter.contains("catchfile.net") && !parameter.contains("file4ever.us") && !parameter.contains("trailerzone.info/") && !parameter.contains("fairtilizer.com/") && !parameter.contains("tm-exchange.com/") && !parameter.contains("fileblip.com/") && !parameter.contains("mixconnect.com/") && !parameter.contains("machines.") && !parameter.contains("ubuntuone.com") && !parameter.contains("stardima.com/") && !parameter.contains("1lien.com/") && !parameter.contains("dropbox.com/") && !parameter.contains("trancearoundtheworld.com/") && !parameter.contains("mrbrownee70.com/")) {
+        } else if (!parameter.contains("imageto.net/") && !parameter.contains("musicloud.fm/dl") && !parameter.contains("oneclickmoviez.com/dwnl/") && !parameter.contains("1tool.biz") && !parameter.contains("catchfile.net") && !parameter.contains("file4ever.us") && !parameter.contains("trailerzone.info/") && !parameter.contains("fairtilizer.com/") && !parameter.contains("tm-exchange.com/") && !parameter.contains("fileblip.com/") && !parameter.contains("mixconnect.com/") && !parameter.contains("machines.") && !parameter.contains("ubuntuone.com") && !parameter.contains("stardima.com/") && !parameter.contains("1lien.com/") && !parameter.contains("dropbox.com/") && !parameter.contains("trancearoundtheworld.com/")) {
             br.getPage(parameter);
         }
         if (parameter.contains("filespart.com")) {
@@ -571,7 +571,7 @@ public class DecrypterForRedirectServicesWithoutDirectRedirects extends PluginFo
             }
             dh = true;
         } else if (parameter.contains("mrbrownee70.com/?id=")) {
-            finallink = parameter.replace("mrbrownee70.com/?id=", "megaupload.com/?d=");
+            finallink = br.getRegex("href=\"(.*?)\" target=\"_blank\">Direct Link</a>").getMatch(0);
         } else if (parameter.contains("gantrack.com/")) {
             if (br.getRedirectLocation() != null) {
                 br.getPage(br.getRedirectLocation());
