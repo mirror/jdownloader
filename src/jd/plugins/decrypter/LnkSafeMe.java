@@ -31,7 +31,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.hoster.DirectHTTP;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "linksafe.me" }, urls = { "http://(www\\.)?linksafe\\.me/(d|p)/[a-z0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "linksafe.me" }, urls = { "http://(www\\.)?linksafe\\.(me|com)/(d|p)/[a-z0-9]+" }, flags = { 0 })
 public class LnkSafeMe extends PluginForDecrypt {
 
     public LnkSafeMe(PluginWrapper wrapper) {
@@ -46,7 +46,7 @@ public class LnkSafeMe extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setFollowRedirects(false);
-        String parameter = param.toString();
+        String parameter = param.toString().replace("linksafe.com/", "linksafe.me/");
         br.getPage(parameter);
         if (parameter.contains("/d/")) {
             String finallink = br.getRedirectLocation();
