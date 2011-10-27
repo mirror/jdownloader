@@ -52,6 +52,8 @@ public class MirrorCreatorCom extends PluginForDecrypt {
             return null;
         }
         parameter = host + "/status.php?uid=" + id;
+        // Need to access it twice so it works
+        br.getPage(parameter);
         br.getPage(parameter);
         /* Error handling */
         if (!br.containsHTML("<img src=") && !br.containsHTML("<td class=\"host\">")) {

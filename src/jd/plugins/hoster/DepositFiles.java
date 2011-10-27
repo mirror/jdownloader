@@ -16,6 +16,7 @@
 
 package jd.plugins.hoster;
 
+import java.io.File;
 import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -31,17 +32,18 @@ import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
-import jd.parser.html.Form.MethodType;
 import jd.parser.html.HTMLParser;
+import jd.parser.html.Form.MethodType;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
+import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -327,40 +329,31 @@ public class DepositFiles extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_RETRY);
                 }
             }
+            final String fid = br.getRegex("var fid = \\'(.*?)\\';").getMatch(0);
+            final String wait = br.getRegex("Please wait (\\d+) sec").getMatch(0);
+            final String id = this.br.getRegex("Recaptcha\\.create\\(\\'([^\"\\']+)\\'").getMatch(0);
             dllink = getDllink();
-            final String icid = br.getRegex("get_download_img_code\\.php\\?icid=(.*?)\"").getMatch(0);
-            /* check for captcha */
-            if ((dllink == null || dllink.equals("")) && icid != null) {
-                logger.info("dllink was null, going into captcha handling!");
-                final Form cap = new Form();
-                cap.setAction(link);
-                cap.setMethod(Form.MethodType.POST);
-                cap.put("icid", icid);
-                // form.put("submit", "Continue");
-                final String captcha = getCaptchaCode(MAINPAGE + "/de/get_download_img_code.php?icid=" + icid, downloadLink);
-                cap.put("img_code", captcha);
-                br.submitForm(cap);
-                dllink = br.getRegex("<div id=\"download_url\" style=\"display:none;\">.*?<form action=\"(.*?)\" method=\"get").getMatch(0);
-                if (dllink == null) {
-                    if (br.containsHTML("get_download_img_code.php")) { throw new PluginException(LinkStatus.ERROR_CAPTCHA); }
-                    dllink = br.getRegex(DLLINKREGEX2).getMatch(0);
-                }
-            }
-            /* check for waittime */
-            // if
-            // (br.containsHTML("Please wait \\d+ sec or use GOLD account to download with no time limits"))
-            // {
+            long timeBefore = System.currentTimeMillis();
             /*
              * seems somethings wrong with waittime parsing so we do wait each
              * time to be sure
              */
+            if (fid == null || dllink == null || id == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            Form dlForm = new Form();
+            dlForm.setMethod(MethodType.GET);
+            dlForm.put("fid", fid);
+            PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+            jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+            rc.setForm(dlForm);
+            rc.setId(id);
+            rc.load();
+            File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+            String c = getCaptchaCode(cf, downloadLink);
+            int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000) - 1;
             int waitThis = 62;
-            final String wait = br.getRegex("Please wait (\\d+) sec").getMatch(0);
-            if (wait != null) {
-                waitThis = Integer.parseInt(wait);
-            }
-            this.sleep(waitThis * 1001l, downloadLink);
-            // }
+            if (wait != null) waitThis = Integer.parseInt(wait);
+            waitThis -= passedTime;
+            if (waitThis > 0) this.sleep(waitThis * 1001l, downloadLink);
             // Important! Setup Header
             br.getHeaders().put("Accept-Charset", null);
             br.getHeaders().put("Pragma", null);
@@ -370,14 +363,12 @@ public class DepositFiles extends PluginForHost {
             br.getHeaders().put("Accept-Language", "de");
             br.setFollowRedirects(true);
             br.getPage(dllink);
-            final Form finalform = br.getForm(0);
-            sleep(2000, downloadLink);
-            if (finalform != null) {
-                dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finalform, true, 1);
-            } else {
-                if (dllink == null || dllink.equals("")) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-                dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
-            }
+            br.getPage("http://depositfiles.com/get_file.php?fid=" + fid + "&challenge=" + rc.getChallenge() + "&response=" + Encoding.urlEncode(c));
+            if (br.containsHTML("(onclick=\"check_recaptcha|load_recaptcha)")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            String finallink = br.getRegex("\"(http://fileshare\\d+\\.depositfiles\\.com/auth.*?)\"").getMatch(0);
+            if (finallink == null) finallink = br.getRegex("<form action=\"(http://.*?)\"").getMatch(0);
+            if (finallink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finallink, true, 1);
             final URLConnectionAdapter con = dl.getConnection();
             if (Plugin.getFileNameFromHeader(con) == null || Plugin.getFileNameFromHeader(con).indexOf("?") >= 0) {
                 if (!con.isContentDisposition()) {

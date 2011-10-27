@@ -633,3 +633,4 @@ jd/captcha/methods/cllctrnt
 jd/plugins/decrypter/Cllctr.java
 jd/plugins/hoster/KewlshareCom.class
 jd/plugins/decrypter/GooGl.java
+jd/plugins/decrypter/ExUa.java
