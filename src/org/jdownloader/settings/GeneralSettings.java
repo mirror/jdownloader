@@ -197,7 +197,7 @@ public interface GeneralSettings extends ConfigInterface {
     void setMaxChunksPerFile(int num);
 
     @AboutConfig
-    @Description("max buffer size for each download connection in kb")
+    @Description("max buffer size for write operations in kb")
     @SpinnerValidator(min = 100, max = 10240)
     @DefaultIntValue(500)
     int getMaxBufferSize();

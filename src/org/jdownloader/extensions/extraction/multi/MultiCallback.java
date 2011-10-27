@@ -16,6 +16,7 @@
 
 package org.jdownloader.extensions.extraction.multi;
 
+import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -24,7 +25,10 @@ import java.io.IOException;
 import net.sf.sevenzipjbinding.ISequentialOutStream;
 import net.sf.sevenzipjbinding.SevenZipException;
 
+import org.appwork.utils.ReusableByteArrayOutputStreamPool;
+import org.appwork.utils.ReusableByteArrayOutputStreamPool.ReusableByteArrayOutputStream;
 import org.jdownloader.extensions.extraction.CPUPriority;
+import org.jdownloader.extensions.extraction.ExtractionConfig;
 import org.jdownloader.extensions.extraction.ExtractionController;
 import org.jdownloader.extensions.extraction.ExtractionControllerConstants;
 
@@ -35,30 +39,35 @@ import org.jdownloader.extensions.extraction.ExtractionControllerConstants;
  * 
  */
 class MultiCallback implements ISequentialOutStream {
-    private FileOutputStream     fos = null;
-    private ExtractionController con;
-    private CPUPriority          priority;
+    private FileOutputStream              fos    = null;
+    private ExtractionController          con;
+    private CPUPriority                   priority;
+    private ReusableByteArrayOutputStream buffer = null;
+    private BufferedOutputStream          bos    = null;
 
-    MultiCallback(File file, ExtractionController con, CPUPriority priority2, boolean shouldCrc) throws FileNotFoundException {
+    MultiCallback(File file, ExtractionController con, ExtractionConfig config, boolean shouldCrc) throws FileNotFoundException {
         this.con = con;
-        this.priority = priority2;
-
+        priority = config.getCPUPriority();
+        if (priority == null || CPUPriority.HIGH.equals(priority)) {
+            this.priority = null;
+        }
+        int maxbuffersize = config.getBufferSize() * 1024;
+        buffer = ReusableByteArrayOutputStreamPool.getReusableByteArrayOutputStream(Math.max(maxbuffersize, 10240), false);
         fos = new FileOutputStream(file, true);
+        bos = new BufferedOutputStream(fos, 1) {
+            {
+                this.buf = buffer.getInternalBuffer();
+            }
+        };
     }
 
     public int write(byte[] data) throws SevenZipException {
         try {
-            fos.write(data);
-
+            bos.write(data);
             con.getArchiv().setExtracted(con.getArchiv().getExtracted() + data.length);
-
-            if (priority != null) {
+            if (priority != null && !CPUPriority.HIGH.equals(priority)) {
                 try {
-                    if (priority == CPUPriority.MIDDLE) {
-                        Thread.sleep(100);
-                    } else if (priority == CPUPriority.LOW) {
-                        Thread.sleep(200);
-                    }
+                    Thread.sleep(priority.getTime());
                 } catch (InterruptedException e) {
                     con.setExeption(e);
                     con.getArchiv().setExitCode(ExtractionControllerConstants.EXIT_CODE_FATAL_ERROR);
@@ -82,11 +91,23 @@ class MultiCallback implements ISequentialOutStream {
      */
     void close() throws IOException {
         try {
-            if (fos != null) fos.flush();
+            bos.flush();
         } catch (Throwable e) {
         }
         try {
-            if (fos != null) fos.close();
+            bos.close();
+        } catch (Throwable e) {
+        }
+        try {
+            ReusableByteArrayOutputStreamPool.reuseReusableByteArrayOutputStream(buffer);
+        } catch (Throwable e) {
+        }
+        try {
+            fos.flush();
+        } catch (Throwable e) {
+        }
+        try {
+            fos.close();
         } catch (Throwable e) {
         }
 

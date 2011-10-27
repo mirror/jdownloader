@@ -65,9 +65,9 @@ public class HJSplit extends IExtraction {
 
         if (extension != null) {
             f = new File(f.getAbsolutePath() + "." + extension);
-            ret = SplitUtil.merge(controller, f, 8);
+            ret = SplitUtil.merge(controller, f, 8, config);
         } else {
-            ret = SplitUtil.merge(controller, f, 0);
+            ret = SplitUtil.merge(controller, f, 0, config);
         }
 
         if (ret) {
