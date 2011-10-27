@@ -46,4 +46,10 @@ public interface LinkgrabberSettings extends ConfigInterface {
     boolean isAddLinksPreParserEnabled();
 
     void setAddLinksPreParserEnabled(boolean b);
+
+    @Description("If set, the addlinks dialog has this text. Use it for debug reasons.")
+    @AboutConfig
+    String getPresetDebugLinks();
+
+    void setPresetDebugLinks(String text);
 }

@@ -40,6 +40,7 @@ import org.appwork.swing.components.ExtTextField;
 import org.appwork.swing.components.searchcombo.SearchComboBox;
 import org.appwork.utils.Application;
 import org.appwork.utils.Lists;
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.AbstractDialog;
 import org.appwork.utils.swing.dialog.Dialog;
@@ -287,6 +288,10 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
 
         updateExtractionOptions();
         String newText = ClipboardHandler.getClipboard().getCurrentClipboardLinks();
+        String pre = config.getPresetDebugLinks();
+        if (!StringUtils.isEmpty(pre)) {
+            newText = pre;
+        }
         if (config.isAddLinksPreParserEnabled()) {
             if (newText != null) input.setText(list(HTMLParser.getHttpLinks(newText)));
             if (Application.getJavaVersion() >= 17000000) {

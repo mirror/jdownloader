@@ -17,13 +17,15 @@ import org.appwork.storage.config.defaults.AbstractDefaultFactory;
 import org.appwork.storage.config.handler.BooleanKeyHandler;
 import org.appwork.storage.config.handler.IntegerKeyHandler;
 import org.appwork.storage.config.handler.StorageHandler;
+import org.appwork.storage.config.handler.StringKeyHandler;
 import org.appwork.utils.Application;
 
 public interface GeneralSettings extends ConfigInterface {
 
-    public static final GeneralSettings                 CFG = JsonConfig.create(GeneralSettings.class);
+    public static final GeneralSettings                 CFG             = JsonConfig.create(GeneralSettings.class);
     @SuppressWarnings("unchecked")
-    public static final StorageHandler<GeneralSettings> SH  = (StorageHandler<GeneralSettings>) CFG.getStorageHandler();
+    public static final StorageHandler<GeneralSettings> SH              = (StorageHandler<GeneralSettings>) CFG.getStorageHandler();
+    public static final StringKeyHandler                DOWNLOAD_FOLDER = SH.getKeyHandler("DefaultDownloadFolder", StringKeyHandler.class);
 
     @AboutConfig
     void setDefaultDownloadFolder(String ddl);

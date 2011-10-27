@@ -7,6 +7,7 @@ import java.io.File;
 import java.util.ArrayList;
 
 import javax.swing.DropMode;
+import javax.swing.JPopupMenu;
 
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
@@ -20,6 +21,7 @@ import jd.plugins.FilePackage;
 import jd.utils.JDUtilities;
 
 import org.appwork.swing.exttable.DropHighlighter;
+import org.appwork.swing.exttable.ExtColumn;
 import org.appwork.utils.Application;
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTable;
@@ -45,24 +47,31 @@ import org.jdownloader.gui.views.downloads.context.ResetAction;
 import org.jdownloader.gui.views.downloads.context.ResumeAction;
 import org.jdownloader.gui.views.downloads.context.SetPasswordAction;
 import org.jdownloader.gui.views.downloads.context.StopsignAction;
+import org.jdownloader.gui.views.linkgrabber.contextmenu.ContextMenuFactory;
 
 public class LinkGrabberTable extends PackageControllerTable<CrawledPackage, CrawledLink> {
 
-    private static final long serialVersionUID = 8843600834248098174L;
+    private static final long  serialVersionUID = 8843600834248098174L;
+    private ContextMenuFactory contextMenuFactory;
 
     public LinkGrabberTable(final LinkGrabberTableModel tableModel) {
         super(tableModel);
-        if (Application.getJavaVersion() >= Application.JAVA16) {
-            this.addRowHighlighter(new DropHighlighter(null, new Color(27, 164, 191, 75)));
-            this.setTransferHandler(new LinkGrabberTableTransferHandler(this));
-            this.setDragEnabled(true);
-            this.setDropMode(DropMode.ON_OR_INSERT_ROWS);
-        }
+
+        this.addRowHighlighter(new DropHighlighter(null, new Color(27, 164, 191, 75)));
+        this.setTransferHandler(new LinkGrabberTableTransferHandler(this));
+        this.setDragEnabled(true);
+        this.setDropMode(DropMode.ON_OR_INSERT_ROWS);
+        contextMenuFactory = new ContextMenuFactory(this);
+
     }
 
     @Override
     protected void onDoubleClick(final MouseEvent e, final AbstractNode obj) {
 
+    }
+
+    protected JPopupMenu onContextMenu(final JPopupMenu popup, final AbstractNode contextObject, final ArrayList<AbstractNode> selection, final ExtColumn<AbstractNode> column) {
+        return contextMenuFactory.createPopup(contextObject, selection, column);
     }
 
     @Override

@@ -2890,4 +2890,34 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Enter Filename Filter Expression..." })
     String SearchField_SearchField_helptext();
 
+    @Default(lngs = { "en" }, values = { "Start Download" })
+    String ConfirmAction_ConfirmAction_context_add_and_start();
+
+    @Default(lngs = { "en" }, values = { "Add to Download List" })
+    String ConfirmAction_ConfirmAction_context_add();
+
+    @Default(lngs = { "en" }, values = { "Open in Browser" })
+    String OpenUrlAction_OpenUrlAction_();
+
+    @Default(lngs = { "en" }, values = { "Link/File" })
+    String ContextMenuFactory_createPopup_link();
+
+    @Default(lngs = { "en" }, values = { "Edit URL" })
+    String EditUrlAction_EditUrlAction_();
+
+    @Default(lngs = { "en" }, values = { "Edit Filename" })
+    String EditFilenameAction_EditFilenameAction_();
+
+    @Default(lngs = { "en" }, values = { "Package" })
+    String ContextMenuFactory_createPopup_pkg();
+
+    @Default(lngs = { "en" }, values = { "Rename Package" })
+    String RenamePackageAction_RenamePackageAction_();
+
+    @Default(lngs = { "en" }, values = { "Save to" })
+    String LinkGrabberTableModel_initColumns_folder();
+
+    @Default(lngs = { "en" }, values = { "Download from" })
+    String LinkGrabberTableModel_initColumns_url();
+
 }

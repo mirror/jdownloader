@@ -1,15 +1,17 @@
 package org.jdownloader.gui.views.downloads.columns;
 
+import java.awt.event.FocusEvent;
+
 import javax.swing.BorderFactory;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.border.Border;
 
 import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.controlling.packagecontroller.AbstractPackageNode;
 import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
 
 import org.appwork.swing.exttable.columns.ExtTextColumn;
 import org.jdownloader.gui.translate._GUI;
@@ -51,15 +53,15 @@ public class FileColumn extends ExtTextColumn<AbstractNode> {
 
     @Override
     public boolean isEditable(AbstractNode obj) {
-        return false;
+        return true;
     }
 
     @Override
     protected void setStringValue(String value, AbstractNode object) {
-        if (object instanceof FilePackage) {
-            ((FilePackage) object).setName(value);
+        if (object instanceof CrawledPackage) {
+            ((CrawledPackage) object).setAutoPackageName(value);
         } else {
-            // ((DownloadLink) object).setName(value);
+            ((CrawledLink) object).getDownloadLink().setFinalFileName(value);
         }
     }
 
@@ -91,6 +93,19 @@ public class FileColumn extends ExtTextColumn<AbstractNode> {
         } else {
             editor.setBorder(leftGapBorder);
         }
+
+    }
+
+    @Override
+    public void focusGained(final FocusEvent e) {
+        String txt = editorField.getText();
+        int point = txt.lastIndexOf(".");
+        if (point > 0) {
+            editorField.select(0, point);
+        } else {
+            this.editorField.selectAll();
+        }
+
     }
 
     @Override
