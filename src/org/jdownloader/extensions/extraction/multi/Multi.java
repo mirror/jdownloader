@@ -122,8 +122,6 @@ public class Multi extends IExtraction {
 
 		if (!pattern.equals("")) {
 			if (link instanceof DummyDownloadLink) {
-				archive.setFirstDownloadLink(link);
-
 				for (File f : new File(link.getFileOutput()).getParentFile().listFiles()) {
 					if (f.isDirectory()) continue;
 					if (new Regex(f.getAbsolutePath(), pattern, Pattern.CASE_INSENSITIVE).matches()) {
@@ -144,7 +142,14 @@ public class Multi extends IExtraction {
 			archive.setFirstDownloadLink(link);
 		} else {
 			for (DownloadLink l : matches) {
-				if (l.getFileOutput().matches("(?i).*\\.pa?r?t?\\.?[0]*1.rar$")) {
+				if (archive.getFirstDownloadLink() == null && l.getFileOutput().matches("(?i).*\\.pa?r?t?\\.?[0]*1.rar$")) {
+					archive.setType(Archive.MULTI_RAR);
+					archive.setFirstDownloadLink(l);
+					if (l.getLinkStatus().hasStatus(LinkStatus.ERROR_ALREADYEXISTS)) {
+						/* this should help finding the link that got downloaded */
+						continue;
+					}
+				} else if (l.getFileOutput().matches("(?i).*\\.pa?r?t?\\.?[0]*0.rar$")) {
 					archive.setType(Archive.MULTI_RAR);
 					archive.setFirstDownloadLink(l);
 					if (l.getLinkStatus().hasStatus(LinkStatus.ERROR_ALREADYEXISTS)) {
@@ -659,6 +664,7 @@ public class Multi extends IExtraction {
 	@Override
 	public boolean isArchivSupportedFileFilter(String file) {
 		if (file.matches("(?i).*\\.pa?r?t?\\.?[0]*1.rar$")) return true;
+		if (file.matches("(?i).*\\.pa?r?t?\\.?[0]*0.rar$")) return true;
 		if (file.matches("(?i).*\\.pa?r?t?\\.?[0-9]+.rar$")) return false;
 		if (file.matches("(?i).*\\.rar$")) return true;
 		if (file.matches("(?i).*\\.zip$")) return true;
@@ -721,7 +727,7 @@ public class Multi extends IExtraction {
 			getwhole = "(\\.7z\\.?)(\\d+)";
 			break;
 		case Archive.MULTI_RAR:
-			if (archive.getFirstDownloadLink().getFileOutput().matches("(?i).*\\.pa?r?t?\\.?[0]*1.rar$")) {
+			if (archive.getFirstDownloadLink().getFileOutput().matches("(?i).*\\.pa?r?t?\\.?[0]*1.rar$") || archive.getFirstDownloadLink().getFileOutput().matches("(?i).*\\.pa?r?t?\\.?[0]*0.rar$")) {
 				getpartid = "\\.pa?r?t?\\.?(\\d+)\\.";
 				getwhole = "(\\.pa?r?t?\\.?)(\\d+)\\.";
 				postfix = ".rar";
