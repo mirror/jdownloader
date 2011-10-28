@@ -5,9 +5,7 @@
 	<property name="dep.updateclient" value="../UpdateClient" />
 	<property name="dep.update" value="../JDUpdater" />
 	<property name="debug" value="true" />
-	<property name="keystore" value="${appwork_java_cert}" />
-	<property name="keystore_alias" value="${appwork_java_cert_alias}" />
-	<property name="keystore_pass" value="${appwork_java_cert_pass}" />
+
 
 
 	<property name="working" value="update" />
@@ -382,7 +380,7 @@
 
 	<!-- Signs the jars -->
 	<target name="sign">
-		<signjar keystore="${keystore}" alias="${keystore_alias}" storepass="${keystore_pass}">
+		<signjar keystore="${appwork_java_cert}" alias="${appwork_java_cert_alias}" storepass="${appwork_java_cert_pass}">
 			<path>
 				<fileset dir="${dist}" includes="**/*.jar" />
 			</path>
