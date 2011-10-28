@@ -86,7 +86,10 @@ class RarOpener implements IArchiveOpenVolumeCallback, IArchiveOpenCallback, ICr
      */
     void close() throws IOException {
         for (RandomAccessFile file : openedRandomAccessFileList.values()) {
-            file.close();
+            try {
+                file.close();
+            } catch (final Throwable e) {
+            }
         }
     }
 
