@@ -94,8 +94,6 @@ public class NaszaKlasa extends PluginForHost {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        // We HAVE to do this, server doesn't send filename correctly!
-        link.setFinalFileName(getFileNameFromHeader(dl.getConnection()));
         dl.startDownload();
     }
 
