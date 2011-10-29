@@ -17,6 +17,7 @@
 package jd.plugins.decrypter;
 
 import java.io.IOException;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 
@@ -95,8 +96,10 @@ public class NkPlGallery extends PluginForDecrypt {
                 final int count = Integer.parseInt(galleryCount);
                 final int reqNum = (count - count % 16) / 16;
                 final String link = correctCryptedLink(parameter);
+                int counter = 1;
 
                 progress.setRange(count);
+                DecimalFormat df = new DecimalFormat("0000");
                 for (int i = 0; i <= reqNum; i++) {
                     br.getPage(link + "/album/" + galleryID + "/ajax/0/" + i * 16 + "?t=" + basicAuth);
                     final String picID = br.getRegex("\\{\"id\":\\[(.*?)\\]").getMatch(0);
@@ -109,9 +112,11 @@ public class NkPlGallery extends PluginForDecrypt {
                     }
                     for (final String id : pictureID) {
                         final DownloadLink dl = createDownloadlink(link.replaceAll("nk\\.pl/", "nk.decryptednaszaplasa/") + "/album/" + galleryID + "/" + id + "?naszaplasalink");
-                        dl.setName(dl.getName() + ".jpeg");
+                        dl.setFinalFileName(df.format(counter) + ".jpeg");
+                        dl.setAvailable(true);
                         decryptedLinks.add(dl);
                         progress.increase(1);
+                        counter++;
                     }
                 }
 
