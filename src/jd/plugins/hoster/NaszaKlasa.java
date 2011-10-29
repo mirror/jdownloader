@@ -79,9 +79,8 @@ public class NaszaKlasa extends PluginForHost {
         requestFileInformation(link);
         login(account, false);
         br.getPage(link.getDownloadURL());
-
         String finallink = br.getRegex("<img id=\"photo_img\" alt=\"zdjęcie\" src=\"(http://.*?)\"").getMatch(0);
-        if (finallink == null) {
+        if (finallink == null || finallink.contains("other/std")) {
             finallink = br.getRegex("\"(http://photos\\.nasza-klasa\\.pl/\\d+/\\d+/main/.*?)\"").getMatch(0);
         }
         if (finallink == null) {

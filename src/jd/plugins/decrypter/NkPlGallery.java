@@ -40,7 +40,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nk.pl" }, urls = { "http://(www\\.)?nk\\.pl/#?profile/\\d+/gallery(/album/\\d+|/\\d+|#\\!q\\?album=\\d+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nk.pl" }, urls = { "http://(www\\.)?nk\\.pl/#?profile/\\d+/gallery(/album/\\d+(/\\d+)?|/\\d+|#\\!q\\?album=\\d+)" }, flags = { 0 })
 public class NkPlGallery extends PluginForDecrypt {
 
     /* must be static so all plugins share same lock */
@@ -70,9 +70,9 @@ public class NkPlGallery extends PluginForDecrypt {
             // Access the page
             br.getPage(correctCryptedLink(parameter));
             final String basicAuth = br.getCookie("nk.pl", "basic_auth");
-            if (parameter.matches(".*?nk\\.pl/profile/\\d+/gallery/[0-9]+")) {
+            if (parameter.matches(".*?nk\\.pl/#?profile/\\d+/gallery/([0-9]+|album/\\d+/\\d+)")) {
                 String finallink = br.getRegex(FINALLINKREGEX1).getMatch(0);
-                if (finallink == null) {
+                if (finallink == null || finallink.contains("other/std")) {
                     finallink = br.getRegex(FINALLINKREGEX2).getMatch(0);
                 }
                 if (finallink == null) {
@@ -96,10 +96,9 @@ public class NkPlGallery extends PluginForDecrypt {
                 final int count = Integer.parseInt(galleryCount);
                 final int reqNum = (count - count % 16) / 16;
                 final String link = correctCryptedLink(parameter);
-                int counter = 1;
 
                 progress.setRange(count);
-                DecimalFormat df = new DecimalFormat("0000");
+                final DecimalFormat df = new DecimalFormat("0000");
                 for (int i = 0; i <= reqNum; i++) {
                     br.getPage(link + "/album/" + galleryID + "/ajax/0/" + i * 16 + "?t=" + basicAuth);
                     final String picID = br.getRegex("\\{\"id\":\\[(.*?)\\]").getMatch(0);
@@ -112,11 +111,10 @@ public class NkPlGallery extends PluginForDecrypt {
                     }
                     for (final String id : pictureID) {
                         final DownloadLink dl = createDownloadlink(link.replaceAll("nk\\.pl/", "nk.decryptednaszaplasa/") + "/album/" + galleryID + "/" + id + "?naszaplasalink");
-                        dl.setFinalFileName(df.format(counter) + ".jpeg");
+                        dl.setFinalFileName(df.format(Integer.parseInt(id)) + ".jpeg");
                         dl.setAvailable(true);
                         decryptedLinks.add(dl);
                         progress.increase(1);
-                        counter++;
                     }
                 }
 
