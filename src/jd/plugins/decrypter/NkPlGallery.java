@@ -18,30 +18,32 @@ package jd.plugins.decrypter;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 
 import jd.PluginWrapper;
 import jd.config.Property;
+import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
 import jd.gui.UserIO;
+import jd.http.Cookie;
+import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.plugins.Account;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.PluginForHost;
+import jd.utils.JDUtilities;
 
-//                                                                                                             http://nk.pl/#profile/19768710/gallery#!q?album=2
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nk.pl" }, urls = { "http://(www\\.)?nk\\.pl/#?profile/\\d+/gallery(/album/\\d+|\\d+|#\\!q\\?album=\\d+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nk.pl" }, urls = { "http://(www\\.)?nk\\.pl/#?profile/\\d+/gallery(/album/\\d+|/\\d+|#\\!q\\?album=\\d+)" }, flags = { 0 })
 public class NkPlGallery extends PluginForDecrypt {
 
     /* must be static so all plugins share same lock */
-    private static final Object LOCK = new Object();
-
-    public NkPlGallery(PluginWrapper wrapper) {
-        super(wrapper);
-    }
+    private static final Object LOCK            = new Object();
 
     private static final String MAINPAGE        = "http://nk.pl/";
     private static final String POSTPAGE        = "https://nk.pl/login";
@@ -49,44 +51,79 @@ public class NkPlGallery extends PluginForDecrypt {
     private static final String FINALLINKREGEX1 = "<img id=\"photo_img\" alt=\"zdjęcie\" src=\"(http://.*?)\"";
     private static final String FINALLINKREGEX2 = "\"(http://photos\\.nasza-klasa\\.pl/\\d+/\\d+/main/.*?)\"";
 
+    public NkPlGallery(final PluginWrapper wrapper) {
+        super(wrapper);
+    }
+
+    private String correctCryptedLink(final String parameter) {
+        return parameter.replaceAll("(\\!q\\?album=\\d+|#)", "");
+    }
+
     @Override
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final String parameter = param.toString();
         br.setCookiesExclusive(true);
         synchronized (LOCK) {
-            if (!getUserLogin()) return null;
-            br.setFollowRedirects(false);
+            if (!getUserLogin()) { return null; }
             // Access the page
-            br.getPage(parameter);
+            br.getPage(correctCryptedLink(parameter));
+            final String basicAuth = br.getCookie("nk.pl", "basic_auth");
             if (parameter.matches(".*?nk\\.pl/profile/\\d+/gallery/[0-9]+")) {
                 String finallink = br.getRegex(FINALLINKREGEX1).getMatch(0);
-                if (finallink == null) finallink = br.getRegex(FINALLINKREGEX2).getMatch(0);
+                if (finallink == null) {
+                    finallink = br.getRegex(FINALLINKREGEX2).getMatch(0);
+                }
                 if (finallink == null) {
                     logger.warning("Failed to find the finallink(s) for gallery: " + parameter);
                     return null;
                 }
-                decryptedLinks.add(createDownloadlink("directhttp://" + finallink));
-            } else {
+                decryptedLinks.add(createDownloadlink(finallink));
+            } else if (parameter.matches(".*?nk\\.pl/#profile/\\d+/gallery#\\!q\\?album=\\d+")) {
                 br.setFollowRedirects(true);
-                String allLinks[] = br.getRegex("REGEXKAPUTT(.*?)REGEXKAPUTT").getColumn(0);
-                if (allLinks == null || allLinks.length == 0) return null;
-                progress.setRange(allLinks.length);
-                for (String singleLink : allLinks) {
-                    br.getPage("http://nk.pl" + singleLink);
-                    String finallink = br.getRegex(FINALLINKREGEX1).getMatch(0);
-                    if (finallink == null) finallink = br.getRegex(FINALLINKREGEX2).getMatch(0);
-                    if (finallink == null) {
-                        logger.warning("Failed to find the finallink(s) for gallery: " + parameter);
-                        logger.warning("Failed on link: " + singleLink);
-                        return null;
-                    }
-                    decryptedLinks.add(createDownloadlink("directhttp://" + finallink));
-                    progress.increase(1);
+                final String galleryID = new Regex(parameter, "album=(\\d+)").getMatch(0);
+                final String galleryCount = br.getRegex("data-count=\"(\\d+)\" data-album-id=\"" + galleryID + "\"").getMatch(0);
+                if (galleryCount == null) { return null; }
+                String galleryName = br.getRegex("album_name\" title=\"(.*?)\"").getMatch(0);
+                if (galleryName == null) {
+                    galleryName = "Gallery " + new Regex(parameter, "nk.pl/profile/(\\d+)").getMatch(0);
+                } else {
+                    galleryName += "_" + galleryID;
                 }
-                FilePackage fp = FilePackage.getInstance();
-                fp.setName("Gallery " + new Regex(parameter, "nk.pl/profile/(\\d+)").getMatch(0).trim());
+
+                // calculating ajax requests
+                final int count = Integer.parseInt(galleryCount);
+                final int reqNum = (count - count % 16) / 16;
+                final String link = correctCryptedLink(parameter);
+
+                progress.setRange(count);
+                for (int i = 0; i <= reqNum; i++) {
+                    br.getPage(link + "/album/" + galleryID + "/ajax/0/" + i * 16 + "?t=" + basicAuth);
+                    final String picID = br.getRegex("\\{\"id\":\\[(.*?)\\]").getMatch(0);
+                    if (picID == null) {
+                        continue;
+                    }
+                    final String[] pictureID = picID.split(",");
+                    if (pictureID == null || pictureID.length == 0) {
+                        continue;
+                    }
+                    for (final String id : pictureID) {
+                        final DownloadLink dl = createDownloadlink(link.replaceAll("nk\\.pl/", "nk.decryptednaszaplasa/") + "/album/" + galleryID + "/" + id + "?naszaplasalink");
+                        dl.setName(dl.getName() + ".jpeg");
+                        decryptedLinks.add(dl);
+                        progress.increase(1);
+                    }
+                }
+
+                final FilePackage fp = FilePackage.getInstance();
+                fp.setName(galleryName.trim());
                 fp.addLinks(decryptedLinks);
+            } else {
+                logger.warning("Failed to find the finallink(s) for gallery: " + parameter);
+            }
+            if (decryptedLinks == null || decryptedLinks.size() == 0) {
+                logger.warning("Decrypter out of date for link: " + parameter);
+                return null;
             }
             return decryptedLinks;
         }
@@ -95,39 +132,47 @@ public class NkPlGallery extends PluginForDecrypt {
 
     private boolean getUserLogin() throws IOException, DecrypterException {
         br.setFollowRedirects(true);
-        // br.getPage(url);
         String username = null;
         String password = null;
         br.getPage(MAINPAGE);
         synchronized (LOCK) {
-            username = this.getPluginConfig().getStringProperty("user", null);
-            password = this.getPluginConfig().getStringProperty("pass", null);
+            username = getPluginConfig().getStringProperty("user", null);
+            password = getPluginConfig().getStringProperty("pass", null);
             if (username != null && password != null) {
                 br.postPage(POSTPAGE, "login=" + Encoding.urlEncode(username) + "&password=" + Encoding.urlEncode(password) + "&remember=1&form_name=login_form&target=&manual=1");
             }
             for (int i = 0; i < 3; i++) {
                 if (br.getCookie(MAINPAGE, "remember_me") == null || br.getCookie(MAINPAGE, "lltkck") == null) {
-                    this.getPluginConfig().setProperty("user", Property.NULL);
-                    this.getPluginConfig().setProperty("pass", Property.NULL);
+                    getPluginConfig().setProperty("user", Property.NULL);
+                    getPluginConfig().setProperty("pass", Property.NULL);
                     username = UserIO.getInstance().requestInputDialog("Enter Loginname for " + DOMAIN + " :");
-                    if (username == null) return false;
+                    if (username == null) { return false; }
                     password = UserIO.getInstance().requestInputDialog("Enter password for " + DOMAIN + " :");
-                    if (password == null) return false;
+                    if (password == null) { return false; }
                     br.postPage(POSTPAGE, "login=" + Encoding.urlEncode(username) + "&password=" + Encoding.urlEncode(password) + "&remember=1&form_name=login_form&target=&manual=1");
                 } else {
-                    this.getPluginConfig().setProperty("user", username);
-                    this.getPluginConfig().setProperty("pass", password);
-                    this.getPluginConfig().save();
+                    getPluginConfig().setProperty("user", username);
+                    getPluginConfig().setProperty("pass", password);
+                    final Account acc = new Account(username, password);
+                    final PluginForHost nkHosterplugin = JDUtilities.getPluginForHost("nk.pl");
+                    final HashMap<String, String> cookies = new HashMap<String, String>();
+                    final Cookies add = br.getCookies(MAINPAGE);
+                    for (final Cookie c : add.getCookies()) {
+                        cookies.put(c.getKey(), c.getValue());
+                    }
+                    getPluginConfig().setProperty("cookies", cookies);
+                    acc.setProperty("name", acc.getUser());
+                    acc.setProperty("pass", acc.getPass());
+                    acc.setProperty("cookies", cookies);
+                    // Add account for the nk.pl hosterplugin so user doesn't
+                    // have to do it
+                    AccountController.getInstance().addAccount(nkHosterplugin, acc);
+                    getPluginConfig().save();
                     return true;
                 }
-
             }
         }
-        this.getPluginConfig().setProperty("user", Property.NULL);
-        this.getPluginConfig().setProperty("pass", Property.NULL);
-        this.getPluginConfig().setProperty("cookies", Property.NULL);
-        this.getPluginConfig().save();
-        throw new DecrypterException("Login or/and password wrong");
+        throw new DecrypterException("Login or/and password for \"Nasza Klasa\" is wrong!");
     }
 
 }

@@ -1306,6 +1306,7 @@ plugins.hoster.megasharescom.errors.allslotsfilled = Cannot check, all slots are
 plugins.hoster.megasharescom.errors.alreadyloading = Cannot check, already loading file
 plugins.hoster.megasharescom.errors.passwordprotected = This link is password protected
 plugins.hoster.mujsouborcz.errors.only4premium = Only downloadable for premium users
+plugins.hoster.naszaklasa.only4registered = Only downloadable for registered users
 plugins.hoster.netload.downloadpassword_question = Password protected. Enter Password for %s
 plugins.hoster.netload.errors.downloadpassword_wrong = Wrong password
 plugins.hoster.netloadin.errors.captchanotfound = CAPTCHA not found
