@@ -41,7 +41,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vkontakte.ru" }, urls = { "http://(www\\.)?(vkontakte\\.ru|vk\\.com)/(audio(\\.php)?(\\?album_id=\\d+\\&id=|\\?id=)\\d+|(video\\-?\\d+_\\d+|videos\\d+|video\\?section=tagged\\&id=\\d+)|(photos|albums)\\d+|([A-Za-z0-9_\\-]+#/)?album\\d+_\\d+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vkontakte.ru" }, urls = { "http://(www\\.)?(vkontakte\\.ru|vk\\.com)/(audio(\\.php)?(\\?album_id=\\d+\\&id=|\\?id=)\\d+|(video\\-?\\d+_\\d+|videos\\d+|video\\?section=tagged\\&id=\\d+)|(photos|id)\\d+|albums\\d+|([A-Za-z0-9_\\-]+#/)?album\\d+_\\d+)" }, flags = { 0 })
 public class VKontakteRu extends PluginForDecrypt implements ProgressControllerListener {
 
     /* must be static so all plugins share same lock */
@@ -108,12 +108,15 @@ public class VKontakteRu extends PluginForDecrypt implements ProgressControllerL
                     return null;
                 }
                 decryptedLinks.add(finallink);
-            } else if (parameter.matches(".*?(album\\d+_\\d+|photos\\d+)")) {
+            } else if (parameter.matches(".*?(album\\d+_|photos|id)\\d+")) {
                 // Photo albums
-                // Example: http://vkontakte.ru/photos575934598
+                // Examples:
+                // http://vkontakte.ru/photos575934598
+                // http://vkontakte.ru/id28426816
+                // http://vkontakte.ru/album87171972_0
                 if (parameter.contains("#/album"))
                     parameter = "http://vkontakte.ru/album" + new Regex(parameter, "#/album(\\d+_\\d+)").getMatch(0);
-                else if (parameter.matches(".*?vkontakte.ru/photos\\d+")) parameter = parameter.replace("vkontakte.ru/photos", "vkontakte.ru/album") + "_0";
+                else if (parameter.matches(".*?vkontakte\\.ru/(photos|id)\\d+")) parameter = parameter.replaceAll("vkontakte\\.ru/(photos|id)", "vkontakte.ru/album") + "_0";
                 br.getPage(parameter);
                 String correctedBR = br.toString().replace("\\", "");
                 String[] photoIDs = new Regex(correctedBR, "class=\"photo_row\" id=\"photo_row(\\d+_\\d+)\"").getColumn(0);

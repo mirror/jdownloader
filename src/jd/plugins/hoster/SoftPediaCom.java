@@ -23,11 +23,11 @@ import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -91,11 +91,14 @@ public class SoftPediaCom extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("(>404 - page not found</h2>|404error\\.gif\"></td>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("google_ad_section_start --><h1>(.*?)<br/></h1><").getMatch(0);
+        if (br.containsHTML("(>404 \\- page not found</h2>|404error\\.gif\"></td>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("google_ad_section_start \\-\\-><h1>(.*?)<br/></h1><").getMatch(0);
         if (filename == null) {
-            filename = br.getRegex("style=\"padding-top: 15px;\">Softpedia guarantees that <b>(.*?)</b> is <b").getMatch(0);
-            if (filename == null) filename = br.getRegex(">yahooBuzzArticleHeadline = \"(.*?)\";").getMatch(0);
+            filename = br.getRegex("style=\"padding\\-top: 15px;\">Softpedia guarantees that <b>(.*?)</b> is <b").getMatch(0);
+            if (filename == null) {
+                filename = br.getRegex(">yahooBuzzArticleHeadline = \"(.*?)\";").getMatch(0);
+                if (filename == null) filename = br.getRegex("<title>Download (.*?) Free \\- ").getMatch(0);
+            }
         }
         String filesize = br.getRegex("([0-9\\.]+ (MB|KB))").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

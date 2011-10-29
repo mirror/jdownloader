@@ -56,8 +56,9 @@ public class DownloadHr extends PluginForHost {
         br.getHeaders().put("Accept-Charset", "ISO-8859-1,utf-8;q=0.7,*;q=0.7");
         br.getPage(link.getDownloadURL());
         if ("http://www.download.hr/".equals(br.getRedirectLocation()) || br.containsHTML("<title>Download\\.hr \\- Free Software Downloads</title>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<h1 class=\"font18\">(.*?)</h2>").getMatch(0);
-        String filesize = br.getRegex("<b>File size:</b>  </div>[\t\n\r ]+<div class=\"file_fileinfo_right\">(.*?)</div>").getMatch(0);
+        String filename = br.getRegex("<div class=\"File_HeaderLine\">[\t\n\r ]+<b class=\"font\\d+\">(.*?)</b>").getMatch(0);
+        String filesize = br.getRegex(">Download</a>[\t\n\r ]+<b class=\"font\\d+\">\\((.*?)\\)</b>").getMatch(0);
+        if (filesize == null) filesize = br.getRegex("<span class=\"file_fileinfo_right\">(.*?)</span>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setName(filename.trim());
         link.setDownloadSize(SizeFormatter.getSize(filesize));
