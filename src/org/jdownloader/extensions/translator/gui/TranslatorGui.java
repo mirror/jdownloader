@@ -25,6 +25,7 @@ import jd.plugins.AddonPanel;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.utils.logging.Log;
+import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
@@ -190,12 +191,23 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
                 this.setEnabled(false);
             }
 
-            @Override
-            public String getText() {
-                return "Revision: " + getLatestRevision().toString();
-            }
         };
+        new Thread() {
 
+            @Override
+            public void run() {
+                final Long revision = getLatestRevision();
+                new EDTRunner() {
+
+                    @Override
+                    protected void runInEDT() {
+                        mnuSvnRev.setText("Revision: " + revision);
+                    }
+                };
+
+            }
+
+        }.start();
         mnuSvn = new JMenu("SVN");
         mnuSvn.add(mnuSvnLogin);
         mnuSvn.add(mnuSvnTest);
@@ -317,9 +329,9 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
         if (latestRevision != null)
             return latestRevision;
         else {
-
+            Subversion svn = null;
             try {
-                Subversion svn = new Subversion("svn://svn.jdownloader.org/jdownloader/trunk/translations");
+                svn = new Subversion("svn://svn.jdownloader.org/jdownloader/trunk/translations");
                 latestRevision = new Long(svn.latestRevision());
                 return latestRevision;
             } catch (SVNException e) {
