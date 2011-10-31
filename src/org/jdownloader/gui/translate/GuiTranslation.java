@@ -2920,4 +2920,61 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Download from" })
     String LinkGrabberTableModel_initColumns_url();
 
+    @Default(lngs = { "en" }, values = { "Click to open Url in browser" })
+    String UrlColumn_UrlColumn_open_tt_();
+
+    @Default(lngs = { "en" }, values = { "Click to choose a new Download Folder" })
+    String DownloadFolderColiumn_edit_tt_();
+
+    @Default(lngs = { "en" }, values = { "Click here to open the Download Folder" })
+    String DownloadFolderColiumn_open_tt_();
+
+    @Default(lngs = { "en" }, values = { "Move to new Package" })
+    String MergeToPackageAction_MergeToPackageAction_();
+
+    @Default(lngs = { "en" }, values = { "Check online status" })
+    String FileCheckAction_FileCheckAction_();
+
+    @Default(lngs = { "en" }, values = { "Download Directory" })
+    String ContextMenuFactory_createPopup_downloaddir();
+
+    @Default(lngs = { "en" }, values = { "Choose Download Directory" })
+    String SetDownloadFolderAction_SetDownloadFolderAction_();
+
+    @Default(lngs = { "en" }, values = { "Open" })
+    String OpenDownloadFolderAction_OpenDownloadFolderAction_();
+
+    @Default(lngs = { "en" }, values = { "Enable/Disable" })
+    String EnabledAction_EnabledAction_object_();
+
+    @Default(lngs = { "en" }, values = { "Set Download Password" })
+    String SetDownloadPassword_SetDownloadPassword_();
+
+    @Default(lngs = { "en" }, values = { "Download Password" })
+    String DownloadPasswordColumn_DownloadPasswordColumn_object_();
+
+    @Default(lngs = { "en" }, values = { "Remove" })
+    String ContextMenuFactory_createPopup_cleanup();
+
+    @Default(lngs = { "en" }, values = { "Offline Links" })
+    String RemoveOfflineAction_RemoveOfflineAction_object_();
+
+    @Default(lngs = { "en" }, values = { "All Links" })
+    String RemoveAllAction_RemoveAllAction_object_();
+
+    @Default(lngs = { "en" }, values = { "Incomplete Split-Archives" })
+    String RemoveIncompleteArchives_RemoveIncompleteArchives_object_();
+
+    @Default(lngs = { "en" }, values = { "Selected Links" })
+    String RemoveSelectionAction_RemoveSelectionAction_object_();
+
+    @Default(lngs = { "en" }, values = { "Not selected Links" })
+    String RemoveNonSelectedAction_RemoveNonSelectedAction_object_();
+
+    @Default(lngs = { "en" }, values = { "Split Packages By Hoster" })
+    String SplitPackagesByHost_SplitPackagesByHost_object_();
+
+    @Default(lngs = { "en" }, values = { "Sort Package on '%s1'" })
+    String SortAction_SortAction_object_(String columnName);
+
 }

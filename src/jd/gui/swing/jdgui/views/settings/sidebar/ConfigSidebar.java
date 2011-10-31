@@ -85,14 +85,15 @@ public class ConfigSidebar extends JPanel implements ControlListener, MouseMotio
                     final AlphaComposite ac5 = AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.1f);
                     g2.setComposite(ac5);
                     int index = locationToIndex(mouse);
-                    if (getModel().getElementAt(index) instanceof ExtensionHeader) { return; }
-                    if (getModel().getElementAt(index) instanceof AdvancedSettings) {
+
+                    if (index >= 0 && getModel().getElementAt(index) instanceof ExtensionHeader) { return; }
+                    if (index >= 0 && getModel().getElementAt(index) instanceof AdvancedSettings) {
                         Point p = indexToLocation(index);
                         g2.fillRect(0, p.y, list.getWidth(), 25);
                         g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f));
                     } else {
                         Point p = indexToLocation(index);
-                        g2.fillRect(0, p.y, list.getWidth(), 55);
+                        g2.fillRect(0, p.y, getWidth(), 55);
 
                         g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f));
                     }

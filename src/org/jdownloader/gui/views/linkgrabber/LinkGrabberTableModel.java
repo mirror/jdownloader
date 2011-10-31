@@ -12,6 +12,8 @@ import org.jdownloader.gui.views.downloads.columns.FileColumn;
 import org.jdownloader.gui.views.downloads.columns.HosterColumn;
 import org.jdownloader.gui.views.downloads.columns.PriorityColumn;
 import org.jdownloader.gui.views.downloads.columns.SizeColumn;
+import org.jdownloader.gui.views.linkgrabber.columns.DownloadFolderColumn;
+import org.jdownloader.gui.views.linkgrabber.columns.UrlColumn;
 
 public class LinkGrabberTableModel extends PackageControllerTableModel<CrawledPackage, CrawledLink> {
 
@@ -27,6 +29,7 @@ public class LinkGrabberTableModel extends PackageControllerTableModel<CrawledPa
 
         this.addColumn(new UrlColumn());
         this.addColumn(new DownloadFolderColumn());
+        this.addColumn(new DownloadPasswordColumn());
 
         // Debug only
         // this.addColumn(new ExtComponentColumn<AbstractNode>("Start") {
