@@ -43,6 +43,7 @@ public class ChoMikujPl extends PluginForDecrypt {
 
     private static final String PASSWORDWRONG = ">Nieprawidłowe hasło<";
     private static final String PASSWORDTEXT  = "Ten folder jest <b>zabezpieczony oddzielnym hasłem";
+    private static final String VIDEOTEXT     = "GalPage";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -94,7 +95,7 @@ public class ChoMikujPl extends PluginForDecrypt {
         // Alle Haupt-POSTdaten
         String postdata = "ctl00%24SM=ctl00%24CT%24FW%24FoldersUp%7Cctl00%24CT%24FW%24RefreshButton&__EVENTTARGET=ctl00%24CT%24FW%24RefreshButton&__EVENTARGUMENT=&__VIEWSTATE=" + Encoding.urlEncode(viewState) + "&PageCmd=&PageArg=undefined&ctl00%24LoginTop%24LoginChomikName=&ctl00%24LoginTop%24LoginChomikPassword=&ctl00%24SearchInputBox=nazwa%20lub%20e-mail&ctl00%24SearchFileBox=nazwa%20pliku&ctl00%24SearchType=all&SType=0&ctl00%24CT%24ChomikID=" + chomikId + "&ctl00%24CT%24PermW%24LoginCtrl%24PF=&treeExpandLog=&" + Encoding.urlEncode(treeExpandLog) + "&ChomikSubfolderId=" + subFolderID + "&tl00%24CT%24TW%24TreeExpandLog=" + "&ctl00%24CT%24FW%24SubfolderID=" + subFolderID + "&FVSortType=1&FVSortDir=1&FVSortChange=&FVPage=%jdownloaderpage%&ctl00%24CT%24FW%24inpFolderAddress=" + Encoding.urlEncode(parameter) + "&ctl00%24CT%24FrW%24FrPage=0&FrGroupId=0&__ASYNCPOST=true&";
         // Needed for page-change for videolinks
-        if (br.containsHTML("GalPage")) postdata = postdata.replace("&FVPage=", "&GalPage=");
+        if (br.containsHTML(VIDEOTEXT)) postdata = postdata.replace("&FVPage=", "&GalPage=");
         // Passwort Handling
         if (br.containsHTML(PASSWORDTEXT)) {
             prepareBrowser(parameter, br);
@@ -129,7 +130,11 @@ public class ChoMikujPl extends PluginForDecrypt {
             // Every full page has 30 links (pictures)
             boolean filenameIncluded = true;
             boolean filenameIncludedVideo = true;
-            String[][] videoIDs = br.getRegex("<div style=\"margin:10px\">[\t\n\r ]+<div style=\"padding: 10px;\">[\t\n\r ]+<a href=\".{1,300}/([^/\"\\'<>]+),\\d+([^/\"\\'<>]+)\" onclick=\"return ch\\.Download.dnFile\\((\\d+)\\);\"").getMatches();
+            String[][] videoIDs = null;
+            // Only try to find videolinks if indicator is true, without
+            // checking this we get normal links as video links which will
+            // result in out of date errors
+            if (br.containsHTML(VIDEOTEXT)) videoIDs = br.getRegex("<div style=\"margin:10px\">[\t\n\r ]+<div style=\"padding: 10px;\">[\t\n\r ]+<a href=\".{1,300}/([^/\"\\'<>]+),\\d+([^/\"\\'<>]+)\" onclick=\"return ch\\.Download.dnFile\\((\\d+)\\);\"").getMatches();
             String[][] fileIds = br.getRegex("class=\"FileName\" onclick=\"return ch\\.Download\\.dnFile\\((.*?)\\);\"><b>(.{1,300})</b>(.{1,300})</a>[\t\n\r ]+</td>[\t\n\r ]+<td>[\t\n\r ]+<table cellpadding=\"0\" cellspacing=\"3\" class=\"fInfoTable\">[\t\n\r ]+<tr>[\t\n\r ]+<td><div class=\"fInfoDiv\">(.{1,20})</div></td>").getMatches();
             if (fileIds == null || fileIds.length == 0) {
                 filenameIncluded = false;

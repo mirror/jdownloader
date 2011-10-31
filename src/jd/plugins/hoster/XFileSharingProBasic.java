@@ -275,7 +275,7 @@ public class XFileSharingProBasic extends PluginForHost {
             if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).matches(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
             if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
                 final HashMap<String, String> cookies = (HashMap<String, String>) ret;
-                if (cookies.containsKey("login") && cookies.containsKey("xfss") && account.isValid()) {
+                if (account.isValid()) {
                     for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
                         final String key = cookieEntry.getKey();
                         final String value = cookieEntry.getValue();

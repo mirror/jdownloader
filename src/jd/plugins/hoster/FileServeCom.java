@@ -19,9 +19,13 @@ package jd.plugins.hoster;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
+import jd.http.Cookie;
+import jd.http.Cookies;
 import jd.http.RandomUserAgent;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -29,12 +33,12 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -43,9 +47,10 @@ import org.appwork.utils.formatter.TimeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fileserve.com" }, urls = { "http://(www\\.)?fileserve\\.com/file/[a-zA-Z0-9]+" }, flags = { 2 })
 public class FileServeCom extends PluginForHost {
 
-    public String        FILEIDREGEX = "fileserve\\.com/file/([a-zA-Z0-9]+)(http:.*)?";
-
-    public static String agent       = RandomUserAgent.generate();
+    public String               FILEIDREGEX = "fileserve\\.com/file/([a-zA-Z0-9]+)(http:.*)?";
+    public static String        agent       = RandomUserAgent.generate();
+    private static final Object LOCK        = new Object();
+    private static final String COOKIE_HOST = "http://fileserve.com/";
 
     public FileServeCom(final PluginWrapper wrapper) {
         super(wrapper);
@@ -250,27 +255,6 @@ public class FileServeCom extends PluginForHost {
     }
 
     @Override
-    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        final AccountInfo ai = new AccountInfo();
-        try {
-
-            loginAPI(br, account);
-        } catch (PluginException e) {
-            account.setValid(false);
-            if (account.getAccountInfo() != null) {
-                return account.getAccountInfo();
-            } else {
-                return ai;
-            }
-        }
-        if (account.getAccountInfo() != null) {
-            return account.getAccountInfo();
-        } else {
-            return ai;
-        }
-    }
-
-    @Override
     public String getAGBLink() {
         return "http://www.fileserve.com/terms.php";
     }
@@ -348,7 +332,13 @@ public class FileServeCom extends PluginForHost {
         if ("302".equalsIgnoreCase(code)) {
             dllink = br.getRegex("next\":\"(.*?)\"").getMatch(0);
         }
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink == null) {
+            logger.warning("API couldn't find downloadlink, trying web-login and web-download.");
+            loginSite(account, false);
+            br.getPage(link.getDownloadURL());
+            dllink = br.getRedirectLocation();
+            if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dllink = dllink.replaceAll("\\\\/", "/");
         br.setFollowRedirects(true);
         this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, link, dllink, true, 0);
@@ -374,6 +364,32 @@ public class FileServeCom extends PluginForHost {
         this.dl.startDownload();
     }
 
+    @Override
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
+        final AccountInfo ai = new AccountInfo();
+        try {
+            loginAPI(br, account);
+        } catch (PluginException e) {
+            try {
+                loginSite(account, true);
+            } catch (PluginException e2) {
+                logger.warning("API login failed, trying login via website!");
+                loginSite(account, true);
+                account.setValid(false);
+                if (account.getAccountInfo() != null) {
+                    return account.getAccountInfo();
+                } else {
+                    return ai;
+                }
+            }
+        }
+        if (account.getAccountInfo() != null) {
+            return account.getAccountInfo();
+        } else {
+            return ai;
+        }
+    }
+
     private Browser loginAPI(final Browser useBr, final Account account) throws IOException, PluginException {
         Browser br = useBr;
         if (br == null) br = new Browser();
@@ -383,9 +399,10 @@ public class FileServeCom extends PluginForHost {
         account.setAccountInfo(ai);
         String username = Encoding.urlEncode(account.getUser());
         String password = Encoding.urlEncode(account.getPass());
+        boolean failed = true;
+        if (failed) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         br.postPage("http://app.fileserve.com/api/login/", "username=" + username + "&password=" + password + "&submit=Submit+Query");
         String type = br.getRegex("type\":\"(.*?)\"").getMatch(0);
-
         if (!"premium".equalsIgnoreCase(type)) {
             String error_code = br.getRegex("error_code\":(\\d+)").getMatch(0);
             if ("110".equals(error_code)) {
@@ -409,8 +426,55 @@ public class FileServeCom extends PluginForHost {
         }
         ai.setUnlimitedTraffic();
         account.setValid(true);
-        ai.setStatus("Premium");
+        ai.setStatus("Premium Account ok");
         return br;
+    }
+
+    @SuppressWarnings("unchecked")
+    private void loginSite(Account account, boolean force) throws Exception {
+        synchronized (LOCK) {
+            // Load cookies
+            br.setCookiesExclusive(false);
+            final Object ret = account.getProperty("cookies", null);
+            boolean acmatch = Encoding.urlEncode(account.getUser()).matches(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
+            if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).matches(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+            if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
+                final HashMap<String, String> cookies = (HashMap<String, String>) ret;
+                if (account.isValid()) {
+                    for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
+                        final String key = cookieEntry.getKey();
+                        final String value = cookieEntry.getValue();
+                        this.br.setCookie(COOKIE_HOST, key, value);
+                    }
+                    return;
+                }
+            }
+            br.postPage("http://fileserve.com/login.php", "loginUserName=" + Encoding.urlEncode(account.getUser()) + "&loginUserPassword=" + Encoding.urlEncode(account.getPass()) + "&autoLogin=on&ppp=102&loginFormSubmit=Login");
+            if (br.getCookie(COOKIE_HOST, "cookie") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            br.getPage("http://fileserve.com/dashboard.php");
+            String type = br.getRegex("<h5>Account type:</h5>[\t\n\r ]+<h3>(Premium) <a").getMatch(0);
+            if (type == null) type = br.getRegex("<h4>Account Type</h4></td> <td><h5 class=\"inline\">(Premium) </h5>").getMatch(0);
+            if (type == null) {
+                logger.warning("No premiumaccount or login broken");
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
+            String uploadedFiles = br.getRegex("<h5>Files uploaded:</h5>[\t\n\r ]+<h3>(\\d+)<span>").getMatch(0);
+            String expire = br.getRegex("<h4>Premium Until</h4></td>[\t\n\r ]+<td><h5>(.*?) EST").getMatch(0);
+            AccountInfo ai = new AccountInfo();
+            account.setAccountInfo(ai);
+            if (uploadedFiles != null) ai.setFilesNum(Integer.parseInt(uploadedFiles));
+            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", null));
+            ai.setStatus("Premium Account ok, API login failed, site login OK");
+            // Save cookies
+            final HashMap<String, String> cookies = new HashMap<String, String>();
+            final Cookies add = this.br.getCookies(COOKIE_HOST);
+            for (final Cookie c : add.getCookies()) {
+                cookies.put(c.getKey(), c.getValue());
+            }
+            account.setProperty("name", Encoding.urlEncode(account.getUser()));
+            account.setProperty("pass", Encoding.urlEncode(account.getPass()));
+            account.setProperty("cookies", cookies);
+        }
     }
 
     @Override

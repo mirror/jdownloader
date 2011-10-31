@@ -49,7 +49,7 @@ public class ChoMikujPl extends PluginForHost {
     }
 
     private String              DLLINK              = null;
-    private static final String PREMIUMONLY         = "(Aby pobrać ten plik, musisz być zalogowany lub wysłać jeden SMS\\.|Właściciel tego chomika udostępnia swój transfer, ale nie ma go już w wystarczającej)";
+    private static final String PREMIUMONLY         = "(Aby pobrać ten plik, musisz być zalogowany lub wysłać jeden SMS\\.|Właściciel tego chomika udostępnia swój transfer, ale nie ma go już w wystarczającej|wymaga opłacenia kosztów transferu z serwerów Chomikuj\\.pl)";
     private static final String PREMIUMONLYUSERTEXT = "Download is only available for registered/premium users!";
     private static final String MAINPAGE            = "http://chomikuj.pl/";
     private static final String FILEIDREGEX         = "\\&id=(.*?)\\&";
@@ -124,6 +124,7 @@ public class ChoMikujPl extends PluginForHost {
         if (savedLink != null && savedPost != null) br.postPage(savedLink, savedPost);
         br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         br2.postPage("http://chomikuj.pl/Chomik/License/Download", "fileId=" + new Regex(theLink.getDownloadURL(), FILEIDREGEX).getMatch(0));
+        if (br2.containsHTML(PREMIUMONLY)) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.chomikujpl.only4registered", PREMIUMONLYUSERTEXT));
         DLLINK = br2.getRegex("redirectUrl\":\"(http://.*?)\"").getMatch(0);
         if (DLLINK == null) DLLINK = br2.getRegex("\\\\u003ca href=\\\\\"(.*?)\\\\\"").getMatch(0);
         if (DLLINK != null) DLLINK = Encoding.htmlDecode(DLLINK);
