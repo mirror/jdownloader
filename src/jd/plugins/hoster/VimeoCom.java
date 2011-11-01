@@ -53,6 +53,7 @@ public class VimeoCom extends PluginForHost {
 
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
+        br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL() + "?hd=1");
         if (br.containsHTML(">Page not found on Vimeo<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String clipID = br.getRegex("targ_clip_id:   (\\d+)").getMatch(0);
