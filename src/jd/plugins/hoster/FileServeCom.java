@@ -417,8 +417,6 @@ public class FileServeCom extends PluginForHost {
         account.setAccountInfo(ai);
         String username = Encoding.urlEncode(account.getUser());
         String password = Encoding.urlEncode(account.getPass());
-        boolean failed = true;
-        if (failed) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         br.postPage("http://app.fileserve.com/api/login/", "username=" + username + "&password=" + password + "&submit=Submit+Query");
         String type = br.getRegex("type\":\"(.*?)\"").getMatch(0);
         if (!"premium".equalsIgnoreCase(type)) {
