@@ -2977,4 +2977,10 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Sort Package on '%s1'" })
     String SortAction_SortAction_object_(String columnName);
 
+    @Default(lngs = { "en" }, values = { "Crawl %s1-Link" })
+    String CaptchaDialog_layoutDialogContent_header_crawler(String tld);
+
+    @Default(lngs = { "en" }, values = { "Crawl %s1 @ %s2" })
+    String CaptchaDialog_layoutDialogContent_header_crawler2(String crawlerStatus, String tld);
+
 }

@@ -402,4 +402,14 @@ public abstract class PluginForDecrypt extends Plugin {
         return lazyC;
     }
 
+    /**
+     * Can be overridden to show the current status for example in captcha
+     * dialog
+     * 
+     * @return
+     */
+    public String getCrawlerStatusString() {
+        return null;
+    }
+
 }

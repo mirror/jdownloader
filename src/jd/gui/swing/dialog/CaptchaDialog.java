@@ -42,6 +42,9 @@ import javax.swing.JPanel;
 import jd.Main;
 import jd.gui.swing.laf.LAFOptions;
 import jd.gui.swing.laf.LookAndFeelController;
+import jd.plugins.Plugin;
+import jd.plugins.PluginForDecrypt;
+import jd.plugins.PluginForHost;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.app.gui.MigPanel;
@@ -85,13 +88,11 @@ public class CaptchaDialog extends AbstractDialog<String> implements ActionListe
 
     private DialogType          type;
 
-    private String              fileName;
-
-    private long                fileSize;
-
     private String              methodName;
 
     private JComponent          iconPanel;
+
+    private Plugin              plugin;
 
     public static void main(String[] args) {
         CaptchaDialog cp;
@@ -99,8 +100,7 @@ public class CaptchaDialog extends AbstractDialog<String> implements ActionListe
             Application.setApplication(".jd_home");
             Main.statics();
             cp = new CaptchaDialog(Dialog.LOGIC_COUNTDOWN, DialogType.HOSTER, DomainInfo.getInstance("wupload.com"), IconIO.getImageIcon(new File("C:/Users/Thomas/.jd_home/captchas/filesonic.com_29.09.2011_11.49.01.653.jpg").toURI().toURL()), null, "Enter both words...");
-            cp.setFilename("My File.rar");
-            cp.setFilesize(21874638l);
+
             cp.setMethodName("filesonic.com");
             LookAndFeelController.getInstance().setUIManager();
 
@@ -262,6 +262,36 @@ public class CaptchaDialog extends AbstractDialog<String> implements ActionListe
             }
             headerPanel.add(header);
 
+        } else {
+            // setBorder(new JTextField().getBorder());
+
+            headerPanel = new MigPanel("ins 0 0 1 0", "[][grow,fill]", "[grow,fill]");
+            headerPanel.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, new Color(LookAndFeelController.getInstance().getLAFOptions().getPanelHeaderLineColor())));
+
+            headerPanel.setBackground(new Color(LookAndFeelController.getInstance().getLAFOptions().getPanelHeaderColor()));
+            headerPanel.setOpaque(true);
+
+            // headerPanel.setOpaque(false);
+            // headerPanel.setOpaque(false);
+            // headerPanel.setOpaque(false);
+            JLabel header = new JLabel();
+            header.setIcon(hosterInfo.getFavIcon());
+
+            // if (col >= 0) {
+            // header.setBackground(new Color(col));
+            // header.setOpaque(false);
+            // }
+            // header.setOpaque(false);
+            // header.setLabelMode(true);
+            PluginForDecrypt plg = (PluginForDecrypt) plugin;
+            if (getCrawlerStatus() == null) {
+                header.setText(_GUI._.CaptchaDialog_layoutDialogContent_header_crawler(hosterInfo.getTld()));
+            } else {
+                header.setText(_GUI._.CaptchaDialog_layoutDialogContent_header_crawler2(getCrawlerStatus(), hosterInfo.getTld()));
+
+            }
+
+            headerPanel.add(header);
         }
 
         iconPanel = new JComponent() {
@@ -304,6 +334,22 @@ public class CaptchaDialog extends AbstractDialog<String> implements ActionListe
         // panel.add(new JLabel("HJ dsf"));
 
         return panel;
+    }
+
+    public String getCrawlerStatus() {
+        switch (type) {
+        case CRAWLER:
+
+            return ((PluginForDecrypt) plugin).getCrawlerStatusString();
+
+        default:
+            return null;
+
+        }
+    }
+
+    public String getPluginName() {
+        return plugin.getHost();
     }
 
     @Override
@@ -353,23 +399,32 @@ public class CaptchaDialog extends AbstractDialog<String> implements ActionListe
         return explain;
     }
 
-    public void setFilename(String name) {
-        fileName = name;
-    }
-
-    public void setFilesize(long downloadMax) {
-        fileSize = downloadMax;
-    }
-
-    public String getFilename() {
-        return fileName;
-    }
-
-    public long getFilesize() {
-        return fileSize;
-    }
-
     public void setMethodName(String methodname) {
         methodName = methodname;
     }
+
+    public String getFilename() {
+        switch (type) {
+        case HOSTER:
+            return ((PluginForHost) plugin).getDownloadLink().getName();
+
+        }
+
+        return null;
+    }
+
+    public long getFilesize() {
+        switch (type) {
+        case HOSTER:
+            return ((PluginForHost) plugin).getDownloadLink().getDownloadMax();
+
+        }
+        return -1;
+    }
+
+    public void setPlugin(Plugin plugin) {
+
+        this.plugin = plugin;
+    }
+
 }

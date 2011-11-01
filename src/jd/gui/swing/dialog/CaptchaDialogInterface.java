@@ -7,10 +7,14 @@ import org.jdownloader.DomainInfo;
 
 public interface CaptchaDialogInterface extends UserIODefinition {
     public static enum DialogType {
-        CRAWLER, HOSTER, OTHER;
+        CRAWLER,
+        HOSTER,
+        OTHER;
     }
 
     public String getFilename();
+
+    public String getCrawlerStatus();
 
     public long getFilesize();
 

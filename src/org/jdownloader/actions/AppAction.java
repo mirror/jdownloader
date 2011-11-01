@@ -1,12 +1,6 @@
 package org.jdownloader.actions;
 
-import java.beans.PropertyChangeListener;
-
-import javax.swing.ImageIcon;
-
 import org.appwork.swing.action.BasicAction;
-import org.appwork.utils.Application;
-import org.appwork.utils.logging.Log;
 import org.jdownloader.images.NewTheme;
 
 /**
@@ -17,59 +11,28 @@ import org.jdownloader.images.NewTheme;
  */
 public abstract class AppAction extends BasicAction {
 
-    public static final int SIZE_CONTEXT_MENU = 18;
+    private String iconKey;
 
-    public static final int BUTTON_ICON_SIZE  = 20;
-
-    private String          iconKey;
-
-    private int             size;
+    private int    size;
 
     public AppAction() {
         super();
 
     }
 
-    public void addPropertyChangeListener(PropertyChangeListener listener) {
-
-        if (!Application.isJared(AppAction.class)) {
-            // just check if actions are missused. to not do this in jared
-            // version. only in dev enviroment
-            StackTraceElement[] st = new Exception().getStackTrace();
-            StackTraceElement caller = st[2];
-            if ("javax.swing.JMenuItem".equals(caller.getClassName())) {
-                ImageIcon icon = getSmallIcon();
-                if (icon != null && icon.getIconWidth() != SIZE_CONTEXT_MENU) {
-                    Log.exception(new Exception("Action used in contextmenu, but not set to org.jdownloader.actions.AppAction.toContextMenuAction()"));
-                }
-
-            } else if ("javax.swing.JButton".equals(caller.getClassName())) {
-                ImageIcon icon = getSmallIcon();
-                if (icon != null && icon.getIconWidth() != BUTTON_ICON_SIZE) {
-                    Log.exception(new Exception("Action used in Jbutton, but not set to org.jdownloader.actions.AppAction.toButtonAction()"));
-                }
-            }
-            // if ("ButtonActionPropertyChangeListener".equals(sn)) {
-
-            // }
-        }
-        super.addPropertyChangeListener(listener);
-
-    }
-
     public AppAction toButtonAction() {
-        setIconSizes(AppAction.BUTTON_ICON_SIZE);
+        setIconSizes(20);
         return this;
     }
 
     public AppAction toContextMenuAction() {
-        setIconSizes(AppAction.SIZE_CONTEXT_MENU);
+        setIconSizes(18);
         return this;
     }
 
     public void setIconKey(String iconKey) {
         this.iconKey = iconKey;
-        setIconSizes(BUTTON_ICON_SIZE);
+        setIconSizes(20);
     }
 
     public AppAction setIconSizes(int size) {

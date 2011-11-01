@@ -144,7 +144,7 @@ public class DownloadsTable extends PackageControllerTable<FilePackage, Download
             {
                 // setName(_GUI._.BottomBar_BottomBar_totop());
                 setToolTipText(_GUI._.BottomBar_BottomBar_totop_tooltip());
-                setSmallIcon(NewTheme.I().getIcon("go-top", AppAction.BUTTON_ICON_SIZE));
+                setSmallIcon(NewTheme.I().getIcon("go-top", 20));
 
             }
 
@@ -162,7 +162,7 @@ public class DownloadsTable extends PackageControllerTable<FilePackage, Download
             {
                 // setName(_GUI._.BottomBar_BottomBar_moveup());
                 setToolTipText(_GUI._.BottomBar_BottomBar_moveup_tooltip());
-                setSmallIcon(NewTheme.I().getIcon("go-up", AppAction.BUTTON_ICON_SIZE));
+                setSmallIcon(NewTheme.I().getIcon("go-up", 20));
 
             }
 
@@ -180,7 +180,7 @@ public class DownloadsTable extends PackageControllerTable<FilePackage, Download
             {
                 // setName(_GUI._.BottomBar_BottomBar_movedown());
                 setToolTipText(_GUI._.BottomBar_BottomBar_movedown_tooltip());
-                setSmallIcon(NewTheme.I().getIcon("go-down", AppAction.BUTTON_ICON_SIZE));
+                setSmallIcon(NewTheme.I().getIcon("go-down", 20));
 
             }
 
@@ -198,7 +198,7 @@ public class DownloadsTable extends PackageControllerTable<FilePackage, Download
             {
                 // setName(_GUI._.BottomBar_BottomBar_tobottom());
                 setToolTipText(_GUI._.BottomBar_BottomBar_tobottom_tooltip());
-                setSmallIcon(NewTheme.I().getIcon("go-bottom", AppAction.BUTTON_ICON_SIZE));
+                setSmallIcon(NewTheme.I().getIcon("go-bottom", 20));
 
             }
 

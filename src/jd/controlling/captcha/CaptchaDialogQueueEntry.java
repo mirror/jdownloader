@@ -101,15 +101,12 @@ public class CaptchaDialogQueueEntry extends QueueAction<String, RuntimeExceptio
             if (CaptchaSettings.CFG.isCountdownEnabled() && CaptchaSettings.CFG.getCountdown() > 0) {
                 f = f | Dialog.LOGIC_COUNTDOWN;
             }
-            if (captchaController.getPlugin() instanceof PluginForHost) {
-                this.dialog = new CaptchaDialog(f, DialogType.HOSTER, getHost(), IconIO.getImageIcon(captchaController.getCaptchafile().toURI().toURL()), def, captchaController.getExplain());
-                dialog.setFilename(((PluginForHost) captchaController.getPlugin()).getDownloadLink().getName());
-                dialog.setFilesize(((PluginForHost) captchaController.getPlugin()).getDownloadLink().getDownloadMax());
-                dialog.setMethodName(captchaController.getMethodname());
-            } else {
-                this.dialog = new CaptchaDialog(f, DialogType.CRAWLER, getHost(), IconIO.getImageIcon(captchaController.getCaptchafile().toURI().toURL()), def, captchaController.getExplain());
-                dialog.setMethodName(captchaController.getMethodname());
-            }
+
+            this.dialog = new CaptchaDialog(f, captchaController.getPlugin() instanceof PluginForHost ? DialogType.HOSTER : DialogType.CRAWLER, getHost(), IconIO.getImageIcon(captchaController.getCaptchafile().toURI().toURL()), def, captchaController.getExplain());
+            dialog.setPlugin(captchaController.getPlugin());
+
+            dialog.setMethodName(captchaController.getMethodname());
+
             dialog.setCountdownTime(CaptchaSettings.CFG.getCountdown());
             CaptchaDialogInterface answer = NewUIO.I().show(CaptchaDialogInterface.class, dialog);
             return answer.getCaptchaCode();
@@ -117,7 +114,7 @@ public class CaptchaDialogQueueEntry extends QueueAction<String, RuntimeExceptio
             if (resp == null) {
                 /* no external response available */
                 if (!e.isCausedByTimeout()) {
-                    String[] options = new String[] { _JDT._.captchacontroller_cancel_dialog_allorhost_next(), _JDT._.captchacontroller_cancel_dialog_allorhost_cancelhost(captchaController.getHost()), _JDT._.captchacontroller_cancel_dialog_allorhost_all() };
+                    String[] options = new String[] { _JDT._.captchacontroller_cancel_dialog_allorhost_next(), _JDT._.captchacontroller_cancel_dialog_allorhost_cancelhost(captchaController.getHost().getTld()), _JDT._.captchacontroller_cancel_dialog_allorhost_all() };
                     try {
                         int defSelection = CaptchaSettings.CFG.getLastCancelOption();
                         ComboBoxDialog combo = new ComboBoxDialog(Dialog.LOGIC_COUNTDOWN | Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _JDT._.captchacontroller_cancel_dialog_allorhost(), _JDT._.captchacontroller_cancel_dialog_allorhost_msg(), options, defSelection, null, null, null, null);
