@@ -24,6 +24,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.io.File;
+import java.net.MalformedURLException;
 
 import javax.swing.ImageIcon;
 import javax.swing.JComponent;
@@ -35,6 +36,7 @@ import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import net.miginfocom.swing.MigLayout;
 
+import org.appwork.utils.images.IconIO;
 import org.appwork.utils.swing.dialog.AbstractDialog;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.images.NewTheme;
@@ -77,7 +79,21 @@ public class ClickPositionDialog extends AbstractDialog<Point> implements Action
         ImageIcon imageIcon = null;
 
         if (this.imagefile != null && this.imagefile.exists()) {
-            imageIcon = new ImageIcon(this.imagefile.getAbsolutePath());
+            try {
+                imageIcon = IconIO.getImageIcon(imagefile.toURI().toURL());
+
+                // if
+                // (GraphicalUserInterfaceSettings.CFG.isCaptchaBackgroundCleanupEnabled())
+                // {
+                // imageIcon = new
+                // ImageIcon(IconIO.removeBackground((BufferedImage)
+                // imageIcon.getImage(), 0.05d));
+                // }
+            } catch (MalformedURLException e) {
+                e.printStackTrace();
+                imageIcon = NewTheme.I().getIcon("ocr", 0);
+            }
+
         } else {
             imageIcon = NewTheme.I().getIcon("ocr", 0);
         }

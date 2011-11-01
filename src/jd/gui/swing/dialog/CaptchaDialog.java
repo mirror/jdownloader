@@ -127,7 +127,9 @@ public class CaptchaDialog extends AbstractDialog<String> implements ActionListe
     private void adaptMethod() {
         if (FILESONIC.equals(methodName) || WUPLOAD.equals(methodName)) {
             // recaptcha
-            imagefile = new ImageIcon(IconIO.colorRangeToTransparency((BufferedImage) imagefile.getImage(), new Color(0xfcfcfc), Color.WHITE));
+            // imagefile = new
+            // ImageIcon(IconIO.colorRangeToTransparency((BufferedImage)
+            // imagefile.getImage(), new Color(0xfcfcfc), Color.WHITE));
         }
     }
 
@@ -203,11 +205,12 @@ public class CaptchaDialog extends AbstractDialog<String> implements ActionListe
         final int size = GraphicalUserInterfaceSettings.CAPTCHA_SCALE.getValue();
         if (this.imagefile != null) {
             // imageIcon = new ImageIcon(this.imagefile.getAbsolutePath());
+            if (GraphicalUserInterfaceSettings.CFG.isCaptchaBackgroundCleanupEnabled()) {
+                imagefile = new ImageIcon(IconIO.removeBackground((BufferedImage) imagefile.getImage(), 0.05d));
+            }
 
             imageIcon = size != 100 ? imagefile : new ImageIcon(imagefile.getImage().getScaledInstance((int) (imagefile.getIconWidth() * size / 100.0f), (int) (imagefile.getIconHeight() * size / 100.0f), Image.SCALE_SMOOTH));
             ;
-            // new ImageIcon(IconIO.colorRangeToTransparency(img, new
-            // Color(0xEEEEEE), new Color(0xFFFFFF)));
 
         } else {
             imageIcon = NewTheme.I().getIcon("ocr", 0);

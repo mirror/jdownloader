@@ -156,6 +156,13 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     void setCaptchaScaleFactor(int b);
 
     @AboutConfig
+    @Description("If enabled, the background of captchas will be removed to fit to the rest of the design (transparency)")
+    @DefaultBooleanValue(true)
+    boolean isCaptchaBackgroundCleanupEnabled();
+
+    void setCaptchaBackgroundCleanupEnabled(boolean b);
+
+    @AboutConfig
     @Description("Font to be used. Default value is default.")
     @DefaultStringValue("default")
     @RequiresRestart
