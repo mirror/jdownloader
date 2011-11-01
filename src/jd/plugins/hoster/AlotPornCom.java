@@ -24,13 +24,13 @@ import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "alotporn.com" }, urls = { "http://(www\\.)?alotporn\\.com/\\d+/[\\w-]+(/?\\?utm_source=\\w+\\&utm_medium=\\w\\&utm_campaign=\\w+)?" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "alotporn.com" }, urls = { "http://(www\\.)?alotporn\\.com/\\d+/[\\w-]+/" }, flags = { 0 })
 public class AlotPornCom extends PluginForHost {
 
     private String DLLINK = null;
@@ -63,7 +63,7 @@ public class AlotPornCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         setBrowserExclusive();
-        final String[] values = new Regex(downloadLink.getDownloadURL(), "http://.*?/(\\d+)/([\\w-]+)(/?\\?.+)?").getRow(0);
+        final String[] values = new Regex(downloadLink.getDownloadURL(), "http://.*?/(\\d+)/([\\w-]+)").getRow(0);
         String filename = values[1].replaceAll("-", "_");
         br.getPage("http://alotporn.com/modules/video/player/config.php?id=" + values[0]);
         if (!br.containsHTML("<provider>http</provider>")) { throw new PluginException(LinkStatus.ERROR_FATAL, "Plugin update needed!"); }
