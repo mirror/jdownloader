@@ -21,12 +21,12 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Random;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
-import jd.http.RandomUserAgent;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -48,7 +48,8 @@ import org.appwork.utils.formatter.TimeFormatter;
 public class FileServeCom extends PluginForHost {
 
     public String               FILEIDREGEX = "fileserve\\.com/file/([a-zA-Z0-9]+)(http:.*)?";
-    public static String        agent       = RandomUserAgent.generate();
+    // public static String agent = RandomUserAgent.generate();
+    public static String        agent       = "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:7.0.1) Gecko/20100101 Firefox/7.0.1";
     private static final Object LOCK        = new Object();
     private static final String COOKIE_HOST = "http://fileserve.com/";
 
@@ -136,7 +137,30 @@ public class FileServeCom extends PluginForHost {
         return new Regex(link.getDownloadURL(), this.FILEIDREGEX).getMatch(0);
     }
 
+    private void correctHeaders(Browser brrr) {
+        brrr.getHeaders().put("User-Agent", agent);
+        brrr.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
+        brrr.getHeaders().put("Accept-Language", "de-de,de;q=0.8,en-us;q=0.5,en;q=0.3");
+        brrr.getHeaders().put("Accept-Encoding", "gzip, deflate");
+        brrr.getHeaders().put("Accept-Charset", "ISO-8859-1,utf-8;q=0.7,*;q=0.7");
+        brrr.getHeaders().put("Referer", "");
+    }
+
+    private void setAjaxHeaders(Browser brrr) {
+        brrr.getHeaders().put("Accept", "application/json, text/javascript, */*");
+        brrr.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
+        brrr.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+    }
+
+    @Override
+    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
+        this.requestFileInformation(downloadLink);
+        boolean direct = getDownloadUrlPage(downloadLink);
+        this.doFree(downloadLink, direct);
+    }
+
     public void doFree(final DownloadLink downloadLink, boolean direct) throws Exception, PluginException {
+        sleep(new Random().nextInt(11) * 1000l, downloadLink);
         String dllink = null;
         if (direct) {
             dllink = br.getRedirectLocation();
@@ -155,17 +179,18 @@ public class FileServeCom extends PluginForHost {
             br2.setCustomCharset("utf-8");
             // It doesn't work without accessing this page!!
             br2.getPage(captchaJSPage);
-            br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+            String secret = br2.getRegex("ppp:\"(.*?)\"").getMatch(0);
+            if (secret == null) secret = "301";
+            br2.getPage("http://www.fileserve.com/script/fileserve.js");
+            br2.getPage("http://www.fileserve.com/styles/landing/DL42/landing.css");
+            br2.getPage("http://www.fileserve.com/script/recaptcha_ajax.js");
+            setAjaxHeaders(br2);
             br2.postPage(downloadLink.getDownloadURL(), "checkDownload=check");
             if (!br2.containsHTML("success\":\"showCaptcha\"")) {
                 logger.info("There seems to be an error, no captcha is shown!");
                 handleCaptchaErrors(br2, downloadLink);
                 handleErrors(br2);
             }
-            // Captcha should appear always
-            // if
-            // (!this.br.containsHTML("<div id=\"captchaArea\" style=\"display:none;\">")
-            // || br2.containsHTML("showCaptcha\\(\\);")) {
             Boolean failed = true;
             for (int i = 0; i <= 10; i++) {
                 final String id = this.br.getRegex("var reCAPTCHA_publickey=\\'(.*?)\\';").getMatch(0);
@@ -178,6 +203,7 @@ public class FileServeCom extends PluginForHost {
                 reCaptchaForm.setMethod(Form.MethodType.POST);
                 reCaptchaForm.setAction("http://www.fileserve.com/checkReCaptcha.php");
                 reCaptchaForm.put("recaptcha_shortencode_field", fileId);
+                reCaptchaForm.put("ppp", Encoding.urlEncode(secret));
                 final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
                 final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(this.br);
                 rc.setForm(reCaptchaForm);
@@ -186,10 +212,10 @@ public class FileServeCom extends PluginForHost {
                 final File cf = rc.downloadCaptcha(this.getLocalCaptchaFile());
                 final String c = this.getCaptchaCode(cf, downloadLink);
                 if (c == null || c.length() == 0) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Recaptcha failed");
-                rc.getForm().put("recaptcha_response_field", c);
+                rc.getForm().put("recaptcha_response_field", Encoding.urlEncode(c));
                 rc.getForm().put("recaptcha_challenge_field", rc.getChallenge());
                 br2.submitForm(rc.getForm());
-                if (br2.containsHTML("incorrect-captcha-sol")) {
+                if (br2.containsHTML("incorrect\\-captcha\\-sol")) {
                     handleCaptchaErrors(br2, downloadLink);
                     this.br.getPage(downloadLink.getDownloadURL());
                     continue;
@@ -279,9 +305,9 @@ public class FileServeCom extends PluginForHost {
         if (br2.containsHTML("landing-error\\.php\\?error_code=404")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br2.containsHTML("landing-406\\.php")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 15 * 60 * 1000l); }
         if (br2.containsHTML("<p>You can only download 1 file at a time")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Too many simultan downloads", 10 * 60 * 1000l);
-        if (br2.containsHTML("(landing-error\\.php\\?error_code=2702|is already downloading a file</li>|is already downloading a file <br>|landing\\-1403)") || br2.getURL().contains("landing-2702.html") || br.getURL().contains("landing-1403")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Your IP is already downloading", 5 * 60 * 1000l);
-        if (br2.containsHTML("landing-error\\.php\\?error_code=1703")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 15 * 60 * 1000l);
-        if (br2.containsHTML("landing-error\\.php") || br.getURL().contains("landing-")) {
+        if (br2.containsHTML("(landing\\-error\\.php\\?error_code=2702|is already downloading a file</li>|is already downloading a file <br>|landing\\-1403)") || br2.getURL().contains("landing-2702.html") || br.getURL().contains("landing-1403")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Your IP is already downloading", 5 * 60 * 1000l);
+        if (br2.containsHTML("landing\\-error\\.php\\?error_code=1703")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 15 * 60 * 1000l);
+        if (br2.containsHTML("landing\\-error\\.php") || br.getURL().contains("landing-")) {
             logger.warning("Unknown landing error!");
             logger.warning("Url = " + br2.getURL());
             logger.warning("html code = " + br2.toString());
@@ -304,18 +330,10 @@ public class FileServeCom extends PluginForHost {
             // Just an additional check
             if (br2.containsHTML("Please retry later\\.<") || br2.containsHTML(">Your IP has failed the captcha too many times")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Too many wrong captcha attempts!", 10 * 60 * 1000l);
         } else if (fail != null) {
-            // This coiuld be a limit message which appears after posting this,
+            // This could be a limit message which appears after posting this,
             // it should then be handled with handleErrors
             br2.postPage(downloadLink.getDownloadURL(), "checkDownload=showError&errorType=" + fail);
         }
-    }
-
-    @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        this.sleep(30 * 1000l, downloadLink);
-        this.requestFileInformation(downloadLink);
-        boolean direct = getDownloadUrlPage(downloadLink);
-        this.doFree(downloadLink, direct);
     }
 
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
@@ -479,7 +497,7 @@ public class FileServeCom extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
-        this.br.getHeaders().put("User-Agent", agent);
+        correctHeaders(this.br);
         if (this.checkLinks(new DownloadLink[] { link }) == false) {
             link.setAvailableStatus(AvailableStatus.UNCHECKABLE);
         } else if (!link.isAvailabilityStatusChecked()) {
