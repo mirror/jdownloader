@@ -67,7 +67,7 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
             }
 
         });
-        filteredAdd.setVisible(false);
+        // filteredAdd.setVisible(false);
         LinkCollector.getInstance().addListener(new LinkCollectorListener() {
 
             public void onLinkCollectorEvent(LinkCollectorEvent event) {
@@ -97,16 +97,16 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
             }
         };
 
-        leftBar = new MigPanel("ins 0", "[]1[][][grow,fill][]", "[]");
+        leftBar = new MigPanel("ins 0", "[]1[][][grow,fill]0[]", "[]");
         rightBar = new MigPanel("ins 0", "[grow,fill]1[]0", "[]");
 
-        leftBar.add(addLinks, "height 24!");
+        leftBar.add(addLinks, "height 24!,aligny top");
 
-        leftBar.add(popup, "height 24!,width 12!");
-        leftBar.add(clearAll, "width 24!,height 24!");
+        leftBar.add(popup, "height 24!,width 12!,aligny top");
+        leftBar.add(clearAll, "width 24!,height 24!,aligny top");
         searchField = new SearchField<CrawledPackage, CrawledLink>(table);
-        leftBar.add(searchField, "height 24!");
-        leftBar.add(filteredAdd, "height 24!,hidemode 3");
+        leftBar.add(searchField, "height 24!,aligny top");
+        leftBar.add(filteredAdd, "height 24!,hidemode 3,gapleft 4");
         // leftBar.add(Box.createGlue());
         rightBar.add(confirmAll, "height 24!");
         rightBar.add(popupConfirm, "height 24!,width 12!");
