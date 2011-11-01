@@ -29,7 +29,7 @@ import jd.plugins.DownloadLink.AvailableStatus;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "astr.sk" }, urls = { "http://(www\\.)?(mojedata|astr)\\.sk/[A-Za-z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "astr.sk" }, urls = { "http://(www\\.)?(mojedata|astr)\\.sk/[A-Za-z0-9_]+" }, flags = { 0 })
 public class AstrSk extends PluginForHost {
 
     public AstrSk(PluginWrapper wrapper) {
