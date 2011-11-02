@@ -32,12 +32,12 @@ public class ImportAction extends AppAction {
      * 
      */
     private static final long  serialVersionUID = 1L;
-    private FilterTable        table;
+    private LinkgrabberFilter  table;
 
-    public ImportAction(FilterTable table) {
+    public ImportAction(LinkgrabberFilter linkgrabberFilter) {
         setIconKey("import");
         setName(_GUI._.LinkgrabberFilter_LinkgrabberFilter_import());
-        this.table = table;
+        this.table = linkgrabberFilter;
         setTooltipText(_JDT._.ImportAction_tt());
     }
 

@@ -135,6 +135,10 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
     protected JComboBox        cobSource;
     protected ExtTextField     txtSource;
 
+    private JComboBox          cobSize;
+
+    private JComboBox          cobType;
+
     public ConditionDialog() {
         super(0, _GUI._.FilterRuleDialog_FilterRuleDialog_(""), null, _GUI._.literally_save(), null);
 
@@ -142,7 +146,7 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
 
     @Override
     public JComponent layoutDialogContent() {
-        panel = new MigPanel("ins 5,wrap 4", "[][][][grow,fill]", "[]");
+        panel = new MigPanel("ins 5,wrap 6", "[][][fill][][][grow,fill]", "[]");
         panel.add(createHeader(_GUI._.FilterRuleDialog_layoutDialogContent_name()), "spanx,growx,pushx");
         txtName = new ExtTextField() {
 
@@ -163,7 +167,7 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
 
         panel.add(createHeader(_GUI._.FilterRuleDialog_layoutDialogContent_if()), "gaptop 10,spanx,growx,pushx");
 
-        cobFilename = new JComboBox(new String[] { _GUI._.FilterRuleDialog_layoutDialogContent_contains(), _GUI._.FilterRuleDialog_layoutDialogContent_equals() });
+        cobFilename = new JComboBox(new String[] { _GUI._.FilterRuleDialog_layoutDialogContent_contains(), _GUI._.FilterRuleDialog_layoutDialogContent_equals(), _GUI._.FilterRuleDialog_layoutDialogContent_contains_not(), _GUI._.FilterRuleDialog_layoutDialogContent_equals_not() });
         txtFilename = new ExtTextField();
         txtFilename.setHelpText(_GUI._.FilterRuleDialog_layoutDialogContent_ht_filename());
 
@@ -183,13 +187,14 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
         panel.add(cbFilename);
         panel.add(lblFilename);
         panel.add(cobFilename);
-        panel.add(txtFilename);
+        panel.add(txtFilename, "spanx,pushx,growx");
 
         size = createSizeFilter();
-        JLabel lblSize = getLabel(_GUI._.FilterRuleDialog_layoutDialogContent_lbl_size());
-        cbSize = new ExtCheckBox(size);
+        cobSize = new JComboBox(new String[] { _GUI._.FilterRuleDialog_layoutDialogContent_is_between(), _GUI._.FilterRuleDialog_layoutDialogContent_is_not_between() });
 
-        size.addMouseListener(new MouseAdapter() {
+        JLabel lblSize = getLabel(_GUI._.FilterRuleDialog_layoutDialogContent_lbl_size());
+        cbSize = new ExtCheckBox(size, cobSize);
+        ml = new MouseAdapter() {
 
             @Override
             public void mousePressed(MouseEvent e) {
@@ -197,9 +202,12 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
 
             }
 
-        });
+        };
+        size.addMouseListener(ml);
+        cobSize.addMouseListener(ml);
         panel.add(cbSize);
         panel.add(lblSize);
+        panel.add(cobSize);
         panel.add(size, "pushx,growx,spanx");
         // Type
 
@@ -216,16 +224,30 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
             }
         };
         JLabel lblType = getLabel(_GUI._.FilterRuleDialog_layoutDialogContent_lbl_type());
+
+        cobType = new JComboBox(new String[] { _GUI._.FilterRuleDialog_layoutDialogContent_is_type(), _GUI._.FilterRuleDialog_layoutDialogContent_is_not_type() });
         cbType = new ExtCheckBox();
+        comp.add(cobType);
+        cobType.addMouseListener(new MouseAdapter() {
+
+            @Override
+            public void mousePressed(MouseEvent e) {
+                cbType.setSelected(true);
+
+            }
+
+        });
         panel.add(cbType, "aligny top");
+
         panel.add(lblType, "aligny top,gaptop 3");
+        panel.add(cobType, "aligny top");
         cbAudio = new ExtCheckBox();
         lbl.addMouseListener(new ClickDelegater(cbAudio));
         ico.addMouseListener(new ClickDelegater(cbAudio));
-        panel.add(ico, "split 2");
+        panel.add(ico, "");
         panel.add(cbAudio);
         cbAudio.addActionListener(al);
-        panel.add(lbl);
+        panel.add(lbl, "spanx");
         comp.add(ico);
         comp.add(cbAudio);
         comp.add(lbl);
@@ -236,9 +258,9 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
         cbVideo.addActionListener(al);
         lbl.addMouseListener(new ClickDelegater(cbVideo));
         ico.addMouseListener(new ClickDelegater(cbVideo));
-        panel.add(ico, "skip 2,split 2");
+        panel.add(ico, "skip 3");
         panel.add(cbVideo);
-        panel.add(lbl);
+        panel.add(lbl, "spanx");
         comp.add(ico);
         comp.add(cbVideo);
         comp.add(lbl);
@@ -249,9 +271,9 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
         cbArchive.addActionListener(al);
         lbl.addMouseListener(new ClickDelegater(cbArchive));
         ico.addMouseListener(new ClickDelegater(cbArchive));
-        panel.add(ico, "skip 2,split 2");
+        panel.add(ico, "skip 3");
         panel.add(cbArchive);
-        panel.add(lbl);
+        panel.add(lbl, "spanx");
         comp.add(ico);
         comp.add(cbArchive);
         comp.add(lbl);
@@ -263,9 +285,9 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
 
         lbl.addMouseListener(new ClickDelegater(cbImage));
         ico.addMouseListener(new ClickDelegater(cbImage));
-        panel.add(ico, "skip 2,split 2");
+        panel.add(ico, "skip 3");
         panel.add(cbImage);
-        panel.add(lbl);
+        panel.add(lbl, "spanx");
         comp.add(ico);
         comp.add(cbImage);
         comp.add(lbl);
@@ -287,9 +309,9 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
         cbCustom = new ExtCheckBox();
         cbCustom.addActionListener(al);
         ico.addMouseListener(new ClickDelegater(cbCustom));
-        panel.add(ico, "skip 2,split 2");
+        panel.add(ico, "skip 3");
         panel.add(cbCustom);
-        panel.add(txtCustumMime);
+        panel.add(txtCustumMime, "spanx");
         comp.add(ico);
         comp.add(cbCustom);
         comp.add(txtCustumMime);
@@ -308,7 +330,7 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
         }
         cbType.setDependencies(comp.toArray(new JComponent[] {}));
         // hoster
-        cobHoster = new JComboBox(new String[] { _GUI._.FilterRuleDialog_layoutDialogContent_contains(), _GUI._.FilterRuleDialog_layoutDialogContent_equals() });
+        cobHoster = new JComboBox(new String[] { _GUI._.FilterRuleDialog_layoutDialogContent_contains(), _GUI._.FilterRuleDialog_layoutDialogContent_equals(), _GUI._.FilterRuleDialog_layoutDialogContent_contains_not(), _GUI._.FilterRuleDialog_layoutDialogContent_equals_not() });
         txtHoster = new ExtTextField();
         txtHoster.setHelpText(_GUI._.FilterRuleDialog_layoutDialogContent_lbl_hoster_help());
 
@@ -327,10 +349,10 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
         panel.add(cbHoster);
         panel.add(new JLabel(_GUI._.FilterRuleDialog_layoutDialogContent_lbl_hoster()));
         panel.add(cobHoster);
-        panel.add(txtHoster);
+        panel.add(txtHoster, "spanx,pushx,growx");
         // crawler
 
-        cobSource = new JComboBox(new String[] { _GUI._.FilterRuleDialog_layoutDialogContent_contains(), _GUI._.FilterRuleDialog_layoutDialogContent_equals() });
+        cobSource = new JComboBox(new String[] { _GUI._.FilterRuleDialog_layoutDialogContent_contains(), _GUI._.FilterRuleDialog_layoutDialogContent_equals(), _GUI._.FilterRuleDialog_layoutDialogContent_contains_not(), _GUI._.FilterRuleDialog_layoutDialogContent_equals_not() });
         txtSource = new ExtTextField();
         txtSource.setHelpText(_GUI._.FilterRuleDialog_layoutDialogContent_lbl_source_help());
 
@@ -349,7 +371,7 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
         panel.add(cbSource);
         panel.add(new JLabel(_GUI._.FilterRuleDialog_layoutDialogContent_lbl_source()));
         panel.add(cobSource);
-        panel.add(txtSource);
+        panel.add(txtSource, "spanx,pushx,growx");
         return panel;
     }
 

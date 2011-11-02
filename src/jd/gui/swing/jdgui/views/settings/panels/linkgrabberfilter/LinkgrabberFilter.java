@@ -1,8 +1,16 @@
 package jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter;
 
-import javax.swing.Box;
+import java.awt.Component;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+
+import javax.swing.JComboBox;
+import javax.swing.JComponent;
+import javax.swing.JLabel;
+import javax.swing.JList;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.ListCellRenderer;
 import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
 
@@ -10,32 +18,44 @@ import jd.gui.swing.jdgui.views.settings.components.SettingsComponent;
 import jd.gui.swing.jdgui.views.settings.components.StateUpdateListener;
 import net.miginfocom.swing.MigLayout;
 
-import org.appwork.app.gui.MigPanel;
 import org.appwork.swing.components.ExtButton;
 import org.appwork.swing.exttable.utils.MinimumSelectionObserver;
+import org.appwork.utils.swing.EDTRunner;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.images.NewTheme;
 
 public class LinkgrabberFilter extends JPanel implements SettingsComponent {
     private static final long serialVersionUID = 6070464296168772795L;
-    private MigPanel          tb;
+
     private FilterTable       table;
     private ExtButton         btadd;
 
     private ExtButton         btImport;
     private ExtButton         btExport;
+    private JComboBox         combobox;
+    private JScrollPane       card;
+    private ExceptionsTable   exceptions;
+    private ExtButton         btRemove;
 
     public LinkgrabberFilter() {
-        super(new MigLayout("ins 0,wrap 1", "[grow,fill]", "[grow,fill][]"));
-        tb = new MigPanel("ins 0", "[][][grow,fill][][]", "[]");
-        table = new FilterTable();
-        tb.add(btadd = new ExtButton(new NewAction(this)), "height 26!,sg 1");
-        RemoveAction ra;
-        ExtButton btRemove;
-        tb.add(btRemove = new ExtButton(ra = new RemoveAction(table)), "height 26!,sg 1");
-        tb.add(Box.createHorizontalGlue());
+        super(new MigLayout("ins 0,wrap 5", "[grow,fill][][]8[][]", "[][grow,fill]"));
 
-        tb.add(btImport = new ExtButton(new ImportAction(table)), "height 26!,sg 2");
+        initComponents();
 
-        tb.add(btExport = new ExtButton(new ExportAction()), "height 26!,sg 2");
+        this.add(this.combobox, "growx, pushx,height 26!");
+        this.add(btImport, "height 26!,sg 1");
+        this.add(btExport, "height 26!,sg 1");
+        this.add(btadd, "height 26!,sg 1");
+        this.add(btRemove, "height 26!,sg 1");
+
+        add(card, "spanx,pushy,growy");
+
+        this.combobox.addActionListener(new ActionListener() {
+
+            public void actionPerformed(ActionEvent e) {
+                setView(combobox.getSelectedIndex() == 0 ? table : exceptions);
+            }
+        });
 
         table.getExtTableModel().addTableModelListener(new TableModelListener() {
 
@@ -44,11 +64,39 @@ public class LinkgrabberFilter extends JPanel implements SettingsComponent {
             }
         });
 
-        table.getSelectionModel().addListSelectionListener(new MinimumSelectionObserver(table, ra, 1));
+        table.getSelectionModel().addListSelectionListener(new MinimumSelectionObserver(table, btRemove.getAction(), 1));
+        setView(table);
+    }
 
-        add(new JScrollPane(table));
+    protected void setView(final JComponent gui) {
+        new EDTRunner() {
 
-        add(tb);
+            @Override
+            protected void runInEDT() {
+                card.getViewport().setView(gui);
+            }
+        };
+
+    }
+
+    private void initComponents() {
+        table = new FilterTable(this);
+        exceptions = new ExceptionsTable(this);
+        btRemove = new ExtButton(new RemoveAction(this));
+        btadd = new ExtButton(new NewAction(this));
+        this.combobox = new JComboBox(new String[] { _GUI._.LinkgrabberFilter_initComponents_filter_(), _GUI._.LinkgrabberFilter_initComponents_exceptions_() });
+        final ListCellRenderer org = combobox.getRenderer();
+        combobox.setRenderer(new ListCellRenderer() {
+
+            public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+                JLabel ret = (JLabel) org.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+                ret.setIcon(value == _GUI._.LinkgrabberFilter_initComponents_filter_() ? NewTheme.I().getIcon("filter", 20) : NewTheme.I().getIcon("filter_exceptions", 20));
+                return ret;
+            }
+        });
+        btImport = new ExtButton(new ImportAction(this));
+        btExport = new ExtButton(new ExportAction());
+        this.card = new JScrollPane();
 
     }
 

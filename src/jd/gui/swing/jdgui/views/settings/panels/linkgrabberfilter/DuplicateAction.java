@@ -9,9 +9,9 @@ import org.jdownloader.translate._JDT;
 public class DuplicateAction extends AppAction {
 
     private LinkgrabberFilterRule contextObject;
-    private FilterTable           filterTable;
+    private AbstractFilterTable   filterTable;
 
-    public DuplicateAction(LinkgrabberFilterRule contextObject, FilterTable filterTable) {
+    public DuplicateAction(LinkgrabberFilterRule contextObject, AbstractFilterTable filterTable) {
         setName(_JDT._.DuplicateAction_DuplicateAction_());
         setIconKey("copy");
         this.contextObject = contextObject;

@@ -2983,4 +2983,28 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Crawl %s1 @ %s2" })
     String CaptchaDialog_layoutDialogContent_header_crawler2(String crawlerStatus, String tld);
 
+    @Default(lngs = { "en" }, values = { "Filter List - filter all links that match these rules." })
+    String LinkgrabberFilter_initComponents_filter_();
+
+    @Default(lngs = { "en" }, values = { "Exception List - Grab all links that match these rules anyway." })
+    String LinkgrabberFilter_initComponents_exceptions_();
+
+    @Default(lngs = { "en" }, values = { "contains not" })
+    String FilterRuleDialog_layoutDialogContent_contains_not();
+
+    @Default(lngs = { "en" }, values = { "equals not" })
+    String FilterRuleDialog_layoutDialogContent_equals_not();
+
+    @Default(lngs = { "en" }, values = { "is between" })
+    String FilterRuleDialog_layoutDialogContent_is_between();
+
+    @Default(lngs = { "en" }, values = { "is not between" })
+    String FilterRuleDialog_layoutDialogContent_is_not_between();
+
+    @Default(lngs = { "en" }, values = { "is" })
+    String FilterRuleDialog_layoutDialogContent_is_type();
+
+    @Default(lngs = { "en" }, values = { "is not" })
+    String FilterRuleDialog_layoutDialogContent_is_not_type();
+
 }

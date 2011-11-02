@@ -20,17 +20,20 @@ public class NewAction extends AbstractAddAction {
     /**
      * 
      */
-    private static final long serialVersionUID = 1L;
+    private static final long   serialVersionUID = 1L;
 
-    private FilterTable       table;
+    private AbstractFilterTable table;
+
+    private LinkgrabberFilter   linkgrabberFilter;
 
     public NewAction(LinkgrabberFilter linkgrabberFilter) {
-        this(linkgrabberFilter.getTable());
+        this.linkgrabberFilter = linkgrabberFilter;
+        this.putValue(NAME, _GUI._.settings_linkgrabber_filter_action_add());
         this.putValue(AbstractAction.SMALL_ICON, NewTheme.I().getIcon("add", 20));
 
     }
 
-    public NewAction(FilterTable table) {
+    public NewAction(AbstractFilterTable table) {
         this.table = table;
         this.putValue(NAME, _GUI._.settings_linkgrabber_filter_action_add());
         this.putValue(AbstractAction.SMALL_ICON, NewTheme.I().getIcon("add", 16));
@@ -38,10 +41,15 @@ public class NewAction extends AbstractAddAction {
 
     public void actionPerformed(ActionEvent e) {
         final LinkgrabberFilterRule rule = new LinkgrabberFilterRule();
-        add(rule, table);
+        add(rule, getTable());
     }
 
-    public static void add(final LinkgrabberFilterRule rule, final FilterTable table) {
+    private AbstractFilterTable getTable() {
+        if (table != null) return table;
+        return linkgrabberFilter.getTable();
+    }
+
+    public static void add(final LinkgrabberFilterRule rule, final AbstractFilterTable table) {
         FilterRuleDialog d = new FilterRuleDialog(rule);
         try {
             Dialog.getInstance().showDialog(d);
