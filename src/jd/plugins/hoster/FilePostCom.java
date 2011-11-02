@@ -172,6 +172,7 @@ public class FilePostCom extends PluginForHost {
         }
         sleep(wait * 1001l, downloadLink);
         boolean captchaNeeded = br.containsHTML("show_captcha = 1");
+        if (!captchaNeeded) captchaNeeded = br.containsHTML("show_captcha = true");
         form = new Form();
         form.setMethod(MethodType.POST);
         form.setAction("http://filepost.com/files/get/?JsHttpRequest=" + System.currentTimeMillis() + "-xml");
