@@ -118,45 +118,63 @@ public class VKontakteRu extends PluginForDecrypt implements ProgressControllerL
                     parameter = "http://vkontakte.ru/album" + new Regex(parameter, "#/album(\\d+_\\d+)").getMatch(0);
                 else if (parameter.matches(".*?vkontakte\\.ru/(photos|id)\\d+")) parameter = parameter.replaceAll("vkontakte\\.ru/(photos|id)", "vkontakte.ru/album") + "_0";
                 br.getPage(parameter);
-                String correctedBR = br.toString().replace("\\", "");
-                String[] photoIDs = new Regex(correctedBR, "class=\"photo_row\" id=\"photo_row(\\d+_\\d+)\"").getColumn(0);
-                photoIDs = null;
-                if (photoIDs == null || photoIDs.length == 0) {
-                    photoIDs = new Regex(correctedBR, "><a href=\"/photo(\\d+_\\d+)\"").getColumn(0);
-                    if (photoIDs == null || photoIDs.length == 0) {
-                        photoIDs = new Regex(correctedBR, "showPhoto\\(\\'(\\d+_\\d+)\\'").getColumn(0);
-                    }
-                }
-                if (photoIDs == null || photoIDs.length == 0) {
+                String numberOfPictures = br.getRegex("\\| (\\d+) zdj&#281;&#263;</title>").getMatch(0);
+                if (numberOfPictures == null) {
                     logger.warning("Decrypter broken for link: " + parameter);
                     return null;
                 }
-                progress.setRange(photoIDs.length);
+                if (numberOfPictures == null) numberOfPictures = br.getRegex("</a>(\\d+) zdj\\&#281;\\&#263;<span").getMatch(0);
+                // Find out how many times we have to reload images. Take the
+                // number of pictures - 80 (because without any request we
+                // already got 80) and divide it by 40 (every reload we get 40)
+                int maxLoops = (Integer.parseInt(numberOfPictures) - 80) / 40;
+                int offset = 80;
                 br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                String albumID = new Regex(parameter, "/album(.+)").getMatch(0);
-                for (String photoID : photoIDs) {
-                    br.postPage("http://vk.com/al_photos.php", "act=show&al=1&list=" + albumID + "&photo=" + photoID);
-                    correctedBR = br.toString().replace("\\", "");
-                    // Try to get best quality
-                    String finallink = new Regex(correctedBR, "\"id\":\"" + photoID + "\",\"w_src\":\"(http://.*?)\"").getMatch(0);
-                    if (finallink == null) {
-                        finallink = new Regex(correctedBR, "\"id\":\"" + photoID + "\",\"x_src\":\"http://[^\"\\']+\",\"y_src\":\"http://[^\"\\']+\",\"z_src\":\"http://[^\"\\']+\",\"w_src\":\"(http://.*?)\"").getMatch(0);
+                progress.setRange(Integer.parseInt(numberOfPictures));
+                for (int i = 0; i <= maxLoops; i++) {
+                    if (i > 0) {
+                        br.postPage(parameter, "al=1&offset=" + offset + "&part=1");
+                        offset += 40;
+                    }
+                    String correctedBR = br.toString().replace("\\", "");
+                    String[] photoIDs = new Regex(correctedBR, "class=\"photo_row\" id=\"photo_row(\\d+_\\d+)\"").getColumn(0);
+                    if (photoIDs == null || photoIDs.length == 0) {
+                        photoIDs = new Regex(correctedBR, "><a href=\"/photo(\\d+_\\d+)\"").getColumn(0);
+                        if (photoIDs == null || photoIDs.length == 0) {
+                            photoIDs = new Regex(correctedBR, "showPhoto\\(\\'(\\d+_\\d+)\\'").getColumn(0);
+                        }
+                    }
+                    if (photoIDs == null || photoIDs.length == 0) {
+                        logger.warning("Decrypter broken for link: " + parameter);
+                        return null;
+                    }
+                    String albumID = new Regex(parameter, "/album(.+)").getMatch(0);
+                    for (String photoID : photoIDs) {
+                        br.postPage("http://vk.com/al_photos.php", "act=show&al=1&list=" + albumID + "&photo=" + photoID);
+                        correctedBR = br.toString().replace("\\", "");
+                        // Try to get best quality
+                        String finallink = new Regex(correctedBR, "\"id\":\"" + photoID + "\",\"w_src\":\"(http://.*?)\"").getMatch(0);
                         if (finallink == null) {
-                            finallink = new Regex(correctedBR, "\"id\":\"" + photoID + "\",\"x_src\":\"http://[^\"\\']+\",\"y_src\":\"http://[^\"\\']+\",\"z_src\":\"(http://.*?)\"").getMatch(0);
+                            finallink = new Regex(correctedBR, "\"id\":\"" + photoID + "\",\"x_src\":\"http://[^\"\\']+\",\"y_src\":\"http://[^\"\\']+\",\"z_src\":\"http://[^\"\\']+\",\"w_src\":\"(http://.*?)\"").getMatch(0);
                             if (finallink == null) {
-                                finallink = new Regex(correctedBR, "\"id\":\"" + photoID + "\",\"x_src\":\"http://[^\"\\']+\",\"y_src\":\"(http://.*?)\"").getMatch(0);
+                                finallink = new Regex(correctedBR, "\"id\":\"" + photoID + "\",\"x_src\":\"http://[^\"\\']+\",\"y_src\":\"http://[^\"\\']+\",\"z_src\":\"(http://.*?)\"").getMatch(0);
                                 if (finallink == null) {
-                                    finallink = new Regex(correctedBR, "\"id\":\"" + photoID + "\",\"x_src\":\"(http://.*?)\"").getMatch(0);
+                                    finallink = new Regex(correctedBR, "\"id\":\"" + photoID + "\",\"x_src\":\"http://[^\"\\']+\",\"y_src\":\"(http://.*?)\"").getMatch(0);
+                                    if (finallink == null) {
+                                        finallink = new Regex(correctedBR, "\"id\":\"" + photoID + "\",\"x_src\":\"(http://.*?)\"").getMatch(0);
+                                    }
                                 }
                             }
                         }
+                        if (finallink == null) {
+                            logger.warning("Decrypter broken for link: " + parameter + "\n");
+                            return null;
+                        }
+                        DownloadLink dl = createDownloadlink("directhttp://" + finallink);
+                        dl.setAvailable(true);
+                        decryptedLinks.add(dl);
+                        progress.increase(1);
                     }
-                    if (finallink == null) {
-                        logger.warning("Decrypter broken for link: " + parameter + "\n");
-                        return null;
-                    }
-                    decryptedLinks.add(createDownloadlink("directhttp://" + finallink));
-                    progress.increase(1);
                 }
                 FilePackage fp = FilePackage.getInstance();
                 fp.setName(new Regex(parameter, "/album(.+)").getMatch(0));
