@@ -10,7 +10,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision: 14904 $", interfaceVersion = 2, names = { "unixmanga.com" }, urls = { "http://[\\w\\.]*?unixmanga\\.com/onlinereading/.*?/.*?(c|ch)\\d+.*" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision: 14904 $", interfaceVersion = 2, names = { "unixmanga.com" }, urls = { "http://(www\\.)?unixmanga\\.com/onlinereading/[^\\?]*?/.*?(c|ch)\\d+.*" }, flags = { 0 })
 public class UnixMangaCom extends PluginForDecrypt {
 
     public UnixMangaCom(PluginWrapper wrapper) {
