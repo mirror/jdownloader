@@ -324,13 +324,14 @@ public class CaptchaDialog extends AbstractDialog<String> implements ActionListe
         field.add(iconPanel);
 
         HeaderScrollPane sp;
+        if (headerPanel != null) {
+            sp = new HeaderScrollPane(field);
 
-        sp = new HeaderScrollPane(field);
+            panel.add(sp);
 
-        panel.add(sp);
-
-        sp.setColumnHeaderView(headerPanel);
-        sp.setMinimumSize(new Dimension(Math.max(imageIcon.getIconWidth() + 10, headerPanel.getPreferredSize().width + 10), imageIcon.getIconHeight() + headerPanel.getPreferredSize().height));
+            sp.setColumnHeaderView(headerPanel);
+            sp.setMinimumSize(new Dimension(Math.max(imageIcon.getIconWidth() + 10, headerPanel.getPreferredSize().width + 10), imageIcon.getIconHeight() + headerPanel.getPreferredSize().height));
+        }
         panel.add(this.textField);
         this.textField.requestFocusInWindow();
         this.textField.selectAll();

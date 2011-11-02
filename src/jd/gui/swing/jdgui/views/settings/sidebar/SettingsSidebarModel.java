@@ -21,6 +21,7 @@ import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.controlling.filter.LinkFilterSettings;
 import org.jdownloader.controlling.packagizer.PackagizerSettings;
 import org.jdownloader.extensions.ExtensionController;
@@ -55,60 +56,67 @@ public class SettingsSidebarModel extends DefaultListModel implements GenericCon
     }
 
     public void fill() {
-        synchronized (LOCK) {
-            removeAllElements();
-            LazyExtension extract = ExtensionController.getInstance().getExtension(ExtractionExtension.class);
-            LazyExtension tray = ExtensionController.getInstance().getExtension(TrayExtension.class);
+        new EDTRunner() {
 
-            if (cfg == null) cfg = new ConfigPanelGeneral();
-            addElement(cfg);
-            if (dlc == null) dlc = new DownloadControll();
-            addElement(dlc);
+            @Override
+            protected void runInEDT() {
+                synchronized (LOCK) {
+                    removeAllElements();
+                    LazyExtension extract = ExtensionController.getInstance().getExtension(ExtractionExtension.class);
+                    LazyExtension tray = ExtensionController.getInstance().getExtension(TrayExtension.class);
 
-            // addElement(new ToolbarController());
-            if (rcs == null) rcs = new ReconnectSettings();
-            addElement(rcs);
-            if (pc == null) pc = new ProxyConfig();
-            addElement(pc);
-            if (ams == null) ams = new AccountManagerSettings();
-            addElement(ams);
-            if (ba == null) ba = new BasicAuthentication();
-            addElement(ba);
+                    if (cfg == null) cfg = new ConfigPanelGeneral();
+                    addElement(cfg);
+                    if (dlc == null) dlc = new DownloadControll();
+                    addElement(dlc);
 
-            // addElement(new Premium());
-            if (ps == null) ps = new PluginSettings();
-            addElement(ps);
-            // addElement(new ExtensionManager());
-            if (gs == null) gs = new GUISettings();
-            addElement(gs);
-            // modules
+                    // addElement(new ToolbarController());
+                    if (rcs == null) rcs = new ReconnectSettings();
+                    addElement(rcs);
+                    if (pc == null) pc = new ProxyConfig();
+                    addElement(pc);
+                    if (ams == null) ams = new AccountManagerSettings();
+                    addElement(ams);
+                    if (ba == null) ba = new BasicAuthentication();
+                    addElement(ba);
 
-            if (lg == null) lg = new jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.Linkgrabber();
-            addElement(lg);
-            if (pz == null) pz = new Packagizer();
-            addElement(pz);
-            if (extract != null) addElement(extract);
-            if (tray != null) addElement(tray);
-            if (ads == null) ads = new AdvancedSettings();
-            addElement(ads);
-            boolean first = true;
-            List<LazyExtension> pluginsOptional = ExtensionController.getInstance().getExtensions();
-            if (pluginsOptional != null) {
-                for (final LazyExtension plg : pluginsOptional) {
-                    if (contains(plg)) continue;
-                    if (CrossSystem.isWindows() && !plg.isWindowsRunnable()) continue;
-                    if (CrossSystem.isLinux() && !plg.isLinuxRunnable()) continue;
-                    if (CrossSystem.isMac() && !plg.isMacRunnable()) continue;
+                    // addElement(new Premium());
+                    if (ps == null) ps = new PluginSettings();
+                    addElement(ps);
+                    // addElement(new ExtensionManager());
+                    if (gs == null) gs = new GUISettings();
+                    addElement(gs);
+                    // modules
 
-                    if (first) {
-                        if (eh == null) eh = new ExtensionHeader();
-                        addElement(eh);
+                    if (lg == null) lg = new jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.Linkgrabber();
+                    addElement(lg);
+                    if (pz == null) pz = new Packagizer();
+                    addElement(pz);
+                    if (extract != null) addElement(extract);
+                    if (tray != null) addElement(tray);
+                    if (ads == null) ads = new AdvancedSettings();
+                    addElement(ads);
+                    boolean first = true;
+                    List<LazyExtension> pluginsOptional = ExtensionController.getInstance().getExtensions();
+                    if (pluginsOptional != null) {
+                        for (final LazyExtension plg : pluginsOptional) {
+                            if (contains(plg)) continue;
+                            if (CrossSystem.isWindows() && !plg.isWindowsRunnable()) continue;
+                            if (CrossSystem.isLinux() && !plg.isLinuxRunnable()) continue;
+                            if (CrossSystem.isMac() && !plg.isMacRunnable()) continue;
+
+                            if (first) {
+                                if (eh == null) eh = new ExtensionHeader();
+                                addElement(eh);
+                            }
+                            first = false;
+                            addElement(plg);
+                        }
                     }
-                    first = false;
-                    addElement(plg);
                 }
             }
-        }
+        };
+
     }
 
     public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {

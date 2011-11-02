@@ -89,13 +89,17 @@ public class ConfigSidebar extends JPanel implements ControlListener, MouseMotio
                     if (index >= 0 && getModel().getElementAt(index) instanceof ExtensionHeader) { return; }
                     if (index >= 0 && getModel().getElementAt(index) instanceof AdvancedSettings) {
                         Point p = indexToLocation(index);
-                        g2.fillRect(0, p.y, list.getWidth(), 25);
-                        g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f));
+                        if (p != null) {
+                            g2.fillRect(0, p.y, list.getWidth(), 25);
+                            g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f));
+                        }
                     } else {
                         Point p = indexToLocation(index);
-                        g2.fillRect(0, p.y, getWidth(), 55);
+                        if (p != null) {
+                            g2.fillRect(0, p.y, getWidth(), 55);
 
-                        g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f));
+                            g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f));
+                        }
                     }
                 }
 
@@ -138,23 +142,30 @@ public class ConfigSidebar extends JPanel implements ControlListener, MouseMotio
             @Override
             public void mouseMoved(MouseEvent e) {
                 int index = list.locationToIndex(e.getPoint());
-                if (list.getModel().getElementAt(index) instanceof CheckBoxedEntry) {
-                    Point point = list.indexToLocation(index);
-                    int x = e.getPoint().x - point.x;
-                    int y = e.getPoint().y - point.y;
-                    if (x > 3 && x < 18 && y > 3 && y < 18) {
+                try {
+                    if (list.getModel().getElementAt(index) instanceof CheckBoxedEntry) {
+                        Point point = list.indexToLocation(index);
+                        int x = 0;
+                        int y = 0;
+                        if (point != null) {
+                            x = e.getPoint().x - point.x;
+                            y = e.getPoint().y - point.y;
+                        }
+                        if (x > 3 && x < 18 && y > 3 && y < 18) {
 
-                        list.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-                        list.setToolTipText(_JDT._.settings_sidebar_tooltip_enable_extension());
-                    } else {
-                        list.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
-                        if (list.getModel().getElementAt(index) instanceof CheckBoxedEntry) {
-                            list.setToolTipText(((CheckBoxedEntry) list.getModel().getElementAt(index)).getDescription());
-
+                            list.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+                            list.setToolTipText(_JDT._.settings_sidebar_tooltip_enable_extension());
                         } else {
-                            list.setToolTipText(null);
+                            list.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
+                            if (list.getModel().getElementAt(index) instanceof CheckBoxedEntry) {
+                                list.setToolTipText(((CheckBoxedEntry) list.getModel().getElementAt(index)).getDescription());
+
+                            } else {
+                                list.setToolTipText(null);
+                            }
                         }
                     }
+                } catch (final ArrayIndexOutOfBoundsException e2) {
                 }
             }
         });
