@@ -110,6 +110,8 @@ public class SendspaceCom extends PluginForHost {
         login(account);
         br.getPage(link.getDownloadURL());
         String linkurl = br.getRegex("<a id=\"downlink\" class=\"mango\" href=\"(.*?)\"").getMatch(0);
+        if (linkurl == null) linkurl = br.getRegex("<a id=\"download_button\" href=\"(http://.*?)\"").getMatch(0);
+        if (linkurl == null) linkurl = br.getRegex("\"(http://fs\\d+n\\d+\\.sendspace\\.com/dl/[a-z0-9]+/[a-z0-9]+/[a-z0-9]+/.*?)\"").getMatch(0);
         if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, linkurl, true, 1);

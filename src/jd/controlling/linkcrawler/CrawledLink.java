@@ -218,6 +218,11 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
         return parentLink;
     }
 
+    public CrawledLink getOriginLink() {
+        if (parentLink == null) return this;
+        return parentLink.getOriginLink();
+    }
+
     public void setParentLink(CrawledLink parent) {
         this.parentLink = parent;
     }

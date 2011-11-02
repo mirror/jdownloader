@@ -21,6 +21,7 @@ import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -81,7 +82,24 @@ public class MdfrFldr extends PluginForDecrypt {
                     return decryptedLinks;
                 }
             } else {
-                br.getPage(br.getRedirectLocation());
+                URLConnectionAdapter con = null;
+                try {
+                    con = br.openGetConnection(red);
+                    if (con.isContentDisposition()) {
+                        String ID = new Regex(red, "//.*?/.*?/(.*?)/").getMatch(0);
+                        if (ID != null) {
+                            DownloadLink link = createDownloadlink("http://www.mediafire.com/download.php?" + ID);
+                            decryptedLinks.add(link);
+                            return decryptedLinks;
+                        }
+                    }
+                    br.followConnection();
+                } finally {
+                    try {
+                        con.disconnect();
+                    } catch (final Throwable e) {
+                    }
+                }
             }
         }
         if (br.containsHTML("The page cannot be found")) return decryptedLinks;

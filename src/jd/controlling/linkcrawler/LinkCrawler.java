@@ -552,7 +552,7 @@ public class LinkCrawler implements IOPermission {
 
     private void forwardCrawledLinkInfos(CrawledLink source, CrawledLink dest) {
         if (source == null || dest == null) return;
-        dest.setParentLink(source.getParentLink());
+        dest.setParentLink(source);
         dest.setMatchingFilter(source.getMatchingFilter());
         dest.setSourceJob(source.getSourceJob());
     }
@@ -766,8 +766,11 @@ public class LinkCrawler implements IOPermission {
         }
         if (link.isDupeAllow() == false) {
             /* check if we already handled this url */
+            CrawledLink origin = link.getOriginLink();
+            /* specialHandling: Crypted A - > B - > Final C , and A equals C */
+            boolean specialHandling = (origin != link) && (origin.getURL().equals(link.getURL()));
             synchronized (duplicateFinder) {
-                if (!duplicateFinder.add(link.getURL())) { return; }
+                if (!duplicateFinder.add(link.getURL()) && !specialHandling) { return; }
             }
         }
         if (isCrawledLinkFiltered(link) == false) {
