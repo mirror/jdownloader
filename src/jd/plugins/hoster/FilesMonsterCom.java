@@ -305,10 +305,7 @@ public class FilesMonsterCom extends PluginForHost {
         if (wait != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Long.parseLong(wait) * 60 * 1001l);
         if (br.containsHTML("Minimum interval between free downloads is 45 minutes")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 45 * 60 * 1001l);
         if (br.containsHTML("Respectfully yours Adminstration of Filesmonster\\.com")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
-        // if (br.containsHTML("You need Premium membership to download files"))
-        // throw new PluginException(LinkStatus.ERROR_FATAL,
-        // JDL.L("plugins.hoster.filesmonstercom.only4premium",
-        // PREMIUMONLYUSERTEXT));
+        if (br.containsHTML("You need Premium membership to download files")) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.filesmonstercom.only4premium", PREMIUMONLYUSERTEXT));
     }
 
     @Override
