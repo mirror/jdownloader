@@ -33,12 +33,12 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -141,7 +141,7 @@ public class FileServeCom extends PluginForHost {
         brrr.getHeaders().put("User-Agent", agent);
         brrr.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
         brrr.getHeaders().put("Accept-Language", "de-de,de;q=0.8,en-us;q=0.5,en;q=0.3");
-        brrr.getHeaders().put("Accept-Encoding", "gzip, deflate");
+        brrr.getHeaders().put("Accept-Encoding", "gzip");
         brrr.getHeaders().put("Accept-Charset", "ISO-8859-1,utf-8;q=0.7,*;q=0.7");
         brrr.getHeaders().put("Referer", "");
     }
@@ -355,8 +355,8 @@ public class FileServeCom extends PluginForHost {
             loginSite(account, false);
             br.getPage(link.getDownloadURL());
             dllink = br.getRedirectLocation();
-            if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dllink = dllink.replaceAll("\\\\/", "/");
         br.setFollowRedirects(true);
         this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, link, dllink, true, 0);
@@ -450,46 +450,51 @@ public class FileServeCom extends PluginForHost {
     private void loginSite(Account account, boolean force) throws Exception {
         synchronized (LOCK) {
             // Load cookies
-            br.setCookiesExclusive(false);
-            final Object ret = account.getProperty("cookies", null);
-            boolean acmatch = Encoding.urlEncode(account.getUser()).matches(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-            if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).matches(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
-            if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
-                final HashMap<String, String> cookies = (HashMap<String, String>) ret;
-                if (account.isValid()) {
-                    for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
-                        final String key = cookieEntry.getKey();
-                        final String value = cookieEntry.getValue();
-                        this.br.setCookie(COOKIE_HOST, key, value);
+            try {
+                br.setCookiesExclusive(false);
+                final Object ret = account.getProperty("cookies", null);
+                boolean acmatch = Encoding.urlEncode(account.getUser()).matches(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
+                if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).matches(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
+                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
+                    if (account.isValid()) {
+                        for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
+                            final String key = cookieEntry.getKey();
+                            final String value = cookieEntry.getValue();
+                            this.br.setCookie(COOKIE_HOST, key, value);
+                        }
+                        return;
                     }
-                    return;
                 }
+                br.postPage("http://fileserve.com/login.php", "loginUserName=" + Encoding.urlEncode(account.getUser()) + "&loginUserPassword=" + Encoding.urlEncode(account.getPass()) + "&autoLogin=on&ppp=102&loginFormSubmit=Login");
+                if (br.getCookie(COOKIE_HOST, "cookie") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                br.getPage("http://fileserve.com/dashboard.php");
+                String type = br.getRegex("<h5>Account type:</h5>[\t\n\r ]+<h3>(Premium) <a").getMatch(0);
+                if (type == null) type = br.getRegex("<h4>Account Type</h4></td> <td><h5 class=\"inline\">(Premium) </h5>").getMatch(0);
+                if (type == null) {
+                    logger.warning("No premiumaccount or login broken");
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+                String uploadedFiles = br.getRegex("<h5>Files uploaded:</h5>[\t\n\r ]+<h3>(\\d+)<span>").getMatch(0);
+                String expire = br.getRegex("<h4>Premium Until</h4></td>[\t\n\r ]+<td><h5>(.*?) EST").getMatch(0);
+                AccountInfo ai = new AccountInfo();
+                account.setAccountInfo(ai);
+                if (uploadedFiles != null) ai.setFilesNum(Integer.parseInt(uploadedFiles));
+                ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", null));
+                ai.setStatus("Premium Account ok, API login failed, site login OK");
+                // Save cookies
+                final HashMap<String, String> cookies = new HashMap<String, String>();
+                final Cookies add = this.br.getCookies(COOKIE_HOST);
+                for (final Cookie c : add.getCookies()) {
+                    cookies.put(c.getKey(), c.getValue());
+                }
+                account.setProperty("name", Encoding.urlEncode(account.getUser()));
+                account.setProperty("pass", Encoding.urlEncode(account.getPass()));
+                account.setProperty("cookies", cookies);
+            } catch (final PluginException e) {
+                account.setProperty("cookies", null);
+                throw e;
             }
-            br.postPage("http://fileserve.com/login.php", "loginUserName=" + Encoding.urlEncode(account.getUser()) + "&loginUserPassword=" + Encoding.urlEncode(account.getPass()) + "&autoLogin=on&ppp=102&loginFormSubmit=Login");
-            if (br.getCookie(COOKIE_HOST, "cookie") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-            br.getPage("http://fileserve.com/dashboard.php");
-            String type = br.getRegex("<h5>Account type:</h5>[\t\n\r ]+<h3>(Premium) <a").getMatch(0);
-            if (type == null) type = br.getRegex("<h4>Account Type</h4></td> <td><h5 class=\"inline\">(Premium) </h5>").getMatch(0);
-            if (type == null) {
-                logger.warning("No premiumaccount or login broken");
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-            }
-            String uploadedFiles = br.getRegex("<h5>Files uploaded:</h5>[\t\n\r ]+<h3>(\\d+)<span>").getMatch(0);
-            String expire = br.getRegex("<h4>Premium Until</h4></td>[\t\n\r ]+<td><h5>(.*?) EST").getMatch(0);
-            AccountInfo ai = new AccountInfo();
-            account.setAccountInfo(ai);
-            if (uploadedFiles != null) ai.setFilesNum(Integer.parseInt(uploadedFiles));
-            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", null));
-            ai.setStatus("Premium Account ok, API login failed, site login OK");
-            // Save cookies
-            final HashMap<String, String> cookies = new HashMap<String, String>();
-            final Cookies add = this.br.getCookies(COOKIE_HOST);
-            for (final Cookie c : add.getCookies()) {
-                cookies.put(c.getKey(), c.getValue());
-            }
-            account.setProperty("name", Encoding.urlEncode(account.getUser()));
-            account.setProperty("pass", Encoding.urlEncode(account.getPass()));
-            account.setProperty("cookies", cookies);
         }
     }
 
