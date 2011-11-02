@@ -163,7 +163,7 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
     public LazyCrawlerPlugin get(String displayName) {
         lazyInit();
         for (LazyCrawlerPlugin p : list) {
-            if (p.getDisplayName().equals(displayName)) return p;
+            if (p.getDisplayName().equalsIgnoreCase(displayName)) return p;
         }
         return null;
     }

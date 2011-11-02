@@ -171,7 +171,7 @@ public class HostPluginController extends PluginController<PluginForHost> {
     public LazyHostPlugin get(String displayName) {
 
         for (LazyHostPlugin p : list) {
-            if (p.getDisplayName().equals(displayName)) return p;
+            if (p.getDisplayName().equalsIgnoreCase(displayName)) return p;
         }
         return null;
     }

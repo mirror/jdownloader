@@ -455,7 +455,6 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      * @return Der Hoster, auf dem dieser Link verweist
      */
     public String getHost() {
-        if (host == null) return null;
         return host;
     }
 

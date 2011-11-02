@@ -154,7 +154,7 @@ public class ContainerPluginController extends PluginController<PluginsC> {
     public LazyContainerPlugin get(String displayName) {
         lazyInit();
         for (LazyContainerPlugin p : list) {
-            if (p.getDisplayName().equals(displayName)) return p;
+            if (p.getDisplayName().equalsIgnoreCase(displayName)) return p;
         }
         return null;
     }

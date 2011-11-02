@@ -53,7 +53,7 @@ public class CaptchaAPIImpl implements CaptchaAPI, CaptchaEventListener {
             if (returnAsDataURL) {
                 OutputStream out = RemoteAPI.getOutputStream(response, request, RemoteAPI.gzip(request), true);
                 String mime = FileResponse.getMimeType(captcha.getFile().getName());
-                String header = "data:" + mime + ";base64,";
+                String header = "{\r\n\"data:\" : \"data:" + mime + ";base64,";
                 out.write(header.getBytes("UTF-8"));
                 Base64OutputStream b64os = new Base64OutputStream(out);
                 FileInputStream fis = null;
@@ -75,6 +75,8 @@ public class CaptchaAPIImpl implements CaptchaAPI, CaptchaEventListener {
                             }
                         }
                     }
+                    b64os.flush();
+                    out.write("\"\r\n}".getBytes("UTF-8"));
                 } finally {
                     try {
                         /*
