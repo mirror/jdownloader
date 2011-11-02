@@ -33,12 +33,12 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -389,16 +389,11 @@ public class FileServeCom extends PluginForHost {
             loginAPI(br, account);
         } catch (PluginException e) {
             try {
-                loginSite(account, true);
-            } catch (PluginException e2) {
                 logger.warning("API login failed, trying login via website!");
                 loginSite(account, true);
+            } catch (PluginException e2) {
+                loginSite(account, true);
                 account.setValid(false);
-                if (account.getAccountInfo() != null) {
-                    return account.getAccountInfo();
-                } else {
-                    return ai;
-                }
             }
         }
         if (account.getAccountInfo() != null) {
