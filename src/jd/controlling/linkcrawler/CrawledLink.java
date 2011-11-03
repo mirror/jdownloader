@@ -7,6 +7,7 @@ import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginsC;
@@ -200,6 +201,11 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
     public boolean isEnabled() {
         if (dlLink != null) return dlLink.isEnabled();
         return true;
+    }
+
+    public AvailableStatus getAvailableStatus() {
+        if (dlLink != null) dlLink.getAvailableStatusInfo();
+        return AvailableStatus.UNCHECKED;
     }
 
     public long getCreated() {
