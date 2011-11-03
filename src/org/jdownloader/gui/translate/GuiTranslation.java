@@ -2602,8 +2602,14 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Filename %s1" })
     String FilterRule_toString_name(String string);
 
+    @Default(lngs = { "en" }, values = { "\r\n%s1 %s2" })
+    String FilterRule_toString_name2(String name, String string);
+
     @Default(lngs = { "en" }, values = { "Hoster URL %s1" })
     String FilterRule_toString_hoster(String string);
+
+    @Default(lngs = { "en" }, values = { "\r\nURL(%s1) %s2" })
+    String FilterRule_toString_hoster2(String a, String string);
 
     @Default(lngs = { "en" }, values = { "Source URL %s1" })
     String FilterRule_toString_source(String string);
@@ -2635,8 +2641,14 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Size %s1" })
     String FilterRule_toString_size(String string);
 
+    @Default(lngs = { "en" }, values = { "\r\nSize(%s1) %s2" })
+    String FilterRule_toString_size2(String string, String string2);
+
     @Default(lngs = { "en" }, values = { "File %s1" })
     String FilterRule_toString_type(String string);
+
+    @Default(lngs = { "en" }, values = { "\r\n%s1-File %s2" })
+    String FilterRule_toString_type2(String ext, String string);
 
     @Default(lngs = { "en" }, values = { "Archive" })
     String FiletypeFilter_toString_archives();
@@ -3036,5 +3048,68 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Allow Links if, " })
     String ExceptionsTableModel_initColumns_condition_();
+
+    @Default(lngs = { "en" }, values = { "Test filter Rules" })
+    String LinkgrabberFilter_LinkgrabberFilter_test_();
+
+    @Default(lngs = { "en" }, values = { "Enter Downloadlink to test Filters..." })
+    String LinkgrabberFilter_LinkgrabberFilter_test_help_();
+
+    @Default(lngs = { "en" }, values = { "Test Filters - running" })
+    String TestWaitDialog_TestWaitDialog_title_();
+
+    @Default(lngs = { "en" }, values = { "Result:" })
+    String TestWaitDialog_layoutDialogContent_filtered();
+
+    @Default(lngs = { "en" }, values = { "%s1/%s2 Links filtered  (%s3 %)" })
+    String TestWaitDialog_runInEDT_(int filtered, int size, double d);
+
+    @Default(lngs = { "en" }, values = { "Testlink:" })
+    String TestWaitDialog_layoutDialogContent_testlink_();
+
+    @Default(lngs = { "en" }, values = { "Url" })
+    String ResultTableModel_initColumns_link_();
+
+    @Default(lngs = { "en" }, values = { "Filtered" })
+    String ResultTableModel_initColumns_status_();
+
+    @Default(lngs = { "en" }, values = { "Filtered Link" })
+    String ResultTableModel_getTooltipText_dropped_();
+
+    @Default(lngs = { "en" }, values = { "Accepted Link" })
+    String ResultTableModel_getTooltipText_accept_();
+
+    @Default(lngs = { "en" }, values = { "Matching Rule Name" })
+    String ResultTableModel_initColumns_rule_();
+
+    @Default(lngs = { "en" }, values = { "Test Filters - finished" })
+    String TestWaitDialog_TestWaitDialog_title_finished();
+
+    @Default(lngs = { "en" }, values = { "Matching Rule Condition" })
+    String ResultTableModel_initColumns_ruledesc_();
+
+    @Default(lngs = { "en" }, values = { "Filename" })
+    String ResultTableModel_initColumns_filename_();
+
+    @Default(lngs = { "en" }, values = { "Filesize" })
+    String ResultTableModel_initColumns_size_();
+
+    @Default(lngs = { "en" }, values = { "Filetype" })
+    String ResultTableModel_initColumns_filetype_();
+
+    @Default(lngs = { "en" }, values = { "Hoster" })
+    String ResultTableModel_initColumns_hoster();
+
+    @Default(lngs = { "en" }, values = { "Source" })
+    String ResultTableModel_initColumns_source();
+
+    @Default(lngs = { "en" }, values = { "Filtered" })
+    String ResultTableModel_getStringValue_filtered_();
+
+    @Default(lngs = { "en" }, values = { "Accepted" })
+    String ResultTableModel_getStringValue_accepted_();
+
+    @Default(lngs = { "en" }, values = { "No Available Downloads found! Retry with a different Testlink." })
+    String TestWaitDialog_runInEDTnothing_found();
 
 }

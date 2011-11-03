@@ -212,7 +212,7 @@ public class LinkFilterController implements LinkCrawlerFilter {
                 return false;
             }
             if (!lgr.checkSource(link)) continue;
-
+            link.setMatchingFilter(lgr.getRule());
             return false;
 
         }
@@ -223,7 +223,7 @@ public class LinkFilterController implements LinkCrawlerFilter {
                 return false;
             }
             if (!lgr.checkSource(link)) continue;
-
+            link.setMatchingFilter(lgr.getRule());
             return false;
         }
         // System.out.println("true " + link);
@@ -232,7 +232,7 @@ public class LinkFilterController implements LinkCrawlerFilter {
     }
 
     public boolean dropByFileProperties(CrawledLink link) {
-        if (link.getMatchingFilter() != null) {
+        if (link.getMatchingFilter() != null && link.getMatchingFilter() instanceof LinkgrabberFilterRule && !((LinkgrabberFilterRule) link.getMatchingFilter()).isAccept()) {
             /*
              * links with set matching filtered are allowed, user wants to add
              * them
@@ -301,7 +301,7 @@ public class LinkFilterController implements LinkCrawlerFilter {
                 throw new WTFException();
             }
             if (!lgr.checkSource(link)) continue;
-
+            link.setMatchingFilter(lgr.getRule());
             return false;
 
         }
@@ -316,7 +316,8 @@ public class LinkFilterController implements LinkCrawlerFilter {
             if (!lgr.checkFileName(link)) continue;
             if (!lgr.checkFileSize(link)) continue;
             if (!lgr.checkFileType(link)) continue;
-            System.out.println(1);
+
+            link.setMatchingFilter(lgr.getRule());
             return false;
         }
 

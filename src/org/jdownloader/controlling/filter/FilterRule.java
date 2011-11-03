@@ -2,7 +2,11 @@ package org.jdownloader.controlling.filter;
 
 import java.util.ArrayList;
 
+import jd.controlling.linkcrawler.CrawledLink;
+
 import org.appwork.storage.Storable;
+import org.appwork.utils.Files;
+import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.gui.translate._GUI;
 
 public abstract class FilterRule implements Storable {
@@ -27,27 +31,46 @@ public abstract class FilterRule implements Storable {
         return getFilenameFilter().isEnabled() || getFilesizeFilter().isEnabled() || getFiletypeFilter().isEnabled() || getHosterURLFilter().isEnabled() || getSourceURLFilter().isEnabled();
     }
 
-    public String toString() {
+    public String toString(CrawledLink link) {
         StringBuilder sb = new StringBuilder();
         ArrayList<String> cond = new ArrayList<String>();
         if (filenameFilter.isEnabled()) {
-            cond.add(_GUI._.FilterRule_toString_name(filenameFilter.toString()));
+            if (link != null && link.getName() != null) {
+                cond.add(_GUI._.FilterRule_toString_name2(link.getName(), filenameFilter.toString()));
+            } else {
+                cond.add(_GUI._.FilterRule_toString_name(filenameFilter.toString()));
+            }
+
         }
         if (filesizeFilter.isEnabled()) {
+            if (link != null && link.getSize() > 0) {
+                cond.add(_GUI._.FilterRule_toString_size2(SizeFormatter.formatBytes(link.getSize()), filesizeFilter.toString()));
+            } else {
+                cond.add(_GUI._.FilterRule_toString_size(filesizeFilter.toString()));
+            }
 
-            cond.add(_GUI._.FilterRule_toString_size(filesizeFilter.toString()));
         }
         if (filetypeFilter.isEnabled()) {
+            if (link != null && link.getName() != null && Files.getExtension(link.getName()) != null) {
+                String ext = Files.getExtension(link.getName());
+                cond.add(_GUI._.FilterRule_toString_type2(ext, filetypeFilter.toString()));
+            } else {
+                cond.add(_GUI._.FilterRule_toString_type(filetypeFilter.toString()));
+            }
 
-            cond.add(_GUI._.FilterRule_toString_type(filetypeFilter.toString()));
         }
         if (hosterURLFilter.isEnabled()) {
+            if (link != null) {
+                cond.add(_GUI._.FilterRule_toString_hoster2(link.getURL(), hosterURLFilter.toString()));
+            } else {
+                cond.add(_GUI._.FilterRule_toString_hoster(hosterURLFilter.toString()));
+            }
 
-            cond.add(_GUI._.FilterRule_toString_hoster(hosterURLFilter.toString()));
         }
         if (sourceURLFilter.isEnabled()) {
 
             cond.add(_GUI._.FilterRule_toString_source(sourceURLFilter.toString()));
+
         }
 
         for (int i = 0; i < cond.size(); i++) {
@@ -64,6 +87,10 @@ public abstract class FilterRule implements Storable {
 
         }
         return sb.toString();
+    }
+
+    public String toString() {
+        return toString(null);
     }
 
     public RegexFilter getHosterURLFilter() {

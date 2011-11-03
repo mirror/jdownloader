@@ -65,7 +65,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
             if (linkChecker != null) return;
             linkChecker = new LinkChecker<CrawledLink>();
             linkChecker.setLinkCheckHandler(this);
-            setCrawlerFilter(LinkCrawler.defaultFilterFactory());
+            // setCrawlerFilter(LinkCrawler.defaultFilterFactory());
             this.setCrawlerFilter(LinkFilterController.getInstance());
         }
     }

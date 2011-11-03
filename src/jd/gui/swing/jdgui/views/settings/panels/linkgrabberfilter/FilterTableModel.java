@@ -118,7 +118,7 @@ public class FilterTableModel extends ExtTableModel<LinkgrabberFilterRule> imple
                     @Override
                     public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
                         super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-                        setIcon(NewTheme.I().getIcon("cancel", 14));
+                        setIcon(NewTheme.I().getIcon("trash", 14));
                         return this;
                     }
 

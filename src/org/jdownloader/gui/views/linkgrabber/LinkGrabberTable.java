@@ -66,6 +66,11 @@ public class LinkGrabberTable extends PackageControllerTable<CrawledPackage, Cra
     }
 
     @Override
+    public boolean isSearchEnabled() {
+        return true;
+    }
+
+    @Override
     protected void onDoubleClick(final MouseEvent e, final AbstractNode obj) {
 
     }
