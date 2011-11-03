@@ -21,21 +21,16 @@ import org.jdownloader.translate._JDT;
 public class DecrypterException extends Exception {
 
     private static final long serialVersionUID = -413359039728789194L;
-    private String            errorMessage     = null;
 
     public static String      CAPTCHA          = _JDT._.decrypter_wrongcaptcha();
     public static String      PASSWORD         = _JDT._.decrypter_wrongpassword();
     public static String      ACCOUNT          = _JDT._.decrypter_invalidaccount();
 
     public DecrypterException() {
-        this.errorMessage = _JDT._.decrypter_unknownerror();
+        super(_JDT._.decrypter_unknownerror());
     }
 
     public DecrypterException(String errorMessage) {
-        this.errorMessage = errorMessage;
-    }
-
-    public String getErrorMessage() {
-        return errorMessage;
+        super(errorMessage);
     }
 }

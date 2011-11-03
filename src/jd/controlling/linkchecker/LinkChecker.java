@@ -9,6 +9,7 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
+import jd.controlling.JDPluginLogger;
 import jd.controlling.linkcrawler.CheckableLink;
 import jd.http.Browser;
 import jd.http.BrowserSettingsThread;
@@ -235,6 +236,7 @@ public class LinkChecker<E extends CheckableLink> {
                                         LazyHostPlugin lazyp = HostPluginController.getInstance().get(linksList[0].getDefaultPlugin().getHost());
                                         plg = lazyp.newInstance();
                                         plg.setBrowser(br);
+                                        plg.setLogger(new JDPluginLogger(lazyp.getDisplayName() + ":LinkCheck"));
                                         plg.init();
                                     }
                                     try {

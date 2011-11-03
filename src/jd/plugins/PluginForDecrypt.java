@@ -192,19 +192,19 @@ public abstract class PluginForDecrypt extends Plugin {
                 /* now we let the decrypter do its magic */
                 tmpLinks = decryptIt(cryptLink, progress);
             } catch (DecrypterException e) {
-                if (DecrypterException.CAPTCHA.equals(e.getErrorMessage())) {
+                if (DecrypterException.CAPTCHA.equals(e.getMessage())) {
                     showException = false;
                 }
                 /*
                  * we got a decrypter exception, clear log and note that
                  * something went wrong
                  */
-                progress.setStatusText(this.getHost() + ": " + e.getErrorMessage());
+                progress.setStatusText(this.getHost() + ": " + e.getMessage());
                 if (logger instanceof JDPluginLogger) {
                     /* make sure we use the right logger */
                     ((JDPluginLogger) logger).clear();
                 }
-                logger.log(Level.SEVERE, "DecrypterException", e);
+                logger.log(Level.SEVERE, "DecrypterException:" + e.getMessage(), e);
                 color = Color.RED;
                 progressShow = 15000;
             } catch (InterruptedException e) {
@@ -221,7 +221,7 @@ public abstract class PluginForDecrypt extends Plugin {
                  * the log
                  */
                 progress.setStatusText(this.getHost() + ": " + e.getMessage());
-                logger.log(Level.SEVERE, "Exception", e);
+                logger.log(Level.SEVERE, "Exception:" + e.getMessage(), e);
                 color = Color.RED;
                 progressShow = 15000;
             }
