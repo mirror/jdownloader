@@ -18,6 +18,10 @@ public class FiletypeFilter extends Filter implements Storable {
         StringBuilder sb = new StringBuilder();
 
         ArrayList<String> cond = new ArrayList<String>();
+        if (videoFilesEnabled) {
+
+            cond.add(VideoExtensions.ASF.getDesc());
+        }
         if (archivesEnabled) {
 
             cond.add(ArchiveExtensions.ACE.getDesc());
@@ -32,40 +36,56 @@ public class FiletypeFilter extends Filter implements Storable {
             cond.add(ImageExtensions.BMP.getDesc());
         }
 
-        if (videoFilesEnabled) {
-
-            cond.add(VideoExtensions.ASF.getDesc());
-        }
         if (customs != null) {
 
             cond.add(_GUI._.FiletypeFilter_toString_custom(customs));
 
         }
+        switch (getMatchType()) {
+        case IS:
 
-        for (int i = 0; i < cond.size(); i++) {
-            if (i > 0) {
-                if (i < cond.size() - 1) {
-                    sb.append(_GUI._.FilterRule_toString_comma(cond.get(i)));
+            for (int i = 0; i < cond.size(); i++) {
+                if (i > 0) {
+                    if (i < cond.size() - 1) {
+                        sb.append(_GUI._.FilterRule_toString_comma(cond.get(i)));
+                    } else {
+                        sb.append(_GUI._.FilterRule_toString_or(cond.get(i)));
+                    }
+
                 } else {
-                    sb.append(_GUI._.FilterRule_toString_or(cond.get(i)));
+                    sb.append(cond.get(i));
                 }
 
-            } else {
-                sb.append(cond.get(i));
             }
+            return _GUI._.FiletypeFilter_toString_(sb.toString());
+        default:
 
+            for (int i = 0; i < cond.size(); i++) {
+                if (i > 0) {
+                    if (i < cond.size() - 1) {
+                        sb.append(_GUI._.FilterRule_toString_comma(cond.get(i)));
+                    } else {
+                        sb.append(_GUI._.FilterRule_toString_or(cond.get(i)));
+                    }
+
+                } else {
+                    sb.append(cond.get(i));
+                }
+
+            }
+            return _GUI._.FiletypeFilter_toString_not(sb.toString());
         }
-        return _GUI._.FiletypeFilter_toString_(sb.toString());
-
     }
 
-    private boolean audioFilesEnabled;
+    private boolean       audioFilesEnabled;
+    private TypeMatchType matchType = TypeMatchType.IS;
 
     public boolean isAudioFilesEnabled() {
         return audioFilesEnabled;
     }
 
     /**
+     * @param typeMatchType
      * @param enabled
      * @param audioFilesEnabled
      * @param videoFilesEnabled
@@ -73,7 +93,7 @@ public class FiletypeFilter extends Filter implements Storable {
      * @param imagesEnabled
      * @param customs
      */
-    public FiletypeFilter(boolean enabled, boolean audioFilesEnabled, boolean videoFilesEnabled, boolean archivesEnabled, boolean imagesEnabled, String customs) {
+    public FiletypeFilter(TypeMatchType typeMatchType, boolean enabled, boolean audioFilesEnabled, boolean videoFilesEnabled, boolean archivesEnabled, boolean imagesEnabled, String customs) {
         super();
         this.enabled = enabled;
         this.audioFilesEnabled = audioFilesEnabled;
@@ -81,6 +101,20 @@ public class FiletypeFilter extends Filter implements Storable {
         this.archivesEnabled = archivesEnabled;
         this.imagesEnabled = imagesEnabled;
         this.customs = customs;
+        this.matchType = typeMatchType;
+    }
+
+    public TypeMatchType getMatchType() {
+        return matchType;
+    }
+
+    public void setMatchType(TypeMatchType matchType) {
+        this.matchType = matchType;
+    }
+
+    public static enum TypeMatchType {
+        IS,
+        IS_NOT
     }
 
     public void setAudioFilesEnabled(boolean audioFilesEnabled) {

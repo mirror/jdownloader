@@ -5,6 +5,8 @@ import java.awt.event.ActionEvent;
 import javax.swing.AbstractAction;
 
 import jd.controlling.IOEQ;
+import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.ConditionDialog;
+import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.ExceptionsRuleDialog;
 import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.FilterRuleDialog;
 
 import org.appwork.utils.swing.dialog.Dialog;
@@ -50,7 +52,13 @@ public class NewAction extends AbstractAddAction {
     }
 
     public static void add(final LinkgrabberFilterRule rule, final AbstractFilterTable table) {
-        FilterRuleDialog d = new FilterRuleDialog(rule);
+        ConditionDialog<LinkgrabberFilterRule> d;
+        if (table instanceof FilterTable) {
+            d = new FilterRuleDialog(rule);
+        } else {
+            d = new ExceptionsRuleDialog(rule);
+        }
+
         try {
             Dialog.getInstance().showDialog(d);
             rule.setEnabled(true);
@@ -69,5 +77,4 @@ public class NewAction extends AbstractAddAction {
             e1.printStackTrace();
         }
     }
-
 }

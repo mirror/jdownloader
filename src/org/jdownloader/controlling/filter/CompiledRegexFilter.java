@@ -17,6 +17,10 @@ public class CompiledRegexFilter extends RegexFilter {
             return pattern.matcher(string).find();
         case EQUALS:
             return pattern.matcher(string).matches();
+        case CONTAINS_NOT:
+            return !pattern.matcher(string).find();
+        case EQUALS_NOT:
+            return !pattern.matcher(string).matches();
         }
         return false;
 

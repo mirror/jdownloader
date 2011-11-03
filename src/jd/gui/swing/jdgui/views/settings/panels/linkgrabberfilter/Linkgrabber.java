@@ -22,7 +22,6 @@ import jd.controlling.IOEQ;
 import jd.gui.swing.jdgui.views.settings.sidebar.CheckBoxedEntry;
 
 import org.appwork.storage.config.JsonConfig;
-import org.jdownloader.controlling.filter.LinkFilterController;
 import org.jdownloader.controlling.filter.LinkFilterSettings;
 import org.jdownloader.extensions.Header;
 import org.jdownloader.extensions.StartException;
@@ -76,7 +75,7 @@ public class Linkgrabber extends AbstractConfigPanel implements CheckBoxedEntry 
         IOEQ.add(new Runnable() {
 
             public void run() {
-                filter.getTable().getExtTableModel()._fireTableStructureChanged(LinkFilterController.getInstance().list(), false);
+                filter.update();
             }
 
         }, true);

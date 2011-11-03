@@ -18,11 +18,11 @@ import org.jdownloader.controlling.filter.LinkgrabberFilterRule;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 
-public class FilterTableModel extends ExtTableModel<LinkgrabberFilterRule> implements ChangeListener {
+public class ExceptionsTableModel extends ExtTableModel<LinkgrabberFilterRule> implements ChangeListener {
 
     private static final long serialVersionUID = -7756459932564776739L;
 
-    public FilterTableModel(String id) {
+    public ExceptionsTableModel(String id) {
         super(id);
         LinkFilterController.getInstance().getEventSender().addListener(this, false);
     }
@@ -104,10 +104,7 @@ public class FilterTableModel extends ExtTableModel<LinkgrabberFilterRule> imple
             }
         });
 
-        addColumn(new ExtTextColumn<LinkgrabberFilterRule>(_GUI._.settings_linkgrabber_filter_columns_condition()) {
-            {
-                // rendererField.setHorizontalAlignment(JLabel.RIGHT);
-            }
+        addColumn(new ExtTextColumn<LinkgrabberFilterRule>(_GUI._.ExceptionsTableModel_initColumns_condition_()) {
 
             public ExtTableHeaderRenderer getHeaderRenderer(final JTableHeader jTableHeader) {
 
@@ -118,7 +115,7 @@ public class FilterTableModel extends ExtTableModel<LinkgrabberFilterRule> imple
                     @Override
                     public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
                         super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-                        setIcon(NewTheme.I().getIcon("cancel", 14));
+                        setIcon(NewTheme.I().getIcon("ok", 14));
                         return this;
                     }
 
@@ -153,6 +150,6 @@ public class FilterTableModel extends ExtTableModel<LinkgrabberFilterRule> imple
     }
 
     public void onChangeEvent(ChangeEvent event) {
-        _fireTableStructureChanged(LinkFilterController.getInstance().listFilters(), true);
+        _fireTableStructureChanged(LinkFilterController.getInstance().listExceptions(), true);
     }
 }

@@ -40,6 +40,7 @@ public class LinkFilterController implements LinkCrawlerFilter {
     private ArrayList<LinkgrabberFilterRuleWrapper> acceptUrlFilter;
 
     private ChangeEventSender                       eventSender;
+    private ArrayList<LinkgrabberFilterRule>        list;
 
     /**
      * Create a new instance of LinkFilterController. This is a singleton class.
@@ -321,5 +322,27 @@ public class LinkFilterController implements LinkCrawlerFilter {
 
         link.setMatchingFilter(matchedFilter);
         return true;
+    }
+
+    public ArrayList<LinkgrabberFilterRule> listFilters() {
+        synchronized (this) {
+            ArrayList<LinkgrabberFilterRule> lst = filter;
+            ArrayList<LinkgrabberFilterRule> ret = new ArrayList<LinkgrabberFilterRule>();
+            for (LinkgrabberFilterRule l : lst) {
+                if (!l.isAccept()) ret.add(l);
+            }
+            return ret;
+        }
+    }
+
+    public ArrayList<LinkgrabberFilterRule> listExceptions() {
+        synchronized (this) {
+            ArrayList<LinkgrabberFilterRule> lst = filter;
+            ArrayList<LinkgrabberFilterRule> ret = new ArrayList<LinkgrabberFilterRule>();
+            for (LinkgrabberFilterRule l : lst) {
+                if (l.isAccept()) ret.add(l);
+            }
+            return ret;
+        }
     }
 }

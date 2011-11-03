@@ -5,7 +5,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
 import javax.swing.JComboBox;
-import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JPanel;
@@ -21,21 +20,24 @@ import net.miginfocom.swing.MigLayout;
 import org.appwork.swing.components.ExtButton;
 import org.appwork.swing.exttable.utils.MinimumSelectionObserver;
 import org.appwork.utils.swing.EDTRunner;
+import org.jdownloader.controlling.filter.LinkFilterController;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 
 public class LinkgrabberFilter extends JPanel implements SettingsComponent {
-    private static final long serialVersionUID = 6070464296168772795L;
+    private static final long     serialVersionUID = 6070464296168772795L;
 
-    private FilterTable       table;
-    private ExtButton         btadd;
+    private FilterTable           filterTable;
+    private ExtButton             btadd;
 
-    private ExtButton         btImport;
-    private ExtButton         btExport;
-    private JComboBox         combobox;
-    private JScrollPane       card;
-    private ExceptionsTable   exceptions;
-    private ExtButton         btRemove;
+    private ExtButton             btImport;
+    private ExtButton             btExport;
+    private JComboBox             combobox;
+    private JScrollPane           card;
+    private ExceptionsTable       exceptionsTable;
+    private ExtButton             btRemove;
+
+    protected AbstractFilterTable view;
 
     public LinkgrabberFilter() {
         super(new MigLayout("ins 0,wrap 5", "[grow,fill][][]8[][]", "[][grow,fill]"));
@@ -53,26 +55,27 @@ public class LinkgrabberFilter extends JPanel implements SettingsComponent {
         this.combobox.addActionListener(new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {
-                setView(combobox.getSelectedIndex() == 0 ? table : exceptions);
+                setView(combobox.getSelectedIndex() == 0 ? filterTable : exceptionsTable);
             }
         });
 
-        table.getExtTableModel().addTableModelListener(new TableModelListener() {
+        filterTable.getExtTableModel().addTableModelListener(new TableModelListener() {
 
             public void tableChanged(TableModelEvent e) {
-                btExport.setEnabled(table.getRowCount() > 0);
+                btExport.setEnabled(filterTable.getRowCount() > 0);
             }
         });
 
-        table.getSelectionModel().addListSelectionListener(new MinimumSelectionObserver(table, btRemove.getAction(), 1));
-        setView(table);
+        filterTable.getSelectionModel().addListSelectionListener(new MinimumSelectionObserver(filterTable, btRemove.getAction(), 1));
+        setView(filterTable);
     }
 
-    protected void setView(final JComponent gui) {
+    protected void setView(final AbstractFilterTable gui) {
         new EDTRunner() {
 
             @Override
             protected void runInEDT() {
+                view = gui;
                 card.getViewport().setView(gui);
             }
         };
@@ -80,8 +83,8 @@ public class LinkgrabberFilter extends JPanel implements SettingsComponent {
     }
 
     private void initComponents() {
-        table = new FilterTable(this);
-        exceptions = new ExceptionsTable(this);
+        filterTable = new FilterTable(this);
+        exceptionsTable = new ExceptionsTable(this);
         btRemove = new ExtButton(new RemoveAction(this));
         btadd = new ExtButton(new NewAction(this));
         this.combobox = new JComboBox(new String[] { _GUI._.LinkgrabberFilter_initComponents_filter_(), _GUI._.LinkgrabberFilter_initComponents_exceptions_() });
@@ -100,10 +103,6 @@ public class LinkgrabberFilter extends JPanel implements SettingsComponent {
 
     }
 
-    public FilterTable getTable() {
-        return table;
-    }
-
     public String getConstraints() {
 
         return "height 60:n:n,pushy,growy";
@@ -115,5 +114,15 @@ public class LinkgrabberFilter extends JPanel implements SettingsComponent {
 
     public void addStateUpdateListener(StateUpdateListener listener) {
         throw new IllegalStateException("Not implemented");
+    }
+
+    public void update() {
+
+        filterTable.getExtTableModel()._fireTableStructureChanged(LinkFilterController.getInstance().listFilters(), true);
+        exceptionsTable.getExtTableModel()._fireTableStructureChanged(LinkFilterController.getInstance().listExceptions(), true);
+    }
+
+    public AbstractFilterTable getTable() {
+        return view;
     }
 }

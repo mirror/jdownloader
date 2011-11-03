@@ -7,7 +7,7 @@ import java.util.ArrayList;
 import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
 
-import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.FilterRuleDialog;
+import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.ExceptionsRuleDialog;
 
 import org.appwork.swing.exttable.ExtColumn;
 import org.appwork.utils.swing.dialog.Dialog;
@@ -22,7 +22,7 @@ public class ExceptionsTable extends AbstractFilterTable {
     private LinkgrabberFilter linkgrabberFilter;
 
     public ExceptionsTable(LinkgrabberFilter linkgrabberFilter) {
-        super(new FilterTableModel("FilterTable2"));
+        super(new ExceptionsTableModel("ExceptionsTableModel"));
         this.setSearchEnabled(true);
         this.linkgrabberFilter = linkgrabberFilter;
 
@@ -50,7 +50,7 @@ public class ExceptionsTable extends AbstractFilterTable {
     @Override
     protected void onDoubleClick(MouseEvent e, LinkgrabberFilterRule obj) {
         try {
-            Dialog.getInstance().showDialog(new FilterRuleDialog(obj));
+            Dialog.getInstance().showDialog(new ExceptionsRuleDialog(obj));
         } catch (DialogClosedException e1) {
             e1.printStackTrace();
         } catch (DialogCanceledException e1) {

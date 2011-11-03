@@ -5,10 +5,12 @@ import java.util.regex.Pattern;
 
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.logging.Log;
+import org.jdownloader.controlling.filter.FiletypeFilter.TypeMatchType;
 import org.jdownloader.gui.translate._GUI;
 
 public class CompiledFiletypeFilter {
-    private Pattern[] list = new Pattern[0];
+    private Pattern[]     list = new Pattern[0];
+    private TypeMatchType matchType;
 
     public static interface ExtensionsFilterInterface {
         public Pattern compiledAllPattern();
@@ -266,17 +268,33 @@ public class CompiledFiletypeFilter {
             /* custom regex may contain errors */
             Log.exception(e);
         }
+        matchType = filetypeFilter.getMatchType();
         this.list = list.toArray(new Pattern[list.size()]);
     }
 
     public boolean matches(String extension) {
-        try {
+        switch (matchType) {
+        case IS:
             for (Pattern o : this.list) {
-                if (o.matcher(extension).matches()) return true;
+                try {
+                    if (o.matcher(extension).matches()) return true;
+                } catch (Throwable e) {
+                    e.printStackTrace();
+                }
             }
-        } catch (Throwable e) {
-            e.printStackTrace();
+            return false;
+        case IS_NOT:
+            for (Pattern o : this.list) {
+                try {
+                    if (o.matcher(extension).matches()) return false;
+                } catch (Throwable e) {
+                    e.printStackTrace();
+                }
+            }
+            return true;
+
         }
+
         return false;
     }
 

@@ -2518,16 +2518,16 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "File Type" })
     String FilterRuleDialog_layoutDialogContent_lbl_type();
 
-    @Default(lngs = { "en" }, values = { "Audio Files" })
+    @Default(lngs = { "en" }, values = { "Audio File" })
     String FilterRuleDialog_createTypeFilter_mime_audio();
 
-    @Default(lngs = { "en" }, values = { "Video Files" })
+    @Default(lngs = { "en" }, values = { "Video File" })
     String FilterRuleDialog_createTypeFilter_mime_video();
 
-    @Default(lngs = { "en" }, values = { "Archives" })
+    @Default(lngs = { "en" }, values = { "Archive" })
     String FilterRuleDialog_createTypeFilter_mime_archives();
 
-    @Default(lngs = { "en" }, values = { "Images" })
+    @Default(lngs = { "en" }, values = { "Image" })
     String FilterRuleDialog_createTypeFilter_mime_images();
 
     @Default(lngs = { "en" }, values = { "Custom" })
@@ -2572,7 +2572,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "drop it." })
     String FilterTableModel_initColumns_deny_link();
 
-    @Default(lngs = { "en" }, values = { "If %s1, " })
+    @Default(lngs = { "en" }, values = { "%s1!" })
     String settings_linkgrabber_filter_columns_if(String trim);
 
     @Default(lngs = { "en" }, values = { "contains %s1" })
@@ -2581,11 +2581,23 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "is %s1" })
     String RegexFilter_toString_matches(String regex);
 
+    @Default(lngs = { "en" }, values = { "doesn't contain %s1" })
+    String RegexFilter_toString_contains_not(String regex);
+
+    @Default(lngs = { "en" }, values = { "isn't %s1" })
+    String RegexFilter_toString_matches_not(String regex);
+
     @Default(lngs = { "en" }, values = { "is %s1" })
     String FilesizeFilter_toString_same(String size);
 
     @Default(lngs = { "en" }, values = { "is between %s1 and %s2" })
     String FilesizeFilter_toString_(String formatBytes, String formatBytes2);
+
+    @Default(lngs = { "en" }, values = { "isn't %s1" })
+    String FilesizeFilter_toString_same_not(String size);
+
+    @Default(lngs = { "en" }, values = { "isn't between %s1 and %s2" })
+    String FilesizeFilter_toString_not(String formatBytes, String formatBytes2);
 
     @Default(lngs = { "en" }, values = { "Filename %s1" })
     String FilterRule_toString_name(String string);
@@ -2602,7 +2614,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { " and %s1" })
     String FilterRule_toString_and(String string);
 
-    @Default(lngs = { "en" }, values = { "Condition" })
+    @Default(lngs = { "en" }, values = { "Filter Links if, " })
     String settings_linkgrabber_filter_columns_condition();
 
     @Default(lngs = { "en" }, values = { "Filename" })
@@ -2623,7 +2635,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Size %s1" })
     String FilterRule_toString_size(String string);
 
-    @Default(lngs = { "en" }, values = { "Filetype %s1" })
+    @Default(lngs = { "en" }, values = { "File %s1" })
     String FilterRule_toString_type(String string);
 
     @Default(lngs = { "en" }, values = { "Archive" })
@@ -2644,8 +2656,11 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { " or %s1" })
     String FilterRule_toString_or(String string);
 
-    @Default(lngs = { "en" }, values = { "is %s1" })
+    @Default(lngs = { "en" }, values = { "is a %s1" })
     String FiletypeFilter_toString_(String string);
+
+    @Default(lngs = { "en" }, values = { "isn't a %s1" })
+    String FiletypeFilter_toString_not(String string);
 
     @Default(lngs = { "en" }, values = { "Packagizer" })
     String gui_config_linkgrabber_packagizer();
@@ -3006,5 +3021,20 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "is not" })
     String FilterRuleDialog_layoutDialogContent_is_not_type();
+
+    @Default(lngs = { "en" }, values = { "Filter Rule" })
+    String FilterRuleDialog_FilterRuleDialog_title_();
+
+    @Default(lngs = { "en" }, values = { "Filter all Links matching these conditions" })
+    String FilterRuleDialog_getIfText_();
+
+    @Default(lngs = { "en" }, values = { "Filter Exception Rule" })
+    String ExceptionsRuleDialog_ExceptionsRuleDialog_title_();
+
+    @Default(lngs = { "en" }, values = { "Allow all Links matching these conditions, and ignore the Filter List" })
+    String ExceptionsRuleDialog_getIfText_();
+
+    @Default(lngs = { "en" }, values = { "Allow Links if, " })
+    String ExceptionsTableModel_initColumns_condition_();
 
 }

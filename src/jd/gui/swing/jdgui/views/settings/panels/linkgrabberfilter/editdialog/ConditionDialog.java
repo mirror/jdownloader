@@ -28,7 +28,9 @@ import org.jdownloader.controlling.filter.CompiledFiletypeFilter.AudioExtensions
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ImageExtensions;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter.VideoExtensions;
 import org.jdownloader.controlling.filter.FilesizeFilter;
+import org.jdownloader.controlling.filter.FilesizeFilter.SizeMatchType;
 import org.jdownloader.controlling.filter.FiletypeFilter;
+import org.jdownloader.controlling.filter.FiletypeFilter.TypeMatchType;
 import org.jdownloader.controlling.filter.RegexFilter;
 import org.jdownloader.controlling.filter.RegexFilter.MatchType;
 import org.jdownloader.gui.translate._GUI;
@@ -60,13 +62,13 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
     public void setFilesizeFilter(FilesizeFilter f) {
         if (f == null) return;
         cbSize.setSelected(f.isEnabled());
-
+        cobSize.setSelectedIndex(f.getMatchType().ordinal());
         fromSize.setValue(f.getFrom());
         toSize.setValue(f.getTo());
     }
 
     public FilesizeFilter getFilersizeFilter() {
-        return new FilesizeFilter(fromSize.getBytes(), toSize.getBytes(), cbSize.isSelected());
+        return new FilesizeFilter(fromSize.getBytes(), toSize.getBytes(), cbSize.isSelected(), SizeMatchType.values()[cobSize.getSelectedIndex()]);
     }
 
     public void setFiletypeFilter(FiletypeFilter f) {
@@ -78,10 +80,11 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
         txtCustumMime.setText(f.getCustoms());
         cbImage.setSelected(f.isImagesEnabled());
         cbVideo.setSelected(f.isVideoFilesEnabled());
+        cobType.setSelectedIndex(f.getMatchType().ordinal());
     }
 
     public FiletypeFilter getFiletypeFilter() {
-        return new FiletypeFilter(cbType.isSelected(), cbAudio.isSelected(), cbVideo.isSelected(), cbArchive.isSelected(), cbImage.isSelected(), cbCustom.isSelected() ? txtCustumMime.getText() : null);
+        return new FiletypeFilter(TypeMatchType.values()[cobType.getSelectedIndex()], cbType.isSelected(), cbAudio.isSelected(), cbVideo.isSelected(), cbArchive.isSelected(), cbImage.isSelected(), cbCustom.isSelected() ? txtCustumMime.getText() : null);
     }
 
     public void setSourceFilter(RegexFilter filter) {
@@ -165,7 +168,7 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
 
         panel.add(txtName, "spanx,growx,pushx,gapleft 21");
 
-        panel.add(createHeader(_GUI._.FilterRuleDialog_layoutDialogContent_if()), "gaptop 10,spanx,growx,pushx");
+        panel.add(createHeader(getIfText()), "gaptop 10,spanx,growx,pushx");
 
         cobFilename = new JComboBox(new String[] { _GUI._.FilterRuleDialog_layoutDialogContent_contains(), _GUI._.FilterRuleDialog_layoutDialogContent_equals(), _GUI._.FilterRuleDialog_layoutDialogContent_contains_not(), _GUI._.FilterRuleDialog_layoutDialogContent_equals_not() });
         txtFilename = new ExtTextField();
@@ -373,6 +376,10 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
         panel.add(cobSource);
         panel.add(txtSource, "spanx,pushx,growx");
         return panel;
+    }
+
+    protected String getIfText() {
+        return _GUI._.FilterRuleDialog_layoutDialogContent_if();
     }
 
     protected MigPanel createHeader(String string) {

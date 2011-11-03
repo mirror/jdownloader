@@ -32,7 +32,7 @@ public class LinkgrabberFilterRuleWrapper {
         return sourceRule;
     }
 
-    public FilesizeFilter getFilesizeRule() {
+    public CompiledFilesizeFilter getFilesizeRule() {
         return filesizeRule;
     }
 
@@ -43,7 +43,7 @@ public class LinkgrabberFilterRuleWrapper {
     private boolean                requiresHoster = false;
     private CompiledRegexFilter    hosterRule;
     private CompiledRegexFilter    sourceRule;
-    private FilesizeFilter         filesizeRule;
+    private CompiledFilesizeFilter filesizeRule;
     private CompiledFiletypeFilter filetypeFilter;
     private LinkgrabberFilterRule  rule;
 
@@ -58,7 +58,7 @@ public class LinkgrabberFilterRuleWrapper {
             requiresLinkcheck = true;
         }
         if (rule.getFilesizeFilter().isEnabled()) {
-            filesizeRule = rule.getFilesizeFilter();
+            filesizeRule = new CompiledFilesizeFilter(rule.getFilesizeFilter());
             requiresLinkcheck = true;
         }
         if (rule.getFiletypeFilter().isEnabled()) {

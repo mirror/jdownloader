@@ -10,10 +10,15 @@ public class RegexFilter extends Filter implements Storable {
     }
 
     public String toString() {
-        if (matchType == MatchType.CONTAINS) {
+        switch (getMatchType()) {
+        case CONTAINS:
             return _GUI._.RegexFilter_toString_contains(regex);
-        } else {
+        case CONTAINS_NOT:
+            return _GUI._.RegexFilter_toString_contains_not(regex);
+        case EQUALS:
             return _GUI._.RegexFilter_toString_matches(regex);
+        default:
+            return _GUI._.RegexFilter_toString_matches_not(regex);
         }
 
     }
@@ -44,7 +49,10 @@ public class RegexFilter extends Filter implements Storable {
     }
 
     public static enum MatchType {
-        CONTAINS, EQUALS
+        CONTAINS,
+        EQUALS,
+        CONTAINS_NOT,
+        EQUALS_NOT
     }
 
     public int calcPlaceholderCount() {

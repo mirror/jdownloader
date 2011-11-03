@@ -11,21 +11,21 @@ import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.controlling.filter.LinkgrabberFilterRule;
 import org.jdownloader.gui.translate._GUI;
 
-public class FilterRuleDialog extends ConditionDialog<LinkgrabberFilterRule> {
+public class ExceptionsRuleDialog extends ConditionDialog<LinkgrabberFilterRule> {
 
     private LinkgrabberFilterRule rule;
 
-    public FilterRuleDialog(LinkgrabberFilterRule filterRule) {
+    public ExceptionsRuleDialog(LinkgrabberFilterRule filterRule) {
         super();
         this.rule = filterRule;
-        setTitle(_GUI._.FilterRuleDialog_FilterRuleDialog_title_());
+        setTitle(_GUI._.ExceptionsRuleDialog_ExceptionsRuleDialog_title_());
 
     }
 
     public static void main(String[] args) {
         try {
             LookAndFeelController.getInstance().setUIManager();
-            Dialog.getInstance().showDialog(new FilterRuleDialog(new LinkgrabberFilterRule()));
+            Dialog.getInstance().showDialog(new ExceptionsRuleDialog(new LinkgrabberFilterRule()));
         } catch (DialogClosedException e) {
             e.printStackTrace();
         } catch (DialogCanceledException e) {
@@ -53,7 +53,7 @@ public class FilterRuleDialog extends ConditionDialog<LinkgrabberFilterRule> {
         rule.setFilesizeFilter(getFilersizeFilter());
         rule.setSourceURLFilter(getSourceFilter());
         rule.setFiletypeFilter(getFiletypeFilter());
-        rule.setAccept(false);
+        rule.setAccept(true);
 
     }
 
@@ -67,13 +67,13 @@ public class FilterRuleDialog extends ConditionDialog<LinkgrabberFilterRule> {
     }
 
     protected String getIfText() {
-        return _GUI._.FilterRuleDialog_getIfText_();
+        return _GUI._.ExceptionsRuleDialog_getIfText_();
     }
 
     @Override
     public JComponent layoutDialogContent() {
         MigPanel ret = (MigPanel) super.layoutDialogContent();
-        // ret.add(createHeader(_GUI._.FilterRuleDialog_layoutDialogContent_then()),
+        // ret.add(createHeader(_GUI._.ExceptionsRuleDialog_layoutDialogContent_then()),
         // "gaptop 10, spanx,growx,pushx");
 
         updateGUI();
