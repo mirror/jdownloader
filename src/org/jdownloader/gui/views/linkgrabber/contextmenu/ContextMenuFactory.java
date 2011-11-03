@@ -46,7 +46,7 @@ public class ContextMenuFactory {
         // m.add(new RenamePackageAction(pkg));
         // p.add(m);
         // }
-        p.add(new SortAction(contextObject, column));
+        p.add(new SortAction(selection, column));
         p.add(new MergeToPackageAction(selection).toContextMenuAction());
         p.add(new FileCheckAction(selection).toContextMenuAction());
         m = new JMenu(_GUI._.ContextMenuFactory_createPopup_downloaddir());

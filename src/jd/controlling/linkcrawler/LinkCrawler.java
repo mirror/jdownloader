@@ -42,12 +42,12 @@ public class LinkCrawler implements IOPermission {
     private AtomicInteger             crawler              = new AtomicInteger(0);
     private HashSet<String>           duplicateFinder      = new HashSet<String>();
     private LinkCrawlerHandler        handler              = null;
-    private long                      createdDate          = -1;
     private static ThreadPoolExecutor threadPool           = null;
 
     private HashSet<String>           captchaBlockedHoster = new HashSet<String>();
     private boolean                   captchaBlockedAll    = false;
     private LinkCrawlerFilter         filter               = null;
+    private volatile boolean          allowCrawling        = true;
 
     static {
         int maxThreads = Math.max(JsonConfig.create(LinkCrawlerConfig.class).getMaxThreads(), 1);
@@ -100,7 +100,6 @@ public class LinkCrawler implements IOPermission {
     public LinkCrawler() {
         setHandler(defaulHandlerFactory());
         setFilter(defaultFilterFactory());
-        this.createdDate = System.currentTimeMillis();
     }
 
     public void crawlNormal(String text) {
@@ -137,7 +136,7 @@ public class LinkCrawler implements IOPermission {
 
     public void enqueueNormal(final ArrayList<CrawledLink> possibleCryptedLinks) {
         if (possibleCryptedLinks == null || possibleCryptedLinks.size() == 0) return;
-        checkStartNotify();
+        if (!checkStartNotify()) return;
         try {
             if (insideDecrypterPlugin()) {
                 /*
@@ -151,7 +150,7 @@ public class LinkCrawler implements IOPermission {
                 /*
                  * enqueue this cryptedLink for decrypting
                  */
-                checkStartNotify();
+                if (!checkStartNotify()) return;
                 threadPool.execute(new LinkCrawlerRunnable(LinkCrawler.this) {
                     public void run() {
                         try {
@@ -171,7 +170,7 @@ public class LinkCrawler implements IOPermission {
     public void enqueueDeep(String text, String url) {
         final String[] possibleLinks = HTMLParser.getHttpLinks(text, url);
         if (possibleLinks == null || possibleLinks.length == 0) return;
-        checkStartNotify();
+        if (!checkStartNotify()) return;
         try {
             if (insideDecrypterPlugin()) {
                 /*
@@ -185,7 +184,7 @@ public class LinkCrawler implements IOPermission {
                 /*
                  * enqueue this cryptedLink for decrypting
                  */
-                checkStartNotify();
+                if (!checkStartNotify()) return;
                 threadPool.execute(new LinkCrawlerRunnable(LinkCrawler.this) {
                     public void run() {
                         try {
@@ -221,7 +220,7 @@ public class LinkCrawler implements IOPermission {
 
     public void enqueueDeep(final ArrayList<CrawledLink> possibleCryptedLinks) {
         if (possibleCryptedLinks == null || possibleCryptedLinks.size() == 0) return;
-        checkStartNotify();
+        if (!checkStartNotify()) return;
         try {
             for (final CrawledLink link : possibleCryptedLinks) {
                 if (insideDecrypterPlugin()) {
@@ -235,7 +234,7 @@ public class LinkCrawler implements IOPermission {
                     /*
                      * enqueue this cryptedLink for decrypting
                      */
-                    checkStartNotify();
+                    if (!checkStartNotify()) return;
                     threadPool.execute(new LinkCrawlerRunnable(LinkCrawler.this) {
                         public void run() {
                             try {
@@ -283,19 +282,21 @@ public class LinkCrawler implements IOPermission {
         if (stopped) handler.linkCrawlerStopped();
     }
 
-    private void checkStartNotify() {
+    private boolean checkStartNotify() {
         boolean started = false;
         synchronized (this) {
+            if (!allowCrawling) return false;
             if (crawler.get() == 0) {
                 started = true;
             }
             crawler.incrementAndGet();
         }
         if (started) handler.linkCrawlerStarted();
+        return true;
     }
 
     protected void crawlDeeper(CrawledLink url) {
-        checkStartNotify();
+        if (!checkStartNotify()) return;
         try {
             if (url == null) return;
             synchronized (duplicateFinder) {
@@ -354,7 +355,7 @@ public class LinkCrawler implements IOPermission {
     }
 
     protected void distribute(ArrayList<CrawledLink> possibleCryptedLinks) {
-        checkStartNotify();
+        if (!checkStartNotify()) return;
         try {
             if (possibleCryptedLinks == null || possibleCryptedLinks.size() == 0) return;
             mainloop: for (final CrawledLink possibleCryptedLink : possibleCryptedLinks) {
@@ -406,7 +407,7 @@ public class LinkCrawler implements IOPermission {
                                                  * enqueue this cryptedLink for
                                                  * decrypting
                                                  */
-                                                checkStartNotify();
+                                                if (!checkStartNotify()) return;
                                                 threadPool.execute(new LinkCrawlerRunnable(LinkCrawler.this) {
                                                     public void run() {
                                                         try {
@@ -471,7 +472,7 @@ public class LinkCrawler implements IOPermission {
                                                  * enqueue this cryptedLink for
                                                  * decrypting
                                                  */
-                                                checkStartNotify();
+                                                if (!checkStartNotify()) return;
                                                 threadPool.execute(new LinkCrawlerRunnable(LinkCrawler.this) {
                                                     public void run() {
                                                         try {
@@ -580,6 +581,14 @@ public class LinkCrawler implements IOPermission {
         }
     }
 
+    public boolean isCrawlingAllowed() {
+        return this.allowCrawling;
+    }
+
+    public void setCrawlingAllowed(boolean b) {
+        this.allowCrawling = b;
+    }
+
     public boolean waitForCrawling() {
         while (crawler.get() > 0) {
             synchronized (LinkCrawler.this) {
@@ -594,7 +603,7 @@ public class LinkCrawler implements IOPermission {
     }
 
     protected void container(final CrawledLink cryptedLink) {
-        checkStartNotify();
+        if (!checkStartNotify()) return;
         try {
             synchronized (duplicateFinder) {
                 /* did we already decrypt this crypted link? */
@@ -636,7 +645,7 @@ public class LinkCrawler implements IOPermission {
                             possibleCryptedLinks.add(ret = new CrawledLink(link));
                             forwardCrawledLinkInfos(cryptedLink, ret);
                         }
-                        checkStartNotify();
+                        if (!checkStartNotify()) return;
                         /* enqueue distributing of the links */
                         threadPool.execute(new LinkCrawlerRunnable(LinkCrawler.this) {
                             public void run() {
@@ -670,7 +679,7 @@ public class LinkCrawler implements IOPermission {
     }
 
     protected void crawl(final CrawledLink cryptedLink) {
-        checkStartNotify();
+        if (!checkStartNotify()) return;
         try {
             synchronized (duplicateFinder) {
                 /* did we already decrypt this crypted link? */
@@ -713,7 +722,7 @@ public class LinkCrawler implements IOPermission {
                             possibleCryptedLinks.add(ret = new CrawledLink(link));
                             forwardCrawledLinkInfos(cryptedLink, ret);
                         }
-                        checkStartNotify();
+                        if (!checkStartNotify()) return;
                         /* enqueue distributing of the links */
                         threadPool.execute(new LinkCrawlerRunnable(LinkCrawler.this) {
                             public void run() {
@@ -758,7 +767,7 @@ public class LinkCrawler implements IOPermission {
 
     protected void handleCrawledLink(CrawledLink link) {
         if (link == null) return;
-        link.setCreated(createdDate);
+        link.setCreated(System.currentTimeMillis());
         if (link.getDownloadLink() != null && link.getDownloadLink().getBooleanProperty("ALLOW_DUPE", false)) {
             /* forward dupeAllow info from DownloadLink to CrawledLinkInfo */
             link.getDownloadLink().setProperty("ALLOW_DUPE", Property.NULL);

@@ -1,6 +1,8 @@
 package jd.controlling.packagecontroller;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -47,6 +49,30 @@ public abstract class PackageController<E extends AbstractPackageNode<V, E>, V e
      */
     public void addmovePackageAt(final E pkg, final int index) {
         addmovePackageAt(pkg, index, false);
+    }
+
+    public void sortPackageChildren(final E pkg, final Comparator<V> comparator) {
+        if (pkg != null && comparator != null) {
+            IOEQ.getQueue().add(new QueueAction<Void, RuntimeException>() {
+
+                @Override
+                protected Void run() throws RuntimeException {
+                    writeLock();
+                    try {
+                        synchronized (pkg) {
+                            List<V> children = pkg.getChildren();
+                            Collections.sort(children, comparator);
+                        }
+                    } finally {
+                        writeUnlock();
+                    }
+                    structureChanged.incrementAndGet();
+                    _controllerStructureChanged(this.getQueuePrio());
+                    return null;
+                }
+
+            });
+        }
     }
 
     protected void addmovePackageAt(final E pkg, final int index, final boolean allowEmpty) {

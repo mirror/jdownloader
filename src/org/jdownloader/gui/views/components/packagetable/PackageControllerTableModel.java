@@ -2,6 +2,7 @@ package org.jdownloader.gui.views.components.packagetable;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
@@ -103,6 +104,10 @@ public abstract class PackageControllerTableModel<E extends AbstractPackageNode<
 
     public void refreshModel() {
         refreshModel(true);
+    }
+
+    public void sortPackageChildren(final AbstractPackageNode pkg, Comparator<AbstractNode> comparator) {
+        pc.sortPackageChildren((E) pkg, (Comparator<V>) comparator);
     }
 
     public void toggleFilePackageExpand(final AbstractPackageNode fp2, final TOGGLEMODE mode) {

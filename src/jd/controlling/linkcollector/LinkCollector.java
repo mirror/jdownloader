@@ -65,8 +65,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
             if (linkChecker != null) return;
             linkChecker = new LinkChecker<CrawledLink>();
             linkChecker.setLinkCheckHandler(this);
-            // setCrawlerFilter(LinkCrawler.defaultFilterFactory());
-            this.setCrawlerFilter(LinkFilterController.getInstance());
+            setCrawlerFilter(LinkFilterController.getInstance());
         }
     }
 
@@ -220,7 +219,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                          * forward name from FilePackage Instance to
                          * CrawledPackageInfo
                          */
-                        match.setAutoPackageName(link.getDownloadLink().getFilePackage().getName());
+                        match.setName(link.getDownloadLink().getFilePackage().getName());
                         match.setCreated(link.getCreated());
                     }
                     List<CrawledLink> add = new ArrayList<CrawledLink>(1);

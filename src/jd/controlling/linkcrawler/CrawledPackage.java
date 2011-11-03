@@ -93,6 +93,10 @@ public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledP
         return autoPackageName;
     }
 
+    public void setName(String name) {
+        customName = name;
+    }
+
     public boolean isEnabled() {
         return true;
     }

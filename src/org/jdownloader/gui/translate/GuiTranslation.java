@@ -3001,7 +3001,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Split Packages By Hoster" })
     String SplitPackagesByHost_SplitPackagesByHost_object_();
 
-    @Default(lngs = { "en" }, values = { "Sort Package on '%s1'" })
+    @Default(lngs = { "en" }, values = { "Sort Package(s) on '%s1'" })
     String SortAction_SortAction_object_(String columnName);
 
     @Default(lngs = { "en" }, values = { "Crawl %s1-Link" })

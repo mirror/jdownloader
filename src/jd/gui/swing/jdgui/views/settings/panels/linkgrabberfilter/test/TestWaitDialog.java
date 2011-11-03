@@ -67,14 +67,11 @@ public class TestWaitDialog extends AbstractDialog<ArrayList<CrawledLink>> {
         return found;
     }
 
-    private void runTest() {
+    private void runTest(final LinkCrawler lc, final LinkChecker<CrawledLink> lch) {
         System.out.println("TEST");
-        LinkCrawler lc = new LinkCrawler();
         lc.setFilter(LinkFilterController.getInstance());
         found = new ArrayList<CrawledLink>();
         filtered = 0;
-
-        final LinkChecker<CrawledLink> lch = new LinkChecker<CrawledLink>();
         lch.setLinkCheckHandler(new LinkCheckerHandler<CrawledLink>() {
 
             public void linkCheckStopped() {
@@ -124,7 +121,6 @@ public class TestWaitDialog extends AbstractDialog<ArrayList<CrawledLink>> {
         lc.crawlNormal(url);
         lc.waitForCrawling();
         lch.waitForChecked();
-
     }
 
     protected void update() {
@@ -176,9 +172,18 @@ public class TestWaitDialog extends AbstractDialog<ArrayList<CrawledLink>> {
         p.add(new JScrollPane(new ResultTable(this, model = new ResultTableModel())), "spanx,pushx,growx");
         recThread = new Thread("ReconnectTest") {
 
+            private LinkCrawler              lc  = new LinkCrawler();
+            private LinkChecker<CrawledLink> lch = new LinkChecker<CrawledLink>();
+
+            @Override
+            public void interrupt() {
+                lc.setCrawlingAllowed(false);
+                super.interrupt();
+            }
+
             public void run() {
 
-                runTest();
+                runTest(lc, lch);
 
                 new EDTRunner() {
 
