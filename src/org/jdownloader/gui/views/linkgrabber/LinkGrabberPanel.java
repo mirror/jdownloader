@@ -2,6 +2,8 @@ package org.jdownloader.gui.views.linkgrabber;
 
 import java.awt.Color;
 import java.awt.event.ActionEvent;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 import java.util.ArrayList;
 
 import javax.swing.JButton;
@@ -32,6 +34,7 @@ import org.jdownloader.gui.views.linkgrabber.actions.AddOptionsAction;
 import org.jdownloader.gui.views.linkgrabber.actions.ClearAction;
 import org.jdownloader.gui.views.linkgrabber.actions.ConfirmAllAction;
 import org.jdownloader.gui.views.linkgrabber.actions.ConfirmOptionsAction;
+import org.jdownloader.gui.views.linkgrabber.actions.RemoveOptionsAction;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 
 public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListener, GenericConfigEventListener<Boolean> {
@@ -49,6 +52,8 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
     private MigPanel                                 rightBar;
     private SearchField<CrawledPackage, CrawledLink> searchField;
     private ExtButton                                filteredAdd;
+    private ExtButton                                offlineAdd;
+    private JButton                                  popupRemove;
 
     public LinkGrabberPanel() {
         super(new MigLayout("ins 0, wrap 2", "[grow,fill]2[fill]", "[grow, fill]2[]"));
@@ -64,6 +69,17 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
             public void actionPerformed(ActionEvent e) {
                 ArrayList<CrawledLink> filteredStuff = LinkCollector.getInstance().getFilteredStuff(true);
                 LinkCollector.getInstance().addCrawlerJob(filteredStuff);
+            }
+
+        });
+        offlineAdd = new ExtButton(new AppAction() {
+            {
+                setName(_GUI._.LinkGrabberPanel_LinkGrabberPanel_offline_(13));
+                setIconKey("file_error");
+            }
+
+            public void actionPerformed(ActionEvent e) {
+                // bla
             }
 
         });
@@ -91,21 +107,43 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
                 super.setBounds(x - 2, y, width + 2, height);
             }
         };
+        popupRemove = new JButton(new RemoveOptionsAction(table, clearAll)) {
+            public void setBounds(int x, int y, int width, int height) {
+                super.setBounds(x - 2, y, width + 2, height);
+            }
+        };
         popupConfirm = new JButton(new ConfirmOptionsAction(table, confirmAll)) {
             public void setBounds(int x, int y, int width, int height) {
                 super.setBounds(x - 2, y, width + 2, height);
             }
         };
 
-        leftBar = new MigPanel("ins 0", "[]1[][][grow,fill]0[]", "[]");
+        leftBar = new MigPanel("ins 0", "[]1[][]1[][grow,fill]0[]0[]", "[]");
         rightBar = new MigPanel("ins 0", "[grow,fill]1[]0", "[]");
 
         leftBar.add(addLinks, "height 24!,aligny top");
 
         leftBar.add(popup, "height 24!,width 12!,aligny top");
         leftBar.add(clearAll, "width 24!,height 24!,aligny top");
+        leftBar.add(popupRemove, "height 24!,width 12!,aligny top");
         searchField = new SearchField<CrawledPackage, CrawledLink>(table);
         leftBar.add(searchField, "height 24!,aligny top");
+        searchField.addKeyListener(new KeyListener() {
+
+            public void keyTyped(KeyEvent e) {
+            }
+
+            public void keyReleased(KeyEvent e) {
+                if (e.getKeyCode() == KeyEvent.VK_ESCAPE) {
+                    searchField.setText("");
+
+                }
+            }
+
+            public void keyPressed(KeyEvent e) {
+            }
+        });
+        leftBar.add(offlineAdd, "height 24!,hidemode 3,gapleft 4");
         leftBar.add(filteredAdd, "height 24!,hidemode 3,gapleft 4");
         // leftBar.add(Box.createGlue());
         rightBar.add(confirmAll, "height 24!");

@@ -58,15 +58,7 @@ public class ContextMenuFactory {
 
         p.add(new CreateDLCAction(selection).toContextMenuAction());
         if (column instanceof DownloadPasswordColumn) p.add(new SetDownloadPassword(selection).toContextMenuAction());
-        m = new JMenu(_GUI._.ContextMenuFactory_createPopup_cleanup());
-        m.setIcon(NewTheme.I().getIcon("remove", 20));
 
-        m.add(new RemoveAllAction().toContextMenuAction());
-        m.add(new RemoveSelectionAction(selection).toContextMenuAction());
-        m.add(new RemoveNonSelectedAction(selection).toContextMenuAction());
-        m.add(new RemoveOfflineAction(selection).toContextMenuAction());
-        m.add(new RemoveIncompleteArchives(selection).toContextMenuAction());
-        p.add(m);
         p.add(new SplitPackagesByHost(getPackages(selection)).toContextMenuAction());
         return p;
     }

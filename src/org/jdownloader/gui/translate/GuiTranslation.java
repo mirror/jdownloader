@@ -3112,4 +3112,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "No Available Downloads found! Retry with a different Testlink." })
     String TestWaitDialog_runInEDTnothing_found();
 
+    @Default(lngs = { "en" }, values = { "Show %s1 offline Links" })
+    String LinkGrabberPanel_LinkGrabberPanel_offline_(int i);
+
 }
