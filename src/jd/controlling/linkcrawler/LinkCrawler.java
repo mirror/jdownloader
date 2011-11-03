@@ -562,7 +562,7 @@ public class LinkCrawler implements IOPermission {
         // source.getFilePackage().remove(source);
         for (DownloadLink dl : dests) {
             dl.addSourcePluginPasswordList(source.getSourcePluginPasswordList());
-            dl.setSourcePluginComment(source.getSourcePluginComment());
+            dl.setSourcePluginComment(source.getComment());
             dl.setName(source.getName());
             dl.forceFileName(source.getForcedFileName());
             dl.setFinalFileName(source.getFinalFileName());

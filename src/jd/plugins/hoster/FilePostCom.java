@@ -146,13 +146,14 @@ public class FilePostCom extends PluginForHost {
         br.getHeaders().put("User-Agent", ua);
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("We are sorry, the server where this file is")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Serverissue", 60 * 60 * 1000l);
-        if (br.containsHTML("(>Your IP address is already downloading a file at the moment|>Please wait till the download completion and try again)")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Too many simultan downloads", 5 * 60 * 1000l);
+        if (br.containsHTML("(>Your IP address is already downloading a file at the moment|>Please wait till the download completion and try again)")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "IP Already Loading", 20 * 60 * 1000l);
         String premiumlimit = br.getRegex(">Files over (.*?) can be downloaded by premium members only").getMatch(0);
         if (premiumlimit != null) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.filepostcom.only4premium", "Files over " + premiumlimit + " are only downloadable for premium users"));
         // Errorhandling in case their linkchecker lies
         if (br.containsHTML("(<title>FilePost\\.com: Download  \\- fast \\&amp; secure\\!</title>|>File not found<|>It may have been deleted by the uploader or due to the received complaint|<div class=\"file_info file_info_deleted\">)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         /* token used for all requests */
         String token = br.getRegex("flp_token', '(.*?)'").getMatch(0);
+        if (token == null) token = br.getRegex("token', '(.*?)'").getMatch(0);
         String id = new Regex(downloadLink.getDownloadURL(), FILEIDREGEX).getMatch(0);
         Browser brc = br.cloneBrowser();
         Form form = new Form();
@@ -164,11 +165,17 @@ public class FilePostCom extends PluginForHost {
         form.setEncoding("application/octet-stream; charset=UTF-8");
         /* click on low speed button */
         brc.submitForm(form);
-        String waittime = brc.getRegex("wait_time\":\"(\\d+)").getMatch(0);
+        boolean nextD = false;
+        String nextDownload = brc.getRegex("next_download\":\"(\\d+)").getMatch(0);
+        if (nextDownload != null) nextD = true;
+        if (nextDownload == null) nextDownload = brc.getRegex("wait_time\":\"(\\d+)").getMatch(0);
         int wait = 30;
-        if (waittime != null) {
-            if (waittime.contains("-")) waittime = "0";
-            wait = Integer.parseInt(waittime);
+        if (nextDownload != null) {
+            if (nextDownload.contains("-")) {
+                nextDownload = "0";
+            }
+            wait = Integer.parseInt(nextDownload);
+            if (wait > 300) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, wait * 1000l);
         }
         sleep(wait * 1001l, downloadLink);
         boolean captchaNeeded = br.containsHTML("show_captcha = 1");
@@ -195,6 +202,11 @@ public class FilePostCom extends PluginForHost {
         brc.submitForm(form);
         if (brc.containsHTML("You entered a wrong CAPTCHA code")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         String correctedBR = brc.toString().replace("\\", "");
+        if (correctedBR.contains("Your download is not found or has expired")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Serverissue", 10 * 60 * 1000l);
+        if (correctedBR.contains("Your IP address is already")) {
+            if (nextD) throw new PluginException(LinkStatus.ERROR_RETRY);
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "IP Already Loading", 5 * 60 * 1000l);
+        }
         String dllink = new Regex(correctedBR, "\"answer\":\\{\"link\":\"(https?://.*?)\"").getMatch(0);
         if (dllink == null) dllink = new Regex(correctedBR, "\"(https?://fs\\d+\\.filepost\\.com/get_file/.*?)\"").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

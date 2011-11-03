@@ -167,14 +167,14 @@ public abstract class PluginsC extends Plugin {
                     next.addSourcePluginPasswordList(srcLink.getSourcePluginPasswordList());
                 }
                 String comment = "";
-                if (srcLink.getSourcePluginComment() != null) {
-                    comment += srcLink.getSourcePluginComment();
+                if (srcLink.getComment() != null) {
+                    comment += srcLink.getComment();
                 }
-                if (next.getSourcePluginComment() != null) {
+                if (next.getComment() != null) {
                     if (comment.length() == 0) {
-                        comment += "->" + next.getSourcePluginComment();
+                        comment += "->" + next.getComment();
                     } else {
-                        comment += next.getSourcePluginComment();
+                        comment += next.getComment();
                     }
                 }
                 next.setSourcePluginComment(comment);

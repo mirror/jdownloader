@@ -364,7 +364,6 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
 
     private void onDownloadFinishedSuccessFull(DownloadLink downloadLink) {
         if ((System.currentTimeMillis() - startTime) > 30000 && SwingGui.getInstance() != null) Balloon.showIfHidden(_JDT._.ballon_download_successful_title(), NewTheme.I().getIcon("true", 32), _JDT._.ballon_download_successful_message(downloadLink.getName() + " (" + Formatter.formatReadable(downloadLink.getDownloadSize()) + ")"));
-        downloadLink.setProperty(DownloadLink.STATIC_OUTPUTFILE, downloadLink.getFileOutput());
 
         // set all links to disabled that point to the same file location
         // - prerequisite: 'skip link' option selected

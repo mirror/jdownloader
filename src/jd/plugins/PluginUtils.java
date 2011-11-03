@@ -49,7 +49,7 @@ public class PluginUtils {
             link.requestGuiUpdate();
 
             if (message == null) message = _JDT._.jd_plugins_PluginUtils_askPassword(link.getName());
-            final String password = askPassword(message, link.getDecrypterPassword());
+            final String password = askPassword(message, link.getDownloadPassword());
 
             link.requestGuiUpdate();
             return password;

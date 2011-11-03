@@ -295,7 +295,7 @@ public class BadongoCom extends PluginForHost {
             for (int i = 0; i <= 5; i++) {
                 final Form pwForm = br.getFormbyProperty("name", "pwdForm");
                 if (pwForm == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-                String pass = downloadLink.getDecrypterPassword();
+                String pass = downloadLink.getStringProperty("pass", null);
                 if (pass == null) {
                     pass = Plugin.getUserInput(null, downloadLink);
                     if (pass == null) {
@@ -309,7 +309,7 @@ public class BadongoCom extends PluginForHost {
                     break;
                 }
             }
-            if (downloadLink.getDecrypterPassword() == null) {
+            if (downloadLink.getStringProperty("pass", null) == null) {
                 logger.severe(JDL.L("plugins.errors.wrongpassword", "Password wrong"));
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }

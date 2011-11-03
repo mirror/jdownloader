@@ -54,7 +54,7 @@ public class CommentColumn extends ExtTextAreaColumn<AbstractNode> {
         } else if (object instanceof CrawledLink) {
             dl = ((CrawledLink) object).getDownloadLink();
         }
-        if (dl != null) { return dl.getSourcePluginComment(); }
+        if (dl != null) { return dl.getComment(); }
         if (object instanceof FilePackage) { return ((FilePackage) object).getComment(); }
         return null;
     }

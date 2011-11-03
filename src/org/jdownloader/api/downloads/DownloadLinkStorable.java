@@ -24,7 +24,7 @@ public class DownloadLinkStorable implements Storable {
 
     public String getComment() {
         if (link == null) return null;
-        return link.getSourcePluginComment();
+        return link.getComment();
     }
 
     public void setComment(String comment) {

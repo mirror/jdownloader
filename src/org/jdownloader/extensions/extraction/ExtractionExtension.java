@@ -57,875 +57,875 @@ import org.jdownloader.gui.views.downloads.table.DownloadsTable;
 import org.jdownloader.settings.GeneralSettings;
 
 public class ExtractionExtension extends AbstractExtension<ExtractionConfig> implements ControlListener, ActionListener {
-	private static final int EXTRACT_LINK = 1000;
+    private static final int             EXTRACT_LINK            = 1000;
 
-	private static final int EXTRACT_PACKAGE = 1001;
+    private static final int             EXTRACT_PACKAGE         = 1001;
 
-	private static final int OPEN_EXTRACT = 1002;
+    private static final int             OPEN_EXTRACT            = 1002;
 
-	private static final int SET_EXTRACT_TO = 1003;
+    private static final int             SET_EXTRACT_TO          = 1003;
 
-	private static final int SET_LINK_AUTOEXTRACT = 1005;
+    private static final int             SET_LINK_AUTOEXTRACT    = 1005;
 
-	private static final int SET_PACKAGE_AUTOEXTRACT = 1006;
+    private static final int             SET_PACKAGE_AUTOEXTRACT = 1006;
 
-	private static final String MENU_PACKAGES = "MENU_EXTRACT_PACKAGE";
+    private static final String          MENU_PACKAGES           = "MENU_EXTRACT_PACKAGE";
 
-	private static final String MENU_LINKS = "MENU_EXTRACT_LINK";
+    private static final String          MENU_LINKS              = "MENU_EXTRACT_LINK";
 
-	private static MenuAction menuAction = null;
+    private static MenuAction            menuAction              = null;
 
-	private Queue ExtractionQueue = new Queue("Extraction") {
+    private Queue                        ExtractionQueue         = new Queue("Extraction") {
 
-	};
+                                                                 };
 
-	private final ArrayList<IExtraction> extractors = new ArrayList<IExtraction>();
+    private final ArrayList<IExtraction> extractors              = new ArrayList<IExtraction>();
 
-	private final ArrayList<Archive> archives = new ArrayList<Archive>();
-
-	private ExtractionConfigPanel configPanel;
+    private final ArrayList<Archive>     archives                = new ArrayList<Archive>();
+
+    private ExtractionConfigPanel        configPanel;
 
-	private static ExtractionExtension INSTANCE;
+    private static ExtractionExtension   INSTANCE;
 
-	public ExtractionExtension() throws StartException {
-		super(T._.name());
-		INSTANCE = this;
-	}
+    public ExtractionExtension() throws StartException {
+        super(T._.name());
+        INSTANCE = this;
+    }
 
-	public static ExtractionExtension getIntance() {
-		return INSTANCE;
-	}
-
-	/**
-	 * Adds all internal extraction plugins.
-	 */
-	private void initExtractors() {
-		setExtractor(new Unix());
-		setExtractor(new XtreamSplit());
-		setExtractor(new HJSplit());
-		setExtractor(new Multi());
-	}
-
-	/**
-	 * Adds an ectraction plugin to the framework.
-	 * 
-	 * @param extractor
-	 *            The exractor.
-	 */
-	public void setExtractor(IExtraction extractor) {
-		extractors.add(extractor);
-	}
-
-	/**
-	 * Checks if there is supported extractor.
-	 * 
-	 * @param file
-	 *            Path of the packed file
-	 * @return True if a extractor was found
-	 */
-	private final boolean isLinkSupported(String file) {
-		for (IExtraction extractor : extractors) {
-			if (extractor.isArchivSupported(file)) { return true; }
-		}
-
-		return false;
-	}
-
-	/**
-	 * Startet das abwarbeiten der extractqueue
-	 */
-	private void addToQueue(final Archive archive) {
-		IExtraction extractor = archive.getExtractor();
-
-		if (!new File(archive.getFirstDownloadLink().getFileOutput()).exists()) return;
-		archive.getFirstDownloadLink().getLinkStatus().removeStatus(LinkStatus.ERROR_POST_PROCESS);
-		archive.getFirstDownloadLink().getLinkStatus().setErrorMessage(null);
-
-		archive.setOverwriteFiles(getSettings().isOverwriteExistingFilesEnabled());
-
-		ExtractionController controller = new ExtractionController(archive, logger);
-
-		if (archive.getFirstDownloadLink() instanceof DummyDownloadLink) {
-			ProgressController progress = new ProgressController(T._.plugins_optional_extraction_progress_extractfile(archive.getFirstDownloadLink().getFileOutput()), 100, getIconKey());
-			controller.setProgressController(progress);
-
-			controller.addExtractionListener(new ExtractionListenerFile());
-		} else {
-			controller.addExtractionListener(new ExtractionListenerList());
-		}
-
-		controller.setRemoveAfterExtract(getSettings().isDeleteArchiveFilesAfterExtraction());
-
-		archive.setActive(true);
-		extractor.setConfig(getSettings());
-
-		controller.fireEvent(ExtractionConstants.WRAPPER_STARTED);
-		ExtractionQueue.addAsynch(controller);
-	}
-
-	/**
-	 * Bestimmt den Pfad in den das Archiv entpackt werden soll
-	 * 
-	 * @param link
-	 * @return
-	 */
-	File getExtractToPath(DownloadLink link) {
-		if (link.getProperty(ExtractionConstants.DOWNLOADLINK_KEY_EXTRACTTOPATH) != null) return (File) link.getProperty(ExtractionConstants.DOWNLOADLINK_KEY_EXTRACTTOPATH);
-		if (link instanceof DummyDownloadLink) return new File(link.getFileOutput()).getParentFile();
-		String path;
-
-		if (!getSettings().isCustomExtractionPathEnabled()) {
-			path = new File(link.getFileOutput()).getParent();
-		} else {
-			path = getSettings().getCustomExtractionPath();
-			if (path == null) {
-				path = org.appwork.storage.config.JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder();
-			}
-		}
-
-		return new File(path);
-	}
-
-	@Override
-	public String getIconKey() {
-		return "unpack";
-	}
-
-	public void actionPerformed(ActionEvent e) {
-		if (e.getSource() instanceof MenuAction) {
-			actionPerformedOnMenuItem((MenuAction) e.getSource());
-		}
-	}
-
-	/**
-	 * Builds an archive for an {@link DownloadLink}.
-	 * 
-	 * @param link
-	 * @return
-	 */
-	private Archive buildArchive(DownloadLink link) {
-		for (Archive archive : archives) {
-			if (archive.getDownloadLinks().contains(link)) { return archive; }
-		}
-
-		Archive archive = getExtractor(link).buildArchive(link);
-
-		archives.add(archive);
-
-		return archive;
-	}
-
-	/**
-	 * Builds an dummy archive for an file.
-	 * 
-	 * @param file
-	 * @return
-	 */
-	private Archive buildDummyArchive(File file) {
-		DownloadLink link = JDUtilities.getController().getDownloadLinkByFileOutput(file, LinkStatus.FINISHED);
-		if (link == null) {
-			/* link no longer in list */
-			DummyDownloadLink link0 = new DummyDownloadLink(file.getName());
-			link0.setFile(file);
-			return buildArchive(link0);
-		}
-
-		return buildArchive(link);
-	}
-
-	/**
-	 * ActionListener for the menuitems.
-	 * 
-	 * @param source
-	 */
-	@SuppressWarnings("unchecked")
-	private void actionPerformedOnMenuItem(MenuAction source) {
-
-		ArrayList<DownloadLink> dlinks = (ArrayList<DownloadLink>) source.getProperty(MENU_LINKS);
-		ArrayList<FilePackage> fps = (ArrayList<FilePackage>) source.getProperty(MENU_PACKAGES);
-		switch (source.getActionID()) {
-
-		case EXTRACT_LINK:
-			if (dlinks == null) return;
-			for (DownloadLink link : dlinks) {
-				final Archive archive = buildArchive(link);
-				new Thread() {
-					@Override
-					public void run() {
-						if (archive.isComplete()) addToQueue(archive);
-					}
-				}.start();
-			}
-			break;
-		case EXTRACT_PACKAGE:
-			if (fps == null) return;
-			ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
-			final boolean readL = DownloadController.getInstance().readLock();
-			try {
-				for (FilePackage fp : fps) {
-					synchronized (fp) {
-						for (DownloadLink l : fp.getChildren()) {
-							if (l.getLinkStatus().isFinished()) {
-								links.add(l);
-							}
-						}
-					}
-				}
-			} finally {
-				DownloadController.getInstance().readUnlock(readL);
-			}
-			if (links.size() == 0) return;
-			for (DownloadLink link0 : links) {
-				final Archive archive0 = buildArchive(link0);
-				new Thread() {
-					@Override
-					public void run() {
-						if (archive0.isComplete()) addToQueue(archive0);
-					}
-				}.start();
-			}
-			break;
-		case OPEN_EXTRACT:
-			DownloadLink link = (DownloadLink) source.getProperty("LINK");
-			if (link == null) { return; }
-			String path = link.getStringProperty(ExtractionConstants.DOWNLOADLINK_KEY_EXTRACTEDPATH + "2");
-
-			if (!new File(path).exists()) {
-				UserIO.getInstance().requestMessageDialog(T._.plugins_optional_extraction_messages(path));
-			} else {
-				JDUtilities.openExplorer(new File(path));
-			}
-
-			break;
-		case SET_EXTRACT_TO:
-			DownloadLink link0 = (DownloadLink) source.getProperty("LINK");
-			if (link0 == null) { return; }
-			if (dlinks == null) return;
-
-			FileFilter ff = new FileFilter() {
-				@Override
-				public boolean accept(File pathname) {
-					if (pathname.isDirectory()) return true;
-					return false;
-				}
-
-				@Override
-				public String getDescription() {
-					return T._.plugins_optional_extraction_filefilter_extractto();
-				}
-			};
-
-			File extractto = this.getExtractToPath(link0);
-			while (extractto != null && !extractto.isDirectory()) {
-				extractto = extractto.getParentFile();
-			}
-
-			File[] files = UserIO.getInstance().requestFileChooser("_EXTRACTION_", null, UserIO.DIRECTORIES_ONLY, ff, null, extractto, null);
-			if (files == null) return;
-
-			for (DownloadLink ll : dlinks) {
-				Archive archive0 = buildArchive(ll);
-				for (DownloadLink l : archive0.getDownloadLinks()) {
-					l.setProperty(ExtractionConstants.DOWNLOADLINK_KEY_EXTRACTTOPATH, files[0]);
-				}
-			}
-			break;
-		case SET_LINK_AUTOEXTRACT:
-			if (dlinks == null) { return; }
-			for (DownloadLink l : dlinks) {
-				l.getFilePackage().setPostProcessing(!l.getFilePackage().isPostProcessing());
-			}
-			break;
-		case SET_PACKAGE_AUTOEXTRACT:
-			if (fps == null) { return; }
-			for (FilePackage fp : fps) {
-				if (fp == null) continue;
-				fp.setPostProcessing(!fp.isPostProcessing());
-			}
-			break;
-		}
-	}
-
-	/**
-	 * Sets the extractionpath with subpahts.
-	 * 
-	 * @param controller
-	 */
-	void assignRealDownloadDir(ExtractionController controller) {
-		Boolean usesub = getSettings().isSubpathEnabled();
-		if (usesub) {
-			if (getSettings().getSubPathFilesTreshhold() > controller.getArchiv().getNumberOfFiles()) { return; }
-			if (getSettings().isSubpathEnabledIfAllFilesAreInAFolder()) {
-				if (controller.getArchiv().isNoFolder()) { return; }
-			}
-
-			String path = getSettings().getSubPath();
-			DownloadLink link = controller.getArchiv().getFirstDownloadLink();
-
-			try {
-				if (link.getFilePackage().getName() != null) {
-					if (link instanceof DummyDownloadLink && controller.getArchiv().getExtractor().getArchiveName(link) != null) {
-						path = path.replace("%PACKAGENAME%", controller.getArchiv().getExtractor().getArchiveName(link));
-					} else {
-						path = path.replace("%PACKAGENAME%", link.getFilePackage().getName());
-					}
-				} else {
-					path = path.replace("%PACKAGENAME%", "");
-					logger.severe("Could not set packagename for " + controller.getArchiv().getFirstDownloadLink().getFileOutput());
-				}
-
-				if (controller.getArchiv().getExtractor().getArchiveName(link) != null) {
-					path = path.replace("%ARCHIVENAME%", controller.getArchiv().getExtractor().getArchiveName(link));
-				} else {
-					path = path.replace("%ARCHIVENAME%", "");
-					logger.severe("Could not set archivename for " + controller.getArchiv().getFirstDownloadLink().getFileOutput());
-				}
-
-				if (link.getHost() != null) {
-					path = path.replace("%HOSTER%", link.getHost());
-				} else {
-					path = path.replace("%HOSTER%", "");
-					logger.severe("Could not set hoster for " + controller.getArchiv().getFirstDownloadLink().getFileOutput());
-				}
-
-				if (path.contains("$DATE:")) {
-					int start = path.indexOf("$DATE:");
-					int end = start + 6;
-
-					while (end < path.length() && path.charAt(end) != '$') {
-						end++;
-					}
-
-					try {
-						SimpleDateFormat format = new SimpleDateFormat(path.substring(start + 6, end));
-						path = path.replace(path.substring(start, end + 1), format.format(new Date()));
-					} catch (Exception e) {
-						path = path.replace(path.substring(start, end + 1), "");
-						logger.severe("Could not set extraction date. Maybe pattern is wrong. For " + controller.getArchiv().getFirstDownloadLink().getFileOutput());
-					}
-				}
-
-				String dif = new File(org.appwork.storage.config.JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder()).getAbsolutePath().replace(new File(link.getFileOutput()).getParent(), "");
-				if (new File(dif).isAbsolute()) {
-					dif = "";
-				}
-				path = path.replace("%SUBFOLDER%", dif);
-
-				path = path.replaceAll("[/]+", "\\\\");
-				path = path.replaceAll("[\\\\]+", "\\\\");
-
-				controller.getArchiv().setExtractTo(new File(controller.getArchiv().getExtractTo(), path));
-			} catch (Exception e) {
-				JDLogger.exception(e);
-			}
-
-			for (DownloadLink l : controller.getArchiv().getDownloadLinks()) {
-				if (l == null) continue;
-				l.setProperty(ExtractionConstants.DOWNLOADLINK_KEY_EXTRACTEDPATH, controller.getArchiv().getExtractTo().getAbsolutePath());
-			}
-		}
-	}
-
-	/**
-	 * Returns the extractor for the {@link DownloadLink}.
-	 * 
-	 * @param link
-	 * @return
-	 */
-	private IExtraction getExtractor(DownloadLink link) {
-		for (IExtraction extractor : extractors) {
-			try {
-				if (extractor.isArchivSupported(link.getFileOutput())) { return extractor.getClass().newInstance(); }
-			} catch (InstantiationException e) {
-				e.printStackTrace();
-			} catch (IllegalAccessException e) {
-				e.printStackTrace();
-			}
-		}
-
-		return null;
-	}
-
-	// @Override
-	// public Object interact(String command, Object parameter) {
-	// if (command.equals("isWorking")) {
-	// return queue.isAlive();
-	// } else {
-	// return null;
-	// }
-	// }
-
-	/**
-	 * Finishes the extraction process.
-	 * 
-	 * @param controller
-	 */
-	void onFinished(ExtractionController controller) {
-		controller.getArchiv().getFirstDownloadLink().setPluginProgress(null);
-		if (controller.getProgressController() != null) {
-			controller.getProgressController().doFinalize(8000);
-		}
-	}
-
-	/**
-	 * Removes an {@link Archive} from the list.
-	 * 
-	 * @param archive
-	 */
-	void removeArchive(Archive archive) {
-		archives.remove(archive);
-	}
-
-	@SuppressWarnings({ "unchecked", "deprecation" })
-	public void controlEvent(ControlEvent event) {
-		DownloadLink link;
-		switch (event.getEventID()) {
-		case ControlEvent.CONTROL_PLUGIN_INACTIVE:
-			if (!(event.getCaller() instanceof PluginForHost)) return;
-			link = ((SingleDownloadController) event.getParameter()).getDownloadLink();
-			if (link.getFilePackage().isPostProcessing() && this.getPluginConfig().getBooleanProperty("ACTIVATED", true) && isLinkSupported(link.getFileOutput())) {
-				Archive archive = buildArchive(link);
-
-				if (!archive.isActive() && archive.getDownloadLinks().size() > 0 && archive.isComplete()) {
-					this.addToQueue(archive);
-				}
-			}
-			break;
-		case ControlEvent.CONTROL_ON_FILEOUTPUT:
-			if (getSettings().isDeepExtractionEnabled()) {
-				try {
-					File[] list = (File[]) event.getParameter();
-					for (File archiveStartFile : list) {
-						if (isLinkSupported(archiveStartFile.getAbsolutePath())) {
-							Archive ar = buildDummyArchive(archiveStartFile);
-							if (ar.isActive() || ar.getDownloadLinks().size() < 1 || !ar.isComplete()) continue;
-							addToQueue(ar);
-						}
-					}
-				} catch (Exception e) {
-					JDLogger.exception(e);
-				}
-			}
-			break;
-		case ControlEvent.CONTROL_LINKLIST_CONTEXT_MENU:
-			Object source = event.getParameter2();
-			if (source == null || !(source instanceof DownloadsTable)) break;
-			ArrayList<MenuAction> items = (ArrayList<MenuAction>) event.getParameter();
-			MenuAction m;
-			MenuAction container = new MenuAction("Extract", "optional.extraction.linkmenu.container", 0) {
-
-				private static final long serialVersionUID = 6976229914297269865L;
-
-				@Override
-				protected String createMnemonic() {
-					return null;
-				}
-
-				@Override
-				protected String createAccelerator() {
-					return null;
-				}
-
-				@Override
-				protected String createTooltip() {
-					return null;
-				}
-			};
-			container.setIcon(getIconKey());
-			items.add(container);
-			if (event.getCaller() instanceof DownloadLink) {
-				link = (DownloadLink) event.getCaller();
-
-				container.addMenuItem(m = new MenuAction("Extract Link", "optional.extraction.linkmenu.extract", EXTRACT_LINK) {
-
-					private static final long serialVersionUID = 8648569972779344623L;
-
-					@Override
-					protected String createMnemonic() {
-						return null;
-					}
-
-					@Override
-					protected String createAccelerator() {
-						return null;
-					}
-
-					@Override
-					protected String createTooltip() {
-						return null;
-					}
-				});
-				m.setIcon(getIconKey());
-				m.setActionListener(this);
-
-				boolean isLocalyAvailable = new File(link.getFileOutput()).exists() || new File(link.getStringProperty(DownloadLink.STATIC_OUTPUTFILE, link.getFileOutput())).exists();
-
-				if (isLocalyAvailable && isLinkSupported(link.getFileOutput())) {
-					m.setEnabled(true);
-				} else {
-					m.setEnabled(false);
-				}
-
-				m.setProperty(MENU_LINKS, ((DownloadsTable) source).getSelectedChildren());
-				container.addMenuItem(m = new MenuAction("Autoextract", "optional.extraction.linkmenu.autoextract", SET_LINK_AUTOEXTRACT) {
-
-					private static final long serialVersionUID = -6049435417230844732L;
-
-					@Override
-					protected String createMnemonic() {
-						return null;
-					}
-
-					@Override
-					protected String createAccelerator() {
-						return null;
-					}
-
-					@Override
-					protected String createTooltip() {
-						return null;
-					}
-				});
-				m.setActionListener(this);
-				m.setSelected(link.getFilePackage().isPostProcessing());
-				if (!this.getPluginConfig().getBooleanProperty("ACTIVATED", true)) {
-					m.setEnabled(false);
-				}
-				m.setProperty(MENU_LINKS, ((DownloadsTable) source).getSelectedChildren());
-				container.addMenuItem(new MenuAction(Types.SEPARATOR) {
-
-					private static final long serialVersionUID = -8990247058181516475L;
-
-					@Override
-					protected String createMnemonic() {
-						return null;
-					}
-
-					@Override
-					protected String createAccelerator() {
-						return null;
-					}
-
-					@Override
-					protected String createTooltip() {
-						return null;
-					}
-				});
-				container.addMenuItem(m = new MenuAction("Extract To", "optional.extraction.linkmenu.setextract", SET_EXTRACT_TO) {
-
-					private static final long serialVersionUID = -7772646110444791318L;
-
-					@Override
-					protected String createMnemonic() {
-						return null;
-					}
-
-					@Override
-					protected String createAccelerator() {
-						return null;
-					}
-
-					@Override
-					protected String createTooltip() {
-						return null;
-					}
-				});
-				m.setActionListener(this);
-
-				if (isLinkSupported(link.getFileOutput())) {
-					m.setEnabled(true);
-				} else {
-					m.setEnabled(false);
-				}
-
-				m.setProperty("LINK", link);
-				m.setProperty(MENU_LINKS, ((DownloadsTable) source).getSelectedChildren());
-				File dir = this.getExtractToPath(link);
-				while (dir != null && !dir.exists()) {
-					if (dir.getParentFile() == null) break;
-					dir = dir.getParentFile();
-				}
-				if (dir == null) break;
-				container.addMenuItem(m = new MenuAction("Open Extract folder", "optional.extraction.linkmenu.openextract3", OPEN_EXTRACT) {
-
-					private static final long serialVersionUID = 212186274511234351L;
-
-					@Override
-					protected String createMnemonic() {
-						return null;
-					}
-
-					@Override
-					protected String createAccelerator() {
-						return null;
-					}
-
-					@Override
-					protected String createTooltip() {
-						return null;
-					}
-				});
-				m.setActionListener(this);
-
-				if (isLinkSupported(link.getFileOutput())) {
-					m.setEnabled(true);
-				} else {
-					m.setEnabled(false);
-				}
-
-				link.setProperty(ExtractionConstants.DOWNLOADLINK_KEY_EXTRACTEDPATH + "2", dir.getAbsolutePath());
-				m.setProperty("LINK", link);
-			} else {
-				FilePackage fp = (FilePackage) event.getCaller();
-				if (fp != null) {
-					container.addMenuItem(m = new MenuAction("Extract Package", "optional.extraction.linkmenu.package.extract", EXTRACT_PACKAGE) {
-
-						private static final long serialVersionUID = 5329598452469482639L;
-
-						@Override
-						protected String createMnemonic() {
-							return null;
-						}
-
-						@Override
-						protected String createAccelerator() {
-							return null;
-						}
-
-						@Override
-						protected String createTooltip() {
-							return null;
-						}
-					});
-					m.setIcon(getIconKey());
-					m.setActionListener(this);
-					container.addMenuItem(m = new MenuAction("Auto Extract Package", "optional.extraction.linkmenu.package.autoextract", SET_PACKAGE_AUTOEXTRACT) {
-
-						private static final long serialVersionUID = 8363153410685078199L;
-
-						@Override
-						protected String createMnemonic() {
-							return null;
-						}
-
-						@Override
-						protected String createAccelerator() {
-							return null;
-						}
-
-						@Override
-						protected String createTooltip() {
-							return null;
-						}
-					});
-					m.setSelected(fp.isPostProcessing());
-					m.setActionListener(this);
-					if (!this.getPluginConfig().getBooleanProperty("ACTIVATED", true)) {
-						m.setEnabled(false);
-					}
-				}
-			}
-			break;
-		}
-	}
-
-	@Override
-	protected void stop() throws StopException {
-		JDController.getInstance().removeControlListener(this);
-	}
-
-	@Override
-	protected void start() throws StartException {
-		JDController.getInstance().addControlListener(this);
-	}
-
-	@Override
-	protected void initExtension() throws StartException {
-		// we will remove them soon anway
-		// ArrayList<PluginOptional> pluginsOptional = new
-		// ArrayList<OptionalPluginWrapper>(OptionalPluginWrapper.getOptionalWrapper());
-		// Collections.sort(pluginsOptional);
-		//
-		// for (OptionalPluginWrapper pow : pluginsOptional) {
-		// if (pow.getAnnotation().id().equals("unrar") ||
-		// pow.getAnnotation().id().equals("hjsplit")) {
-		// if (pow.isEnabled()) {
-		// logger.warning("Disable unrar and hjsplit to use this plugin");
-		// UserIO.getInstance().requestMessageDialog(0,
-		// "Disable unrar and hjsplit to use this plugin");
-		// return false;
-		// }
-		// }
-		// }
-
-		// new ToolBarAction("extraction", "extraction", getIconKey()) { //
-		// TODO:
-		// // remove
-		// private static final long serialVersionUID = 1L;
-		//
-		// @Override
-		// protected String createMnemonic() {
-		// return null;
-		// }
-		//
-		// @Override
-		// protected String createAccelerator() {
-		// return null;
-		// }
-		//
-		// @Override
-		// protected String createTooltip() {
-		// return "Extraction";
-		// }
-		//
-		// @Override
-		// public void initDefaults() {
-		// }
-		//
-		// @Override
-		// public void onAction(final ActionEvent e) {
-		// FileFilter ff = new FileFilter() {
-		// @Override
-		// public boolean accept(File pathname) {
-		// if (pathname.isDirectory()) return true;
-		//
-		// for (IExtraction extractor : extractors) {
-		// if
-		// (extractor.isArchivSupportedFileFilter(pathname.getAbsolutePath())) {
-		// return true; }
-		// }
-		//
-		// return false;
-		// }
-		//
-		// @Override
-		// public String getDescription() {
-		// return T._.plugins_optional_extraction_filefilter();
-		// }
-		// };
-		//
-		// File[] files = UserIO.getInstance().requestFileChooser("_EXTRATION_",
-		// null, UserIO.FILES_ONLY, ff, true, null, null);
-		// if (files == null) return;
-		//
-		// for (File archiveStartFile : files) {
-		// final Archive archive = buildDummyArchive(archiveStartFile);
-		// new Thread() {
-		// @Override
-		// public void run() {
-		// if (archive.isComplete()) addToQueue(archive);
-		// }
-		// }.start();
-		// }
-		// }
-		// };
-
-		initExtractors();
-
-		Iterator<IExtraction> it = extractors.iterator();
-		while (it.hasNext()) {
-			IExtraction extractor = it.next();
-			if (!extractor.checkCommand()) {
-				logger.warning("Extractor " + extractor.getClass().getName() + " plugin could not be initialized");
-				it.remove();
-			}
-		}
-
-		if (menuAction == null) menuAction = new MenuAction("Extract Files", "optional.extraction.menu.extract.singlefiles", getIconKey()) {
-			private static final long serialVersionUID = -7569522709162921624L;
-
-			@Override
-			public void initDefaults() {
-				this.setEnabled(true);
-			}
-
-			@Override
-			public void onAction(ActionEvent e) {
-				FileFilter ff = new FileFilter() {
-					@Override
-					public boolean accept(File pathname) {
-						if (pathname.isDirectory()) return true;
-
-						for (IExtraction extractor : extractors) {
-							if (extractor.isArchivSupportedFileFilter(pathname.getAbsolutePath())) { return true; }
-						}
-
-						return false;
-					}
-
-					@Override
-					public String getDescription() {
-						return T._.plugins_optional_extraction_filefilter();
-					}
-				};
-
-				File[] files = UserIO.getInstance().requestFileChooser("_EXTRATION_", null, UserIO.FILES_ONLY, ff, true, null, null);
-				if (files == null) return;
-
-				for (File archiveStartFile : files) {
-					final Archive archive = buildDummyArchive(archiveStartFile);
-					new Thread() {
-						@Override
-						public void run() {
-							if (archive.isComplete()) addToQueue(archive);
-						}
-					}.start();
-				}
-			}
-
-			@Override
-			protected String createMnemonic() {
-				return null;
-			}
-
-			@Override
-			protected String createAccelerator() {
-				return null;
-			}
-
-			@Override
-			protected String createTooltip() {
-				return null;
-			}
-		};
-
-		configPanel = new ExtractionConfigPanel(this);
-
-	}
-
-	@Override
-	public boolean hasConfigPanel() {
-		return true;
-	}
-
-	@Override
-	public String getConfigID() {
-		return "extraction";
-	}
-
-	@Override
-	public String getAuthor() {
-		return null;
-	}
-
-	@Override
-	public String getDescription() {
-		return T._.description();
-	}
-
-	@Override
-	public AddonPanel<ExtractionExtension> getGUI() {
-		return null;
-	}
-
-	@Override
-	public ArrayList<MenuAction> getMenuAction() {
-
-		return null;
-	}
-
-	@Override
-	public ExtensionConfigPanel<ExtractionExtension> getConfigPanel() {
-		return configPanel;
-	}
+    public static ExtractionExtension getIntance() {
+        return INSTANCE;
+    }
+
+    /**
+     * Adds all internal extraction plugins.
+     */
+    private void initExtractors() {
+        setExtractor(new Unix());
+        setExtractor(new XtreamSplit());
+        setExtractor(new HJSplit());
+        setExtractor(new Multi());
+    }
+
+    /**
+     * Adds an ectraction plugin to the framework.
+     * 
+     * @param extractor
+     *            The exractor.
+     */
+    public void setExtractor(IExtraction extractor) {
+        extractors.add(extractor);
+    }
+
+    /**
+     * Checks if there is supported extractor.
+     * 
+     * @param file
+     *            Path of the packed file
+     * @return True if a extractor was found
+     */
+    private final boolean isLinkSupported(String file) {
+        for (IExtraction extractor : extractors) {
+            if (extractor.isArchivSupported(file)) { return true; }
+        }
+
+        return false;
+    }
+
+    /**
+     * Startet das abwarbeiten der extractqueue
+     */
+    private void addToQueue(final Archive archive) {
+        IExtraction extractor = archive.getExtractor();
+
+        if (!new File(archive.getFirstDownloadLink().getFileOutput()).exists()) return;
+        archive.getFirstDownloadLink().getLinkStatus().removeStatus(LinkStatus.ERROR_POST_PROCESS);
+        archive.getFirstDownloadLink().getLinkStatus().setErrorMessage(null);
+
+        archive.setOverwriteFiles(getSettings().isOverwriteExistingFilesEnabled());
+
+        ExtractionController controller = new ExtractionController(archive, logger);
+
+        if (archive.getFirstDownloadLink() instanceof DummyDownloadLink) {
+            ProgressController progress = new ProgressController(T._.plugins_optional_extraction_progress_extractfile(archive.getFirstDownloadLink().getFileOutput()), 100, getIconKey());
+            controller.setProgressController(progress);
+
+            controller.addExtractionListener(new ExtractionListenerFile());
+        } else {
+            controller.addExtractionListener(new ExtractionListenerList());
+        }
+
+        controller.setRemoveAfterExtract(getSettings().isDeleteArchiveFilesAfterExtraction());
+
+        archive.setActive(true);
+        extractor.setConfig(getSettings());
+
+        controller.fireEvent(ExtractionConstants.WRAPPER_STARTED);
+        ExtractionQueue.addAsynch(controller);
+    }
+
+    /**
+     * Bestimmt den Pfad in den das Archiv entpackt werden soll
+     * 
+     * @param link
+     * @return
+     */
+    File getExtractToPath(DownloadLink link) {
+        if (link.getProperty(ExtractionConstants.DOWNLOADLINK_KEY_EXTRACTTOPATH) != null) return (File) link.getProperty(ExtractionConstants.DOWNLOADLINK_KEY_EXTRACTTOPATH);
+        if (link instanceof DummyDownloadLink) return new File(link.getFileOutput()).getParentFile();
+        String path;
+
+        if (!getSettings().isCustomExtractionPathEnabled()) {
+            path = new File(link.getFileOutput()).getParent();
+        } else {
+            path = getSettings().getCustomExtractionPath();
+            if (path == null) {
+                path = org.appwork.storage.config.JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder();
+            }
+        }
+
+        return new File(path);
+    }
+
+    @Override
+    public String getIconKey() {
+        return "unpack";
+    }
+
+    public void actionPerformed(ActionEvent e) {
+        if (e.getSource() instanceof MenuAction) {
+            actionPerformedOnMenuItem((MenuAction) e.getSource());
+        }
+    }
+
+    /**
+     * Builds an archive for an {@link DownloadLink}.
+     * 
+     * @param link
+     * @return
+     */
+    private Archive buildArchive(DownloadLink link) {
+        for (Archive archive : archives) {
+            if (archive.getDownloadLinks().contains(link)) { return archive; }
+        }
+
+        Archive archive = getExtractor(link).buildArchive(link);
+
+        archives.add(archive);
+
+        return archive;
+    }
+
+    /**
+     * Builds an dummy archive for an file.
+     * 
+     * @param file
+     * @return
+     */
+    private Archive buildDummyArchive(File file) {
+        DownloadLink link = JDUtilities.getController().getDownloadLinkByFileOutput(file, LinkStatus.FINISHED);
+        if (link == null) {
+            /* link no longer in list */
+            DummyDownloadLink link0 = new DummyDownloadLink(file.getName());
+            link0.setFile(file);
+            return buildArchive(link0);
+        }
+
+        return buildArchive(link);
+    }
+
+    /**
+     * ActionListener for the menuitems.
+     * 
+     * @param source
+     */
+    @SuppressWarnings("unchecked")
+    private void actionPerformedOnMenuItem(MenuAction source) {
+
+        ArrayList<DownloadLink> dlinks = (ArrayList<DownloadLink>) source.getProperty(MENU_LINKS);
+        ArrayList<FilePackage> fps = (ArrayList<FilePackage>) source.getProperty(MENU_PACKAGES);
+        switch (source.getActionID()) {
+
+        case EXTRACT_LINK:
+            if (dlinks == null) return;
+            for (DownloadLink link : dlinks) {
+                final Archive archive = buildArchive(link);
+                new Thread() {
+                    @Override
+                    public void run() {
+                        if (archive.isComplete()) addToQueue(archive);
+                    }
+                }.start();
+            }
+            break;
+        case EXTRACT_PACKAGE:
+            if (fps == null) return;
+            ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
+            final boolean readL = DownloadController.getInstance().readLock();
+            try {
+                for (FilePackage fp : fps) {
+                    synchronized (fp) {
+                        for (DownloadLink l : fp.getChildren()) {
+                            if (l.getLinkStatus().isFinished()) {
+                                links.add(l);
+                            }
+                        }
+                    }
+                }
+            } finally {
+                DownloadController.getInstance().readUnlock(readL);
+            }
+            if (links.size() == 0) return;
+            for (DownloadLink link0 : links) {
+                final Archive archive0 = buildArchive(link0);
+                new Thread() {
+                    @Override
+                    public void run() {
+                        if (archive0.isComplete()) addToQueue(archive0);
+                    }
+                }.start();
+            }
+            break;
+        case OPEN_EXTRACT:
+            DownloadLink link = (DownloadLink) source.getProperty("LINK");
+            if (link == null) { return; }
+            String path = link.getStringProperty(ExtractionConstants.DOWNLOADLINK_KEY_EXTRACTEDPATH + "2");
+
+            if (!new File(path).exists()) {
+                UserIO.getInstance().requestMessageDialog(T._.plugins_optional_extraction_messages(path));
+            } else {
+                JDUtilities.openExplorer(new File(path));
+            }
+
+            break;
+        case SET_EXTRACT_TO:
+            DownloadLink link0 = (DownloadLink) source.getProperty("LINK");
+            if (link0 == null) { return; }
+            if (dlinks == null) return;
+
+            FileFilter ff = new FileFilter() {
+                @Override
+                public boolean accept(File pathname) {
+                    if (pathname.isDirectory()) return true;
+                    return false;
+                }
+
+                @Override
+                public String getDescription() {
+                    return T._.plugins_optional_extraction_filefilter_extractto();
+                }
+            };
+
+            File extractto = this.getExtractToPath(link0);
+            while (extractto != null && !extractto.isDirectory()) {
+                extractto = extractto.getParentFile();
+            }
+
+            File[] files = UserIO.getInstance().requestFileChooser("_EXTRACTION_", null, UserIO.DIRECTORIES_ONLY, ff, null, extractto, null);
+            if (files == null) return;
+
+            for (DownloadLink ll : dlinks) {
+                Archive archive0 = buildArchive(ll);
+                for (DownloadLink l : archive0.getDownloadLinks()) {
+                    l.setProperty(ExtractionConstants.DOWNLOADLINK_KEY_EXTRACTTOPATH, files[0]);
+                }
+            }
+            break;
+        case SET_LINK_AUTOEXTRACT:
+            if (dlinks == null) { return; }
+            for (DownloadLink l : dlinks) {
+                l.getFilePackage().setPostProcessing(!l.getFilePackage().isPostProcessing());
+            }
+            break;
+        case SET_PACKAGE_AUTOEXTRACT:
+            if (fps == null) { return; }
+            for (FilePackage fp : fps) {
+                if (fp == null) continue;
+                fp.setPostProcessing(!fp.isPostProcessing());
+            }
+            break;
+        }
+    }
+
+    /**
+     * Sets the extractionpath with subpahts.
+     * 
+     * @param controller
+     */
+    void assignRealDownloadDir(ExtractionController controller) {
+        Boolean usesub = getSettings().isSubpathEnabled();
+        if (usesub) {
+            if (getSettings().getSubPathFilesTreshhold() > controller.getArchiv().getNumberOfFiles()) { return; }
+            if (getSettings().isSubpathEnabledIfAllFilesAreInAFolder()) {
+                if (controller.getArchiv().isNoFolder()) { return; }
+            }
+
+            String path = getSettings().getSubPath();
+            DownloadLink link = controller.getArchiv().getFirstDownloadLink();
+
+            try {
+                if (link.getFilePackage().getName() != null) {
+                    if (link instanceof DummyDownloadLink && controller.getArchiv().getExtractor().getArchiveName(link) != null) {
+                        path = path.replace("%PACKAGENAME%", controller.getArchiv().getExtractor().getArchiveName(link));
+                    } else {
+                        path = path.replace("%PACKAGENAME%", link.getFilePackage().getName());
+                    }
+                } else {
+                    path = path.replace("%PACKAGENAME%", "");
+                    logger.severe("Could not set packagename for " + controller.getArchiv().getFirstDownloadLink().getFileOutput());
+                }
+
+                if (controller.getArchiv().getExtractor().getArchiveName(link) != null) {
+                    path = path.replace("%ARCHIVENAME%", controller.getArchiv().getExtractor().getArchiveName(link));
+                } else {
+                    path = path.replace("%ARCHIVENAME%", "");
+                    logger.severe("Could not set archivename for " + controller.getArchiv().getFirstDownloadLink().getFileOutput());
+                }
+
+                if (link.getHost() != null) {
+                    path = path.replace("%HOSTER%", link.getHost());
+                } else {
+                    path = path.replace("%HOSTER%", "");
+                    logger.severe("Could not set hoster for " + controller.getArchiv().getFirstDownloadLink().getFileOutput());
+                }
+
+                if (path.contains("$DATE:")) {
+                    int start = path.indexOf("$DATE:");
+                    int end = start + 6;
+
+                    while (end < path.length() && path.charAt(end) != '$') {
+                        end++;
+                    }
+
+                    try {
+                        SimpleDateFormat format = new SimpleDateFormat(path.substring(start + 6, end));
+                        path = path.replace(path.substring(start, end + 1), format.format(new Date()));
+                    } catch (Exception e) {
+                        path = path.replace(path.substring(start, end + 1), "");
+                        logger.severe("Could not set extraction date. Maybe pattern is wrong. For " + controller.getArchiv().getFirstDownloadLink().getFileOutput());
+                    }
+                }
+
+                String dif = new File(org.appwork.storage.config.JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder()).getAbsolutePath().replace(new File(link.getFileOutput()).getParent(), "");
+                if (new File(dif).isAbsolute()) {
+                    dif = "";
+                }
+                path = path.replace("%SUBFOLDER%", dif);
+
+                path = path.replaceAll("[/]+", "\\\\");
+                path = path.replaceAll("[\\\\]+", "\\\\");
+
+                controller.getArchiv().setExtractTo(new File(controller.getArchiv().getExtractTo(), path));
+            } catch (Exception e) {
+                JDLogger.exception(e);
+            }
+
+            for (DownloadLink l : controller.getArchiv().getDownloadLinks()) {
+                if (l == null) continue;
+                l.setProperty(ExtractionConstants.DOWNLOADLINK_KEY_EXTRACTEDPATH, controller.getArchiv().getExtractTo().getAbsolutePath());
+            }
+        }
+    }
+
+    /**
+     * Returns the extractor for the {@link DownloadLink}.
+     * 
+     * @param link
+     * @return
+     */
+    private IExtraction getExtractor(DownloadLink link) {
+        for (IExtraction extractor : extractors) {
+            try {
+                if (extractor.isArchivSupported(link.getFileOutput())) { return extractor.getClass().newInstance(); }
+            } catch (InstantiationException e) {
+                e.printStackTrace();
+            } catch (IllegalAccessException e) {
+                e.printStackTrace();
+            }
+        }
+
+        return null;
+    }
+
+    // @Override
+    // public Object interact(String command, Object parameter) {
+    // if (command.equals("isWorking")) {
+    // return queue.isAlive();
+    // } else {
+    // return null;
+    // }
+    // }
+
+    /**
+     * Finishes the extraction process.
+     * 
+     * @param controller
+     */
+    void onFinished(ExtractionController controller) {
+        controller.getArchiv().getFirstDownloadLink().setPluginProgress(null);
+        if (controller.getProgressController() != null) {
+            controller.getProgressController().doFinalize(8000);
+        }
+    }
+
+    /**
+     * Removes an {@link Archive} from the list.
+     * 
+     * @param archive
+     */
+    void removeArchive(Archive archive) {
+        archives.remove(archive);
+    }
+
+    @SuppressWarnings({ "unchecked", "deprecation" })
+    public void controlEvent(ControlEvent event) {
+        DownloadLink link;
+        switch (event.getEventID()) {
+        case ControlEvent.CONTROL_PLUGIN_INACTIVE:
+            if (!(event.getCaller() instanceof PluginForHost)) return;
+            link = ((SingleDownloadController) event.getParameter()).getDownloadLink();
+            if (link.getFilePackage().isPostProcessing() && this.getPluginConfig().getBooleanProperty("ACTIVATED", true) && isLinkSupported(link.getFileOutput())) {
+                Archive archive = buildArchive(link);
+
+                if (!archive.isActive() && archive.getDownloadLinks().size() > 0 && archive.isComplete()) {
+                    this.addToQueue(archive);
+                }
+            }
+            break;
+        case ControlEvent.CONTROL_ON_FILEOUTPUT:
+            if (getSettings().isDeepExtractionEnabled()) {
+                try {
+                    File[] list = (File[]) event.getParameter();
+                    for (File archiveStartFile : list) {
+                        if (isLinkSupported(archiveStartFile.getAbsolutePath())) {
+                            Archive ar = buildDummyArchive(archiveStartFile);
+                            if (ar.isActive() || ar.getDownloadLinks().size() < 1 || !ar.isComplete()) continue;
+                            addToQueue(ar);
+                        }
+                    }
+                } catch (Exception e) {
+                    JDLogger.exception(e);
+                }
+            }
+            break;
+        case ControlEvent.CONTROL_LINKLIST_CONTEXT_MENU:
+            Object source = event.getParameter2();
+            if (source == null || !(source instanceof DownloadsTable)) break;
+            ArrayList<MenuAction> items = (ArrayList<MenuAction>) event.getParameter();
+            MenuAction m;
+            MenuAction container = new MenuAction("Extract", "optional.extraction.linkmenu.container", 0) {
+
+                private static final long serialVersionUID = 6976229914297269865L;
+
+                @Override
+                protected String createMnemonic() {
+                    return null;
+                }
+
+                @Override
+                protected String createAccelerator() {
+                    return null;
+                }
+
+                @Override
+                protected String createTooltip() {
+                    return null;
+                }
+            };
+            container.setIcon(getIconKey());
+            items.add(container);
+            if (event.getCaller() instanceof DownloadLink) {
+                link = (DownloadLink) event.getCaller();
+
+                container.addMenuItem(m = new MenuAction("Extract Link", "optional.extraction.linkmenu.extract", EXTRACT_LINK) {
+
+                    private static final long serialVersionUID = 8648569972779344623L;
+
+                    @Override
+                    protected String createMnemonic() {
+                        return null;
+                    }
+
+                    @Override
+                    protected String createAccelerator() {
+                        return null;
+                    }
+
+                    @Override
+                    protected String createTooltip() {
+                        return null;
+                    }
+                });
+                m.setIcon(getIconKey());
+                m.setActionListener(this);
+
+                boolean isLocalyAvailable = new File(link.getFileOutput()).exists();
+
+                if (isLocalyAvailable && isLinkSupported(link.getFileOutput())) {
+                    m.setEnabled(true);
+                } else {
+                    m.setEnabled(false);
+                }
+
+                m.setProperty(MENU_LINKS, ((DownloadsTable) source).getSelectedChildren());
+                container.addMenuItem(m = new MenuAction("Autoextract", "optional.extraction.linkmenu.autoextract", SET_LINK_AUTOEXTRACT) {
+
+                    private static final long serialVersionUID = -6049435417230844732L;
+
+                    @Override
+                    protected String createMnemonic() {
+                        return null;
+                    }
+
+                    @Override
+                    protected String createAccelerator() {
+                        return null;
+                    }
+
+                    @Override
+                    protected String createTooltip() {
+                        return null;
+                    }
+                });
+                m.setActionListener(this);
+                m.setSelected(link.getFilePackage().isPostProcessing());
+                if (!this.getPluginConfig().getBooleanProperty("ACTIVATED", true)) {
+                    m.setEnabled(false);
+                }
+                m.setProperty(MENU_LINKS, ((DownloadsTable) source).getSelectedChildren());
+                container.addMenuItem(new MenuAction(Types.SEPARATOR) {
+
+                    private static final long serialVersionUID = -8990247058181516475L;
+
+                    @Override
+                    protected String createMnemonic() {
+                        return null;
+                    }
+
+                    @Override
+                    protected String createAccelerator() {
+                        return null;
+                    }
+
+                    @Override
+                    protected String createTooltip() {
+                        return null;
+                    }
+                });
+                container.addMenuItem(m = new MenuAction("Extract To", "optional.extraction.linkmenu.setextract", SET_EXTRACT_TO) {
+
+                    private static final long serialVersionUID = -7772646110444791318L;
+
+                    @Override
+                    protected String createMnemonic() {
+                        return null;
+                    }
+
+                    @Override
+                    protected String createAccelerator() {
+                        return null;
+                    }
+
+                    @Override
+                    protected String createTooltip() {
+                        return null;
+                    }
+                });
+                m.setActionListener(this);
+
+                if (isLinkSupported(link.getFileOutput())) {
+                    m.setEnabled(true);
+                } else {
+                    m.setEnabled(false);
+                }
+
+                m.setProperty("LINK", link);
+                m.setProperty(MENU_LINKS, ((DownloadsTable) source).getSelectedChildren());
+                File dir = this.getExtractToPath(link);
+                while (dir != null && !dir.exists()) {
+                    if (dir.getParentFile() == null) break;
+                    dir = dir.getParentFile();
+                }
+                if (dir == null) break;
+                container.addMenuItem(m = new MenuAction("Open Extract folder", "optional.extraction.linkmenu.openextract3", OPEN_EXTRACT) {
+
+                    private static final long serialVersionUID = 212186274511234351L;
+
+                    @Override
+                    protected String createMnemonic() {
+                        return null;
+                    }
+
+                    @Override
+                    protected String createAccelerator() {
+                        return null;
+                    }
+
+                    @Override
+                    protected String createTooltip() {
+                        return null;
+                    }
+                });
+                m.setActionListener(this);
+
+                if (isLinkSupported(link.getFileOutput())) {
+                    m.setEnabled(true);
+                } else {
+                    m.setEnabled(false);
+                }
+
+                link.setProperty(ExtractionConstants.DOWNLOADLINK_KEY_EXTRACTEDPATH + "2", dir.getAbsolutePath());
+                m.setProperty("LINK", link);
+            } else {
+                FilePackage fp = (FilePackage) event.getCaller();
+                if (fp != null) {
+                    container.addMenuItem(m = new MenuAction("Extract Package", "optional.extraction.linkmenu.package.extract", EXTRACT_PACKAGE) {
+
+                        private static final long serialVersionUID = 5329598452469482639L;
+
+                        @Override
+                        protected String createMnemonic() {
+                            return null;
+                        }
+
+                        @Override
+                        protected String createAccelerator() {
+                            return null;
+                        }
+
+                        @Override
+                        protected String createTooltip() {
+                            return null;
+                        }
+                    });
+                    m.setIcon(getIconKey());
+                    m.setActionListener(this);
+                    container.addMenuItem(m = new MenuAction("Auto Extract Package", "optional.extraction.linkmenu.package.autoextract", SET_PACKAGE_AUTOEXTRACT) {
+
+                        private static final long serialVersionUID = 8363153410685078199L;
+
+                        @Override
+                        protected String createMnemonic() {
+                            return null;
+                        }
+
+                        @Override
+                        protected String createAccelerator() {
+                            return null;
+                        }
+
+                        @Override
+                        protected String createTooltip() {
+                            return null;
+                        }
+                    });
+                    m.setSelected(fp.isPostProcessing());
+                    m.setActionListener(this);
+                    if (!this.getPluginConfig().getBooleanProperty("ACTIVATED", true)) {
+                        m.setEnabled(false);
+                    }
+                }
+            }
+            break;
+        }
+    }
+
+    @Override
+    protected void stop() throws StopException {
+        JDController.getInstance().removeControlListener(this);
+    }
+
+    @Override
+    protected void start() throws StartException {
+        JDController.getInstance().addControlListener(this);
+    }
+
+    @Override
+    protected void initExtension() throws StartException {
+        // we will remove them soon anway
+        // ArrayList<PluginOptional> pluginsOptional = new
+        // ArrayList<OptionalPluginWrapper>(OptionalPluginWrapper.getOptionalWrapper());
+        // Collections.sort(pluginsOptional);
+        //
+        // for (OptionalPluginWrapper pow : pluginsOptional) {
+        // if (pow.getAnnotation().id().equals("unrar") ||
+        // pow.getAnnotation().id().equals("hjsplit")) {
+        // if (pow.isEnabled()) {
+        // logger.warning("Disable unrar and hjsplit to use this plugin");
+        // UserIO.getInstance().requestMessageDialog(0,
+        // "Disable unrar and hjsplit to use this plugin");
+        // return false;
+        // }
+        // }
+        // }
+
+        // new ToolBarAction("extraction", "extraction", getIconKey()) { //
+        // TODO:
+        // // remove
+        // private static final long serialVersionUID = 1L;
+        //
+        // @Override
+        // protected String createMnemonic() {
+        // return null;
+        // }
+        //
+        // @Override
+        // protected String createAccelerator() {
+        // return null;
+        // }
+        //
+        // @Override
+        // protected String createTooltip() {
+        // return "Extraction";
+        // }
+        //
+        // @Override
+        // public void initDefaults() {
+        // }
+        //
+        // @Override
+        // public void onAction(final ActionEvent e) {
+        // FileFilter ff = new FileFilter() {
+        // @Override
+        // public boolean accept(File pathname) {
+        // if (pathname.isDirectory()) return true;
+        //
+        // for (IExtraction extractor : extractors) {
+        // if
+        // (extractor.isArchivSupportedFileFilter(pathname.getAbsolutePath())) {
+        // return true; }
+        // }
+        //
+        // return false;
+        // }
+        //
+        // @Override
+        // public String getDescription() {
+        // return T._.plugins_optional_extraction_filefilter();
+        // }
+        // };
+        //
+        // File[] files = UserIO.getInstance().requestFileChooser("_EXTRATION_",
+        // null, UserIO.FILES_ONLY, ff, true, null, null);
+        // if (files == null) return;
+        //
+        // for (File archiveStartFile : files) {
+        // final Archive archive = buildDummyArchive(archiveStartFile);
+        // new Thread() {
+        // @Override
+        // public void run() {
+        // if (archive.isComplete()) addToQueue(archive);
+        // }
+        // }.start();
+        // }
+        // }
+        // };
+
+        initExtractors();
+
+        Iterator<IExtraction> it = extractors.iterator();
+        while (it.hasNext()) {
+            IExtraction extractor = it.next();
+            if (!extractor.checkCommand()) {
+                logger.warning("Extractor " + extractor.getClass().getName() + " plugin could not be initialized");
+                it.remove();
+            }
+        }
+
+        if (menuAction == null) menuAction = new MenuAction("Extract Files", "optional.extraction.menu.extract.singlefiles", getIconKey()) {
+            private static final long serialVersionUID = -7569522709162921624L;
+
+            @Override
+            public void initDefaults() {
+                this.setEnabled(true);
+            }
+
+            @Override
+            public void onAction(ActionEvent e) {
+                FileFilter ff = new FileFilter() {
+                    @Override
+                    public boolean accept(File pathname) {
+                        if (pathname.isDirectory()) return true;
+
+                        for (IExtraction extractor : extractors) {
+                            if (extractor.isArchivSupportedFileFilter(pathname.getAbsolutePath())) { return true; }
+                        }
+
+                        return false;
+                    }
+
+                    @Override
+                    public String getDescription() {
+                        return T._.plugins_optional_extraction_filefilter();
+                    }
+                };
+
+                File[] files = UserIO.getInstance().requestFileChooser("_EXTRATION_", null, UserIO.FILES_ONLY, ff, true, null, null);
+                if (files == null) return;
+
+                for (File archiveStartFile : files) {
+                    final Archive archive = buildDummyArchive(archiveStartFile);
+                    new Thread() {
+                        @Override
+                        public void run() {
+                            if (archive.isComplete()) addToQueue(archive);
+                        }
+                    }.start();
+                }
+            }
+
+            @Override
+            protected String createMnemonic() {
+                return null;
+            }
+
+            @Override
+            protected String createAccelerator() {
+                return null;
+            }
+
+            @Override
+            protected String createTooltip() {
+                return null;
+            }
+        };
+
+        configPanel = new ExtractionConfigPanel(this);
+
+    }
+
+    @Override
+    public boolean hasConfigPanel() {
+        return true;
+    }
+
+    @Override
+    public String getConfigID() {
+        return "extraction";
+    }
+
+    @Override
+    public String getAuthor() {
+        return null;
+    }
+
+    @Override
+    public String getDescription() {
+        return T._.description();
+    }
+
+    @Override
+    public AddonPanel<ExtractionExtension> getGUI() {
+        return null;
+    }
+
+    @Override
+    public ArrayList<MenuAction> getMenuAction() {
+
+        return null;
+    }
+
+    @Override
+    public ExtensionConfigPanel<ExtractionExtension> getConfigPanel() {
+        return configPanel;
+    }
 }

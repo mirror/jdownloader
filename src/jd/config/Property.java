@@ -209,12 +209,13 @@ public class Property implements Serializable {
      * @return value
      */
     public Object getProperty(final String key, final Object def) {
-        if (getProperty(key) == null) {
+        Object ret = getProperty(key);
+        if (ret == null) {
             /* FIXME: WHY THE HELL DO WE PUT DEFAULTS INTO HASHMAP?!?!? */
             // setProperty(key, def);
             return def;
         }
-        return properties.get(key);
+        return ret;
     }
 
     /**

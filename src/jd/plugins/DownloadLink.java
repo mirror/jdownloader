@@ -69,6 +69,13 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         TRUE;
     }
 
+    private static final String                PROPERTY_MD5             = "MD5";
+    private static final String                PROPERTY_SHA1            = "SHA1";
+    private static final String                PROPERTY_PASS            = "pass";
+    private static final String                PROPERTY_FORCEDFILENAME  = "FORCED_FILENAME";
+    private static final String                PROPERTY_SUBFOLDER       = "SUBFOLDER";
+    private static final String                PROPERTY_COMMENT         = "COMMENT";
+
     public static final int                    LINKTYPE_CONTAINER       = 1;
 
     public static final int                    LINKTYPE_NORMAL          = 0;
@@ -78,8 +85,6 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     private static final long                  serialVersionUID         = 1981079856214268373L;
 
     public static final String                 UNKNOWN_FILE_NAME        = "unknownFileName.file";
-
-    public static final String                 STATIC_OUTPUTFILE        = "STATIC_OUTPUTFILE";
 
     private transient AvailableStatus          availableStatus          = AvailableStatus.UNCHECKED;
 
@@ -103,8 +108,6 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
 
     /** Maximum der heruntergeladenen Datei (Dateilaenge) */
     private long                               downloadMax              = 0;
-
-    private String                             subdirectory             = null;
 
     private String                             browserurl               = null;
 
@@ -136,8 +139,6 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      */
     private transient PluginsC                 pluginForContainer;
 
-    private String                             sourcePluginComment      = null;
-
     private ArrayList<String>                  sourcePluginPasswordList = null;
 
     /**
@@ -145,12 +146,6 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      * Pfad) abgespeichert. (z.b. Plugins, DownloadSystem)
      */
     private String                             finalFileName;
-
-    /**
-     * if filename is set by jd (eg autorename) or user (manual rename of
-     * filename), then this filename has highest priority
-     */
-    private String                             forcedFileName           = null;
 
     /**
      * /** Von hier soll der Download stattfinden
@@ -161,13 +156,8 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      * Password welches einem weiteren Decrypter-Plugin uebergeben werden soll
      * (zb FolderPassword)
      */
-    private String                             decrypterPassword;
-
-    private String                             mD5Hash;
 
     private transient PluginProgress           pluginProgress;
-
-    private String                             sha1Hash;
 
     private int                                priority                 = 0;
 
@@ -283,15 +273,9 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
             this.priority = 0;
     }
 
-    /**
-     * Uebernimmt das subdirectory von einem anderen Downloadlink. Zum erstellen
-     * eines eigenen subdirectorys steht addSubdirectory(String s) zur
-     * verfuegung.
-     * 
-     * @param downloadLink
-     */
     public void setSubdirectory(DownloadLink downloadLink) {
-        subdirectory = downloadLink.getSubdirectory();
+        String subdirectory = downloadLink.getSubdirectory();
+        this.setSubdirectory(subdirectory);
     }
 
     public int compareTo(DownloadLink o) {
@@ -378,7 +362,6 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      * @return Die Download URL
      */
     public String getDownloadURL() {
-
         if (linkType == LINKTYPE_CONTAINER) {
             if (urlDownload != null) { return urlDownload; }
             if (pluginForContainer != null) {
@@ -390,9 +373,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
             } else {
                 logger.severe(this + " is a containerlink, but no plugin could be found");
                 return null;
-
             }
-
         }
         return urlDownload;
     }
@@ -410,22 +391,11 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         return browserurl != null;
     }
 
-    /**
-     * Liefert die Datei zurueck, in die dieser Download gespeichert werden soll
-     * 
-     * @return Die Datei zum Abspeichern
-     */
     public String getFileOutput() {
-        return getFileOutput0();
-    }
-
-    public String getFileOutput0() {
-        String sfo = this.getStringProperty(DownloadLink.STATIC_OUTPUTFILE, null);
-        if (this.isDefaultFilePackage() && sfo != null && new File(sfo).exists()) return sfo;
-
         if (getFilePackage().getDownloadDirectory() != null && getFilePackage().getDownloadDirectory().length() > 0) {
-            if (subdirectory != null) {
-                return new File(new File(getFilePackage().getDownloadDirectory(), File.separator + subdirectory), getName()).getAbsolutePath();
+            String subFolder = this.getSubdirectory();
+            if (subFolder != null) {
+                return new File(new File(getFilePackage().getDownloadDirectory(), File.separator + subFolder), getName()).getAbsolutePath();
             } else {
                 return new File(new File(getFilePackage().getDownloadDirectory()), getName()).getAbsolutePath();
             }
@@ -446,7 +416,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     }
 
     public boolean isDefaultFilePackage() {
-        return (filePackage == null || filePackage == FilePackage.getDefaultFilePackage());
+        return (getFilePackage() == FilePackage.getDefaultFilePackage());
     }
 
     /**
@@ -516,8 +486,8 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         return pluginForContainer;
     }
 
-    public String getSourcePluginComment() {
-        return sourcePluginComment;
+    public String getComment() {
+        return this.getStringProperty(PROPERTY_COMMENT, null);
     }
 
     public ArrayList<String> getSourcePluginPasswordList() {
@@ -535,7 +505,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     }
 
     public String getForcedFileName() {
-        return forcedFileName;
+        return this.getStringProperty(PROPERTY_FORCEDFILENAME, null);
     }
 
     /**
@@ -803,19 +773,28 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      *            der neue downloadPfad
      */
     public void addSubdirectory(String subdir) {
+        String newSubFolder = null;
+        String oldSubFolder = getSubdirectory();
         if (subdir != null && name.length() > 0) {
-            if (subdirectory != null) {
-                subdirectory = new StringBuilder(subdirectory).append(File.separator).append(JDUtilities.removeEndingPoints(JDIO.validateFileandPathName(subdir))).toString();
+            if (oldSubFolder != null) {
+                newSubFolder = new StringBuilder(oldSubFolder).append(File.separator).append(JDUtilities.removeEndingPoints(JDIO.validateFileandPathName(subdir))).toString();
             } else {
-                subdirectory = JDUtilities.removeEndingPoints(JDIO.validateFileandPathName(subdir));
+                newSubFolder = JDUtilities.removeEndingPoints(JDIO.validateFileandPathName(subdir));
             }
+        }
+        setSubdirectory(newSubFolder);
+    }
+
+    private void setSubdirectory(String subdirectory) {
+        if (subdirectory == null || subdirectory.length() == 0) {
+            this.setProperty(PROPERTY_SUBFOLDER, Property.NULL);
         } else {
-            subdirectory = null;
+            this.setProperty(PROPERTY_SUBFOLDER, subdirectory);
         }
     }
 
     public String getSubdirectory() {
-        return subdirectory;
+        return this.getStringProperty(PROPERTY_SUBFOLDER, null);
     }
 
     /**
@@ -904,11 +883,11 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      * use this function to force a name, it has highest priority
      */
     public void forceFileName(String name) {
-        if (name == null || name.length() == 0) {
-            this.forcedFileName = null;
+        if (name == null) {
+            this.setProperty(PROPERTY_FORCEDFILENAME, Property.NULL);
         } else {
             setFinalFileName(name);
-            this.forcedFileName = finalFileName;
+            this.setProperty(PROPERTY_FORCEDFILENAME, name);
         }
     }
 
@@ -916,9 +895,21 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         this.icon = icon;
     }
 
+    @Deprecated
     public DownloadLink setSourcePluginComment(String sourcePluginComment) {
-        this.sourcePluginComment = sourcePluginComment;
+        setComment(sourcePluginComment);
         return this;
+    }
+
+    /*
+     * WARNING: DO NOT use in 09581 stable!
+     */
+    public void setComment(String comment) {
+        if (comment == null || comment.length() == 0) {
+            this.setProperty(PROPERTY_COMMENT, Property.NULL);
+        } else {
+            this.setProperty(PROPERTY_COMMENT, comment);
+        }
     }
 
     public DownloadLink setSourcePluginPasswordList(ArrayList<String> sourcePluginPassword) {
@@ -1000,7 +991,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      * @return
      */
     public String getDownloadPassword() {
-        return getStringProperty("pass", null);
+        return getStringProperty(PROPERTY_PASS, null);
     }
 
     /**
@@ -1009,31 +1000,28 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      * @return
      */
     public void setDownloadPassword(String pass) {
-        this.setProperty("pass", pass);
+        if (pass == null || pass.length() == 0) {
+            this.setProperty(PROPERTY_PASS, Property.NULL);
+        } else {
+            this.setProperty(PROPERTY_PASS, pass);
+        }
     }
 
-    /**
-     * Gibt das Password zurueck, welches vom Decrypter-Plugin genutzt werden
-     * kann (zb. FolderPassword)
-     */
-    public String getDecrypterPassword() {
-        return this.decrypterPassword;
-    }
-
-    /**
-     * Setzt das Password, welches vom Decrypter-Plugin genutzt werden kann (zb.
-     * FolderPassword)
-     */
+    @Deprecated
     public void setDecrypterPassword(String pw) {
-        this.decrypterPassword = pw;
+        setDownloadPassword(pw);
     }
 
-    public void setMD5Hash(String string) {
-        this.mD5Hash = string;
+    public void setMD5Hash(String md5) {
+        if (md5 == null || md5.length() == 0) {
+            this.setProperty(PROPERTY_MD5, Property.NULL);
+        } else {
+            this.setProperty(PROPERTY_MD5, md5);
+        }
     }
 
     public String getMD5Hash() {
-        return mD5Hash;
+        return getStringProperty(PROPERTY_MD5, (String) null);
     }
 
     public void setPluginProgress(PluginProgress progress) {
@@ -1044,12 +1032,16 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         return pluginProgress;
     }
 
-    public void setSha1Hash(String hash) {
-        this.sha1Hash = hash;
+    public void setSha1Hash(String sha1) {
+        if (sha1 == null || sha1.length() == 0) {
+            this.setProperty(PROPERTY_SHA1, Property.NULL);
+        } else {
+            this.setProperty(PROPERTY_SHA1, sha1);
+        }
     }
 
     public String getSha1Hash() {
-        return sha1Hash;
+        return getStringProperty(PROPERTY_SHA1, (String) null);
     }
 
     /* TODO: memfresser, anders machen */

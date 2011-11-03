@@ -98,7 +98,7 @@ public class LinkPropertiesDialog extends AbstractDialog<Object> implements Focu
         txtSha1 = new JTextField();
         txtSha1.setText(link.getSha1Hash());
         txtComment = new JTextArea();
-        txtComment.setText(link.getSourcePluginComment());
+        txtComment.setText(link.getComment());
         btnReset = new JButton(NewTheme.I().getIcon("reset", 16));
         btnReset.setToolTipText(_GUI._.LinkPropertiesDialog_layoutDialogContent_reset_filename_tt());
         btnReset.addActionListener(new ActionListener() {

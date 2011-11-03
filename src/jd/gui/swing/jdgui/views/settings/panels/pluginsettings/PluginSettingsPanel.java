@@ -102,7 +102,7 @@ public class PluginSettingsPanel extends JPanel implements SettingsComponent, Ac
     }
 
     private void show(final LazyPlugin<?> selectedItem) {
-
+        if (selectedItem == null) return;
         new EDTRunner() {
 
             @Override
