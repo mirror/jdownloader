@@ -22,7 +22,7 @@ public class ResultTableModel extends ExtTableModel<CrawledLink> {
 
     @Override
     protected void initColumns() {
-        addColumn(new ExtTextColumn<CrawledLink>("") {
+        addColumn(new ExtTextColumn<CrawledLink>(_GUI._.ResultTableModel_initColumns_filtered_()) {
             @Override
             protected String getTooltipText(final CrawledLink value) {
 
@@ -111,6 +111,67 @@ public class ResultTableModel extends ExtTableModel<CrawledLink> {
                 return value.getName();
             }
         });
+        addColumn(new ExtTextColumn<CrawledLink>(_GUI._.ResultTableModel_initColumns_online_()) {
+            @Override
+            protected String getTooltipText(final CrawledLink value) {
+
+                switch (value.getLinkState()) {
+                case OFFLINE:
+                    return _GUI._.ConditionDialog_layoutDialogContent_offline_();
+                case ONLINE:
+                    return _GUI._.ConditionDialog_layoutDialogContent_online_();
+                case TEMP_UNKNOWN:
+                    return _GUI._.ConditionDialog_layoutDialogContent_uncheckable_();
+
+                }
+                return null;
+            }
+
+            public int getDefaultWidth() {
+
+                return 22;
+            }
+
+            public boolean isPaintWidthLockIcon() {
+                return false;
+            }
+
+            protected boolean isDefaultResizable() {
+
+                return false;
+            }
+
+            @Override
+            protected Icon getIcon(CrawledLink value) {
+
+                switch (value.getLinkState()) {
+                case OFFLINE:
+                    return NewTheme.getInstance().getIcon("checkbox_false", 16);
+                case ONLINE:
+                    return NewTheme.getInstance().getIcon("checkbox_true", 16);
+                case TEMP_UNKNOWN:
+                    return NewTheme.getInstance().getIcon("checkbox_undefined", 16);
+
+                }
+                return null;
+
+            }
+
+            @Override
+            public String getStringValue(CrawledLink value) {
+                switch (value.getLinkState()) {
+                case OFFLINE:
+                    return _GUI._.ConditionDialog_layoutDialogContent_offline_();
+                case ONLINE:
+                    return _GUI._.ConditionDialog_layoutDialogContent_online_();
+                case TEMP_UNKNOWN:
+                    return _GUI._.ConditionDialog_layoutDialogContent_uncheckable_();
+
+                }
+                return "";
+            }
+        });
+
         addColumn(new ExtFileSizeColumn<CrawledLink>(_GUI._.ResultTableModel_initColumns_size_()) {
             public int getDefaultWidth() {
                 return 80;

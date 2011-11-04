@@ -1,7 +1,7 @@
 package org.jdownloader.controlling.filter;
 
 public class Filter {
-    protected boolean enabled;
+    protected boolean enabled = false;
 
     public boolean isEnabled() {
         return enabled;

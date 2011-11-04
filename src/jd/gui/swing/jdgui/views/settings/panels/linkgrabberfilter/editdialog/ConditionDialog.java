@@ -15,6 +15,8 @@ import javax.swing.JSeparator;
 import javax.swing.SpinnerNumberModel;
 
 import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.ClickDelegater;
+import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.OnlineStatusFilter.OnlineStatus;
+import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.OnlineStatusFilter.OnlineStatusMatchtype;
 
 import org.appwork.app.gui.MigPanel;
 import org.appwork.swing.components.ExtCheckBox;
@@ -23,6 +25,7 @@ import org.appwork.swing.components.SizeSpinner;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.swing.SwingUtils;
 import org.appwork.utils.swing.dialog.AbstractDialog;
+import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ArchiveExtensions;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter.AudioExtensions;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ImageExtensions;
@@ -59,6 +62,14 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
         return new RegexFilter(cbFilename.isSelected(), MatchType.values()[cobFilename.getSelectedIndex()], txtFilename.getText());
     }
 
+    public void setOnlineStatusFilter(OnlineStatusFilter f) {
+        if (f == null) return;
+        cbOnline.setSelected(f.isEnabled());
+        cobOnline.setSelectedIndex(f.getMatchType().ordinal());
+        cobOnlineOptions.setSelectedIndex(f.getOnlineStatus().ordinal());
+
+    }
+
     public void setFilesizeFilter(FilesizeFilter f) {
         if (f == null) return;
         cbSize.setSelected(f.isEnabled());
@@ -85,6 +96,10 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
 
     public FiletypeFilter getFiletypeFilter() {
         return new FiletypeFilter(TypeMatchType.values()[cobType.getSelectedIndex()], cbType.isSelected(), cbAudio.isSelected(), cbVideo.isSelected(), cbArchive.isSelected(), cbImage.isSelected(), cbCustom.isSelected() ? txtCustumMime.getText() : null);
+    }
+
+    public OnlineStatusFilter getOnlineStatusFilter() {
+        return new OnlineStatusFilter(OnlineStatusMatchtype.values()[cobOnline.getSelectedIndex()], cbOnline.isSelected(), OnlineStatus.values()[cobOnlineOptions.getSelectedIndex()]);
     }
 
     public void setSourceFilter(RegexFilter filter) {
@@ -142,6 +157,14 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
 
     private JComboBox          cobType;
 
+    private JComboBox          cobOnline;
+
+    private JComboBox          cobOnlineOptions;
+
+    private ExtCheckBox        cbOnline;
+
+    private boolean            autoset;
+
     public ConditionDialog() {
         super(0, _GUI._.FilterRuleDialog_FilterRuleDialog_(""), null, _GUI._.literally_save(), null);
 
@@ -175,7 +198,16 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
         txtFilename.setHelpText(_GUI._.FilterRuleDialog_layoutDialogContent_ht_filename());
 
         JLabel lblFilename = getLabel(_GUI._.FilterRuleDialog_layoutDialogContent_lbl_filename());
-        cbFilename = new ExtCheckBox(cobFilename, txtFilename);
+        cbFilename = new ExtCheckBox(cobFilename, txtFilename) {
+
+            @Override
+            public void updateDependencies() {
+                super.updateDependencies();
+                updateOnline();
+
+            }
+
+        };
         MouseAdapter ml = new MouseAdapter() {
 
             @Override
@@ -196,7 +228,16 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
         cobSize = new JComboBox(new String[] { _GUI._.FilterRuleDialog_layoutDialogContent_is_between(), _GUI._.FilterRuleDialog_layoutDialogContent_is_not_between() });
 
         JLabel lblSize = getLabel(_GUI._.FilterRuleDialog_layoutDialogContent_lbl_size());
-        cbSize = new ExtCheckBox(size, cobSize);
+        cbSize = new ExtCheckBox(size, cobSize) {
+
+            @Override
+            public void updateDependencies() {
+                super.updateDependencies();
+                updateOnline();
+
+            }
+
+        };
         ml = new MouseAdapter() {
 
             @Override
@@ -229,7 +270,16 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
         JLabel lblType = getLabel(_GUI._.FilterRuleDialog_layoutDialogContent_lbl_type());
 
         cobType = new JComboBox(new String[] { _GUI._.FilterRuleDialog_layoutDialogContent_is_type(), _GUI._.FilterRuleDialog_layoutDialogContent_is_not_type() });
-        cbType = new ExtCheckBox();
+        cbType = new ExtCheckBox() {
+
+            @Override
+            public void updateDependencies() {
+                super.updateDependencies();
+                updateOnline();
+
+            }
+
+        };
         comp.add(cobType);
         cobType.addMouseListener(new MouseAdapter() {
 
@@ -375,7 +425,47 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
         panel.add(new JLabel(_GUI._.FilterRuleDialog_layoutDialogContent_lbl_source()));
         panel.add(cobSource);
         panel.add(txtSource, "spanx,pushx,growx");
+
+        // offline
+
+        cobOnline = new JComboBox(new String[] { _GUI._.ConditionDialog_layoutDialogContent_online_is_(), _GUI._.ConditionDialog_layoutDialogContent_online_isnot() });
+        cobOnlineOptions = new JComboBox(new String[] { _GUI._.ConditionDialog_layoutDialogContent_uncheckable_(), _GUI._.ConditionDialog_layoutDialogContent_online_(), _GUI._.ConditionDialog_layoutDialogContent_offline_() });
+        cbOnline = new ExtCheckBox(cobOnline, cobOnlineOptions);
+
+        panel.add(cbOnline);
+        panel.add(new JLabel(_GUI._.FilterRuleDialog_layoutDialogContent_lbl_online()));
+        panel.add(cobOnline);
+        panel.add(cobOnlineOptions, "spanx,pushx,growx");
+        ml = new MouseAdapter() {
+
+            @Override
+            public void mousePressed(MouseEvent e) {
+                cbOnline.setSelected(true);
+
+            }
+
+        };
+        cobOnline.addMouseListener(ml);
+        cobOnlineOptions.addMouseListener(ml);
         return panel;
+    }
+
+    protected void updateOnline() {
+        if (cbOnline == null) return;
+        if (cbFilename.isSelected() || cbSize.isSelected() || cbType.isSelected()) {
+            if (!cbOnline.isSelected() || cobOnline.getSelectedIndex() != 0 || cobOnlineOptions.getSelectedIndex() != 1) {
+                autoset = true;
+                cbOnline.setSelected(true);
+                cobOnline.setSelectedIndex(0);
+                cobOnlineOptions.setSelectedIndex(1);
+                Dialog.getInstance().showMessageDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.literally_warning(), _GUI._.ConditionDialog_updateOnline_linkcheck_required());
+                return;
+            }
+        } else if (autoset) {
+            cbOnline.setSelected(false);
+            autoset = false;
+
+        }
     }
 
     protected String getIfText() {

@@ -10,7 +10,7 @@ import org.jdownloader.controlling.filter.CompiledFiletypeFilter.VideoExtensions
 import org.jdownloader.gui.translate._GUI;
 
 public class FiletypeFilter extends Filter implements Storable {
-    private FiletypeFilter() {
+    public FiletypeFilter() {
         // Storable
     }
 

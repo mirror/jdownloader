@@ -3,6 +3,7 @@ package org.jdownloader.controlling.filter;
 import java.util.ArrayList;
 
 import jd.controlling.linkcrawler.CrawledLink;
+import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.OnlineStatusFilter;
 
 import org.appwork.storage.Storable;
 import org.appwork.utils.Files;
@@ -10,11 +11,13 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.gui.translate._GUI;
 
 public abstract class FilterRule implements Storable {
-    private FilesizeFilter filesizeFilter;
-    private RegexFilter    hosterURLFilter;
-    private RegexFilter    sourceURLFilter;
+    private FilesizeFilter     filesizeFilter;
+    private RegexFilter        hosterURLFilter;
+    private RegexFilter        sourceURLFilter;
+    private OnlineStatusFilter onlineStatusFilter;
 
     public FilesizeFilter getFilesizeFilter() {
+        if (filesizeFilter == null) filesizeFilter = new FilesizeFilter();
         return filesizeFilter;
     }
 
@@ -28,12 +31,28 @@ public abstract class FilterRule implements Storable {
      * @return
      */
     public boolean isValid() {
-        return getFilenameFilter().isEnabled() || getFilesizeFilter().isEnabled() || getFiletypeFilter().isEnabled() || getHosterURLFilter().isEnabled() || getSourceURLFilter().isEnabled();
+        return getFilenameFilter().isEnabled() || getFilesizeFilter().isEnabled() || getFiletypeFilter().isEnabled() || getHosterURLFilter().isEnabled() || getSourceURLFilter().isEnabled() || getOnlineStatusFilter().isEnabled();
     }
 
     public String toString(CrawledLink link) {
         StringBuilder sb = new StringBuilder();
         ArrayList<String> cond = new ArrayList<String>();
+
+        if (onlineStatusFilter.isEnabled()) {
+            switch (onlineStatusFilter.getOnlineStatus()) {
+            case OFFLINE:
+                cond.add(_GUI._.FilterRule_toString_offline());
+                break;
+            case ONLINE:
+                cond.add(_GUI._.FilterRule_toString_online());
+                break;
+            case UNCHECKABLE:
+                cond.add(_GUI._.FilterRule_toString_uncheckable());
+                break;
+
+            }
+
+        }
         if (filenameFilter.isEnabled()) {
             if (link != null && link.getName() != null) {
                 cond.add(_GUI._.FilterRule_toString_name2(link.getName(), filenameFilter.toString()));
@@ -94,6 +113,7 @@ public abstract class FilterRule implements Storable {
     }
 
     public RegexFilter getHosterURLFilter() {
+        if (hosterURLFilter == null) hosterURLFilter = new RegexFilter();
         return hosterURLFilter;
     }
 
@@ -102,6 +122,7 @@ public abstract class FilterRule implements Storable {
     }
 
     public RegexFilter getSourceURLFilter() {
+        if (sourceURLFilter == null) sourceURLFilter = new RegexFilter();
         return sourceURLFilter;
     }
 
@@ -110,6 +131,7 @@ public abstract class FilterRule implements Storable {
     }
 
     public FiletypeFilter getFiletypeFilter() {
+        if (filetypeFilter == null) filetypeFilter = new FiletypeFilter();
         return filetypeFilter;
     }
 
@@ -117,7 +139,17 @@ public abstract class FilterRule implements Storable {
         this.filetypeFilter = type;
     }
 
+    public void setOnlineStatusFilter(OnlineStatusFilter onlineStatusFilter) {
+        this.onlineStatusFilter = onlineStatusFilter;
+    }
+
+    public OnlineStatusFilter getOnlineStatusFilter() {
+        if (onlineStatusFilter == null) onlineStatusFilter = new OnlineStatusFilter();
+        return onlineStatusFilter;
+    }
+
     public RegexFilter getFilenameFilter() {
+        if (filenameFilter == null) filenameFilter = new RegexFilter();
         return filenameFilter;
     }
 

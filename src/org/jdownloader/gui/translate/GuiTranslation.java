@@ -3115,4 +3115,40 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Show %s1 offline Links" })
     String LinkGrabberPanel_LinkGrabberPanel_offline_(int i);
 
+    @Default(lngs = { "en" }, values = { "is" })
+    String ConditionDialog_layoutDialogContent_online_is_();
+
+    @Default(lngs = { "en" }, values = { "isn't" })
+    String ConditionDialog_layoutDialogContent_online_isnot();
+
+    @Default(lngs = { "en" }, values = { "currently uncheckable - Download may be possible." })
+    String ConditionDialog_layoutDialogContent_uncheckable_();
+
+    @Default(lngs = { "en" }, values = { "online - Download is possible." })
+    String ConditionDialog_layoutDialogContent_online_();
+
+    @Default(lngs = { "en" }, values = { "offline - Download not possible." })
+    String ConditionDialog_layoutDialogContent_offline_();
+
+    @Default(lngs = { "en" }, values = { "File" })
+    String FilterRuleDialog_layoutDialogContent_lbl_online();
+
+    @Default(lngs = { "en" }, values = { "File is offline" })
+    String FilterRule_toString_offline();
+
+    @Default(lngs = { "en" }, values = { "File is online" })
+    String FilterRule_toString_online();
+
+    @Default(lngs = { "en" }, values = { "Onlinestatus uncheckable" })
+    String FilterRule_toString_uncheckable();
+
+    @Default(lngs = { "en" }, values = { "Online Status" })
+    String ResultTableModel_initColumns_online_();
+
+    @Default(lngs = { "en" }, values = { "Filtered/Accepted" })
+    String ResultTableModel_initColumns_filtered_();
+
+    @Default(lngs = { "en" }, values = { "This condition requires that the file is online." })
+    String ConditionDialog_updateOnline_linkcheck_required();
+
 }

@@ -8,7 +8,7 @@ public class FilesizeFilter extends Filter implements Storable {
     private long          from;
     private SizeMatchType matchType = SizeMatchType.BETWEEN;
 
-    private FilesizeFilter() {
+    public FilesizeFilter() {
         // Storable
     }
 

@@ -5,7 +5,7 @@ import org.appwork.storage.config.JsonConfig;
 import org.jdownloader.gui.translate._GUI;
 
 public class RegexFilter extends Filter implements Storable {
-    private RegexFilter() {
+    public RegexFilter() {
         // Storable
     }
 
@@ -39,7 +39,7 @@ public class RegexFilter extends Filter implements Storable {
         this.regex = regex;
     }
 
-    private MatchType matchType;
+    private MatchType matchType = MatchType.CONTAINS;
     private String    regex;
 
     public RegexFilter(boolean enabled, MatchType matchType, String text) {

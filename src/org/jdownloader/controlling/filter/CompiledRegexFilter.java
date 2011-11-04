@@ -12,6 +12,7 @@ public class CompiledRegexFilter extends RegexFilter {
     }
 
     public boolean matches(String string) {
+
         switch (getMatchType()) {
         case CONTAINS:
             return pattern.matcher(string).find();

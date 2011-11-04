@@ -3,6 +3,7 @@ package org.jdownloader.controlling.filter;
 import java.util.regex.Pattern;
 
 import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledLink.LinkState;
 
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Files;
@@ -40,12 +41,13 @@ public class LinkgrabberFilterRuleWrapper {
         return filetypeFilter;
     }
 
-    private boolean                requiresHoster = false;
-    private CompiledRegexFilter    hosterRule;
-    private CompiledRegexFilter    sourceRule;
-    private CompiledFilesizeFilter filesizeRule;
-    private CompiledFiletypeFilter filetypeFilter;
-    private LinkgrabberFilterRule  rule;
+    private boolean                   requiresHoster = false;
+    private CompiledRegexFilter       hosterRule;
+    private CompiledRegexFilter       sourceRule;
+    private CompiledFilesizeFilter    filesizeRule;
+    private CompiledFiletypeFilter    filetypeFilter;
+    private LinkgrabberFilterRule     rule;
+    private CompiledOnlineStatusFiler onlineStatusFilter;
 
     public LinkgrabberFilterRule getRule() {
         return rule;
@@ -53,6 +55,11 @@ public class LinkgrabberFilterRuleWrapper {
 
     public LinkgrabberFilterRuleWrapper(LinkgrabberFilterRule rule) {
         this.rule = rule;
+        if (rule.getOnlineStatusFilter().isEnabled()) {
+            onlineStatusFilter = new CompiledOnlineStatusFiler(rule.getOnlineStatusFilter());
+            requiresLinkcheck = true;
+        }
+
         if (rule.getFilenameFilter().isEnabled()) {
             fileNameRule = new CompiledRegexFilter(rule.getFilenameFilter());
             requiresLinkcheck = true;
@@ -74,6 +81,10 @@ public class LinkgrabberFilterRuleWrapper {
             sourceRule = new CompiledRegexFilter(rule.getSourceURLFilter());
 
         }
+    }
+
+    public CompiledOnlineStatusFiler getOnlineStatusFilter() {
+        return onlineStatusFilter;
     }
 
     public static Pattern createPattern(String regex, boolean simpleRegex) {
@@ -98,6 +109,7 @@ public class LinkgrabberFilterRuleWrapper {
 
     public boolean checkFileType(CrawledLink link) {
         if (getFiletypeFilter() != null) {
+            if (link.getLinkState() != LinkState.ONLINE) return false;
             String ext = Files.getExtension(link.getName());
             if (ext == null) return true;
             return getFiletypeFilter().matches(ext);
@@ -108,13 +120,19 @@ public class LinkgrabberFilterRuleWrapper {
     public boolean checkFileSize(CrawledLink link) {
         if (getFilesizeRule() != null) {
             // if (link.getDownloadLink().getDownloadSize() <= 0) return true;
+            if (link.getLinkState() != LinkState.ONLINE) return false;
             return getFilesizeRule().matches(link.getSize());
         }
         return true;
     }
 
     public boolean checkFileName(CrawledLink link) {
-        if (getFileNameRule() != null) { return getFileNameRule().matches(link.getName()); }
+
+        if (getFileNameRule() != null) {
+            if (link.getLinkState() != LinkState.ONLINE) return false;
+
+            return getFileNameRule().matches(link.getName());
+        }
         return true;
     }
 
@@ -137,4 +155,13 @@ public class LinkgrabberFilterRuleWrapper {
         return true;
     }
 
+    public boolean checkOnlineStatus(CrawledLink link) {
+
+        if (getOnlineStatusFilter() != null) {
+            LinkState t = LinkState.ONLINE;
+            return getOnlineStatusFilter().matches(link.getLinkState());
+
+        }
+        return true;
+    }
 }
