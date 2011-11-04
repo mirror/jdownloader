@@ -13,6 +13,7 @@ import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JSeparator;
 import javax.swing.SpinnerNumberModel;
+import javax.swing.SwingUtilities;
 
 import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.ClickDelegater;
 import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.OnlineStatusFilter.OnlineStatus;
@@ -451,21 +452,29 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
     }
 
     protected void updateOnline() {
-        if (cbOnline == null) return;
-        if (cbFilename.isSelected() || cbSize.isSelected() || cbType.isSelected()) {
-            if (!cbOnline.isSelected() || cobOnline.getSelectedIndex() != 0 || cobOnlineOptions.getSelectedIndex() != 1) {
-                autoset = true;
-                cbOnline.setSelected(true);
-                cobOnline.setSelectedIndex(0);
-                cobOnlineOptions.setSelectedIndex(1);
-                Dialog.getInstance().showMessageDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.literally_warning(), _GUI._.ConditionDialog_updateOnline_linkcheck_required());
-                return;
-            }
-        } else if (autoset) {
-            cbOnline.setSelected(false);
-            autoset = false;
+        // we have to enqueue it at the edt. This is important!
+        SwingUtilities.invokeLater(new Runnable() {
 
-        }
+            public void run() {
+                if (cbOnline == null) return;
+                if (cbFilename.isSelected() || cbSize.isSelected() || cbType.isSelected()) {
+                    if (!cbOnline.isSelected() || cobOnline.getSelectedIndex() != 0 || cobOnlineOptions.getSelectedIndex() != 1) {
+                        autoset = true;
+                        cbOnline.setSelected(true);
+                        cobOnline.setSelectedIndex(0);
+                        cobOnlineOptions.setSelectedIndex(1);
+                        Dialog.getInstance().showMessageDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.literally_warning(), _GUI._.ConditionDialog_updateOnline_linkcheck_required());
+                        return;
+                    }
+                } else if (autoset) {
+                    cbOnline.setSelected(false);
+                    autoset = false;
+
+                }
+            }
+
+        });
+
     }
 
     protected String getIfText() {
