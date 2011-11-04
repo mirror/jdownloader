@@ -18,16 +18,20 @@ package jd.plugins.hoster;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
 
 import jd.PluginWrapper;
+import jd.controlling.AccountController;
+import jd.gui.UserIO;
 import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
+import jd.nutils.nativeintegration.LocalBrowser;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
@@ -290,7 +294,20 @@ public class FileServeCom extends PluginForHost {
         return 1;
     }
 
-    private void handleErrors(Browser br2) throws PluginException {
+    private void handleErrorsShowDialog(Account blocked) throws Exception {
+        int ret = -100;
+        UserIO.setCountdownTime(120);
+        ret = UserIO.getInstance().requestConfirmDialog(UserIO.STYLE_LARGE, "FileServe landing error 612(Account '" + blocked.getUser() + "' blocked)!", "It seems like your account has been blocked by fileserve.\r\nTo unblock it, please visit the fileserve Supportforum and contact the User \"RickyFS\".\r\nBy clicking on OK a browser instance will open which leads to the fileserve Supportforum.\r\n\r\nYour premium account has been deactivated in JD to prevent further problems.\r\nIf you leave it that way JDownloader will continue to download as a free user from fileserve.com.\r\n\r\nJDTeam", null, "OK", "Cancel");
+        if (ret != -100) {
+            if (UserIO.isOK(ret)) {
+                LocalBrowser.openDefaultURL(new URL("http://www.wjunction.com/95-file-hosts-official-support/35113-fileserve-make-money-upto-%2425-per-1000-downloads-official-thread.html"));
+            } else {
+                return;
+            }
+        }
+    }
+
+    private void handleErrors(Browser br2) throws Exception {
         logger.info("Handling errors...");
         if (br2.containsHTML("Your daily download limit has been reached")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Daily limit reached", 2 * 60 * 60 * 1000l);
         if (br2.containsHTML("li>This file has been deleted by the system")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -306,7 +323,16 @@ public class FileServeCom extends PluginForHost {
         if (br2.containsHTML("(landing-406\\.php|landing\\-error\\.php\\?error_code=1703)")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 15 * 60 * 1000l); }
         if (br2.containsHTML("<p>You can only download 1 file at a time")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Too many simultan downloads", 10 * 60 * 1000l);
         if (br2.containsHTML("(landing\\-error\\.php\\?error_code=2702|is already downloading a file</li>|is already downloading a file <br>|landing\\-1403)") || br2.getURL().contains("landing-2702.html") || br.getURL().contains("landing-1403")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Your IP is already downloading", 5 * 60 * 1000l);
-        if (br2.containsHTML("landing\\-error\\.php\\?error_code=612")) throw new PluginException(LinkStatus.ERROR_FATAL, "YOUR IP IS BANNED BY FILESERVE, PLEASE CONTACT THE FILESERVE SUPPORT!");
+        // error 612(Account gesperrt) --> Dialogfenster aufrufen
+        if (br2.containsHTML("landing\\-error\\.php\\?error_code=612")) {
+            Account blockedAcc = AccountController.getInstance().getValidAccount(this);
+            if (blockedAcc != null && blockedAcc.isEnabled() && blockedAcc.isValid()) {
+                handleErrorsShowDialog(blockedAcc);
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_FATAL, "YOUR IP IS BANNED BY FILESERVE, PLEASE CONTACT THE FILESERVE SUPPORT!");
+            }
+        }
         if (br2.containsHTML("landing\\-error\\.php") || br.getURL().contains("landing-")) {
             logger.warning("Unknown landing error!");
             logger.warning("Url = " + br2.getURL());
