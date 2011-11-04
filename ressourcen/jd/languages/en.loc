@@ -1369,6 +1369,7 @@ plugins.hoster.uploaderpl.freememberacc = Free registered user account
 plugins.hoster.uploadherecom.temporaryunavailable = Server error, retry later
 plugins.hoster.uploadingcom.errors.countrylimitreached = Download limit reached
 plugins.hoster.uploadingcom.errors.tempunavailable = Server error, retry later
+plugins.hoster.uploadkingcom.temporaryunavailable = Server error, retry later
 plugins.hoster.usershare.servererror = Server error, retry later
 plugins.hoster.videobbcom.accounttype = Account type: Collector's Account
 plugins.hoster.videogoogle.videotemporaryunavailable = Server error, retry later
