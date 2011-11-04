@@ -1369,6 +1369,7 @@ plugins.hoster.uploaderpl.freememberacc = Cuenta de usuario gratuito registrada.
 plugins.hoster.uploadherecom.temporaryunavailable = Error del servidor, reintente mas tarde
 plugins.hoster.uploadingcom.errors.countrylimitreached = Limite de trafico alcanzado
 plugins.hoster.uploadingcom.errors.tempunavailable = Error del servidor, reintente mas tarde
+plugins.hoster.uploadkingcom.temporaryunavailable = Error del servidor, reintente mas tarde
 plugins.hoster.usershare.servererror = Error del servidor, reintente mas tarde
 plugins.hoster.videobbcom.accounttype = Cuenta de Coleccionista
 plugins.hoster.videogoogle.videotemporaryunavailable = Error del servidor, reintente mas tarde
