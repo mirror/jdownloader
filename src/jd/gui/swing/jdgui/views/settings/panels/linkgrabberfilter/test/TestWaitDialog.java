@@ -14,7 +14,6 @@ import jd.controlling.linkchecker.LinkCheckerHandler;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.LinkCrawler;
 import jd.controlling.linkcrawler.LinkCrawlerHandler;
-import jd.controlling.linkcrawler.OnlineStatusUncheckedException;
 import jd.gui.swing.SwingGui;
 import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.ExceptionsRuleDialog;
 import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.FilterRuleDialog;
@@ -81,21 +80,13 @@ public class TestWaitDialog extends AbstractDialog<ArrayList<CrawledLink>> {
             }
 
             public void linkCheckDone(CrawledLink link) {
-                try {
-                    if (link.isAvailable()) {
-                        synchronized (found) {
-                            if (LinkFilterController.getInstance().dropByFileProperties(link)) {
-                                filtered++;
-                            }
-
-                            found.add(link);
-
-                        }
-                        delayer.run();
+                synchronized (found) {
+                    if (LinkFilterController.getInstance().dropByFileProperties(link)) {
+                        filtered++;
                     }
-                } catch (OnlineStatusUncheckedException e) {
-                    e.printStackTrace();
+                    found.add(link);
                 }
+                delayer.run();
             }
         });
         lc.setHandler(new LinkCrawlerHandler() {

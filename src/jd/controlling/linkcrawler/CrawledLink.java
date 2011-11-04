@@ -15,6 +15,13 @@ import org.jdownloader.controlling.filter.FilterRule;
 
 public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>, CheckableLink {
 
+    public static enum LinkState {
+        ONLINE,
+        OFFLINE,
+        UNKNOWN,
+        TEMP_UNKNOWN
+    }
+
     private CrawledPackage    parent      = null;
     private PluginForDecrypt  dPlugin     = null;
     private LinkCollectingJob sourceJob   = null;
@@ -243,9 +250,22 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
         return matchingFilter;
     }
 
-    public boolean isAvailable() throws OnlineStatusUncheckedException {
-        if (getDownloadLink() == null || !getDownloadLink().isAvailabilityStatusChecked()) { throw new OnlineStatusUncheckedException(); }
-        return getDownloadLink().isAvailable();
+    public LinkState getLinkState() {
+        if (dlLink != null) {
+            switch (dlLink.getAvailableStatusInfo()) {
+            case FALSE:
+                return LinkState.OFFLINE;
+            case TRUE:
+                return LinkState.ONLINE;
+            case UNCHECKABLE:
+                return LinkState.TEMP_UNKNOWN;
+            case UNCHECKED:
+                return LinkState.UNKNOWN;
+            default:
+                return LinkState.UNKNOWN;
+            }
+        }
+        return LinkState.UNKNOWN;
     }
 
 }
