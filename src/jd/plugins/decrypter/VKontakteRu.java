@@ -127,7 +127,9 @@ public class VKontakteRu extends PluginForDecrypt implements ProgressControllerL
                 // Find out how many times we have to reload images. Take the
                 // number of pictures - 80 (because without any request we
                 // already got 80) and divide it by 40 (every reload we get 40)
-                int maxLoops = (Integer.parseInt(numberOfPictures) - 80) / 40;
+                // int maxLoops = (Integer.parseInt(numberOfPictures) - 80) /
+                // 40;
+                int maxLoops = (int) StrictMath.ceil((Double.parseDouble(numberOfPictures) - 80) / 40);
                 int offset = 80;
                 br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                 progress.setRange(Integer.parseInt(numberOfPictures));
@@ -145,7 +147,8 @@ public class VKontakteRu extends PluginForDecrypt implements ProgressControllerL
                         }
                     }
                     if (photoIDs == null || photoIDs.length == 0) {
-                        logger.warning("Decrypter broken for link: " + parameter);
+                        logger.warning("Decrypter broken for link: " + parameter + "\n");
+                        logger.warning("Decrypter couldn't find photoIDs!");
                         return null;
                     }
                     String albumID = new Regex(parameter, "/album(.+)").getMatch(0);
@@ -168,6 +171,7 @@ public class VKontakteRu extends PluginForDecrypt implements ProgressControllerL
                         }
                         if (finallink == null) {
                             logger.warning("Decrypter broken for link: " + parameter + "\n");
+                            logger.warning("Finallink is null for photoID: " + photoID);
                             return null;
                         }
                         DownloadLink dl = createDownloadlink("directhttp://" + finallink);
