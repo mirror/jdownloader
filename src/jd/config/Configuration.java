@@ -89,8 +89,6 @@ public class Configuration extends SubConfiguration implements Serializable {
 
     public static final String PARAM_HTTPSEND_USER                    = "HTTPSEND_USER";
 
-    public static final String PARAM_LOGGER_LEVEL                     = "LOGGER_LEVEL3";
-
     public static final String PARAM_RELOADCONTAINER                  = "RELOADCONTAINER";
 
     public static final String PARAM_SHOW_CONTAINER_ONLOAD_OVERVIEW   = "SHOW_CONTAINER_ONLOAD_OVERVIEW";

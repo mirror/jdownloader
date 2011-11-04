@@ -80,7 +80,7 @@ public class HellShareCom extends PluginForHost {
     }
 
     private String getDownloadOverview(final String fileID) {
-        String freePage = br.getRegex("\"(/[^/\"\\'<>]+/" + fileID + "/\\?do=relatedFileDownloadButton\\-" + fileID + "\\-showDownloadWindow)\"").getMatch(0);
+        String freePage = br.getRegex("\"(/[^/\"\\'<>]+/[^/\"\\'<>]+/" + fileID + "/\\?do=relatedFileDownloadButton\\-" + fileID + ".*?)\"").getMatch(0);
         if (freePage == null) {
             freePage = br.getRegex("\"(/[^/\"\\'<>]+/" + fileID + "/\\?do=fileDownloadButton\\-showDownloadWindow)\"").getMatch(0);
             if (freePage == null) {
@@ -288,7 +288,7 @@ public class HellShareCom extends PluginForHost {
             }
         }
         if (filename == null || filesize == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-        link.setName(filename);
+        link.setName(filename.trim());
         link.setDownloadSize(SizeFormatter.getSize(filesize.replace("&nbsp;", "")));
         link.setUrlDownload(br.getURL());
         return AvailableStatus.TRUE;

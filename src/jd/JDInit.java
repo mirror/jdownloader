@@ -19,7 +19,6 @@ package jd;
 import java.awt.event.ActionEvent;
 import java.io.File;
 import java.io.IOException;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.swing.AbstractAction;
@@ -175,7 +174,6 @@ public class JDInit {
             if (!JDInit.TEST_INSTALLER && obj != null && (((Configuration) obj).getStringProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY) != null || JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder() != null)) {
                 final Configuration configuration = (Configuration) obj;
                 JDUtilities.setConfiguration(configuration);
-                JDInit.LOG.setLevel(configuration.getGenericProperty(Configuration.PARAM_LOGGER_LEVEL, Level.WARNING));
 
             } else {
                 final File cfg = JDUtilities.getResourceFile("config");
@@ -191,7 +189,6 @@ public class JDInit {
                 }
                 final Configuration configuration = new Configuration();
                 JDUtilities.setConfiguration(configuration);
-                JDInit.LOG.setLevel(configuration.getGenericProperty(Configuration.PARAM_LOGGER_LEVEL, Level.WARNING));
 
                 JDUtilities.getDatabaseConnector().saveConfiguration(Configuration.NAME, JDUtilities.getConfiguration());
 

@@ -106,6 +106,7 @@ public class TbCm extends PluginForDecrypt {
 
     ArrayList<String>                           done                = new ArrayList<String>();
     private static boolean                      pluginloaded        = false;
+    private boolean                             verifyAge           = false;
 
     public static boolean ConvertFile(final DownloadLink downloadlink, final DestinationFormat InType, final DestinationFormat OutType) {
         TbCm.LOG.info("Convert " + downloadlink.getName() + " - " + InType.getText() + " - " + OutType.getText());
@@ -246,10 +247,10 @@ public class TbCm extends PluginForDecrypt {
                     decryptedLinks.add(thislink);
                     return decryptedLinks;
                 }
-
+                verifyAge = false;
                 final HashMap<Integer, String[]> LinksFound = this.getLinks(parameter, prem, this.br);
                 if (LinksFound == null || LinksFound.isEmpty()) {
-                    if (this.br.getURL().toLowerCase().indexOf("youtube.com/verify_age?next_url=") != -1 || this.br.getURL().toLowerCase().indexOf("youtube.com/get_video_info?") != -1 && !prem) { throw new DecrypterException(DecrypterException.ACCOUNT); }
+                    if (verifyAge || this.br.getURL().toLowerCase().indexOf("youtube.com/get_video_info?") != -1 && !prem) { throw new DecrypterException(DecrypterException.ACCOUNT); }
                     throw new DecrypterException("Video no longer available");
                 }
 
@@ -411,7 +412,10 @@ public class TbCm extends PluginForDecrypt {
         boolean ythack = false;
         if (url != null && !url.equals(video)) {
             /* age verify with activated premium? */
-            if (url.toLowerCase().indexOf("youtube.com/verify_age?next_url=") != -1 && prem) {
+            if (url.toLowerCase(Locale.ENGLISH).indexOf("youtube.com/verify_age?next_url=") != -1) {
+                verifyAge = true;
+            }
+            if (url.toLowerCase(Locale.ENGLISH).indexOf("youtube.com/verify_age?next_url=") != -1 && prem) {
                 final String session_token = br.getRegex("onLoadFunc.*?gXSRF_token = '(.*?)'").getMatch(0);
                 final LinkedHashMap<String, String> p = Request.parseQuery(url);
                 final String next = p.get("next_url");
@@ -423,11 +427,11 @@ public class TbCm extends PluginForDecrypt {
                 form.put("session_token", Encoding.urlEncode(session_token));
                 br.submitForm(form);
                 if (br.getCookie("http://www.youtube.com", "is_adult") == null) { return null; }
-            } else if (url.toLowerCase().indexOf("youtube.com/index?ytsession=") != -1 || url.toLowerCase().indexOf("youtube.com/verify_age?next_url=") != -1 && !prem) {
+            } else if (url.toLowerCase(Locale.ENGLISH).indexOf("youtube.com/index?ytsession=") != -1 || url.toLowerCase(Locale.ENGLISH).indexOf("youtube.com/verify_age?next_url=") != -1 && !prem) {
                 ythack = true;
                 br.getPage("http://www.youtube.com/get_video_info?video_id=" + VIDEOID);
                 YT_FILENAME = br.containsHTML("&title=") ? Encoding.htmlDecode(br.getRegex("&title=([^&$]+)").getMatch(0).replaceAll("\\+", " ").trim()) : VIDEOID;
-            } else if (url.toLowerCase().indexOf("google.com/accounts/servicelogin?") != -1) {
+            } else if (url.toLowerCase(Locale.ENGLISH).indexOf("google.com/accounts/servicelogin?") != -1) {
                 // private videos
                 return null;
             }

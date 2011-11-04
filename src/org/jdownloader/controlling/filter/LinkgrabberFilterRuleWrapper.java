@@ -156,12 +156,7 @@ public class LinkgrabberFilterRuleWrapper {
     }
 
     public boolean checkOnlineStatus(CrawledLink link) {
-
-        if (getOnlineStatusFilter() != null) {
-            LinkState t = LinkState.ONLINE;
-            return getOnlineStatusFilter().matches(link.getLinkState());
-
-        }
+        if (getOnlineStatusFilter() != null) { return getOnlineStatusFilter().matches(link.getLinkState()); }
         return true;
     }
 }

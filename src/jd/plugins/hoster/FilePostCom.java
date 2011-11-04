@@ -145,6 +145,7 @@ public class FilePostCom extends PluginForHost {
         br.setFollowRedirects(false);
         br.getHeaders().put("User-Agent", ua);
         br.getPage(downloadLink.getDownloadURL());
+        if (br.containsHTML("The file owner has limited free downloads of this file")) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.filepostcom.only4premium2", "Only downloadable for premium users"));
         if (br.containsHTML("We are sorry, the server where this file is")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Serverissue", 60 * 60 * 1000l);
         if (br.containsHTML("(>Your IP address is already downloading a file at the moment|>Please wait till the download completion and try again)")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "IP Already Loading", 20 * 60 * 1000l);
         String premiumlimit = br.getRegex(">Files over (.*?) can be downloaded by premium members only").getMatch(0);

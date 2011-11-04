@@ -83,7 +83,6 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
     /**
      * Der Logger
      */
-    private JDPluginLogger                            logger        = null;
 
     private long                                      startTime;
 
@@ -689,9 +688,9 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
             downloadLink.setLivePlugin(downloadLink.getDefaultPlugin().getNewInstance());
             currentPlugin = downloadLink.getLivePlugin();
             currentPlugin.setIOPermission(ioP);
-            currentPlugin.setLogger(logger = new JDPluginLogger(downloadLink.getHost() + ":" + downloadLink.getName()));
-            super.setLogger(logger);
-            logger = currentPlugin.getLogger();
+            JDPluginLogger llogger = null;
+            currentPlugin.setLogger(llogger = new JDPluginLogger(downloadLink.getHost() + ":" + downloadLink.getName()));
+            super.setLogger(llogger);
             /*
              * handle is only called in download situation, that why we create a
              * new browser instance here
@@ -727,16 +726,16 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
                 handlePlugin();
                 if (isAborted() && !linkStatus.isFinished()) {
                     /* download aborted */
-                    logger.clear();
-                    logger.info("\r\nDownload stopped- " + downloadLink.getName());
+                    llogger.clear();
+                    llogger.info("\r\nDownload stopped- " + downloadLink.getName());
                 } else if (linkStatus.isFinished()) {
                     /* error free */
-                    logger.clear();
-                    logger.finest("\r\nFinished- " + downloadLink.getLinkStatus());
-                    logger.info("\r\nFinished- " + downloadLink.getName() + "->" + downloadLink.getFileOutput());
+                    llogger.clear();
+                    llogger.finest("\r\nFinished- " + downloadLink.getLinkStatus());
+                    llogger.info("\r\nFinished- " + downloadLink.getName() + "->" + downloadLink.getFileOutput());
                 }
                 /* move download log into global log */
-                logger.logInto(JDLogger.getLogger());
+                llogger.logInto(JDLogger.getLogger());
             }
             if (SwingGui.getInstance() != null) downloadLink.requestGuiUpdate();
         } finally {

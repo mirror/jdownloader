@@ -98,7 +98,14 @@ public class Freaksharenet extends PluginForHost {
         }
         br.submitForm(form);
         handleFreeErrors();
-        form = br.getForm(0);
+        Form[] forms = br.getForms();
+        form = null;
+        if (forms == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        for (Form a : forms) {
+            if (a.getAction().contains("shop")) continue;
+            form = a;
+            break;
+        }
         if (form == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         if (br.containsHTML("api\\.recaptcha\\.net")) {
             for (int i = 0; i <= 5; i++) {

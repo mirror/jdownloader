@@ -20,29 +20,27 @@ import java.io.File;
 import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.Locale;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
-import jd.http.Browser;
 import jd.http.RandomUserAgent;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
-import jd.parser.html.HTMLParser;
 import jd.parser.html.Form.MethodType;
+import jd.parser.html.HTMLParser;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -107,70 +105,6 @@ public class DepositFiles extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
         }
         if (br.containsHTML("Entweder existiert diese Datei nicht oder sie wurde aufgrund von")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-    }
-
-    @Override
-    public boolean checkLinks(final DownloadLink[] urls) {
-        if (urls == null || urls.length == 0) { return false; }
-        try {
-            final Browser br = new Browser();
-            br.setCookiesExclusive(true);
-            br.setCookie(MAINPAGE, "lang_current", "de");
-            br.getPage("http://bonus.depositfiles.com/de/links_checker.php");
-            if (br.containsHTML("Temporary unavailable")) return false;
-            final StringBuilder sb = new StringBuilder();
-            final ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
-            int index = 0;
-            while (true) {
-                links.clear();
-                while (true) {
-                    /* we test 80 links at once */
-                    if (index == urls.length || links.size() > 80) {
-                        break;
-                    }
-                    links.add(urls[index]);
-                    index++;
-                }
-                sb.delete(0, sb.capacity());
-                sb.append("links=");
-                int c = 0;
-                for (final DownloadLink dl : links) {
-                    if (c > 0) {
-                        sb.append("%0D%0A");
-                    }
-                    sb.append(Encoding.urlEncode(dl.getDownloadURL()));
-                    c++;
-                }
-                br.postPage("http://bonus.depositfiles.com/de/links_checker.php", sb.toString());
-                final String existed = br.getRegex("links_existed(.*?)links_deleted").getMatch(0);
-                if (existed == null) { return false; }
-                final String infos[][] = new Regex(existed, Pattern.compile("id_str\":\"(.*?)\".*?filename\":\"(.*?)\".*?size\":\"(\\d+)", Pattern.DOTALL)).getMatches();
-                for (final DownloadLink dl : links) {
-                    final String id = new Regex(dl.getDownloadURL(), "/.*?files/(.*?)(/|$)").getMatch(0);
-                    int hit = -1;
-                    for (int i = 0; i < infos.length; i++) {
-                        if (infos[i][0].equalsIgnoreCase(id)) {
-                            hit = i;
-                            break;
-                        }
-                    }
-                    if (hit == -1) {
-                        /* id not in response, so its offline */
-                        dl.setAvailable(false);
-                    } else {
-                        dl.setAvailable(true);
-                        dl.setFinalFileName(infos[hit][1].trim().replace("_", " "));
-                        dl.setDownloadSize(SizeFormatter.getSize(infos[hit][2]));
-                    }
-                }
-                if (index == urls.length) {
-                    break;
-                }
-            }
-        } catch (final Exception e) {
-            return false;
-        }
-        return true;
     }
 
     @Override

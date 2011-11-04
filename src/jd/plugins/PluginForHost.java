@@ -691,7 +691,6 @@ public abstract class PluginForHost extends Plugin {
                 transferStatus.usePremium(true);
                 handlePremium(downloadLink, account);
             } catch (PluginException e) {
-                e.printStackTrace();
                 e.fillLinkStatus(downloadLink.getLinkStatus());
                 if (e.getLinkStatus() == LinkStatus.ERROR_PLUGIN_DEFECT) logger.info(JDLogger.getStackTrace(e));
                 logger.info(downloadLink.getLinkStatus().getLongErrorMessage());

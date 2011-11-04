@@ -21,12 +21,12 @@ import java.io.IOException;
 import jd.PluginWrapper;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
@@ -48,20 +48,27 @@ public class RGhostRu extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("(Access to the file was restricted|the action is prohibited, this is a private file and your key is incorrect|<title>404|File was deleted)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<meta name=\"description\" content=\"(.*?). Download").getMatch(0);
         if (filename == null) filename = br.getRegex("title=\"Comments for the file (.*?)\"").getMatch(0);
         String filesize = br.getRegex("<small>\\((.*?)\\)</small>").getMatch(0);
         if (filesize == null) filesize = br.getRegex("class=\"filesize\">\\((.*?)\\)</span>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null || filesize == null) {
+            offlineCheck();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         String md5 = br.getRegex("<b>MD5</b></td><td>(.*?)</td></tr>").getMatch(0);
         if (md5 != null) link.setMD5Hash(md5.trim());
         String sha1 = br.getRegex("<b>SHA1</b></td><td>(.*?)</td></tr>").getMatch(0);
         if (sha1 != null) link.setSha1Hash(sha1.trim());
         link.setName(filename);
         link.setDownloadSize(SizeFormatter.getSize(filesize));
+        offlineCheck();
         if (br.containsHTML(PWTEXT)) link.getLinkStatus().setStatusText("This file is password protected");
         return AvailableStatus.TRUE;
+    }
+
+    private void offlineCheck() throws PluginException {
+        if (br.containsHTML("(Access to the file (is|was) restricted|the action is prohibited, this is a private file and your key is incorrect|<title>404|File was deleted)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
     }
 
     @Override

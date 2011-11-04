@@ -23,9 +23,7 @@ import java.io.StringWriter;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.FileHandler;
 import java.util.logging.Formatter;
-import java.util.logging.Handler;
 import java.util.logging.Level;
-import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
 import jd.utils.JDUtilities;
@@ -71,6 +69,7 @@ public final class JDLogger {
             try {
                 logpath = JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath() + "/JDownloader.log";
                 filehandler = new FileHandler(logpath);
+                filehandler.setLevel(Level.ALL);
                 filehandler.setFormatter(formatter);
                 LOGGER.addHandler(filehandler);
             } catch (Exception e) {
@@ -78,28 +77,6 @@ public final class JDLogger {
             }
         }
         return LOGGER;
-    }
-
-    public static Logger getLogger(String name) {
-        Logger logger = Logger.getLogger(name);
-        logger.setUseParentHandlers(false);
-
-        logger.addHandler(new Handler() {
-
-            @Override
-            public void publish(LogRecord record) {
-            }
-
-            @Override
-            public void flush() {
-            }
-
-            @Override
-            public void close() throws SecurityException {
-            }
-
-        });
-        return logger;
     }
 
     /**

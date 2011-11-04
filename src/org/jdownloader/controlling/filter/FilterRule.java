@@ -38,7 +38,7 @@ public abstract class FilterRule implements Storable {
         StringBuilder sb = new StringBuilder();
         ArrayList<String> cond = new ArrayList<String>();
 
-        if (onlineStatusFilter.isEnabled()) {
+        if (getOnlineStatusFilter().isEnabled()) {
             switch (onlineStatusFilter.getOnlineStatus()) {
             case OFFLINE:
                 cond.add(_GUI._.FilterRule_toString_offline());
@@ -53,7 +53,7 @@ public abstract class FilterRule implements Storable {
             }
 
         }
-        if (filenameFilter.isEnabled()) {
+        if (getFilenameFilter().isEnabled()) {
             if (link != null && link.getName() != null) {
                 cond.add(_GUI._.FilterRule_toString_name2(link.getName(), filenameFilter.toString()));
             } else {
@@ -61,7 +61,7 @@ public abstract class FilterRule implements Storable {
             }
 
         }
-        if (filesizeFilter.isEnabled()) {
+        if (getFilesizeFilter().isEnabled()) {
             if (link != null && link.getSize() > 0) {
                 cond.add(_GUI._.FilterRule_toString_size2(SizeFormatter.formatBytes(link.getSize()), filesizeFilter.toString()));
             } else {
@@ -69,7 +69,7 @@ public abstract class FilterRule implements Storable {
             }
 
         }
-        if (filetypeFilter.isEnabled()) {
+        if (getFiletypeFilter().isEnabled()) {
             if (link != null && link.getName() != null && Files.getExtension(link.getName()) != null) {
                 String ext = Files.getExtension(link.getName());
                 cond.add(_GUI._.FilterRule_toString_type2(ext, filetypeFilter.toString()));
@@ -78,7 +78,7 @@ public abstract class FilterRule implements Storable {
             }
 
         }
-        if (hosterURLFilter.isEnabled()) {
+        if (getHosterURLFilter().isEnabled()) {
             if (link != null) {
                 cond.add(_GUI._.FilterRule_toString_hoster2(link.getURL(), hosterURLFilter.toString()));
             } else {
@@ -86,7 +86,7 @@ public abstract class FilterRule implements Storable {
             }
 
         }
-        if (sourceURLFilter.isEnabled()) {
+        if (getSourceURLFilter().isEnabled()) {
 
             cond.add(_GUI._.FilterRule_toString_source(sourceURLFilter.toString()));
 
