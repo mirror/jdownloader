@@ -66,7 +66,6 @@ public class FileFactory extends PluginForHost {
     private static final String  CAPTCHALIMIT     = "<p>We have detected several recent attempts to bypass our free download restrictions originating from your IP Address";
     private static final Object  LOCK             = new Object();
     private static final String  COOKIE_HOST      = "http://filefactory.com/";
-
     private String               dlUrl            = null;
 
     public FileFactory(final PluginWrapper wrapper) {

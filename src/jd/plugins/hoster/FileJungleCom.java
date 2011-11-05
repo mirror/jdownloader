@@ -127,6 +127,8 @@ public class FileJungleCom extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
+            handleErrors();
+            logger.warning("The final dllink seems not to be a file!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
@@ -224,7 +226,7 @@ public class FileJungleCom extends PluginForHost {
             if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).matches(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
             if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
                 final HashMap<String, String> cookies = (HashMap<String, String>) ret;
-                if (cookies.containsKey("cookie") && account.isValid()) {
+                if (account.isValid()) {
                     for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
                         final String key = cookieEntry.getKey();
                         final String value = cookieEntry.getValue();
@@ -280,11 +282,25 @@ public class FileJungleCom extends PluginForHost {
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
-            logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
+            handleErrors();
+            logger.warning("The final dllink seems not to be a file!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    private void handleErrors() throws PluginException {
+        final String theURL = br.getURL();
+        if (theURL.contains("filejungle.com/landing-1703")) {
+            logger.warning("Found unknown error, landing page: " + theURL);
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Landing error 1703 found, please check if you can download via browser!");
+        }
+        String landing = new Regex(theURL, ".*?filejungle\\.com/landing\\-(\\d+)").getMatch(0);
+        if (landing != null) {
+            logger.warning("Found unknown error, landing page: " + theURL);
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Unknown landing error " + landing + "found, please contact our support!");
+        }
     }
 
     @Override

@@ -127,8 +127,6 @@ public class VKontakteRu extends PluginForDecrypt implements ProgressControllerL
                 // Find out how many times we have to reload images. Take the
                 // number of pictures - 80 (because without any request we
                 // already got 80) and divide it by 40 (every reload we get 40)
-                // int maxLoops = (Integer.parseInt(numberOfPictures) - 80) /
-                // 40;
                 int maxLoops = (int) StrictMath.ceil((Double.parseDouble(numberOfPictures) - 80) / 40);
                 int offset = 80;
                 br.getHeaders().put("X-Requested-With", "XMLHttpRequest");

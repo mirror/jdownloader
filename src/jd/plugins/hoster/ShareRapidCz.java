@@ -17,6 +17,7 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
@@ -33,7 +34,7 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "share-rapid.cz" }, urls = { "http://(www\\.)?(share-rapid\\.(biz|com|info|cz|eu|info|net|sk)|((mediatack|rapidspool|e-stahuj|premium-rapidshare|qiuck|rapidshare-premium|share-credit|srapid|share-free)\\.cz)|((strelci|share-ms|)\\.net)|jirkasekyrka\\.com|((kadzet|universal-share)\\.com)|sharerapid\\.(biz|cz|net|org|sk)|stahuj-zdarma\\.eu|share-central\\.cz|rapids\\.cz)/stahuj/([0-9]+/.+|[a-z0-9]+)" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "share-rapid.cz" }, urls = { "http://(www\\.)?(share\\-rapid\\.(biz|com|info|cz|eu|info|net|sk)|((mediatack|rapidspool|e\\-stahuj|premium\\-rapidshare|qiuck|rapidshare\\-premium|share\\-credit|srapid|share\\-free)\\.cz)|((strelci|share\\-ms|)\\.net)|jirkasekyrka\\.com|((kadzet|universal\\-share)\\.com)|sharerapid\\.(biz|cz|net|org|sk)|stahuj\\-zdarma\\.eu|share\\-central\\.cz|rapids\\.cz)/stahuj/([0-9]+/.+|[a-z0-9]+)" }, flags = { 2 })
 public class ShareRapidCz extends PluginForHost {
 
     public ShareRapidCz(PluginWrapper wrapper) {
@@ -45,6 +46,9 @@ public class ShareRapidCz extends PluginForHost {
     public String getAGBLink() {
         return "http://share-rapid.com/informace/";
     }
+
+    private static AtomicInteger maxPrem  = new AtomicInteger(1);
+    private static final String  MAINPAGE = "http://share-rapid.com/";
 
     @Override
     public void correctDownloadLink(DownloadLink link) throws Exception {
@@ -60,6 +64,7 @@ public class ShareRapidCz extends PluginForHost {
         br.setCustomCharset("UTF-8");
         br.setFollowRedirects(true);
         br.setDebug(true);
+        br.setCookie(MAINPAGE, "lang", "cs");
         br.getPage("http://share-rapid.com/prihlaseni/");
         Form form = br.getForm(0);
         if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -74,6 +79,8 @@ public class ShareRapidCz extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
+        /* reset maxPrem workaround on every fetchaccount info */
+        maxPrem.set(1);
         try {
             login(account);
         } catch (PluginException e) {
@@ -97,12 +104,14 @@ public class ShareRapidCz extends PluginForHost {
         String maxSimultanDownloads = br.getRegex("<td>Max\\. počet paralelních stahování: </td><td>(\\d+) <a href").getMatch(0);
         if (maxSimultanDownloads != null) {
             try {
-                account.setMaxSimultanDownloads(Integer.parseInt(maxSimultanDownloads));
+                int maxSimultan = Integer.parseInt(maxSimultanDownloads);
+                maxPrem.set(maxSimultan);
+                account.setMaxSimultanDownloads(maxSimultan);
             } catch (Throwable e) {
                 /* not available in 0.9xxx */
             }
         }
-        ai.setStatus("Premium User" + trafficleft);
+        ai.setStatus("Account ok" + trafficleft);
         account.setValid(true);
         return ai;
     }
@@ -136,22 +145,22 @@ public class ShareRapidCz extends PluginForHost {
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return 3;
+        /* workaround for free/premium issue on stable 09581 */
+        return maxPrem.get();
     }
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setCustomCharset("UTF-8");
+        br.setCookie(MAINPAGE, "lang", "cs");
         br.getPage(link.getDownloadURL());
         br.setFollowRedirects(true);
         if (br.containsHTML("Nastala chyba 404") || br.containsHTML("Soubor byl smazán")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-
         String filename = Encoding.htmlDecode(br.getRegex("style=\"padding: 12px 0px 0px 10px; display: block\">(.*?)</ br>").getMatch(0));
         if (filename == null) filename = Encoding.htmlDecode(br.getRegex("<title>(.*?)- Share-Rapid</title>").getMatch(0));
         String filesize = Encoding.htmlDecode(br.getRegex("Velikost:</td>.*?<td class=\"h\"><strong>.*?(.*?)</strong></td>").getMatch(0));
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-
         link.setName(filename.trim());
         link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
