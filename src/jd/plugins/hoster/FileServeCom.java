@@ -385,6 +385,8 @@ public class FileServeCom extends PluginForHost {
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dllink = dllink.replaceAll("\\\\/", "/");
         br.setFollowRedirects(true);
+        // Sometimes slow servers
+        br.setReadTimeout(60 * 1000);
         this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, link, dllink, true, 0);
         if (this.dl.getConnection().getResponseCode() == 404) {
             this.br.followConnection();
