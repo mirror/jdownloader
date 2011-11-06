@@ -20,16 +20,17 @@ import java.io.IOException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
@@ -37,9 +38,72 @@ import org.appwork.utils.formatter.TimeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "share-rapid.cz" }, urls = { "http://(www\\.)?(share\\-rapid\\.(biz|com|info|cz|eu|info|net|sk)|((mediatack|rapidspool|e\\-stahuj|premium\\-rapidshare|qiuck|rapidshare\\-premium|share\\-credit|srapid|share\\-free)\\.cz)|((strelci|share\\-ms|)\\.net)|jirkasekyrka\\.com|((kadzet|universal\\-share)\\.com)|sharerapid\\.(biz|cz|net|org|sk)|stahuj\\-zdarma\\.eu|share\\-central\\.cz|rapids\\.cz)/stahuj/([0-9]+/.+|[a-z0-9]+)" }, flags = { 2 })
 public class ShareRapidCz extends PluginForHost {
 
-    public ShareRapidCz(PluginWrapper wrapper) {
+    private static AtomicInteger maxPrem  = new AtomicInteger(1);
+
+    private static final String  MAINPAGE = "http://share-rapid.com/";
+
+    public ShareRapidCz(final PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://share-rapid.com/dobiti/?zeme=1");
+    }
+
+    @Override
+    public void correctDownloadLink(final DownloadLink link) throws Exception {
+        // Complete list of all domains, maybe they buy more....
+        // http://share-rapid.com/informace/
+        String downloadlinklink = link.getDownloadURL();
+        if (downloadlinklink != null) {
+            downloadlinklink = downloadlinklink.replaceAll("(share-rapid\\.(biz|com|info|cz|eu|info|net|sk)|((mediatack|rapidspool|e-stahuj|premium-rapidshare|qiuck|rapidshare-premium|share-credit|share-free|srapid)\\.cz)|((strelci|share-ms|)\\.net)|jirkasekyrka\\.com|((kadzet|universal-share)\\.com)|sharerapid\\.(biz|cz|net|org|sk)|stahuj-zdarma\\.eu|share-central\\.cz|rapids\\.cz)", "share-rapid\\.com");
+        }
+        link.setUrlDownload(downloadlinklink);
+    }
+
+    @Override
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
+        final AccountInfo ai = new AccountInfo();
+        /* reset maxPrem workaround on every fetchaccount info */
+        maxPrem.set(1);
+        try {
+            login(account);
+        } catch (final PluginException e) {
+            account.setValid(false);
+            return ai;
+        }
+        long realTraffic = 0l;
+        // Trafficleft actually only caused problems because in the night you
+        // got no limit when downloading from this host so i guess it's the best
+        // not to show any traffic-information
+        String trafficleft = br.getMatch("Kredit:</td><td>(.*?)<a");
+        if (trafficleft != null) {
+            logger.info("Free traffic equals: " + trafficleft);
+            realTraffic = SizeFormatter.getSize(trafficleft);
+            trafficleft = ", " + trafficleft.trim() + " traffic left";
+        } else {
+            trafficleft = "";
+        }
+        final String expires = br.getMatch("Neomezený tarif vyprší</td><td><strong>([0-9]{1,2}.[0-9]{1,2}.[0-9]{2,4} - [0-9]{1,2}:[0-9]{1,2})</strong>");
+        if (expires != null) {
+            ai.setValidUntil(TimeFormatter.getMilliSeconds(expires, "dd.MM.yy - HH:mm", null));
+        }
+        final String maxSimultanDownloads = br.getRegex("<td>Max\\. počet paralelních stahování: </td><td>(\\d+) <a href").getMatch(0);
+        if (maxSimultanDownloads != null) {
+            try {
+                final int maxSimultan = Integer.parseInt(maxSimultanDownloads);
+                maxPrem.set(maxSimultan);
+                account.setMaxSimultanDownloads(maxSimultan);
+            } catch (final Throwable e) {
+                /* not available in 0.9xxx */
+            }
+        }
+        if (realTraffic > 0l) {
+            ai.setStatus("Premium User" + trafficleft);
+            ai.setUnlimitedTraffic();
+        } else {
+            ai.setStatus("Registered (free) User");
+            ai.setTrafficLeft(realTraffic);
+        }
+        account.setValid(true);
+        return ai;
     }
 
     @Override
@@ -47,84 +111,59 @@ public class ShareRapidCz extends PluginForHost {
         return "http://share-rapid.com/informace/";
     }
 
-    private static AtomicInteger maxPrem  = new AtomicInteger(1);
-    private static final String  MAINPAGE = "http://share-rapid.com/";
-
     @Override
-    public void correctDownloadLink(DownloadLink link) throws Exception {
-        // Complete list of all domains, maybe they buy more....
-        // http://share-rapid.com/informace/
-        String downloadlinklink = link.getDownloadURL();
-        if (downloadlinklink != null) downloadlinklink = downloadlinklink.replaceAll("(share-rapid\\.(biz|com|info|cz|eu|info|net|sk)|((mediatack|rapidspool|e-stahuj|premium-rapidshare|qiuck|rapidshare-premium|share-credit|share-free|srapid)\\.cz)|((strelci|share-ms|)\\.net)|jirkasekyrka\\.com|((kadzet|universal-share)\\.com)|sharerapid\\.(biz|cz|net|org|sk)|stahuj-zdarma\\.eu|share-central\\.cz|rapids\\.cz)", "share-rapid\\.com");
-        link.setUrlDownload(downloadlinklink);
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
     }
 
-    public void login(Account account) throws Exception {
-        this.setBrowserExclusive();
-        br.setCustomCharset("UTF-8");
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        /* workaround for free/premium issue on stable 09581 */
+        return maxPrem.get();
+    }
+
+    @Override
+    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
+        requestFileInformation(downloadLink);
+        if (br.containsHTML("Disk, na kterém se soubor nachází, je dočasně odpojen, zkuste to prosím později")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "This file is on a damaged hard drive disk", 60 * 60 * 1000); }
+        if (br.containsHTML("Soubor byl chybně nahrán na server")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "This file isn't uploaded correctly", 60 * 60 * 1000); }
+        final String dllink = br.getRegex("\"(http://s[0-9]{1,2}\\.share-rapid\\.com/download.*?)\"").getMatch(0);
+        if (dllink == null && br.containsHTML("(Stahování je přístupné pouze přihlášeným uživatelům|class=\"error_div\"><strong>Stahov)")) { throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable for registered users"); }
+        if (dllink == null) { throw new PluginException(LinkStatus.ERROR_FATAL, "Please contact the support jdownloader.org"); }
         br.setFollowRedirects(true);
-        br.setDebug(true);
-        br.setCookie(MAINPAGE, "lang", "cs");
-        br.getPage("http://share-rapid.com/prihlaseni/");
-        Form form = br.getForm(0);
-        if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        form.put("login", Encoding.urlEncode(account.getUser()));
-        form.put("pass1", Encoding.urlEncode(account.getPass()));
-        form.remove("remember");
-        br.submitForm(form);
-        if (!br.containsHTML("Kredit:</td>")) br.getPage("http://share-rapid.com/mujucet/");
-        if (!br.containsHTML("Kredit:</td>")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
+        dl.startDownload();
     }
 
     @Override
-    public AccountInfo fetchAccountInfo(Account account) throws Exception {
-        AccountInfo ai = new AccountInfo();
-        /* reset maxPrem workaround on every fetchaccount info */
-        maxPrem.set(1);
-        try {
-            login(account);
-        } catch (PluginException e) {
-            account.setValid(false);
-            return ai;
-        }
-        // Trafficleft actually only caused problems because in the night you
-        // got no limit when downloading from this host so i guess it's the best
-        // not to show any traffic-information
-        String trafficleft = br.getMatch("Kredit:</td><td>(.*?)<a");
-        if (trafficleft != null) {
-            logger.info("Free traffic equals" + trafficleft);
-            trafficleft = ", " + trafficleft.trim() + " traffic left";
-        } else
-            trafficleft = "";
-        ai.setUnlimitedTraffic();
-        String expires = br.getMatch("Neomezený tarif vyprší</td><td><strong>([0-9]{1,2}.[0-9]{1,2}.[0-9]{2,4} - [0-9]{1,2}:[0-9]{1,2})</strong>");
-        if (expires != null) {
-            ai.setValidUntil(TimeFormatter.getMilliSeconds(expires, "dd.MM.yy - HH:mm", null));
-        }
-        String maxSimultanDownloads = br.getRegex("<td>Max\\. počet paralelních stahování: </td><td>(\\d+) <a href").getMatch(0);
-        if (maxSimultanDownloads != null) {
-            try {
-                int maxSimultan = Integer.parseInt(maxSimultanDownloads);
-                maxPrem.set(maxSimultan);
-                account.setMaxSimultanDownloads(maxSimultan);
-            } catch (Throwable e) {
-                /* not available in 0.9xxx */
-            }
-        }
-        ai.setStatus("Account ok" + trafficleft);
-        account.setValid(true);
-        return ai;
-    }
-
-    @Override
-    public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
+    public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
         requestFileInformation(downloadLink);
         login(account);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("Disk, na kterém se soubor nachází, je dočasně odpojen, zkuste to prosím později")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "This file is on a damaged hard drive disk", 60 * 60 * 1000);
-        if (br.containsHTML("Soubor byl chybně nahrán na server")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "This file isn't uploaded correctly", 60 * 60 * 1000);
-        if (br.containsHTML("Již Vám došel kredit a vyčerpal jste free limit")) throw new PluginException(LinkStatus.ERROR_FATAL, "Not enough traffic left to download this file!");
+        if (br.containsHTML("Disk, na kterém se soubor nachází, je dočasně odpojen, zkuste to prosím později")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "This file is on a damaged hard drive disk", 60 * 60 * 1000); }
+        if (br.containsHTML("Soubor byl chybně nahrán na server")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "This file isn't uploaded correctly", 60 * 60 * 1000); }
+        if (br.containsHTML("Již Vám došel kredit a vyčerpal jste free limit")) { throw new PluginException(LinkStatus.ERROR_FATAL, "Not enough traffic left to download this file!"); }
         String dllink = br.getRegex("\"(http://s[0-9]{1,2}\\.share-rapid\\.com/download.*?)\"").getMatch(0);
+
+        if (dllink == null && account.getAccountInfo().getTrafficLeft() == 0l) {
+            final Browser br2 = new Browser();
+            br2.getHeaders().put("User-Agent", "share-rapid downloader");
+            br2.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
+            br2.getHeaders().put("Accept-Charset", "iso-8859-1, utf-8, utf-16");
+            br2.getHeaders().put("Accept-Encoding", "deflate, gzip, identity");
+            br2.getHeaders().put("Accept-Language", "en");
+            br2.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
+            br2.getHeaders().put("Authorization", "Basic " + Encoding.Base64Encode(account.getUser() + ":" + account.getPass()));
+
+            br2.getPage("http://share-rapid.com/userinfo.php");
+            br2.getPage("http://share-rapid.com/login.php");
+
+            br2.getHeaders().put("Accept", "*/*");
+
+            br2.postPageRaw("http://share-rapid.com/checkfiles.php", "files=" + Encoding.urlEncode(downloadLink.getDownloadURL()));
+            br = br2.cloneBrowser();
+            dllink = downloadLink.getDownloadURL();
+        }
         if (dllink == null) {
             if (br.containsHTML(">Stahování zdarma je možné jen přes náš")) {
                 logger.info("No traffic left, disabling premium...");
@@ -135,53 +174,50 @@ public class ShareRapidCz extends PluginForHost {
         logger.info("Final downloadlink = " + dllink);
         br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
-        if (!(dl.getConnection().isContentDisposition())) {
+        if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
-            if (br.containsHTML("(was not found on this server|No htmlCode read)")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000);
+            if (br.containsHTML("(was not found on this server|No htmlCode read)")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000); }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
     }
 
-    @Override
-    public int getMaxSimultanPremiumDownloadNum() {
-        /* workaround for free/premium issue on stable 09581 */
-        return maxPrem.get();
+    public void login(final Account account) throws Exception {
+        setBrowserExclusive();
+        br.setCustomCharset("UTF-8");
+        br.setFollowRedirects(true);
+        br.setDebug(true);
+        br.setCookie(MAINPAGE, "lang", "cs");
+        br.getPage("http://share-rapid.com/prihlaseni/");
+        final Form form = br.getForm(0);
+        if (form == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        form.put("login", Encoding.urlEncode(account.getUser()));
+        form.put("pass1", Encoding.urlEncode(account.getPass()));
+        form.remove("remember");
+        br.submitForm(form);
+        if (!br.containsHTML("Kredit:</td>")) {
+            br.getPage("http://share-rapid.com/mujucet/");
+        }
+        if (!br.containsHTML("Kredit:</td>")) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE); }
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        setBrowserExclusive();
         br.setCustomCharset("UTF-8");
         br.setCookie(MAINPAGE, "lang", "cs");
         br.getPage(link.getDownloadURL());
         br.setFollowRedirects(true);
-        if (br.containsHTML("Nastala chyba 404") || br.containsHTML("Soubor byl smazán")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("Nastala chyba 404") || br.containsHTML("Soubor byl smazán")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         String filename = Encoding.htmlDecode(br.getRegex("style=\"padding: 12px 0px 0px 10px; display: block\">(.*?)</ br>").getMatch(0));
-        if (filename == null) filename = Encoding.htmlDecode(br.getRegex("<title>(.*?)- Share-Rapid</title>").getMatch(0));
-        String filesize = Encoding.htmlDecode(br.getRegex("Velikost:</td>.*?<td class=\"h\"><strong>.*?(.*?)</strong></td>").getMatch(0));
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (filename == null) {
+            filename = Encoding.htmlDecode(br.getRegex("<title>(.*?)- Share-Rapid</title>").getMatch(0));
+        }
+        final String filesize = Encoding.htmlDecode(br.getRegex("Velikost:</td>.*?<td class=\"h\"><strong>.*?(.*?)</strong></td>").getMatch(0));
+        if (filename == null || filesize == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         link.setName(filename.trim());
         link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
-    }
-
-    @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        if (br.containsHTML("Disk, na kterém se soubor nachází, je dočasně odpojen, zkuste to prosím později")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "This file is on a damaged hard drive disk", 60 * 60 * 1000);
-        if (br.containsHTML("Soubor byl chybně nahrán na server")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "This file isn't uploaded correctly", 60 * 60 * 1000);
-        String dllink = br.getRegex("\"(http://s[0-9]{1,2}\\.share-rapid\\.com/download.*?)\"").getMatch(0);
-        if (dllink == null && br.containsHTML("(Stahování je přístupné pouze přihlášeným uživatelům|class=\"error_div\"><strong>Stahov)")) throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable for registered users");
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_FATAL, "Please contact the support jdownloader.org");
-        br.setFollowRedirects(true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
-        dl.startDownload();
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
     }
 
     @Override
@@ -189,6 +225,6 @@ public class ShareRapidCz extends PluginForHost {
     }
 
     @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetDownloadlink(final DownloadLink link) {
     }
 }

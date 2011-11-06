@@ -205,14 +205,13 @@ public class TurboBitNet extends PluginForHost {
 
         final String res = parseImageUrl(br.getRegex(LnkCrptWs.IMAGEREGEX).getMatch(0));
         if (res != null) {
-            if (res.startsWith("http")) {
-                MAINPAGE = res;
-            } else {
-                MAINPAGE += res;
+            String fReq = res;
+            if (!res.startsWith("http")) {
+                fReq = MAINPAGE + res;
             }
             sleep(tt * 1001, downloadLink);
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            br.getPage(MAINPAGE);
+            br.getPage(fReq);
             downloadUrl = br.getRegex("<a href=\\'(.*?)\\'>").getMatch(0);
         }
         if (downloadUrl == null) {
