@@ -26,11 +26,11 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
@@ -53,7 +53,7 @@ public class ShareRapidCz extends PluginForHost {
         // http://share-rapid.com/informace/
         String downloadlinklink = link.getDownloadURL();
         if (downloadlinklink != null) {
-            downloadlinklink = downloadlinklink.replaceAll("(share-rapid\\.(biz|com|info|cz|eu|info|net|sk)|((mediatack|rapidspool|e-stahuj|premium-rapidshare|qiuck|rapidshare-premium|share-credit|share-free|srapid)\\.cz)|((strelci|share-ms|)\\.net)|jirkasekyrka\\.com|((kadzet|universal-share)\\.com)|sharerapid\\.(biz|cz|net|org|sk)|stahuj-zdarma\\.eu|share-central\\.cz|rapids\\.cz)", "share-rapid\\.com");
+            downloadlinklink = downloadlinklink.replaceAll("(share-rapid\\.(biz|com|info|cz|eu|info|net|sk)|((mediatack|rapidspool|e\\-stahuj|premium\\-rapidshare|qiuck|rapidshare\\-premium|share\\-credit|share\\-free|srapid)\\.cz)|((strelci|share\\-ms|)\\.net)|jirkasekyrka\\.com|((kadzet|universal\\-share)\\.com)|sharerapid\\.(biz|cz|net|org|sk)|stahuj\\-zdarma\\.eu|share\\-central\\.cz|rapids\\.cz)", "share-rapid.com");
         }
         link.setUrlDownload(downloadlinklink);
     }
@@ -82,26 +82,26 @@ public class ShareRapidCz extends PluginForHost {
             trafficleft = "";
         }
         final String expires = br.getMatch("Neomezený tarif vyprší</td><td><strong>([0-9]{1,2}.[0-9]{1,2}.[0-9]{2,4} - [0-9]{1,2}:[0-9]{1,2})</strong>");
-        if (expires != null) {
-            ai.setValidUntil(TimeFormatter.getMilliSeconds(expires, "dd.MM.yy - HH:mm", null));
-        }
-        final String maxSimultanDownloads = br.getRegex("<td>Max\\. počet paralelních stahování: </td><td>(\\d+) <a href").getMatch(0);
-        if (maxSimultanDownloads != null) {
-            try {
-                final int maxSimultan = Integer.parseInt(maxSimultanDownloads);
-                maxPrem.set(maxSimultan);
-                account.setMaxSimultanDownloads(maxSimultan);
-            } catch (final Throwable e) {
-                /* not available in 0.9xxx */
-            }
-        }
+        if (expires != null) ai.setValidUntil(TimeFormatter.getMilliSeconds(expires, "dd.MM.yy - HH:mm", null));
         if (realTraffic > 0l) {
+            // Max simultan downloads (higher than 1) only works if you got any
+            // traffic
             ai.setStatus("Premium User" + trafficleft);
-            ai.setUnlimitedTraffic();
+            final String maxSimultanDownloads = br.getRegex("<td>Max\\. počet paralelních stahování: </td><td>(\\d+) <a href").getMatch(0);
+            if (maxSimultanDownloads != null) {
+                try {
+                    final int maxSimultan = Integer.parseInt(maxSimultanDownloads);
+                    maxPrem.set(maxSimultan);
+                    account.setMaxSimultanDownloads(maxSimultan);
+                } catch (final Throwable e) {
+                    /* not available in 0.9xxx */
+                }
+            }
         } else {
             ai.setStatus("Registered (free) User");
-            ai.setTrafficLeft(realTraffic);
+            account.setProperty("freeaccount", "true");
         }
+        ai.setUnlimitedTraffic();
         account.setValid(true);
         return ai;
     }
@@ -145,7 +145,7 @@ public class ShareRapidCz extends PluginForHost {
         if (br.containsHTML("Již Vám došel kredit a vyčerpal jste free limit")) { throw new PluginException(LinkStatus.ERROR_FATAL, "Not enough traffic left to download this file!"); }
         String dllink = br.getRegex("\"(http://s[0-9]{1,2}\\.share-rapid\\.com/download.*?)\"").getMatch(0);
 
-        if (dllink == null && account.getAccountInfo().getTrafficLeft() == 0l) {
+        if (dllink == null && account.getStringProperty("freeaccount") != null) {
             final Browser br2 = new Browser();
             br2.getHeaders().put("User-Agent", "share-rapid downloader");
             br2.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");

@@ -23,15 +23,15 @@ import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.HTMLParser;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uptal.com" }, urls = { "http://(www\\.)?(new\\.)?uptal\\.(com|org)/\\?d=[A-Fa-f0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uptal.com", "uptal.org" }, urls = { "frrthe32676okfweziqdnmUNUSED_REGEXBZU%GFFD", "http://(www\\.)?(new\\.)?uptal\\.(com|org)/\\?d=[A-Fa-f0-9]+" }, flags = { 0, 0 })
 public class UptalCom extends PluginForHost {
 
     public UptalCom(PluginWrapper wrapper) {
