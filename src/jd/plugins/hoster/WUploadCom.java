@@ -411,6 +411,7 @@ public class WUploadCom extends PluginForHost implements ControlListener {
             downloadUrl = ajax.getRegex(re).getMatch(0);
         }
         if (downloadUrl == null) {
+            errorHandling(downloadLink, ajax);
             logger.info(ajax.toString());
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

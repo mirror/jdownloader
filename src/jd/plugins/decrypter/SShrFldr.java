@@ -31,7 +31,7 @@ import jd.utils.locale.JDL;
 
 // this plugin supports 'folders' and 'other files of this uploader'.
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "easy-share.com" }, urls = { "https?://(www\\.)?easy\\-share\\.com/(f/[A-Z0-9]+/.+|o/[0-9]+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "crocko.com" }, urls = { "https?://(www\\.)?(easy\\-share|crocko)\\.com/(f/[A-Z0-9]+/.+|o/[0-9]+)" }, flags = { 0 })
 public class SShrFldr extends PluginForDecrypt {
 
     public SShrFldr(PluginWrapper wrapper) {
@@ -41,7 +41,8 @@ public class SShrFldr extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-        br.setCookie("http://www.easy-share.com", "language", "en");
+        parameter = parameter.replaceFirst("easy-share", "crocko");
+        br.setCookie("http://www.crocko.com", "language", "en");
         br.setCustomCharset("utf-8");
         br.getPage(parameter);
         if (br.containsHTML(">Error 404: Page not found<|No files in this folder|Folder not found")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Either incorrect URL, folder or owner no longer exists, empty folder."));
@@ -49,12 +50,12 @@ public class SShrFldr extends PluginForDecrypt {
         String fpName = br.getRegex("<h1>(.*?)</h1>").getMatch(0);
         String[] links = br.getRegex("class=\"w331 fl h18 l \"><a href=\"(.*?)\">").getColumn(0);
         if (links == null || links.length == 0) {
-            links = br.getRegex("\"(https?://(www\\.)?easy\\-share\\.com/f/[A-Z0-9]+/[^\"\\'<>]+)\"").getColumn(0);
+            links = br.getRegex("\"(https?://(www\\.)?crocko\\.com/f/[A-Z0-9]+/[^\"\\'<>]+)\"").getColumn(0);
             if (links == null || links.length == 0) {
                 links = br.getRegex("class=\"last\"><a href=\"(.*?)\">").getColumn(0);
             }
         }
-        String[] folders = br.getRegex("\"(https?://(www\\.)?easy\\-share\\.com/f/[A-Z0-9]+)/.+\"").getColumn(0);
+        String[] folders = br.getRegex("\"(https?://(www\\.)?crocko\\.com/f/[A-Z0-9]+)/.+\"").getColumn(0);
         if ((links == null || links.length == 0) && (folders == null || folders.length == 0)) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
@@ -64,7 +65,7 @@ public class SShrFldr extends PluginForDecrypt {
                 decryptedLinks.add(createDownloadlink(dl));
         }
         if (folders != null && folders.length != 0) {
-            final String id = new Regex(parameter, ".*?easy\\-share\\.com/(f|o)/([A-Z0-9]+)").getMatch(1);
+            final String id = new Regex(parameter, ".*?crocko\\.com/(f|o)/([A-Z0-9]+)").getMatch(1);
             for (String aFolder : folders)
                 if (!aFolder.contains(id)) decryptedLinks.add(createDownloadlink(aFolder));
         }

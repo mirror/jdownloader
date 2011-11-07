@@ -47,7 +47,7 @@ public class GeTtDecrypter extends PluginForDecrypt {
             decryptedLinks.add(dlink);
             return decryptedLinks;
         }
-        String[] links = br.getRegex("downloadurl\":\"(http://api\\.ge\\.tt/\\d/[A-Za-z0-9]+/.*?)\"").getColumn(0);
+        String[] links = br.getRegex("downloadurl\":\"(http://api\\d+?\\.ge\\.tt/\\d/[A-Za-z0-9]+/.*?)\"").getColumn(0);
         if (links == null || links.length == 0) return null;
         for (String dl : links) {
             if (!dl.contains("/download")) {

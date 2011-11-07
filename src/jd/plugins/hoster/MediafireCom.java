@@ -36,12 +36,12 @@ import jd.parser.html.InputField;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -551,7 +551,7 @@ public class MediafireCom extends PluginForHost {
                 if (redirectURL != null && this.br.getCookie("http://www.mediafire.com", "ukey") != null) {
                     if (url.contains("download.php") || url.contains("fire.com/file/")) {
                         /* new redirect format */
-                        if (!new Regex(redirectURL, "http://download\\d+\\.mediafire").matches()) {
+                        if (new Regex(redirectURL, "http://download\\d+\\.mediafire").matches()) {
                             URLConnectionAdapter con = null;
                             try {
                                 con = br.openGetConnection(redirectURL);
