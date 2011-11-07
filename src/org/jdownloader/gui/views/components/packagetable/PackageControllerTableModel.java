@@ -3,6 +3,7 @@ package org.jdownloader.gui.views.components.packagetable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -268,11 +269,10 @@ public abstract class PackageControllerTableModel<E extends AbstractPackageNode<
 
     public List<V> getAllChildrenNodes() {
         ArrayList<AbstractNode> data = this.tableData;
-        ArrayList<V> ret = new ArrayList<V>(data.size());
+        HashSet<V> ret = new HashSet<V>(data.size());
         for (AbstractNode node : data) {
             if (node instanceof AbstractPackageNode) {
                 AbstractPackageNode pkg = (AbstractPackageNode) node;
-                if (pkg.isExpanded()) continue;
                 synchronized (pkg) {
                     for (Object node2 : pkg.getChildren()) {
                         if (node2 instanceof AbstractPackageChildrenNode) {
@@ -284,7 +284,7 @@ public abstract class PackageControllerTableModel<E extends AbstractPackageNode<
                 ret.add((V) node);
             }
         }
-        return ret;
+        return new ArrayList<V>(ret);
     }
 
     public List<E> getAllPackageNodes() {
