@@ -270,7 +270,17 @@ public abstract class PackageControllerTableModel<E extends AbstractPackageNode<
         ArrayList<AbstractNode> data = this.tableData;
         ArrayList<V> ret = new ArrayList<V>(data.size());
         for (AbstractNode node : data) {
-            if (node instanceof AbstractPackageChildrenNode) {
+            if (node instanceof AbstractPackageNode) {
+                AbstractPackageNode pkg = (AbstractPackageNode) node;
+                if (pkg.isExpanded()) continue;
+                synchronized (pkg) {
+                    for (Object node2 : pkg.getChildren()) {
+                        if (node2 instanceof AbstractPackageChildrenNode) {
+                            ret.add((V) node2);
+                        }
+                    }
+                }
+            } else if (node instanceof AbstractPackageChildrenNode) {
                 ret.add((V) node);
             }
         }
