@@ -61,4 +61,8 @@ public abstract class Filter<E extends AbstractPackageNode<V, E>, V extends Abst
     abstract public boolean isFiltered(V link);
 
     abstract public boolean isFiltered(E link);
+
+    public String getDescription() {
+        return null;
+    }
 }

@@ -52,7 +52,7 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
     private MigPanel                                 rightBar;
     private SearchField<CrawledPackage, CrawledLink> searchField;
     private ExtButton                                filteredAdd;
-    private ExtButton                                offlineAdd;
+
     private JButton                                  popupRemove;
 
     public LinkGrabberPanel() {
@@ -72,17 +72,7 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
             }
 
         });
-        offlineAdd = new ExtButton(new AppAction() {
-            {
-                setName(_GUI._.LinkGrabberPanel_LinkGrabberPanel_offline_(13));
-                setIconKey("file_error");
-            }
 
-            public void actionPerformed(ActionEvent e) {
-                // bla
-            }
-
-        });
         // filteredAdd.setVisible(false);
         LinkCollector.getInstance().addListener(new LinkCollectorListener() {
 
@@ -118,7 +108,7 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
             }
         };
 
-        leftBar = new MigPanel("ins 0", "[]1[][]1[][grow,fill]0[]0[]", "[]");
+        leftBar = new MigPanel("ins 0", "[]1[][]1[][grow,fill]0[]", "[]");
         rightBar = new MigPanel("ins 0", "[grow,fill]1[]0", "[]");
 
         leftBar.add(addLinks, "height 24!,aligny top");
@@ -143,7 +133,7 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
             public void keyPressed(KeyEvent e) {
             }
         });
-        leftBar.add(offlineAdd, "height 24!,hidemode 3,gapleft 4");
+
         leftBar.add(filteredAdd, "height 24!,hidemode 3,gapleft 4");
         // leftBar.add(Box.createGlue());
         rightBar.add(confirmAll, "height 24!");

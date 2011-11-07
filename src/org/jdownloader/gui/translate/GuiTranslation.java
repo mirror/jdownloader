@@ -3151,4 +3151,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "This condition requires that the file is online." })
     String ConditionDialog_updateOnline_linkcheck_required();
 
+    @Default(lngs = { "en" }, values = { "Custom" })
+    String LinkGrabberSidebar_LinkGrabberSidebar_exceptionfilter();
+
 }

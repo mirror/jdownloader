@@ -35,6 +35,15 @@ public class LinkFilterController implements LinkCrawlerFilter {
     private ArrayList<LinkgrabberFilterRule>        filter;
     private LinkFilterSettings                      config;
     private ArrayList<LinkgrabberFilterRuleWrapper> denyFileFilter;
+
+    public ArrayList<LinkgrabberFilterRuleWrapper> getAcceptFileFilter() {
+        return acceptFileFilter;
+    }
+
+    public ArrayList<LinkgrabberFilterRuleWrapper> getAcceptUrlFilter() {
+        return acceptUrlFilter;
+    }
+
     private ArrayList<LinkgrabberFilterRuleWrapper> acceptFileFilter;
     private ArrayList<LinkgrabberFilterRuleWrapper> denyUrlFilter;
     private ArrayList<LinkgrabberFilterRuleWrapper> acceptUrlFilter;
@@ -86,7 +95,7 @@ public class LinkFilterController implements LinkCrawlerFilter {
         ArrayList<LinkgrabberFilterRuleWrapper> newacceptFileFilter = new ArrayList<LinkgrabberFilterRuleWrapper>();
 
         for (LinkgrabberFilterRule lgr : filter) {
-            if (lgr.isEnabled() && lgr.isValid()) {
+            if ((lgr.isEnabled() && lgr.isValid()) || (lgr.isAccept() && config.isExceptionAsQuickfilterEnabled() && lgr.isValid())) {
 
                 LinkgrabberFilterRuleWrapper compiled = lgr.compile();
                 if (lgr.isAccept()) {

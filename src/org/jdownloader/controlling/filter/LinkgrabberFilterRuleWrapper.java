@@ -159,4 +159,12 @@ public class LinkgrabberFilterRuleWrapper {
         if (getOnlineStatusFilter() != null) { return getOnlineStatusFilter().matches(link.getLinkState()); }
         return true;
     }
+
+    public String getName() {
+        return rule.getName();
+    }
+
+    public boolean isEnabled() {
+        return rule.isEnabled();
+    }
 }

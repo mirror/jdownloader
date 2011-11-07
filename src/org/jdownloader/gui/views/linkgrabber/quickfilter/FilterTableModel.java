@@ -93,8 +93,21 @@ public class FilterTableModel<E extends AbstractPackageNode<V, E>, V extends Abs
             }
 
             @Override
+            protected String getTooltipText(final Filter<E, V> obj) {
+
+                return obj.getDescription();
+            }
+
+            @Override
             public boolean isSortable(Filter<E, V> obj) {
+
                 return false;
+            }
+
+            @Override
+            public void configureRendererComponent(Filter<E, V> value, boolean isSelected, boolean hasFocus, int row, int column) {
+                super.configureRendererComponent(value, isSelected, hasFocus, row, column);
+                if (getLong(value) < 0) renderer.setText("");
             }
 
             @Override
@@ -116,6 +129,12 @@ public class FilterTableModel<E extends AbstractPackageNode<V, E>, V extends Abs
             }
 
             @Override
+            protected String getTooltipText(final Filter<E, V> obj) {
+
+                return obj.getDescription();
+            }
+
+            @Override
             public boolean isSortable(Filter<E, V> obj) {
                 return true;
             }
@@ -129,6 +148,12 @@ public class FilterTableModel<E extends AbstractPackageNode<V, E>, V extends Abs
             @Override
             public boolean isSortable(Filter<E, V> obj) {
                 return false;
+            }
+
+            @Override
+            protected String getTooltipText(final Filter<E, V> obj) {
+
+                return obj.getDescription();
             }
 
             @Override

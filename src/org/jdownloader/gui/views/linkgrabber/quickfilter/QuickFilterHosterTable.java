@@ -172,7 +172,7 @@ public class QuickFilterHosterTable extends FilterTable<CrawledPackage, CrawledL
             filters = newfilters;
 
         }
-        header.setFilterCount(filters.size());
+        header.setFilterCount(newTableData.size());
         if (LinkFilterSettings.LG_QUICKFILTER_HOSTER_VISIBLE.getValue()) QuickFilterHosterTable.this.getExtTableModel()._fireTableStructureChanged(newTableData, true);
     }
 

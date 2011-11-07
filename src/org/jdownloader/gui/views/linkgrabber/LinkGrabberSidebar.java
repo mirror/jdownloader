@@ -12,6 +12,7 @@ import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.jdownloader.controlling.filter.LinkFilterSettings;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.gui.views.linkgrabber.quickfilter.QuickFilterExceptionsTable;
 import org.jdownloader.gui.views.linkgrabber.quickfilter.QuickFilterHosterTable;
 import org.jdownloader.gui.views.linkgrabber.quickfilter.QuickFilterTypeTable;
 
@@ -20,16 +21,18 @@ public class LinkGrabberSidebar extends MigPanel {
     /**
      * 
      */
-    private static final long      serialVersionUID = 4006309139115917564L;
-    private MigPanel               quicksettings;
-    private QuickFilterHosterTable hosterFilterTable;
-    private QuickFilterTypeTable   filetypeFilterTable;
-    private Header                 hosterFilter;
-    private Header                 filetypeFilter;
-    private Header                 quickSettingsHeader;
+    private static final long          serialVersionUID = 4006309139115917564L;
+    private MigPanel                   quicksettings;
+    private QuickFilterHosterTable     hosterFilterTable;
+    private QuickFilterTypeTable       filetypeFilterTable;
+    private Header                     hosterFilter;
+    private Header                     filetypeFilter;
+    private Header                     quickSettingsHeader;
+    private Header                     exceptions;
+    private QuickFilterExceptionsTable exceptionsFilterTable;
 
     public LinkGrabberSidebar(LinkGrabberTable table) {
-        super("ins 0,wrap 1", "[grow,fill]", "[][][][][grow,fill][]");
+        super("ins 0,wrap 1", "[grow,fill]", "0[]0[]0[]0[]0[]0[]0[grow,fill][]");
         int c = LookAndFeelController.getInstance().getLAFOptions().getPanelBackgroundColor();
 
         if (c >= 0) {
@@ -38,10 +41,13 @@ public class LinkGrabberSidebar extends MigPanel {
         }
         // header
         hosterFilter = new Header(LinkFilterSettings.LG_QUICKFILTER_HOSTER_VISIBLE, _GUI._.LinkGrabberSidebar_LinkGrabberSidebar_hosterfilter());
+        exceptions = new Header(LinkFilterSettings.LG_QUICKFILTER_EXCEPTIONS_VISIBLE, _GUI._.LinkGrabberSidebar_LinkGrabberSidebar_exceptionfilter());
         filetypeFilter = new Header(LinkFilterSettings.LG_QUICKFILTER_TYPE_VISIBLE, _GUI._.LinkGrabberSidebar_LinkGrabberSidebar_extensionfilter());
         quickSettingsHeader = new Header(LinkFilterSettings.LG_QUICKSETTINGS_VISIBLE, _GUI._.LinkGrabberSidebar_LinkGrabberSidebar_settings());
 
         //
+        exceptionsFilterTable = new QuickFilterExceptionsTable(exceptions, table);
+        exceptionsFilterTable.setVisible(LinkFilterSettings.LG_QUICKFILTER_EXCEPTIONS_VISIBLE.getValue());
         hosterFilterTable = new QuickFilterHosterTable(hosterFilter, table);
         hosterFilterTable.setVisible(LinkFilterSettings.LG_QUICKFILTER_HOSTER_VISIBLE.getValue());
         filetypeFilterTable = new QuickFilterTypeTable(filetypeFilter, table);
@@ -67,10 +73,13 @@ public class LinkGrabberSidebar extends MigPanel {
             public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
             }
         });
-        add(hosterFilter, "gaptop 7");
+        add(hosterFilter, "gaptop 7,hidemode 2");
         add(hosterFilterTable, "hidemode 2");
-        add(filetypeFilter, "gaptop 7");
+        add(filetypeFilter, "gaptop 7,hidemode 2");
         add(filetypeFilterTable, "hidemode 2");
+
+        add(exceptions, "gaptop 7,hidemode 2");
+        add(exceptionsFilterTable, "hidemode 2");
         add(Box.createGlue());
         add(quickSettingsHeader, "gaptop 7");
         add(quicksettings, "hidemode 2");
