@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.PluginWrapper;
+import jd.config.Property;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
@@ -31,6 +32,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
+import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
@@ -70,9 +72,11 @@ public class ShareRapidCz extends PluginForHost {
             return ai;
         }
         long realTraffic = 0l;
-        // Trafficleft actually only caused problems because in the night you
-        // got no limit when downloading from this host so i guess it's the best
-        // not to show any traffic-information
+        /**
+         * Trafficleft actually only caused problems because in the night you
+         * got no limit when downloading from this host so i guess it's the best
+         * not to show any traffic-information
+         */
         String trafficleft = br.getMatch("Kredit:</td><td>(.*?)<a");
         if (trafficleft != null) {
             logger.info("Free traffic equals: " + trafficleft);
@@ -84,9 +88,12 @@ public class ShareRapidCz extends PluginForHost {
         final String expires = br.getMatch("Neomezený tarif vyprší</td><td><strong>([0-9]{1,2}.[0-9]{1,2}.[0-9]{2,4} - [0-9]{1,2}:[0-9]{1,2})</strong>");
         if (expires != null) ai.setValidUntil(TimeFormatter.getMilliSeconds(expires, "dd.MM.yy - HH:mm", null));
         if (realTraffic > 0l) {
-            // Max simultan downloads (higher than 1) only works if you got any
-            // traffic
+            /**
+             * Max simultan downloads (higher than 1) only works if you got any
+             */
             ai.setStatus("Premium User" + trafficleft);
+            /** Remove property in case account was a free acount but changes to */
+            account.setProperty("freeaccount", Property.NULL);
             final String maxSimultanDownloads = br.getRegex("<td>Max\\. počet paralelních stahování: </td><td>(\\d+) <a href").getMatch(0);
             if (maxSimultanDownloads != null) {
                 try {
@@ -176,7 +183,11 @@ public class ShareRapidCz extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
-            if (br.containsHTML("(was not found on this server|No htmlCode read)")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000); }
+            if (br.containsHTML("(was not found on this server|No htmlCode read)")) {
+                /** Show other errormessage if free account was used */
+                if (account.getStringProperty("freeaccount") != null) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.sharerapidcz.maybenofreedownloadpossible", "Error: Maybe this file cannot be downloaded as a freeuser: Buy traffic or try again later"), 60 * 60 * 1000);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
