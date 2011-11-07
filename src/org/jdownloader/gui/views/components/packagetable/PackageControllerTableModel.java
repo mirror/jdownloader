@@ -3,6 +3,7 @@ package org.jdownloader.gui.views.components.packagetable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.List;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
@@ -263,6 +264,28 @@ public abstract class PackageControllerTableModel<E extends AbstractPackageNode<
 
     protected boolean isSortStateSaverEnabled() {
         return false;
+    }
+
+    public List<V> getAllChildrenNodes() {
+        ArrayList<AbstractNode> data = this.tableData;
+        ArrayList<V> ret = new ArrayList<V>(data.size());
+        for (AbstractNode node : data) {
+            if (node instanceof AbstractPackageChildrenNode) {
+                ret.add((V) node);
+            }
+        }
+        return ret;
+    }
+
+    public List<E> getAllPackageNodes() {
+        ArrayList<AbstractNode> data = this.tableData;
+        ArrayList<E> ret = new ArrayList<E>(data.size());
+        for (AbstractNode node : data) {
+            if (node instanceof AbstractPackageNode) {
+                ret.add((E) node);
+            }
+        }
+        return ret;
     }
 
     @Override
