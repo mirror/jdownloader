@@ -178,8 +178,6 @@ public class QuickFilterTypeTable extends FilterTable<CrawledPackage, CrawledLin
             enabled = false;
             /* filter disabled, remove listener */
             old = -1;
-            // table2Filter.getPackageControllerTableModel().removeFilter(this);
-            // LinkCollector.getInstance().removeListener(this);
             setVisible(false);
             table2Filter.getPackageControllerTableModel().removeFilter(this);
         }

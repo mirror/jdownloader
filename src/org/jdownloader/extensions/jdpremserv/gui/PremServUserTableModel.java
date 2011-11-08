@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Map.Entry;
 
-
 import org.appwork.swing.exttable.ExtTableModel;
 import org.appwork.swing.exttable.columns.ExtCheckColumn;
 import org.appwork.swing.exttable.columns.ExtTextColumn;
@@ -54,15 +53,7 @@ public class PremServUserTableModel extends ExtTableModel<PremServUser> {
     protected void fillData(final ArrayList<PremServUser> transferables) {
 
         final ArrayList<PremServUser> tmp = new ArrayList<PremServUser>(transferables);
-
-        final ArrayList<PremServUser> selection = PremServUserTableModel.this.getSelectedObjects();
-        tableData = tmp;
-        refreshSort();
-
-        fireTableStructureChanged();
-
-        setSelectedObjects(selection);
-
+        this._fireTableStructureChanged(tmp, true);
     }
 
     @Override

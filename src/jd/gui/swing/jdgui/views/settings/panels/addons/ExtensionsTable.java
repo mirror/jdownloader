@@ -61,7 +61,7 @@ public class ExtensionsTable extends BasicJDTable<LazyExtension> implements Sett
                     return o1.getName().compareTo(o2.getName());
                 }
             });
-            tableData = new ArrayList<LazyExtension>(pluginsOptional);
+            setTableData(pluginsOptional);
         }
 
         @Override

@@ -392,7 +392,7 @@ public class PremiumAccountTableModel extends ExtTableModel<Account> implements 
 
     protected void _refill() {
         if (accountManagerSettings.isShown()) {
-            final ArrayList<Account> newtableData = new ArrayList<Account>(tableData.size());
+            final ArrayList<Account> newtableData = new ArrayList<Account>(this.getRowCount());
             for (LazyHostPlugin plugin : HostPluginController.getInstance().list()) {
                 ArrayList<Account> accs = AccountController.getInstance().getAllAccounts(plugin.getDisplayName());
                 for (Account acc : accs) {
@@ -400,24 +400,8 @@ public class PremiumAccountTableModel extends ExtTableModel<Account> implements 
                     acc.setHoster(plugin.getDisplayName());
                 }
             }
-            PremiumAccountTableModel.this.refreshSort(newtableData);
-            _fireTableStructureChanged(newtableData);
+            _fireTableStructureChanged(newtableData, true);
         }
     }
 
-    private void _fireTableStructureChanged(final ArrayList<Account> newtableData) {
-        new EDTRunner() {
-            @Override
-            protected void runInEDT() {
-                final ArrayList<Account> selected = PremiumAccountTableModel.this.getSelectedObjects();
-                int anchor = PremiumAccountTableModel.this.getTable().getSelectionModel().getAnchorSelectionIndex();
-                int lead = PremiumAccountTableModel.this.getTable().getSelectionModel().getLeadSelectionIndex();
-                tableData = newtableData;
-                PremiumAccountTableModel.this.fireTableStructureChanged();
-                PremiumAccountTableModel.this.setSelectedObjects(selected);
-                PremiumAccountTableModel.this.getTable().getSelectionModel().setAnchorSelectionIndex(anchor);
-                PremiumAccountTableModel.this.getTable().getSelectionModel().setLeadSelectionIndex(lead);
-            }
-        };
-    }
 }

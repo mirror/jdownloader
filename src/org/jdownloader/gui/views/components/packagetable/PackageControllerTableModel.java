@@ -64,8 +64,7 @@ public abstract class PackageControllerTableModel<E extends AbstractPackageNode<
         asyncRecreate = new DelayedRunnable(queue, 50l, 1000l) {
             @Override
             public void delayedrun() {
-                final ArrayList<AbstractNode> newtableData = refreshSort(tableData);
-                _fireTableStructureChanged(newtableData, false);
+                _fireTableStructureChanged(getTableData(), true);
             }
         };
     }
@@ -268,7 +267,7 @@ public abstract class PackageControllerTableModel<E extends AbstractPackageNode<
     }
 
     public List<V> getAllChildrenNodes() {
-        ArrayList<AbstractNode> data = this.tableData;
+        ArrayList<AbstractNode> data = this.getTableData();
         HashSet<V> ret = new HashSet<V>(data.size());
         for (AbstractNode node : data) {
             if (node instanceof AbstractPackageNode) {
@@ -288,7 +287,7 @@ public abstract class PackageControllerTableModel<E extends AbstractPackageNode<
     }
 
     public List<E> getAllPackageNodes() {
-        ArrayList<AbstractNode> data = this.tableData;
+        ArrayList<AbstractNode> data = this.getTableData();
         ArrayList<E> ret = new ArrayList<E>(data.size());
         for (AbstractNode node : data) {
             if (node instanceof AbstractPackageNode) {
