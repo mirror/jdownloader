@@ -52,7 +52,7 @@ public class ContextMenuFactory {
         m = new JMenu(_GUI._.ContextMenuFactory_createPopup_downloaddir());
         m.setIcon(NewTheme.I().getIcon("saveto", 20));
         m.add(new OpenDownloadFolderAction(contextObject).toContextMenuAction());
-        m.add(new SetDownloadFolderAction(getPackages(selection)).toContextMenuAction());
+        m.add(new SetDownloadFolderAction(contextObject, getPackages(selection)).toContextMenuAction());
         p.add(m);
         p.add(new EnabledAction(selection).toContextMenuAction());
 

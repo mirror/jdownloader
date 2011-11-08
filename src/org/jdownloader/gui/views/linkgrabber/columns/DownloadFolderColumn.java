@@ -4,6 +4,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.FocusEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.io.File;
 
 import javax.swing.JTextField;
 
@@ -14,16 +15,11 @@ import net.miginfocom.swing.MigLayout;
 import org.appwork.swing.action.BasicAction;
 import org.appwork.swing.components.ExtButton;
 import org.appwork.swing.exttable.columns.ExtTextColumn;
-import org.appwork.utils.Application;
 import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.swing.dialog.Dialog;
-import org.appwork.utils.swing.dialog.Dialog.FileChooserSelectionMode;
-import org.appwork.utils.swing.dialog.Dialog.FileChooserType;
-import org.appwork.utils.swing.dialog.DialogCanceledException;
-import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.gui.views.linkgrabber.contextmenu.OpenDownloadFolderAction;
+import org.jdownloader.gui.views.linkgrabber.contextmenu.SetDownloadFolderAction;
 import org.jdownloader.images.NewTheme;
-import org.jdownloader.settings.GeneralSettings;
 
 public class DownloadFolderColumn extends ExtTextColumn<AbstractNode> {
     /**
@@ -31,11 +27,11 @@ public class DownloadFolderColumn extends ExtTextColumn<AbstractNode> {
      */
     private static final long serialVersionUID = 1L;
     private AbstractNode      editing;
+    private ExtButton         open;
 
     public DownloadFolderColumn() {
         super(_GUI._.LinkGrabberTableModel_initColumns_folder());
         setClickcount(2);
-        // setFolder
 
         editorField.addMouseListener(new MouseAdapter() {
 
@@ -43,21 +39,20 @@ public class DownloadFolderColumn extends ExtTextColumn<AbstractNode> {
             public void mouseClicked(MouseEvent e) {
                 if (e.getClickCount() >= 2) {
                     editorField.selectAll();
-                    try {
-                        Dialog.getInstance().showFileChooser("test", "Choose file", FileChooserSelectionMode.FILES_AND_DIRECTORIES, null, false, FileChooserType.OPEN_DIALOG, null);
-                    } catch (DialogCanceledException e1) {
-                        // TODO Auto-generated catch block
-                        e1.printStackTrace();
-                    } catch (DialogClosedException e1) {
-                        // TODO Auto-generated catch block
-                        e1.printStackTrace();
-                    }
+                    noset = true;
+                    new SetDownloadFolderAction(editing).actionPerformed(null);
+                    DownloadFolderColumn.this.stopCellEditing();
                 }
             }
         });
 
         editorField.setBorder(new JTextField().getBorder());
         ExtButton bt = new ExtButton(new BasicAction() {
+            /**
+             * 
+             */
+            private static final long serialVersionUID = 5187588042473800725L;
+
             {
                 setSmallIcon(NewTheme.I().getIcon("edit", 16));
                 setTooltipText(_GUI._.DownloadFolderColiumn_edit_tt_());
@@ -65,25 +60,26 @@ public class DownloadFolderColumn extends ExtTextColumn<AbstractNode> {
 
             public void actionPerformed(ActionEvent e) {
                 editorField.selectAll();
-                try {
-                    Dialog.getInstance().showFileChooser("test", "Choose file", FileChooserSelectionMode.FILES_AND_DIRECTORIES, null, false, FileChooserType.OPEN_DIALOG, null);
-                } catch (DialogCanceledException e1) {
-                    // TODO Auto-generated catch block
-                    e1.printStackTrace();
-                } catch (DialogClosedException e1) {
-                    // TODO Auto-generated catch block
-                    e1.printStackTrace();
-                }
+                noset = true;
+                new SetDownloadFolderAction(editing).actionPerformed(e);
+                DownloadFolderColumn.this.stopCellEditing();
             }
         });
-        ExtButton open = new ExtButton(new BasicAction() {
+        open = new ExtButton(new BasicAction() {
+            /**
+             * 
+             */
+            private static final long serialVersionUID = -2832597849544070872L;
+
             {
                 setSmallIcon(NewTheme.I().getIcon("load", 16));
                 setTooltipText(_GUI._.DownloadFolderColiumn_open_tt_());
             }
 
             public void actionPerformed(ActionEvent e) {
-                CrossSystem.openFile(Application.getResource(""));
+                noset = true;
+                new OpenDownloadFolderAction(editing).actionPerformed(e);
+                DownloadFolderColumn.this.stopCellEditing();
             }
         });
         // bt.setRolloverEffectEnabled(true);
@@ -99,6 +95,13 @@ public class DownloadFolderColumn extends ExtTextColumn<AbstractNode> {
     public void configureEditorComponent(AbstractNode value, boolean isSelected, int row, int column) {
         super.configureEditorComponent(value, isSelected, row, column);
         this.editing = value;
+        noset = false;
+        boolean enabled = false;
+        if (CrossSystem.isOpenFileSupported() && value != null && value instanceof CrawledPackage) {
+            File file = new File(((CrawledPackage) value).getDownloadFolder());
+            if (file.exists() && file.isDirectory()) enabled = true;
+        }
+        open.setEnabled(enabled);
     }
 
     @Override
@@ -108,7 +111,6 @@ public class DownloadFolderColumn extends ExtTextColumn<AbstractNode> {
 
     @Override
     public boolean isEditable(AbstractNode obj) {
-
         return obj instanceof CrawledPackage;
     }
 
@@ -129,13 +131,16 @@ public class DownloadFolderColumn extends ExtTextColumn<AbstractNode> {
 
     @Override
     protected void setStringValue(String value, AbstractNode object) {
-        // set Folder
+        if (object instanceof CrawledPackage && value != null) {
+            File file = new File(value);
+            if (SetDownloadFolderAction.isDownloadFolderValid(file)) ((CrawledPackage) object).setDownloadFolder(value);
+        }
     }
 
     @Override
     public String getStringValue(AbstractNode value) {
         if (value instanceof CrawledPackage) {
-            return GeneralSettings.DOWNLOAD_FOLDER.getValue();
+            return ((CrawledPackage) value).getDownloadFolder();
         } else {
             return null;
         }

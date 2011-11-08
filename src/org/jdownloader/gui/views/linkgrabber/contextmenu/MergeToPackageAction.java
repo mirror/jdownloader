@@ -19,6 +19,10 @@ import org.jdownloader.gui.translate._GUI;
 
 public class MergeToPackageAction extends AppAction {
 
+    /**
+     * 
+     */
+    private static final long       serialVersionUID = -4468197802870765463L;
     private ArrayList<AbstractNode> selection;
 
     public MergeToPackageAction(ArrayList<AbstractNode> selection) {

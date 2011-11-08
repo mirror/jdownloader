@@ -17,9 +17,13 @@ import org.jdownloader.gui.views.components.packagetable.PackageControllerTableM
 
 public class SortAction extends AppAction {
 
+    /**
+     * 
+     */
+    private static final long       serialVersionUID = -3883739313644803093L;
     private ExtColumn<AbstractNode> column;
-    private ArrayList<AbstractNode> selection = null;
-    private static String           sortOrder = null;
+    private ArrayList<AbstractNode> selection        = null;
+    private static String           sortOrder        = null;
 
     public SortAction(ArrayList<AbstractNode> selection, ExtColumn<AbstractNode> column) {
         setIconKey("sort");

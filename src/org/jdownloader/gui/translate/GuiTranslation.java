@@ -2224,6 +2224,9 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Do you really want to remove all selected links from Linkgrabber?" })
     String ClearAction_actionPerformed_selected_msg();
 
+    @Default(lngs = { "en" }, values = { "Do you really want to remove all not-selected links from Linkgrabber?" })
+    String ClearAction_actionPerformed_notselected_msg();
+
     @Default(lngs = { "en" }, values = { "Yes" })
     String literally_yes();
 

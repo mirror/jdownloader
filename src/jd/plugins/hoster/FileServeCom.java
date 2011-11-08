@@ -37,12 +37,12 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -382,6 +382,8 @@ public class FileServeCom extends PluginForHost {
             br.getHeaders().put("Authorization", "Basic " + Encoding.Base64Encode(username + ":" + password));
             br.getPage(link.getDownloadURL());
             dllink = br.getRedirectLocation();
+        }
+        if (dllink == null) {
             logger.warning("API couldn't find downloadlink, trying web-login and web-download.");
             loginSite(account, false);
             br.getPage(link.getDownloadURL());

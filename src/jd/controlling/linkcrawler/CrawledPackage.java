@@ -6,6 +6,9 @@ import java.util.List;
 import jd.controlling.packagecontroller.AbstractPackageNode;
 import jd.controlling.packagecontroller.PackageController;
 
+import org.appwork.storage.config.JsonConfig;
+import org.jdownloader.settings.GeneralSettings;
+
 public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledPackage> {
 
     private ArrayList<CrawledLink>                         children         = new ArrayList<CrawledLink>();
@@ -14,6 +17,15 @@ public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledP
     private String                                         autoPackageName  = null;
     private boolean                                        allowAutoPackage = true;
     private transient CrawledPackageInfo                   fpInfo           = null;
+    private String                                         downloadFolder   = JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder();
+
+    public String getDownloadFolder() {
+        return downloadFolder;
+    }
+
+    public void setDownloadFolder(String downloadFolder) {
+        if (downloadFolder != null) this.downloadFolder = downloadFolder;
+    }
 
     /**
      * @return the allowAutoPackage

@@ -114,6 +114,10 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         broadcaster.fireEvent(new LinkCollectorEvent(LinkCollector.this, LinkCollectorEvent.TYPE.REFRESH_STRUCTURE, priority));
     }
 
+    public void refreshData() {
+        broadcaster.fireEvent(new LinkCollectorEvent(LinkCollector.this, LinkCollectorEvent.TYPE.REFRESH_DATA));
+    }
+
     public LinkCrawler addCrawlerJob(final ArrayList<CrawledLink> links) {
         if (links == null || links.size() == 0) throw new IllegalArgumentException("no links");
         lazyInit();
