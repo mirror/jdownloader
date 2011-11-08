@@ -101,7 +101,6 @@ public class FileApeCom extends PluginForHost {
 
     private void login(Account account) throws Exception {
         this.setBrowserExclusive();
-        // br.getPage("http://fileape.com/?act=premium");
         br.postPage("http://fileape.com/?act=login&redir=premium", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
         if (br.getCookie(MAINPAGE, "usr_id") == null || br.getCookie(MAINPAGE, "usr_session_ident") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }

@@ -373,10 +373,15 @@ public class FileServeCom extends PluginForHost {
         if ("403".equalsIgnoreCase(code) || "605".equalsIgnoreCase(code)) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE); }
         if ("606".equalsIgnoreCase(code) || "607".equalsIgnoreCase(code) || "608".equalsIgnoreCase(code)) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         String dllink = null;
-        if ("302".equalsIgnoreCase(code)) {
-            dllink = br.getRegex("next\":\"(.*?)\"").getMatch(0);
-        }
+        if ("302".equalsIgnoreCase(code)) dllink = br.getRegex("next\":\"(.*?)\"").getMatch(0);
         if (dllink == null) {
+            /**
+             * This is another method to get the downloadlink. If this doesn't
+             * work, try via normal browser login
+             */
+            br.getHeaders().put("Authorization", "Basic " + Encoding.Base64Encode(username + ":" + password));
+            br.getPage(link.getDownloadURL());
+            dllink = br.getRedirectLocation();
             logger.warning("API couldn't find downloadlink, trying web-login and web-download.");
             loginSite(account, false);
             br.getPage(link.getDownloadURL());

@@ -50,6 +50,7 @@ public class WallBaseCc extends PluginForDecrypt {
         if (filename != null) {
             String ext = finallink.substring(finallink.lastIndexOf("."));
             if (ext == null || ext.length() > 5) ext = ".jpg";
+            /** We have to add the ID because many filenames are the same */
             dl.setFinalFileName(new Regex(parameter, "(\\d+)$").getMatch(0) + "_" + Encoding.htmlDecode(filename) + ext);
         }
         decryptedLinks.add(dl);

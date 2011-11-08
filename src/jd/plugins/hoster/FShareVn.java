@@ -22,7 +22,6 @@ import java.util.Locale;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.PluginWrapper;
-import jd.http.RandomUserAgent;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
 import jd.plugins.Account;
@@ -64,14 +63,21 @@ public class FShareVn extends PluginForHost {
         this.setBrowserExclusive();
         // Sometime the page is extremely slow!
         br.setReadTimeout(120 * 1000);
-        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
+        // br.getHeaders().put("User-Agent", RandomUserAgent.generate());
+        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:7.0.1) Gecko/20100101 Firefox/7.0.1");
+        br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
+        br.getHeaders().put("Accept-Language", "de-de,de;q=0.8,en-us;q=0.5,en;q=0.3");
+        br.getHeaders().put("Accept-Charset", "ISO-8859-1,utf-8;q=0.7,*;q=0.7");
+        br.getHeaders().put("Accept-Encoding", "gzip, deflate");
         br.setCustomCharset("UTF-8");
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("(<title>Fshare \\– Dịch vụ chia sẻ số 1 Việt Nam \\– Cần là có \\- </title>|b>Liên kết bạn chọn không tồn tại trên hệ thống Fshare</|<li>Liên kết không chính xác, hãy kiểm tra lại|<li>Liên kết bị xóa bởi người sở hữu\\.<)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = Encoding.htmlDecode(br.getRegex("<b>Tên file: <span class=\"color_red\">(.*?)</span></b>").getMatch(0));
-        String filesize = br.getRegex("<p><b>Dung lượng: </b><span>(.*?)</span>").getMatch(0);
+        String filename = br.getRegex("<p><b>Tên file:</b> (.*?)</p>").getMatch(0);
+        if (filename == null) filename = br.getRegex("<title>(.*?) \\- Fshare \\- Dịch vụ chia sẻ, lưu trữ dữ liệu miễn phí tốt nhất </title>").getMatch(0);
+        String filesize = br.getRegex("<b>Dung lượng file:</b> (.*?)</p>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        link.setName(filename);
+        // Server sometimes sends bad filenames
+        link.setFinalFileName(Encoding.htmlDecode(filename));
         link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
     }
@@ -81,6 +87,9 @@ public class FShareVn extends PluginForHost {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(true);
         br.setDebug(true);
+        final String fid = br.getRegex("name=\"file_id\" value=\"(\\d+)\"").getMatch(0);
+        if (fid == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        br.postPage(downloadLink.getDownloadURL(), "link_file_pwd_dl=&action=download_file&file_id=" + fid);
         if (br.containsHTML("Vui lòng chờ lượt download kế tiếp")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l); }
         if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
             PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
@@ -91,24 +100,17 @@ public class FShareVn extends PluginForHost {
             String c = getCaptchaCode(cf, downloadLink);
             rc.setCode(c);
             if (br.containsHTML("frm_download")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-        } else {
-            Form dlForm = br.getForm(0);
-            if (dlForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            br.submitForm(dlForm);
         }
-        String downloadURL = br.getRegex("\\'(http://\\d+\\.\\d+\\.\\d+\\.\\d+/downloads/file/[a-z0-9]+/.*?)\\'").getMatch(0);
+        String downloadURL = br.getRegex("window\\.location=\\'(.*?)\\'").getMatch(0);
         if (downloadURL == null) {
-            downloadURL = br.getRegex("window\\.location=\\'(.*?)\\'").getMatch(0);
+            downloadURL = br.getRegex("value=\"Download\" name=\"btn_download\" value=\"Download\"  onclick=\"window\\.location=\\'(http://.*?)\\'\"").getMatch(0);
             if (downloadURL == null) {
-                downloadURL = br.getRegex("value=\"Download\" name=\"btn_download\" value=\"Download\"  onclick=\"window\\.location=\\'(http://.*?)\\'\"").getMatch(0);
-                if (downloadURL == null) {
-                    downloadURL = br.getRegex("\\'(http://download\\d+\\.fshare\\.vn/download/[A-Za-z0-9]+/.*?)\\'").getMatch(0);
-                }
+                downloadURL = br.getRegex("\\'(http://download\\d+\\.fshare\\.vn/download/[A-Za-z0-9]+/.*?)\\'").getMatch(0);
             }
         }
         // Waittime
         String wait = br.getRegex("var count = (\\d+);").getMatch(0);
-        if (wait == null || downloadURL == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (wait == null || downloadURL == null || !downloadURL.contains("fshare.vn")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         sleep(Long.parseLong(wait) * 1001l, downloadLink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadURL, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {

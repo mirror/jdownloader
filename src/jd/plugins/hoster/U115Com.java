@@ -87,7 +87,7 @@ public class U115Com extends PluginForHost {
             br.getPage(br.getRedirectLocation());
         }
         if (br.containsHTML("(id=\"pickcode_error\">很抱歉，文件不存在。</div>|很抱歉，文件不存在。|>很抱歉，该文件提取码不存在。<|<title>115网盘\\|网盘\\|115,我的网盘\\|免费网络硬盘 \\- 爱分享，云生活</title>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<title>(.*?)下载\\|115网盘|网盘|115网络U盘-我的网盘|免费网络硬盘</title>").getMatch(0);
+        String filename = br.getRegex("<title>(.*?)网盘下载\\|115网盘|网盘|115网络U盘-我的网盘|免费网络硬盘</title>").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("id=\"Download\"></a><a id=\"Download(.*?)\"></a>").getMatch(0);
             if (filename == null) {
@@ -119,8 +119,10 @@ public class U115Com extends PluginForHost {
         requestFileInformation(link);
         if (br.getRedirectLocation() != null && br.getRedirectLocation().equals(UNDERMAINTENANCEURL)) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.U115Com.undermaintenance", UNDERMAINTENANCETEXT));
         if (br.containsHTML(NOFREESLOTS)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "No free slots available at the moment");
-        // I don't know what this text means (google couldn't help) so i handle
-        // it like that
+        /**
+         * I don't know what this text means (google couldn't help) so i handle
+         * it like that
+         */
         if (br.containsHTML(ACCOUNTNEEDED)) {
             logger.warning("Only downloadable via account: " + link.getDownloadURL());
             throw new PluginException(LinkStatus.ERROR_FATAL, ACCOUNTNEEDEDUSERTEXT);
