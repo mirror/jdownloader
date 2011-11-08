@@ -30,6 +30,7 @@ public class DownloadFolderColumn extends ExtTextColumn<AbstractNode> {
      * 
      */
     private static final long serialVersionUID = 1L;
+    private AbstractNode      editing;
 
     public DownloadFolderColumn() {
         super(_GUI._.LinkGrabberTableModel_initColumns_folder());
@@ -92,6 +93,12 @@ public class DownloadFolderColumn extends ExtTextColumn<AbstractNode> {
         editor.add(bt, "height 20!,width 20!");
         editor.add(open, "height 20!,width 20!");
 
+    }
+
+    @Override
+    public void configureEditorComponent(AbstractNode value, boolean isSelected, int row, int column) {
+        super.configureEditorComponent(value, isSelected, row, column);
+        this.editing = value;
     }
 
     @Override
