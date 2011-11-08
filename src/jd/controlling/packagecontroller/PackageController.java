@@ -208,6 +208,70 @@ public abstract class PackageController<E extends AbstractPackageNode<V, E>, V e
         }
     }
 
+    public void removeChildren(final List<V> removechildren) {
+        if (removechildren != null && removechildren.size() > 0) {
+            IOEQ.getQueue().add(new QueueAction<Void, RuntimeException>() {
+
+                @Override
+                protected Void run() throws RuntimeException {
+                    LinkedList<V> children = new LinkedList<V>(removechildren);
+                    /* build map for removal of children links */
+                    boolean childrenRemoved = false;
+                    HashMap<E, LinkedList<V>> removeaddMap = new HashMap<E, LinkedList<V>>();
+                    for (V child : children) {
+                        E parent = child.getParentNode();
+                        if (parent == null) {
+                            continue;
+                        }
+                        LinkedList<V> pmap = removeaddMap.get(parent);
+                        if (pmap == null) {
+                            childrenRemoved = true;
+                            pmap = new LinkedList<V>();
+                            removeaddMap.put(parent, pmap);
+                        }
+                        pmap.add(child);
+                    }
+                    Set<Entry<E, LinkedList<V>>> eset = removeaddMap.entrySet();
+                    Iterator<Entry<E, LinkedList<V>>> it = eset.iterator();
+                    while (it.hasNext()) {
+                        /* remove children from other packages */
+                        Entry<E, LinkedList<V>> next = it.next();
+                        E cpkg = next.getKey();
+                        PackageController<E, V> controller = cpkg.getControlledBy();
+                        if (controller == null) {
+                            Log.exception(new Throwable("NO CONTROLLER!!!"));
+                        } else {
+                            controller.removeChildren(cpkg, next.getValue(), true);
+                        }
+                    }
+                    structureChanged.incrementAndGet();
+                    if (childrenRemoved) childrenChanged.incrementAndGet();
+                    _controllerStructureChanged(this.getQueuePrio());
+                    return null;
+                }
+            });
+        }
+    }
+
+    public List<V> getChildrenByFilter(AbstractPackageChildrenNodeFilter<V> filter) {
+        ArrayList<V> ret = new ArrayList<V>();
+        boolean readL = readLock();
+        try {
+            for (E pkg : packages) {
+                synchronized (pkg) {
+                    for (V child : pkg.getChildren()) {
+                        if (filter.isChildrenNodeFiltered(child)) {
+                            ret.add(child);
+                        }
+                    }
+                }
+            }
+        } finally {
+            readUnlock(readL);
+        }
+        return ret;
+    }
+
     public void addmoveChildren(final E pkg, final List<V> movechildren, final int index) {
         if (pkg != null && movechildren != null && movechildren.size() > 0) {
             IOEQ.getQueue().add(new QueueAction<Void, RuntimeException>() {

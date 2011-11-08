@@ -3,19 +3,53 @@ package org.jdownloader.gui.views.linkgrabber.contextmenu;
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 
+import jd.controlling.IOEQ;
+import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.packagecontroller.AbstractNode;
 
+import org.appwork.utils.swing.dialog.Dialog;
+import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.gui.views.linkgrabber.LinkGrabberTable;
 
 public class RemoveSelectionAction extends AppAction {
 
-    public RemoveSelectionAction(ArrayList<AbstractNode> selection) {
+    /**
+     * 
+     */
+    private static final long       serialVersionUID = -3008851305036758872L;
+    private ArrayList<AbstractNode> selection;
+    private LinkGrabberTable        table;
+
+    public RemoveSelectionAction(LinkGrabberTable table, ArrayList<AbstractNode> selection) {
         setIconKey("remove");
         setName(_GUI._.RemoveSelectionAction_RemoveSelectionAction_object_());
+        this.selection = selection;
+        this.table = table;
     }
 
     public void actionPerformed(ActionEvent e) {
+        if (!isEnabled()) return;
+        try {
+            Dialog.getInstance().showConfirmDialog(0, _GUI._.ClearAction_actionPerformed_(), _GUI._.ClearAction_actionPerformed_selected_msg(), null, _GUI._.literally_yes(), _GUI._.literall_no());
+
+            IOEQ.add(new Runnable() {
+
+                public void run() {
+                    ArrayList<CrawledLink> remove = table.getAllSelectedChildren(selection);
+                    LinkCollector.getInstance().removeChildren(remove);
+                }
+
+            }, true);
+        } catch (DialogNoAnswerException e1) {
+        }
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return selection != null && selection.size() > 0;
     }
 
 }

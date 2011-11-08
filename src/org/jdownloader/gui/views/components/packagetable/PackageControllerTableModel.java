@@ -33,15 +33,15 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
         BOTTOM
     }
 
-    private static final String                                SORT_ORIGINAL = "ORIGINAL";
+    private static final String                                                     SORT_ORIGINAL = "ORIGINAL";
 
-    private DelayedRunnable                                    asyncRefresh;
+    private DelayedRunnable                                                         asyncRefresh;
     protected PackageController<PackageType, ChildrenType>                          pc;
-    private DelayedRunnable                                    asyncRecreate = null;
+    private DelayedRunnable                                                         asyncRecreate = null;
     private ArrayList<PackageControllerTableModelFilter<PackageType, ChildrenType>> tableFilters  = new ArrayList<PackageControllerTableModelFilter<PackageType, ChildrenType>>();
-    private Object                                             LOCK          = new Object();
+    private Object                                                                  LOCK          = new Object();
 
-    private ScheduledThreadPoolExecutor                        queue         = new ScheduledThreadPoolExecutor(1);
+    private ScheduledThreadPoolExecutor                                             queue         = new ScheduledThreadPoolExecutor(1);
 
     public PackageControllerTableModel(PackageController<PackageType, ChildrenType> pc, String id) {
         super(id);
@@ -284,7 +284,7 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
                                 }
                             }
                             if (filtered == false) {
-                                ret.add((ChildrenType) node);
+                                ret.add((ChildrenType) node2);
                             }
                         }
                     }

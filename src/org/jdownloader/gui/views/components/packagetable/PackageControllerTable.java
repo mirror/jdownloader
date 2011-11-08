@@ -27,9 +27,9 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
     /**
      * 
      */
-    private static final long                 serialVersionUID = 3880570615872972276L;
+    private static final long                                     serialVersionUID = 3880570615872972276L;
     private PackageControllerTableModel<ParentType, ChildrenType> tableModel       = null;
-    private Color                             sortNotifyColor;
+    private Color                                                 sortNotifyColor;
 
     public PackageControllerTable(PackageControllerTableModel<ParentType, ChildrenType> pctm) {
         super(pctm);
@@ -125,7 +125,7 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
     }
 
     @SuppressWarnings("unchecked")
-    protected ArrayList<ChildrenType> getAllSelectedChildren(ArrayList<AbstractNode> selectedObjects) {
+    public ArrayList<ChildrenType> getAllSelectedChildren(ArrayList<AbstractNode> selectedObjects) {
         final ArrayList<ChildrenType> links = new ArrayList<ChildrenType>();
         for (final AbstractNode node : selectedObjects) {
             if (node instanceof AbstractPackageChildrenNode<?>) {

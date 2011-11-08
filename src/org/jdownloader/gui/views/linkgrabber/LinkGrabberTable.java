@@ -86,17 +86,6 @@ public class LinkGrabberTable extends PackageControllerTable<CrawledPackage, Cra
         return true;
     }
 
-    public ArrayList<DownloadLink> getSelectedDownloadLinks() {
-        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        final ArrayList<AbstractNode> selected = this.getExtTableModel().getSelectedObjects();
-        for (final AbstractNode node : selected) {
-            if (node instanceof DownloadLink) {
-                ret.add((DownloadLink) node);
-            }
-        }
-        return ret;
-    }
-
     /**
      * Creates all contextmenu items, and a initial rating for it.
      * 
