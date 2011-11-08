@@ -21,7 +21,7 @@ import org.appwork.swing.exttable.ExtTableModel;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.swing.EDTRunner;
 
-public abstract class PackageControllerTableModel<E extends AbstractPackageNode<V, E>, V extends AbstractPackageChildrenNode<E>> extends ExtTableModel<AbstractNode> {
+public abstract class PackageControllerTableModel<PackageType extends AbstractPackageNode<ChildrenType, PackageType>, ChildrenType extends AbstractPackageChildrenNode<PackageType>> extends ExtTableModel<AbstractNode> {
     /**
      * 
      */
@@ -36,14 +36,14 @@ public abstract class PackageControllerTableModel<E extends AbstractPackageNode<
     private static final String                                SORT_ORIGINAL = "ORIGINAL";
 
     private DelayedRunnable                                    asyncRefresh;
-    protected PackageController<E, V>                          pc;
+    protected PackageController<PackageType, ChildrenType>                          pc;
     private DelayedRunnable                                    asyncRecreate = null;
-    private ArrayList<PackageControllerTableModelFilter<E, V>> tableFilters  = new ArrayList<PackageControllerTableModelFilter<E, V>>();
+    private ArrayList<PackageControllerTableModelFilter<PackageType, ChildrenType>> tableFilters  = new ArrayList<PackageControllerTableModelFilter<PackageType, ChildrenType>>();
     private Object                                             LOCK          = new Object();
 
     private ScheduledThreadPoolExecutor                        queue         = new ScheduledThreadPoolExecutor(1);
 
-    public PackageControllerTableModel(PackageController<E, V> pc, String id) {
+    public PackageControllerTableModel(PackageController<PackageType, ChildrenType> pc, String id) {
         super(id);
         resetSorting();
         queue.setKeepAliveTime(10000, TimeUnit.MILLISECONDS);
@@ -108,7 +108,7 @@ public abstract class PackageControllerTableModel<E extends AbstractPackageNode<
     }
 
     public void sortPackageChildren(final AbstractPackageNode pkg, Comparator<AbstractNode> comparator) {
-        pc.sortPackageChildren((E) pkg, (Comparator<V>) comparator);
+        pc.sortPackageChildren((PackageType) pkg, (Comparator<ChildrenType>) comparator);
     }
 
     public void toggleFilePackageExpand(final AbstractPackageNode fp2, final TOGGLEMODE mode) {
@@ -130,7 +130,7 @@ public abstract class PackageControllerTableModel<E extends AbstractPackageNode<
                 if (mode != TOGGLEMODE.CURRENT) {
                     final boolean readL = pc.readLock();
                     try {
-                        for (E fp : pc.getPackages()) {
+                        for (PackageType fp : pc.getPackages()) {
 
                             if (doToggle) {
                                 fp.setExpanded(cur);
@@ -153,19 +153,19 @@ public abstract class PackageControllerTableModel<E extends AbstractPackageNode<
 
     }
 
-    public void addFilter(PackageControllerTableModelFilter<E, V> filter) {
+    public void addFilter(PackageControllerTableModelFilter<PackageType, ChildrenType> filter) {
         synchronized (LOCK) {
             if (tableFilters.contains(filter)) return;
-            ArrayList<PackageControllerTableModelFilter<E, V>> newfilters = new ArrayList<PackageControllerTableModelFilter<E, V>>(tableFilters);
+            ArrayList<PackageControllerTableModelFilter<PackageType, ChildrenType>> newfilters = new ArrayList<PackageControllerTableModelFilter<PackageType, ChildrenType>>(tableFilters);
             newfilters.add(filter);
             tableFilters = newfilters;
         }
     }
 
-    public void removeFilter(PackageControllerTableModelFilter<E, V> filter) {
+    public void removeFilter(PackageControllerTableModelFilter<PackageType, ChildrenType> filter) {
         synchronized (LOCK) {
             if (!tableFilters.contains(filter)) return;
-            ArrayList<PackageControllerTableModelFilter<E, V>> newfilters = new ArrayList<PackageControllerTableModelFilter<E, V>>(tableFilters);
+            ArrayList<PackageControllerTableModelFilter<PackageType, ChildrenType>> newfilters = new ArrayList<PackageControllerTableModelFilter<PackageType, ChildrenType>>(tableFilters);
             newfilters.remove(filter);
             tableFilters = newfilters;
         }
@@ -207,12 +207,12 @@ public abstract class PackageControllerTableModel<E extends AbstractPackageNode<
         } finally {
             pc.readUnlock(readL);
         }
-        ArrayList<PackageControllerTableModelFilter<E, V>> filters = this.tableFilters;
+        ArrayList<PackageControllerTableModelFilter<PackageType, ChildrenType>> filters = this.tableFilters;
         /* filter packages */
         for (int index = packages.size() - 1; index >= 0; index--) {
             AbstractNode pkg = packages.get(index);
-            for (PackageControllerTableModelFilter<E, V> filter : filters) {
-                if (filter.isFiltered((E) pkg)) {
+            for (PackageControllerTableModelFilter<PackageType, ChildrenType> filter : filters) {
+                if (filter.isFiltered((PackageType) pkg)) {
                     /* remove package because it is filtered */
                     packages.remove(index);
                     break;
@@ -225,20 +225,20 @@ public abstract class PackageControllerTableModel<E extends AbstractPackageNode<
         for (AbstractNode node : packages) {
             ArrayList<AbstractNode> files = null;
             synchronized (node) {
-                files = new ArrayList<AbstractNode>(((E) node).getChildren());
+                files = new ArrayList<AbstractNode>(((PackageType) node).getChildren());
             }
             /* filter children of this package */
             for (int index = files.size() - 1; index >= 0; index--) {
                 AbstractNode child = files.get(index);
-                for (PackageControllerTableModelFilter<E, V> filter : filters) {
-                    if (filter.isFiltered((V) child)) {
+                for (PackageControllerTableModelFilter<PackageType, ChildrenType> filter : filters) {
+                    if (filter.isFiltered((ChildrenType) child)) {
                         /* remove child because it is filtered */
                         files.remove(index);
                         break;
                     }
                 }
             }
-            boolean expanded = ((E) node).isExpanded();
+            boolean expanded = ((PackageType) node).isExpanded();
             if (column != null && expanded) {
                 /* we only have to sort children if the package is expanded */
                 Collections.sort(files, column.getRowSorter());
@@ -266,10 +266,10 @@ public abstract class PackageControllerTableModel<E extends AbstractPackageNode<
         return false;
     }
 
-    public List<V> getAllChildrenNodes() {
+    public List<ChildrenType> getAllChildrenNodes() {
         ArrayList<AbstractNode> data = this.getTableData();
-        ArrayList<PackageControllerTableModelFilter<E, V>> filters = this.tableFilters;
-        HashSet<V> ret = new HashSet<V>(data.size());
+        ArrayList<PackageControllerTableModelFilter<PackageType, ChildrenType>> filters = this.tableFilters;
+        HashSet<ChildrenType> ret = new HashSet<ChildrenType>(data.size());
         for (AbstractNode node : data) {
             if (node instanceof AbstractPackageNode) {
                 AbstractPackageNode pkg = (AbstractPackageNode) node;
@@ -277,31 +277,31 @@ public abstract class PackageControllerTableModel<E extends AbstractPackageNode<
                     for (Object node2 : pkg.getChildren()) {
                         if (node2 instanceof AbstractPackageChildrenNode) {
                             boolean filtered = false;
-                            for (PackageControllerTableModelFilter<E, V> filter : filters) {
-                                if (filter.isFiltered((V) node2)) {
+                            for (PackageControllerTableModelFilter<PackageType, ChildrenType> filter : filters) {
+                                if (filter.isFiltered((ChildrenType) node2)) {
                                     filtered = true;
                                     break;
                                 }
                             }
                             if (filtered == false) {
-                                ret.add((V) node);
+                                ret.add((ChildrenType) node);
                             }
                         }
                     }
                 }
             } else if (node instanceof AbstractPackageChildrenNode) {
-                ret.add((V) node);
+                ret.add((ChildrenType) node);
             }
         }
-        return new ArrayList<V>(ret);
+        return new ArrayList<ChildrenType>(ret);
     }
 
-    public List<E> getAllPackageNodes() {
+    public List<PackageType> getAllPackageNodes() {
         ArrayList<AbstractNode> data = this.getTableData();
-        ArrayList<E> ret = new ArrayList<E>(data.size());
+        ArrayList<PackageType> ret = new ArrayList<PackageType>(data.size());
         for (AbstractNode node : data) {
             if (node instanceof AbstractPackageNode) {
-                ret.add((E) node);
+                ret.add((PackageType) node);
             }
         }
         return ret;
