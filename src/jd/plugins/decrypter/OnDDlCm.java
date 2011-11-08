@@ -45,6 +45,7 @@ public class OnDDlCm extends PluginForDecrypt {
         br.getPage(parameter);
         String content = br.getRegex(Pattern.compile("<div id=\"main\">(.*?)<!-- related posts START -->", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
         if (content == null) content = br.getRegex(Pattern.compile("<div class=\"postarea\">(.*?)<!-- You can start editing here\\. -->", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
+        if (content == null) content = br.getRegex(Pattern.compile("<div class=\"entry-content\">(.*?)<!-- \\.entry-content -->", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
         if (content == null) return null;
         passwords = HTMLParser.findPasswords(content);
         String[] links = new Regex(content, "<a href=\"(http://.*?)\"", Pattern.CASE_INSENSITIVE).getColumn(0);
