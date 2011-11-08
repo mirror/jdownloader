@@ -106,7 +106,7 @@ public class LinkgrabberFilter extends JPanel implements SettingsComponent {
                 btExport.setEnabled(filterTable.getRowCount() > 0);
             }
         });
-
+        exceptionsTable.getSelectionModel().addListSelectionListener(new MinimumSelectionObserver(exceptionsTable, btRemove.getAction(), 1));
         filterTable.getSelectionModel().addListSelectionListener(new MinimumSelectionObserver(filterTable, btRemove.getAction(), 1));
         setView(filterTable);
     }

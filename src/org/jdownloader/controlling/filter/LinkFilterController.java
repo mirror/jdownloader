@@ -13,14 +13,9 @@ import org.appwork.shutdown.ShutdownEvent;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.event.predefined.changeevent.ChangeEvent;
 import org.appwork.utils.event.predefined.changeevent.ChangeEventSender;
-import org.jdownloader.translate._JDT;
 
 public class LinkFilterController implements LinkCrawlerFilter {
-    private static final LinkFilterController INSTANCE          = new LinkFilterController();
-    public static final LinkgrabberFilterRule VIRTUAL_DENY_RULE = new LinkgrabberFilterRule();
-    static {
-        VIRTUAL_DENY_RULE.setName(_JDT._.LinkFilterController_deny_all_());
-    }
+    private static final LinkFilterController INSTANCE = new LinkFilterController();
 
     /**
      * get the only existing instance of LinkFilterController. This is a
@@ -196,14 +191,6 @@ public class LinkFilterController implements LinkCrawlerFilter {
 
             }
 
-        } else {
-            // no filter
-            if (localacceptFileFilter.size() > 0 || localacceptUrlFilter.size() > 0) {
-                // no deny filter, but accept filter. does not make any sense.
-                // add a virtual deny all filter if we have accept filters
-                matches = true;
-                matchingFilter = VIRTUAL_DENY_RULE;
-            }
         }
         // no deny filter match. We can return here
         if (!matches) {
@@ -291,18 +278,9 @@ public class LinkFilterController implements LinkCrawlerFilter {
 
                 }
             }
-        } else {
-
-            // no deny filter...add a virtual MATCH ALL one
-            if (localacceptFileFilter.size() > 0 || localacceptUrlFilter.size() > 0) {
-                // no deny filter, but accept filter. does not make any sense.
-                // add a virtual deny all filter if we have accept filters
-                matches = true;
-                matchedFilter = VIRTUAL_DENY_RULE;
-            }
         }
         if (!matches) return false;
-        System.out.println("ACCEPT?");
+
         // now check if we have an accept filter for this link.
         for (LinkgrabberFilterRuleWrapper lgr : localacceptUrlFilter) {
 

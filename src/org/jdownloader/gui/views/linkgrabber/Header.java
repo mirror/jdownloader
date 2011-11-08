@@ -52,7 +52,7 @@ public class Header extends MigPanel {
             @Override
             protected void runInEDT() {
                 setVisible(size > 0);
-                counter.setText(size + "");
+                // counter.setText(size + "");
             }
         };
 

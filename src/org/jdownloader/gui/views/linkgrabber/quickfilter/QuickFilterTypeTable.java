@@ -2,10 +2,10 @@ package org.jdownloader.gui.views.linkgrabber.quickfilter;
 
 import java.util.ArrayList;
 
+import javax.swing.event.TableModelEvent;
+import javax.swing.event.TableModelListener;
+
 import jd.controlling.IOEQ;
-import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.linkcollector.LinkCollectorEvent;
-import jd.controlling.linkcollector.LinkCollectorListener;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
 
@@ -14,6 +14,7 @@ import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.utils.Files;
+import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ArchiveExtensions;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter.AudioExtensions;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ImageExtensions;
@@ -21,11 +22,12 @@ import org.jdownloader.controlling.filter.CompiledFiletypeFilter.VideoExtensions
 import org.jdownloader.controlling.filter.LinkFilterSettings;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTable;
+import org.jdownloader.gui.views.components.packagetable.PackageControllerTableModel;
 import org.jdownloader.gui.views.linkgrabber.Header;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 
-public class QuickFilterTypeTable extends FilterTable<CrawledPackage, CrawledLink> implements LinkCollectorListener, GenericConfigEventListener<Boolean> {
+public class QuickFilterTypeTable extends FilterTable<CrawledPackage, CrawledLink> implements GenericConfigEventListener<Boolean> {
     private static final long                                   serialVersionUID = 2109715691047942399L;
     private PackageControllerTable<CrawledPackage, CrawledLink> table2Filter;
     private DelayedRunnable                                     delayedRefresh;
@@ -117,50 +119,59 @@ public class QuickFilterTypeTable extends FilterTable<CrawledPackage, CrawledLin
         });
 
         LinkFilterSettings.LG_QUICKFILTER_TYPE_VISIBLE.getEventSender().addListener(this);
-        LinkCollector.getInstance().addListener(this);
+
+        table2Filter.getModel().addTableModelListener(new TableModelListener() {
+
+            public void tableChanged(TableModelEvent e) {
+
+                if (LinkFilterSettings.LG_QUICKFILTER_TYPE_VISIBLE.getValue()) delayedRefresh.run();
+
+            }
+        });
+
         onConfigValueModified(null, LinkFilterSettings.LG_QUICKFILTER_TYPE_VISIBLE.getValue());
     }
 
     private void updateQuickFilerTableData() {
-        ArrayList<Filter<CrawledPackage, CrawledLink>> newTableData = null;
-        synchronized (LOCK) {
-            /* reset existing filter counters */
+
+        // synchronized (LOCK) {
+        /* reset existing filter counters */
+        for (Filter<CrawledPackage, CrawledLink> filter : filters) {
+            filter.setCounter(0);
+        }
+        /* update filter list */
+
+        for (CrawledLink link : ((PackageControllerTableModel<CrawledPackage, CrawledLink>) table2Filter.getExtTableModel()).getAllChildrenNodes()) {
+
+            /*
+             * speed optimization, we dont want to get extension several times
+             */
+            String ext = Files.getExtension(link.getName());
             for (Filter<CrawledPackage, CrawledLink> filter : filters) {
-                filter.setCounter(0);
-            }
-            /* update filter list */
-            boolean readL = LinkCollector.getInstance().readLock();
-            try {
-                for (CrawledPackage pkg : LinkCollector.getInstance().getPackages()) {
-                    synchronized (pkg) {
-                        for (CrawledLink link : pkg.getChildren()) {
-                            /*
-                             * speed optimization, we dont want to get extension
-                             * several times
-                             */
-                            String ext = Files.getExtension(link.getName());
-                            for (Filter<CrawledPackage, CrawledLink> filter : filters) {
-                                if (((ExtensionFilter<CrawledPackage, CrawledLink>) filter).isFiltered(ext)) {
-                                    filter.setCounter(filter.getCounter() + 1);
-                                    break;
-                                }
-                            }
-                        }
-                    }
-                }
-            } finally {
-                LinkCollector.getInstance().readUnlock(readL);
-            }
-            /* update FilterTableModel */
-            newTableData = new ArrayList<Filter<CrawledPackage, CrawledLink>>(QuickFilterTypeTable.this.getExtTableModel().getTableData().size());
-            for (Filter<CrawledPackage, CrawledLink> filter : filters) {
-                if (filter.getCounter() > 0) {
-                    /* only add entries with counter >0 to visible table */
-                    newTableData.add(filter);
+                if (((ExtensionFilter<CrawledPackage, CrawledLink>) filter).isFiltered(ext)) {
+                    filter.setCounter(filter.getCounter() + 1);
+                    break;
                 }
             }
         }
+
+        /* update FilterTableModel */
+        final ArrayList<Filter<CrawledPackage, CrawledLink>> newTableData = new ArrayList<Filter<CrawledPackage, CrawledLink>>(QuickFilterTypeTable.this.getExtTableModel().getTableData().size());
+        for (Filter<CrawledPackage, CrawledLink> filter : filters) {
+            if (filter.getCounter() > 0) {
+                /* only add entries with counter >0 to visible table */
+                newTableData.add(filter);
+            }
+        }
+        // }
         header.setFilterCount(newTableData.size());
+        new EDTRunner() {
+
+            @Override
+            protected void runInEDT() {
+                setVisible(newTableData.size() > 0);
+            }
+        };
         if (LinkFilterSettings.LG_QUICKFILTER_TYPE_VISIBLE.getValue()) QuickFilterTypeTable.this.getExtTableModel()._fireTableStructureChanged(newTableData, true);
     }
 
@@ -182,18 +193,6 @@ public class QuickFilterTypeTable extends FilterTable<CrawledPackage, CrawledLin
             table2Filter.getPackageControllerTableModel().removeFilter(this);
         }
         table2Filter.getPackageControllerTableModel().recreateModel(false);
-    }
-
-    public void onLinkCollectorEvent(LinkCollectorEvent event) {
-        switch (event.getType()) {
-        case REMOVE_CONTENT:
-        case REFRESH_STRUCTURE:
-            if (old != LinkCollector.getInstance().getChildrenChanges()) {
-                old = LinkCollector.getInstance().getChildrenChanges();
-                delayedRefresh.run();
-            }
-            break;
-        }
     }
 
     @Override

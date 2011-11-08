@@ -3,7 +3,6 @@ package org.jdownloader.gui.views.linkgrabber.quickfilter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map.Entry;
 
 import javax.swing.JPopupMenu;
@@ -11,9 +10,6 @@ import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
 
 import jd.controlling.IOEQ;
-import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.linkcollector.LinkCollectorEvent;
-import jd.controlling.linkcollector.LinkCollectorListener;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
 
@@ -25,6 +21,7 @@ import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.swing.exttable.ExtColumn;
 import org.appwork.utils.event.predefined.changeevent.ChangeEvent;
 import org.appwork.utils.event.predefined.changeevent.ChangeListener;
+import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.controlling.filter.FilterRule;
 import org.jdownloader.controlling.filter.LinkFilterController;
 import org.jdownloader.controlling.filter.LinkFilterSettings;
@@ -35,7 +32,7 @@ import org.jdownloader.gui.views.components.packagetable.PackageControllerTableM
 import org.jdownloader.gui.views.linkgrabber.Header;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 
-public class QuickFilterExceptionsTable extends FilterTable<CrawledPackage, CrawledLink> implements LinkCollectorListener, GenericConfigEventListener<Boolean> {
+public class QuickFilterExceptionsTable extends FilterTable<CrawledPackage, CrawledLink> implements GenericConfigEventListener<Boolean> {
 
     /**
      * 
@@ -59,7 +56,7 @@ public class QuickFilterExceptionsTable extends FilterTable<CrawledPackage, Craw
 
             @Override
             public void delayedrun() {
-                // updateQuickFilerTableData();
+                updateQuickFilerTableData();
             }
 
         };
@@ -76,14 +73,13 @@ public class QuickFilterExceptionsTable extends FilterTable<CrawledPackage, Craw
         });
 
         LinkFilterSettings.LG_QUICKFILTER_EXCEPTIONS_VISIBLE.getEventSender().addListener(this);
-        LinkCollector.getInstance().addListener(this);
+
         onConfigValueModified(null, LinkFilterSettings.LG_QUICKFILTER_EXCEPTIONS_VISIBLE.getValue());
         table2Filter.getModel().addTableModelListener(new TableModelListener() {
 
             public void tableChanged(TableModelEvent e) {
 
-                List<CrawledLink> td = ((PackageControllerTableModel<CrawledPackage, CrawledLink>) table2Filter.getExtTableModel()).getAllChildrenNodes();
-                updateQuickFilerTableData(td);
+                if (LinkFilterSettings.LG_QUICKFILTER_EXCEPTIONS_VISIBLE.getValue()) delayedRefresh.run();
             }
         });
 
@@ -119,61 +115,54 @@ public class QuickFilterExceptionsTable extends FilterTable<CrawledPackage, Craw
         return popup;
     }
 
-    public void onLinkCollectorEvent(LinkCollectorEvent event) {
-        switch (event.getType()) {
-        case REMOVE_CONTENT:
-        case REFRESH_STRUCTURE:
-            if (old != LinkCollector.getInstance().getChildrenChanges()) {
-                old = LinkCollector.getInstance().getChildrenChanges();
-                delayedRefresh.run();
-            }
-            break;
-        }
-    }
-
-    private void updateQuickFilerTableData(List<CrawledLink> td) {
+    private void updateQuickFilerTableData() {
         ArrayList<Filter<CrawledPackage, CrawledLink>> newTableData = null;
-        synchronized (LOCK) {
-            newTableData = new ArrayList<Filter<CrawledPackage, CrawledLink>>(0);
+        // synchronized (LOCK) {
+        newTableData = new ArrayList<Filter<CrawledPackage, CrawledLink>>(0);
 
-            /* update filter list */
-            boolean readL = LinkCollector.getInstance().readLock();
-            Iterator<Entry<FilterRule, Filter<CrawledPackage, CrawledLink>>> it;
-            Entry<FilterRule, Filter<CrawledPackage, CrawledLink>> next;
-            try {
-                for (it = map.entrySet().iterator(); it.hasNext();) {
-                    next = it.next();
-                    next.getValue().setCounter(0);
-                    newTableData.add(next.getValue());
-                }
-                for (CrawledLink link : td) {
-                    for (it = map.entrySet().iterator(); it.hasNext();) {
-                        next = it.next();
-                        if (!next.getValue().isEnabled()) {
-                            if (next.getValue().isFiltered(link)) {
-                                int c = next.getValue().getCounter();
+        Iterator<Entry<FilterRule, Filter<CrawledPackage, CrawledLink>>> it;
+        Entry<FilterRule, Filter<CrawledPackage, CrawledLink>> next;
 
-                                next.getValue().setCounter(c + 1);
-                            }
-                        } else {
-                            next.getValue().setCounter(-1);
-                        }
+        for (it = map.entrySet().iterator(); it.hasNext();) {
+            next = it.next();
+            if (!next.getValue().isEnabled()) {
+                next.getValue().setCounter(0);
+            } else {
+                next.getValue().setCounter(-1);
+            }
+            newTableData.add(next.getValue());
+        }
+        for (CrawledLink link : ((PackageControllerTableModel<CrawledPackage, CrawledLink>) table2Filter.getExtTableModel()).getAllChildrenNodes()) {
+            for (it = map.entrySet().iterator(); it.hasNext();) {
+                next = it.next();
+                if (!next.getValue().isEnabled()) {
+                    if (next.getValue().isFiltered(link)) {
+                        int c = next.getValue().getCounter();
+
+                        next.getValue().setCounter(c + 1);
                     }
-
+                } else {
+                    next.getValue().setCounter(-1);
                 }
-
-            } finally {
-                LinkCollector.getInstance().readUnlock(readL);
             }
-            /* update FilterTableModel */
-            for (Iterator<Filter<CrawledPackage, CrawledLink>> itt = newTableData.iterator(); itt.hasNext();) {
-                if (itt.next().getCounter() == 0) itt.remove();
-            }
-            filters = newTableData;
 
         }
-        header.setFilterCount(filters.size());
 
+        /* update FilterTableModel */
+        for (Iterator<Filter<CrawledPackage, CrawledLink>> itt = newTableData.iterator(); itt.hasNext();) {
+            if (itt.next().getCounter() == 0) itt.remove();
+        }
+        filters = newTableData;
+
+        // }
+        header.setFilterCount(filters.size());
+        new EDTRunner() {
+
+            @Override
+            protected void runInEDT() {
+                setVisible(filters.size() > 0);
+            }
+        };
         if (LinkFilterSettings.LG_QUICKFILTER_EXCEPTIONS_VISIBLE.getValue()) {
             QuickFilterExceptionsTable.this.getExtTableModel()._fireTableStructureChanged(newTableData, true);
         }

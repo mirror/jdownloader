@@ -32,7 +32,7 @@ public class LinkGrabberSidebar extends MigPanel {
     private QuickFilterExceptionsTable exceptionsFilterTable;
 
     public LinkGrabberSidebar(LinkGrabberTable table) {
-        super("ins 0,wrap 1", "[grow,fill]", "0[]0[]0[]0[]0[]0[]0[grow,fill][]");
+        super("ins 0,wrap 1", "[grow,fill]", "[]");
         int c = LookAndFeelController.getInstance().getLAFOptions().getPanelBackgroundColor();
 
         if (c >= 0) {
@@ -73,16 +73,16 @@ public class LinkGrabberSidebar extends MigPanel {
             public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
             }
         });
-        add(hosterFilter, "gaptop 7,hidemode 2");
-        add(hosterFilterTable, "hidemode 2");
-        add(filetypeFilter, "gaptop 7,hidemode 2");
-        add(filetypeFilterTable, "hidemode 2");
+        add(hosterFilter, "gaptop 7,hidemode 3");
+        add(hosterFilterTable, "hidemode 3");
+        add(filetypeFilter, "gaptop 7,hidemode 3");
+        add(filetypeFilterTable, "hidemode 3");
 
-        add(exceptions, "gaptop 7,hidemode 2");
-        add(exceptionsFilterTable, "hidemode 2");
-        add(Box.createGlue());
+        add(exceptions, "gaptop 7,hidemode 3");
+        add(exceptionsFilterTable, "hidemode 3");
+        add(Box.createGlue(), "pushy,growy");
         add(quickSettingsHeader, "gaptop 7");
-        add(quicksettings, "hidemode 2");
+        add(quicksettings, "hidemode 3");
 
     }
 }
