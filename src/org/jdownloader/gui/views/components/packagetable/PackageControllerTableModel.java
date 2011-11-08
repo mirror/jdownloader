@@ -268,6 +268,7 @@ public abstract class PackageControllerTableModel<E extends AbstractPackageNode<
 
     public List<V> getAllChildrenNodes() {
         ArrayList<AbstractNode> data = this.getTableData();
+        ArrayList<PackageControllerTableModelFilter<E, V>> filters = this.tableFilters;
         HashSet<V> ret = new HashSet<V>(data.size());
         for (AbstractNode node : data) {
             if (node instanceof AbstractPackageNode) {
@@ -275,7 +276,16 @@ public abstract class PackageControllerTableModel<E extends AbstractPackageNode<
                 synchronized (pkg) {
                     for (Object node2 : pkg.getChildren()) {
                         if (node2 instanceof AbstractPackageChildrenNode) {
-                            ret.add((V) node2);
+                            boolean filtered = false;
+                            for (PackageControllerTableModelFilter<E, V> filter : filters) {
+                                if (filter.isFiltered((V) node2)) {
+                                    filtered = true;
+                                    break;
+                                }
+                            }
+                            if (filtered == false) {
+                                ret.add((V) node);
+                            }
                         }
                     }
                 }
