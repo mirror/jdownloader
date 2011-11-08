@@ -6,6 +6,7 @@ import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
 
 import jd.controlling.IOEQ;
+import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
 
@@ -43,6 +44,9 @@ public class QuickFilterTypeTable extends FilterTable<CrawledPackage, CrawledLin
         final ArrayList<ExtensionFilter<CrawledPackage, CrawledLink>> knownExtensionFilters = new ArrayList<ExtensionFilter<CrawledPackage, CrawledLink>>();
         ExtensionFilter<CrawledPackage, CrawledLink> filter;
         filters.add(filter = new ExtensionFilter<CrawledPackage, CrawledLink>(AudioExtensions.AA) {
+            protected String getID() {
+                return "Type_Audio";
+            }
 
             @Override
             public void setEnabled(boolean enabled) {
@@ -53,6 +57,10 @@ public class QuickFilterTypeTable extends FilterTable<CrawledPackage, CrawledLin
         });
         knownExtensionFilters.add(filter);
         filters.add(filter = new ExtensionFilter<CrawledPackage, CrawledLink>(VideoExtensions.ASF) {
+            protected String getID() {
+                return "Type_Video";
+            }
+
             @Override
             public void setEnabled(boolean enabled) {
                 super.setEnabled(enabled);
@@ -61,6 +69,10 @@ public class QuickFilterTypeTable extends FilterTable<CrawledPackage, CrawledLin
         });
         knownExtensionFilters.add(filter);
         filters.add(filter = new ExtensionFilter<CrawledPackage, CrawledLink>(ImageExtensions.BMP) {
+            protected String getID() {
+                return "Type_Image";
+            }
+
             @Override
             public void setEnabled(boolean enabled) {
                 super.setEnabled(enabled);
@@ -69,6 +81,10 @@ public class QuickFilterTypeTable extends FilterTable<CrawledPackage, CrawledLin
         });
         knownExtensionFilters.add(filter);
         filters.add(filter = new ExtensionFilter<CrawledPackage, CrawledLink>(ArchiveExtensions.ACE) {
+            protected String getID() {
+                return "Type_Archive";
+            }
+
             @Override
             public void setEnabled(boolean enabled) {
                 super.setEnabled(enabled);
@@ -82,6 +98,9 @@ public class QuickFilterTypeTable extends FilterTable<CrawledPackage, CrawledLin
          * extensions
          */
         filters.add(new ExtensionFilter<CrawledPackage, CrawledLink>(_GUI._.settings_linkgrabber_filter_others(), NewTheme.I().getIcon("help", 16), false) {
+            protected String getID() {
+                return "Type_Others";
+            }
 
             @Override
             public boolean isFiltered(String ext) {
@@ -154,11 +173,34 @@ public class QuickFilterTypeTable extends FilterTable<CrawledPackage, CrawledLin
                 }
             }
         }
+        boolean readL = LinkCollector.getInstance().readLock();
+        try {
+            for (CrawledPackage pkg : LinkCollector.getInstance().getPackages()) {
+                synchronized (pkg) {
+                    for (CrawledLink link : pkg.getChildren()) {
+                        /*
+                         * speed optimization, we dont want to get extension
+                         * several times
+                         */
+                        String ext = Files.getExtension(link.getName());
+                        for (Filter<CrawledPackage, CrawledLink> filter : filters) {
+                            if (((ExtensionFilter<CrawledPackage, CrawledLink>) filter).isFiltered(ext)) {
 
+                                if (filter.getCounter() == 0 && !filter.isEnabled()) filter.setCounter(-1);
+
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+        } finally {
+            LinkCollector.getInstance().readUnlock(readL);
+        }
         /* update FilterTableModel */
         final ArrayList<Filter<CrawledPackage, CrawledLink>> newTableData = new ArrayList<Filter<CrawledPackage, CrawledLink>>(QuickFilterTypeTable.this.getExtTableModel().getTableData().size());
         for (Filter<CrawledPackage, CrawledLink> filter : filters) {
-            if (filter.getCounter() > 0) {
+            if (filter.getCounter() != 0) {
                 /* only add entries with counter >0 to visible table */
                 newTableData.add(filter);
             }
@@ -210,7 +252,7 @@ public class QuickFilterTypeTable extends FilterTable<CrawledPackage, CrawledLin
         String ext = Files.getExtension(v.getName());
         ArrayList<Filter<CrawledPackage, CrawledLink>> lfilters = filters;
         for (Filter<CrawledPackage, CrawledLink> filter : lfilters) {
-            if (!filter.isEnabled()) continue;
+            if (filter.isEnabled()) continue;
             if (((ExtensionFilter<CrawledPackage, CrawledLink>) filter).isFiltered(ext)) { return true; }
         }
         return false;

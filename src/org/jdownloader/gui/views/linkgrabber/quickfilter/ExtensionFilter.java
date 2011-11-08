@@ -11,16 +11,16 @@ import org.appwork.utils.Files;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ExtensionsFilterInterface;
 import org.jdownloader.images.NewTheme;
 
-public class ExtensionFilter<E extends AbstractPackageNode<V, E>, V extends AbstractPackageChildrenNode<E>> extends Filter<E, V> {
+public abstract class ExtensionFilter<E extends AbstractPackageNode<V, E>, V extends AbstractPackageChildrenNode<E>> extends Filter<E, V> {
 
     private Pattern pattern;
 
     public ExtensionFilter(String string, ImageIcon icon, boolean b) {
-        super(string, icon, b);
+        super(string, icon);
     }
 
     public ExtensionFilter(ExtensionsFilterInterface filter) {
-        super(filter.getDesc(), NewTheme.I().getIcon(filter.getIconID(), 16), false);
+        super(filter.getDesc(), NewTheme.I().getIcon(filter.getIconID(), 16));
         pattern = filter.compiledAllPattern();
     }
 

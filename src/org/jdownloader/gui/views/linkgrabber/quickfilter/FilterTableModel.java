@@ -48,7 +48,7 @@ public class FilterTableModel<E extends AbstractPackageNode<V, E>, V extends Abs
 
             @Override
             public boolean isEnabled(Filter obj) {
-                return !obj.isEnabled();
+                return obj.isEnabled();
             }
 
             @Override
@@ -89,7 +89,7 @@ public class FilterTableModel<E extends AbstractPackageNode<V, E>, V extends Abs
 
             @Override
             public boolean isEnabled(Filter<E, V> obj) {
-                return !obj.isEnabled();
+                return obj.isEnabled();
             }
 
             @Override
@@ -125,7 +125,7 @@ public class FilterTableModel<E extends AbstractPackageNode<V, E>, V extends Abs
 
             @Override
             public boolean isEnabled(Filter<E, V> obj) {
-                return !obj.isEnabled();
+                return obj.isEnabled();
             }
 
             @Override
@@ -158,7 +158,7 @@ public class FilterTableModel<E extends AbstractPackageNode<V, E>, V extends Abs
 
             @Override
             protected boolean getBooleanValue(Filter<E, V> value) {
-                return !value.isEnabled();
+                return value.isEnabled();
             }
 
             @Override

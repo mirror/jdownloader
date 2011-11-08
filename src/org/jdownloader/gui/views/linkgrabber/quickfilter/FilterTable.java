@@ -80,7 +80,7 @@ public class FilterTable<E extends AbstractPackageNode<V, E>, V extends Abstract
         if (enabled == false) return false;
         ArrayList<Filter<E, V>> lfilters = filters;
         for (Filter<E, V> filter : lfilters) {
-            if (!filter.isEnabled()) continue;
+            if (filter.isEnabled()) continue;
             if (filter.isFiltered(e)) return true;
         }
         return false;
@@ -90,7 +90,7 @@ public class FilterTable<E extends AbstractPackageNode<V, E>, V extends Abstract
         if (enabled == false) return false;
         ArrayList<Filter<E, V>> lfilters = filters;
         for (Filter<E, V> filter : lfilters) {
-            if (!filter.isEnabled()) continue;
+            if (filter.isEnabled()) continue;
             if (filter.isFiltered(v)) return true;
         }
         return false;

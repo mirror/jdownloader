@@ -90,7 +90,7 @@ public class LinkFilterController implements LinkCrawlerFilter {
         ArrayList<LinkgrabberFilterRuleWrapper> newacceptFileFilter = new ArrayList<LinkgrabberFilterRuleWrapper>();
 
         for (LinkgrabberFilterRule lgr : filter) {
-            if ((lgr.isEnabled() && lgr.isValid()) || (lgr.isAccept() && config.isExceptionAsQuickfilterEnabled() && lgr.isValid())) {
+            if (lgr.isEnabled() && lgr.isValid()) {
 
                 LinkgrabberFilterRuleWrapper compiled = lgr.compile();
                 if (lgr.isAccept()) {

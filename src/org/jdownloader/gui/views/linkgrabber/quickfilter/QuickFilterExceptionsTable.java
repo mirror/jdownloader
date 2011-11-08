@@ -19,6 +19,7 @@ import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.swing.exttable.ExtColumn;
+import org.appwork.utils.Hash;
 import org.appwork.utils.event.predefined.changeevent.ChangeEvent;
 import org.appwork.utils.event.predefined.changeevent.ChangeListener;
 import org.appwork.utils.swing.EDTRunner;
@@ -125,7 +126,7 @@ public class QuickFilterExceptionsTable extends FilterTable<CrawledPackage, Craw
 
         for (it = map.entrySet().iterator(); it.hasNext();) {
             next = it.next();
-            if (!next.getValue().isEnabled()) {
+            if (next.getValue().isEnabled()) {
                 next.getValue().setCounter(0);
             } else {
                 next.getValue().setCounter(-1);
@@ -135,7 +136,7 @@ public class QuickFilterExceptionsTable extends FilterTable<CrawledPackage, Craw
         for (CrawledLink link : ((PackageControllerTableModel<CrawledPackage, CrawledLink>) table2Filter.getExtTableModel()).getAllChildrenNodes()) {
             for (it = map.entrySet().iterator(); it.hasNext();) {
                 next = it.next();
-                if (!next.getValue().isEnabled()) {
+                if (next.getValue().isEnabled()) {
                     if (next.getValue().isFiltered(link)) {
                         int c = next.getValue().getCounter();
 
@@ -173,9 +174,13 @@ public class QuickFilterExceptionsTable extends FilterTable<CrawledPackage, Craw
             Filter<CrawledPackage, CrawledLink> filter = map.get(rule.getRule());
             if (filter == null) {
 
-                filter = new Filter<CrawledPackage, CrawledLink>(rule.getName(), null, !rule.isEnabled()) {
+                filter = new Filter<CrawledPackage, CrawledLink>(rule.getName(), null) {
                     public String getDescription() {
                         return rule.getRule().toString();
+                    }
+
+                    protected String getID() {
+                        return "Custom_" + Hash.getMD5(rule.getName() + ":" + getDescription());
                     }
 
                     @Override

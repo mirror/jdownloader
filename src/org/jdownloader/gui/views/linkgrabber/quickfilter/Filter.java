@@ -6,12 +6,15 @@ import jd.controlling.FavIconRequestor;
 import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
 import jd.controlling.packagecontroller.AbstractPackageNode;
 
+import org.appwork.storage.config.JsonConfig;
+import org.appwork.utils.Application;
 import org.jdownloader.images.NewTheme;
 
 public abstract class Filter<E extends AbstractPackageNode<V, E>, V extends AbstractPackageChildrenNode<E>> implements FavIconRequestor {
-    protected boolean enabled = true;
-    private ImageIcon icon    = null;
-    protected int     counter = 0;
+
+    private ImageIcon      icon    = null;
+    protected int          counter = 0;
+    private FilterSettings config;
 
     public int getCounter() {
         return counter;
@@ -29,18 +32,22 @@ public abstract class Filter<E extends AbstractPackageNode<V, E>, V extends Abst
         if (icon != null) this.icon = NewTheme.I().getScaledInstance(icon, 16);
     }
 
-    public Filter(String string, ImageIcon icon, boolean b) {
+    public Filter(String string, ImageIcon icon) {
         this.name = string;
         if (icon != null) this.icon = NewTheme.I().getScaledInstance(icon, 16);
-        this.enabled = b;
+        config = JsonConfig.create(Application.getResource("cfg/quickfilter_" + getID()), FilterSettings.class);
+
     }
 
+    abstract protected String getID();
+
     public boolean isEnabled() {
-        return enabled;
+        return config.isEnabled();
     }
 
     public void setEnabled(boolean enabled) {
-        this.enabled = !enabled;
+
+        config.setEnabled(enabled);
     }
 
     public String getName() {

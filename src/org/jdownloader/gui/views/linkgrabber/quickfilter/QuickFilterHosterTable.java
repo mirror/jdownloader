@@ -12,6 +12,7 @@ import javax.swing.event.TableModelListener;
 
 import jd.controlling.FavIconController;
 import jd.controlling.IOEQ;
+import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
 
@@ -106,7 +107,7 @@ public class QuickFilterHosterTable extends FilterTable<CrawledPackage, CrawledL
         /* update filter list */
 
         for (CrawledLink link : ((PackageControllerTableModel<CrawledPackage, CrawledLink>) table2Filter.getExtTableModel()).getAllChildrenNodes()) {
-            String hoster = link.getRealHost();
+            final String hoster = link.getRealHost();
             if (hoster != null) {
                 Filter<CrawledPackage, CrawledLink> filter = null;
                 filter = filterMap.get(hoster);
@@ -114,30 +115,7 @@ public class QuickFilterHosterTable extends FilterTable<CrawledPackage, CrawledL
                     /*
                      * create new filter entry and set its icon
                      */
-                    filter = new Filter<CrawledPackage, CrawledLink>(hoster, null, false) {
-
-                        @Override
-                        public boolean isFiltered(CrawledLink link) {
-                            if (name.equals(link.getRealHost())) return true;
-                            return false;
-                        }
-
-                        @Override
-                        public boolean isFiltered(CrawledPackage link) {
-                            /* we do not filter packages */
-                            return false;
-                        }
-
-                        @Override
-                        public void setEnabled(boolean enabled) {
-                            super.setEnabled(enabled);
-                            /*
-                             * request recreate the model of filtered view
-                             */
-                            table2Filter.getPackageControllerTableModel().recreateModel(false);
-                        }
-
-                    };
+                    filter = createFilter(hoster);
                     filter.setIcon(FavIconController.getFavIcon(hoster, filter, true));
                     filterMap.put(hoster, filter);
                 }
@@ -145,7 +123,33 @@ public class QuickFilterHosterTable extends FilterTable<CrawledPackage, CrawledL
             }
 
         }
+        /* update filter list */
+        boolean readL = LinkCollector.getInstance().readLock();
+        try {
 
+            for (CrawledPackage pkg : LinkCollector.getInstance().getPackages()) {
+                synchronized (pkg) {
+                    for (CrawledLink link : pkg.getChildren()) {
+                        String hoster = link.getRealHost();
+                        if (hoster != null) {
+                            Filter<CrawledPackage, CrawledLink> filter = null;
+                            filter = filterMap.get(hoster);
+                            if (filter == null) {
+                                /*
+                                 * create new filter entry and set its icon
+                                 */
+                                filter = createFilter(hoster);
+                                filter.setIcon(FavIconController.getFavIcon(hoster, filter, true));
+                                filterMap.put(hoster, filter);
+                            }
+                            if (filter.getCounter() == 0 && !filter.isEnabled()) filter.setCounter(-1);
+                        }
+                    }
+                }
+            }
+        } finally {
+            LinkCollector.getInstance().readUnlock(readL);
+        }
         /* update FilterTableModel */
         ArrayList<Filter<CrawledPackage, CrawledLink>> newfilters = new ArrayList<Filter<CrawledPackage, CrawledLink>>();
         es = filterMap.entrySet();
@@ -154,7 +158,7 @@ public class QuickFilterHosterTable extends FilterTable<CrawledPackage, CrawledL
         while (it.hasNext()) {
             Entry<String, Filter<CrawledPackage, CrawledLink>> next = it.next();
             Filter<CrawledPackage, CrawledLink> value = next.getValue();
-            if (value.getCounter() > 0) {
+            if (value.getCounter() != 0) {
                 /* only add entries with counter >0 to visible table */
                 newTableData.add(value);
             }
@@ -173,6 +177,38 @@ public class QuickFilterHosterTable extends FilterTable<CrawledPackage, CrawledL
 
         // }
 
+    }
+
+    public Filter<CrawledPackage, CrawledLink> createFilter(final String hoster) {
+        Filter<CrawledPackage, CrawledLink> filter;
+        filter = new Filter<CrawledPackage, CrawledLink>(hoster, null) {
+            protected String getID() {
+                return "Hoster_" + hoster;
+            }
+
+            @Override
+            public boolean isFiltered(CrawledLink link) {
+                if (name.equals(link.getRealHost())) return true;
+                return false;
+            }
+
+            @Override
+            public boolean isFiltered(CrawledPackage link) {
+                /* we do not filter packages */
+                return false;
+            }
+
+            @Override
+            public void setEnabled(boolean enabled) {
+                super.setEnabled(enabled);
+                /*
+                 * request recreate the model of filtered view
+                 */
+                table2Filter.getPackageControllerTableModel().recreateModel(false);
+            }
+
+        };
+        return filter;
     }
 
     @Override
