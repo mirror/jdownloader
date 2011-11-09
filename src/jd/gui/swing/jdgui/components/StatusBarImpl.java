@@ -16,11 +16,14 @@
 
 package jd.gui.swing.jdgui.components;
 
-import java.awt.event.MouseAdapter;
+import java.awt.event.ActionEvent;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.JPanel;
+import javax.swing.JPopupMenu;
 
 import jd.Main;
 import jd.controlling.linkcollector.LinkCollector;
@@ -34,13 +37,13 @@ import net.miginfocom.swing.MigLayout;
 import org.appwork.controlling.StateEvent;
 import org.appwork.controlling.StateEventListener;
 import org.appwork.utils.swing.EDTRunner;
+import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 
 public class StatusBarImpl extends JPanel {
 
     private static final long      serialVersionUID = 3676496738341246846L;
-    private MouseAdapter           mouseHoverAdapter;
     private IconedProcessIndicator reconnectIndicator;
     private IconedProcessIndicator linkGrabberIndicator;
     private IconedProcessIndicator extractIndicator;
@@ -64,7 +67,7 @@ public class StatusBarImpl extends JPanel {
     }
 
     private void initGUI() {
-        setLayout(new MigLayout("ins 0", "[fill,grow,left][fill,grow,right][grow,fill][]1[]1[]3", "[22!]"));
+        setLayout(new MigLayout("ins 0", "[fill,grow,left][][][]3", "[22!]"));
         if (LookAndFeelController.getInstance().getLAFOptions().isPaintStatusbarTopBorder()) {
             setBorder(BorderFactory.createMatteBorder(1, 0, 0, 0, getBackground().darker()));
         } else {
@@ -159,6 +162,44 @@ public class StatusBarImpl extends JPanel {
         linkGrabberIndicator.setDescription(_GUI._.StatusBarImpl_initGUI_linkgrabber_desc_inactive());
         linkGrabberIndicator.setIndeterminate(false);
         linkGrabberIndicator.setEnabled(false);
+        linkGrabberIndicator.addMouseListener(new MouseListener() {
+
+            public void mouseReleased(MouseEvent e) {
+                final JPopupMenu popup = new JPopupMenu();
+
+                popup.add(new AppAction() {
+                    /**
+                     * 
+                     */
+                    private static final long serialVersionUID = -968768342263254431L;
+
+                    {
+                        this.setIconKey("cancel");
+                        this.setName(_GUI._.StatusBarImpl_initGUI_abort_linkgrabber());
+                        this.setEnabled(linkGrabberIndicator.isEnabled());
+                    }
+
+                    public void actionPerformed(ActionEvent e) {
+                        LinkCollector.getInstance().abort();
+                    }
+
+                });
+
+                popup.show(linkGrabberIndicator, e.getPoint().x, 0 - popup.getPreferredSize().height);
+            }
+
+            public void mousePressed(MouseEvent e) {
+            }
+
+            public void mouseExited(MouseEvent e) {
+            }
+
+            public void mouseEntered(MouseEvent e) {
+            }
+
+            public void mouseClicked(MouseEvent e) {
+            }
+        });
         Main.GUI_COMPLETE.executeWhenReached(new Runnable() {
 
             public void run() {

@@ -10,8 +10,6 @@ import javax.swing.JPopupMenu;
 import javax.swing.Timer;
 
 import jd.controlling.DownloadWatchDog;
-import jd.gui.swing.jdgui.menu.actions.AddContainerAction;
-import jd.gui.swing.jdgui.menu.actions.AddUrlAction;
 import jd.gui.swing.jdgui.menu.actions.CleanupDownloads;
 import jd.gui.swing.jdgui.menu.actions.CleanupPackages;
 import jd.gui.swing.jdgui.menu.actions.RemoveDisabledAction;
@@ -54,11 +52,7 @@ public class BottomBar extends MigPanel implements ActionListener {
                 }
 
                 public void actionPerformed(ActionEvent e) {
-                    JPopupMenu pu = new JPopupMenu();
-                    pu.add(new AddUrlAction());
-                    pu.add(new AddContainerAction());
-                    int[] insets = LookAndFeelController.getInstance().getLAFOptions().getPopupBorderInsets();
-                    pu.show((Component) e.getSource(), -insets[1], -pu.getPreferredSize().height + insets[2]);
+
                 }
             });
             addButton(new AppAction() {

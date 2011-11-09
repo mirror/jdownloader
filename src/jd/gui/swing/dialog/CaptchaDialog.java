@@ -138,6 +138,11 @@ public class CaptchaDialog extends AbstractDialog<String> implements ActionListe
         final JPanel ret = new JPanel(new MigLayout("ins 0", "[]", "0[fill,grow]0"));
         ret.setOpaque(false);
         ExtButton premium = new ExtButton(new AppAction() {
+            /**
+             * 
+             */
+            private static final long serialVersionUID = -3551320196255605774L;
+
             {
                 setName(_GUI._.CaptchaDialog_getDefaultButtonPanel_premium());
             }
@@ -286,7 +291,6 @@ public class CaptchaDialog extends AbstractDialog<String> implements ActionListe
             // }
             // header.setOpaque(false);
             // header.setLabelMode(true);
-            PluginForDecrypt plg = (PluginForDecrypt) plugin;
             if (getCrawlerStatus() == null) {
                 header.setText(_GUI._.CaptchaDialog_layoutDialogContent_header_crawler(hosterInfo.getTld()));
             } else {
@@ -343,9 +347,7 @@ public class CaptchaDialog extends AbstractDialog<String> implements ActionListe
     public String getCrawlerStatus() {
         switch (type) {
         case CRAWLER:
-
             return ((PluginForDecrypt) plugin).getCrawlerStatusString();
-
         default:
             return null;
 

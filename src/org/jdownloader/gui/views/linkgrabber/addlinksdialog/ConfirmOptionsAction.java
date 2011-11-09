@@ -40,8 +40,9 @@ public class ConfirmOptionsAction extends AbstractAction {
 
             public void actionPerformed(ActionEvent e) {
                 dialog.setDeepAnalyse(true);
+                ActionEvent e2 = new ActionEvent(defaultOK, e.getID(), e.getActionCommand());
                 for (ActionListener a : defaultOK.getActionListeners())
-                    a.actionPerformed(e);
+                    a.actionPerformed(e2);
             }
 
         }));
@@ -52,8 +53,10 @@ public class ConfirmOptionsAction extends AbstractAction {
             }
 
             public void actionPerformed(ActionEvent e) {
+                dialog.setDeepAnalyse(false);
+                ActionEvent e2 = new ActionEvent(defaultOK, e.getID(), e.getActionCommand());
                 for (ActionListener a : defaultOK.getActionListeners())
-                    a.actionPerformed(e);
+                    a.actionPerformed(e2);
             }
         }));
         // selected.add(new JMenuItem(new ConfirmAction(false,

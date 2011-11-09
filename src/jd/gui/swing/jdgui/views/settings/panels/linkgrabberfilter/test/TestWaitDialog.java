@@ -161,30 +161,32 @@ public class TestWaitDialog extends AbstractDialog<ArrayList<CrawledLink>> {
         lbl = new JLabel();
         p.add(lbl);
         p.add(new JScrollPane(new ResultTable(this, model = new ResultTableModel())), "spanx,pushx,growx");
-        recThread = new Thread("ReconnectTest") {
+        recThread = new Thread("LinkFilterTesting") {
 
             private LinkCrawler              lc  = new LinkCrawler();
             private LinkChecker<CrawledLink> lch = new LinkChecker<CrawledLink>();
 
             @Override
             public void interrupt() {
+                lch.stopChecking();
+                lc.stopCrawling();
                 lc.setCrawlingAllowed(false);
                 super.interrupt();
             }
 
             public void run() {
+                try {
+                    runTest(lc, lch);
+                } finally {
+                    new EDTRunner() {
 
-                runTest(lc, lch);
-
-                new EDTRunner() {
-
-                    @Override
-                    protected void runInEDT() {
-                        progress.setIndeterminate(false);
-                        setTitle(_GUI._.TestWaitDialog_TestWaitDialog_title_finished());
-                    }
-                };
-
+                        @Override
+                        protected void runInEDT() {
+                            progress.setIndeterminate(false);
+                            setTitle(_GUI._.TestWaitDialog_TestWaitDialog_title_finished());
+                        }
+                    };
+                }
             }
         };
 

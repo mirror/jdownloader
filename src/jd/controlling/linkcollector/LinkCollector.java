@@ -69,6 +69,11 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         }
     }
 
+    public void abort() {
+        broadcaster.fireEvent(new LinkCollectorEvent(LinkCollector.this, LinkCollectorEvent.TYPE.ABORT));
+        if (linkChecker != null) linkChecker.stopChecking();
+    }
+
     public boolean isRunning() {
         return collStarts.get() > collStops.get();
     }
@@ -121,7 +126,8 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
     public LinkCrawler addCrawlerJob(final ArrayList<CrawledLink> links) {
         if (links == null || links.size() == 0) throw new IllegalArgumentException("no links");
         lazyInit();
-        LinkCrawler lc = new LinkCrawler();
+        final LinkCollectorCrawler lc = new LinkCollectorCrawler();
+        broadcaster.addListener(lc, true);
         lc.setFilter(crawlerFilter);
         lc.setHandler(this);
         ArrayList<CrawledLink> deep = new ArrayList<CrawledLink>();
@@ -143,7 +149,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
     public LinkCrawler addCrawlerJob(final LinkCollectingJob job) {
         if (job == null) throw new IllegalArgumentException("job is null");
         lazyInit();
-        LinkCrawler lc = new LinkCrawler() {
+        final LinkCollectorCrawler lc = new LinkCollectorCrawler() {
 
             @Override
             protected CrawledLink crawledLinkFactorybyURL(String url) {
@@ -153,6 +159,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
             }
 
         };
+        broadcaster.addListener(lc, true);
         lc.setFilter(crawlerFilter);
         lc.setHandler(this);
         if (job.isDeepAnalyse()) {

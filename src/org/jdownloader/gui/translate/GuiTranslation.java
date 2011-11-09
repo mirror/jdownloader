@@ -2332,6 +2332,9 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Linkgrabber Activity" })
     String StatusBarImpl_initGUI_linkgrabber();
 
+    @Default(lngs = { "en" }, values = { "Abort Linkgrabber" })
+    String StatusBarImpl_initGUI_abort_linkgrabber();
+
     @Default(lngs = { "en" }, values = { "Extraction Activity" })
     String StatusBarImpl_initGUI_extract();
 

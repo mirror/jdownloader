@@ -66,6 +66,15 @@ public class LinkChecker<E extends CheckableLink> {
         return handler;
     }
 
+    public void stopChecking() {
+        synchronized (this) {
+            for (LinkedList<E> values : links2Check.values()) {
+                linksDone.addAndGet(values.size());
+            }
+            links2Check.clear();
+        }
+    }
+
     @SuppressWarnings("unchecked")
     protected void linkChecked(CheckableLink link) {
         if (link == null) return;

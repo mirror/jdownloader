@@ -48,7 +48,9 @@ public class LinkCollectorEvent extends SimpleEvent<LinkCollector, Object, LinkC
         /* refresh content structure */
         REFRESH_STRUCTURE,
         /* content got removed */
-        REMOVE_CONTENT
+        REMOVE_CONTENT,
+        /* request collector abort */
+        ABORT
     }
 
 }
