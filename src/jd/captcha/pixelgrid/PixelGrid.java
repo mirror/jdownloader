@@ -29,6 +29,8 @@ import java.util.Iterator;
 import java.util.Vector;
 import java.util.logging.Logger;
 
+import javax.imageio.ImageIO;
+
 import jd.captcha.JAntiCaptcha;
 import jd.captcha.gui.ScrollPaneWindow;
 import jd.captcha.pixelobject.PixelObject;
@@ -36,9 +38,6 @@ import jd.captcha.utils.Utilities;
 import jd.config.Property;
 import jd.controlling.JDLogger;
 import jd.nutils.Colors;
-
-import com.sun.image.codec.jpeg.JPEGCodec;
-import com.sun.image.codec.jpeg.JPEGImageEncoder;
 
 /**
  * Diese Klasse behinhaltet alle wichtigen Methoden um das Image-Pixelgrid zu
@@ -1864,15 +1863,17 @@ public class PixelGrid extends Property {
 
         bimg = new BufferedImage(getWidth(), getHeight(), BufferedImage.TYPE_INT_RGB);
         bimg.setRGB(0, 0, getWidth(), getHeight(), getPixel(), 0, getWidth());
-
+        FileOutputStream fos = null;
         try {
-            FileOutputStream fos = new FileOutputStream(file);
-
-            JPEGImageEncoder jpeg = JPEGCodec.createJPEGEncoder(fos);
-            jpeg.encode(bimg);
-            fos.close();
+            fos = new FileOutputStream(file);
+            ImageIO.write(bimg, "jpg", fos);
         } catch (Exception e) {
             JDLogger.exception(e);
+        } finally {
+            try {
+                fos.close();
+            } catch (final Throwable e) {
+            }
         }
     }
 

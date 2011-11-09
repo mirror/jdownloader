@@ -67,7 +67,6 @@ import jd.gui.swing.jdgui.interfaces.View;
 import jd.gui.swing.jdgui.menu.JDMenuBar;
 import jd.gui.swing.jdgui.views.linkgrabber.LinkGrabberPanel;
 import jd.gui.swing.jdgui.views.linkgrabber.LinkgrabberView;
-import jd.gui.swing.jdgui.views.log.LogView;
 import jd.gui.swing.jdgui.views.settings.ConfigurationView;
 import jd.gui.swing.jdgui.views.settings.sidebar.AddonConfig;
 import jd.nutils.JDFlags;
@@ -310,7 +309,7 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
             this.mainTabbedPane.addTab(ConfigurationView.getInstance());
         }
         if (JsonConfig.create(GraphicalUserInterfaceSettings.class).isLogViewVisible()) {
-            this.mainTabbedPane.addTab(LogView.getInstance());
+            // this.mainTabbedPane.addTab(LogView.getInstance());
         }
         this.mainTabbedPane.setSelectedComponent(this.downloadView);
         // TODO

@@ -31,6 +31,9 @@ import jd.event.ControlListener;
 import jd.gui.swing.dialog.AboutDialog;
 import jd.gui.swing.jdgui.actions.ActionController;
 
+import org.appwork.utils.swing.dialog.Dialog;
+import org.appwork.utils.swing.dialog.DialogNoAnswerException;
+
 import com.apple.eawt.AboutHandler;
 import com.apple.eawt.AppEvent;
 import com.apple.eawt.AppEvent.AboutEvent;
@@ -89,15 +92,10 @@ public class MacOSApplicationAdapter implements QuitHandler, AboutHandler, Prefe
     }
 
     public void handleAbout(AboutEvent e) {
-        new GuiRunnable<Object>() {
-
-            @Override
-            public Object runSave() {
-                new AboutDialog();
-                return null;
-            }
-
-        }.start();
+        try {
+            Dialog.getInstance().showDialog(new AboutDialog());
+        } catch (DialogNoAnswerException e1) {
+        }
     }
 
     public void appReOpened(AppReOpenedEvent e) {

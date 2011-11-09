@@ -21,6 +21,8 @@ import java.awt.event.ActionEvent;
 import jd.gui.swing.dialog.AboutDialog;
 import jd.gui.swing.jdgui.actions.ToolBarAction;
 
+import org.appwork.utils.swing.dialog.Dialog;
+import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.gui.translate._GUI;
 
 public class AboutAction extends ToolBarAction {
@@ -33,7 +35,10 @@ public class AboutAction extends ToolBarAction {
 
     @Override
     public void onAction(ActionEvent e) {
-        new AboutDialog();
+        try {
+            Dialog.getInstance().showDialog(new AboutDialog());
+        } catch (DialogNoAnswerException e1) {
+        }
     }
 
     @Override

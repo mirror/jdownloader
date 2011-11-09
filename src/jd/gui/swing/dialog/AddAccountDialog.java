@@ -272,7 +272,6 @@ public class AddAccountDialog extends AbstractDialog<Integer> {
     protected void packed() {
         super.packed();
         hoster.requestFocus();
-
     }
 
 }

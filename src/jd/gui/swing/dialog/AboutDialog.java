@@ -22,7 +22,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 
 import javax.swing.JButton;
-import javax.swing.JDialog;
+import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 
@@ -30,24 +30,38 @@ import jd.controlling.ClipboardHandler;
 import jd.gui.UserIO;
 import jd.gui.swing.Factory;
 import jd.gui.swing.components.linkbutton.JLink;
-import jd.gui.userio.DummyFrame;
 import jd.nutils.JDImage;
-import jd.nutils.Screen;
 import jd.nutils.io.JDIO;
 import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
 
+import org.appwork.utils.swing.dialog.AbstractDialog;
+import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.update.JDUpdater;
 
-public class AboutDialog extends JDialog {
+public class AboutDialog extends AbstractDialog<Integer> {
 
     private static final long serialVersionUID = -7647771640756844691L;
 
     public AboutDialog() {
-        super(DummyFrame.getDialogParent());
+        super(Dialog.BUTTONS_HIDE_CANCEL | Dialog.BUTTONS_HIDE_OK | Dialog.STYLE_HIDE_ICON, _GUI._.jd_gui_swing_components_AboutDialog_title(), null, null, null);
+    }
 
+    @Override
+    protected Integer createReturnValue() {
+        return null;
+    }
+
+    @Override
+    protected boolean isResizable() {
+        return false;
+    }
+
+    @Override
+    public JComponent layoutDialogContent() {
+        final JPanel contentpane = new JPanel();
         JLabel lbl = new JLabel("JDownloader");
         lbl.setFont(lbl.getFont().deriveFont(lbl.getFont().getSize() * 2.0f));
 
@@ -97,30 +111,18 @@ public class AboutDialog extends JDialog {
         btn.setVerticalTextPosition(JButton.BOTTOM);
         btn.setHorizontalTextPosition(JButton.CENTER);
 
-        this.setLayout(new MigLayout("ins 10, wrap 3", "[]15[]push[right]"));
-        this.add(new JLabel(JDImage.getImageIcon("logo/jd_logo_128_128")), "aligny center, spany 6");
-        this.add(lbl, "spanx");
-        this.add(new JLabel("© AppWork GmbH 2007-2011"), "spanx");
-        this.add(new JLabel(version), "gaptop 10");
-        this.add(btn, "aligny center, spany 3");
-        this.add(new JLabel("JRE Vendor: " + System.getProperty("java.vendor")));
-        this.add(new JLabel("JRE Version: " + System.getProperty("java.version")));
-        this.add(new JLabel("Synthetica License Registration Number (#289416475)"), "gaptop 10, spanx");
-        this.add(links, "gaptop 15, growx, pushx, spanx");
-        this.pack();
-
-        this.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
-        this.setTitle(_GUI._.jd_gui_swing_components_AboutDialog_title());
-        this.setResizable(false);
-        this.setLocation(Screen.getCenterOfComponent(DummyFrame.getDialogParent(), this));
-
-        /*
-         * Fixes Always-on-Top-Bug in windows. Bugdesc: found in svn
-         */
-        DummyFrame.getDialogParent().setAlwaysOnTop(true);
-        DummyFrame.getDialogParent().setAlwaysOnTop(false);
-
-        this.setVisible(true);
+        contentpane.setLayout(new MigLayout("ins 10, wrap 3", "[]15[]push[right]"));
+        contentpane.add(new JLabel(JDImage.getImageIcon("logo/jd_logo_128_128")), "aligny center, spany 6");
+        contentpane.add(lbl, "spanx");
+        contentpane.add(new JLabel("© AppWork GmbH 2007-2011"), "spanx");
+        contentpane.add(new JLabel(version), "gaptop 10");
+        contentpane.add(btn, "aligny center, spany 3");
+        contentpane.add(new JLabel("JRE Vendor: " + System.getProperty("java.vendor")));
+        contentpane.add(new JLabel("JRE Version: " + System.getProperty("java.version")));
+        contentpane.add(new JLabel("Synthetica License Registration Number (#289416475)"), "gaptop 10, spanx");
+        contentpane.add(links, "gaptop 15, growx, pushx, spanx");
+        this.registerEscape(contentpane);
+        return contentpane;
     }
 
 }

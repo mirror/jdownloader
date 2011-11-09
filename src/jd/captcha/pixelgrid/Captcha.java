@@ -31,6 +31,8 @@ import java.util.Iterator;
 import java.util.Vector;
 import java.util.logging.Logger;
 
+import javax.imageio.ImageIO;
+
 import jd.captcha.JAntiCaptcha;
 import jd.captcha.LetterComperator;
 import jd.captcha.gui.BasicWindow;
@@ -43,8 +45,6 @@ import com.jhlabs.image.BoxBlurFilter;
 import com.jhlabs.image.ContrastFilter;
 import com.jhlabs.image.PosterizeFilter;
 import com.jhlabs.image.QuantizeFilter;
-import com.sun.image.codec.jpeg.JPEGCodec;
-import com.sun.image.codec.jpeg.JPEGImageEncoder;
 
 /**
  * Diese Klasse behinhaltet Methoden zum verarbeiten von Captchas. Also Grafiken
@@ -1608,15 +1608,17 @@ public class Captcha extends PixelGrid {
     public void saveImageasJpgWithGaps(File file) {
         BufferedImage bimg = new BufferedImage(getWidth(), getHeight(), BufferedImage.TYPE_INT_RGB);
         bimg.setRGB(0, 0, getWidth(), getHeight(), getPixelWithGaps(), 0, getWidth());
-
+        FileOutputStream fos = null;
         try {
-            FileOutputStream fos = new FileOutputStream(file);
-
-            JPEGImageEncoder jpeg = JPEGCodec.createJPEGEncoder(fos);
-            jpeg.encode(bimg);
-            fos.close();
+            fos = new FileOutputStream(file);
+            ImageIO.write(bimg, "jpg", fos);
         } catch (Exception e) {
             JDLogger.exception(e);
+        } finally {
+            try {
+                fos.close();
+            } catch (final Throwable e) {
+            }
         }
     }
 
