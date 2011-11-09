@@ -16,14 +16,11 @@
 
 package jd.plugins.decrypter;
 
-import java.awt.Color;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.captcha.easy.load.LoadImage;
 import jd.controlling.ProgressController;
-import jd.controlling.ProgressControllerEvent;
-import jd.controlling.ProgressControllerListener;
 import jd.http.URLConnectionAdapter;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -31,24 +28,17 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.locale.JDL;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "deviantclip.com" }, urls = { "http://(www\\.)?deviantclip\\.com/Media\\-([0-9]+\\-[0-9]+|[0-9]+_).*?\\.html" }, flags = { 0 })
-public class DeviantClipComGallery extends PluginForDecrypt implements ProgressControllerListener {
+public class DeviantClipComGallery extends PluginForDecrypt {
 
     public DeviantClipComGallery(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private boolean abort  = false;
-    public String   fpName = null;
+    public String fpName = null;
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        try {
-            progress.getBroadcaster().addListener(this);
-        } catch (Throwable e) {
-            /* stable does not have appwork utils yet */
-        }
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.getPage(parameter);
@@ -85,12 +75,6 @@ public class DeviantClipComGallery extends PluginForDecrypt implements ProgressC
                 if (fpName != null) {
                     int counter = 1;
                     for (String photolink : links) {
-                        if (abort) {
-                            progress.setColor(Color.RED);
-                            progress.setStatusText(progress.getStatusText() + ": " + JDL.L("gui.linkgrabber.aborted", "Aborted"));
-                            progress.doFinalize(5000l);
-                            return new ArrayList<DownloadLink>();
-                        }
                         DownloadLink dl = createDownloadlink(photolink.replace("deviantclip.com", "gsghe366REHrtzegiolp") + "---picture");
                         dl.setName(fpName + "_" + counter);
                         br.getPage(photolink);
@@ -134,12 +118,6 @@ public class DeviantClipComGallery extends PluginForDecrypt implements ProgressC
             }
         }
         return decryptedLinks;
-    }
-
-    public void onProgressControllerEvent(ProgressControllerEvent event) {
-        if (event.getID() == ProgressControllerEvent.CANCEL) {
-            abort = true;
-        }
     }
 
     public void getfpName() throws NumberFormatException, PluginException {

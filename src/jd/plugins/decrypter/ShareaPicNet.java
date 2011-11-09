@@ -16,13 +16,10 @@
 
 package jd.plugins.decrypter;
 
-import java.awt.Color;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.controlling.ProgressControllerEvent;
-import jd.controlling.ProgressControllerListener;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
@@ -33,20 +30,13 @@ import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "shareapic.net" }, urls = { "http://(www\\.)?shareapic\\.net/([0-9]+|(Zoom|View)-[0-9]+|content\\.php\\?id=[0-9]+)" }, flags = { 0 })
-public class ShareaPicNet extends PluginForDecrypt implements ProgressControllerListener {
-
-    private boolean abort = false;
+public class ShareaPicNet extends PluginForDecrypt {
 
     public ShareaPicNet(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        try {
-            progress.getBroadcaster().addListener(this);
-        } catch (Throwable e) {
-            /* stable does not have appwork utils yet */
-        }
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         // content links are kinda the same as View and can be handled easily so
@@ -87,12 +77,6 @@ public class ShareaPicNet extends PluginForDecrypt implements ProgressController
         if (links == null || links.length == 0) return null;
         progress.setRange(links.length);
         for (String link : links) {
-            if (abort) {
-                progress.setColor(Color.RED);
-                progress.setStatusText(progress.getStatusText() + ": " + JDL.L("gui.linkgrabber.aborted", "Aborted"));
-                progress.doFinalize(5000l);
-                return new ArrayList<DownloadLink>();
-            }
             link = link.replace("View", "Zoom");
             br.getPage(link + ".html");
             String finallink = getFinallink();
@@ -116,9 +100,4 @@ public class ShareaPicNet extends PluginForDecrypt implements ProgressController
         return finallink;
     }
 
-    public void onProgressControllerEvent(ProgressControllerEvent event) {
-        if (event.getID() == ProgressControllerEvent.CANCEL) {
-            abort = true;
-        }
-    }
 }

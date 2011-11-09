@@ -15,14 +15,11 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.decrypter;
 
-import java.awt.Color;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.controlling.ProgressControllerEvent;
-import jd.controlling.ProgressControllerListener;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -30,7 +27,6 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.locale.JDL;
 
 /*
  Domains:
@@ -43,14 +39,13 @@ import jd.utils.locale.JDL;
  en.album.ee
  */
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "album.ee" }, urls = { "http://[\\w\\.]*?(album.ee|mallorca.as.album.ee|static1.album.ee|beta.album.ee|ru.album.ee|en.album.ee)/(album|node)/[0-9]+/[0-9]+(\\?page=[0-9]+)?" }, flags = { 0 })
-public class AlbumEE extends PluginForDecrypt implements ProgressControllerListener {
+public class AlbumEE extends PluginForDecrypt {
 
     private Pattern fileNamePattern    = Pattern.compile("\">(photo|foto|Фото).*?<b>(.*?)</b></p>");
     private Pattern albumNamePattern   = Pattern.compile(">.*?(album|альбом).*?<a href=\"album[/0-9]+\".*?>(.*?)</a></p>");
     private Pattern nextPagePattern    = Pattern.compile("<a href=\"(album[/0-9]+\\?page=[0-9]+)\">(Next|Järgmine|Следующая)</a>");
     private Pattern singleLinksPattern = Pattern.compile("<div class=\"img\"><a href=\"(node/[0-9]+/[0-9]+)\"><img src");
     private Pattern pictureURLPattern  = Pattern.compile("<img src=\"(http://[\\w\\.]*?album.*?/files/.*?)\" alt");
-    private boolean abort              = false;
 
     public AlbumEE(PluginWrapper wrapper) {
         super(wrapper);
@@ -59,11 +54,6 @@ public class AlbumEE extends PluginForDecrypt implements ProgressControllerListe
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        try {
-            progress.getBroadcaster().addListener(this);
-        } catch (Throwable e) {
-            /* stable does not have appwork utils yet */
-        }
         ArrayList<String> picLinks = new ArrayList<String>();
         br.setFollowRedirects(true);
         String link = parameter.toString();
@@ -85,12 +75,6 @@ public class AlbumEE extends PluginForDecrypt implements ProgressControllerListe
                 onePageOnly = true; // only load this single page
             }
             do {
-                if (abort) {
-                    progress.setColor(Color.RED);
-                    progress.setStatusText(progress.getStatusText() + ": " + JDL.L("gui.linkgrabber.aborted", "Aborted"));
-                    progress.doFinalize(5000l);
-                    return new ArrayList<DownloadLink>();
-                }
                 links = br.getRegex(singleLinksPattern).getColumn(0);
                 for (String link2 : links) {
                     picLinks.add("http://www.album.ee/" + link2);
@@ -106,12 +90,6 @@ public class AlbumEE extends PluginForDecrypt implements ProgressControllerListe
         DownloadLink dlLink;
         progress.setRange(picLinks.size());
         for (String picLink : picLinks) {
-            if (abort) {
-                progress.setColor(Color.RED);
-                progress.setStatusText(progress.getStatusText() + ": " + JDL.L("gui.linkgrabber.aborted", "Aborted"));
-                progress.doFinalize(5000l);
-                return new ArrayList<DownloadLink>();
-            }
             br.getPage(picLink);
             filename = br.getRegex(fileNamePattern).getMatch(1);
             pictureURL = br.getRegex(pictureURLPattern).getMatch(0);
@@ -125,10 +103,4 @@ public class AlbumEE extends PluginForDecrypt implements ProgressControllerListe
         return decryptedLinks;
     }
 
-    public void onProgressControllerEvent(ProgressControllerEvent event) {
-        if (event.getID() == ProgressControllerEvent.CANCEL) {
-            abort = true;
-        }
-
-    }
 }

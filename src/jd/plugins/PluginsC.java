@@ -16,7 +16,6 @@
 
 package jd.plugins;
 
-import java.awt.Color;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -28,7 +27,6 @@ import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.JDLogger;
 import jd.controlling.JDPluginLogger;
-import jd.controlling.ProgressController;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.LinkCrawler;
 import jd.event.ControlEvent;
@@ -48,7 +46,6 @@ import org.jdownloader.controlling.filter.LinkFilterController;
 import org.jdownloader.plugins.controller.container.LazyContainerPlugin;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
-import org.jdownloader.translate._JDT;
 
 /**
  * Dies ist die Oberklasse für alle Plugins, die Containerdateien nutzen können
@@ -132,15 +129,13 @@ public abstract class PluginsC extends Plugin {
      * geht die containedLinks liste durch und decrypted alle links die darin
      * sind.
      */
-    private void decryptLinkProtectorLinks(ProgressController progress) {
+    private void decryptLinkProtectorLinks() {
         final ArrayList<DownloadLink> tmpDlink = new ArrayList<DownloadLink>();
         final ArrayList<String> tmpURL = new ArrayList<String>();
         int i = 0;
         int c = 0;
-        progress.addToMax(dlU.size());
+
         for (String string : dlU) {
-            progress.increase(1);
-            progress.setStatusText(_JDT._.plugins_container_decrypt(i));
             LinkCrawler lc = new LinkCrawler();
             lc.setFilter(LinkFilterController.getInstance());
             lc.crawlNormal(string);
@@ -149,10 +144,8 @@ public abstract class PluginsC extends Plugin {
 
             final DownloadLink srcLink = cls.get(i);
             final Iterator<CrawledLink> it = links.iterator();
-            progress.addToMax(links.size());
 
             while (it.hasNext()) {
-                progress.increase(1);
                 final CrawledLink nextc = it.next();
                 DownloadLink next = nextc.getDownloadLink();
                 if (next == null) continue;
@@ -386,54 +379,26 @@ public abstract class PluginsC extends Plugin {
         if (cls == null || cls.size() == 0) {
             logger.info("Init Container");
             fireControlEvent(ControlEvent.CONTROL_PLUGIN_ACTIVE, this);
-
-            ProgressController progress = null;
-            Color color = null;
-            String errorTxt = null;
-            int wait = 0;
             try {
-                progress = new ProgressController(_JDT._.plugins_container_open(), 10, null);
-                progress.increase(1);
                 if (bs != null) k = bs;
                 try {
                     doDecryption(filename);
                 } catch (Throwable e) {
                     logger.severe(e.toString());
                 }
-                progress.increase(1);
 
                 logger.info(filename + " Parse");
                 if (cls != null && dlU != null) {
-                    progress.setStatusText(_JDT._.plugins_container_found(cls.size()));
-                    decryptLinkProtectorLinks(progress);
-                    progress.setStatusText(_JDT._.plugins_container_exit(cls.size()));
+
+                    decryptLinkProtectorLinks();
+
                     final Iterator<DownloadLink> it = cls.iterator();
                     while (it.hasNext()) {
                         it.next().setLinkType(DownloadLink.LINKTYPE_CONTAINER);
                     }
-                    progress.increase(1);
-                }
-                if (this.containerStatus == null) {
-                    color = Color.RED;
-                    errorTxt = _JDT._.plugins_container_exit_error("Container not found!");
-                    wait = 500;
-                } else if (!this.containerStatus.hasStatus(ContainerStatus.STATUS_FINISHED)) {
-                    color = Color.RED;
-                    errorTxt = _JDT._.plugins_container_exit_error(containerStatus.getStatusText());
-                    wait = 1000;
                 }
             } finally {
                 fireControlEvent(ControlEvent.CONTROL_PLUGIN_INACTIVE, this);
-                try {
-                    if (color != null) progress.setColor(color);
-                    if (errorTxt != null) progress.setStatusText(errorTxt);
-                    if (wait > 0) {
-                        progress.doFinalize(wait);
-                    } else {
-                        progress.doFinalize();
-                    }
-                } catch (final Throwable e) {
-                }
             }
         }
     }
@@ -485,71 +450,49 @@ public abstract class PluginsC extends Plugin {
     }
 
     public ArrayList<DownloadLink> decryptContainer(CrawledLink source) {
-        ProgressController progress = null;
-        int progressShow = 0;
-        Color color = null;
-        try {
-            if (source.getURL() == null) return null;
-            progress = new ProgressController(_JDT._.jd_plugins_PluginForDecrypt_decrypting(getHost()), null);
-            ArrayList<DownloadLink> tmpLinks = null;
-            boolean showException = true;
-            try {
-                /*
-                 * we now lets log into plugin specific loggers with all
-                 * verbose/debug on
-                 */
-                br.setLogger(logger);
-                br.setVerbose(true);
-                br.setDebug(true);
-                /* extract filename from url */
-                String file = new Regex(source.getURL(), "file://(.+)").getMatch(0);
-                file = Encoding.urlDecode(file, false);
-                if (file != null && new File(file).exists()) {
-                    initContainer(file, null);
-                    tmpLinks = getContainedDownloadlinks();
-                } else {
-                    throw new Throwable("Invalid Container: " + source.getURL());
-                }
-            } catch (Throwable e) {
-                /*
-                 * damn, something must have gone really really bad, lets keep
-                 * the log
-                 */
-                progress.setStatusText(this.getHost() + ": " + e.getMessage());
-                logger.log(Level.SEVERE, "Exception", e);
-                color = Color.RED;
-                progressShow = 15000;
-            }
-            if (tmpLinks == null && showException) {
-                /*
-                 * null as return value? something must have happened, do not
-                 * clear log
-                 */
-                logger.severe("ContainerPlugin out of date: " + this + " :" + getVersion());
-                progress.setStatusText(_JDT._.jd_plugins_PluginForDecrypt_error_outOfDate(this.getHost()));
-                color = Color.RED;
-                progressShow = 15000;
 
-                /* lets forward the log */
-                if (logger instanceof JDPluginLogger) {
-                    /* make sure we use the right logger */
-                    ((JDPluginLogger) logger).logInto(JDLogger.getLogger());
-                }
+        if (source.getURL() == null) return null;
+        ArrayList<DownloadLink> tmpLinks = null;
+        boolean showException = true;
+        try {
+            /*
+             * we now lets log into plugin specific loggers with all
+             * verbose/debug on
+             */
+            br.setLogger(logger);
+            br.setVerbose(true);
+            br.setDebug(true);
+            /* extract filename from url */
+            String file = new Regex(source.getURL(), "file://(.+)").getMatch(0);
+            file = Encoding.urlDecode(file, false);
+            if (file != null && new File(file).exists()) {
+                initContainer(file, null);
+                tmpLinks = getContainedDownloadlinks();
+            } else {
+                throw new Throwable("Invalid Container: " + source.getURL());
             }
-            return tmpLinks;
-        } finally {
-            try {
-                if (progressShow > 0) {
-                    if (color != null) {
-                        progress.setColor(color);
-                    }
-                    progress.doFinalize(progressShow);
-                } else {
-                    progress.doFinalize();
-                }
-            } catch (Throwable e) {
+        } catch (Throwable e) {
+            /*
+             * damn, something must have gone really really bad, lets keep the
+             * log
+             */
+
+            logger.log(Level.SEVERE, "Exception", e);
+        }
+        if (tmpLinks == null && showException) {
+            /*
+             * null as return value? something must have happened, do not clear
+             * log
+             */
+            logger.severe("ContainerPlugin out of date: " + this + " :" + getVersion());
+
+            /* lets forward the log */
+            if (logger instanceof JDPluginLogger) {
+                /* make sure we use the right logger */
+                ((JDPluginLogger) logger).logInto(JDLogger.getLogger());
             }
         }
+        return tmpLinks;
     }
 
 }

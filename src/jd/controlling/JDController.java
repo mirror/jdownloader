@@ -178,25 +178,23 @@ public class JDController implements ControlListener {
      * {@link #fireControlEvent(ControlEvent)} ein Event losgeschickt wird.
      */
 
-    private final ArrayList<ControlEvent> eventQueue       = new ArrayList<ControlEvent>();
+    private final ArrayList<ControlEvent> eventQueue   = new ArrayList<ControlEvent>();
 
-    private EventSender                   eventSender      = null;
+    private EventSender                   eventSender  = null;
 
     /**
      * Der Logger
      */
-    private static final Logger           LOGGER           = JDLogger.getLogger();
-
-    private boolean                       alreadyAutostart = false;
+    private static final Logger           LOGGER       = JDLogger.getLogger();
 
     /**
      * Der Download Watchdog verwaltet die Downloads
      */
 
-    private static ArrayList<String>      delayMap         = new ArrayList<String>();
-    private static JDController           INSTANCE         = new JDController();
+    private static ArrayList<String>      delayMap     = new ArrayList<String>();
+    private static JDController           INSTANCE     = new JDController();
 
-    private static final Object           SHUTDOWNLOCK     = new Object();
+    private static final Object           SHUTDOWNLOCK = new Object();
 
     /**
      * Private constructor. Use singleton method instead!
@@ -524,31 +522,6 @@ public class JDController implements ControlListener {
         }
         LOGGER.severe("Container creation failed");
         UserIO.getInstance().requestMessageDialog("Container encryption failed");
-    }
-
-    public synchronized void autostartDownloadsonStartup() {
-        if (alreadyAutostart == true) return;
-        alreadyAutostart = true;
-        new Thread("Autostart counter") {
-            @Override
-            public void run() {
-                final ProgressController pc = new ProgressController(_JDT._.gui_autostart(), null);
-                pc.getBroadcaster().addListener(new ProgressControllerListener() {
-                    public void onProgressControllerEvent(final ProgressControllerEvent event) {
-                        pc.setStatusText("Autostart aborted!");
-                    }
-                });
-                pc.doFinalize(10 * 1000l);
-                while (!pc.isFinished()) {
-                    try {
-                        Thread.sleep(1000);
-                    } catch (final InterruptedException e) {
-                        break;
-                    }
-                }
-                if (!pc.isAbort()) DownloadWatchDog.getInstance().startDownloads();
-            }
-        }.start();
     }
 
     public DownloadLink getDownloadLinkByFileOutput(final File file, final Integer linkstatus) {

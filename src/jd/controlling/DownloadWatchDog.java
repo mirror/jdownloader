@@ -726,26 +726,20 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         /* wait till all downloads are stopped */
         int waitStop = DownloadWatchDog.this.activeDownloads.get();
         if (waitStop > 0) {
-            final ProgressController progress = new ProgressController(_JDT._.jd_controlling_DownloadWatchDog_stopping(waitStop), waitStop, null);
-            try {
-                while (true) {
-                    boolean alive = false;
-                    for (SingleDownloadController con : list) {
-                        if (con.isAlive()) {
-                            alive = true;
-                            break;
-                        }
+            while (true) {
+                boolean alive = false;
+                for (SingleDownloadController con : list) {
+                    if (con.isAlive()) {
+                        alive = true;
+                        break;
                     }
-                    if (alive == false) break;
-                    try {
-                        Thread.sleep(1000);
-                    } catch (InterruptedException e) {
-                        JDLogger.exception(e);
-                    }
-                    progress.setStatusText("Stopping all downloads " + waitStop);
                 }
-            } finally {
-                progress.doFinalize();
+                if (alive == false) break;
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    JDLogger.exception(e);
+                }
             }
         }
     }
@@ -1124,19 +1118,13 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                         /* wait till all downloads are stopped */
                         int waitStop = DownloadWatchDog.this.activeDownloads.get();
                         if (waitStop > 0) {
-                            final ProgressController progress = new ProgressController(_JDT._.jd_controlling_DownloadWatchDog_stopping(waitStop), waitStop, null);
-                            try {
-                                while (true) {
-                                    if ((waitStop = DownloadWatchDog.this.activeDownloads.get()) == 0) break;
-                                    try {
-                                        sleep(1000);
-                                    } catch (InterruptedException e) {
-                                        JDLogger.exception(e);
-                                    }
-                                    progress.setStatusText("Stopping all downloads " + waitStop);
+                            while (true) {
+                                if ((waitStop = DownloadWatchDog.this.activeDownloads.get()) == 0) break;
+                                try {
+                                    sleep(1000);
+                                } catch (InterruptedException e) {
+                                    JDLogger.exception(e);
                                 }
-                            } finally {
-                                progress.doFinalize();
                             }
                         }
                         /* clear sessionHistory */

@@ -184,10 +184,6 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
                         JDGui.this.mainFrame.setEnabled(true);
                     }
                 };
-                if (JsonConfig.create(GeneralSettings.class).isAutoStartDownloadsOnStartupEnabled()) {
-                    /* autostart downloads when no autoupdate is enabled */
-                    JDController.getInstance().autostartDownloadsonStartup();
-                }
             }
 
         });

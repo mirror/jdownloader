@@ -1,15 +1,16 @@
 package jd.gui.swing.jdgui.views.settings.panels.reconnect;
 
-import java.awt.Color;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
 import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.SwingConstants;
 
+import jd.controlling.IOEQ;
 import jd.controlling.JDLogger;
-import jd.controlling.ProgressController;
 import jd.controlling.reconnect.ReconnectConfig;
 import jd.controlling.reconnect.Reconnecter;
 import jd.controlling.reconnect.ipcheck.IP;
@@ -116,7 +117,6 @@ public class ReconnectTester extends MigPanel implements SettingsComponent, Acti
     private void testReconnect() {
         JDLogger.addHeader("Reconnect Testing");
 
-        final ProgressController progress = new ProgressController(100, _JDT._.gui_warning_reconnect_pleaseWait(), NewTheme.I().getIcon("reconnect", 20));
         btnTest.setEnabled(false);
         Log.L.info("Start Reconnect");
         this.lblStatusMessage.setText(_JDT._.gui_warning_reconnect_running());
@@ -127,47 +127,30 @@ public class ReconnectTester extends MigPanel implements SettingsComponent, Acti
         this.lblBeforeIpLabel.setEnabled(true);
         this.lblCurrentIP.setText("?");
         final long timel = System.currentTimeMillis();
+        final ScheduledFuture<?> timer = IOEQ.TIMINGQUEUE.scheduleAtFixedRate(new Runnable() {
 
-        final Thread timer = new Thread() {
-            @Override
             public void run() {
-                while (true) {
-                    new EDTRunner() {
+                new EDTRunner() {
 
-                        @Override
-                        protected void runInEDT() {
-                            lblTime.setText(Formatter.formatSeconds((System.currentTimeMillis() - timel) / 1000));
-                            lblTime.setEnabled(true);
-                            lblDuration.setEnabled(true);
-                        }
+                    @Override
+                    protected void runInEDT() {
+                        lblTime.setText(Formatter.formatSeconds((System.currentTimeMillis() - timel) / 1000));
+                        lblTime.setEnabled(true);
+                        lblDuration.setEnabled(true);
+                    }
 
-                    };
-                    try {
-                        Thread.sleep(1000);
-                    } catch (final InterruptedException e) {
-                        return;
-                    }
-                    if (progress.isFinalizing()) {
-                        break;
-                    }
-                }
+                };
             }
-        };
-        timer.start();
+
+        }, 1, 1, TimeUnit.SECONDS);
         final ReconnectConfig config = JsonConfig.create(ReconnectConfig.class);
         final int retries = config.getMaxReconnectRetryNum();
-        progress.setStatus(30);
         new Thread() {
             @Override
             public void run() {
                 try {
                     config.setMaxReconnectRetryNum(0);
                     if (Reconnecter.getInstance().forceReconnect()) {
-                        if (config.isIPCheckGloballyDisabled()) {
-                            progress.setStatusText(_JDT._.gui_warning_reconnectunknown());
-                        } else {
-                            progress.setStatusText(_JDT._.gui_warning_reconnectSuccess());
-                        }
                         new EDTRunner() {
 
                             @Override
@@ -189,8 +172,6 @@ public class ReconnectTester extends MigPanel implements SettingsComponent, Acti
 
                         };
                     } else {
-                        progress.setStatusText(_JDT._.gui_warning_reconnectFailed());
-                        progress.setColor(Color.RED);
                         new EDTRunner() {
 
                             @Override
@@ -207,12 +188,9 @@ public class ReconnectTester extends MigPanel implements SettingsComponent, Acti
 
                         };
                     }
-                    timer.interrupt();
-                    progress.setStatus(100);
-                    progress.doFinalize(5000);
                     config.setMaxReconnectRetryNum(retries);
-
                 } finally {
+                    timer.cancel(true);
                     new EDTRunner() {
 
                         @Override

@@ -31,7 +31,6 @@ import javax.swing.JProgressBar;
 
 import jd.controlling.JDLogger;
 import jd.controlling.JSonWrapper;
-import jd.controlling.ProgressController;
 import jd.event.MessageEvent;
 import jd.event.MessageListener;
 import jd.http.Browser;
@@ -624,16 +623,12 @@ public class WebUpdater implements Serializable {
      *            TODO
      * @throws IOException
      */
-    public void updateFiles(final ArrayList<FileUpdate> files, final ProgressController prg) throws IOException {
+    public void updateFiles(final ArrayList<FileUpdate> files) throws IOException {
 
         if (this.progressload != null) {
             this.progressload.setMaximum(files.size());
         }
-
         int i = 0;
-        if (prg != null) {
-            prg.addToMax(files.size());
-        }
         for (final FileUpdate file : files) {
             try {
                 this.broadcaster.fireEvent(new MessageEvent(this, 0, String.format("Update %s", WebUpdater.formatPathReadable(file.getLocalPath()))));
@@ -646,9 +641,6 @@ public class WebUpdater implements Serializable {
                     if (this.progressload != null) {
                         this.progressload.setForeground(Color.RED);
                     }
-                    if (prg != null) {
-                        prg.setColor(Color.RED);
-                    }
                 }
 
             } catch (final Exception e) {
@@ -659,9 +651,6 @@ public class WebUpdater implements Serializable {
                 if (this.progressload != null) {
                     this.progressload.setForeground(Color.RED);
                 }
-                if (prg != null) {
-                    prg.setColor(Color.RED);
-                }
             }
 
             i++;
@@ -670,9 +659,6 @@ public class WebUpdater implements Serializable {
                 this.progressload.setValue(i);
             }
 
-            if (prg != null) {
-                prg.increase(1);
-            }
         }
         if (this.progressload != null) {
             this.progressload.setValue(100);

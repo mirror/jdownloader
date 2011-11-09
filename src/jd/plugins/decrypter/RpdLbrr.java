@@ -50,7 +50,6 @@ public class RpdLbrr extends PluginForDecrypt {
          * only the first link shows a captcha. so we wait and queue paralell
          * requests
          */
-        if (RpdLbrr.decryptRunning) progress.setStatusText("Queued");
         waitQueue();
         br.setCookiesExclusive(false);
         br.getPage(parameter.getCryptedUrl());

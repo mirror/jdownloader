@@ -128,10 +128,6 @@ public class Rlnks extends PluginForDecrypt {
             Browser brc = null;
             PROGRESS.addToMax(matches.length);
             for (final String match : matches) {
-                try {
-                    PROGRESS.setInitials(String.valueOf(i += 1));
-                } catch (final Throwable e) {
-                }
                 Thread.sleep(2333);
                 getCaptcha("http://www.relink.us/frame.php?" + match, param);
                 if (ALLFORM != null && ALLFORM.getRegex("captcha").matches()) {

@@ -16,24 +16,19 @@
 
 package jd.plugins.decrypter;
 
-import java.awt.Color;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.controlling.ProgressControllerEvent;
-import jd.controlling.ProgressControllerListener;
 import jd.http.RandomUserAgent;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.locale.JDL;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "iload.to" }, urls = { "http://((beta|de)\\.)?iload\\.to/(de/)?((go/\\d+([-\\w/\\.]+)?(/merged|go/\\d+)?)(streaming/.+)?|(view|title|release)/.*?/)" }, flags = { 0 })
-public class LdT extends PluginForDecrypt implements ProgressControllerListener {
+public class LdT extends PluginForDecrypt {
 
-    private boolean      abort                 = false;
     private final String patternSupported_Info = ".*?((beta|de)\\.)?iload\\.to/(de/)?(view|title|release)/.*?/";
 
     public LdT(final PluginWrapper wrapper) {
@@ -42,11 +37,6 @@ public class LdT extends PluginForDecrypt implements ProgressControllerListener 
 
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
-        try {
-            progress.getBroadcaster().addListener(this);
-        } catch (final Throwable e) {
-            /* stable does not have appwork utils yet */
-        }
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final ArrayList<String> alllinks = new ArrayList<String>();
         final String parameter = param.toString();
@@ -77,13 +67,6 @@ public class LdT extends PluginForDecrypt implements ProgressControllerListener 
             logger.info("Found links to " + alllinks.size() + ". Decrypting now...");
             progress.setRange(alllinks.size());
             for (final String link : alllinks) {
-                if (abort) {
-                    logger.info("Decrypt aborted by user.");
-                    progress.setColor(Color.RED);
-                    progress.setStatusText(progress.getStatusText() + ": " + JDL.L("gui.linkgrabber.aborted", "Aborted"));
-                    progress.doFinalize(5000l);
-                    return new ArrayList<DownloadLink>();
-                }
                 final String golink = "http://iload.to/" + link;
                 br.getPage(golink);
                 final String finallink = br.getRedirectLocation();
@@ -107,13 +90,6 @@ public class LdT extends PluginForDecrypt implements ProgressControllerListener 
             dl.setUrlDownload(url);
         }
         return decryptedLinks;
-    }
-
-    @SuppressWarnings("deprecation")
-    public void onProgressControllerEvent(final ProgressControllerEvent event) {
-        if (event.getID() == ProgressControllerEvent.CANCEL) {
-            abort = true;
-        }
     }
 
 }

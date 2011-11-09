@@ -16,7 +16,6 @@
 
 package jd.controlling;
 
-import java.awt.EventQueue;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
@@ -34,7 +33,6 @@ import jd.plugins.PluginForHost;
 import org.appwork.utils.event.Eventsender;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
-import org.jdownloader.translate._JDT;
 
 class LinkCheckBroadcaster extends Eventsender<LinkCheckListener, LinkCheckEvent> {
 
@@ -45,7 +43,7 @@ class LinkCheckBroadcaster extends Eventsender<LinkCheckListener, LinkCheckEvent
 
 }
 
-public class LinkCheck implements ActionListener, ProgressControllerListener {
+public class LinkCheck implements ActionListener {
 
     private static LinkCheck               INSTANCE     = null;
     private Timer                          checkTimer   = null;
@@ -53,7 +51,6 @@ public class LinkCheck implements ActionListener, ProgressControllerListener {
 
     private ArrayList<DownloadLink>        linksToCheck = new ArrayList<DownloadLink>();
     private boolean                        checkRunning = false;
-    protected ProgressController           pc;
     protected Jobber                       checkJobbers;
     transient private LinkCheckBroadcaster broadcaster  = new LinkCheckBroadcaster();
 
@@ -158,15 +155,14 @@ public class LinkCheck implements ActionListener, ProgressControllerListener {
                             link.getAvailableStatus(plg);
                             getBroadcaster().fireEvent(new LinkCheckEvent(this, LinkCheckEvent.AFTER_CHECK, link));
                         }
-                        pc.increase(1);
+
                     }
                 } else {
                     getBroadcaster().fireEvent(new LinkCheckEvent(this, LinkCheckEvent.AFTER_CHECK, hosterList));
-                    pc.increase(hosterList.size());
+
                 }
             } catch (Throwable e) {
                 JDLogger.exception(e);
-                pc.increase(hosterList.size());
             }
         }
         DownloadController.getInstance().fireDataUpdate(hosterList);
@@ -178,14 +174,10 @@ public class LinkCheck implements ActionListener, ProgressControllerListener {
             public void run() {
                 setName("OnlineCheck");
                 getBroadcaster().fireEvent(new LinkCheckEvent(this, LinkCheckEvent.START));
-                pc = new ProgressController(_JDT._.gui_linkgrabber_pc_onlinecheck(), null);
-                pc.getBroadcaster().addListener(LinkCheck.getLinkChecker());
-                pc.setRange(0);
                 while (linksToCheck.size() != 0) {
                     ArrayList<DownloadLink> currentList;
                     synchronized (linksToCheck) {
                         currentList = new ArrayList<DownloadLink>(linksToCheck);
-                        pc.addToMax(currentList.size());
                     }
                     /* onlinecheck, multithreaded damit schneller */
                     HashMap<String, ArrayList<DownloadLink>> map = new HashMap<String, ArrayList<DownloadLink>>();
@@ -229,8 +221,6 @@ public class LinkCheck implements ActionListener, ProgressControllerListener {
                         return;
                     }
                 }
-                pc.doFinalize();
-                pc.getBroadcaster().removeListener(LinkCheck.getLinkChecker());
                 getBroadcaster().fireEvent(new LinkCheckEvent(this, LinkCheckEvent.STOP));
                 checkRunning = false;
             }
@@ -269,25 +259,11 @@ public class LinkCheck implements ActionListener, ProgressControllerListener {
         checkRunning = false;
         checkTimer.stop();
         if (checkThread != null && checkThread.isAlive()) {
-            EventQueue.invokeLater(new Runnable() {
-                public void run() {
-                    pc.setStatusText(pc.getStatusText() + ": " + _JDT._.gui_linkgrabber_aborted());
-                    pc.doFinalize(5000l);
-                }
-            });
             checkJobbers.stop();
             checkThread.interrupt();
         }
         synchronized (linksToCheck) {
             linksToCheck.clear();
-        }
-    }
-
-    public void onProgressControllerEvent(ProgressControllerEvent event) {
-        if (event.getCaller() == this.pc) {
-            this.abortLinkCheck();
-            getBroadcaster().fireEvent(new LinkCheckEvent(this, LinkCheckEvent.ABORT));
-            return;
         }
     }
 

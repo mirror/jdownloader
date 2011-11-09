@@ -27,7 +27,6 @@ import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcollector.LinkCollectorEvent;
 import jd.controlling.linkcollector.LinkCollectorListener;
 import jd.controlling.reconnect.Reconnecter;
-import jd.gui.swing.jdgui.components.modules.ModuleStatus;
 import jd.gui.swing.jdgui.components.premiumbar.PremiumStatus;
 import jd.gui.swing.laf.LookAndFeelController;
 import net.miginfocom.swing.MigLayout;
@@ -118,7 +117,6 @@ public class StatusBarImpl extends JPanel {
         // spMaxChunks.getSpinner().addChangeListener(this);
 
         add(PremiumStatus.getInstance());
-        add(new ModuleStatus());
 
         reconnectIndicator = new IconedProcessIndicator(NewTheme.I().getIcon("reconnect", 16));
         reconnectIndicator.setTitle(_GUI._.StatusBarImpl_initGUI_reconnect());

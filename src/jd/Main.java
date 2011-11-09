@@ -57,7 +57,9 @@ import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 import org.appwork.controlling.SingleReachableState;
+import org.appwork.exceptions.WTFException;
 import org.appwork.storage.JSonStorage;
+import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.jackson.JacksonMapper;
 import org.appwork.utils.Application;
 import org.appwork.utils.logging.Log;
@@ -72,6 +74,7 @@ import org.jdownloader.gui.uiserio.JDSwingUserIO;
 import org.jdownloader.gui.uiserio.NewUIO;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.plugins.controller.host.HostPluginController;
+import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.translate._JDT;
 import org.jdownloader.update.JDUpdater;
 
@@ -474,6 +477,10 @@ public class Main {
                         // JDUpdater.getInstance().startChecker();
                         /* start downloadwatchdog */
                         DownloadWatchDog.getInstance();
+                        if (JsonConfig.create(GeneralSettings.class).isAutoStartDownloadsOnStartupEnabled()) {
+                            /* autostart downloads when no autoupdate is enabled */
+                            Log.exception(new WTFException("REIMPLEMENT ME:autostart on startup"));
+                        }
                     }
                 }.start();
             }

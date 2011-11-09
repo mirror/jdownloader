@@ -1,13 +1,11 @@
 package org.jdownloader.extensions.lecturnity;
 
-import java.awt.Color;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
 
 import jd.controlling.JDLogger;
 import jd.controlling.LinkGrabberController;
-import jd.controlling.ProgressController;
 import jd.gui.UserIO;
 import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.http.Browser;
@@ -62,9 +60,6 @@ public class LecturnityDownloaderExtension extends AbstractExtension<LecturnityD
         new Thread(new Runnable() {
 
             public void run() {
-                ProgressController progress = new ProgressController("Lecturnity: Parsing " + url, null);
-                progress.setInitials("LE");
-                progress.setIndeterminate(true);
 
                 String message;
                 try {
@@ -72,17 +67,11 @@ public class LecturnityDownloaderExtension extends AbstractExtension<LecturnityD
 
                     ArrayList<DownloadLink> links = listFiles(name, name + "/", url);
                     LinkGrabberController.getInstance().addLinks(links, true, false);
-
                     message = "Successfully added " + links.size() + " links to downloadlist!";
                 } catch (Exception e1) {
                     JDLogger.exception(e1);
-
                     message = "An error occured while parsing the site " + url + "! See Log for more informations!";
-                    progress.setColor(Color.RED);
                 }
-
-                progress.setStatusText("Lecturnity: " + message);
-                progress.doFinalize(5 * 1000l);
 
                 UserIO.getInstance().requestMessageDialog(message);
             }

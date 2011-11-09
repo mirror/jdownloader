@@ -1131,11 +1131,6 @@ public class LnkCrptWs extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    @Override
-    protected String getInitials() {
-        return "LC";
-    }
-
     private void prepareBrowser(final String userAgent) {
         br.getHeaders().put("Cache-Control", null);
         br.getHeaders().put("Accept-Charset", null);

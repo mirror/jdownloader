@@ -16,7 +16,6 @@
 
 package jd.gui.swing.jdgui.views.linkgrabber;
 
-import java.awt.EventQueue;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
@@ -40,9 +39,6 @@ import jd.controlling.LinkCheckListener;
 import jd.controlling.LinkGrabberController;
 import jd.controlling.LinkGrabberControllerEvent;
 import jd.controlling.LinkGrabberControllerListener;
-import jd.controlling.ProgressController;
-import jd.controlling.ProgressControllerEvent;
-import jd.controlling.ProgressControllerListener;
 import jd.gui.UserIO;
 import jd.gui.swing.components.Balloon;
 import jd.gui.swing.jdgui.actions.ToolBarAction;
@@ -63,7 +59,7 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.GeneralSettings;
 
-public class LinkGrabberPanel extends SwitchPanel implements ActionListener, LinkCheckListener, ProgressControllerListener, LinkGrabberControllerListener {
+public class LinkGrabberPanel extends SwitchPanel implements ActionListener, LinkCheckListener, LinkGrabberControllerListener {
 
     private static final long       serialVersionUID       = 1607433619381447389L;
 
@@ -75,7 +71,6 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
 
     private transient Thread        gatherer;
     private boolean                 gatherer_running       = false;
-    private ProgressController      pc;
 
     private Timer                   gathertimer;
 
@@ -128,8 +123,6 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
         INSTANCE = this;
         LGINSTANCE = LinkGrabberController.getInstance();
         LGINSTANCE.addListener(this);
-        /* to init the DownloadAutostart Listener */
-        DownloadAutostart.getInstance();
 
         if (SubConfiguration.getConfig(LinkGrabberController.CONFIG).getBooleanProperty(LinkGrabberController.PARAM_CONTROLPOSITION, true)) {
             this.setLayout(new MigLayout("ins 0, wrap 1", "[fill,grow]", "[][fill,grow]"));
@@ -358,12 +351,6 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
         lc.getBroadcaster().removeListener(this);
         if (gatherer != null && gatherer.isAlive()) {
             gatherer_running = false;
-            EventQueue.invokeLater(new Runnable() {
-                public void run() {
-                    pc.setStatusText(pc.getStatusText() + ": " + _GUI._.gui_linkgrabber_aborted());
-                    pc.doFinalize(5000l);
-                }
-            });
             checkJobbers.stop();
             gatherer.interrupt();
         }
@@ -393,15 +380,12 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
             public void run() {
                 setName("LinkGrabber");
                 gatherer_running = true;
-                pc = new ProgressController(_GUI._.gui_linkgrabber_pc_linkgrabber(), null);
-                pc.getBroadcaster().addListener(INSTANCE);
-                lc.getBroadcaster().addListener(INSTANCE);
-                pc.setRange(0);
+
                 while (waitingList.size() > 0 || lc.isRunning()) {
                     ArrayList<DownloadLink> currentList = new ArrayList<DownloadLink>();
                     synchronized (waitingList) {
                         currentList = new ArrayList<DownloadLink>(waitingList);
-                        pc.addToMax(currentList.size());
+
                         waitingList.removeAll(currentList);
                     }
                     if (!LGINSTANCE.isLinkCheckEnabled()) {
@@ -429,8 +413,6 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
                     }
                 }
                 lc.getBroadcaster().removeListener(INSTANCE);
-                pc.doFinalize();
-                pc.getBroadcaster().removeListener(INSTANCE);
                 LGINSTANCE.postprocessing();
                 LGINSTANCE.throwFinished();
                 gatherer_running = false;
@@ -451,7 +433,6 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
             if (!gatherer_running) break;
             if (!link.getBooleanProperty("removed", false)) LGINSTANCE.attachToPackagesSecondStage(link);
         }
-        pc.increase(links.size());
         updateAsync.restart();
     }
 
@@ -591,14 +572,6 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
         case LinkCheckEvent.ABORT:
             stopLinkGatherer();
             break;
-        }
-    }
-
-    public void onProgressControllerEvent(ProgressControllerEvent event) {
-        if (event.getCaller() == this.pc) {
-            lc.abortLinkCheck();
-            this.stopLinkGatherer();
-            return;
         }
     }
 

@@ -16,14 +16,11 @@
 
 package jd.plugins.decrypter;
 
-import java.awt.Color;
 import java.io.IOException;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.controlling.ProgressControllerEvent;
-import jd.controlling.ProgressControllerListener;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -36,7 +33,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "audiobeats.net" }, urls = { "http://[\\w\\.]*?audiobeats\\.net/(liveset|link|event|artist)\\?id=\\d+" }, flags = { 0 })
-public class DBtsNt extends PluginForDecrypt implements ProgressControllerListener {
+public class DBtsNt extends PluginForDecrypt {
 
     private String                  fpName;
     private ArrayList<DownloadLink> decryptedLinks;
@@ -45,16 +42,9 @@ public class DBtsNt extends PluginForDecrypt implements ProgressControllerListen
         super(wrapper);
     }
 
-    private boolean abort = false;
-
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
         decryptedLinks = new ArrayList<DownloadLink>();
-        try {
-            progress.getBroadcaster().addListener(this);
-        } catch (Throwable e) {
-            /* stable does not have appwork utils yet */
-        }
         // TODO: beim hinzuf�gen von Events oder Artisten etc. sollte der
         // Linkgrabber gleiche links auch als gleiche Links erkennen
 
@@ -123,13 +113,6 @@ public class DBtsNt extends PluginForDecrypt implements ProgressControllerListen
                 }
                 progress.setRange(progress.getMax() + allLinks.length);
                 for (String aLink : allLinks) {
-                    if (abort) {
-                        progress.setColor(Color.RED);
-                        progress.setStatusText(progress.getStatusText() + ": " + JDL.L("gui.linkgrabber.aborted", "Aborted"));
-                        logger.info("Decrypter is NOT defect, aborted by user!");
-                        progress.doFinalize(5000l);
-                        return false;
-                    }
                     if (!decryptSingleLink(parameter, progress, decryptedLinks, aLink)) return false;
                     try {
                         Thread.sleep(1000);
@@ -174,13 +157,6 @@ public class DBtsNt extends PluginForDecrypt implements ProgressControllerListen
                     finallink = br.getRegex("var finalLink = \"(.*?)\";").getMatch(0);
             }
         }
-        if (abort) {
-            progress.setColor(Color.RED);
-            progress.setStatusText(progress.getStatusText() + ": " + JDL.L("gui.linkgrabber.aborted", "Aborted"));
-            logger.info("Decrypter is NOT defect, aborted by user!");
-            progress.doFinalize(5000l);
-            return false;
-        }
         if (finallink == null) {
             finallink = br.getRegex("link_header\\.php\" noresize=\"noresize\">[\t\n\r ]+<frame src=\"(http.*?)\"").getMatch(0);
             if (finallink == null) finallink = br.getRedirectLocation();
@@ -194,13 +170,6 @@ public class DBtsNt extends PluginForDecrypt implements ProgressControllerListen
         }
         progress.increase(1);
         return true;
-    }
-
-    public void onProgressControllerEvent(ProgressControllerEvent event) {
-        if (event.getID() == ProgressControllerEvent.CANCEL) {
-            abort = true;
-        }
-
     }
 
 }

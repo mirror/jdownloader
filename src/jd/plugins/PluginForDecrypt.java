@@ -16,7 +16,6 @@
 
 package jd.plugins;
 
-import java.awt.Color;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -35,12 +34,10 @@ import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.LinkCrawlerDistributer;
 import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.http.Browser;
-import jd.nutils.Formatter;
 import jd.nutils.encoding.Encoding;
 
 import org.appwork.utils.Regex;
 import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin;
-import org.jdownloader.translate._JDT;
 
 /**
  * Dies ist die Oberklasse für alle Plugins, die Links entschlüsseln können
@@ -121,13 +118,12 @@ public abstract class PluginForDecrypt extends Plugin {
     }
 
     public void sleep(long i, CryptedLink link) throws InterruptedException {
-        String before = link.getProgressController().getStatusText();
         while (i > 0) {
             i -= 1000;
-            link.getProgressController().setStatusText(before + " " + _JDT._.gui_download_waittime_status2(Formatter.formatSeconds(i / 1000)));
-            Thread.sleep(1000);
+            synchronized (this) {
+                this.wait(1000);
+            }
         }
-        link.getProgressController().setStatusText(before);
     }
 
     /**
@@ -170,90 +166,64 @@ public abstract class PluginForDecrypt extends Plugin {
      * @return Ein Vector mit Klartext-links
      */
     public ArrayList<DownloadLink> decryptLink(CrawledLink source) {
-        ProgressController progress = null;
-        int progressShow = 0;
-        Color color = null;
+        CryptedLink cryptLink = source.getCryptedLink();
+        if (cryptLink == null) return null;
+        ProgressController progress = new ProgressController();
+        cryptLink.setProgressController(progress);
+        ArrayList<DownloadLink> tmpLinks = null;
+        boolean showException = true;
         try {
-            CryptedLink cryptLink = source.getCryptedLink();
-            if (cryptLink == null) return null;
-            progress = new ProgressController(_JDT._.jd_plugins_PluginForDecrypt_decrypting(getHost()), null);
-            progress.setInitials(getInitials());
-            cryptLink.setProgressController(progress);
-            ArrayList<DownloadLink> tmpLinks = null;
-            boolean showException = true;
-            try {
-                /*
-                 * we now lets log into plugin specific loggers with all
-                 * verbose/debug on
-                 */
-                br.setLogger(logger);
-                br.setVerbose(true);
-                br.setDebug(true);
-                /* now we let the decrypter do its magic */
-                tmpLinks = decryptIt(cryptLink, progress);
-            } catch (DecrypterException e) {
-                if (DecrypterException.CAPTCHA.equals(e.getMessage())) {
-                    showException = false;
-                }
-                /*
-                 * we got a decrypter exception, clear log and note that
-                 * something went wrong
-                 */
-                progress.setStatusText(this.getHost() + ": " + e.getMessage());
-                if (logger instanceof JDPluginLogger) {
-                    /* make sure we use the right logger */
-                    ((JDPluginLogger) logger).clear();
-                }
-                logger.log(Level.SEVERE, "DecrypterException:" + e.getMessage(), e);
-                color = Color.RED;
-                progressShow = 15000;
-            } catch (InterruptedException e) {
-                /* plugin got interrupted, clear log and note what happened */
-                if (logger instanceof JDPluginLogger) {
-                    /* make sure we use the right logger */
-                    ((JDPluginLogger) logger).clear();
-                }
-                logger.log(Level.SEVERE, "Interrupted", e);
-                progressShow = 0;
-            } catch (Throwable e) {
-                /*
-                 * damn, something must have gone really really bad, lets keep
-                 * the log
-                 */
-                progress.setStatusText(this.getHost() + ": " + e.getMessage());
-                logger.log(Level.SEVERE, "Exception:" + e.getMessage(), e);
-                color = Color.RED;
-                progressShow = 15000;
+            /*
+             * we now lets log into plugin specific loggers with all
+             * verbose/debug on
+             */
+            br.setLogger(logger);
+            br.setVerbose(true);
+            br.setDebug(true);
+            /* now we let the decrypter do its magic */
+            tmpLinks = decryptIt(cryptLink, progress);
+        } catch (DecrypterException e) {
+            if (DecrypterException.CAPTCHA.equals(e.getMessage())) {
+                showException = false;
             }
-            if (tmpLinks == null && showException) {
-                /*
-                 * null as return value? something must have happened, do not
-                 * clear log
-                 */
-                logger.severe("CrawlerPlugin out of date: " + this + " :" + getVersion());
-                color = Color.RED;
-                progressShow = 15000;
+            /*
+             * we got a decrypter exception, clear log and note that something
+             * went wrong
+             */
+            if (logger instanceof JDPluginLogger) {
+                /* make sure we use the right logger */
+                ((JDPluginLogger) logger).clear();
+            }
+            logger.log(Level.SEVERE, "DecrypterException:" + e.getMessage(), e);
+        } catch (InterruptedException e) {
+            /* plugin got interrupted, clear log and note what happened */
+            if (logger instanceof JDPluginLogger) {
+                /* make sure we use the right logger */
+                ((JDPluginLogger) logger).clear();
+            }
+            logger.log(Level.SEVERE, "Interrupted", e);
 
-                /* lets forward the log */
-                if (logger instanceof JDPluginLogger) {
-                    /* make sure we use the right logger */
-                    ((JDPluginLogger) logger).logInto(JDLogger.getLogger());
-                }
-            }
-            return tmpLinks;
-        } finally {
-            try {
-                if (progressShow > 0) {
-                    if (color != null) {
-                        progress.setColor(color);
-                    }
-                    progress.doFinalize(progressShow);
-                } else {
-                    progress.doFinalize();
-                }
-            } catch (Throwable e) {
+        } catch (Throwable e) {
+            /*
+             * damn, something must have gone really really bad, lets keep the
+             * log
+             */
+            logger.log(Level.SEVERE, "Exception:" + e.getMessage(), e);
+        }
+        if (tmpLinks == null && showException) {
+            /*
+             * null as return value? something must have happened, do not clear
+             * log
+             */
+            logger.severe("CrawlerPlugin out of date: " + this + " :" + getVersion());
+
+            /* lets forward the log */
+            if (logger instanceof JDPluginLogger) {
+                /* make sure we use the right logger */
+                ((JDPluginLogger) logger).logInto(JDLogger.getLogger());
             }
         }
+        return tmpLinks;
     }
 
     /**
@@ -327,13 +297,7 @@ public abstract class PluginForDecrypt extends Plugin {
      * @throws DecrypterException
      */
     protected String getCaptchaCode(String method, File file, int flag, CryptedLink link, String defaultValue, String explain) throws DecrypterException {
-        if (link.getProgressController() != null) link.getProgressController().setStatusText(_JDT._.gui_linkgrabber_waitinguserio2(method));
-        String cc = null;
-        try {
-            cc = new CaptchaController(ioPermission, method, file, defaultValue, explain, this).getCode(flag);
-        } finally {
-            if (link.getProgressController() != null) link.getProgressController().setStatusText(null);
-        }
+        String cc = new CaptchaController(ioPermission, method, file, defaultValue, explain, this).getCode(flag);
         if (cc == null) throw new DecrypterException(DecrypterException.CAPTCHA);
         return cc;
     }
@@ -375,16 +339,6 @@ public abstract class PluginForDecrypt extends Plugin {
         if (br == null) return;
         br.setCookiesExclusive(true);
         br.clearCookies(getHost());
-    }
-
-    /**
-     * Should be overwridden to specify special initials for the decryption
-     * process.
-     * 
-     * @return a String with a length of 2
-     */
-    protected String getInitials() {
-        return null;
     }
 
     /**

@@ -29,7 +29,6 @@ import javax.swing.filechooser.FileFilter;
 import jd.controlling.DownloadController;
 import jd.controlling.JDController;
 import jd.controlling.JDLogger;
-import jd.controlling.ProgressController;
 import jd.controlling.SingleDownloadController;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
@@ -146,9 +145,6 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
         ExtractionController controller = new ExtractionController(archive, logger);
 
         if (archive.getFirstDownloadLink() instanceof DummyDownloadLink) {
-            ProgressController progress = new ProgressController(T._.plugins_optional_extraction_progress_extractfile(archive.getFirstDownloadLink().getFileOutput()), 100, getIconKey());
-            controller.setProgressController(progress);
-
             controller.addExtractionListener(new ExtractionListenerFile());
         } else {
             controller.addExtractionListener(new ExtractionListenerList());
@@ -462,9 +458,6 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
      */
     void onFinished(ExtractionController controller) {
         controller.getArchiv().getFirstDownloadLink().setPluginProgress(null);
-        if (controller.getProgressController() != null) {
-            controller.getProgressController().doFinalize(8000);
-        }
     }
 
     /**

@@ -267,7 +267,7 @@ public class Main {
                 updater.filterAvailableUpdates(files);
 
                 JDUpdateUtils.backupDataBase();
-                updater.updateFiles(files, null);
+                updater.updateFiles(files);
             }
 
             Restarter.main(new String[] {});

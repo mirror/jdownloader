@@ -39,11 +39,6 @@ public class StereoMoodCom extends PluginForDecrypt {
             for (String loc : locations2) {
                 locations.add(loc);
             }
-            try {
-                if (progress.isAbort()) return decryptedLinks;
-            } catch (Throwable e) {
-                /* stable does not have appwork utils yet */
-            }
             index++;
         }
         progress.setRange(locations.size());
@@ -55,11 +50,6 @@ public class StereoMoodCom extends PluginForDecrypt {
             String url = br2.getRedirectLocation();
             if (url == null) continue;
             decryptedLinks.add(this.createDownloadlink("directhttp://" + url));
-            try {
-                if (progress.isAbort()) return decryptedLinks;
-            } catch (Throwable e) {
-                /* stable does not have appwork utils yet */
-            }
             progress.increase(1);
         }
         return decryptedLinks;

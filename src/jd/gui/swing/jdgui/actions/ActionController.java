@@ -28,7 +28,6 @@ import jd.controlling.DownloadWatchDog;
 import jd.controlling.IOEQ;
 import jd.controlling.JDController;
 import jd.controlling.LinkGrabberController;
-import jd.controlling.ProgressController;
 import jd.controlling.reconnect.Reconnecter;
 import jd.event.ControlEvent;
 import jd.event.ControlIDListener;
@@ -295,35 +294,6 @@ public class ActionController {
 
                         public void run() {
                             if (DownloadWatchDog.getInstance().getStateMonitor().hasPassed(DownloadWatchDog.STOPPING_STATE)) return;
-                            final ProgressController pc = new ProgressController(_GUI._.gui_downloadstop(), null);
-                            final Thread test = new Thread() {
-                                @Override
-                                public void run() {
-                                    try {
-                                        while (true) {
-                                            pc.increase(1);
-                                            try {
-                                                Thread.sleep(1000);
-                                            } catch (final InterruptedException e) {
-                                                break;
-                                            }
-                                            if (isInterrupted() || DownloadWatchDog.getInstance().getStateMonitor().isFinal() || DownloadWatchDog.getInstance().getStateMonitor().isStartState()) {
-                                                break;
-                                            }
-                                        }
-                                    } finally {
-                                        pc.doFinalize();
-                                    }
-                                }
-                            };
-                            test.start();
-                            DownloadWatchDog.getInstance().getStateMonitor().executeOnceOnState(new Runnable() {
-
-                                public void run() {
-                                    test.interrupt();
-                                }
-
-                            }, DownloadWatchDog.STOPPED_STATE);
                             DownloadWatchDog.getInstance().stopDownloads();
                         }
 

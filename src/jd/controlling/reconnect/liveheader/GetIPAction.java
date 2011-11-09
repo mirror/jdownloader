@@ -3,9 +3,6 @@ package jd.controlling.reconnect.liveheader;
 import java.awt.event.ActionEvent;
 import java.net.InetAddress;
 
-import javax.swing.ImageIcon;
-
-import jd.controlling.ProgressController;
 import jd.controlling.reconnect.RouterUtils;
 import jd.controlling.reconnect.liveheader.translate.T;
 
@@ -78,8 +75,6 @@ public class GetIPAction extends BasicAction {
         } catch (DialogCanceledException e1) {
             e1.printStackTrace();
         }
-
-        final ProgressController progress = new ProgressController(100, T._.gui_config_routeripfinder_featchIP(), (ImageIcon) null);
 
     }
 

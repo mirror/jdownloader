@@ -284,7 +284,6 @@ public class Srnnks extends PluginForDecrypt {
 
                             if (code == null) { return ret; }
                             if (code.length() != 3) {
-                                progress.setStatusText("Captcha code falsch");
                                 progress.setStatus(30);
                                 Thread.sleep(1100);
                                 continue;
@@ -356,8 +355,4 @@ public class Srnnks extends PluginForDecrypt {
         }
     }
 
-    @Override
-    protected String getInitials() {
-        return "SJ";
-    }
 }

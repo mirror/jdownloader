@@ -16,7 +16,6 @@
 
 package jd.plugins.decrypter;
 
-import java.awt.Color;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -25,8 +24,6 @@ import java.util.Map;
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.controlling.ProgressController;
-import jd.controlling.ProgressControllerEvent;
-import jd.controlling.ProgressControllerListener;
 import jd.gui.UserIO;
 import jd.http.Cookie;
 import jd.http.Cookies;
@@ -39,14 +36,12 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.locale.JDL;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vkontakte.ru" }, urls = { "http://(www\\.)?(vkontakte\\.ru|vk\\.com)/(audio(\\.php)?(\\?album_id=\\d+\\&id=|\\?id=)\\d+|(video\\-?\\d+_\\d+|videos\\d+|video\\?section=tagged\\&id=\\d+)|(photos|id)\\d+|albums\\d+|([A-Za-z0-9_\\-]+#/)?album\\d+_\\d+)" }, flags = { 0 })
-public class VKontakteRu extends PluginForDecrypt implements ProgressControllerListener {
+public class VKontakteRu extends PluginForDecrypt {
 
     /* must be static so all plugins share same lock */
-    private static final Object LOCK  = new Object();
-    private boolean             abort = false;
+    private static final Object LOCK = new Object();
 
     public VKontakteRu(PluginWrapper wrapper) {
         super(wrapper);
@@ -59,11 +54,6 @@ public class VKontakteRu extends PluginForDecrypt implements ProgressControllerL
 
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        try {
-            progress.getBroadcaster().addListener(this);
-        } catch (Throwable e) {
-            /* stable does not have appwork utils yet */
-        }
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setFollowRedirects(false);
         String parameter = param.toString().replace("vk.com/", "vkontakte.ru/");
@@ -203,13 +193,6 @@ public class VKontakteRu extends PluginForDecrypt implements ProgressControllerL
                 int counter = 1;
                 logger.info("Found " + allVideos.length + " videos, decrypting...");
                 for (String singleVideo : allVideos) {
-                    if (abort) {
-                        logger.info("Decrypt process stopped at video " + counter + " / " + allVideos.length);
-                        progress.setColor(Color.RED);
-                        progress.setStatusText(progress.getStatusText() + ": " + JDL.L("gui.linkgrabber.aborted", "Aborted"));
-                        progress.doFinalize(5000l);
-                        return new ArrayList<DownloadLink>();
-                    }
                     logger.info("Decrypting video " + counter + " / " + allVideos.length);
                     String completeVideolink = "http://vkontakte.ru/video" + singleVideo;
                     br.getPage(completeVideolink);
@@ -384,13 +367,6 @@ public class VKontakteRu extends PluginForDecrypt implements ProgressControllerL
             br.submitForm(lol);
         }
         return true;
-    }
-
-    @SuppressWarnings("deprecation")
-    public void onProgressControllerEvent(ProgressControllerEvent event) {
-        if (event.getID() == ProgressControllerEvent.CANCEL) {
-            abort = true;
-        }
     }
 
 }

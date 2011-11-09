@@ -21,7 +21,6 @@ import java.nio.charset.CharacterCodingException;
 import jd.gui.UserIO;
 import jd.gui.swing.components.Balloon;
 import jd.http.Browser;
-import jd.utils.JDUtilities;
 
 import org.appwork.utils.logging.Log;
 import org.jdownloader.translate._JDT;
@@ -59,19 +58,14 @@ public class PluginUtils {
     }
 
     public static String askPassword(String message, final CryptedLink link) {
-        link.getProgressController().setStatusText(_JDT._.gui_linkgrabber_waitinguserio());
 
         if (message == null) message = _JDT._.jd_plugins_PluginUtils_askPassword(link.getCryptedUrl());
         final String password = askPassword(message, link.getDecrypterPassword());
-
-        link.getProgressController().setStatusText(null);
         return password;
     }
 
     public static String askPassword(final String message, final String defaultmessage) {
-        synchronized (JDUtilities.LOCK) {
-            return UserIO.getInstance().requestInputDialog(0, message, defaultmessage);
-        }
+        return UserIO.getInstance().requestInputDialog(0, message, defaultmessage);
     }
 
     /**
