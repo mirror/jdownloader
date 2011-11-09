@@ -1,6 +1,7 @@
 package org.jdownloader.gui.views.linkgrabber.quickfilter;
 
 import java.util.ArrayList;
+import java.util.Collection;
 
 import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
@@ -28,7 +29,7 @@ import org.jdownloader.gui.views.linkgrabber.Header;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 
-public class QuickFilterTypeTable extends FilterTable<CrawledPackage, CrawledLink> implements GenericConfigEventListener<Boolean> {
+public class QuickFilterTypeTable extends FilterTable implements GenericConfigEventListener<Boolean> {
     private static final long                                   serialVersionUID = 2109715691047942399L;
 
     private PackageControllerTable<CrawledPackage, CrawledLink> table2Filter;
@@ -43,10 +44,10 @@ public class QuickFilterTypeTable extends FilterTable<CrawledPackage, CrawledLin
         this.table2Filter = table2Filter;
         header = filetypeFilter;
         header.setFilterCount(0);
-        final ArrayList<ExtensionFilter<CrawledPackage, CrawledLink>> knownExtensionFilters = new ArrayList<ExtensionFilter<CrawledPackage, CrawledLink>>();
-        ExtensionFilter<CrawledPackage, CrawledLink> filter;
+        final ArrayList<ExtensionFilter> knownExtensionFilters = new ArrayList<ExtensionFilter>();
+        ExtensionFilter filter;
 
-        filters.add(filter = new ExtensionFilter<CrawledPackage, CrawledLink>(AudioExtensions.AA) {
+        filters.add(filter = new ExtensionFilter(AudioExtensions.AA) {
             protected String getID() {
                 return "Type_Audio";
             }
@@ -59,7 +60,7 @@ public class QuickFilterTypeTable extends FilterTable<CrawledPackage, CrawledLin
 
         });
         knownExtensionFilters.add(filter);
-        filters.add(filter = new ExtensionFilter<CrawledPackage, CrawledLink>(VideoExtensions.ASF) {
+        filters.add(filter = new ExtensionFilter(VideoExtensions.ASF) {
             protected String getID() {
                 return "Type_Video";
             }
@@ -71,7 +72,7 @@ public class QuickFilterTypeTable extends FilterTable<CrawledPackage, CrawledLin
             }
         });
         knownExtensionFilters.add(filter);
-        filters.add(filter = new ExtensionFilter<CrawledPackage, CrawledLink>(ImageExtensions.BMP) {
+        filters.add(filter = new ExtensionFilter(ImageExtensions.BMP) {
             protected String getID() {
                 return "Type_Image";
             }
@@ -83,7 +84,7 @@ public class QuickFilterTypeTable extends FilterTable<CrawledPackage, CrawledLin
             }
         });
         knownExtensionFilters.add(filter);
-        filters.add(filter = new ExtensionFilter<CrawledPackage, CrawledLink>(ArchiveExtensions.ACE) {
+        filters.add(filter = new ExtensionFilter(ArchiveExtensions.ACE) {
             protected String getID() {
                 return "Type_Archive";
             }
@@ -100,7 +101,7 @@ public class QuickFilterTypeTable extends FilterTable<CrawledPackage, CrawledLin
          * now we add special extensionfilter which will handle all unknown
          * extensions
          */
-        filters.add(new ExtensionFilter<CrawledPackage, CrawledLink>(_GUI._.settings_linkgrabber_filter_others(), NewTheme.I().getIcon("help", 16), false) {
+        filters.add(new ExtensionFilter(_GUI._.settings_linkgrabber_filter_others(), NewTheme.I().getIcon("help", 16), false) {
             protected String getID() {
                 return "Type_Others";
             }
@@ -108,7 +109,7 @@ public class QuickFilterTypeTable extends FilterTable<CrawledPackage, CrawledLin
             @Override
             public boolean isFiltered(String ext) {
                 if (ext == null) return true;
-                for (ExtensionFilter<CrawledPackage, CrawledLink> filter : knownExtensionFilters) {
+                for (ExtensionFilter filter : knownExtensionFilters) {
                     if (filter.isFiltered(ext)) return false;
                 }
                 return true;
@@ -155,7 +156,7 @@ public class QuickFilterTypeTable extends FilterTable<CrawledPackage, CrawledLin
 
         // synchronized (LOCK) {
         /* reset existing filter counters */
-        for (Filter<CrawledPackage, CrawledLink> filter : filters) {
+        for (Filter filter : filters) {
             filter.setCounter(0);
         }
         /* update filter list */
@@ -166,8 +167,8 @@ public class QuickFilterTypeTable extends FilterTable<CrawledPackage, CrawledLin
              * speed optimization, we dont want to get extension several times
              */
             String ext = Files.getExtension(link.getName());
-            for (Filter<CrawledPackage, CrawledLink> filter : filters) {
-                if (((ExtensionFilter<CrawledPackage, CrawledLink>) filter).isFiltered(ext)) {
+            for (Filter filter : filters) {
+                if (((ExtensionFilter) filter).isFiltered(ext)) {
                     filter.setCounter(filter.getCounter() + 1);
                     break;
                 }
@@ -183,10 +184,13 @@ public class QuickFilterTypeTable extends FilterTable<CrawledPackage, CrawledLin
                          * several times
                          */
                         String ext = Files.getExtension(link.getName());
-                        for (Filter<CrawledPackage, CrawledLink> filter : filters) {
-                            if (((ExtensionFilter<CrawledPackage, CrawledLink>) filter).isFiltered(ext)) {
+                        for (Filter filter : filters) {
+                            if (((ExtensionFilter) filter).isFiltered(ext)) {
 
-                                if (filter.getCounter() == 0 && !filter.isEnabled()) filter.setCounter(-1);
+                                if (filter.getCounter() == 0 && !filter.isEnabled()) {
+                                    filter.setCounter(filter.getMatchCounter());
+
+                                }
 
                                 break;
                             }
@@ -198,8 +202,8 @@ public class QuickFilterTypeTable extends FilterTable<CrawledPackage, CrawledLin
             LinkCollector.getInstance().readUnlock(readL);
         }
         /* update FilterTableModel */
-        final ArrayList<Filter<CrawledPackage, CrawledLink>> newTableData = new ArrayList<Filter<CrawledPackage, CrawledLink>>(QuickFilterTypeTable.this.getExtTableModel().getTableData().size());
-        for (Filter<CrawledPackage, CrawledLink> filter : filters) {
+        final ArrayList<Filter> newTableData = new ArrayList<Filter>(QuickFilterTypeTable.this.getExtTableModel().getTableData().size());
+        for (Filter filter : filters) {
             if (filter.getCounter() != 0) {
                 /* only add entries with counter >0 to visible table */
                 newTableData.add(filter);
@@ -217,6 +221,15 @@ public class QuickFilterTypeTable extends FilterTable<CrawledPackage, CrawledLin
         };
         if (LinkFilterSettings.LG_QUICKFILTER_TYPE_VISIBLE.getValue()) {
             QuickFilterTypeTable.this.getExtTableModel()._fireTableStructureChanged(newTableData, true);
+        }
+
+    }
+
+    public void reset() {
+        Collection<Filter> lfilters = filters;
+        for (Filter filter : lfilters) {
+            filter.setMatchCounter(0);
+            filter.setCounter(0);
         }
     }
 
@@ -242,22 +255,20 @@ public class QuickFilterTypeTable extends FilterTable<CrawledPackage, CrawledLin
     }
 
     @Override
-    public boolean isFiltered(CrawledPackage link) {
-        /* we do not filter packages */
-        return false;
-    }
-
-    @Override
     public boolean isFiltered(CrawledLink v) {
         /*
          * speed optimization, we dont want to get extension several times
          */
         if (enabled == false) return false;
         String ext = Files.getExtension(v.getName());
-        ArrayList<Filter<CrawledPackage, CrawledLink>> lfilters = filters;
-        for (Filter<CrawledPackage, CrawledLink> filter : lfilters) {
+        ArrayList<Filter> lfilters = filters;
+        for (Filter filter : lfilters) {
             if (filter.isEnabled()) continue;
-            if (((ExtensionFilter<CrawledPackage, CrawledLink>) filter).isFiltered(ext)) { return true; }
+            if (((ExtensionFilter) filter).isFiltered(ext)) {
+                filter.setMatchCounter(filter.getMatchCounter() + 1);
+
+                return true;
+            }
         }
         return false;
     }

@@ -3,18 +3,26 @@ package org.jdownloader.gui.views.linkgrabber.quickfilter;
 import javax.swing.ImageIcon;
 
 import jd.controlling.FavIconRequestor;
-import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
-import jd.controlling.packagecontroller.AbstractPackageNode;
+import jd.controlling.linkcrawler.CrawledLink;
 
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Application;
 import org.jdownloader.images.NewTheme;
 
-public abstract class Filter<E extends AbstractPackageNode<V, E>, V extends AbstractPackageChildrenNode<E>> implements FavIconRequestor {
+public abstract class Filter implements FavIconRequestor {
 
-    private ImageIcon      icon    = null;
-    protected int          counter = 0;
+    private ImageIcon      icon         = null;
+    protected int          counter      = 0;
     private FilterSettings config;
+    protected int          matchCounter = 0;
+
+    public int getMatchCounter() {
+        return matchCounter;
+    }
+
+    public void setMatchCounter(int matchCounter) {
+        this.matchCounter = matchCounter;
+    }
 
     public int getCounter() {
         return counter;
@@ -22,6 +30,7 @@ public abstract class Filter<E extends AbstractPackageNode<V, E>, V extends Abst
 
     public void setCounter(int counter) {
         this.counter = counter;
+
     }
 
     public ImageIcon getIcon() {
@@ -65,9 +74,9 @@ public abstract class Filter<E extends AbstractPackageNode<V, E>, V extends Abst
         return icon;
     }
 
-    abstract public boolean isFiltered(V link);
+    // abstract public boolean isFiltered(CrawledPackage link);
 
-    abstract public boolean isFiltered(E link);
+    abstract public boolean isFiltered(CrawledLink link);
 
     public String getDescription() {
         return null;

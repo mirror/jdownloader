@@ -7,8 +7,8 @@ import java.util.ArrayList;
 import javax.swing.JLabel;
 import javax.swing.ListSelectionModel;
 
-import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
-import jd.controlling.packagecontroller.AbstractPackageNode;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledPackage;
 import jd.gui.swing.laf.LookAndFeelController;
 
 import org.appwork.swing.exttable.AlternateHighlighter;
@@ -18,19 +18,19 @@ import org.appwork.swing.exttable.ExtTable;
 import org.appwork.utils.ColorUtils;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTableModelFilter;
 
-public class FilterTable<E extends AbstractPackageNode<V, E>, V extends AbstractPackageChildrenNode<E>> extends ExtTable<Filter<E, V>> implements PackageControllerTableModelFilter<E, V> {
+public class FilterTable extends ExtTable<Filter> implements PackageControllerTableModelFilter<CrawledPackage, CrawledLink> {
 
     /**
      * 
      */
-    private static final long         serialVersionUID = -5917220196056769905L;
-    protected ArrayList<Filter<E, V>> filters          = new ArrayList<Filter<E, V>>();
-    protected volatile boolean        enabled          = false;
-    protected static final long       REFRESH_MIN      = 200l;
-    protected static final long       REFRESH_MAX      = 2000l;
+    private static final long   serialVersionUID = -5917220196056769905L;
+    protected ArrayList<Filter> filters          = new ArrayList<Filter>();
+    protected volatile boolean  enabled          = false;
+    protected static final long REFRESH_MIN      = 200l;
+    protected static final long REFRESH_MAX      = 2000l;
 
     public FilterTable() {
-        super(new FilterTableModel<E, V>());
+        super(new FilterTableModel());
 
         this.setShowVerticalLines(false);
         this.setShowGrid(false);
@@ -50,10 +50,10 @@ public class FilterTable<E extends AbstractPackageNode<V, E>, V extends Abstract
         }
         this.setBackground(new Color(LookAndFeelController.getInstance().getLAFOptions().getPanelBackgroundColor()));
 
-        this.getExtTableModel().addExtComponentRowHighlighter(new ExtComponentRowHighlighter<Filter<E, V>>(f2, b2, null) {
+        this.getExtTableModel().addExtComponentRowHighlighter(new ExtComponentRowHighlighter<Filter>(f2, b2, null) {
 
             @Override
-            public boolean accept(ExtColumn<Filter<E, V>> column, Filter<E, V> value, boolean selected, boolean focus, int row) {
+            public boolean accept(ExtColumn<Filter> column, Filter value, boolean selected, boolean focus, int row) {
                 return selected;
             }
 
@@ -78,24 +78,35 @@ public class FilterTable<E extends AbstractPackageNode<V, E>, V extends Abstract
         this.setIntercellSpacing(new Dimension(0, 0));
     }
 
-    public boolean isFiltered(E e) {
+    public boolean isFiltered(CrawledLink e) {
         if (enabled == false) return false;
-        ArrayList<Filter<E, V>> lfilters = filters;
-        for (Filter<E, V> filter : lfilters) {
-            if (filter.isEnabled()) continue;
-            if (filter.isFiltered(e)) return true;
+        ArrayList<Filter> lfilters = filters;
+        for (Filter filter : lfilters) {
+            if (filter.isEnabled()) {
+                if (filter.isFiltered(e)) {
+                    filter.setMatchCounter(filter.getMatchCounter() + 1);
+                }
+                continue;
+            }
+            if (filter.isFiltered(e)) {
+                filter.setMatchCounter(filter.getMatchCounter() + 1);
+                return true;
+            }
         }
         return false;
     }
 
-    public boolean isFiltered(V v) {
-        if (enabled == false) return false;
-        ArrayList<Filter<E, V>> lfilters = filters;
-        for (Filter<E, V> filter : lfilters) {
-            if (filter.isEnabled()) continue;
-            if (filter.isFiltered(v)) return true;
-        }
+    public boolean isFiltered(CrawledPackage v) {
+
         return false;
+    }
+
+    public void reset() {
+        ArrayList<Filter> lfilters = filters;
+        for (Filter filter : lfilters) {
+            filter.setMatchCounter(0);
+            filter.setCounter(0);
+        }
     }
 
 }

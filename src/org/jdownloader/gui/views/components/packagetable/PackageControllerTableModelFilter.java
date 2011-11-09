@@ -9,4 +9,6 @@ public interface PackageControllerTableModelFilter<E extends AbstractPackageNode
 
     public boolean isFiltered(V v);
 
+    public void reset();
+
 }

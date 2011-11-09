@@ -2,8 +2,6 @@ package org.jdownloader.gui.views.linkgrabber.quickfilter;
 
 import javax.swing.Icon;
 
-import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
-import jd.controlling.packagecontroller.AbstractPackageNode;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.swing.exttable.ExtTableModel;
@@ -11,7 +9,7 @@ import org.appwork.swing.exttable.columns.ExtCheckColumn;
 import org.appwork.swing.exttable.columns.ExtLongColumn;
 import org.appwork.swing.exttable.columns.ExtTextColumn;
 
-public class FilterTableModel<E extends AbstractPackageNode<V, E>, V extends AbstractPackageChildrenNode<E>> extends ExtTableModel<Filter<E, V>> {
+public class FilterTableModel extends ExtTableModel<Filter> {
 
     /**
      * 
@@ -25,7 +23,12 @@ public class FilterTableModel<E extends AbstractPackageNode<V, E>, V extends Abs
 
     @Override
     protected void initColumns() {
-        addColumn(new ExtTextColumn<Filter<E, V>>("Hoster") {
+        addColumn(new ExtTextColumn<Filter>("Hoster") {
+            /**
+             * 
+             */
+            private static final long serialVersionUID = 1L;
+
             // {
             // renderer.setLayout(new MigLayout("ins 0", "[grow,fill][]",
             // "[]"));
@@ -66,7 +69,7 @@ public class FilterTableModel<E extends AbstractPackageNode<V, E>, V extends Abs
                 return "";
             }
         });
-        addColumn(new ExtLongColumn<Filter<E, V>>("Hoster") {
+        addColumn(new ExtLongColumn<Filter>("Hoster") {
             // {
             // renderer.setLayout(new MigLayout("ins 0", "[grow,fill][]",
             // "[]"));
@@ -88,76 +91,76 @@ public class FilterTableModel<E extends AbstractPackageNode<V, E>, V extends Abs
             }
 
             @Override
-            public boolean isEnabled(Filter<E, V> obj) {
+            public boolean isEnabled(Filter obj) {
                 return obj.isEnabled();
             }
 
             @Override
-            protected String getTooltipText(final Filter<E, V> obj) {
+            protected String getTooltipText(final Filter obj) {
 
                 return obj.getDescription();
             }
 
             @Override
-            public boolean isSortable(Filter<E, V> obj) {
+            public boolean isSortable(Filter obj) {
 
                 return false;
             }
 
             @Override
-            public void configureRendererComponent(Filter<E, V> value, boolean isSelected, boolean hasFocus, int row, int column) {
+            public void configureRendererComponent(Filter value, boolean isSelected, boolean hasFocus, int row, int column) {
                 super.configureRendererComponent(value, isSelected, hasFocus, row, column);
                 if (getLong(value) < 0) renderer.setText("");
             }
 
             @Override
-            protected long getLong(Filter<E, V> value) {
+            protected long getLong(Filter value) {
                 return value.getCounter();
             }
 
         });
-        ExtTextColumn<Filter<E, V>> hosterColumn;
-        addColumn(hosterColumn = new ExtTextColumn<Filter<E, V>>("Hoster") {
+        ExtTextColumn<Filter> hosterColumn;
+        addColumn(hosterColumn = new ExtTextColumn<Filter>("Hoster") {
             {
                 renderer.setLayout(new MigLayout("ins 0", "[grow,fill][]", "[]"));
 
             }
 
             @Override
-            public boolean isEnabled(Filter<E, V> obj) {
+            public boolean isEnabled(Filter obj) {
                 return obj.isEnabled();
             }
 
             @Override
-            protected String getTooltipText(final Filter<E, V> obj) {
+            protected String getTooltipText(final Filter obj) {
 
                 return obj.getDescription();
             }
 
             @Override
-            public boolean isSortable(Filter<E, V> obj) {
+            public boolean isSortable(Filter obj) {
                 return true;
             }
 
             @Override
-            public String getStringValue(Filter<E, V> value) {
+            public String getStringValue(Filter value) {
                 return value.getName();
             }
         });
-        addColumn(new ExtCheckColumn<Filter<E, V>>("Check") {
+        addColumn(new ExtCheckColumn<Filter>("Check") {
             @Override
-            public boolean isSortable(Filter<E, V> obj) {
+            public boolean isSortable(Filter obj) {
                 return false;
             }
 
             @Override
-            protected String getTooltipText(final Filter<E, V> obj) {
+            protected String getTooltipText(final Filter obj) {
 
                 return obj.getDescription();
             }
 
             @Override
-            protected boolean getBooleanValue(Filter<E, V> value) {
+            protected boolean getBooleanValue(Filter value) {
                 return value.isEnabled();
             }
 
@@ -177,12 +180,12 @@ public class FilterTableModel<E extends AbstractPackageNode<V, E>, V extends Abs
             }
 
             @Override
-            public boolean isEditable(Filter<E, V> obj) {
+            public boolean isEditable(Filter obj) {
                 return true;
             }
 
             @Override
-            protected void setBooleanValue(boolean value, Filter<E, V> object) {
+            protected void setBooleanValue(boolean value, Filter object) {
                 object.setEnabled(value);
             }
         });

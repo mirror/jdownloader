@@ -1,6 +1,7 @@
 package org.jdownloader.gui.views.linkgrabber.quickfilter;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -31,22 +32,22 @@ import org.jdownloader.gui.views.linkgrabber.sidebar.actions.DropHosterAction;
 import org.jdownloader.gui.views.linkgrabber.sidebar.actions.KeepOnlyAction;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 
-public class QuickFilterHosterTable extends FilterTable<CrawledPackage, CrawledLink> implements GenericConfigEventListener<Boolean> {
+public class QuickFilterHosterTable extends FilterTable implements GenericConfigEventListener<Boolean> {
 
     /**
      * 
      */
-    private static final long                                          serialVersionUID = 658947589171018284L;
-    private LinkedHashMap<String, Filter<CrawledPackage, CrawledLink>> filterMap        = new LinkedHashMap<String, Filter<CrawledPackage, CrawledLink>>();
+    private static final long             serialVersionUID = 658947589171018284L;
+    private LinkedHashMap<String, Filter> filterMap        = new LinkedHashMap<String, Filter>();
 
-    private long                                                       old              = -1;
-    private DelayedRunnable                                            delayedRefresh;
-    private PackageControllerTable<CrawledPackage, CrawledLink>        table2Filter     = null;
-    private final Object                                               LOCK             = new Object();
-    private Header                                                     header;
-    private TableModelListener                                         listener;
+    private long                          old              = -1;
+    private DelayedRunnable               delayedRefresh;
+    private PackageControllerTable        table2Filter     = null;
+    private final Object                  LOCK             = new Object();
+    private Header                        header;
+    private TableModelListener            listener;
 
-    public QuickFilterHosterTable(Header hosterFilter, PackageControllerTable<CrawledPackage, CrawledLink> table) {
+    public QuickFilterHosterTable(Header hosterFilter, PackageControllerTable table) {
         super();
         header = hosterFilter;
         header.setFilterCount(0);
@@ -73,9 +74,9 @@ public class QuickFilterHosterTable extends FilterTable<CrawledPackage, CrawledL
     }
 
     @Override
-    protected JPopupMenu onContextMenu(JPopupMenu popup, Filter<CrawledPackage, CrawledLink> contextObject, ArrayList<Filter<CrawledPackage, CrawledLink>> selection, ExtColumn<Filter<CrawledPackage, CrawledLink>> column) {
+    protected JPopupMenu onContextMenu(JPopupMenu popup, Filter contextObject, ArrayList<Filter> selection, ExtColumn<Filter> column) {
         ArrayList<String> ret = new ArrayList<String>();
-        for (Filter<CrawledPackage, CrawledLink> f : selection) {
+        for (Filter f : selection) {
             ret.add(f.getName());
         }
         popup.add(new DropHosterAction(ret).toContextMenuAction());
@@ -84,14 +85,18 @@ public class QuickFilterHosterTable extends FilterTable<CrawledPackage, CrawledL
         return popup;
     }
 
+    @SuppressWarnings("unchecked")
     private void updateQuickFilerTableData() {
 
         // synchronized (LOCK) {
         /* reset existing filter counters */
-        Set<Entry<String, Filter<CrawledPackage, CrawledLink>>> es = filterMap.entrySet();
-        Iterator<Entry<String, Filter<CrawledPackage, CrawledLink>>> it = es.iterator();
+        Set<Entry<String, Filter>> es = filterMap.entrySet();
+        Iterator<Entry<String, Filter>> it = es.iterator();
+        Entry<String, Filter> next;
         while (it.hasNext()) {
-            it.next().getValue().setCounter(0);
+            next = it.next();
+            next.getValue().setCounter(0);
+
         }
         /* update filter list */
         HashSet<CrawledLink> map = new HashSet<CrawledLink>();
@@ -99,7 +104,7 @@ public class QuickFilterHosterTable extends FilterTable<CrawledPackage, CrawledL
             final String hoster = link.getRealHost();
             map.add(link);
             if (hoster != null) {
-                Filter<CrawledPackage, CrawledLink> filter = null;
+                Filter filter = null;
                 filter = filterMap.get(hoster);
                 if (filter == null) {
                     /*
@@ -122,7 +127,7 @@ public class QuickFilterHosterTable extends FilterTable<CrawledPackage, CrawledL
                     for (CrawledLink link : pkg.getChildren()) {
                         String hoster = link.getRealHost();
                         if (hoster != null) {
-                            Filter<CrawledPackage, CrawledLink> filter = null;
+                            Filter filter = null;
                             filter = filterMap.get(hoster);
                             if (filter == null) {
                                 /*
@@ -134,7 +139,7 @@ public class QuickFilterHosterTable extends FilterTable<CrawledPackage, CrawledL
                             }
                             if (filter.getCounter() == 0 && !filter.isEnabled()) {
 
-                                filter.setCounter(-1);
+                                filter.setCounter(filter.getMatchCounter());
                             }
                         }
                     }
@@ -144,14 +149,14 @@ public class QuickFilterHosterTable extends FilterTable<CrawledPackage, CrawledL
             LinkCollector.getInstance().readUnlock(readL);
         }
         /* update FilterTableModel */
-        // ArrayList<Filter<CrawledPackage, CrawledLink>> newfilters = new
-        // ArrayList<Filter<CrawledPackage, CrawledLink>>();
+        // ArrayList<Filter> newfilters = new
+        // ArrayList<Filter>();
         es = filterMap.entrySet();
         it = es.iterator();
-        final ArrayList<Filter<CrawledPackage, CrawledLink>> newTableData = new ArrayList<Filter<CrawledPackage, CrawledLink>>(QuickFilterHosterTable.this.getExtTableModel().getTableData().size());
+        final ArrayList<Filter> newTableData = new ArrayList<Filter>(QuickFilterHosterTable.this.getExtTableModel().getTableData().size());
         while (it.hasNext()) {
-            Entry<String, Filter<CrawledPackage, CrawledLink>> next = it.next();
-            Filter<CrawledPackage, CrawledLink> value = next.getValue();
+            next = it.next();
+            Filter value = next.getValue();
             if (value.getCounter() != 0) {
                 /* only add entries with counter >0 to visible table */
                 newTableData.add(value);
@@ -169,13 +174,19 @@ public class QuickFilterHosterTable extends FilterTable<CrawledPackage, CrawledL
         };
         if (LinkFilterSettings.LG_QUICKFILTER_HOSTER_VISIBLE.getValue()) QuickFilterHosterTable.this.getExtTableModel()._fireTableStructureChanged(newTableData, true);
 
-        // }
-
     }
 
-    public Filter<CrawledPackage, CrawledLink> createFilter(final String hoster) {
-        Filter<CrawledPackage, CrawledLink> filter;
-        filter = new Filter<CrawledPackage, CrawledLink>(hoster, null) {
+    public void reset() {
+        Collection<Filter> lfilters = filterMap.values();
+        for (Filter filter : lfilters) {
+            filter.setMatchCounter(0);
+            filter.setCounter(0);
+        }
+    }
+
+    public Filter createFilter(final String hoster) {
+        Filter filter;
+        filter = new Filter(hoster, null) {
             protected String getID() {
                 return "Hoster_" + hoster;
             }
@@ -183,12 +194,6 @@ public class QuickFilterHosterTable extends FilterTable<CrawledPackage, CrawledL
             @Override
             public boolean isFiltered(CrawledLink link) {
                 if (name.equals(link.getRealHost())) return true;
-                return false;
-            }
-
-            @Override
-            public boolean isFiltered(CrawledPackage link) {
-                /* we do not filter packages */
                 return false;
             }
 
@@ -203,12 +208,6 @@ public class QuickFilterHosterTable extends FilterTable<CrawledPackage, CrawledL
 
         };
         return filter;
-    }
-
-    @Override
-    public boolean isFiltered(CrawledPackage e) {
-        /* we do not filter packages */
-        return false;
     }
 
     public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {

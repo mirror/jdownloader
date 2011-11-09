@@ -208,6 +208,10 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
             pc.readUnlock(readL);
         }
         ArrayList<PackageControllerTableModelFilter<PackageType, ChildrenType>> filters = this.tableFilters;
+
+        for (PackageControllerTableModelFilter<PackageType, ChildrenType> filter : filters) {
+            filter.reset();
+        }
         /* filter packages */
         for (int index = packages.size() - 1; index >= 0; index--) {
             AbstractNode pkg = packages.get(index);

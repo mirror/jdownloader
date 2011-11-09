@@ -1,6 +1,7 @@
 package org.jdownloader.gui.views.linkgrabber.quickfilter;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map.Entry;
@@ -33,22 +34,22 @@ import org.jdownloader.gui.views.components.packagetable.PackageControllerTable;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTableModel;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 
-public class QuickFilterExceptionsTable extends FilterTable<CrawledPackage, CrawledLink> implements GenericConfigEventListener<Boolean> {
+public class QuickFilterExceptionsTable extends FilterTable implements GenericConfigEventListener<Boolean> {
 
     /**
      * 
      */
-    private static final long                                        serialVersionUID = 658947589171018284L;
+    private static final long                                   serialVersionUID = 658947589171018284L;
 
-    private long                                                     old              = -1;
-    private DelayedRunnable                                          delayedRefresh;
-    private PackageControllerTable<CrawledPackage, CrawledLink>      table2Filter     = null;
-    private final Object                                             LOCK             = new Object();
-    private CustomFilterHeader                                       header;
+    private long                                                old              = -1;
+    private DelayedRunnable                                     delayedRefresh;
+    private PackageControllerTable<CrawledPackage, CrawledLink> table2Filter     = null;
+    private final Object                                        LOCK             = new Object();
+    private CustomFilterHeader                                  header;
 
-    private HashMap<FilterRule, Filter<CrawledPackage, CrawledLink>> map;
+    private HashMap<FilterRule, Filter>                         map;
 
-    private TableModelListener                                       listener;
+    private TableModelListener                                  listener;
 
     public QuickFilterExceptionsTable(CustomFilterHeader exceptions, PackageControllerTable<CrawledPackage, CrawledLink> table) {
         super();
@@ -88,16 +89,16 @@ public class QuickFilterExceptionsTable extends FilterTable<CrawledPackage, Craw
             ArrayList<LinkgrabberFilterRuleWrapper> fileFilter = LinkFilterController.getInstance().getAcceptFileFilter();
             ArrayList<LinkgrabberFilterRuleWrapper> urlFilter = LinkFilterController.getInstance().getAcceptUrlFilter();
 
-            map = new HashMap<FilterRule, Filter<CrawledPackage, CrawledLink>>();
+            map = new HashMap<FilterRule, Filter>();
             setup(fileFilter);
             setup(urlFilter);
         }
     }
 
     @Override
-    protected JPopupMenu onContextMenu(JPopupMenu popup, Filter<CrawledPackage, CrawledLink> contextObject, ArrayList<Filter<CrawledPackage, CrawledLink>> selection, ExtColumn<Filter<CrawledPackage, CrawledLink>> column) {
+    protected JPopupMenu onContextMenu(JPopupMenu popup, Filter contextObject, ArrayList<Filter> selection, ExtColumn<Filter> column) {
         ArrayList<String> ret = new ArrayList<String>();
-        // for (Filter<CrawledPackage, CrawledLink> f : selection) {
+        // for (Filter f : selection) {
         // ret.add(f.getName());
         // }
         // popup.add(new DropHosterAction(ret).toContextMenuAction());
@@ -107,12 +108,12 @@ public class QuickFilterExceptionsTable extends FilterTable<CrawledPackage, Craw
     }
 
     private void updateQuickFilerTableData() {
-        ArrayList<Filter<CrawledPackage, CrawledLink>> newTableData = null;
+        ArrayList<Filter> newTableData = null;
         // synchronized (LOCK) {
-        newTableData = new ArrayList<Filter<CrawledPackage, CrawledLink>>(0);
+        newTableData = new ArrayList<Filter>(0);
 
-        Iterator<Entry<FilterRule, Filter<CrawledPackage, CrawledLink>>> it;
-        Entry<FilterRule, Filter<CrawledPackage, CrawledLink>> next;
+        Iterator<Entry<FilterRule, Filter>> it;
+        Entry<FilterRule, Filter> next;
 
         for (it = map.entrySet().iterator(); it.hasNext();) {
             next = it.next();
@@ -145,7 +146,7 @@ public class QuickFilterExceptionsTable extends FilterTable<CrawledPackage, Craw
                             next = it.next();
                             if (next.getValue().getCounter() <= 0) {
                                 if (!next.getValue().isEnabled() && next.getValue().isFiltered(link)) {
-                                    next.getValue().setCounter(-1);
+                                    next.getValue().setCounter(next.getValue().getMatchCounter());
 
                                 }
                             }
@@ -157,7 +158,7 @@ public class QuickFilterExceptionsTable extends FilterTable<CrawledPackage, Craw
             LinkCollector.getInstance().readUnlock(readL);
         }
         /* update FilterTableModel */
-        for (Iterator<Filter<CrawledPackage, CrawledLink>> itt = newTableData.iterator(); itt.hasNext();) {
+        for (Iterator<Filter> itt = newTableData.iterator(); itt.hasNext();) {
             if (itt.next().getCounter() == 0) itt.remove();
         }
         filters = newTableData;
@@ -175,14 +176,15 @@ public class QuickFilterExceptionsTable extends FilterTable<CrawledPackage, Craw
         if (LinkFilterSettings.LG_QUICKFILTER_EXCEPTIONS_VISIBLE.getValue()) {
             QuickFilterExceptionsTable.this.getExtTableModel()._fireTableStructureChanged(newTableData, true);
         }
+
     }
 
     private void setup(ArrayList<LinkgrabberFilterRuleWrapper> fileFilter) {
         for (final LinkgrabberFilterRuleWrapper rule : fileFilter) {
-            Filter<CrawledPackage, CrawledLink> filter = map.get(rule.getRule());
+            Filter filter = map.get(rule.getRule());
             if (filter == null) {
 
-                filter = new Filter<CrawledPackage, CrawledLink>(rule.getName(), null) {
+                filter = new Filter(rule.getName(), null) {
                     public String getDescription() {
                         return rule.getRule().toString();
                     }
@@ -210,12 +212,6 @@ public class QuickFilterExceptionsTable extends FilterTable<CrawledPackage, Craw
                     }
 
                     @Override
-                    public boolean isFiltered(CrawledPackage link) {
-                        /* we do not filter packages */
-                        return false;
-                    }
-
-                    @Override
                     public void setEnabled(boolean enabled) {
                         super.setEnabled(enabled);
                         /*
@@ -231,10 +227,12 @@ public class QuickFilterExceptionsTable extends FilterTable<CrawledPackage, Craw
         }
     }
 
-    @Override
-    public boolean isFiltered(CrawledPackage e) {
-        /* we do not filter packages */
-        return false;
+    public void reset() {
+        Collection<Filter> lfilters = map.values();
+        for (Filter filter : lfilters) {
+            filter.setMatchCounter(0);
+            filter.setCounter(0);
+        }
     }
 
     public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {

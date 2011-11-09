@@ -4,14 +4,13 @@ import java.util.regex.Pattern;
 
 import javax.swing.ImageIcon;
 
-import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
-import jd.controlling.packagecontroller.AbstractPackageNode;
+import jd.controlling.linkcrawler.CrawledLink;
 
 import org.appwork.utils.Files;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ExtensionsFilterInterface;
 import org.jdownloader.images.NewTheme;
 
-public abstract class ExtensionFilter<E extends AbstractPackageNode<V, E>, V extends AbstractPackageChildrenNode<E>> extends Filter<E, V> {
+public abstract class ExtensionFilter extends Filter {
 
     private Pattern pattern;
 
@@ -25,7 +24,7 @@ public abstract class ExtensionFilter<E extends AbstractPackageNode<V, E>, V ext
     }
 
     @Override
-    public boolean isFiltered(V link) {
+    public boolean isFiltered(CrawledLink link) {
         String ext = Files.getExtension(link.getName());
         return isFiltered(ext);
     }
@@ -36,9 +35,9 @@ public abstract class ExtensionFilter<E extends AbstractPackageNode<V, E>, V ext
         return pattern.matcher(ext).matches();
     }
 
-    @Override
-    public boolean isFiltered(E link) {
-        return false;
-    }
+    // @Override
+    // public boolean isFiltered(CrawledPackage link) {
+    // return false;
+    // }
 
 }

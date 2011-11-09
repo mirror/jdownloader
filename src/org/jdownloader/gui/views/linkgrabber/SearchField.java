@@ -88,4 +88,7 @@ public class SearchField<PackageType extends AbstractPackageNode<ChildType, Pack
     public boolean isFiltered(ChildType v) {
         return !filterPattern.matcher(v.getName()).find();
     }
+
+    public void reset() {
+    }
 }
