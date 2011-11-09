@@ -9,7 +9,6 @@ import javax.swing.JTable;
 import org.appwork.app.gui.MigPanel;
 import org.appwork.storage.config.handler.BooleanKeyHandler;
 import org.appwork.swing.components.ExtCheckBox;
-import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.SwingUtils;
 
 public class Header extends MigPanel {
@@ -47,14 +46,6 @@ public class Header extends MigPanel {
     }
 
     public void setFilterCount(final int size) {
-        new EDTRunner() {
-
-            @Override
-            protected void runInEDT() {
-                setVisible(size > 0);
-                // counter.setText(size + "");
-            }
-        };
 
     }
 

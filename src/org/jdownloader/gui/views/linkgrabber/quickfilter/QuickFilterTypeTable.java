@@ -30,11 +30,13 @@ import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 
 public class QuickFilterTypeTable extends FilterTable<CrawledPackage, CrawledLink> implements GenericConfigEventListener<Boolean> {
     private static final long                                   serialVersionUID = 2109715691047942399L;
+
     private PackageControllerTable<CrawledPackage, CrawledLink> table2Filter;
     private DelayedRunnable                                     delayedRefresh;
     private final Object                                        LOCK             = new Object();
     private long                                                old              = -1;
     private Header                                              header;
+    private TableModelListener                                  listener;
 
     public QuickFilterTypeTable(Header filetypeFilter, PackageControllerTable<CrawledPackage, CrawledLink> table2Filter) {
         super();
@@ -43,6 +45,7 @@ public class QuickFilterTypeTable extends FilterTable<CrawledPackage, CrawledLin
         header.setFilterCount(0);
         final ArrayList<ExtensionFilter<CrawledPackage, CrawledLink>> knownExtensionFilters = new ArrayList<ExtensionFilter<CrawledPackage, CrawledLink>>();
         ExtensionFilter<CrawledPackage, CrawledLink> filter;
+
         filters.add(filter = new ExtensionFilter<CrawledPackage, CrawledLink>(AudioExtensions.AA) {
             protected String getID() {
                 return "Type_Audio";
@@ -117,7 +120,7 @@ public class QuickFilterTypeTable extends FilterTable<CrawledPackage, CrawledLin
                 QuickFilterTypeTable.this.table2Filter.getPackageControllerTableModel().recreateModel(false);
             }
         });
-        delayedRefresh = new DelayedRunnable(IOEQ.TIMINGQUEUE, 100l, 1000l) {
+        delayedRefresh = new DelayedRunnable(IOEQ.TIMINGQUEUE, REFRESH_MIN, REFRESH_MAX) {
 
             @Override
             public void delayedrun() {
@@ -136,19 +139,16 @@ public class QuickFilterTypeTable extends FilterTable<CrawledPackage, CrawledLin
             }
 
         });
-
-        LinkFilterSettings.LG_QUICKFILTER_TYPE_VISIBLE.getEventSender().addListener(this);
-
-        table2Filter.getModel().addTableModelListener(new TableModelListener() {
+        listener = new TableModelListener() {
 
             public void tableChanged(TableModelEvent e) {
-
-                if (LinkFilterSettings.LG_QUICKFILTER_TYPE_VISIBLE.getValue()) delayedRefresh.run();
-
+                delayedRefresh.run();
             }
-        });
+        };
+        LinkFilterSettings.LG_QUICKFILTER_TYPE_VISIBLE.getEventSender().addListener(this);
 
         onConfigValueModified(null, LinkFilterSettings.LG_QUICKFILTER_TYPE_VISIBLE.getValue());
+
     }
 
     private void updateQuickFilerTableData() {
@@ -206,15 +206,18 @@ public class QuickFilterTypeTable extends FilterTable<CrawledPackage, CrawledLin
             }
         }
         // }
-        header.setFilterCount(newTableData.size());
+
         new EDTRunner() {
 
             @Override
             protected void runInEDT() {
-                setVisible(newTableData.size() > 0);
+                header.setVisible(newTableData.size() > 0);
+                setVisible(newTableData.size() > 0 && LinkFilterSettings.LG_QUICKFILTER_TYPE_VISIBLE.getValue());
             }
         };
-        if (LinkFilterSettings.LG_QUICKFILTER_TYPE_VISIBLE.getValue()) QuickFilterTypeTable.this.getExtTableModel()._fireTableStructureChanged(newTableData, true);
+        if (LinkFilterSettings.LG_QUICKFILTER_TYPE_VISIBLE.getValue()) {
+            QuickFilterTypeTable.this.getExtTableModel()._fireTableStructureChanged(newTableData, true);
+        }
     }
 
     public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
@@ -225,15 +228,16 @@ public class QuickFilterTypeTable extends FilterTable<CrawledPackage, CrawledLin
             enabled = true;
             /* filter is enabled, add listener and run again */
             table2Filter.getPackageControllerTableModel().addFilter(this);
-            updateQuickFilerTableData();
-            setVisible(true);
+            this.table2Filter.getModel().addTableModelListener(listener);
         } else {
+            this.table2Filter.getModel().removeTableModelListener(listener);
             enabled = false;
             /* filter disabled, remove listener */
             old = -1;
-            setVisible(false);
             table2Filter.getPackageControllerTableModel().removeFilter(this);
+
         }
+        updateQuickFilerTableData();
         table2Filter.getPackageControllerTableModel().recreateModel(false);
     }
 

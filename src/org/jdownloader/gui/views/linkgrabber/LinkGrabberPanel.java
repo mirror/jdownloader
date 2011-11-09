@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import javax.swing.JButton;
 import javax.swing.JScrollPane;
 import javax.swing.ScrollPaneConstants;
+import javax.swing.SwingUtilities;
 
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcollector.LinkCollectorEvent;
@@ -27,6 +28,7 @@ import org.appwork.swing.components.ExtButton;
 import org.appwork.utils.event.queue.Queue.QueuePriority;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.actions.AppAction;
+import org.jdownloader.controlling.filter.LinkFilterSettings;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.components.HeaderScrollPane;
 import org.jdownloader.gui.views.linkgrabber.actions.AddLinksAction;
@@ -202,6 +204,25 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
         }
         sidebarScrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
         sidebarScrollPane.setColumnHeaderView(new LinkGrabberSideBarHeader(table));
+
+        LinkFilterSettings.LG_QUICKSETTINGS_VISIBLE.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
+
+            public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
+            }
+
+            public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
+
+                if (Boolean.TRUE.equals(newValue)) {
+                    SwingUtilities.invokeLater(new Runnable() {
+
+                        public void run() {
+                            sidebarScrollPane.getVerticalScrollBar().setValue(sidebarScrollPane.getVerticalScrollBar().getMaximum());
+                        }
+                    });
+
+                }
+            }
+        });
 
     }
 

@@ -1,6 +1,7 @@
 package org.jdownloader.gui.views.linkgrabber.quickfilter;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map.Entry;
@@ -43,13 +44,14 @@ public class QuickFilterHosterTable extends FilterTable<CrawledPackage, CrawledL
     private PackageControllerTable<CrawledPackage, CrawledLink>        table2Filter     = null;
     private final Object                                               LOCK             = new Object();
     private Header                                                     header;
+    private TableModelListener                                         listener;
 
     public QuickFilterHosterTable(Header hosterFilter, PackageControllerTable<CrawledPackage, CrawledLink> table) {
         super();
         header = hosterFilter;
         header.setFilterCount(0);
         this.table2Filter = table;
-        delayedRefresh = new DelayedRunnable(IOEQ.TIMINGQUEUE, 100l, 1000l) {
+        delayedRefresh = new DelayedRunnable(IOEQ.TIMINGQUEUE, REFRESH_MIN, REFRESH_MAX) {
 
             @Override
             public void delayedrun() {
@@ -57,28 +59,15 @@ public class QuickFilterHosterTable extends FilterTable<CrawledPackage, CrawledL
             }
 
         };
-        GraphicalUserInterfaceSettings.LINKGRABBER_SIDEBAR_ENABLED.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
 
-            public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
-            }
-
-            public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
-                /* we call a different onConfigValueModified here */
-                QuickFilterHosterTable.this.onConfigValueModified(null, LinkFilterSettings.LG_QUICKFILTER_HOSTER_VISIBLE.getValue());
-            }
-
-        });
-
-        LinkFilterSettings.LG_QUICKFILTER_HOSTER_VISIBLE.getEventSender().addListener(this);
-
-        table2Filter.getModel().addTableModelListener(new TableModelListener() {
+        listener = new TableModelListener() {
 
             public void tableChanged(TableModelEvent e) {
-
-                if (LinkFilterSettings.LG_QUICKFILTER_HOSTER_VISIBLE.getValue()) delayedRefresh.run();
-
+                delayedRefresh.run();
             }
-        });
+        };
+
+        LinkFilterSettings.LG_QUICKFILTER_HOSTER_VISIBLE.getEventSender().addListener(this);
 
         onConfigValueModified(null, LinkFilterSettings.LG_QUICKFILTER_HOSTER_VISIBLE.getValue());
     }
@@ -105,9 +94,10 @@ public class QuickFilterHosterTable extends FilterTable<CrawledPackage, CrawledL
             it.next().getValue().setCounter(0);
         }
         /* update filter list */
-
+        HashSet<CrawledLink> map = new HashSet<CrawledLink>();
         for (CrawledLink link : ((PackageControllerTableModel<CrawledPackage, CrawledLink>) table2Filter.getExtTableModel()).getAllChildrenNodes()) {
             final String hoster = link.getRealHost();
+            map.add(link);
             if (hoster != null) {
                 Filter<CrawledPackage, CrawledLink> filter = null;
                 filter = filterMap.get(hoster);
@@ -142,7 +132,10 @@ public class QuickFilterHosterTable extends FilterTable<CrawledPackage, CrawledL
                                 filter.setIcon(FavIconController.getFavIcon(hoster, filter, true));
                                 filterMap.put(hoster, filter);
                             }
-                            if (filter.getCounter() == 0 && !filter.isEnabled()) filter.setCounter(-1);
+                            if (filter.getCounter() == 0 && !filter.isEnabled()) {
+
+                                filter.setCounter(-1);
+                            }
                         }
                     }
                 }
@@ -151,7 +144,8 @@ public class QuickFilterHosterTable extends FilterTable<CrawledPackage, CrawledL
             LinkCollector.getInstance().readUnlock(readL);
         }
         /* update FilterTableModel */
-        ArrayList<Filter<CrawledPackage, CrawledLink>> newfilters = new ArrayList<Filter<CrawledPackage, CrawledLink>>();
+        // ArrayList<Filter<CrawledPackage, CrawledLink>> newfilters = new
+        // ArrayList<Filter<CrawledPackage, CrawledLink>>();
         es = filterMap.entrySet();
         it = es.iterator();
         final ArrayList<Filter<CrawledPackage, CrawledLink>> newTableData = new ArrayList<Filter<CrawledPackage, CrawledLink>>(QuickFilterHosterTable.this.getExtTableModel().getTableData().size());
@@ -162,15 +156,15 @@ public class QuickFilterHosterTable extends FilterTable<CrawledPackage, CrawledL
                 /* only add entries with counter >0 to visible table */
                 newTableData.add(value);
             }
-            newfilters.add(value);
+            // newfilters.add(value);
         }
-        filters = newfilters;
-        header.setFilterCount(newTableData.size());
+        filters = newTableData;
         new EDTRunner() {
 
             @Override
             protected void runInEDT() {
-                setVisible(newTableData.size() > 0);
+                header.setVisible(filters.size() > 0);
+                setVisible(filters.size() > 0 && LinkFilterSettings.LG_QUICKFILTER_HOSTER_VISIBLE.getValue());
             }
         };
         if (LinkFilterSettings.LG_QUICKFILTER_HOSTER_VISIBLE.getValue()) QuickFilterHosterTable.this.getExtTableModel()._fireTableStructureChanged(newTableData, true);
@@ -224,15 +218,17 @@ public class QuickFilterHosterTable extends FilterTable<CrawledPackage, CrawledL
         if (Boolean.TRUE.equals(newValue) && GraphicalUserInterfaceSettings.CFG.isLinkgrabberSidebarEnabled()) {
             enabled = true;
             table2Filter.getPackageControllerTableModel().addFilter(this);
-            updateQuickFilerTableData();
-            setVisible(true);
+
+            this.table2Filter.getModel().addTableModelListener(listener);
         } else {
-            setVisible(false);
+            this.table2Filter.getModel().removeTableModelListener(listener);
+
             enabled = false;
             /* filter disabled */
             old = -1;
             table2Filter.getPackageControllerTableModel().removeFilter(this);
         }
+        updateQuickFilerTableData();
         table2Filter.getPackageControllerTableModel().recreateModel(false);
     }
 

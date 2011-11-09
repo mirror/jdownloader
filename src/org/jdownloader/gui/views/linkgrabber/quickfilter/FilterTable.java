@@ -26,6 +26,8 @@ public class FilterTable<E extends AbstractPackageNode<V, E>, V extends Abstract
     private static final long         serialVersionUID = -5917220196056769905L;
     protected ArrayList<Filter<E, V>> filters          = new ArrayList<Filter<E, V>>();
     protected volatile boolean        enabled          = false;
+    protected static final long       REFRESH_MIN      = 200l;
+    protected static final long       REFRESH_MAX      = 2000l;
 
     public FilterTable() {
         super(new FilterTableModel<E, V>());

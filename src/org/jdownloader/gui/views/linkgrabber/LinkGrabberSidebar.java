@@ -12,9 +12,11 @@ import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.jdownloader.controlling.filter.LinkFilterSettings;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.gui.views.linkgrabber.quickfilter.CustomFilterHeader;
 import org.jdownloader.gui.views.linkgrabber.quickfilter.QuickFilterExceptionsTable;
 import org.jdownloader.gui.views.linkgrabber.quickfilter.QuickFilterHosterTable;
 import org.jdownloader.gui.views.linkgrabber.quickfilter.QuickFilterTypeTable;
+import org.jdownloader.gui.views.linkgrabber.quickfilter.QuickSettingsHeader;
 
 public class LinkGrabberSidebar extends MigPanel {
 
@@ -27,8 +29,8 @@ public class LinkGrabberSidebar extends MigPanel {
     private QuickFilterTypeTable       filetypeFilterTable;
     private Header                     hosterFilter;
     private Header                     filetypeFilter;
-    private Header                     quickSettingsHeader;
-    private Header                     exceptions;
+    private QuickSettingsHeader        quickSettingsHeader;
+    private CustomFilterHeader         exceptions;
     private QuickFilterExceptionsTable exceptionsFilterTable;
 
     public LinkGrabberSidebar(LinkGrabberTable table) {
@@ -41,9 +43,9 @@ public class LinkGrabberSidebar extends MigPanel {
         }
         // header
         hosterFilter = new Header(LinkFilterSettings.LG_QUICKFILTER_HOSTER_VISIBLE, _GUI._.LinkGrabberSidebar_LinkGrabberSidebar_hosterfilter());
-        exceptions = new Header(LinkFilterSettings.LG_QUICKFILTER_EXCEPTIONS_VISIBLE, _GUI._.LinkGrabberSidebar_LinkGrabberSidebar_exceptionfilter());
+        exceptions = new CustomFilterHeader();
         filetypeFilter = new Header(LinkFilterSettings.LG_QUICKFILTER_TYPE_VISIBLE, _GUI._.LinkGrabberSidebar_LinkGrabberSidebar_extensionfilter());
-        quickSettingsHeader = new Header(LinkFilterSettings.LG_QUICKSETTINGS_VISIBLE, _GUI._.LinkGrabberSidebar_LinkGrabberSidebar_settings());
+        quickSettingsHeader = new QuickSettingsHeader();
 
         //
         exceptionsFilterTable = new QuickFilterExceptionsTable(exceptions, table);
