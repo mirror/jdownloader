@@ -6,7 +6,6 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.controlling.AccountController;
-import jd.controlling.JDPluginLogger;
 import jd.http.Browser;
 import jd.nutils.Formatter;
 import jd.nutils.encoding.Encoding;
@@ -128,18 +127,6 @@ public class PremShare extends PluginForHost implements JDPremInterface {
         proxyused = false;
         br.reset();
         plugin.handlePremium(downloadLink, account);
-    }
-
-    @Override
-    public void setLogger(JDPluginLogger logger) {
-        this.logger = logger;
-        if (plugin != null) plugin.setLogger(logger);
-    }
-
-    @Override
-    public JDPluginLogger getLogger() {
-        if (plugin != null) plugin.getLogger();
-        return (JDPluginLogger) logger;
     }
 
     @Override

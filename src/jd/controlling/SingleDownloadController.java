@@ -689,7 +689,7 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
             currentPlugin = downloadLink.getLivePlugin();
             currentPlugin.setIOPermission(ioP);
             JDPluginLogger llogger = null;
-            currentPlugin.setLogger(llogger = new JDPluginLogger(downloadLink.getHost() + ":" + downloadLink.getName()));
+            currentPlugin.setLogger(llogger = new JDPluginLogger(downloadLink.getHost() + ":Download:" + downloadLink.getName()));
             super.setLogger(llogger);
             /*
              * handle is only called in download situation, that why we create a

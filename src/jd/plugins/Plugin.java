@@ -60,7 +60,7 @@ public abstract class Plugin implements ActionListener {
     // protected static Logger logger = jd.controlling.JDLogger.getLogger();
 
     /* afer 0.95xx */
-    protected JDPluginLogger   logger           = null;
+    protected JDPluginLogger   logger           = JDPluginLogger.Trash;
 
     /**
      * Gibt nur den Dateinamen aus der URL extrahiert zurück. Um auf den
