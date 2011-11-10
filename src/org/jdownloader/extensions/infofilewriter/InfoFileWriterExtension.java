@@ -29,7 +29,7 @@ import jd.config.Property;
 import jd.controlling.JDController;
 import jd.controlling.JDLogger;
 import jd.controlling.JSonWrapper;
-import jd.controlling.SingleDownloadController;
+import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.gui.swing.components.JDTextArea;
@@ -103,9 +103,8 @@ public class InfoFileWriterExtension extends AbstractExtension<InfoFileWriterCon
 
             if (subConfig.getBooleanProperty(PARAM_ONLYPASSWORD, false)) {
                 // only set if password is availale
-                String pw = dl.getFilePackage().getPassword();
                 Set<String> pws = FilePackage.getPasswordAuto(dl.getFilePackage());
-                if ((pw == null || pw.length() == 0) && (pws.size() == 0)) return;
+                if ((pws.size() == 0)) return;
             }
             if (subConfig.getIntegerProperty(PARAM_CREATION, 0) == 0) {
                 FilePackage fp = dl.getFilePackage();

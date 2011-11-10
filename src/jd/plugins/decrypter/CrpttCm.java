@@ -43,7 +43,7 @@ public class CrpttCm extends PluginForDecrypt {
 
     private static final String PATTERN_PASSWORD_FOLDER = "<input type=\"password\"";
 
-    private static final String PATTERN_PW = "Passworteingabe";
+    private static final String PATTERN_PW              = "Passworteingabe";
 
     public CrpttCm(PluginWrapper wrapper) {
         super(wrapper);
@@ -170,7 +170,6 @@ public class CrpttCm extends PluginForDecrypt {
             br.getHeaders().remove("Content-Type");
             FilePackage fp = FilePackage.getInstance();
             fp.setName(packagename);
-            fp.setPassword(password);
 
             progress.setRange(ciphers.length);
             for (String string : ciphers) {
@@ -181,7 +180,6 @@ public class CrpttCm extends PluginForDecrypt {
                 if (links.length > 0 && links[0].startsWith("http")) {
                     DownloadLink link = createDownloadlink(links[0]);
                     link.addSourcePluginPassword(password);
-                    link.setSourcePluginComment(packagename);
                     fp.add(link);
                     decryptedLinks.add(link);
                 }

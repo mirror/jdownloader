@@ -51,7 +51,6 @@ public class LinkGrabberFilePackage extends Property implements LinkGrabberFileP
     private boolean                                     postProcessing   = true;
     private boolean                                     useSubDir        = true;
     private String                                      comment          = "";
-    private String                                      password         = "";
     private long                                        size             = -1;
 
     private long                                        lastSizeCalc     = 0;
@@ -331,10 +330,6 @@ public class LinkGrabberFilePackage extends Property implements LinkGrabberFileP
         return downloadLinks;
     }
 
-    public String getPassword() {
-        return password != null ? password : "";
-    }
-
     /**
      * returns a list of archivepasswords set by downloadlinks
      */
@@ -413,10 +408,6 @@ public class LinkGrabberFilePackage extends Property implements LinkGrabberFileP
         } else
             this.name = JDUtilities.removeEndingPoints(JDIO.validateFileandPathName(name));
         this.name = this.name.trim();
-    }
-
-    public void setPassword(String password) {
-        this.password = password;
     }
 
     public int size() {

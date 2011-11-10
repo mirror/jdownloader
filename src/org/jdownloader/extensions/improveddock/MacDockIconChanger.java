@@ -20,8 +20,8 @@ import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.image.BufferedImage;
 
-import jd.controlling.DownloadInformations;
-import jd.controlling.DownloadWatchDog;
+import jd.controlling.downloadcontroller.DownloadInformations;
+import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.nutils.JDImage;
 
 import com.apple.eawt.Application;

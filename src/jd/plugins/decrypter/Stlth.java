@@ -145,9 +145,6 @@ public class Stlth extends PluginForDecrypt {
             if (name != null) {
                 fp.setName(name.trim());
             }
-            if (pass != null) {
-                fp.setPassword(pass);
-            }
             fp.addLinks(decryptedLinks);
         }
         return decryptedLinks;

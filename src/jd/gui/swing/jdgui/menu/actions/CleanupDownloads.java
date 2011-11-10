@@ -19,8 +19,8 @@ package jd.gui.swing.jdgui.menu.actions;
 import java.awt.event.ActionEvent;
 import java.util.LinkedList;
 
-import jd.controlling.DownloadController;
 import jd.controlling.IOEQ;
+import jd.controlling.downloadcontroller.DownloadController;
 import jd.gui.UserIO;
 import jd.gui.swing.jdgui.actions.ToolBarAction;
 import jd.plugins.DownloadLink;

@@ -34,12 +34,12 @@ import jd.config.Configuration;
 import jd.config.Property;
 import jd.config.SubConfiguration;
 import jd.controlling.DistributeData;
-import jd.controlling.DownloadController;
-import jd.controlling.DownloadWatchDog;
 import jd.controlling.JDLogger;
 import jd.controlling.LinkGrabberController;
 import jd.controlling.captcha.CaptchaDialogQueue;
 import jd.controlling.captcha.CaptchaDialogQueueEntry;
+import jd.controlling.downloadcontroller.DownloadController;
+import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcrawler.LinkCrawler;
@@ -675,7 +675,6 @@ public class Serverhandler implements Handler {
                 outer: for (final String packagename : packagenames) {
                     for (final LinkGrabberFilePackage pack : packages) {
                         if (packagename.equals(pack.getName())) {
-                            pack.setPassword(password);
                             packagesWithPW.add(pack);
                             LinkGrabberController.getInstance().throwRefresh();
                             continue outer;

@@ -201,7 +201,6 @@ public class PackagePropertiesDialog extends AbstractDialog<Object> {
             FilePackage fp = FilePackage.getInstance();
             fp.setName("My Package");
             fp.setComment("Kommenztar");
-            fp.setPassword("passwords");
             fp.setPostProcessing(true);
             fp.setDownloadDirectory("c:/");
             Dialog.getInstance().showDialog(new PackagePropertiesDialog(null));

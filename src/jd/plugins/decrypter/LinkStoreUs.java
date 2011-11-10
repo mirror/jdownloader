@@ -53,9 +53,9 @@ public class LinkStoreUs extends PluginForDecrypt {
     }
 
     private static final String CIRCLECAPTCHATEXT = "captcha_cross\\.png";
-    private static final String RECAPTCHATEXT = "(/recaptcha/api/challenge\\?k=|api\\.recaptcha\\.net)";
-    private static final String PASSWORDTEXT = "<h4>Folder-password:</h4>";
-    private static final String MAINPAGE = "http://linkstore.us/";
+    private static final String RECAPTCHATEXT     = "(/recaptcha/api/challenge\\?k=|api\\.recaptcha\\.net)";
+    private static final String PASSWORDTEXT      = "<h4>Folder-password:</h4>";
+    private static final String MAINPAGE          = "http://linkstore.us/";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         // Allow only 1 instance of this decrypter at the same time
@@ -120,7 +120,6 @@ public class LinkStoreUs extends PluginForDecrypt {
                     if (dlclinks != null && dlclinks.size() != 0) {
                         if (fpName != null) {
                             FilePackage fp = FilePackage.getInstance();
-                            if (password != null) fp.setPassword(password);
                             fp.setName(fpName.trim());
                             fp.addLinks(dlclinks);
                         }
@@ -161,7 +160,6 @@ public class LinkStoreUs extends PluginForDecrypt {
             }
             if (fpName != null) {
                 FilePackage fp = FilePackage.getInstance();
-                if (password != null) fp.setPassword(password);
                 fp.setName(fpName.trim());
                 fp.addLinks(decryptedLinks);
             }

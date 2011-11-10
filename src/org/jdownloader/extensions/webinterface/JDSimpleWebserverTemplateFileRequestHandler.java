@@ -27,10 +27,10 @@ import java.util.Iterator;
 import java.util.Vector;
 
 import jd.config.Configuration;
-import jd.controlling.DownloadWatchDog;
 import jd.controlling.JDLogger;
 import jd.controlling.LinkGrabberController;
 import jd.controlling.PasswordListController;
+import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.proxy.ProxyController;
 import jd.gui.swing.jdgui.views.linkgrabber.LinkGrabberPanel;
 import jd.nutils.Formatter;
@@ -207,9 +207,6 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
             downloadLink = JDUtilities.getController().getPackages().get(package_id).getChildren().get(download_id);
 
             addEntry("file", new File(downloadLink.getFileOutput()).getName() + " @ " + downloadLink.getHost());
-            if (downloadLink.getFilePackage() != null && downloadLink.getFilePackage().getPassword() != null) {
-                addEntry(T._.gui_linkinfo_password(), downloadLink.getFilePackage().getPassword());
-            }
             if (downloadLink.getFilePackage() != null && downloadLink.getFilePackage().getComment() != null) {
                 addEntry(T._.gui_linkinfo_comment(), downloadLink.getFilePackage().getComment());
             }

@@ -14,7 +14,7 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package jd.controlling;
+package jd.controlling.downloadcontroller;
 
 import java.io.File;
 import java.io.IOException;
@@ -26,6 +26,9 @@ import java.util.logging.Logger;
 
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
+import jd.controlling.IOPermission;
+import jd.controlling.JDLogger;
+import jd.controlling.JDPluginLogger;
 import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.proxy.ProxyController;

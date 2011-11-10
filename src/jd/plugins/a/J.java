@@ -135,7 +135,6 @@ public class J extends PluginsC {
                 pack.setComment(p.getComment());
                 if (new File(p.getDownloadDirectory()).exists()) pack.setDownloadDirectory(p.getDownloadDirectory());
                 pack.setName(p.getName());
-                pack.setPassword(p.getPassword());
 
                 for (DownloadLink l : p.getChildren()) {
                     /*

@@ -26,10 +26,10 @@ import java.util.Iterator;
 
 import javax.swing.filechooser.FileFilter;
 
-import jd.controlling.DownloadController;
 import jd.controlling.JDController;
 import jd.controlling.JDLogger;
-import jd.controlling.SingleDownloadController;
+import jd.controlling.downloadcontroller.DownloadController;
+import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.gui.UserIO;

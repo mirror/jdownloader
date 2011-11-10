@@ -51,8 +51,8 @@ import java.net.URL;
 import java.rmi.ConnectException;
 import java.util.StringTokenizer;
 
-import jd.controlling.DownloadWatchDog;
 import jd.controlling.JDLogger;
+import jd.controlling.downloadcontroller.DownloadWatchDog;
 
 import org.appwork.utils.Regex;
 import org.appwork.utils.event.Eventsender;

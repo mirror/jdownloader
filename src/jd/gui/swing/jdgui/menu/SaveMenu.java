@@ -17,7 +17,6 @@
 package jd.gui.swing.jdgui.menu;
 
 import jd.gui.swing.jdgui.menu.actions.BackupAction;
-import jd.gui.swing.jdgui.menu.actions.BackupLinkListAction;
 
 import org.jdownloader.gui.translate._GUI;
 
@@ -28,7 +27,6 @@ public class SaveMenu extends JStartMenu {
     public SaveMenu() {
         super(_GUI._.gui_menu_save(), "save");
         this.add(new BackupAction());
-        this.add(new BackupLinkListAction());
     }
 
 }

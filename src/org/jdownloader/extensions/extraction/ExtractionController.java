@@ -23,10 +23,10 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
 import jd.config.SubConfiguration;
-import jd.controlling.DownloadWatchDog;
 import jd.controlling.IOEQ;
 import jd.controlling.JDLogger;
 import jd.controlling.PasswordListController;
+import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
@@ -134,10 +134,8 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
                 }
 
                 if (archive.isProtected() && archive.getPassword().equals("")) {
-                    String dlpw = archive.getFirstDownloadLink().getFilePackage().getPassword();
-                    if (dlpw != null) passwordList.add(dlpw);
                     passwordList.addAll(FilePackage.getPasswordAuto(archive.getFirstDownloadLink().getFilePackage()));
-                    dlpw = archive.getFirstDownloadLink().getStringProperty("pass", null);
+                    String dlpw = archive.getFirstDownloadLink().getDownloadPassword();
                     if (dlpw != null) passwordList.add(dlpw);
                     // passwordList.addAll(PasswordListController.getInstance().getPasswordList());
                     // passwordList.add(extractor.getArchiveName(archive.getFirstDownloadLink()));

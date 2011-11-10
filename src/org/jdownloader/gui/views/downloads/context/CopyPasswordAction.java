@@ -8,6 +8,8 @@ import jd.controlling.ClipboardHandler;
 import jd.gui.swing.jdgui.interfaces.ContextMenuAction;
 import jd.plugins.DownloadLink;
 
+import org.appwork.exceptions.WTFException;
+import org.appwork.utils.logging.Log;
 import org.jdownloader.gui.translate._GUI;
 
 public class CopyPasswordAction extends ContextMenuAction {
@@ -47,22 +49,7 @@ public class CopyPasswordAction extends ContextMenuAction {
         StringBuilder sb = new StringBuilder("");
         String pw;
         for (DownloadLink link : links) {
-            pw = link.getFilePackage().getPassword();
-            if (pw == null) continue;
-            if (!list.contains(pw) && pw.length() > 0) {
-                if (list.size() > 0) sb.append("\r\n");
-                list.add(pw);
-                sb.append(pw);
-            }
-
-            pw = link.getStringProperty("pass", null);
-            if (pw != null) {
-                if (!list.contains(pw) && pw.length() > 0) {
-                    if (list.size() > 0) sb.append("\r\n");
-                    list.add(pw);
-                    sb.append(pw);
-                }
-            }
+            Log.exception(new WTFException("TODO"));
         }
         return sb.toString();
     }

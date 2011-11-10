@@ -3,8 +3,8 @@ package org.jdownloader.gui.views.downloads.context;
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 
-import jd.controlling.DownloadWatchDog;
 import jd.controlling.IOEQ;
+import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.gui.swing.jdgui.interfaces.ContextMenuAction;
 import jd.plugins.DownloadLink;
 

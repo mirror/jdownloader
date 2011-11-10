@@ -14,7 +14,7 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package jd.controlling;
+package jd.controlling.downloadcontroller;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -26,6 +26,12 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 
 import jd.config.Configuration;
+import jd.controlling.AccountController;
+import jd.controlling.IOEQ;
+import jd.controlling.IOPermission;
+import jd.controlling.JDController;
+import jd.controlling.JDLogger;
+import jd.controlling.IOPermission.CAPTCHA;
 import jd.controlling.proxy.ProxyController;
 import jd.controlling.proxy.ProxyInfo;
 import jd.controlling.reconnect.Reconnecter;

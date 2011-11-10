@@ -24,6 +24,7 @@ import java.util.Iterator;
 
 import javax.swing.Timer;
 
+import jd.controlling.downloadcontroller.DownloadController;
 import jd.http.Browser;
 import jd.nutils.jobber.JDRunnable;
 import jd.nutils.jobber.Jobber;

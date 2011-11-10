@@ -5,7 +5,7 @@ import java.util.ArrayList;
 
 import javax.swing.JMenu;
 
-import jd.controlling.DownloadController;
+import jd.controlling.downloadcontroller.DownloadController;
 import jd.gui.swing.jdgui.interfaces.ContextMenuAction;
 import jd.plugins.DownloadLink;
 

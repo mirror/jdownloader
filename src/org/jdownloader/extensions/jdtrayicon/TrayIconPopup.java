@@ -42,8 +42,8 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
 import jd.config.Property;
-import jd.controlling.DownloadWatchDog;
 import jd.controlling.JSonWrapper;
+import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.components.JDSpinner;
 import jd.gui.swing.jdgui.JDGui;

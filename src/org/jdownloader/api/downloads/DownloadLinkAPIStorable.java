@@ -4,7 +4,7 @@ import jd.plugins.DownloadLink;
 
 import org.appwork.storage.Storable;
 
-public class DownloadLinkStorable implements Storable {
+public class DownloadLinkAPIStorable implements Storable {
 
     public long getId() {
         if (link == null) return 0;
@@ -120,11 +120,11 @@ public class DownloadLinkStorable implements Storable {
 
     private DownloadLink link;
 
-    private DownloadLinkStorable() {
+    private DownloadLinkAPIStorable() {
         this.link = null;
     }
 
-    public DownloadLinkStorable(DownloadLink link) {
+    public DownloadLinkAPIStorable(DownloadLink link) {
         this.link = link;
     }
 }

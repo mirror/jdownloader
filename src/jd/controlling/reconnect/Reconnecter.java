@@ -20,9 +20,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 
 import jd.config.Configuration;
-import jd.controlling.DownloadWatchDog;
 import jd.controlling.JDLogger;
 import jd.controlling.LinkCheck;
+import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.reconnect.ipcheck.IPController;
 import jd.gui.UserIF;
 import jd.gui.UserIO;

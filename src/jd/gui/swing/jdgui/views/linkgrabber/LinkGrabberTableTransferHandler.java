@@ -33,9 +33,9 @@ import javax.swing.JTable;
 import javax.swing.SwingUtilities;
 import javax.swing.TransferHandler;
 
-import jd.controlling.DownloadController;
 import jd.controlling.JDController;
 import jd.controlling.LinkGrabberController;
+import jd.controlling.downloadcontroller.DownloadController;
 import jd.gui.swing.SwingGui;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkGrabberFilePackage;

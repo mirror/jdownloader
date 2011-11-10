@@ -31,7 +31,7 @@ import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
 import jd.PluginWrapper;
-import jd.controlling.DownloadWatchDog;
+import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.crypt.Base64;
 import jd.crypt.JDCrypt;
 import jd.gui.UserIO;

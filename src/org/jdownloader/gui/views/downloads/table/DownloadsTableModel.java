@@ -1,6 +1,6 @@
 package org.jdownloader.gui.views.downloads.table;
 
-import jd.controlling.DownloadController;
+import jd.controlling.downloadcontroller.DownloadController;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 

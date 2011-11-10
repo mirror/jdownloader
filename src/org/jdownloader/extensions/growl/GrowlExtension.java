@@ -23,9 +23,9 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 
-import jd.controlling.DownloadWatchDog;
 import jd.controlling.JDController;
-import jd.controlling.SingleDownloadController;
+import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.gui.swing.jdgui.menu.MenuAction;

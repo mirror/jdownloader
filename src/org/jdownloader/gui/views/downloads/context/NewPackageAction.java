@@ -3,7 +3,7 @@ package org.jdownloader.gui.views.downloads.context;
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 
-import jd.controlling.DownloadController;
+import jd.controlling.downloadcontroller.DownloadController;
 import jd.gui.UserIO;
 import jd.gui.swing.jdgui.interfaces.ContextMenuAction;
 import jd.plugins.DownloadLink;
@@ -46,7 +46,6 @@ public class NewPackageAction extends ContextMenuAction {
         nfp.setComment(fp.getComment());
 
         for (DownloadLink link : links) {
-            link.addSourcePluginPassword(link.getFilePackage().getPassword());
             /* TODO: speed optimize */
             link.getFilePackage().remove(link);
         }

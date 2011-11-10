@@ -20,7 +20,7 @@ import java.awt.Color;
 
 import javax.swing.JLabel;
 
-import jd.controlling.DownloadWatchDog;
+import jd.controlling.downloadcontroller.DownloadWatchDog;
 
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.ValidationException;

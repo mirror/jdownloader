@@ -19,8 +19,8 @@ package org.jdownloader.extensions.jdtrayicon;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 
-import jd.controlling.DownloadInformations;
-import jd.controlling.DownloadWatchDog;
+import jd.controlling.downloadcontroller.DownloadInformations;
+import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.gui.swing.components.JWindowTooltip;
 import jd.gui.swing.jdgui.components.JDProgressBar;
 import jd.nutils.Formatter;

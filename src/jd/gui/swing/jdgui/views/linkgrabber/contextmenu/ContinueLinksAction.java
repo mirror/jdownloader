@@ -49,7 +49,6 @@ public class ContinueLinksAction extends ContextMenuAction {
 
             LinkGrabberFilePackage fp4 = new LinkGrabberFilePackage(fp3.getName());
             fp4.setDownloadDirectory(fp3.getDownloadDirectory());
-            fp4.setPassword(fp3.getPassword());
             fp4.setPostProcessing(fp3.isPostProcessing());
             fp4.setUseSubDir(fp3.useSubDir());
             fp4.setComment(fp3.getComment());

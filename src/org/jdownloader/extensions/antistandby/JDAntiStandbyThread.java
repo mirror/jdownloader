@@ -18,8 +18,8 @@ package org.jdownloader.extensions.antistandby;
 
 import java.util.logging.Logger;
 
-import jd.controlling.DownloadWatchDog;
 import jd.controlling.JDLogger;
+import jd.controlling.downloadcontroller.DownloadWatchDog;
 
 import com.sun.jna.Native;
 

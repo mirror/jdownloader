@@ -5,7 +5,7 @@ import java.util.List;
 
 import javax.swing.JLabel;
 
-import jd.controlling.DownloadWatchDog;
+import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.gui.swing.SwingGui;
 
 import org.jdownloader.extensions.omnibox.omni.Action;

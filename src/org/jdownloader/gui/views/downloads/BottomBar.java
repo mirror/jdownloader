@@ -9,7 +9,7 @@ import javax.swing.JLabel;
 import javax.swing.JPopupMenu;
 import javax.swing.Timer;
 
-import jd.controlling.DownloadWatchDog;
+import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.gui.swing.jdgui.menu.actions.CleanupDownloads;
 import jd.gui.swing.jdgui.menu.actions.CleanupPackages;
 import jd.gui.swing.jdgui.menu.actions.RemoveDisabledAction;

@@ -8,5 +8,5 @@ import org.appwork.remoteapi.RemoteAPIInterface;
 @ApiNamespace("downloads")
 public interface DownloadsAPI extends RemoteAPIInterface {
 
-    public List<FilePackageStorable> list();
+    public List<FilePackageAPIStorable> list();
 }

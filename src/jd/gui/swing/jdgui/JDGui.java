@@ -47,12 +47,12 @@ import javax.swing.WindowConstants;
 
 import jd.Main;
 import jd.config.ConfigContainer;
-import jd.controlling.DownloadController;
-import jd.controlling.DownloadWatchDog;
 import jd.controlling.JDController;
 import jd.controlling.JDLogger;
 import jd.controlling.LinkCheck;
 import jd.controlling.LinkGrabberDistributeEvent;
+import jd.controlling.downloadcontroller.DownloadController;
+import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.event.ControlEvent;
 import jd.gui.UIConstants;
 import jd.gui.UserIF;

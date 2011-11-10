@@ -6,9 +6,9 @@ import java.util.concurrent.TimeUnit;
 import javax.swing.JScrollPane;
 
 import jd.Main;
-import jd.controlling.DownloadController;
-import jd.controlling.DownloadControllerEvent;
-import jd.controlling.DownloadControllerListener;
+import jd.controlling.downloadcontroller.DownloadController;
+import jd.controlling.downloadcontroller.DownloadControllerEvent;
+import jd.controlling.downloadcontroller.DownloadControllerListener;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import net.miginfocom.swing.MigLayout;
 

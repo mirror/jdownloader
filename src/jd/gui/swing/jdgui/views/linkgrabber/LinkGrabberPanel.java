@@ -29,8 +29,6 @@ import javax.swing.Timer;
 import jd.config.Configuration;
 import jd.config.Property;
 import jd.config.SubConfiguration;
-import jd.controlling.DownloadController;
-import jd.controlling.DownloadWatchDog;
 import jd.controlling.GarbageController;
 import jd.controlling.IOEQ;
 import jd.controlling.LinkCheck;
@@ -39,6 +37,8 @@ import jd.controlling.LinkCheckListener;
 import jd.controlling.LinkGrabberController;
 import jd.controlling.LinkGrabberControllerEvent;
 import jd.controlling.LinkGrabberControllerListener;
+import jd.controlling.downloadcontroller.DownloadController;
+import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.gui.UserIO;
 import jd.gui.swing.components.Balloon;
 import jd.gui.swing.jdgui.actions.ToolBarAction;
@@ -492,7 +492,6 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
         fp.setExpanded(fpv2.getBooleanProperty(LinkGrabberController.PROPERTY_EXPANDED, false));
         fp.setName(fpv2.getName());
         fp.setComment(fpv2.getComment());
-        fp.setPassword(fpv2.getPassword());
         fp.setPostProcessing(fpv2.isPostProcessing());
         addToDownloadDirs(fpv2.getDownloadDirectory(), fpv2.getName());
 

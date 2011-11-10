@@ -1,4 +1,4 @@
-package jd.controlling;
+package jd.controlling.downloadcontroller;
 
 import jd.plugins.Account;
 import jd.plugins.DownloadLink;

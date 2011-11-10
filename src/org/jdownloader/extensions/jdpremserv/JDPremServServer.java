@@ -6,9 +6,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 import jd.controlling.AccountController;
-import jd.controlling.DownloadWatchDog;
 import jd.controlling.JDController;
-import jd.controlling.SingleDownloadController;
+import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.nutils.encoding.Encoding;

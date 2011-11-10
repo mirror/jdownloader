@@ -16,7 +16,7 @@ import javax.swing.JPopupMenu;
 import javax.swing.JWindow;
 import javax.swing.SwingUtilities;
 
-import jd.controlling.DownloadInformations;
+import jd.controlling.downloadcontroller.DownloadInformations;
 import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.SwingGui;
 import jd.gui.swing.jdgui.GUIUtils;

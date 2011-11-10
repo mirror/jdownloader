@@ -20,9 +20,9 @@ import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 import java.util.LinkedList;
 
-import jd.controlling.DownloadController;
 import jd.controlling.IOEQ;
 import jd.controlling.LinkGrabberController;
+import jd.controlling.downloadcontroller.DownloadController;
 import jd.gui.UserIO;
 import jd.gui.swing.jdgui.actions.ToolBarAction;
 import jd.gui.swing.jdgui.views.linkgrabber.LinkGrabberPanel;

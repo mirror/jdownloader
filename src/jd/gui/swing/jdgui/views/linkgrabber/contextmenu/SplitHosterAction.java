@@ -41,7 +41,6 @@ public class SplitHosterAction extends ContextMenuAction {
                 for (String host : hosts) {
                     LinkGrabberFilePackage nfp = new LinkGrabberFilePackage(packagee.getName());
                     nfp.setDownloadDirectory(packagee.getDownloadDirectory());
-                    nfp.setPassword(packagee.getPassword());
                     nfp.setPostProcessing(packagee.isPostProcessing());
                     nfp.setUseSubDir(packagee.useSubDir());
                     nfp.setComment(packagee.getComment());

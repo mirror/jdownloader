@@ -113,9 +113,6 @@ public class TeleMuCom extends PluginForDecrypt {
             fp.setName(fpName.trim());
             fp.addLinks(decryptedLinks);
 
-            if (TabPassword.length == 1 && TabPassword[0] != "AUCUN") {
-                fp.setPassword(TabPassword[0].trim());
-            }
         }
         return decryptedLinks;
     }

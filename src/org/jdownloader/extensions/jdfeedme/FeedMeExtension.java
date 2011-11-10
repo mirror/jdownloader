@@ -5,9 +5,9 @@ import java.util.ArrayList;
 
 import jd.controlling.AccountController;
 import jd.controlling.DistributeData;
-import jd.controlling.DownloadWatchDog;
 import jd.controlling.JDLogger;
 import jd.controlling.LinkGrabberController;
+import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.components.table.JDTableModel;
 import jd.http.Browser;

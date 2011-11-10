@@ -100,13 +100,23 @@ public class LinkCrawler implements IOPermission {
     }
 
     public LinkCrawler() {
+        this(true);
+    }
+
+    public LinkCrawler(boolean connectParentCrawler) {
         setHandler(defaulHandlerFactory());
         setFilter(defaultFilterFactory());
-        if (Thread.currentThread() instanceof LinkCrawlerThread) {
+        if (connectParentCrawler && Thread.currentThread() instanceof LinkCrawlerThread) {
             /* forward crawlerGeneration from parent to this child */
             LinkCrawlerThread thread = (LinkCrawlerThread) Thread.currentThread();
             parentCrawler = thread.getCurrentLinkCrawler();
         }
+    }
+
+    public LinkCrawler(LinkCrawler parentCrawler) {
+        setHandler(defaulHandlerFactory());
+        setFilter(defaultFilterFactory());
+        this.parentCrawler = parentCrawler;
     }
 
     /**
@@ -884,12 +894,27 @@ public class LinkCrawler implements IOPermission {
         return this.handler;
     }
 
+    /**
+     * checks if the given host is allowed to ask for Captcha.
+     * 
+     * if a parentCrawler does exist, the state of the parentCrawler is returned
+     */
     public synchronized boolean isCaptchaAllowed(String hoster) {
+        if (this.parentCrawler != null) return this.parentCrawler.isCaptchaAllowed(hoster);
         if (captchaBlockedAll) return false;
         return !captchaBlockedHoster.contains(hoster);
     }
 
+    /**
+     * sets captchaAllowed state for given host.
+     * 
+     * if a parentCrawler does exist, the state is set in the parentCrawler
+     */
     public synchronized void setCaptchaAllowed(String hoster, CAPTCHA mode) {
+        if (this.parentCrawler != null) {
+            this.parentCrawler.setCaptchaAllowed(hoster, mode);
+            return;
+        }
         switch (mode) {
         case OK:
             if (hoster != null && hoster.length() > 0) {

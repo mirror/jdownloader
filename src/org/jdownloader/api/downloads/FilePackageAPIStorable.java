@@ -6,7 +6,7 @@ import jd.plugins.FilePackage;
 
 import org.appwork.storage.Storable;
 
-public class FilePackageStorable implements Storable {
+public class FilePackageAPIStorable implements Storable {
 
     public String getName() {
         return pkg.getName();
@@ -63,7 +63,7 @@ public class FilePackageStorable implements Storable {
     /**
      * @return the links
      */
-    public List<DownloadLinkStorable> getLinks() {
+    public List<DownloadLinkAPIStorable> getLinks() {
         return links;
     }
 
@@ -71,17 +71,17 @@ public class FilePackageStorable implements Storable {
      * @param links
      *            the links to set
      */
-    public void setLinks(List<DownloadLinkStorable> links) {
+    public void setLinks(List<DownloadLinkAPIStorable> links) {
         this.links = links;
     }
 
-    private List<DownloadLinkStorable> links;
+    private List<DownloadLinkAPIStorable> links;
     private FilePackage                pkg;
 
-    private FilePackageStorable() {
+    private FilePackageAPIStorable() {
     }
 
-    public FilePackageStorable(FilePackage pkg) {
+    public FilePackageAPIStorable(FilePackage pkg) {
         this.pkg = pkg;
     }
 }

@@ -3,7 +3,7 @@ package org.jdownloader.gui.views.downloads.columns;
 import javax.swing.Icon;
 import javax.swing.SwingConstants;
 
-import jd.controlling.DownloadWatchDog;
+import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.nutils.Formatter;
 import jd.plugins.DownloadLink;

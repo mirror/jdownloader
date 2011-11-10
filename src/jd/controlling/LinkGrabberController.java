@@ -26,6 +26,8 @@ import java.util.regex.Pattern;
 import jd.config.ConfigPropertyListener;
 import jd.config.Property;
 import jd.config.SubConfiguration;
+import jd.controlling.downloadcontroller.DownloadController;
+import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkGrabberFilePackage;
@@ -427,7 +429,6 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
                         fp = new LinkGrabberFilePackage(packageName, this);
                     }
                     fp.setDownloadDirectory(link.getFilePackage().getDownloadDirectory());
-                    fp.setPassword(link.getFilePackage().getPassword());
                 }
             }
             if (fp == null) {

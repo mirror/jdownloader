@@ -33,10 +33,10 @@ import java.util.regex.Pattern;
 import javax.swing.ImageIcon;
 
 import jd.config.Property;
-import jd.controlling.DownloadController;
 import jd.controlling.JDLogger;
-import jd.controlling.SingleDownloadController;
 import jd.controlling.UniqueID;
+import jd.controlling.downloadcontroller.DownloadController;
+import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.controlling.linkcrawler.CheckableLink;
 import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
 import jd.http.Browser;
@@ -72,9 +72,11 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     private static final String                PROPERTY_MD5             = "MD5";
     private static final String                PROPERTY_SHA1            = "SHA1";
     private static final String                PROPERTY_PASS            = "pass";
+    private static final String                PROPERTY_FINALFILENAME   = "FINAL_FILENAME";
     private static final String                PROPERTY_FORCEDFILENAME  = "FORCED_FILENAME";
     private static final String                PROPERTY_SUBFOLDER       = "SUBFOLDER";
     private static final String                PROPERTY_COMMENT         = "COMMENT";
+    private static final String                PROPERTY_PRIORITY        = "PRIORITY";
 
     public static final int                    LINKTYPE_CONTAINER       = 1;
 
@@ -141,9 +143,9 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
 
     private ArrayList<String>                  sourcePluginPasswordList = null;
 
-    /**
-     * Wird dieser Wert gesetzt, so wird der Download unter diesem Namen (nicht
-     * Pfad) abgespeichert. (z.b. Plugins, DownloadSystem)
+    /*
+     * we need to keep this some time to perfom conversion from variable to
+     * property
      */
     private String                             finalFileName;
 
@@ -158,8 +160,6 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      */
 
     private transient PluginProgress           pluginProgress;
-
-    private int                                priority                 = 0;
 
     private transient ImageIcon                icon                     = null;
 
@@ -187,7 +187,6 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     public DownloadLink(PluginForHost plugin, String name, String host, String urlDownload, boolean isEnabled) {
         uniqueID = new UniqueID();
         this.defaultplugin = plugin;
-        priority = 0;
         setName(name);
         sourcePluginPasswordList = null;
         downloadMax = 0;
@@ -204,7 +203,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
             }
         }
         if (name == null && urlDownload != null) {
-            this.name = Plugin.extractFileNameFromURL(getDownloadURL());
+            setName(Plugin.extractFileNameFromURL(getDownloadURL()));
         }
     }
 
@@ -263,14 +262,19 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     }
 
     public int getPriority() {
-        return this.priority;
+        return this.getIntegerProperty(PROPERTY_PRIORITY, 0);
     }
 
     public void setPriority(int pr) {
+        int priority = 0;
         if (pr >= -1 && pr < 4) {
-            this.priority = pr;
-        } else
-            this.priority = 0;
+            priority = pr;
+        }
+        if (priority == 0) {
+            this.setProperty(PROPERTY_PRIORITY, Property.NULL);
+        } else {
+            this.setProperty(PROPERTY_PRIORITY, priority);
+        }
     }
 
     public void setSubdirectory(DownloadLink downloadLink) {
@@ -501,7 +505,11 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      * @return Statischer Dateiname
      */
     public String getFinalFileName() {
-        return finalFileName;
+        if (finalFileName != null) {
+            /* convert existing finalFileName into Property System */
+            this.setFinalFileName(finalFileName);
+        }
+        return this.getStringProperty(PROPERTY_FINALFILENAME, null);
     }
 
     public String getForcedFileName() {
@@ -642,7 +650,8 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         this.getTransferStatus().usePremium(false);
         this.getTransferStatus().setResumeSupport(false);
         deleteFile(true, true);
-        finalFileName = null;
+        setFinalFileName(null);
+        forceFileName(null);
         PluginForHost plg = liveplugin;
         if (plg == null) {
             plg = this.defaultplugin.getNewInstance();
@@ -936,10 +945,11 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
                 logger.info("Use Workaround for stupid >>rar.html<< uploaders!");
                 newfinalFileName = newfinalFileName.substring(0, newfinalFileName.length() - new Regex(newfinalFileName, Pattern.compile("r..(\\.htm.?)$", Pattern.CASE_INSENSITIVE)).getMatch(0).length());
             }
-            finalFileName = JDUtilities.removeEndingPoints(JDIO.validateFileandPathName(newfinalFileName));
+            this.setProperty(PROPERTY_FINALFILENAME, JDUtilities.removeEndingPoints(JDIO.validateFileandPathName(newfinalFileName)));
         } else {
-            finalFileName = null;
+            this.setProperty(PROPERTY_FINALFILENAME, Property.NULL);
         }
+        finalFileName = null;
     }
 
     /**
@@ -1105,10 +1115,6 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
 
     public void setIconHost(String iconHost) {
         this.iconHost = iconHost;
-    }
-
-    public String getType() {
-        return JDIO.getFileType(JDIO.getFileExtension(getFileOutput()));
     }
 
     /**

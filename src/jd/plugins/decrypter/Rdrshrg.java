@@ -45,7 +45,6 @@ public class Rdrshrg extends PluginForDecrypt {
         String pass = br.getRegex("<strong>Passwort\\:</strong> <small>(.*?)</small>").getMatch(0);
         FilePackage fp = FilePackage.getInstance();
         fp.setName(title);
-        fp.setPassword(pass);
 
         String[][] matches = br.getRegex("ddl\\(\\'(.*?)\\'\\,\\'([\\d]*?)\\'\\)").getMatches();
         progress.setRange(matches.length);

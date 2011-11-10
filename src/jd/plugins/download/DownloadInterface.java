@@ -28,9 +28,9 @@ import java.util.Map.Entry;
 import java.util.Vector;
 import java.util.logging.Logger;
 
-import jd.controlling.DownloadWatchDog;
 import jd.controlling.GarbageController;
 import jd.controlling.JDLogger;
+import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.http.Browser;
 import jd.http.Request;
 import jd.http.URLConnectionAdapter;

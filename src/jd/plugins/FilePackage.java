@@ -48,8 +48,6 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
 
     private static final long            UPDATE_INTERVAL  = 2000;
 
-    private String                       comment;
-
     private String                       downloadDirectory;
 
     private ArrayList<DownloadLink>      downloadLinkList;
@@ -132,11 +130,7 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
 
     private int                                                    linksInProgress;
 
-    private String                                                 name                 = null;
-
-    private String                                                 password2;
-
-    private boolean                                                extractAfterDownload = true;
+    private String                                                 name              = null;
 
     private long                                                   totalBytesLoaded_v2;
 
@@ -154,17 +148,19 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
     private Integer                                                links_Disabled;
     /* no longer in use, pay attention when removing */
     @Deprecated
-    private String                                                 ListHoster           = null;
+    private String                                                 ListHoster        = null;
 
-    private long                                                   created              = -1l;
+    private long                                                   created           = -1l;
 
-    private long                                                   finishedDate         = -1l;
+    private long                                                   finishedDate      = -1l;
 
-    private transient boolean                                      isExpanded           = false;
+    private transient boolean                                      isExpanded        = false;
 
-    private transient PackageController<FilePackage, DownloadLink> controlledby         = null;
-    private transient UniqueID                                     uniqueID             = null;
-    public transient static final String                           PROPERTY_EXPANDED    = "expanded";
+    private transient PackageController<FilePackage, DownloadLink> controlledby      = null;
+    private transient UniqueID                                     uniqueID          = null;
+    public static final String                                     PROPERTY_EXPANDED = "EXPANDED";
+    public static final String                                     PROPERTY_COMMENT  = "COMMENT";
+    public static final String                                     PROPERTY_EXTRACT  = "EXTRACT";
 
     /**
      * @return the uniqueID
@@ -338,7 +334,7 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
      * @return
      */
     public boolean isPostProcessing() {
-        return extractAfterDownload;
+        return this.getBooleanProperty(PROPERTY_EXTRACT, true);
     }
 
     /**
@@ -347,16 +343,11 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
      * @param postProcessing
      */
     public void setPostProcessing(boolean postProcessing) {
-        this.extractAfterDownload = postProcessing;
-    }
-
-    /**
-     * return the comment of this FilePackage if set
-     * 
-     * @return
-     */
-    public String getComment() {
-        return comment;
+        if (postProcessing) {
+            this.setProperty(PROPERTY_EXTRACT, Property.NULL);
+        } else {
+            this.setProperty(PROPERTY_EXTRACT, false);
+        }
     }
 
     /**
@@ -429,17 +420,6 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
      */
     public String getName() {
         return name;
-    }
-
-    /**
-     * return post processing password for this FilePackage, if it is set
-     * 
-     * @deprecated Use {@link #getPasswordList()}
-     * @return
-     */
-    @Deprecated
-    public String getPassword() {
-        return password2;
     }
 
     /**
@@ -537,13 +517,16 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
         }
     }
 
-    /**
-     * set the Comment for this FilePackage
-     * 
-     * @param comment
-     */
     public void setComment(String comment) {
-        this.comment = comment;
+        if (comment == null || comment.length() == 0) {
+            this.setProperty(PROPERTY_COMMENT, Property.NULL);
+        } else {
+            this.setProperty(PROPERTY_COMMENT, comment);
+        }
+    }
+
+    public String getComment() {
+        return this.getStringProperty(PROPERTY_COMMENT, null);
     }
 
     /**
@@ -570,17 +553,6 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
             this.name = JDUtilities.removeEndingPoints(JDIO.validateFileandPathName(name));
         }
         this.name = this.name.trim();
-    }
-
-    /**
-     * set the Password for post processing to this FilePackage
-     * 
-     * @deprecated Use {@link #setPasswordList(ArrayList)}
-     * @param password
-     */
-    @Deprecated
-    public void setPassword(String password) {
-        this.password2 = password;
     }
 
     /**
@@ -614,7 +586,11 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
     public void setExpanded(boolean b) {
         if (this.isExpanded == b) return;
         this.isExpanded = b;
-        setProperty(PROPERTY_EXPANDED, b);
+        if (b == false) {
+            setProperty(PROPERTY_EXPANDED, Property.NULL);
+        } else {
+            setProperty(PROPERTY_EXPANDED, b);
+        }
     }
 
     public void updateCollectives() {
@@ -683,7 +659,6 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
         if (passwordList != null) {
             lst.addAll(passwordList);
         }
-        if (getPassword() != null && getPassword().length() > 0) lst.add(getPassword());
         for (Iterator<String> it = getPasswordAuto(this).iterator(); it.hasNext();) {
             lst.add(it.next());
         }

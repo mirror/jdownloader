@@ -1,7 +1,7 @@
 package org.jdownloader.gui.views.downloads.columns;
 
-import jd.controlling.DownloadWatchDog;
-import jd.controlling.SingleDownloadController;
+import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;

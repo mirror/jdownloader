@@ -706,7 +706,6 @@ public class D extends PluginsC {
 
             FilePackage fp = FilePackage.getInstance();
             fp.setName(pn);
-            fp.setPassword(oos);
             fp.setProperty("header", header);
             if (ca3 != null && ca3.trim().length() > 0) {
                 fp.setComment("[" + ca3 + "] " + cs2);
@@ -1012,7 +1011,6 @@ public class D extends PluginsC {
                 if (packages.get(i) == null) {
                     FilePackage.setAttribute("name", Encoding.Base64Encode("various"));
                 } else {
-                    FilePackage.setAttribute("passwords", Encoding.Base64Encode(packages.get(i).getPassword()));
                     FilePackage.setAttribute("name", Encoding.Base64Encode(packages.get(i).getName()));
                     FilePackage.setAttribute("comment", Encoding.Base64Encode(packages.get(i).getComment()));
                     String category = Encoding.Base64Encode("various");

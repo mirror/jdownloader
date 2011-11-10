@@ -2,7 +2,7 @@ package org.jdownloader.gui.views.downloads.context;
 
 import java.awt.event.ActionEvent;
 
-import jd.controlling.DownloadWatchDog;
+import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.gui.swing.jdgui.interfaces.ContextMenuAction;
 
 import org.jdownloader.gui.translate._GUI;

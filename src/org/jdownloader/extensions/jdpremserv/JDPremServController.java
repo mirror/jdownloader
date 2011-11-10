@@ -7,7 +7,7 @@ import java.util.LinkedList;
 
 import jd.config.Configuration;
 import jd.controlling.DistributeData;
-import jd.controlling.DownloadController;
+import jd.controlling.downloadcontroller.DownloadController;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.utils.JDUtilities;

@@ -14,31 +14,48 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package jd.controlling;
+package jd.controlling.downloadcontroller;
 
 import java.io.File;
+import java.io.InputStream;
+import java.security.DigestInputStream;
+import java.security.MessageDigest;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.regex.Pattern;
+import java.util.zip.ZipEntry;
 
 import jd.config.Configuration;
+import jd.controlling.IOEQ;
+import jd.controlling.JDLogger;
 import jd.controlling.packagecontroller.PackageController;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
+import org.appwork.exceptions.WTFException;
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.Application;
 import org.appwork.utils.Exceptions;
+import org.appwork.utils.IO;
 import org.appwork.utils.event.Eventsender;
 import org.appwork.utils.event.queue.Queue.QueuePriority;
 import org.appwork.utils.event.queue.QueueAction;
+import org.appwork.utils.formatter.HexFormatter;
 import org.appwork.utils.logging.Log;
+import org.appwork.utils.zip.ZipIOReader;
+import org.appwork.utils.zip.ZipIOWriter;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 
@@ -135,6 +152,7 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
             return;
         }
         LinkedList<FilePackage> lpackages;
+        load(getDownloadListFile());
         try {
             lpackages = loadDownloadLinks();
         } catch (final Throwable e) {
@@ -168,6 +186,14 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
         return;
     }
 
+    private File getDownloadListFile() {
+        return Application.getResource("cfg/downloadList.zip");
+    }
+
+    private String getCheckFileName() {
+        return "check.info";
+    }
+
     /**
      * save the current FilePackages/DownloadLinks controlled by this
      * DownloadController
@@ -185,6 +211,172 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
             JDUtilities.getDatabaseConnector().saveLinks(packages);
             JDUtilities.getDatabaseConnector().save();
         }
+        /* save as new Json ZipFile */
+        save(packages, getDownloadListFile());
+    }
+
+    /**
+     * saves List of FilePackages to given File as ZippedJSon
+     * 
+     * @param packages
+     * @param file
+     */
+    synchronized private boolean save(ArrayList<FilePackage> packages, File file) {
+        boolean ret = false;
+        if (packages != null && file != null) {
+            /* prepare tmp file */
+            final File tmpfile = new File(file.getAbsolutePath() + ".tmp");
+            tmpfile.getParentFile().mkdirs();
+            tmpfile.delete();
+            ZipIOWriter zip = null;
+            int index = 0;
+            /* prepare formatter for package filenames in zipfiles */
+            String format = "%02d";
+            if (packages.size() >= 10) {
+                format = String.format("%%0%dd", (int) Math.log10(packages.size()) + 1);
+            }
+            try {
+                MessageDigest md = MessageDigest.getInstance("SHA1");
+                zip = new ZipIOWriter(tmpfile, true);
+                for (FilePackage pkg : packages) {
+                    /* convert FilePackage to JSon */
+                    FilePackageStorable storable = new FilePackageStorable(pkg);
+                    String string = JSonStorage.toString(storable);
+                    storable = null;
+                    byte[] bytes = string.getBytes("UTF-8");
+                    string = null;
+                    md.update(bytes);
+                    zip.addByteArry(bytes, true, "", String.format(format, (index++)));
+                }
+                String check = System.currentTimeMillis() + ":" + packages.size() + ":" + HexFormatter.byteArrayToHex(md.digest());
+                zip.addByteArry(check.getBytes("UTF-8"), true, "", getCheckFileName());
+                /* close ZipIOWriter, so we can rename tmp file now */
+                try {
+                    zip.close();
+                } catch (final Throwable e) {
+                }
+                /* try to delete destination file if it already exists */
+                if (file.exists()) {
+                    if (!file.delete()) {
+                        Log.exception(new WTFException("Could not delete: " + file.getAbsolutePath()));
+                        return false;
+                    }
+                }
+                /* rename tmpfile to destination file */
+                if (!tmpfile.renameTo(file)) {
+                    Log.exception(new WTFException("Could not rename file: " + tmpfile + " to " + file));
+                    return false;
+                }
+                return true;
+            } catch (final Throwable e) {
+                Log.exception(e);
+            } finally {
+                try {
+                    zip.close();
+                } catch (final Throwable e) {
+                }
+            }
+        }
+        return ret;
+    }
+
+    synchronized private ArrayList<FilePackage> load(File file) {
+        ArrayList<FilePackage> ret = null;
+        if (file != null) {
+            ZipIOReader zip = null;
+            try {
+                zip = new ZipIOReader(file);
+                ZipEntry check = zip.getZipFile(getCheckFileName());
+                String checkString = null;
+                if (check != null) {
+                    /* parse checkFile if it exists */
+                    InputStream checkIS = null;
+                    try {
+                        checkIS = zip.getInputStream(check);
+                        byte[] checkbyte = IO.readStream(1024, checkIS);
+                        checkString = new String(checkbyte, "UTF-8");
+                        checkbyte = null;
+                    } finally {
+                        try {
+                            checkIS.close();
+                        } catch (final Throwable e) {
+                        }
+                    }
+                    check = null;
+                }
+                if (checkString != null) {
+                    /* checkFile exists, lets verify */
+                    MessageDigest md = MessageDigest.getInstance("SHA1");
+                    byte[] buffer = new byte[1024];
+                    int found = 0;
+                    for (ZipEntry entry : zip.getZipFiles()) {
+                        if (entry.getName().matches("^\\d+$")) {
+                            found++;
+                            DigestInputStream checkIS = null;
+                            try {
+                                checkIS = new DigestInputStream(zip.getInputStream(entry), md);
+                                while (checkIS.read(buffer) >= 0) {
+                                }
+                            } finally {
+                                try {
+                                    checkIS.close();
+                                } catch (final Throwable e) {
+                                }
+                            }
+                        }
+                    }
+                    String hash = HexFormatter.byteArrayToHex(md.digest());
+                    String time = new Regex(checkString, "(\\d+)").getMatch(0);
+                    String numberCheck = new Regex(checkString, ".*?:(\\d+)").getMatch(0);
+                    String hashCheck = new Regex(checkString, ".*?:.*?:(.+)").getMatch(0);
+                    boolean numberOk = (numberCheck != null && Integer.parseInt(numberCheck) == found);
+                    boolean hashOk = (hashCheck != null && hashCheck.equalsIgnoreCase(hash));
+                    Log.L.info("DownloadListVerify: TimeStamp(" + time + ")|numberOfPackages(" + found + "):" + numberOk + "|hash:" + hashOk);
+                }
+                /* lets restore the FilePackages from Json */
+                HashMap<Integer, FilePackage> map = new HashMap<Integer, FilePackage>();
+                for (ZipEntry entry : zip.getZipFiles()) {
+                    if (entry.getName().matches("^\\d+$")) {
+                        int packageIndex = Integer.parseInt(entry.getName());
+                        InputStream is = null;
+                        try {
+                            is = zip.getInputStream(entry);
+                            byte[] bytes = IO.readStream((int) entry.getSize(), is);
+                            String json = new String(bytes, "UTF-8");
+                            bytes = null;
+                            FilePackageStorable storable = JSonStorage.restoreFromString(json, new TypeRef<FilePackageStorable>() {
+                            }, null);
+                            json = null;
+                            map.put(packageIndex, storable._getFilePackage());
+                        } finally {
+                            try {
+                                is.close();
+                            } catch (final Throwable e) {
+                            }
+                        }
+                    }
+                }
+                /* sort positions */
+                ArrayList<Integer> positions = new ArrayList<Integer>(map.keySet());
+                Collections.sort(positions);
+                /* build final ArrayList of FilePackages */
+                ArrayList<FilePackage> ret2 = new ArrayList<FilePackage>(positions.size());
+                for (Integer position : positions) {
+                    ret2.add(map.get(position));
+                }
+                map = null;
+                positions = null;
+                ret = ret2;
+            } catch (final Throwable e) {
+                Log.exception(e);
+            } finally {
+                try {
+                    zip.close();
+                } catch (final Throwable e) {
+                }
+            }
+        }
+        return ret;
     }
 
     /**

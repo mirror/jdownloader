@@ -24,11 +24,11 @@ import java.util.logging.Logger;
 
 import jd.config.Configuration;
 import jd.controlling.DistributeData;
-import jd.controlling.DownloadController;
-import jd.controlling.DownloadWatchDog;
 import jd.controlling.JDLogger;
 import jd.controlling.LinkGrabberController;
 import jd.controlling.PasswordListController;
+import jd.controlling.downloadcontroller.DownloadController;
+import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.reconnect.Reconnecter;
 import jd.gui.swing.jdgui.views.linkgrabber.LinkGrabberPanel;
 import jd.nutils.Formatter;

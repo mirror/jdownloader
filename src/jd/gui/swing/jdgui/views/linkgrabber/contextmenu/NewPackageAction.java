@@ -50,7 +50,6 @@ public class NewPackageAction extends ContextMenuAction {
         nfp.setComment(fp.getComment());
         for (DownloadLink dlink : links) {
             fp = controller.getFPwithLink(dlink);
-            if (fp != null) dlink.addSourcePluginPassword(fp.getPassword());
         }
         nfp.addAll(links);
 
