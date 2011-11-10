@@ -83,25 +83,26 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
     private DelayedRunnable                                                            asyncSaving = null;
     private boolean                                                                    allowSave   = false;
 
-    public boolean isAllowSave() {
+    public boolean isSaveAllowed() {
         return allowSave;
     }
 
-    public void setAllowSave(boolean allowSave) {
+    public void setSaveAllowed(boolean allowSave) {
         this.allowSave = allowSave;
     }
 
     private boolean allowLoad = true;
 
-    public boolean isAllowLoad() {
+    public boolean isLoadAllowed() {
         return allowLoad;
     }
 
-    public void setAllowLoad(boolean allowLoad) {
+    public void setLoadAllowed(boolean allowLoad) {
         this.allowLoad = allowLoad;
     }
 
-    private static DownloadController INSTANCE = new DownloadController();
+    private static DownloadController INSTANCE     = new DownloadController();
+    private static Object             SAVELOADLOCK = new Object();
 
     /**
      * darf erst nachdem der JDController init wurde, aufgerufen werden
@@ -147,7 +148,7 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
      * load all FilePackages/DownloadLinks from Database
      */
     public synchronized void initDownloadLinks() {
-        if (isAllowLoad() == false) {
+        if (isLoadAllowed() == false) {
             /* loading is not allowed */
             return;
         }
@@ -160,22 +161,23 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
             lpackages = new LinkedList<FilePackage>();
         }
         final LinkedList<FilePackage> lpackages2 = lpackages;
-        for (final FilePackage filePackage : lpackages2) {
-            filePackage.setControlledBy(this);
-        }
         IOEQ.getQueue().add(new QueueAction<Void, RuntimeException>() {
 
             @Override
             protected Void run() throws RuntimeException {
-                if (isAllowLoad() == true) {
+                if (isLoadAllowed() == true) {
                     writeLock();
+                    /* add loaded Packages to this controller */
                     try {
+                        for (final FilePackage filePackage : lpackages2) {
+                            filePackage.setControlledBy(DownloadController.this);
+                        }
                         packages.addAll(0, lpackages2);
                     } finally {
                         /* loaded, we no longer allow loading */
-                        setAllowLoad(false);
+                        setLoadAllowed(false);
                         /* now we allow saving */
-                        setAllowSave(true);
+                        setSaveAllowed(true);
                         writeUnlock();
                     }
                     broadcaster.fireEvent(new DownloadControllerEvent(DownloadController.this, DownloadControllerEvent.TYPE.REFRESH_STRUCTURE));
@@ -199,7 +201,7 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
      * DownloadController
      */
     public void saveDownloadLinks() {
-        if (allowSave == false) return;
+        if (isSaveAllowed() == false) return;
         ArrayList<FilePackage> packages = null;
         final boolean readL = this.readLock();
         try {
@@ -221,162 +223,166 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
      * @param packages
      * @param file
      */
-    synchronized private boolean save(ArrayList<FilePackage> packages, File file) {
-        boolean ret = false;
-        if (packages != null && file != null) {
-            /* prepare tmp file */
-            final File tmpfile = new File(file.getAbsolutePath() + ".tmp");
-            tmpfile.getParentFile().mkdirs();
-            tmpfile.delete();
-            ZipIOWriter zip = null;
-            int index = 0;
-            /* prepare formatter for package filenames in zipfiles */
-            String format = "%02d";
-            if (packages.size() >= 10) {
-                format = String.format("%%0%dd", (int) Math.log10(packages.size()) + 1);
-            }
-            try {
-                MessageDigest md = MessageDigest.getInstance("SHA1");
-                zip = new ZipIOWriter(tmpfile, true);
-                for (FilePackage pkg : packages) {
-                    /* convert FilePackage to JSon */
-                    FilePackageStorable storable = new FilePackageStorable(pkg);
-                    String string = JSonStorage.toString(storable);
-                    storable = null;
-                    byte[] bytes = string.getBytes("UTF-8");
-                    string = null;
-                    md.update(bytes);
-                    zip.addByteArry(bytes, true, "", String.format(format, (index++)));
+    private boolean save(ArrayList<FilePackage> packages, File file) {
+        synchronized (SAVELOADLOCK) {
+            boolean ret = false;
+            if (packages != null && file != null) {
+                /* prepare tmp file */
+                final File tmpfile = new File(file.getAbsolutePath() + ".tmp");
+                tmpfile.getParentFile().mkdirs();
+                tmpfile.delete();
+                ZipIOWriter zip = null;
+                int index = 0;
+                /* prepare formatter for package filenames in zipfiles */
+                String format = "%02d";
+                if (packages.size() >= 10) {
+                    format = String.format("%%0%dd", (int) Math.log10(packages.size()) + 1);
                 }
-                String check = System.currentTimeMillis() + ":" + packages.size() + ":" + HexFormatter.byteArrayToHex(md.digest());
-                zip.addByteArry(check.getBytes("UTF-8"), true, "", getCheckFileName());
-                /* close ZipIOWriter, so we can rename tmp file now */
                 try {
-                    zip.close();
-                } catch (final Throwable e) {
-                }
-                /* try to delete destination file if it already exists */
-                if (file.exists()) {
-                    if (!file.delete()) {
-                        Log.exception(new WTFException("Could not delete: " + file.getAbsolutePath()));
-                        return false;
+                    MessageDigest md = MessageDigest.getInstance("SHA1");
+                    zip = new ZipIOWriter(tmpfile, true);
+                    for (FilePackage pkg : packages) {
+                        /* convert FilePackage to JSon */
+                        FilePackageStorable storable = new FilePackageStorable(pkg);
+                        String string = JSonStorage.toString(storable);
+                        storable = null;
+                        byte[] bytes = string.getBytes("UTF-8");
+                        string = null;
+                        md.update(bytes);
+                        zip.addByteArry(bytes, true, "", String.format(format, (index++)));
                     }
-                }
-                /* rename tmpfile to destination file */
-                if (!tmpfile.renameTo(file)) {
-                    Log.exception(new WTFException("Could not rename file: " + tmpfile + " to " + file));
-                    return false;
-                }
-                return true;
-            } catch (final Throwable e) {
-                Log.exception(e);
-            } finally {
-                try {
-                    zip.close();
-                } catch (final Throwable e) {
-                }
-            }
-        }
-        return ret;
-    }
-
-    synchronized private ArrayList<FilePackage> load(File file) {
-        ArrayList<FilePackage> ret = null;
-        if (file != null) {
-            ZipIOReader zip = null;
-            try {
-                zip = new ZipIOReader(file);
-                ZipEntry check = zip.getZipFile(getCheckFileName());
-                String checkString = null;
-                if (check != null) {
-                    /* parse checkFile if it exists */
-                    InputStream checkIS = null;
+                    String check = System.currentTimeMillis() + ":" + packages.size() + ":" + HexFormatter.byteArrayToHex(md.digest());
+                    zip.addByteArry(check.getBytes("UTF-8"), true, "", getCheckFileName());
+                    /* close ZipIOWriter, so we can rename tmp file now */
                     try {
-                        checkIS = zip.getInputStream(check);
-                        byte[] checkbyte = IO.readStream(1024, checkIS);
-                        checkString = new String(checkbyte, "UTF-8");
-                        checkbyte = null;
-                    } finally {
-                        try {
-                            checkIS.close();
-                        } catch (final Throwable e) {
+                        zip.close();
+                    } catch (final Throwable e) {
+                    }
+                    /* try to delete destination file if it already exists */
+                    if (file.exists()) {
+                        if (!file.delete()) {
+                            Log.exception(new WTFException("Could not delete: " + file.getAbsolutePath()));
+                            return false;
                         }
                     }
-                    check = null;
+                    /* rename tmpfile to destination file */
+                    if (!tmpfile.renameTo(file)) {
+                        Log.exception(new WTFException("Could not rename file: " + tmpfile + " to " + file));
+                        return false;
+                    }
+                    return true;
+                } catch (final Throwable e) {
+                    Log.exception(e);
+                } finally {
+                    try {
+                        zip.close();
+                    } catch (final Throwable e) {
+                    }
                 }
-                if (checkString != null) {
-                    /* checkFile exists, lets verify */
-                    MessageDigest md = MessageDigest.getInstance("SHA1");
-                    byte[] buffer = new byte[1024];
-                    int found = 0;
+            }
+            return ret;
+        }
+    }
+
+    private ArrayList<FilePackage> load(File file) {
+        synchronized (SAVELOADLOCK) {
+            ArrayList<FilePackage> ret = null;
+            if (file != null) {
+                ZipIOReader zip = null;
+                try {
+                    zip = new ZipIOReader(file);
+                    ZipEntry check = zip.getZipFile(getCheckFileName());
+                    String checkString = null;
+                    if (check != null) {
+                        /* parse checkFile if it exists */
+                        InputStream checkIS = null;
+                        try {
+                            checkIS = zip.getInputStream(check);
+                            byte[] checkbyte = IO.readStream(1024, checkIS);
+                            checkString = new String(checkbyte, "UTF-8");
+                            checkbyte = null;
+                        } finally {
+                            try {
+                                checkIS.close();
+                            } catch (final Throwable e) {
+                            }
+                        }
+                        check = null;
+                    }
+                    if (checkString != null) {
+                        /* checkFile exists, lets verify */
+                        MessageDigest md = MessageDigest.getInstance("SHA1");
+                        byte[] buffer = new byte[1024];
+                        int found = 0;
+                        for (ZipEntry entry : zip.getZipFiles()) {
+                            if (entry.getName().matches("^\\d+$")) {
+                                found++;
+                                DigestInputStream checkIS = null;
+                                try {
+                                    checkIS = new DigestInputStream(zip.getInputStream(entry), md);
+                                    while (checkIS.read(buffer) >= 0) {
+                                    }
+                                } finally {
+                                    try {
+                                        checkIS.close();
+                                    } catch (final Throwable e) {
+                                    }
+                                }
+                            }
+                        }
+                        String hash = HexFormatter.byteArrayToHex(md.digest());
+                        String time = new Regex(checkString, "(\\d+)").getMatch(0);
+                        String numberCheck = new Regex(checkString, ".*?:(\\d+)").getMatch(0);
+                        String hashCheck = new Regex(checkString, ".*?:.*?:(.+)").getMatch(0);
+                        boolean numberOk = (numberCheck != null && Integer.parseInt(numberCheck) == found);
+                        boolean hashOk = (hashCheck != null && hashCheck.equalsIgnoreCase(hash));
+                        Log.L.info("DownloadListVerify: TimeStamp(" + time + ")|numberOfPackages(" + found + "):" + numberOk + "|hash:" + hashOk);
+                    }
+                    /* lets restore the FilePackages from Json */
+                    HashMap<Integer, FilePackage> map = new HashMap<Integer, FilePackage>();
                     for (ZipEntry entry : zip.getZipFiles()) {
                         if (entry.getName().matches("^\\d+$")) {
-                            found++;
-                            DigestInputStream checkIS = null;
+                            int packageIndex = Integer.parseInt(entry.getName());
+                            InputStream is = null;
                             try {
-                                checkIS = new DigestInputStream(zip.getInputStream(entry), md);
-                                while (checkIS.read(buffer) >= 0) {
-                                }
+                                is = zip.getInputStream(entry);
+                                byte[] bytes = IO.readStream((int) entry.getSize(), is);
+                                String json = new String(bytes, "UTF-8");
+                                bytes = null;
+                                FilePackageStorable storable = JSonStorage.restoreFromString(json, new TypeRef<FilePackageStorable>() {
+                                }, null);
+                                json = null;
+                                if (storable != null) map.put(packageIndex, storable._getFilePackage());
                             } finally {
                                 try {
-                                    checkIS.close();
+                                    is.close();
                                 } catch (final Throwable e) {
                                 }
                             }
                         }
                     }
-                    String hash = HexFormatter.byteArrayToHex(md.digest());
-                    String time = new Regex(checkString, "(\\d+)").getMatch(0);
-                    String numberCheck = new Regex(checkString, ".*?:(\\d+)").getMatch(0);
-                    String hashCheck = new Regex(checkString, ".*?:.*?:(.+)").getMatch(0);
-                    boolean numberOk = (numberCheck != null && Integer.parseInt(numberCheck) == found);
-                    boolean hashOk = (hashCheck != null && hashCheck.equalsIgnoreCase(hash));
-                    Log.L.info("DownloadListVerify: TimeStamp(" + time + ")|numberOfPackages(" + found + "):" + numberOk + "|hash:" + hashOk);
-                }
-                /* lets restore the FilePackages from Json */
-                HashMap<Integer, FilePackage> map = new HashMap<Integer, FilePackage>();
-                for (ZipEntry entry : zip.getZipFiles()) {
-                    if (entry.getName().matches("^\\d+$")) {
-                        int packageIndex = Integer.parseInt(entry.getName());
-                        InputStream is = null;
-                        try {
-                            is = zip.getInputStream(entry);
-                            byte[] bytes = IO.readStream((int) entry.getSize(), is);
-                            String json = new String(bytes, "UTF-8");
-                            bytes = null;
-                            FilePackageStorable storable = JSonStorage.restoreFromString(json, new TypeRef<FilePackageStorable>() {
-                            }, null);
-                            json = null;
-                            map.put(packageIndex, storable._getFilePackage());
-                        } finally {
-                            try {
-                                is.close();
-                            } catch (final Throwable e) {
-                            }
-                        }
+                    /* sort positions */
+                    ArrayList<Integer> positions = new ArrayList<Integer>(map.keySet());
+                    Collections.sort(positions);
+                    /* build final ArrayList of FilePackages */
+                    ArrayList<FilePackage> ret2 = new ArrayList<FilePackage>(positions.size());
+                    for (Integer position : positions) {
+                        ret2.add(map.get(position));
+                    }
+                    map = null;
+                    positions = null;
+                    ret = ret2;
+                } catch (final Throwable e) {
+                    Log.exception(e);
+                } finally {
+                    try {
+                        zip.close();
+                    } catch (final Throwable e) {
                     }
                 }
-                /* sort positions */
-                ArrayList<Integer> positions = new ArrayList<Integer>(map.keySet());
-                Collections.sort(positions);
-                /* build final ArrayList of FilePackages */
-                ArrayList<FilePackage> ret2 = new ArrayList<FilePackage>(positions.size());
-                for (Integer position : positions) {
-                    ret2.add(map.get(position));
-                }
-                map = null;
-                positions = null;
-                ret = ret2;
-            } catch (final Throwable e) {
-                Log.exception(e);
-            } finally {
-                try {
-                    zip.close();
-                } catch (final Throwable e) {
-                }
             }
+            return ret;
         }
-        return ret;
     }
 
     /**
