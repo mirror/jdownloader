@@ -31,55 +31,65 @@ import jd.plugins.PluginForHost;
 import jd.plugins.hoster.DirectHTTP;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "zpag.es" }, urls = { "http://(www\\.)?zpag\\.es/(\\d+/int/protect\\-my\\-links\\.com/\\?id=[a-z0-9]+|[A-Za-z0-9]+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "zpag.es" }, urls = { "http://(www\\.)?zpag\\.es/.+" }, flags = { 0 })
 public class ZPagEs extends PluginForDecrypt {
 
-    public ZPagEs(PluginWrapper wrapper) {
-        super(wrapper);
-    }
+	public ZPagEs(PluginWrapper wrapper) {
+		super(wrapper);
+	}
 
-    /* must be static so all plugins share same lock */
-    private static final Object LOCK         = new Object();
-    private static final String LINKREGEX    = "window\\.location = \"(http://.*?)\"";
-    private static final String CAPTCHATEXT  = "google\\.com/recaptcha/api";
-    private static final String CAPTCHATEXT2 = "zpag.es/cap";
+	/* must be static so all plugins share same lock */
+	private static final Object LOCK = new Object();
+	private static final String LINKREGEX = "window\\.location = \"(http://.*?)\"";
+	private static final String CAPTCHATEXT = "google\\.com/recaptcha/api";
+	private static final String CAPTCHATEXT2 = "zpag.es/cap";
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
-        String parameter = param.toString();
-        br.setFollowRedirects(true);
-        synchronized (LOCK) {
-            br.getPage(parameter);
-            if (br.containsHTML(">zPag\\.es \\- Invalid Page<")) return decryptedLinks;
-            if (br.containsHTML(CAPTCHATEXT) || br.getURL().contains(CAPTCHATEXT2)) {
-                for (int i = 0; i <= 5; i++) {
-                    PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                    jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
-                    rc.parse();
-                    rc.getForm().setAction("http://zpag.es/receiveRecaptcha.do");
-                    rc.getForm().put("URL", parameter);
-                    rc.load();
-                    File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                    String c = getCaptchaCode(cf, param);
-                    rc.setCode(c);
-                    if (br.containsHTML(CAPTCHATEXT) || br.getURL().contains(CAPTCHATEXT2)) continue;
-                    break;
-                }
-                if (br.containsHTML(CAPTCHATEXT) || br.getURL().contains(CAPTCHATEXT2)) throw new DecrypterException(DecrypterException.CAPTCHA);
+	public ArrayList<DownloadLink> decryptIt(CryptedLink param,
+			ProgressController progress) throws Exception {
+		ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+		br.getHeaders().put("User-Agent", RandomUserAgent.generate());
+		String parameter = param.toString();
+		br.setFollowRedirects(true);
+		synchronized (LOCK) {
+			br.getPage(parameter);
+			if (br.containsHTML(">zPag\\.es \\- Invalid Page<"))
+				return decryptedLinks;
+			if (br.containsHTML(CAPTCHATEXT)
+					|| br.getURL().contains(CAPTCHATEXT2)) {
+				for (int i = 0; i <= 5; i++) {
+					PluginForHost recplug = JDUtilities
+							.getPluginForHost("DirectHTTP");
+					jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug)
+							.getReCaptcha(br);
+					rc.parse();
+					rc.getForm()
+							.setAction("http://zpag.es/receiveRecaptcha.do");
+					rc.getForm().put("URL", parameter);
+					rc.load();
+					File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+					String c = getCaptchaCode(cf, param);
+					rc.setCode(c);
+					if (br.containsHTML(CAPTCHATEXT)
+							|| br.getURL().contains(CAPTCHATEXT2))
+						continue;
+					break;
+				}
+				if (br.containsHTML(CAPTCHATEXT)
+						|| br.getURL().contains(CAPTCHATEXT2))
+					throw new DecrypterException(DecrypterException.CAPTCHA);
 
-            }
-            String link = br.getRegex(LINKREGEX).getMatch(0);
-            if (link == null) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
-            }
-            // If we don't wait we have to enter reCaptchas more often which
-            // would need even more time for ;)
-            sleep(3000, param);
-            decryptedLinks.add(createDownloadlink(link));
-        }
-        return decryptedLinks;
-    }
+			}
+			String link = br.getRegex(LINKREGEX).getMatch(0);
+			if (link == null) {
+				logger.warning("Decrypter broken for link: " + parameter);
+				return null;
+			}
+			// If we don't wait we have to enter reCaptchas more often which
+			// would need even more time for ;)
+			sleep(3000, param);
+			decryptedLinks.add(createDownloadlink(link));
+		}
+		return decryptedLinks;
+	}
 
 }
