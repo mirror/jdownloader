@@ -31,7 +31,6 @@ import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
 import jd.PluginWrapper;
-import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.crypt.Base64;
 import jd.crypt.JDCrypt;
 import jd.gui.UserIO;
@@ -229,7 +228,7 @@ public class VeohCom extends PluginForHost {
                     try {
                         INPUTSTREAM = new org.appwork.utils.net.throttledconnection.MeteredThrottledInputStream(DL.getInputStream(), new org.appwork.utils.speedmeter.AverageSpeedMeter(10));
                         /* add inputstream to connectionmanager */
-                        DownloadWatchDog.getInstance().getConnectionManager().addManagedThrottledInputStream(INPUTSTREAM);
+                        jd.controlling.downloadcontroller.DownloadWatchDog.getInstance().getConnectionManager().addManagedThrottledInputStream(INPUTSTREAM);
                     } catch (final Throwable e) {
                         /* 0.95xx comp */
                     }
@@ -293,7 +292,7 @@ public class VeohCom extends PluginForHost {
                         }
                         try {
                             /* remove inputstream from connectionmanager */
-                            DownloadWatchDog.getInstance().getConnectionManager().removeManagedThrottledInputConnection(INPUTSTREAM);
+                            jd.controlling.downloadcontroller.DownloadWatchDog.getInstance().getConnectionManager().removeManagedThrottledInputConnection(INPUTSTREAM);
                         } catch (final Throwable e) {
                             /* 0.95xx comp */
                         }

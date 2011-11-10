@@ -26,7 +26,6 @@ import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.controlling.JDLogger;
-import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
 import jd.http.Request;
@@ -618,20 +617,6 @@ public class Rapidshare extends PluginForHost {
                 downloadLink.getLinkStatus().setStatusText(JDL.LF("plugins.host.rapidshare.loadedvia", "Loaded via %s", account.getUser()));
             }
         }
-    }
-
-    /**
-     * DO NOT REMOVE, ANTI DDOS PROTECTION
-     */
-    @SuppressWarnings("deprecation")
-    @Override
-    public boolean isPremiumDownload() {
-        /*
-         * this plugin must take care of HOST_TEMP_UNAVAIL status even in
-         * premium mode, can be removed with next major update TODO
-         */
-        if (DownloadWatchDog.getInstance().getRemainingTempUnavailWaittime(this.getHost()) > 0) { return false; }
-        return super.isPremiumDownload();
     }
 
     private Browser login(final Account account, final boolean forceRefresh) throws Exception {
