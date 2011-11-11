@@ -19,11 +19,12 @@ import org.appwork.utils.Application;
 
 public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
-    public static final GraphicalUserInterfaceSettings                 CFG                         = JsonConfig.create(GraphicalUserInterfaceSettings.class);
+    public static final GraphicalUserInterfaceSettings                 CFG                                = JsonConfig.create(GraphicalUserInterfaceSettings.class);
     @SuppressWarnings("unchecked")
-    public static final StorageHandler<GraphicalUserInterfaceSettings> SH                          = (StorageHandler<GraphicalUserInterfaceSettings>) CFG.getStorageHandler();
-    public static final IntegerKeyHandler                              CAPTCHA_SCALE               = SH.getKeyHandler("CaptchaScaleFactor", IntegerKeyHandler.class);
-    public static final BooleanKeyHandler                              LINKGRABBER_SIDEBAR_ENABLED = SH.getKeyHandler("LinkgrabberSidebarEnabled", BooleanKeyHandler.class);
+    public static final StorageHandler<GraphicalUserInterfaceSettings> SH                                 = (StorageHandler<GraphicalUserInterfaceSettings>) CFG.getStorageHandler();
+    public static final IntegerKeyHandler                              CAPTCHA_SCALE                      = SH.getKeyHandler("CaptchaScaleFactor", IntegerKeyHandler.class);
+    public static final BooleanKeyHandler                              LINKGRABBER_SIDEBAR_ENABLED        = SH.getKeyHandler("LinkgrabberSidebarEnabled", BooleanKeyHandler.class);
+    public static final BooleanKeyHandler                              LINKGRABBER_SIDEBAR_TOGGLE_ENABLED = SH.getKeyHandler("LinkgrabberSidebarToggleButtonEnabled", BooleanKeyHandler.class);
 
     void setActiveConfigPanel(String name);
 
@@ -193,5 +194,13 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     boolean isLinkgrabberSidebarEnabled();
 
     void setLinkgrabberSidebarEnabled(boolean b);
+
+    @AboutConfig
+    @Description("Enable/Disable the Linkgrabber Sidebar QuicktoggleButton")
+    @DefaultBooleanValue(true)
+    @RequiresRestart
+    boolean isLinkgrabberSidebarToggleButtonEnabled();
+
+    void setLinkgrabberSidebarToggleButtonEnabled(boolean b);
 
 }

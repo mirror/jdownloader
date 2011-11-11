@@ -8,6 +8,7 @@ import java.util.ArrayList;
 
 import javax.swing.JButton;
 import javax.swing.JScrollPane;
+import javax.swing.JToggleButton;
 import javax.swing.ScrollPaneConstants;
 import javax.swing.SwingUtilities;
 
@@ -37,6 +38,7 @@ import org.jdownloader.gui.views.linkgrabber.actions.ClearAction;
 import org.jdownloader.gui.views.linkgrabber.actions.ConfirmAllAction;
 import org.jdownloader.gui.views.linkgrabber.actions.ConfirmOptionsAction;
 import org.jdownloader.gui.views.linkgrabber.actions.RemoveOptionsAction;
+import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 
 public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListener, GenericConfigEventListener<Boolean> {
@@ -56,6 +58,7 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
     private ExtButton                                filteredAdd;
 
     private JButton                                  popupRemove;
+    private JToggleButton                            showHideSidebar;
 
     public LinkGrabberPanel() {
         super(new MigLayout("ins 0, wrap 2", "[grow,fill]2[fill]", "[grow, fill]2[]"));
@@ -110,8 +113,21 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
             }
         };
 
+        showHideSidebar = new JToggleButton(new AppAction() {
+            {
+
+                putValue(SMALL_ICON, NewTheme.I().getIcon("sidebar", -1));
+                setTooltipText(_GUI._.LinkGrabberPanel_LinkGrabberPanel_btn_showsidebar_tt_up());
+
+            }
+
+            public void actionPerformed(ActionEvent e) {
+                GraphicalUserInterfaceSettings.LINKGRABBER_SIDEBAR_ENABLED.setValue(!GraphicalUserInterfaceSettings.LINKGRABBER_SIDEBAR_ENABLED.getValue());
+            }
+        });
+        showHideSidebar.setSelected(GraphicalUserInterfaceSettings.LINKGRABBER_SIDEBAR_ENABLED.getValue());
         leftBar = new MigPanel("ins 0", "[]1[][]1[][grow,fill]0[]", "[]");
-        rightBar = new MigPanel("ins 0", "[grow,fill]1[]0", "[]");
+        rightBar = new MigPanel("ins 0", "[grow,fill]1[]0[]0", "[]");
 
         leftBar.add(addLinks, "height 24!,aligny top");
 
@@ -138,11 +154,11 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
 
         leftBar.add(filteredAdd, "height 24!,hidemode 3,gapleft 4");
         // leftBar.add(Box.createGlue());
-        rightBar.add(confirmAll, "height 24!");
-        rightBar.add(popupConfirm, "height 24!,width 12!");
-
         layoutComponents();
+
+        // showHideSidebar.setVisible(GraphicalUserInterfaceSettings.LINKGRABBER_SIDEBAR_ENABLED.getValue());
         GraphicalUserInterfaceSettings.LINKGRABBER_SIDEBAR_ENABLED.getEventSender().addListener(this);
+        GraphicalUserInterfaceSettings.LINKGRABBER_SIDEBAR_TOGGLE_ENABLED.getEventSender().addListener(this);
     }
 
     private void setFilteredAvailable(final int size) {
@@ -167,6 +183,11 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
     }
 
     private void layoutComponents() {
+        rightBar.removeAll();
+        rightBar.add(confirmAll, "height 24!");
+        rightBar.add(popupConfirm, "height 24!,width 12!");
+        if (GraphicalUserInterfaceSettings.LINKGRABBER_SIDEBAR_TOGGLE_ENABLED.getValue()) rightBar.add(showHideSidebar, "height 24!,width 24!,gapleft 4");
+
         if (GraphicalUserInterfaceSettings.CFG.isLinkgrabberSidebarEnabled()) {
 
             if (sidebarScrollPane == null) {
@@ -204,7 +225,19 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
         }
         sidebarScrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
         sidebarScrollPane.setColumnHeaderView(new LinkGrabberSideBarHeader(table));
-
+        // ExtButton bt = new ExtButton(new AppAction() {
+        // {
+        // setSmallIcon(NewTheme.I().getIcon("close", -1));
+        // setToolTipText(_GUI._.LinkGrabberSideBarHeader_LinkGrabberSideBarHeader_object_());
+        // }
+        //
+        // public void actionPerformed(ActionEvent e) {
+        // GraphicalUserInterfaceSettings.LINKGRABBER_SIDEBAR_ENABLED.setValue(false);
+        // }
+        // });
+        //
+        // sidebarScrollPane.setCorner(ScrollPaneConstants.UPPER_RIGHT_CORNER,
+        // bt);
         LinkFilterSettings.LG_QUICKSETTINGS_VISIBLE.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
 
             public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
@@ -254,12 +287,15 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
     }
 
     public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
+        System.out.println(1);
         new EDTRunner() {
 
             @Override
             protected void runInEDT() {
                 removeAll();
                 layoutComponents();
+
+                revalidate();
             }
         };
     }

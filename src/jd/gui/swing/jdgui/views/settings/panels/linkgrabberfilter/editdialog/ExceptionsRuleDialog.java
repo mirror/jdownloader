@@ -55,13 +55,16 @@ public class ExceptionsRuleDialog extends ConditionDialog<LinkgrabberFilterRule>
         rule.setFiletypeFilter(getFiletypeFilter());
         rule.setOnlineStatusFilter(getOnlineStatusFilter());
         rule.setAccept(true);
+        rule.setIconKey(getIconKey());
 
     }
 
     private void updateGUI() {
+        setIconKey(rule.getIconKey());
         setFilenameFilter(rule.getFilenameFilter());
         setHosterFilter(rule.getHosterURLFilter());
         setName(rule.getName());
+
         setFilesizeFilter(rule.getFilesizeFilter());
         setOnlineStatusFilter(rule.getOnlineStatusFilter());
         setSourceFilter(rule.getSourceURLFilter());

@@ -93,4 +93,10 @@ public class ConfigurationView extends ClosableView {
         return "configview";
     }
 
+    public void setSelectedSubPanel(Class<?> class1) {
+
+        ((ConfigurationPanel) getContent()).setSelectedSubPanel(class1);
+
+    }
+
 }

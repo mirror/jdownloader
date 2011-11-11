@@ -28,7 +28,8 @@ public class LinkGrabberSideBarHeader extends MigPanel {
         setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, new Color(LookAndFeelController.getInstance().getLAFOptions().getPanelHeaderLineColor())));
 
         setBackground(new Color(LookAndFeelController.getInstance().getLAFOptions().getPanelHeaderColor()));
-        // add(bt, "width 20!");
+
+        // add(bt, "width 20!,height 20!");
     }
 
 }

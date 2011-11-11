@@ -7,7 +7,12 @@ import javax.swing.JCheckBox;
 import javax.swing.JLabel;
 import javax.swing.JTable;
 
+import jd.gui.swing.SwingGui;
+import jd.gui.swing.jdgui.views.settings.ConfigurationView;
+import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.LinkgrabberFilter;
+
 import org.appwork.app.gui.MigPanel;
+import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.handler.BooleanKeyHandler;
 import org.appwork.swing.action.BasicAction;
 import org.appwork.swing.components.ExtButton;
@@ -16,14 +21,21 @@ import org.appwork.utils.swing.SwingUtils;
 import org.jdownloader.controlling.filter.LinkFilterSettings;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 
-public class CustomFilterHeader extends MigPanel {
+public class CustomFilterHeader extends MigPanel implements HeaderInterface {
 
     private ExtCheckBox       checkBox;
     private JLabel            lbl;
     private BooleanKeyHandler keyHandler;
     private JLabel            counter;
     private ExtButton         config;
+
+    public void setEnabled(boolean enabled) {
+        // checkBox.setEnabled(enabled);
+        lbl.setEnabled(enabled);
+
+    }
 
     public CustomFilterHeader() {
         super("ins 0", "2[][grow,fill][]8[]4", "[]");
@@ -37,7 +49,10 @@ public class CustomFilterHeader extends MigPanel {
             }
 
             public void actionPerformed(ActionEvent e) {
-                System.out.println("Go to LinkFIlter");
+                JsonConfig.create(GraphicalUserInterfaceSettings.class).setConfigViewVisible(true);
+                SwingGui.getInstance().setContent(ConfigurationView.getInstance(), true);
+                LinkgrabberFilter.getInstance().setSelectedIndex(1);
+                ConfigurationView.getInstance().setSelectedSubPanel(jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.Linkgrabber.class);
             }
         });
         config.setRolloverEffectEnabled(true);

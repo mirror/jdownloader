@@ -128,9 +128,12 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
         rule.setAutoExtractionEnabled(cbExtract.isSelected());
         rule.setAutoAddEnabled(cbAdd.isSelected());
         rule.setAutoStartEnabled(cbStart.isSelected());
+        rule.setIconKey(getIconKey());
+
     }
 
     private void updateGUI() {
+        setIconKey(rule.getIconKey());
         setFilenameFilter(rule.getFilenameFilter());
         setHosterFilter(rule.getHosterURLFilter());
         setName(rule.getName());

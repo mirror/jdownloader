@@ -10,13 +10,21 @@ import org.appwork.app.gui.MigPanel;
 import org.appwork.storage.config.handler.BooleanKeyHandler;
 import org.appwork.swing.components.ExtCheckBox;
 import org.appwork.utils.swing.SwingUtils;
+import org.jdownloader.gui.views.linkgrabber.quickfilter.HeaderInterface;
 
-public class Header extends MigPanel {
+public class Header extends MigPanel implements HeaderInterface {
 
     private ExtCheckBox       checkBox;
     private JLabel            lbl;
     private BooleanKeyHandler keyHandler;
     private JLabel            counter;
+
+    public void setEnabled(boolean enabled) {
+        // checkBox.setEnabled(enabled);
+        lbl.setEnabled(enabled);
+        counter.setEnabled(enabled);
+
+    }
 
     public Header(BooleanKeyHandler visible, String title) {
         super("ins 0", "[][grow,fill][]8[]4", "[]");

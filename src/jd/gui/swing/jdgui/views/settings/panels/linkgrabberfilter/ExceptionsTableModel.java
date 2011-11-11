@@ -3,6 +3,7 @@ package jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter;
 import java.awt.Component;
 import java.awt.Point;
 
+import javax.swing.Icon;
 import javax.swing.JTable;
 import javax.swing.table.JTableHeader;
 
@@ -91,6 +92,16 @@ public class ExceptionsTableModel extends ExtTableModel<LinkgrabberFilterRule> i
             @Override
             public boolean isEnabled(LinkgrabberFilterRule value) {
                 return value.isEnabled();
+
+            }
+
+            protected Icon getIcon(final LinkgrabberFilterRule value) {
+                String key = value.getIconKey();
+                if (key == null) {
+                    return null;
+                } else {
+                    return NewTheme.I().getIcon(key, 18);
+                }
             }
 
             @Override

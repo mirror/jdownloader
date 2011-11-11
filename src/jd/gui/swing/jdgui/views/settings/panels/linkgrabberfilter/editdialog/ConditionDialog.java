@@ -1,19 +1,32 @@
 package jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog;
 
+import java.awt.Component;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.io.File;
+import java.io.FilenameFilter;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.util.ArrayList;
+import java.util.logging.Level;
 
+import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
+import javax.swing.JList;
+import javax.swing.JPopupMenu;
 import javax.swing.JSeparator;
+import javax.swing.ListCellRenderer;
+import javax.swing.ListSelectionModel;
 import javax.swing.SpinnerNumberModel;
 import javax.swing.SwingUtilities;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 
 import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.ClickDelegater;
 import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.OnlineStatusFilter.OnlineStatus;
@@ -24,9 +37,11 @@ import org.appwork.swing.components.ExtCheckBox;
 import org.appwork.swing.components.ExtTextField;
 import org.appwork.swing.components.SizeSpinner;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.logging.Log;
 import org.appwork.utils.swing.SwingUtils;
 import org.appwork.utils.swing.dialog.AbstractDialog;
 import org.appwork.utils.swing.dialog.Dialog;
+import org.jdownloader.actions.AppAction;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ArchiveExtensions;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter.AudioExtensions;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ImageExtensions;
@@ -166,6 +181,23 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
 
     private boolean            autoset;
 
+    private JButton            btnIcon;
+
+    private String             iconKey;
+
+    public String getIconKey() {
+        return iconKey;
+    }
+
+    public void setIconKey(String iconKey) {
+        this.iconKey = iconKey;
+        if (iconKey != null) {
+            btnIcon.setIcon(NewTheme.I().getIcon(iconKey, 16));
+        } else {
+            btnIcon.setIcon(NewTheme.I().getIcon("help", 16));
+        }
+    }
+
     public ConditionDialog() {
         super(0, _GUI._.FilterRuleDialog_FilterRuleDialog_(""), null, _GUI._.literally_save(), null);
 
@@ -189,8 +221,61 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
 
         };
         txtName.setHelpText(_GUI._.FilterRuleDialog_layoutDialogContent_ht_name());
+        btnIcon = new JButton(new AppAction() {
+            {
+                setSmallIcon(NewTheme.I().getIcon("help", 16));
+                setTooltipText(_GUI._.ConditionDialog_layoutDialogContent_object_());
+            }
 
-        panel.add(txtName, "spanx,growx,pushx,gapleft 21");
+            public void actionPerformed(ActionEvent e) {
+                try {
+                    final JPopupMenu p = new JPopupMenu();
+
+                    URL url = NewTheme.I().getURL("images/", "help", ".png");
+
+                    File imagesDir = new File(url.toURI()).getParentFile();
+
+                    String[] names = imagesDir.list(new FilenameFilter() {
+
+                        public boolean accept(File dir, String name) {
+                            return name.endsWith(".png");
+                        }
+                    });
+
+                    final JList list = new JList(names);
+                    list.setLayoutOrientation(JList.HORIZONTAL_WRAP);
+                    final ListCellRenderer org = list.getCellRenderer();
+                    list.setCellRenderer(new ListCellRenderer() {
+
+                        public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+                            String key = value.toString().substring(0, value.toString().length() - 4);
+                            JLabel ret = (JLabel) org.getListCellRendererComponent(list, "", index, isSelected, cellHasFocus);
+                            ret.setIcon(NewTheme.I().getIcon(key, 20));
+                            return ret;
+                        }
+                    });
+                    list.setFixedCellHeight(22);
+                    list.setFixedCellWidth(22);
+                    list.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+                    list.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
+
+                        public void valueChanged(ListSelectionEvent e) {
+                            String v = list.getSelectedValue().toString();
+
+                            ConditionDialog.this.setIconKey(v.substring(0, v.length() - 4));
+                            p.setVisible(false);
+                        }
+                    });
+                    p.add(list);
+                    p.show(btnIcon, 0, btnIcon.getHeight());
+                } catch (URISyntaxException e1) {
+                    Log.exception(Level.WARNING, e1);
+                }
+            }
+        });
+
+        panel.add(btnIcon, "height 22!,width 22!");
+        panel.add(txtName, "spanx,growx,pushx,height 22!");
 
         panel.add(createHeader(getIfText()), "gaptop 10,spanx,growx,pushx");
 

@@ -36,27 +36,43 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 
 public class LinkgrabberFilter extends JPanel implements SettingsComponent {
-    private static final long     serialVersionUID = 6070464296168772795L;
+    private static final long              serialVersionUID = 6070464296168772795L;
 
-    private FilterTable           filterTable;
-    private ExtButton             btadd;
+    private FilterTable                    filterTable;
+    private ExtButton                      btadd;
 
-    private ExtButton             btImport;
-    private ExtButton             btExport;
-    private JComboBox             combobox;
-    private JScrollPane           card;
-    private ExceptionsTable       exceptionsTable;
-    private ExtButton             btRemove;
+    private ExtButton                      btImport;
+    private ExtButton                      btExport;
+    private JComboBox                      combobox;
+    private JScrollPane                    card;
+    private ExceptionsTable                exceptionsTable;
+    private ExtButton                      btRemove;
 
-    protected AbstractFilterTable view;
+    protected AbstractFilterTable          view;
 
-    private MigPanel              tb;
+    private MigPanel                       tb;
 
-    private ExtTextField          txtTest;
+    private ExtTextField                   txtTest;
 
-    private ExtButton             btTest;
+    private ExtButton                      btTest;
+    private static final LinkgrabberFilter INSTANCE         = new LinkgrabberFilter();
 
-    public LinkgrabberFilter() {
+    public static LinkgrabberFilter getInstance() {
+        return INSTANCE;
+    }
+
+    public void setSelectedIndex(final int i) {
+        new EDTRunner() {
+
+            @Override
+            protected void runInEDT() {
+                combobox.setSelectedIndex(i);
+            }
+        };
+
+    }
+
+    private LinkgrabberFilter() {
         super(new MigLayout("ins 0,wrap 5", "[grow,fill][][]8[][]", "[24!][grow,fill][]"));
 
         initComponents();

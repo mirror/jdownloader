@@ -3163,7 +3163,31 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "This condition requires that the file is online." })
     String ConditionDialog_updateOnline_linkcheck_required();
 
-    @Default(lngs = { "en" }, values = { "Custom" })
+    @Default(lngs = { "en" }, values = { "Custom Views" })
     String LinkGrabberSidebar_LinkGrabberSidebar_exceptionfilter();
+
+    @Default(lngs = { "en" }, values = { "Show All" })
+    String EnabledAllAction_EnabledAllAction_object_();
+
+    @Default(lngs = { "en" }, values = { "Hide All" })
+    String DisableAllAction_DisableAllAction_object_();
+
+    @Default(lngs = { "en" }, values = { "%s1 - Views" })
+    String Header_setEnabled_enabled_tt(String string);
+
+    @Default(lngs = { "en" }, values = { "No %s1 - Views available" })
+    String Header_setEnabled_disabled_tt(String text);
+
+    @Default(lngs = { "en" }, values = { "Custom Views" })
+    String CustomFilterHeader_setEnabled_enabled_tt(String text);
+
+    @Default(lngs = { "en" }, values = { "No custom Views available" })
+    String CustomFilterHeader_setEnabled_disabled_tt(String text);
+
+    @Default(lngs = { "en" }, values = { "Choose Icon for this Filter" })
+    String ConditionDialog_layoutDialogContent_object_();
+
+    @Default(lngs = { "en" }, values = { "Show/Hide Sidebar" })
+    String LinkGrabberPanel_LinkGrabberPanel_btn_showsidebar_tt_up();
 
 }

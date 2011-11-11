@@ -8,6 +8,7 @@ public class EDTEventQueue {
 
     public static void initEventQueue() {
         Toolkit.getDefaultToolkit().getSystemEventQueue().push(new CopyCutPasteHandler());
+
     }
 
 }

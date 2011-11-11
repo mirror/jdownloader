@@ -56,9 +56,12 @@ public class FilterRuleDialog extends ConditionDialog<LinkgrabberFilterRule> {
         rule.setOnlineStatusFilter(getOnlineStatusFilter());
         rule.setAccept(false);
 
+        rule.setIconKey(getIconKey());
+
     }
 
     private void updateGUI() {
+        setIconKey(rule.getIconKey());
         setFilenameFilter(rule.getFilenameFilter());
         setHosterFilter(rule.getHosterURLFilter());
         setName(rule.getName());

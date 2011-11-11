@@ -28,6 +28,7 @@ public class LinkgrabberFilterRule extends FilterRule implements Storable {
         LinkgrabberFilterRule ret = new LinkgrabberFilterRule();
         ret.accept = accept;
         ret.setEnabled(isEnabled());
+        ret.setIconKey(getIconKey());
         ret.setFilenameFilter(getFilenameFilter());
         ret.setFilesizeFilter(getFilesizeFilter());
         ret.setFiletypeFilter(getFiletypeFilter());
@@ -35,6 +36,7 @@ public class LinkgrabberFilterRule extends FilterRule implements Storable {
         ret.setHosterURLFilter(getHosterURLFilter());
         ret.setName(_JDT._.LinkgrabberFilterRule_duplicate(getName()));
         ret.setSourceURLFilter(getSourceURLFilter());
+
         return ret;
     }
 

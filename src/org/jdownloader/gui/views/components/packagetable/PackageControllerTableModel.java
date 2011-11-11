@@ -39,9 +39,14 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
     protected PackageController<PackageType, ChildrenType>                          pc;
     private DelayedRunnable                                                         asyncRecreate = null;
     private ArrayList<PackageControllerTableModelFilter<PackageType, ChildrenType>> tableFilters  = new ArrayList<PackageControllerTableModelFilter<PackageType, ChildrenType>>();
-    private Object                                                                  LOCK          = new Object();
 
-    private ScheduledThreadPoolExecutor                                             queue         = new ScheduledThreadPoolExecutor(1);
+    public ArrayList<PackageControllerTableModelFilter<PackageType, ChildrenType>> getTableFilters() {
+        return tableFilters;
+    }
+
+    private Object                      LOCK  = new Object();
+
+    private ScheduledThreadPoolExecutor queue = new ScheduledThreadPoolExecutor(1);
 
     private DelayedRunnable                                                         asyncRecreateFast;
 
@@ -218,9 +223,6 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
         }
         ArrayList<PackageControllerTableModelFilter<PackageType, ChildrenType>> filters = this.tableFilters;
 
-        for (PackageControllerTableModelFilter<PackageType, ChildrenType> filter : filters) {
-            filter.reset();
-        }
         /* filter packages */
         for (int index = packages.size() - 1; index >= 0; index--) {
             AbstractNode pkg = packages.get(index);

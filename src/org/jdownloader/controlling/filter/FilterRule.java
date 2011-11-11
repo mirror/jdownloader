@@ -15,6 +15,15 @@ public abstract class FilterRule implements Storable {
     private RegexFilter        hosterURLFilter;
     private RegexFilter        sourceURLFilter;
     private OnlineStatusFilter onlineStatusFilter;
+    private String             iconKey;
+
+    public String getIconKey() {
+        return iconKey;
+    }
+
+    public void setIconKey(String iconKey) {
+        this.iconKey = iconKey;
+    }
 
     public FilesizeFilter getFilesizeFilter() {
         if (filesizeFilter == null) filesizeFilter = new FilesizeFilter();

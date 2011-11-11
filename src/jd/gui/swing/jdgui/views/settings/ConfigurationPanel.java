@@ -117,4 +117,8 @@ public class ConfigurationPanel extends SwitchPanel implements ListSelectionList
         panel.setShown();
     }
 
+    public void setSelectedSubPanel(Class<?> class1) {
+        sidebar.setSelectedTreeEntry(class1);
+    }
+
 }

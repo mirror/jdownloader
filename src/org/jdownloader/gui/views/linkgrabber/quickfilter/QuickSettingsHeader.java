@@ -7,7 +7,11 @@ import javax.swing.Box;
 import javax.swing.JLabel;
 import javax.swing.JTable;
 
+import jd.gui.swing.SwingGui;
+import jd.gui.swing.jdgui.views.settings.ConfigurationView;
+
 import org.appwork.app.gui.MigPanel;
+import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
@@ -17,8 +21,9 @@ import org.appwork.utils.swing.SwingUtils;
 import org.jdownloader.controlling.filter.LinkFilterSettings;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 
-public class QuickSettingsHeader extends MigPanel implements GenericConfigEventListener<Boolean> {
+public class QuickSettingsHeader extends MigPanel implements GenericConfigEventListener<Boolean>, HeaderInterface {
 
     private JLabel    lbl;
 
@@ -38,7 +43,10 @@ public class QuickSettingsHeader extends MigPanel implements GenericConfigEventL
             }
 
             public void actionPerformed(ActionEvent e) {
-                System.out.println("Go to Settings");
+                JsonConfig.create(GraphicalUserInterfaceSettings.class).setConfigViewVisible(true);
+                SwingGui.getInstance().setContent(ConfigurationView.getInstance(), true);
+                // LinkgrabberFilter.getInstance().setSelectedIndex(1);
+                // ConfigurationView.getInstance().setSelectedSubPanel(jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.Linkgrabber.class);
             }
         });
         config.setRolloverEffectEnabled(true);
@@ -54,7 +62,8 @@ public class QuickSettingsHeader extends MigPanel implements GenericConfigEventL
         btn = new ExtButton(new BasicAction() {
 
             public void actionPerformed(ActionEvent e) {
-                LinkFilterSettings.LG_QUICKSETTINGS_VISIBLE.setValue(!LinkFilterSettings.LG_QUICKSETTINGS_VISIBLE.getValue());
+                boolean nv = !LinkFilterSettings.LG_QUICKSETTINGS_VISIBLE.getValue();
+                LinkFilterSettings.LG_QUICKSETTINGS_VISIBLE.setValue(nv);
             }
 
         });
@@ -74,5 +83,8 @@ public class QuickSettingsHeader extends MigPanel implements GenericConfigEventL
         } else {
             btn.setIcon(NewTheme.I().getIcon("popupButton", -1));
         }
+    }
+
+    public void setFilterCount(int i) {
     }
 }

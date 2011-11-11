@@ -11,18 +11,9 @@ import org.jdownloader.images.NewTheme;
 
 public abstract class Filter implements FavIconRequestor {
 
-    private ImageIcon      icon         = null;
-    protected int          counter      = 0;
+    private ImageIcon      icon    = null;
+    protected int          counter = 0;
     private FilterSettings config;
-    protected int          matchCounter = 0;
-
-    public int getMatchCounter() {
-        return matchCounter;
-    }
-
-    public void setMatchCounter(int matchCounter) {
-        this.matchCounter = matchCounter;
-    }
 
     public int getCounter() {
         return counter;
