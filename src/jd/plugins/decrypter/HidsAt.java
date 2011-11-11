@@ -29,7 +29,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hides.at" }, urls = { "http://(www\\.)?hides\\.at/[a-z0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hides.at" }, urls = { "https?://(www\\.)?hides\\.at/(link/)?[a-z0-9]{32}" }, flags = { 0 })
 public class HidsAt extends PluginForDecrypt {
 
     public HidsAt(PluginWrapper wrapper) {
@@ -40,14 +40,15 @@ public class HidsAt extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        br.setFollowRedirects(true);
         String parameter = param.toString();
         br.getPage(parameter);
         if (br.containsHTML("Error loading list or invalid list")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
         if (!br.containsHTML(CAPTCHATEXT)) return null;
-        String linkID = new Regex(parameter, "hides\\.at/(.+)").getMatch(0);
+        String linkID = new Regex(parameter, "hides\\.at/(link/)?(.+)").getMatch(1);
         for (int i = 0; i <= 5; i++) {
             String code = getCaptchaCode("http://hides.at/include/securimage-1.0.3.1/securimage_show.php", param);
-            br.getPage("http://hides.at/" + linkID + "?captcha_code=" + code + "&hash=" + linkID + "&btnSubmit=Submit");
+            br.getPage("http://hides.at/link/" + linkID + "?captcha_code=" + code + "&hash=" + linkID + "&btnSubmit=Submit");
             if (br.containsHTML(CAPTCHATEXT)) continue;
             break;
         }
