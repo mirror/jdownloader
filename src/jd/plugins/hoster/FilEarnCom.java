@@ -233,6 +233,10 @@ public class FilEarnCom extends PluginForHost {
         login(account, false);
         br.setFollowRedirects(false);
         br.getPage(link.getDownloadURL());
+        if (br.containsHTML(">Downloading disabled! We have detected multiple IP addresses accessing this account")) {
+            logger.info("Account blocked, disabling it!");
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        }
         String action = getAction();
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, action, "pass=&waited=1", true, -2);
         if (dl.getConnection().getContentType().contains("html")) {
