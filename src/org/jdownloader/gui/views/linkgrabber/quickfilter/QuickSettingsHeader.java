@@ -27,7 +27,7 @@ public class QuickSettingsHeader extends MigPanel implements GenericConfigEventL
     private ExtButton config;
 
     public QuickSettingsHeader() {
-        super("ins 0,debug", "2[][grow,fill][]8[]8", "[]");
+        super("ins 0", "2[][grow,fill][]8[]8", "[]");
         setOpaque(false);
         setBackground(null);
         // add(new JSeparator(), "gapleft 15");

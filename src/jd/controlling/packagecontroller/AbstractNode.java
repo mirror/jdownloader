@@ -6,6 +6,8 @@ public interface AbstractNode {
 
     boolean isEnabled();
 
+    void setEnabled(boolean b);
+
     long getCreated();
 
     long getFinishedDate();

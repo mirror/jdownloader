@@ -10,6 +10,11 @@ import org.jdownloader.gui.translate._GUI;
 
 public class RemoveIncompleteArchives extends AppAction {
 
+    /**
+     * 
+     */
+    private static final long serialVersionUID = 2816227528827363428L;
+
     public RemoveIncompleteArchives(ArrayList<AbstractNode> selection) {
         setName(_GUI._.RemoveIncompleteArchives_RemoveIncompleteArchives_object_());
         setIconKey("remove_packages");

@@ -123,14 +123,6 @@ public class DownloadLinkStorable implements Storable {
         link.setCreated(time);
     }
 
-    public long getFinished() {
-        return link.getFinishedDate();
-    }
-
-    public void setFinished(long time) {
-        link.setFinishedDate(time);
-    }
-
     /* Do Not Serialize */
     public DownloadLink _getDownloadLink() {
         return link;

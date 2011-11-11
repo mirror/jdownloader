@@ -130,7 +130,7 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
 
     private int                                                    linksInProgress;
 
-    private String                                                 name              = null;
+    private String                                                 name                = null;
 
     private long                                                   totalBytesLoaded_v2;
 
@@ -148,19 +148,18 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
     private Integer                                                links_Disabled;
     /* no longer in use, pay attention when removing */
     @Deprecated
-    private String                                                 ListHoster        = null;
+    private String                                                 ListHoster          = null;
 
-    private long                                                   created           = -1l;
+    private long                                                   created             = -1l;
 
-    private long                                                   finishedDate      = -1l;
+    private transient boolean                                      isExpanded          = false;
 
-    private transient boolean                                      isExpanded        = false;
-
-    private transient PackageController<FilePackage, DownloadLink> controlledby      = null;
-    private transient UniqueID                                     uniqueID          = null;
-    public static final String                                     PROPERTY_EXPANDED = "EXPANDED";
-    public static final String                                     PROPERTY_COMMENT  = "COMMENT";
-    public static final String                                     PROPERTY_EXTRACT  = "EXTRACT";
+    private transient PackageController<FilePackage, DownloadLink> controlledby        = null;
+    private transient UniqueID                                     uniqueID            = null;
+    public static final String                                     PROPERTY_EXPANDED   = "EXPANDED";
+    private static final String                                    PROPERTY_COMMENT    = "COMMENT";
+    private static final String                                    PROPERTY_EXTRACT    = "EXTRACT";
+    private static final String                                    PROPERTY_FINISHTIME = "FINISHTIME";
 
     /**
      * @return the uniqueID
@@ -266,22 +265,16 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
         this.created = created;
     }
 
-    /**
-     * return this FilePackage finish timestamp
-     * 
-     * @return
-     */
     public long getFinishedDate() {
-        return finishedDate;
+        return this.getLongProperty(PROPERTY_FINISHTIME, -1l);
     }
 
-    /**
-     * set this FilePackage finish timestamp
-     * 
-     * @param finishedDate
-     */
     public void setFinishedDate(long finishedDate) {
-        this.finishedDate = finishedDate;
+        if (finishedDate <= 0) {
+            this.setProperty(PROPERTY_FINISHTIME, Property.NULL);
+        } else {
+            this.setProperty(PROPERTY_FINISHTIME, finishedDate);
+        }
     }
 
     /**
@@ -322,7 +315,7 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
                     }
                 }
             }
-            notifyChanges();
+            notifyStructureChanges();
         } else {
             this.controlledby.addmoveChildren(this, Arrays.asList(links), -1);
         }
@@ -407,8 +400,8 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
             }
             isFinished = value;
             if (!isFinished) {
-                finishedDate = -1;
-            } else if (isFinished && finishedDate == -1) finishedDate = lastfinished;
+                this.setFinishedDate(-1);
+            } else if (isFinished && getFinishedDate() == -1) this.setFinishedDate(lastfinished);
         }
         return isFinished;
     }
@@ -511,7 +504,7 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
                     }
                 }
             }
-            notifyChanges();
+            notifyStructureChanges();
         } else {
             this.controlledby.removeChildren(this, Arrays.asList(links), true);
         }
@@ -677,11 +670,17 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
         controlledby = controller;
     }
 
-    public void notifyChanges() {
+    public void notifyStructureChanges() {
         if (fpInfo != null) {
             synchronized (fpInfo) {
                 fpInfo.changeStructure();
             }
         }
+    }
+
+    public void setEnabled(boolean b) {
+    }
+
+    public void notifyPropertyChanges() {
     }
 }

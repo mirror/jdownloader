@@ -165,6 +165,19 @@ public class Property implements Serializable {
         }
     }
 
+    public long getLongProperty(final String key, final long def) {
+        try {
+            Object r = getProperty(key, def);
+            if (r instanceof String) {
+                r = Long.parseLong((String) r);
+            }
+            final Long ret = (Long) r;
+            return ret;
+        } catch (final Exception e) {
+            return def;
+        }
+    }
+
     /**
      * Returns the internal HashMap Properties
      */

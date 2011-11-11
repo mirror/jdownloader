@@ -84,7 +84,7 @@ public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledP
         return children;
     }
 
-    public void notifyChanges() {
+    public void notifyStructureChanges() {
         if (fpInfo != null) {
             synchronized (fpInfo) {
                 fpInfo.structureVersion++;
@@ -132,6 +132,12 @@ public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledP
             }
         }
         return fpInfo;
+    }
+
+    public void setEnabled(boolean b) {
+    }
+
+    public void notifyPropertyChanges() {
     }
 
 }

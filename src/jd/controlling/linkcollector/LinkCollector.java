@@ -400,7 +400,6 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
     }
 
     private void addFilteredStuff(CrawledLink filtered) {
-        System.out.println("got Filtered: " + filtered);
         synchronized (filteredStuff) {
             filteredStuff.add(filtered);
         }

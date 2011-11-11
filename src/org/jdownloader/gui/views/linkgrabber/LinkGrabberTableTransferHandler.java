@@ -13,6 +13,7 @@ import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
 
 import org.appwork.exceptions.WTFException;
+import org.appwork.utils.event.queue.Queue;
 import org.appwork.utils.event.queue.Queue.QueuePriority;
 import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.logging.Log;
@@ -44,13 +45,16 @@ public class LinkGrabberTableTransferHandler extends TransferHandler {
             boolean linksAvailable = support.isDataFlavorSupported(CrawledLinksDataFlavor.Flavor);
             boolean packagesAvailable = support.isDataFlavorSupported(CrawledPackagesDataFlavor.Flavor);
             if (linksAvailable || packagesAvailable) {
-                if (!LinkGrabberTransferable.isVersionOkay(support.getTransferable())) {
-                    /*
-                     * packagecontroller has newer version, we no longer allow
-                     * this copy/paste to happen
-                     */
-                    return false;
-                }
+                // if
+                // (!LinkGrabberTransferable.isVersionOkay(support.getTransferable()))
+                // {
+                /*
+                 * packagecontroller has newer version, we no longer allow this
+                 * copy/paste to happen
+                 */
+                /* DISABLED: as it will only confuse the customer! */
+                // return false;
+                // }
             }
             boolean isInsert = dl.isInsertRow();
             int dropRow = dl.getRow();
@@ -173,13 +177,16 @@ public class LinkGrabberTableTransferHandler extends TransferHandler {
         if (!canImport(support)) return false;
         final ArrayList<CrawledLink> links;
         final ArrayList<CrawledPackage> packages;
+        QueuePriority prio = Queue.QueuePriority.HIGH;
         if (support.isDataFlavorSupported(CrawledLinksDataFlavor.Flavor)) {
             links = LinkGrabberTransferable.getChildren(support.getTransferable());
+            if (links.size() > 10) prio = Queue.QueuePriority.NORM;
         } else {
             links = null;
         }
         if (support.isDataFlavorSupported(CrawledPackagesDataFlavor.Flavor)) {
             packages = LinkGrabberTransferable.getPackages(support.getTransferable());
+            if (packages.size() > 3) prio = Queue.QueuePriority.NORM;
         } else {
             packages = null;
         }
@@ -191,8 +198,9 @@ public class LinkGrabberTableTransferHandler extends TransferHandler {
             final Object afterElement = table.getExtTableModel().getObjectbyRow(dropRow);
             if (isInsert == false) {
                 /* dropOn,merge */
+
                 if (afterElement instanceof CrawledPackage) {
-                    IOEQ.getQueue().add(new QueueAction<Void, RuntimeException>(QueuePriority.HIGH) {
+                    IOEQ.getQueue().add(new QueueAction<Void, RuntimeException>(prio) {
 
                         @Override
                         protected Void run() throws RuntimeException {
@@ -218,7 +226,7 @@ public class LinkGrabberTableTransferHandler extends TransferHandler {
                     } else {
                         dest = null;
                     }
-                    IOEQ.getQueue().add(new QueueAction<Void, RuntimeException>(QueuePriority.HIGH) {
+                    IOEQ.getQueue().add(new QueueAction<Void, RuntimeException>(prio) {
 
                         @Override
                         protected Void run() throws RuntimeException {
@@ -246,7 +254,7 @@ public class LinkGrabberTableTransferHandler extends TransferHandler {
                         afterL = null;
                         destP = null;
                     }
-                    IOEQ.getQueue().add(new QueueAction<Void, RuntimeException>(QueuePriority.HIGH) {
+                    IOEQ.getQueue().add(new QueueAction<Void, RuntimeException>(prio) {
 
                         @Override
                         protected Void run() throws RuntimeException {

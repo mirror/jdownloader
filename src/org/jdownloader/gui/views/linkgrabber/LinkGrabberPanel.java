@@ -245,7 +245,7 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
             tableModel.recreateModel(!QueuePriority.HIGH.equals(event.getPrio()));
             break;
         case REFRESH_DATA:
-            tableModel.refreshModel();
+            tableModel.refreshModel(!QueuePriority.HIGH.equals(event.getPrio()));
             break;
         }
     }

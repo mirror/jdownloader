@@ -10,7 +10,6 @@ import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.packagecontroller.AbstractNode;
 
-import org.appwork.utils.event.queue.Queue.QueuePriority;
 import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
@@ -37,7 +36,7 @@ public class MergeToPackageAction extends AppAction {
             final String name = Dialog.getInstance().showInputDialog(0, _GUI._.MergeToPackageAction_MergeToPackageAction_(), null);
             if (name == null | name.trim().length() == 0) return;
 
-            IOEQ.getQueue().add(new QueueAction<Void, RuntimeException>(QueuePriority.NORM) {
+            IOEQ.getQueue().add(new QueueAction<Void, RuntimeException>() {
 
                 @Override
                 protected Void run() throws RuntimeException {

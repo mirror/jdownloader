@@ -20,11 +20,12 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
+import jd.utils.JDUtilities;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "videarn.com" }, urls = { "http://(www\\.)?videarndecrypted\\.com/video\\.php\\?id=\\d+" }, flags = { PluginWrapper.DEBUG_ONLY })
 public class VidearnCom extends PluginForHost {
@@ -52,11 +53,7 @@ public class VidearnCom extends PluginForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
 
-        /**
-         * NOT WORKING IN RTMPDUMP Version < 2.3
-         */
-        final String nw = "rtmpdump";
-        if (nw.equals("rtmpdump")) { throw new PluginException(LinkStatus.ERROR_FATAL, "Not supported yet!"); }
+        if (oldStyle()) { throw new PluginException(LinkStatus.ERROR_FATAL, "Not supported yet!"); }
 
         final String playpath = br.getRegex("file:'(.*?)',").getMatch(0);
         final String url = br.getRegex("streamer:'(.*?)',").getMatch(0);
@@ -75,6 +72,18 @@ public class VidearnCom extends PluginForHost {
         rtmp.setSwfUrl("http://videarn.com/player.swf");
 
         ((RTMPDownload) dl).startDownload();
+    }
+
+    private boolean oldStyle() {
+        String prev = JDUtilities.getRevision();
+        if (prev == null || prev.length() < 3) {
+            prev = "0";
+        } else {
+            prev = prev.replaceAll(",|\\.", "");
+        }
+        int rev = Integer.parseInt(prev);
+        if (rev < 14000) return true;
+        return false;
     }
 
     @Override

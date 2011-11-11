@@ -77,6 +77,8 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     private static final String                PROPERTY_SUBFOLDER       = "SUBFOLDER";
     private static final String                PROPERTY_COMMENT         = "COMMENT";
     private static final String                PROPERTY_PRIORITY        = "PRIORITY";
+    private static final String                PROPERTY_FINISHTIME      = "FINISHTIME";
+    private static final String                PROPERTY_ENABLED         = "ENABLED";
 
     public static final int                    LINKTYPE_CONTAINER       = 1;
 
@@ -165,8 +167,6 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
 
     private long                               created                  = -1l;
 
-    private long                               finishedDate             = -1l;
-
     private transient UniqueID                 uniqueID                 = null;
     private transient String                   iconHost                 = null;
 
@@ -193,7 +193,6 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         this.host = host == null ? null : host.toLowerCase(Locale.ENGLISH);
         this.isEnabled = isEnabled;
         created = System.currentTimeMillis();
-        finishedDate = -1l;
         this.setUrlDownload(urlDownload);
         if (plugin != null && this.getDownloadURL() != null) {
             try {
@@ -208,11 +207,15 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     }
 
     public long getFinishedDate() {
-        return finishedDate;
+        return this.getLongProperty(PROPERTY_FINISHTIME, -1l);
     }
 
     public void setFinishedDate(long finishedDate) {
-        this.finishedDate = finishedDate;
+        if (finishedDate <= 0) {
+            this.setProperty(PROPERTY_FINISHTIME, Property.NULL);
+        } else {
+            this.setProperty(PROPERTY_FINISHTIME, finishedDate);
+        }
     }
 
     public long getCreated() {
@@ -643,7 +646,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         chunksProgress = null;
         downloadLinkController = null;
         downloadCurrent = 0;
-        finishedDate = -1l;
+        this.setFinishedDate(-1l);
         linkStatus.reset();
         this.availableStatus = AvailableStatus.UNCHECKED;
         this.setEnabled(true);
@@ -651,7 +654,6 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         this.getTransferStatus().setResumeSupport(false);
         deleteFile(true, true);
         setFinalFileName(null);
-        forceFileName(null);
         PluginForHost plg = liveplugin;
         if (plg == null) {
             plg = this.defaultplugin.getNewInstance();
@@ -826,6 +828,12 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
                 logger.severe("Es ist kein passendes ContainerPlugin geladen");
                 return;
             }
+        }
+
+        if (isEnabled == true) {
+            setProperty(PROPERTY_ENABLED, Property.NULL);
+        } else {
+            setProperty(PROPERTY_ENABLED, isEnabled);
         }
     }
 

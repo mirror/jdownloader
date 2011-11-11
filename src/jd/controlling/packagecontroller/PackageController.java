@@ -346,7 +346,7 @@ public abstract class PackageController<E extends AbstractPackageNode<V, E>, V e
                                 child.setParentNode(pkg);
                             }
                         }
-                        pkg.notifyChanges();
+                        pkg.notifyStructureChanges();
                     } finally {
                         writeUnlock();
                     }
@@ -401,7 +401,7 @@ public abstract class PackageController<E extends AbstractPackageNode<V, E>, V e
                                 }
                             }
                         }
-                        pkg.notifyChanges();
+                        pkg.notifyStructureChanges();
                     } finally {
                         writeUnlock();
                     }

@@ -43,6 +43,8 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
 
     private ScheduledThreadPoolExecutor                                             queue         = new ScheduledThreadPoolExecutor(1);
 
+    private DelayedRunnable                                                         asyncRecreateFast;
+
     public PackageControllerTableModel(PackageController<PackageType, ChildrenType> pc, String id) {
         super(id);
         resetSorting();
@@ -62,6 +64,13 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
             }
         };
         asyncRecreate = new DelayedRunnable(queue, 50l, 1000l) {
+            @Override
+            public void delayedrun() {
+                _fireTableStructureChanged(getTableData(), true);
+            }
+        };
+
+        asyncRecreateFast = new DelayedRunnable(queue, 10l, 50l) {
             @Override
             public void delayedrun() {
                 _fireTableStructureChanged(getTableData(), true);
@@ -87,7 +96,7 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
         if (delay) {
             asyncRecreate.run();
         } else {
-            asyncRecreate.delayedrun();
+            asyncRecreateFast.run();
         }
     }
 

@@ -10,6 +10,10 @@ import org.jdownloader.gui.translate._GUI;
 
 public class SetDownloadPassword extends AppAction {
 
+    /**
+     * 
+     */
+    private static final long       serialVersionUID = -8280535886054721277L;
     private ArrayList<AbstractNode> selection;
 
     public SetDownloadPassword(ArrayList<AbstractNode> selection) {

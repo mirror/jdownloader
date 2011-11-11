@@ -10,6 +10,10 @@ import org.jdownloader.gui.translate._GUI;
 
 public class SplitPackagesByHost extends AppAction {
 
+    /**
+     * 
+     */
+    private static final long         serialVersionUID = 2636706677433058054L;
     private ArrayList<CrawledPackage> packages;
 
     public SplitPackagesByHost(ArrayList<CrawledPackage> packages) {

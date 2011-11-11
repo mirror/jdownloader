@@ -14,6 +14,7 @@ public class RenamePackageAction extends AppAction {
     public RenamePackageAction(CrawledPackage pkg) {
         this.pkg = pkg;
         setName(_GUI._.RenamePackageAction_RenamePackageAction_());
+        setIconKey("edit");
     }
 
     public void actionPerformed(ActionEvent e) {

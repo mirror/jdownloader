@@ -22,12 +22,13 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
         TEMP_UNKNOWN
     }
 
-    private CrawledPackage    parent      = null;
-    private PluginForDecrypt  dPlugin     = null;
-    private LinkCollectingJob sourceJob   = null;
-    private long              created     = -1;
-    private boolean           isDupeAllow = false;
-    private String            realHost    = null;
+    private CrawledPackage    parent       = null;
+    private PluginForDecrypt  dPlugin      = null;
+    private LinkCollectingJob sourceJob    = null;
+    private long              created      = -1;
+    private boolean           isDupeAllow  = false;
+    private String            realHost     = null;
+    boolean                   enabledState = true;
 
     /**
      * @return the isDupeAllow
@@ -146,6 +147,10 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
         return "DUMMY";
     }
 
+    public void setForcedName(String name) {
+        if (dlLink != null) dlLink.forceFileName(name);
+    }
+
     public ImageIcon getHosterIcon() {
         if (dlLink != null) return dlLink.getHosterIcon();
         return null;
@@ -205,8 +210,14 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
     }
 
     public boolean isEnabled() {
-        if (dlLink != null) return dlLink.isEnabled();
-        return true;
+        return enabledState;
+    }
+
+    public void setEnabled(boolean b) {
+        if (b == enabledState) return;
+        enabledState = b;
+        CrawledPackage lparent = parent;
+        if (lparent != null) lparent.notifyPropertyChanges();
     }
 
     public long getCreated() {

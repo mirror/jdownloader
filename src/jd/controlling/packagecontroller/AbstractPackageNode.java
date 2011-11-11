@@ -10,7 +10,9 @@ public interface AbstractPackageNode<V extends AbstractPackageChildrenNode<E>, E
 
     List<V> getChildren();
 
-    void notifyChanges();
+    void notifyStructureChanges();
+
+    void notifyPropertyChanges();
 
     boolean isExpanded();
 
