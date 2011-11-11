@@ -10,6 +10,7 @@ import javax.swing.JTextField;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.packagecontroller.AbstractNode;
+import jd.plugins.DownloadLink;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.swing.action.BasicAction;
@@ -25,6 +26,7 @@ public class UrlColumn extends ExtTextColumn<AbstractNode> {
      */
     private static final long serialVersionUID = 1L;
     private ExtButton         bt;
+    private AbstractNode      editing          = null;
 
     public UrlColumn() {
         super(_GUI._.LinkGrabberTableModel_initColumns_url());
@@ -35,19 +37,27 @@ public class UrlColumn extends ExtTextColumn<AbstractNode> {
             public void mouseClicked(MouseEvent e) {
                 if (e.getClickCount() >= 2) {
                     editorField.selectAll();
-                    CrossSystem.openURLOrShowMessage(editorField.getText());
+                    if (isOpenURLAllowed(editing)) CrossSystem.openURLOrShowMessage(editorField.getText());
+                    UrlColumn.this.stopCellEditing();
                 }
             }
         });
         editorField.setBorder(new JTextField().getBorder());
         bt = new ExtButton(new BasicAction() {
+            /**
+             * 
+             */
+            private static final long serialVersionUID = -5856576135198890532L;
+
             {
                 setSmallIcon(NewTheme.I().getIcon("browse", 16));
                 setTooltipText(_GUI._.UrlColumn_UrlColumn_open_tt_());
             }
 
             public void actionPerformed(ActionEvent e) {
-                CrossSystem.openURLOrShowMessage(editorField.getText());
+                noset = true;
+                if (isOpenURLAllowed(editing)) CrossSystem.openURLOrShowMessage(getStringValue(editing));
+                UrlColumn.this.stopCellEditing();
             }
         });
 
@@ -60,20 +70,28 @@ public class UrlColumn extends ExtTextColumn<AbstractNode> {
     }
 
     @Override
-    public void focusGained(final FocusEvent e) {
+    public void configureEditorComponent(AbstractNode value, boolean isSelected, int row, int column) {
+        super.configureEditorComponent(value, isSelected, row, column);
+        editing = value;
+        noset = false;
+        bt.setEnabled(CrossSystem.isOpenBrowserSupported() && isOpenURLAllowed(value));
+    }
 
+    @Override
+    public void focusGained(final FocusEvent e) {
     }
 
     @Override
     public boolean isEditable(AbstractNode obj) {
-
         return obj instanceof CrawledLink;
-
     }
 
-    @Override
-    protected void onSingleClick(MouseEvent e, AbstractNode obj) {
-        super.onSingleClick(e, obj);
+    private boolean isOpenURLAllowed(AbstractNode value) {
+        if (value instanceof CrawledLink) {
+            DownloadLink dlLink = ((CrawledLink) value).getDownloadLink();
+            return dlLink.getLinkType() == DownloadLink.LINKTYPE_NORMAL;
+        }
+        return false;
     }
 
     @Override
@@ -88,16 +106,18 @@ public class UrlColumn extends ExtTextColumn<AbstractNode> {
 
     @Override
     protected void setStringValue(String value, AbstractNode object) {
-        // set Folder
     }
 
     @Override
     public String getStringValue(AbstractNode value) {
         if (value instanceof CrawledPackage) {
             return null;
-        } else {
-            return ((CrawledLink) value).getDownloadLink().getBrowserUrl();
+        } else if (value instanceof CrawledLink) {
+            DownloadLink dlLink = ((CrawledLink) value).getDownloadLink();
+            if (dlLink.getLinkType() == DownloadLink.LINKTYPE_CONTAINER) return null;
+            return dlLink.getBrowserUrl();
         }
+        return null;
     }
 
 }

@@ -65,7 +65,7 @@ public class ContextMenuFactory {
         m.add(new RemoveSelectionAction(table, selection).toContextMenuAction());
         m.add(new RemoveNonSelectedAction(table, selection).toContextMenuAction());
         m.add(new RemoveOfflineAction().toContextMenuAction());
-        m.add(new RemoveIncompleteArchives(table.getExtTableModel().getSelectedObjects()).toContextMenuAction());
+        m.add(new RemoveIncompleteArchives(selection).toContextMenuAction());
         p.add(m);
         return p;
     }

@@ -44,7 +44,7 @@ public class RemoveOptionsAction extends AbstractAction {
         popup.add(new RemoveSelectionAction(table, selection).toContextMenuAction());
         popup.add(new RemoveNonSelectedAction(table, selection).toContextMenuAction());
         popup.add(new RemoveOfflineAction().toContextMenuAction());
-        popup.add(new RemoveIncompleteArchives(table.getExtTableModel().getSelectedObjects()).toContextMenuAction());
+        popup.add(new RemoveIncompleteArchives(selection).toContextMenuAction());
 
         int[] insets = LookAndFeelController.getInstance().getLAFOptions().getPopupBorderInsets();
 

@@ -191,19 +191,18 @@ public abstract class FilterTable extends ExtTable<Filter> implements PackageCon
     }
 
     protected void updateNow() {
-        synchronized (LOCK) {
 
-            reset();
-            ArrayList<Filter> newData = updateQuickFilerTableData();
-            for (Iterator<Filter> it = newData.iterator(); it.hasNext();) {
-                if (it.next().getCounter() == 0) {
-                    // it.remove();
-                }
+        reset();
+        ArrayList<Filter> newData = updateQuickFilerTableData();
+        for (Iterator<Filter> it = newData.iterator(); it.hasNext();) {
+            if (it.next().getCounter() == 0) {
+                // it.remove();
             }
-            setVisible(newData.size() > 0);
-            filters = newData;
-            if (visibleKeyHandler.getValue()) getExtTableModel()._fireTableStructureChanged(newData, true);
         }
+        setVisible(newData.size() > 0);
+        filters = newData;
+        if (visibleKeyHandler.getValue()) getExtTableModel()._fireTableStructureChanged(newData, true);
+
     }
 
     protected int getCountWithout(Filter filter, ArrayList<CrawledLink> filteredLinks) {

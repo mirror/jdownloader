@@ -69,51 +69,52 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         TRUE;
     }
 
-    private static final String                PROPERTY_MD5             = "MD5";
-    private static final String                PROPERTY_SHA1            = "SHA1";
-    private static final String                PROPERTY_PASS            = "pass";
-    private static final String                PROPERTY_FINALFILENAME   = "FINAL_FILENAME";
-    private static final String                PROPERTY_FORCEDFILENAME  = "FORCED_FILENAME";
-    private static final String                PROPERTY_SUBFOLDER       = "SUBFOLDER";
-    private static final String                PROPERTY_COMMENT         = "COMMENT";
-    private static final String                PROPERTY_PRIORITY        = "PRIORITY";
-    private static final String                PROPERTY_FINISHTIME      = "FINISHTIME";
-    private static final String                PROPERTY_ENABLED         = "ENABLED";
+    private static final String                PROPERTY_MD5            = "MD5";
+    private static final String                PROPERTY_SHA1           = "SHA1";
+    private static final String                PROPERTY_PASS           = "pass";
+    private static final String                PROPERTY_FINALFILENAME  = "FINAL_FILENAME";
+    private static final String                PROPERTY_FORCEDFILENAME = "FORCED_FILENAME";
+    private static final String                PROPERTY_SUBFOLDER      = "SUBFOLDER";
+    private static final String                PROPERTY_COMMENT        = "COMMENT";
+    private static final String                PROPERTY_PRIORITY       = "PRIORITY";
+    private static final String                PROPERTY_FINISHTIME     = "FINISHTIME";
+    private static final String                PROPERTY_ENABLED        = "ENABLED";
+    private static final String                PROPERTY_PWLIST         = "PWLIST";
 
-    public static final int                    LINKTYPE_CONTAINER       = 1;
+    public static final int                    LINKTYPE_CONTAINER      = 1;
 
-    public static final int                    LINKTYPE_NORMAL          = 0;
+    public static final int                    LINKTYPE_NORMAL         = 0;
 
-    private transient static Logger            logger                   = JDLogger.getLogger();
+    private transient static Logger            logger                  = JDLogger.getLogger();
 
-    private static final long                  serialVersionUID         = 1981079856214268373L;
+    private static final long                  serialVersionUID        = 1981079856214268373L;
 
-    public static final String                 UNKNOWN_FILE_NAME        = "unknownFileName.file";
+    public static final String                 UNKNOWN_FILE_NAME       = "unknownFileName.file";
 
-    private transient AvailableStatus          availableStatus          = AvailableStatus.UNCHECKED;
+    private transient AvailableStatus          availableStatus         = AvailableStatus.UNCHECKED;
 
-    private long[]                             chunksProgress           = null;
+    private long[]                             chunksProgress          = null;
 
     /** Containername */
     private String                             container;
 
     /** Dateiname des Containers */
-    private String                             containerFile            = null;
+    private String                             containerFile           = null;
 
     /** Index dieses DownloadLinks innerhalb der Containerdatei */
-    private int                                containerIndex           = -1;
+    private int                                containerIndex          = -1;
 
     /** Aktuell heruntergeladene Bytes der Datei */
-    private long                               downloadCurrent          = 0;
+    private long                               downloadCurrent         = 0;
 
     private transient DownloadInterface        downloadInstance;
 
     private transient SingleDownloadController downloadLinkController;
 
     /** Maximum der heruntergeladenen Datei (Dateilaenge) */
-    private long                               downloadMax              = 0;
+    private long                               downloadMax             = 0;
 
-    private String                             browserurl               = null;
+    private String                             browserurl              = null;
 
     private FilePackage                        filePackage;
 
@@ -127,7 +128,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
 
     private TransferStatus                     transferstatus;
 
-    private int                                linkType                 = LINKTYPE_NORMAL;
+    private int                                linkType                = LINKTYPE_NORMAL;
 
     /** Beschreibung des Downloads */
     /* kann sich noch ändern, NICHT final */
@@ -142,8 +143,6 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      * geladen wurde
      */
     private transient PluginsC                 pluginForContainer;
-
-    private ArrayList<String>                  sourcePluginPasswordList = null;
 
     /*
      * we need to keep this some time to perfom conversion from variable to
@@ -163,12 +162,12 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
 
     private transient PluginProgress           pluginProgress;
 
-    private transient ImageIcon                icon                     = null;
+    private transient ImageIcon                icon                    = null;
 
-    private long                               created                  = -1l;
+    private long                               created                 = -1l;
 
-    private transient UniqueID                 uniqueID                 = null;
-    private transient String                   iconHost                 = null;
+    private transient UniqueID                 uniqueID                = null;
+    private transient String                   iconHost                = null;
 
     /**
      * Erzeugt einen neuen DownloadLink
@@ -188,7 +187,6 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         uniqueID = new UniqueID();
         this.defaultplugin = plugin;
         setName(name);
-        sourcePluginPasswordList = null;
         downloadMax = 0;
         this.host = host == null ? null : host.toLowerCase(Locale.ENGLISH);
         this.isEnabled = isEnabled;
@@ -239,9 +237,11 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     public DownloadLink addSourcePluginPassword(String sourcePluginPassword) {
         if (sourcePluginPassword == null || sourcePluginPassword.length() == 0) return this;
         synchronized (this) {
-            String pwadd = sourcePluginPassword.trim();
-            if (sourcePluginPasswordList == null) sourcePluginPasswordList = new ArrayList<String>();
-            if (!sourcePluginPasswordList.contains(pwadd)) sourcePluginPasswordList.add(pwadd);
+            // String pwadd = sourcePluginPassword.trim();
+            // if (sourcePluginPasswordList == null) sourcePluginPasswordList =
+            // new ArrayList<String>();
+            // if (!sourcePluginPasswordList.contains(pwadd))
+            // sourcePluginPasswordList.add(pwadd);
             return this;
         }
     }
@@ -498,7 +498,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     }
 
     public ArrayList<String> getSourcePluginPasswordList() {
-        return sourcePluginPasswordList;
+        return this.getGenericProperty(PROPERTY_PWLIST, (ArrayList<String>) null);
     }
 
     /**
@@ -930,8 +930,10 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     }
 
     public DownloadLink setSourcePluginPasswordList(ArrayList<String> sourcePluginPassword) {
-        synchronized (this) {
-            sourcePluginPasswordList = sourcePluginPassword;
+        if (sourcePluginPassword == null || sourcePluginPassword.size() == 0) {
+            this.setProperty(PROPERTY_PWLIST, Property.NULL);
+        } else {
+            this.setProperty(PROPERTY_PWLIST, sourcePluginPassword);
         }
         return this;
     }

@@ -24,6 +24,11 @@ public class SetDownloadFolderAction extends AppAction {
     private static final long         serialVersionUID = -6632019767606316873L;
     private ArrayList<CrawledPackage> selection        = null;
     private CrawledPackage            pkg              = null;
+    private boolean                   retOkay          = false;
+
+    public boolean newValueSet() {
+        return retOkay;
+    }
 
     public SetDownloadFolderAction(AbstractNode node, ArrayList<CrawledPackage> selection) {
         if (node != null && node instanceof CrawledPackage) {
@@ -49,6 +54,7 @@ public class SetDownloadFolderAction extends AppAction {
         try {
             final File[] dest = Dialog.getInstance().showFileChooser("downloadFolderDialog", _GUI._.SetDownloadFolderAction_SetDownloadFolderAction_(), FileChooserSelectionMode.DIRECTORIES_ONLY, null, false, FileChooserType.SAVE_DIALOG, new File(pkg.getDownloadFolder()));
             if (!isDownloadFolderValid(dest[0])) return;
+            retOkay = true;
             IOEQ.add(new Runnable() {
 
                 public void run() {

@@ -2,7 +2,6 @@ package org.jdownloader.gui.views.linkgrabber.columns;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.FocusEvent;
-import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.File;
 
@@ -33,19 +32,6 @@ public class DownloadFolderColumn extends ExtTextColumn<AbstractNode> {
         super(_GUI._.LinkGrabberTableModel_initColumns_folder());
         setClickcount(2);
 
-        editorField.addMouseListener(new MouseAdapter() {
-
-            @Override
-            public void mouseClicked(MouseEvent e) {
-                if (e.getClickCount() >= 2) {
-                    editorField.selectAll();
-                    noset = true;
-                    new SetDownloadFolderAction(editing).actionPerformed(null);
-                    DownloadFolderColumn.this.stopCellEditing();
-                }
-            }
-        });
-
         editorField.setBorder(new JTextField().getBorder());
         ExtButton bt = new ExtButton(new BasicAction() {
             /**
@@ -61,8 +47,13 @@ public class DownloadFolderColumn extends ExtTextColumn<AbstractNode> {
             public void actionPerformed(ActionEvent e) {
                 editorField.selectAll();
                 noset = true;
-                new SetDownloadFolderAction(editing).actionPerformed(e);
-                DownloadFolderColumn.this.stopCellEditing();
+                SetDownloadFolderAction sna = new SetDownloadFolderAction(editing);
+                sna.actionPerformed(null);
+                if (sna.newValueSet()) {
+                    DownloadFolderColumn.this.stopCellEditing();
+                } else {
+                    noset = false;
+                }
             }
         });
         open = new ExtButton(new BasicAction() {
