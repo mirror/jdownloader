@@ -17,6 +17,7 @@ import jd.controlling.linkcollector.LinkCollectorEvent;
 import jd.controlling.linkcollector.LinkCollectorListener;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
+import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.gui.swing.laf.LookAndFeelController;
 import net.miginfocom.swing.MigLayout;
@@ -122,7 +123,7 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
             }
 
             public void actionPerformed(ActionEvent e) {
-                GraphicalUserInterfaceSettings.LINKGRABBER_SIDEBAR_ENABLED.setValue(!GraphicalUserInterfaceSettings.LINKGRABBER_SIDEBAR_ENABLED.getValue());
+                GraphicalUserInterfaceSettings.CFG.setLinkgrabberSidebarVisible(!GraphicalUserInterfaceSettings.CFG.isLinkgrabberSidebarVisible());
             }
         });
         showHideSidebar.setSelected(GraphicalUserInterfaceSettings.LINKGRABBER_SIDEBAR_ENABLED.getValue());
@@ -158,7 +159,9 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
 
         // showHideSidebar.setVisible(GraphicalUserInterfaceSettings.LINKGRABBER_SIDEBAR_ENABLED.getValue());
         GraphicalUserInterfaceSettings.LINKGRABBER_SIDEBAR_ENABLED.getEventSender().addListener(this);
+
         GraphicalUserInterfaceSettings.LINKGRABBER_SIDEBAR_TOGGLE_ENABLED.getEventSender().addListener(this);
+        GraphicalUserInterfaceSettings.LINKGRABBER_SIDEBAR_VISIBLE.getEventSender().addListener(this);
     }
 
     private void setFilteredAvailable(final int size) {
@@ -186,9 +189,9 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
         rightBar.removeAll();
         rightBar.add(confirmAll, "height 24!");
         rightBar.add(popupConfirm, "height 24!,width 12!");
-        if (GraphicalUserInterfaceSettings.LINKGRABBER_SIDEBAR_TOGGLE_ENABLED.getValue()) rightBar.add(showHideSidebar, "height 24!,width 24!,gapleft 4");
+        if (GraphicalUserInterfaceSettings.LINKGRABBER_SIDEBAR_TOGGLE_ENABLED.getValue() && GraphicalUserInterfaceSettings.LINKGRABBER_SIDEBAR_ENABLED.getValue()) rightBar.add(showHideSidebar, "height 24!,width 24!,gapleft 4");
 
-        if (GraphicalUserInterfaceSettings.CFG.isLinkgrabberSidebarEnabled()) {
+        if (GraphicalUserInterfaceSettings.CFG.isLinkgrabberSidebarEnabled() && GraphicalUserInterfaceSettings.LINKGRABBER_SIDEBAR_VISIBLE.getValue()) {
 
             if (sidebarScrollPane == null) {
                 createSidebar();
@@ -287,7 +290,10 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
     }
 
     public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
-        System.out.println(1);
+        if (!newValue && keyHandler == GraphicalUserInterfaceSettings.LINKGRABBER_SIDEBAR_VISIBLE) {
+            JDGui.help(_GUI._.LinkGrabberPanel_onConfigValueModified_title_(), _GUI._.LinkGrabberPanel_onConfigValueModified_msg_(), NewTheme.I().getIcon("warning_green", 32));
+
+        }
         new EDTRunner() {
 
             @Override
@@ -299,5 +305,4 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
             }
         };
     }
-
 }

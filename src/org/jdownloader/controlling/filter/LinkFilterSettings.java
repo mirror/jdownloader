@@ -2,13 +2,19 @@ package org.jdownloader.controlling.filter;
 
 import java.util.ArrayList;
 
+import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.OnlineStatusFilter;
+import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.OnlineStatusFilter.OnlineStatus;
+import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.OnlineStatusFilter.OnlineStatusMatchtype;
+
 import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
-import org.appwork.storage.config.annotations.DefaultJsonObject;
+import org.appwork.storage.config.annotations.DefaultFactory;
+import org.appwork.storage.config.defaults.AbstractDefaultFactory;
 import org.appwork.storage.config.handler.BooleanKeyHandler;
 import org.appwork.storage.config.handler.StorageHandler;
+import org.jdownloader.translate._JDT;
 
 public interface LinkFilterSettings extends ConfigInterface {
 
@@ -26,7 +32,24 @@ public interface LinkFilterSettings extends ConfigInterface {
     public static final BooleanKeyHandler                  LG_QUICKFILTER_HOSTER_VISIBLE     = SH.getKeyHandler("LinkgrabberHosterQuickfilterEnabled", BooleanKeyHandler.class);
     public static final BooleanKeyHandler                  LG_QUICKFILTER_EXCEPTIONS_VISIBLE = SH.getKeyHandler("LinkgrabberExceptionsQuickfilterEnabled", BooleanKeyHandler.class); ;
 
-    @DefaultJsonObject("[]")
+    class DefaultFilterList extends AbstractDefaultFactory<ArrayList<LinkgrabberFilterRule>> {
+
+        @Override
+        public ArrayList<LinkgrabberFilterRule> getDefaultValue() {
+
+            LinkgrabberFilterRule offline = new LinkgrabberFilterRule();
+            offline.setOnlineStatusFilter(new OnlineStatusFilter(OnlineStatusMatchtype.ISNOT, true, OnlineStatus.ONLINE));
+            offline.setName(_JDT._.LinkFilterSettings_DefaultFilterList_getDefaultValue_());
+            offline.setIconKey("error");
+            offline.setAccept(true);
+            offline.setEnabled(true);
+            ArrayList<LinkgrabberFilterRule> ret = new ArrayList<LinkgrabberFilterRule>();
+            ret.add(offline);
+            return ret;
+        }
+    }
+
+    @DefaultFactory(DefaultFilterList.class)
     @AboutConfig
     ArrayList<LinkgrabberFilterRule> getFilterList();
 

@@ -731,4 +731,7 @@ public interface JdownloaderTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Drop ALL links - Whitelist" })
     String LinkFilterController_deny_all_();
+
+    @Default(lngs = { "en" }, values = { "Offline Files" })
+    String LinkFilterSettings_DefaultFilterList_getDefaultValue_();
 }

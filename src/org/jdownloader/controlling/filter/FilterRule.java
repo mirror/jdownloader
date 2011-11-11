@@ -48,18 +48,7 @@ public abstract class FilterRule implements Storable {
         ArrayList<String> cond = new ArrayList<String>();
 
         if (getOnlineStatusFilter().isEnabled()) {
-            switch (onlineStatusFilter.getOnlineStatus()) {
-            case OFFLINE:
-                cond.add(_GUI._.FilterRule_toString_offline());
-                break;
-            case ONLINE:
-                cond.add(_GUI._.FilterRule_toString_online());
-                break;
-            case UNCHECKABLE:
-                cond.add(_GUI._.FilterRule_toString_uncheckable());
-                break;
-
-            }
+            cond.add(onlineStatusFilter.toString());
 
         }
         if (getFilenameFilter().isEnabled()) {

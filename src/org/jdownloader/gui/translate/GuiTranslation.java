@@ -3151,8 +3151,17 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "File is online" })
     String FilterRule_toString_online();
 
-    @Default(lngs = { "en" }, values = { "Onlinestatus uncheckable" })
+    @Default(lngs = { "en" }, values = { "Filestatus cannot be checked" })
     String FilterRule_toString_uncheckable();
+
+    @Default(lngs = { "en" }, values = { "File isn't offline" })
+    String FilterRule_toString_offline_not();
+
+    @Default(lngs = { "en" }, values = { "File isn't online" })
+    String FilterRule_toString_online_not();
+
+    @Default(lngs = { "en" }, values = { "Filestatus is known" })
+    String FilterRule_toString_uncheckable_not();
 
     @Default(lngs = { "en" }, values = { "Online Status" })
     String ResultTableModel_initColumns_online_();
@@ -3189,5 +3198,11 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Show/Hide Sidebar" })
     String LinkGrabberPanel_LinkGrabberPanel_btn_showsidebar_tt_up();
+
+    @Default(lngs = { "en" }, values = { "Sidebar Hidden!" })
+    String LinkGrabberPanel_onConfigValueModified_title_();
+
+    @Default(lngs = { "en" }, values = { "The Sidebar is hidden now. Click again to show it.\r\n\r\nWARNING: Views and Settings are still active! Check advanced Settings to disable the sidebar and all it's features completely." })
+    String LinkGrabberPanel_onConfigValueModified_msg_();
 
 }

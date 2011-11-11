@@ -17,6 +17,7 @@ import org.jdownloader.gui.views.linkgrabber.quickfilter.QuickFilterExceptionsTa
 import org.jdownloader.gui.views.linkgrabber.quickfilter.QuickFilterHosterTable;
 import org.jdownloader.gui.views.linkgrabber.quickfilter.QuickFilterTypeTable;
 import org.jdownloader.gui.views.linkgrabber.quickfilter.QuickSettingsHeader;
+import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 
 public class LinkGrabberSidebar extends MigPanel {
 
@@ -66,6 +67,18 @@ public class LinkGrabberSidebar extends MigPanel {
 
         quicksettings.add(new Checkbox(LinkFilterSettings.LINK_FILTER_ENABLED, _GUI._.LinkGrabberSidebar_LinkGrabberSidebar_globfilter(), _GUI._.LinkGrabberSidebar_LinkGrabberSidebar_globfilter_tt()));
 
+        // disable auto confirm if user closed sidebar
+        GraphicalUserInterfaceSettings.LINKGRABBER_SIDEBAR_ENABLED.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
+
+            public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
+            }
+
+            public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
+                if (GraphicalUserInterfaceSettings.LINKGRABBER_SIDEBAR_ENABLED.getValue()) {
+                    LinkFilterSettings.AUTO_CONFIRM_ENABLED.setValue(LinkFilterSettings.AUTO_CONFIRM_ENABLED.getDefaultValue());
+                }
+            }
+        });
         LinkFilterSettings.LG_QUICKSETTINGS_VISIBLE.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
 
             public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {

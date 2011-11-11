@@ -126,6 +126,7 @@ public abstract class FilterTable extends ExtTable<Filter> implements PackageCon
         visible.getEventSender().addListener(this);
         init();
         onConfigValueModified(null, visible.getValue());
+        GraphicalUserInterfaceSettings.LINKGRABBER_SIDEBAR_ENABLED.getEventSender().addListener(this, true);
 
     }
 
