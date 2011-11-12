@@ -3007,7 +3007,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Selected Links" })
     String RemoveSelectionAction_RemoveSelectionAction_object_();
 
-    @Default(lngs = { "en" }, values = { "Not selected Links" })
+    @Default(lngs = { "en" }, values = { "Keep only selected Links" })
     String RemoveNonSelectedAction_RemoveNonSelectedAction_object_();
 
     @Default(lngs = { "en" }, values = { "Split Packages By Hoster" })
@@ -3025,7 +3025,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Filter List - filter all links that match these rules." })
     String LinkgrabberFilter_initComponents_filter_();
 
-    @Default(lngs = { "en" }, values = { "Exception List - Grab all links that match these rules anyway." })
+    @Default(lngs = { "en" }, values = { "Views - Grab all links that match these rules anyway." })
     String LinkgrabberFilter_initComponents_exceptions_();
 
     @Default(lngs = { "en" }, values = { "contains not" })
@@ -3175,7 +3175,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Custom Views" })
     String LinkGrabberSidebar_LinkGrabberSidebar_exceptionfilter();
 
-    @Default(lngs = { "en" }, values = { "Show All" })
+    @Default(lngs = { "en" }, values = { "Show/Hide" })
     String EnabledAllAction_EnabledAllAction_object_();
 
     @Default(lngs = { "en" }, values = { "Hide All" })
@@ -3204,5 +3204,11 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "The Sidebar is hidden now. Click again to show it.\r\n\r\nWARNING: Views and Settings are still active! Check advanced Settings to disable the sidebar and all it's features completely." })
     String LinkGrabberPanel_onConfigValueModified_msg_();
+
+    @Default(lngs = { "en" }, values = { "Show Selection" })
+    String EnabledAllAction_EnabledAllAction_object_show();
+
+    @Default(lngs = { "en" }, values = { "Hide Selection" })
+    String EnabledAllAction_EnabledAllAction_object_hide();
 
 }

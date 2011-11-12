@@ -630,7 +630,7 @@ public interface JdownloaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Linkgrabber Filter" })
     String gui_settings_linkgrabber_title();
 
-    @Default(lngs = { "en" }, values = { "The linkfilter is used to filter links. Use it to ignore links, adresses, urls or files based on their properties. Use * as Wildcard, or enable regular expressions." })
+    @Default(lngs = { "en" }, values = { "The linkfilter is used to filter links. Use it to ignore links, adresses, urls or files based on their properties. Add Exceptions to accept special links. Exceptions will be available as a Custom View in the Linkgrabber Sidebar." })
     String gui_settings_linkgrabber_filter_description();
 
     @Default(lngs = { "en" }, values = { "Accessibility" })

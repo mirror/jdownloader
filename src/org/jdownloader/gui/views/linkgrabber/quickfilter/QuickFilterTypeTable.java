@@ -24,7 +24,7 @@ public class QuickFilterTypeTable extends FilterTable {
     private ArrayList<Filter> allFilters;
 
     public QuickFilterTypeTable(Header filetypeFilter, LinkGrabberTable table2Filter) {
-        super(filetypeFilter, table2Filter, LinkFilterSettings.LG_QUICKFILTER_TYPE_VISIBLE);
+        super(filetypeFilter, table2Filter, LinkFilterSettings.LINKGRABBER_FILETYPE_QUICKFILTER_ENABLED);
 
     }
 

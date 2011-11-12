@@ -20,7 +20,7 @@ public class ConfirmAction extends AppAction {
 
     public ConfirmAction(ArrayList<AbstractNode> selection) {
         this.selection = selection;
-        if (LinkFilterSettings.AUTO_START_ENABLED.getValue()) {
+        if (LinkFilterSettings.LINKGRABBER_AUTO_START_ENABLED.getValue()) {
             setName(_GUI._.ConfirmAction_ConfirmAction_context_add_and_start());
             Image add = NewTheme.I().getImage("media-playback-start", 20);
             Image play = NewTheme.I().getImage("add", 12);

@@ -207,7 +207,7 @@ public class CaptchaDialog extends AbstractDialog<String> implements ActionListe
             // panel.setBackground(new Color(col));
         }
         final ImageIcon imageIcon;
-        final int size = GraphicalUserInterfaceSettings.CAPTCHA_SCALE.getValue();
+        final int size = GraphicalUserInterfaceSettings.CAPTCHA_SCALE_FACTOR.getValue();
         if (this.imagefile != null) {
             // imageIcon = new ImageIcon(this.imagefile.getAbsolutePath());
             if (GraphicalUserInterfaceSettings.CFG.isCaptchaBackgroundCleanupEnabled()) {

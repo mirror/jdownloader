@@ -3,11 +3,14 @@ package org.jdownloader.gui.views.linkgrabber.quickfilter;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.event.KeyEvent;
+import java.awt.event.MouseEvent;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 
 import javax.swing.JLabel;
+import javax.swing.JMenu;
 import javax.swing.JPopupMenu;
 import javax.swing.KeyStroke;
 import javax.swing.ListSelectionModel;
@@ -17,6 +20,7 @@ import javax.swing.event.TableModelListener;
 import jd.controlling.IOEQ;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
+import jd.controlling.packagecontroller.AbstractNode;
 import jd.gui.swing.laf.LookAndFeelController;
 
 import org.appwork.scheduler.DelayedRunnable;
@@ -28,12 +32,21 @@ import org.appwork.swing.exttable.AlternateHighlighter;
 import org.appwork.swing.exttable.ExtColumn;
 import org.appwork.swing.exttable.ExtComponentRowHighlighter;
 import org.appwork.swing.exttable.ExtTable;
+import org.appwork.swing.exttable.columns.ExtCheckColumn;
 import org.appwork.utils.ColorUtils;
 import org.appwork.utils.swing.EDTRunner;
+import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTableModel;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTableModelFilter;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberTable;
-import org.jdownloader.gui.views.linkgrabber.sidebar.actions.KeepOnlyAction;
+import org.jdownloader.gui.views.linkgrabber.addlinksdialog.LinkgrabberSettings;
+import org.jdownloader.gui.views.linkgrabber.contextmenu.ConfirmAction;
+import org.jdownloader.gui.views.linkgrabber.contextmenu.CreateDLCAction;
+import org.jdownloader.gui.views.linkgrabber.contextmenu.MergeToPackageAction;
+import org.jdownloader.gui.views.linkgrabber.contextmenu.RemoveIncompleteArchives;
+import org.jdownloader.gui.views.linkgrabber.contextmenu.RemoveNonSelectedAction;
+import org.jdownloader.gui.views.linkgrabber.contextmenu.RemoveSelectionAction;
+import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 
 public abstract class FilterTable extends ExtTable<Filter> implements PackageControllerTableModelFilter<CrawledPackage, CrawledLink>, GenericConfigEventListener<Boolean> {
@@ -131,18 +144,55 @@ public abstract class FilterTable extends ExtTable<Filter> implements PackageCon
     }
 
     protected void onSelectionChanged() {
+        updateSelection();
+    }
+
+    private void updateSelection() {
         // clear selection in other filter tables if we switched to a new one
         if (this.hasFocus()) {
-            ArrayList<PackageControllerTableModelFilter<CrawledPackage, CrawledLink>> tableFilters = getLinkgrabberTable().getPackageControllerTableModel().getTableFilters();
 
-            for (PackageControllerTableModelFilter<CrawledPackage, CrawledLink> f : tableFilters) {
-                if (f instanceof FilterTable && f != this) {
-                    ((FilterTable) f).clearSelection();
+            // LinkFilterSettings.CFG
+            if (LinkgrabberSettings.QUICK_VIEW_SELECTION_ENABLED.getValue()) {
+                ArrayList<Filter> selection = getSelectedFilters();
+                ArrayList<AbstractNode> newSelection = getMatches(selection);
 
-                }
+                getLinkgrabberTable().getExtTableModel().setSelectedObjects(newSelection);
+            }
+        }
+    }
+
+    private ArrayList<Filter> getSelectedFilters() {
+        ArrayList<PackageControllerTableModelFilter<CrawledPackage, CrawledLink>> tableFilters = getLinkgrabberTable().getPackageControllerTableModel().getTableFilters();
+        ArrayList<Filter> ret = new ArrayList<Filter>();
+        for (PackageControllerTableModelFilter<CrawledPackage, CrawledLink> f : tableFilters) {
+            if (f instanceof FilterTable) {
+                ret.addAll(((FilterTable) f).getExtTableModel().getSelectedObjects());
             }
         }
 
+        return ret;
+    }
+
+    public ArrayList<AbstractNode> getMatches(ArrayList<Filter> selection) {
+        List<CrawledLink> all = getVisibleLinks();
+        HashSet<CrawledPackage> packages = new HashSet<CrawledPackage>();
+        CrawledLink link;
+        main: for (Iterator<CrawledLink> it = all.iterator(); it.hasNext();) {
+            link = it.next();
+            for (Filter f : selection) {
+                if (f.isFiltered(link)) {
+                    if (!link.getParentNode().isExpanded()) packages.add(link.getParentNode());
+
+                    continue main;
+                }
+            }
+
+            it.remove();
+        }
+
+        ArrayList<AbstractNode> newSelection = new ArrayList<AbstractNode>(all);
+        newSelection.addAll(packages);
+        return newSelection;
     }
 
     protected JPopupMenu onContextMenu(final JPopupMenu popup, final Filter contextObject, final ArrayList<Filter> selection, final ExtColumn<Filter> column) {
@@ -150,24 +200,59 @@ public abstract class FilterTable extends ExtTable<Filter> implements PackageCon
         for (Filter f : selection) {
             ret.add(f.getName());
         }
-        popup.add(new EnabledAllAction(getFullSelection()));
-        popup.add(new DisableAllAction(getFullSelection()));
 
-        popup.add(new KeepOnlyAction(ret).toContextMenuAction());
+        popup.add(new EnabledAllAction(getExtTableModel().getSelectedObjects()));
+        ArrayList<Filter> nonSel = new ArrayList<Filter>(getExtTableModel().getTableData());
+        for (Filter f : getExtTableModel().getSelectedObjects()) {
+            nonSel.remove(f);
+        }
+
+        // if (LinkgrabberSettings.QUICK_VIEW_SELECTION_ENABLED.getValue()) {
+        ArrayList<AbstractNode> matches = getMatches(getSelectedFilters());
+        popup.add(new ConfirmAction(matches));
+        popup.add(new MergeToPackageAction(matches));
+        popup.add(new CreateDLCAction(matches));
+        JMenu m = new JMenu(_GUI._.ContextMenuFactory_createPopup_cleanup());
+        m.setIcon(NewTheme.I().getIcon("clear", 18));
+        m.add(new RemoveNonSelectedAction(getLinkgrabberTable(), matches).toContextMenuAction());
+        m.add(new RemoveSelectionAction(getLinkgrabberTable(), matches).toContextMenuAction());
+
+        m.add(new RemoveIncompleteArchives(matches).toContextMenuAction());
+        popup.add(m);
+        // }
 
         return popup;
     }
 
-    private ArrayList<Filter> getFullSelection() {
-        ArrayList<Filter> ret = new ArrayList<Filter>();
-        ArrayList<PackageControllerTableModelFilter<CrawledPackage, CrawledLink>> tableFilters = getLinkgrabberTable().getPackageControllerTableModel().getTableFilters();
+    protected void processMouseEvent(final MouseEvent e) {
 
-        for (PackageControllerTableModelFilter<CrawledPackage, CrawledLink> f : tableFilters) {
-            if (f instanceof FilterTable) {
-                ret.addAll(((FilterTable) f).getExtTableModel().getSelectedObjects());
+        if (e.getID() == MouseEvent.MOUSE_PRESSED) {
+            if (e.getButton() == MouseEvent.BUTTON1 && e.getClickCount() == 1) {
+                final int row = this.rowAtPoint(e.getPoint());
+                ExtColumn<Filter> col = this.getExtColumnAtPoint(e.getPoint());
+                if (isRowSelected(row) && !(col instanceof ExtCheckColumn)) {
+                    // clearSelection();
+                    getSelectionModel().removeSelectionInterval(row, row);
+                    return;
+                }
             }
         }
-        return ret;
+        super.processMouseEvent(e);
+
+    }
+
+    @Override
+    protected void onSingleClick(MouseEvent e, Filter obj) {
+        ArrayList<PackageControllerTableModelFilter<CrawledPackage, CrawledLink>> tableFilters = getLinkgrabberTable().getPackageControllerTableModel().getTableFilters();
+
+        if (!e.isControlDown()) {
+            for (PackageControllerTableModelFilter<CrawledPackage, CrawledLink> f : tableFilters) {
+                if (f instanceof FilterTable && f != this) {
+                    ((FilterTable) f).clearSelection();
+
+                }
+            }
+        }
     }
 
     protected boolean processKeyBinding(final KeyStroke stroke, final KeyEvent evt, final int condition, final boolean pressed) {
@@ -175,17 +260,11 @@ public abstract class FilterTable extends ExtTable<Filter> implements PackageCon
 
         switch (evt.getKeyCode()) {
         case KeyEvent.VK_ENTER:
-            for (Filter f : getFullSelection()) {
-                f.setEnabled(true);
-            }
-            return true;
         case KeyEvent.VK_BACK_SPACE:
         case KeyEvent.VK_DELETE:
-            for (Filter f : getFullSelection()) {
-                f.setEnabled(false);
-            }
-
+            new EnabledAllAction(getExtTableModel().getSelectedObjects()).actionPerformed(null);
             return true;
+
         }
         return false;
     }
@@ -201,7 +280,9 @@ public abstract class FilterTable extends ExtTable<Filter> implements PackageCon
         }
         setVisible(newData.size() > 0);
         filters = newData;
+
         if (visibleKeyHandler.getValue()) getExtTableModel()._fireTableStructureChanged(newData, true);
+        // updateSelection();
 
     }
 
@@ -271,7 +352,7 @@ public abstract class FilterTable extends ExtTable<Filter> implements PackageCon
             linkgrabberTable.getPackageControllerTableModel().removeFilter(this);
             super.setVisible(false);
         }
-        updateQuickFilerTableData();
+        updateAllFiltersInstant();
         linkgrabberTable.getPackageControllerTableModel().recreateModel(false);
     }
 

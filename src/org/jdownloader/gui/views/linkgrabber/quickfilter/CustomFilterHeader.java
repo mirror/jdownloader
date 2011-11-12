@@ -64,8 +64,8 @@ public class CustomFilterHeader extends MigPanel implements HeaderInterface {
         // Color(LookAndFeelController.getInstance().getLAFOptions().getPanelHeaderLineColor()));
         add(counter);
         add(lbl);
-        keyHandler = LinkFilterSettings.LG_QUICKFILTER_EXCEPTIONS_VISIBLE;
-        checkBox = new ExtCheckBox(LinkFilterSettings.LG_QUICKFILTER_EXCEPTIONS_VISIBLE, lbl, counter);
+        keyHandler = LinkFilterSettings.LINKGRABBER_QUICK_SETTINGS_VISIBLE;
+        checkBox = new ExtCheckBox(LinkFilterSettings.LINKGRABBER_QUICK_SETTINGS_VISIBLE, lbl, counter);
         add(checkBox);
         setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, new JTable().getGridColor()));
 

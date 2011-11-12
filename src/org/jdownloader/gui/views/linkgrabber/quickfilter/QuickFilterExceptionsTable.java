@@ -43,7 +43,7 @@ public class QuickFilterExceptionsTable extends FilterTable {
     private HashMap<FilterRule, Filter> filterMap;
 
     public QuickFilterExceptionsTable(CustomFilterHeader exceptions, LinkGrabberTable table) {
-        super(exceptions, table, LinkFilterSettings.LG_QUICKFILTER_EXCEPTIONS_VISIBLE);
+        super(exceptions, table, LinkFilterSettings.LINKGRABBER_QUICK_SETTINGS_VISIBLE);
         LinkFilterController.getInstance().getEventSender().addListener(new ChangeListener() {
 
             public void onChangeEvent(ChangeEvent event) {

@@ -160,7 +160,7 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
         // showHideSidebar.setVisible(GraphicalUserInterfaceSettings.LINKGRABBER_SIDEBAR_ENABLED.getValue());
         GraphicalUserInterfaceSettings.LINKGRABBER_SIDEBAR_ENABLED.getEventSender().addListener(this);
 
-        GraphicalUserInterfaceSettings.LINKGRABBER_SIDEBAR_TOGGLE_ENABLED.getEventSender().addListener(this);
+        GraphicalUserInterfaceSettings.LINKGRABBER_SIDEBAR_TOGGLE_BUTTON_ENABLED.getEventSender().addListener(this);
         GraphicalUserInterfaceSettings.LINKGRABBER_SIDEBAR_VISIBLE.getEventSender().addListener(this);
     }
 
@@ -189,7 +189,7 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
         rightBar.removeAll();
         rightBar.add(confirmAll, "height 24!");
         rightBar.add(popupConfirm, "height 24!,width 12!");
-        if (GraphicalUserInterfaceSettings.LINKGRABBER_SIDEBAR_TOGGLE_ENABLED.getValue() && GraphicalUserInterfaceSettings.LINKGRABBER_SIDEBAR_ENABLED.getValue()) rightBar.add(showHideSidebar, "height 24!,width 24!,gapleft 4");
+        if (GraphicalUserInterfaceSettings.LINKGRABBER_SIDEBAR_TOGGLE_BUTTON_ENABLED.getValue() && GraphicalUserInterfaceSettings.LINKGRABBER_SIDEBAR_ENABLED.getValue()) rightBar.add(showHideSidebar, "height 24!,width 24!,gapleft 4");
 
         if (GraphicalUserInterfaceSettings.CFG.isLinkgrabberSidebarEnabled() && GraphicalUserInterfaceSettings.LINKGRABBER_SIDEBAR_VISIBLE.getValue()) {
 
@@ -241,7 +241,7 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
         //
         // sidebarScrollPane.setCorner(ScrollPaneConstants.UPPER_RIGHT_CORNER,
         // bt);
-        LinkFilterSettings.LG_QUICKSETTINGS_VISIBLE.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
+        LinkFilterSettings.LINKGRABBER_QUICK_SETTINGS_VISIBLE.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
 
             public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
             }

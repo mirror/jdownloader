@@ -1,5 +1,7 @@
 package org.jdownloader.gui.views.linkgrabber.quickfilter;
 
+import java.util.ArrayList;
+
 import javax.swing.Icon;
 
 import net.miginfocom.swing.MigLayout;
@@ -8,6 +10,7 @@ import org.appwork.swing.exttable.ExtTableModel;
 import org.appwork.swing.exttable.columns.ExtCheckColumn;
 import org.appwork.swing.exttable.columns.ExtLongColumn;
 import org.appwork.swing.exttable.columns.ExtTextColumn;
+import org.appwork.utils.swing.EDTHelper;
 
 public class FilterTableModel extends ExtTableModel<Filter> {
 
@@ -19,6 +22,27 @@ public class FilterTableModel extends ExtTableModel<Filter> {
     public FilterTableModel() {
         super("FilterTableModel");
 
+    }
+
+    public void _fireTableStructureChanged(ArrayList<Filter> newtableData, final boolean refreshSort) {
+        if (refreshSort) {
+            newtableData = this.refreshSort(newtableData);
+        }
+        final ArrayList<Filter> newdata = newtableData;
+        final ArrayList<Filter> selection = new EDTHelper<ArrayList<Filter>>() {
+
+            @Override
+            public ArrayList<Filter> edtRun() {
+                return FilterTableModel.this.getSelectedObjects();
+            }
+
+        }.getReturnValue();
+
+        if (selection != null) {
+            selection.retainAll(newdata);
+        }
+
+        this._replaceTableData(newdata, selection, true);
     }
 
     @Override
@@ -122,7 +146,7 @@ public class FilterTableModel extends ExtTableModel<Filter> {
         ExtTextColumn<Filter> hosterColumn;
         addColumn(hosterColumn = new ExtTextColumn<Filter>("Hoster") {
             {
-                renderer.setLayout(new MigLayout("ins 0", "[grow,fill][]", "[]"));
+                renderer.setLayout(new MigLayout("ins 0", "[grow,fill][]", "[grow,fill]"));
 
             }
 

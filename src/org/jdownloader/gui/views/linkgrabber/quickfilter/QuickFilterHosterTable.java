@@ -31,7 +31,7 @@ public class QuickFilterHosterTable extends FilterTable {
     private LinkedHashMap<String, Filter> filterMap;
 
     public QuickFilterHosterTable(Header hosterFilter, LinkGrabberTable table) {
-        super(hosterFilter, table, LinkFilterSettings.LG_QUICKFILTER_HOSTER_VISIBLE);
+        super(hosterFilter, table, LinkFilterSettings.LINKGRABBER_HOSTER_QUICKFILTER_ENABLED);
 
     }
 
