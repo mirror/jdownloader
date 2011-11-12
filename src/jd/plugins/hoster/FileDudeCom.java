@@ -25,11 +25,11 @@ import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.BrowserAdapter;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
@@ -49,7 +49,8 @@ public class FileDudeCom extends PluginForHost {
         return "http://www.filedude.com/terms";
     }
 
-    private String FILEDUDECAPTCHAREGEX = "\"(http://www.filedude\\.com/captcha/.*?\\.jpg)\"";
+    private String              FILEDUDECAPTCHAREGEX = "\"(http://www.filedude\\.com/captcha/.*?\\.jpg)\"";
+    private static final String SERVERERROR          = "(>Not Found<|>404 Not Found<)";
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
@@ -91,6 +92,7 @@ public class FileDudeCom extends PluginForHost {
         dl = BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
+            if (br.containsHTML(SERVERERROR)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000l);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
@@ -130,6 +132,7 @@ public class FileDudeCom extends PluginForHost {
         jd.plugins.BrowserAdapter.openDownload(br, link, finallink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
+            if (br.containsHTML(SERVERERROR)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000l);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();

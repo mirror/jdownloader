@@ -230,7 +230,8 @@ public class FilEarnCom extends PluginForHost {
     @Override
     public void handlePremium(DownloadLink link, Account account) throws Exception {
         requestFileInformation(link);
-        login(account, false);
+        /** Don't use the saved cookies, maybe they cause errors */
+        login(account, true);
         br.setFollowRedirects(false);
         br.getPage(link.getDownloadURL());
         if (br.containsHTML(">Downloading disabled! We have detected multiple IP addresses accessing this account")) {
