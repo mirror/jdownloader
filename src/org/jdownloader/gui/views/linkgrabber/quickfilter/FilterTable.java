@@ -232,7 +232,12 @@ public abstract class FilterTable extends ExtTable<Filter> implements PackageCon
                 ExtColumn<Filter> col = this.getExtColumnAtPoint(e.getPoint());
                 if (isRowSelected(row) && !(col instanceof ExtCheckColumn)) {
                     // clearSelection();
-                    getSelectionModel().removeSelectionInterval(row, row);
+                    if (getSelectedRows().length > 1) {
+                        getSelectionModel().setSelectionInterval(row, row);
+                    } else {
+                        getSelectionModel().removeSelectionInterval(row, row);
+                    }
+
                     return;
                 }
             }
