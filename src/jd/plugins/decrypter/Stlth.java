@@ -53,70 +53,77 @@ public class Stlth extends PluginForDecrypt {
         } else {
             stealthID = parameter.substring(parameter.lastIndexOf("/") + 1);
         }
-        this.setBrowserExclusive();
-        this.br.setFollowRedirects(true);
-        this.br.getPage(parameter);
-        if (this.br.containsHTML("besucherpass.png")) {
-            final Form form = this.br.getFormBySubmitvalue("Weiter");
+        setBrowserExclusive();
+        br.setFollowRedirects(true);
+        br.getPage(parameter);
+        if (br.containsHTML("besucherpass.png")) {
+            final Form form = br.getFormBySubmitvalue("Weiter");
             form.put("access_pass", Plugin.getUserInput(null, param));
-            this.br.submitForm(form);
+            br.submitForm(form);
         }
         // Captcha
-        if (this.br.containsHTML("Sicherheitsabfrage")) {
+        if (br.containsHTML("Sicherheitsabfrage")) {
             logger.fine("The current page is captcha protected, getting captcha ID...");
             final int max = 3;
             for (int i = 0; i <= max; i++) {
-                final String recaptchaID = this.br.getRegex("k=([a-zA-Z0-9]+)\"").getMatch(0);
-                final Form captchaForm = this.br.getForm(0);
-                if ((recaptchaID == null) || (captchaForm == null)) { return null; }
+                final String recaptchaID = br.getRegex("k=([a-zA-Z0-9]+)\"").getMatch(0);
+                final Form captchaForm = br.getForm(0);
+                if (recaptchaID == null || captchaForm == null) { return null; }
                 logger.fine("The current recaptcha ID is '" + recaptchaID + "'");
                 logger.fine("The current stealth ID is '" + stealthID + "'");
                 final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(this.br);
+                final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
                 rc.setId(recaptchaID);
                 rc.setForm(captchaForm);
                 rc.load();
                 final File cf = rc.downloadCaptcha(this.getLocalCaptchaFile());
                 final String c = this.getCaptchaCode(cf, param);
                 rc.setCode(c);
-                if (this.br.containsHTML("api\\.recaptcha\\.net")) {
+                if (br.containsHTML("api\\.recaptcha\\.net")) {
                     continue;
                 }
                 break;
             }
-            if (this.br.containsHTML("api\\.recaptcha\\.net")) { throw new DecrypterException(DecrypterException.CAPTCHA); }
+            if (br.containsHTML("api\\.recaptcha\\.net")) { throw new DecrypterException(DecrypterException.CAPTCHA); }
         }
-        final String name = this.br.getRegex("class=\"Foldername\">(.*?)<").getMatch(0);
-        final String pass = this.br.getRegex(">Passwort: (.*?)</span>").getMatch(0);
+        final String name = br.getRegex("class=\"Foldername\">(.*?)<").getMatch(0);
+        final String pass = br.getRegex(">Passwort: (.*?)</span>").getMatch(0);
         // Container handling
-        final String containerDownloadLink = this.br.getRegex("\"(http://[a-z]+\\.stealth\\.to/dlc\\.php\\?name=[a-z0-9]+)\"").getMatch(0);
+        final String containerDownloadLink = br.getRegex("\"(http://[a-z]+\\.stealth\\.to/dlc\\.php\\?name=[a-z0-9]+)\"").getMatch(0);
         if (containerDownloadLink == null) {
             logger.warning("containerDownloadLink equals null");
             return null;
         }
-        Browser brc = this.br.cloneBrowser();
+        Browser brc = br.cloneBrowser();
         File file = null;
-        final URLConnectionAdapter con = brc.openGetConnection(containerDownloadLink);
-        if (con.getResponseCode() == 200) {
-            file = JDUtilities.getResourceFile("tmp/stealthto/" + containerDownloadLink.replaceAll("(:|/|\\?|=)", "") + ".dlc");
-            if (file == null) { return null; }
-            file.deleteOnExit();
-            brc.downloadConnection(file, con);
-            if ((file != null) && file.exists() && (file.length() > 100)) {
-                decryptedLinks = JDUtilities.getController().getContainerLinks(file);
+        URLConnectionAdapter con = null;
+        try {
+            con = brc.openGetConnection(containerDownloadLink);
+            if (con.getResponseCode() == 200) {
+                file = JDUtilities.getResourceFile("tmp/stealthto/" + containerDownloadLink.replaceAll("(:|/|\\?|=)", "") + ".dlc");
+                if (file != null) {
+                    file.deleteOnExit();
+                    brc.downloadConnection(file, con);
+                    if (file != null && file.exists() && file.length() > 100) {
+                        decryptedLinks = JDUtilities.getController().getContainerLinks(file);
+                    }
+                }
             }
-        } else {
-            con.disconnect();
-            return null;
+        } finally {
+            try {
+                con.disconnect();
+            } catch (final Throwable e) {
+            }
         }
-        if ((decryptedLinks == null) || (decryptedLinks.size() == 0)) {
+
+        if (decryptedLinks == null || decryptedLinks.size() == 0) {
             // File handling
-            final int filePart = this.br.getRegex("form action").count();
-            brc = this.br.cloneBrowser();
+            final int filePart = br.getRegex("form action").count();
+            brc = br.cloneBrowser();
             if (filePart > 0) {
                 progress.setRange(filePart);
                 for (int i = 0; i < filePart; i++) {
-                    final Form cryptedLink = this.br.getForm(i);
+                    final Form cryptedLink = br.getForm(i);
                     cryptedLink.remove("mirror");
                     brc.submitForm(cryptedLink);
                     if (brc.containsHTML("form action")) {
@@ -124,7 +131,7 @@ public class Stlth extends PluginForDecrypt {
                     }
                     final String decLink = brc.getRegex("<td><iframe src=\"(.*?)\"").getMatch(0);
                     if (decLink != null) {
-                        final DownloadLink dl = this.createDownloadlink(decLink);
+                        final DownloadLink dl = createDownloadlink(decLink);
                         decryptedLinks.add(dl);
                         progress.increase(1);
                     } else {
@@ -140,7 +147,7 @@ public class Stlth extends PluginForDecrypt {
             logger.warning("Decrypter out of date for link: " + parameter);
             return null;
         }
-        if ((name != null) || (pass != null)) {
+        if (name != null || pass != null) {
             final FilePackage fp = FilePackage.getInstance();
             if (name != null) {
                 fp.setName(name.trim());
