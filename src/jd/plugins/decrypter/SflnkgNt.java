@@ -49,7 +49,7 @@ public class SflnkgNt extends PluginForDecrypt {
     private static final String RECAPTCHATEXT         = "(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)";
     private static String       CAPTCHAREGEX1         = "\"(http://safelinking\\.net/includes/captcha_factory/securimage/securimage_show\\.php\\?sid=[a-z0-9]+)\"";
     private static String       CAPTCHAREGEX2         = "\"(http://safelinking\\.net/includes/captcha_factory/3dcaptcha/3DCaptcha\\.php)\"";
-    private static String       CAPTCHATEXT3          = "fancycaptcha\\.css\"";
+    private static String       CAPTCHATEXT3          = "class=\"captcha_image ajax\\-fc\\-container\"";
     private static String       PASSWORDPROTECTEDTEXT = "type=\"password\" name=\"link-password\"";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
@@ -83,7 +83,7 @@ public class SflnkgNt extends PluginForDecrypt {
                     capForm.put("3dcaptcha_response_field", getCaptchaCode(br.getRegex(CAPTCHAREGEX2).getMatch(0), param));
                 } else if (br.containsHTML(CAPTCHATEXT3)) {
                     Browser xmlbrowser = br.cloneBrowser();
-                    xmlbrowser.getPage("http://safelinking.net/includes/captcha_factory/fancycaptcha.php");
+                    xmlbrowser.getPage("http://safelinking.net/includes/captcha_factory/fancycaptcha.php?hash=" + new Regex(parameter, "safelinking\\.net/p/(.+)").getMatch(0));
                     capForm.put("fancy-captcha", xmlbrowser.toString().trim());
                 }
                 br.submitForm(capForm);
@@ -122,6 +122,10 @@ public class SflnkgNt extends PluginForDecrypt {
                     links = br.getRegex("\"(http://safelinking\\.net/d/[a-z0-9]+)\"").getColumn(0);
                     if (links == null || links.length == 0) {
                         links = br.getRegex("class=\"linked\">(http://.*?)</a>").getColumn(0);
+                        if (links == null || links.length == 0) {
+                            String lnks = br.getRegex("class=\"result\\-form\">(.*?)</fieldset></div></div></div></div><div id=\"footer\"").getMatch(0);
+                            if (lnks != null) links = br.getRegex("href=\"(.*?)\"").getColumn(0);
+                        }
                     }
                 }
             }
@@ -131,6 +135,7 @@ public class SflnkgNt extends PluginForDecrypt {
                 if (!link.contains("safelinking.net/")) {
                     decryptedLinks.add(createDownloadlink(link));
                 } else {
+                    if (!link.matches(".*?safelinking\\.net/d/")) continue;
                     br.getPage(link);
                     String finallink = br.getRedirectLocation();
                     if (finallink == null) {
