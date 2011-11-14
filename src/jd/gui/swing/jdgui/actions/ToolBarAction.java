@@ -21,10 +21,10 @@ import java.awt.event.ActionEvent;
 import javax.swing.AbstractAction;
 
 import jd.gui.action.JDAction;
-import jd.gui.swing.GuiRunnable;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.Application;
+import org.appwork.utils.swing.EDTHelper;
 import org.jdownloader.images.NewTheme;
 
 public abstract class ToolBarAction extends JDAction {
@@ -103,9 +103,9 @@ public abstract class ToolBarAction extends JDAction {
 
     @Override
     public void setSelected(final boolean selected) {
-        new GuiRunnable<Object>() {
+        new EDTHelper<Object>() {
             @Override
-            public Object runSave() {
+            public Object edtRun() {
                 setSelectedInternal(selected);
                 return null;
             }

@@ -1,9 +1,9 @@
 package org.jdownloader.extensions.jdfeedme.columns;
 
-import org.jdownloader.extensions.jdfeedme.JDFeedMeFeed;
-
 import jd.gui.swing.components.table.JDTableModel;
 import jd.gui.swing.components.table.JDTextEditorTableColumn;
+
+import org.jdownloader.extensions.jdfeedme.JDFeedMeFeed;
 
 public class DescriptionColumn extends JDTextEditorTableColumn {
 

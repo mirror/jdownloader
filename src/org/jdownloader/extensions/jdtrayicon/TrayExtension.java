@@ -44,14 +44,13 @@ import jd.config.ConfigGroup;
 import jd.controlling.JDController;
 import jd.controlling.JDLogger;
 import jd.controlling.JSonWrapper;
-import jd.controlling.LinkGrabberController;
-import jd.controlling.LinkGrabberControllerEvent;
-import jd.controlling.LinkGrabberControllerListener;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcollector.LinkCollectorEvent;
+import jd.controlling.linkcollector.LinkCollectorListener;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.gui.UserIO;
-import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.SwingGui;
 import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.menu.MenuAction;
@@ -62,37 +61,38 @@ import jd.plugins.AddonPanel;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.Application;
+import org.appwork.utils.swing.EDTHelper;
 import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
 import org.jdownloader.extensions.jdtrayicon.translate.T;
 
-public class TrayExtension extends AbstractExtension<TrayConfig> implements MouseListener, MouseMotionListener, WindowListener, LinkGrabberControllerListener, WindowStateListener, ActionListener, ControlListener {
+public class TrayExtension extends AbstractExtension<TrayConfig> implements MouseListener, MouseMotionListener, WindowListener, WindowStateListener, ActionListener, ControlListener, LinkCollectorListener {
 
     @Override
     protected void stop() throws StopException {
         removeTrayIcon();
-        LinkGrabberController.getInstance().removeListener(this);
         if (guiFrame != null) {
             guiFrame.removeWindowListener(this);
             guiFrame.removeWindowStateListener(this);
             if (!shutdown) miniIt(false);
             guiFrame.setAlwaysOnTop(false);
         }
+        LinkCollector.getInstance().removeListener(this);
         JDController.getInstance().removeControlListener(this);
     }
 
     @Override
     protected void start() throws StartException {
-        new GuiRunnable<Boolean>() {
-
+        if (Application.getJavaVersion() < Application.JAVA16) {
+            logger.severe("Error initializing SystemTray: Tray is supported since Java 1.6. your Version: " + Application.getJavaVersion());
+            throw new StartException("Tray is supported since Java 1.6. your Version: " + Application.getJavaVersion());
+        }
+        new EDTHelper<Boolean>() {
             @Override
-            public Boolean runSave() {
-                if (Application.getJavaVersion() < 16000000) {
-                    logger.severe("Error initializing SystemTray: Tray is supported since Java 1.6. your Version: " + Application.getJavaVersion());
-                    return false;
-                }
+            public Boolean edtRun() {
+
                 if (!SystemTray.isSupported()) {
                     logger.severe("Error initializing SystemTray: Tray isn't supported jet");
                     return false;
@@ -105,19 +105,21 @@ public class TrayExtension extends AbstractExtension<TrayConfig> implements Mous
                             guiFrame.addWindowListener(TrayExtension.this);
                             guiFrame.removeWindowStateListener(TrayExtension.this);
                             guiFrame.addWindowStateListener(TrayExtension.this);
+                            logger.info("Systemtray OK");
+                            initGUI();
+                            JDController.getInstance().addControlListener(TrayExtension.this);
+                            LinkCollector.getInstance().addListener(TrayExtension.this);
                         }
                     }
-                    logger.info("Systemtray OK");
-                    initGUI();
+
                 } catch (Exception e) {
                     return false;
                 }
-                LinkGrabberController.getInstance().addListener(TrayExtension.this);
                 return true;
             }
 
         }.getReturnValue();
-        JDController.getInstance().addControlListener(this);
+
     }
 
     protected void initSettings(ConfigContainer config) {
@@ -382,9 +384,9 @@ public class TrayExtension extends AbstractExtension<TrayConfig> implements Mous
     }
 
     private static void calcLocation(final TrayIconPopup window, final Point p) {
-        new GuiRunnable<Object>() {
+        new EDTHelper<Object>() {
             @Override
-            public Object runSave() {
+            public Object edtRun() {
                 Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
                 int limitX = (int) screenSize.getWidth() / 2;
                 int limitY = (int) screenSize.getHeight() / 2;
@@ -424,9 +426,9 @@ public class TrayExtension extends AbstractExtension<TrayConfig> implements Mous
             if (!checkPassword()) return;
 
         }
-        new GuiRunnable<Object>() {
+        new EDTHelper<Object>() {
             @Override
-            public Object runSave() {
+            public Object edtRun() {
                 /* set visible state */
                 guiFrame.setVisible(!minimize);
                 return null;
@@ -434,9 +436,9 @@ public class TrayExtension extends AbstractExtension<TrayConfig> implements Mous
         }.start();
         if (minimize == false) {
             /* workaround for : toFront() */
-            new GuiRunnable<Object>() {
+            new EDTHelper<Object>() {
                 @Override
-                public Object runSave() {
+                public Object edtRun() {
                     guiFrame.setAlwaysOnTop(true);
                     disableAlwaysonTop.restart();
                     guiFrame.toFront();
@@ -466,7 +468,7 @@ public class TrayExtension extends AbstractExtension<TrayConfig> implements Mous
                     trayIcon.removeMouseMotionListener(ma);
                 }
             }
-        } catch (Exception e) {
+        } catch (Throwable e) {
         }
     }
 
@@ -477,9 +479,9 @@ public class TrayExtension extends AbstractExtension<TrayConfig> implements Mous
     // if (command.equalsIgnoreCase("closetotray")) return
     // subConfig.getBooleanProperty(PROPERTY_CLOSE_TO_TRAY, true);
     // if (command.equalsIgnoreCase("refresh")) {
-    // new GuiRunnable<Object>() {
+    // new EDTHelper<Object>() {
     // @Override
-    // public Object runSave() {
+    // public Object edtRun() {
     // removeTrayIcon();
     // initGUI();
     // return null;
@@ -515,42 +517,6 @@ public class TrayExtension extends AbstractExtension<TrayConfig> implements Mous
     public void windowOpened(WindowEvent e) {
     }
 
-    public void onLinkGrabberControllerEvent(LinkGrabberControllerEvent event) {
-        if (event.getEventID() == LinkGrabberControllerEvent.NEW_LINKS && ((subConfig.getBooleanProperty(PROPERTY_SHOW_ON_LINKGRAB, true) && !guiFrame.isVisible()) || subConfig.getBooleanProperty(PROPERTY_SHOW_ON_LINKGRAB2, false))) {
-            /* dont try to restore jd if password required */
-            if (subConfig.getBooleanProperty(PROPERTY_PASSWORD_REQUIRED, false)) return;
-            if (!guiFrame.isVisible()) {
-                /* set visible */
-                new GuiRunnable<Object>() {
-                    @Override
-                    public Object runSave() {
-                        guiFrame.setVisible(true);
-                        return null;
-                    }
-                }.start();
-            }
-            /* workaround for : toFront() */
-            new GuiRunnable<Object>() {
-                @Override
-                public Object runSave() {
-                    guiFrame.toFront();
-                    return null;
-                }
-            }.start();
-            if (iconified) {
-                /* restore normale state,if windows was iconified */
-                new GuiRunnable<Object>() {
-                    @Override
-                    public Object runSave() {
-                        /* after this normal, its back to iconified */
-                        guiFrame.setState(JFrame.NORMAL);
-                        return null;
-                    }
-                }.start();
-            }
-        }
-    }
-
     public void windowStateChanged(WindowEvent evt) {
         int oldState = evt.getOldState();
         int newState = evt.getNewState();
@@ -569,5 +535,43 @@ public class TrayExtension extends AbstractExtension<TrayConfig> implements Mous
         ConfigContainer cc = new ConfigContainer(getName());
         initSettings(cc);
         configPanel = createPanelFromContainer(cc);
+    }
+
+    public void onLinkCollectorEvent(LinkCollectorEvent event) {
+        if (LinkCollectorEvent.TYPE.COLLECTOR_START.equals(event.getType())) {
+            if ((subConfig.getBooleanProperty(PROPERTY_SHOW_ON_LINKGRAB, true) && !guiFrame.isVisible()) || subConfig.getBooleanProperty(PROPERTY_SHOW_ON_LINKGRAB2, false)) {
+                /* dont try to restore jd if password required */
+                if (subConfig.getBooleanProperty(PROPERTY_PASSWORD_REQUIRED, false)) return;
+                if (!guiFrame.isVisible()) {
+                    /* set visible */
+                    new EDTHelper<Object>() {
+                        @Override
+                        public Object edtRun() {
+                            guiFrame.setVisible(true);
+                            return null;
+                        }
+                    }.start();
+                }
+                /* workaround for : toFront() */
+                new EDTHelper<Object>() {
+                    @Override
+                    public Object edtRun() {
+                        guiFrame.toFront();
+                        return null;
+                    }
+                }.start();
+                if (iconified) {
+                    /* restore normale state,if windows was iconified */
+                    new EDTHelper<Object>() {
+                        @Override
+                        public Object edtRun() {
+                            /* after this normal, its back to iconified */
+                            guiFrame.setState(JFrame.NORMAL);
+                            return null;
+                        }
+                    }.start();
+                }
+            }
+        }
     }
 }

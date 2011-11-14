@@ -5,20 +5,23 @@ import java.util.List;
 
 import javax.swing.JLabel;
 
+import jd.config.Configuration;
+import jd.controlling.ClipboardHandler;
+import jd.controlling.linkcollector.LinkCollectingJob;
+import jd.controlling.linkcollector.LinkCollector;
+import jd.utils.JDUtilities;
+
 import org.jdownloader.extensions.omnibox.omni.Action;
 import org.jdownloader.extensions.omnibox.omni.Proposal;
 import org.jdownloader.extensions.omnibox.omni.ProposalRequest;
 import org.jdownloader.extensions.omnibox.omni.ProposalRequestListener;
 import org.jdownloader.extensions.omnibox.omni.Utils;
 
-import jd.config.Configuration;
-import jd.controlling.ClipboardHandler;
-import jd.controlling.DistributeData;
-import jd.utils.JDUtilities;
-
 public class AwesomeClipboardListener implements ProposalRequestListener {
     private enum actionid {
-        TURNOFF, TURNON, ADDLINKS
+        TURNOFF,
+        TURNON,
+        ADDLINKS
     }
 
     public void performAction(Action action) {
@@ -38,7 +41,7 @@ public class AwesomeClipboardListener implements ProposalRequestListener {
             }
             break;
         case ADDLINKS:
-            new DistributeData(ClipboardHandler.getClipboard().getCurrentClipboardLinks()).start();
+            LinkCollector.getInstance().addCrawlerJob(new LinkCollectingJob(ClipboardHandler.getClipboard().getCurrentClipboardLinks()));
             /*
              * if (ClipboardHandler.getClipboard().isEnabled()) {
              * ClipboardHandler.getClipboard().copyTextToClipboard(data) } else

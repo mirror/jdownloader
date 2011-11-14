@@ -46,6 +46,7 @@ import jd.plugins.download.DownloadInterface.Chunk;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.DomainInfo;
@@ -1020,7 +1021,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      * @return
      */
     public void setDownloadPassword(String pass) {
-        if (pass == null || pass.length() == 0) {
+        if (StringUtils.isEmpty(pass)) {
             this.setProperty(PROPERTY_PASS, Property.NULL);
         } else {
             this.setProperty(PROPERTY_PASS, pass);
@@ -1033,7 +1034,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     }
 
     public void setMD5Hash(String md5) {
-        if (md5 == null || md5.length() == 0) {
+        if (StringUtils.isEmpty(md5)) {
             this.setProperty(PROPERTY_MD5, Property.NULL);
         } else {
             this.setProperty(PROPERTY_MD5, md5);
@@ -1053,7 +1054,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     }
 
     public void setSha1Hash(String sha1) {
-        if (sha1 == null || sha1.length() == 0) {
+        if (StringUtils.isEmpty(sha1)) {
             this.setProperty(PROPERTY_SHA1, Property.NULL);
         } else {
             this.setProperty(PROPERTY_SHA1, sha1);

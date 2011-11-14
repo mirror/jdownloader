@@ -30,9 +30,10 @@ import javax.swing.JScrollPane;
 
 import jd.captcha.gui.ImageComponent;
 import jd.captcha.translate.T;
-import jd.gui.swing.GuiRunnable;
 import jd.gui.userio.DummyFrame;
 import jd.nutils.Screen;
+
+import org.appwork.utils.swing.EDTHelper;
 
 public class BackGroundImageGUIList implements ActionListener {
     public BackGroundImageGUIList(EasyMethodFile methode, JFrame owner) {
@@ -48,8 +49,8 @@ public class BackGroundImageGUIList implements ActionListener {
 
     public void showImages() {
         // Images initialisiert
-        new GuiRunnable<Object>() {
-            public Object runSave() {
+        new EDTHelper<Object>() {
+            public Object edtRun() {
                 imageBox = new JPanel();
                 imageBox.setLayout(new BoxLayout(imageBox, BoxLayout.Y_AXIS));
                 panel.add(imageBox);
@@ -66,8 +67,8 @@ public class BackGroundImageGUIList implements ActionListener {
 
     void showImage(final BackGroundImage bgio) {
         if (bgio == null) return;
-        new GuiRunnable<Object>() {
-            public Object runSave() {
+        new EDTHelper<Object>() {
+            public Object edtRun() {
                 final JPanel tmpPanel = new JPanel();
                 final ImageComponent ic = new ImageComponent(bgio.getImage(manager.methode));
                 tmpPanel.add(ic, BorderLayout.WEST);
@@ -78,8 +79,8 @@ public class BackGroundImageGUIList implements ActionListener {
                 edit.addActionListener(new ActionListener() {
 
                     public void actionPerformed(ActionEvent e) {
-                        new GuiRunnable<Object>() {
-                            public Object runSave() {
+                        new EDTHelper<Object>() {
+                            public Object edtRun() {
 
                                 BackGroundImage dialogImage = bgio.clone();
                                 mainDialog.setAlwaysOnTop(false);
@@ -108,8 +109,8 @@ public class BackGroundImageGUIList implements ActionListener {
                 del.addActionListener(new ActionListener() {
 
                     public void actionPerformed(ActionEvent e) {
-                        new GuiRunnable<Object>() {
-                            public Object runSave() {
+                        new EDTHelper<Object>() {
+                            public Object edtRun() {
                                 tmpPanel.remove(ic);
                                 tmpPanel.remove(del);
                                 tmpPanel.remove(edit);
@@ -132,8 +133,8 @@ public class BackGroundImageGUIList implements ActionListener {
     }
 
     public void show() {
-        new GuiRunnable<Object>() {
-            public Object runSave() {
+        new EDTHelper<Object>() {
+            public Object edtRun() {
                 mainDialog = new JDialog(owner);
                 mainDialog.setAlwaysOnTop(true);
                 mainDialog.setModal(true);
@@ -147,8 +148,8 @@ public class BackGroundImageGUIList implements ActionListener {
         }.waitForEDT();
 
         showImages();
-        new GuiRunnable<Object>() {
-            public Object runSave() {
+        new EDTHelper<Object>() {
+            public Object edtRun() {
                 btAdd = new JButton(T._.gui_menu_add());
                 btExit = new JButton(T._.easycaptcha_backgroundimagetrainer_saveandexit());
                 Box box = new Box(BoxLayout.X_AXIS);
@@ -172,8 +173,8 @@ public class BackGroundImageGUIList implements ActionListener {
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == btExit) {
             manager.save();
-            new GuiRunnable<Object>() {
-                public Object runSave() {
+            new EDTHelper<Object>() {
+                public Object edtRun() {
                     mainDialog.dispose();
                     return null;
                 }

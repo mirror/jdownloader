@@ -31,7 +31,6 @@ import jd.captcha.pixelgrid.Captcha;
 import jd.captcha.translate.T;
 import jd.captcha.utils.Utilities;
 import jd.gui.UserIO;
-import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.components.JDLabelContainer;
 import jd.nutils.JDFlags;
 import jd.nutils.JDImage;
@@ -39,6 +38,7 @@ import jd.nutils.io.JDIO;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.Regex;
+import org.appwork.utils.swing.EDTHelper;
 
 public class EasyMethodFile implements JDLabelContainer, Serializable {
     /**
@@ -110,8 +110,8 @@ public class EasyMethodFile implements JDLabelContainer, Serializable {
                     this.openCaptchaFolder();
                     return "jpg";
                 } else {
-                    return new GuiRunnable<String>() {
-                        public String runSave() {
+                    return new EDTHelper<String>() {
+                        public String edtRun() {
                             if (!new LoadCaptchas(EasyCaptchaTool.ownerFrame, EasyMethodFile.this.file.getName()).start()) {
                                 EasyMethodFile.this.openCaptchaFolder();
                                 return "jpg";

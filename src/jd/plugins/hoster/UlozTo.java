@@ -34,7 +34,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uloz.to" }, urls = { "http://(www\\.)?((uloz\\.to|ulozto\\.sk|ulozto\\.cz|ulozto\\.net)/[0-9]+/|bagruj\\.cz/[a-z0-9]{12}/.*?\\.html)" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uloz.to" }, urls = { "http://(www\\.)?((uloz\\.to|ulozto\\.sk|ulozto\\.cz|ulozto\\.net)/[0-9]+/.+|bagruj\\.cz/[a-z0-9]{12}/.*?\\.html)" }, flags = { 2 })
 public class UlozTo extends PluginForHost {
 
     public UlozTo(PluginWrapper wrapper) {
@@ -48,7 +48,7 @@ public class UlozTo extends PluginForHost {
     }
 
     public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replaceAll("(uloz\\.to|ulozto\\.sk|ulozto\\.cz|ulozto\\.net)", "uloz.to"));
+        link.setUrlDownload(link.getDownloadURL().replaceAll("(uloz\\.to|ulozto\\.sk|ulozto\\.cz|ulozto\\.net)", "ulozto.net"));
     }
 
     public boolean rewriteHost(DownloadLink link) {
@@ -82,10 +82,11 @@ public class UlozTo extends PluginForHost {
         if (filename == null) filename = br.getRegex(Pattern.compile("cptm=;Pe/\\d+/(.*?)\\?b")).getMatch(0);
         String filesize = br.getRegex(Pattern.compile("style=\"top:\\-55px;\"><div>\\d+:\\d+ \\| (.*?)</div></div>")).getMatch(0);
         if (filesize == null) {
-            filesize = br.getRegex("<span>Velikost:</span> <span class=\"green\">(.*?)</span>").getMatch(0);
+            filesize = br.getRegex("class=\"info_velikost\" style=\"top:\\-55px;\">[\t\n\r ]+<div>[\t\n\r ]+\\d{2}:\\d{2}(:\\d{2})? \\| (.*?)</div>").getMatch(1);
             if (filesize == null) {
-                filesize = br.getRegex("class=\"info_velikost\" style=\"top:\\-55px;\">[\t\n\r ]+<div>[\t\n\r ]+\\d{2}:\\d{2}(:\\d{2})? \\| (.*?)</div>").getMatch(1);
+                filesize = br.getRegex("<span>Velikost:</span> <span class=\"green\">(.*?)</span>").getMatch(0);
             }
+
         }
         if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename.trim()));
@@ -113,11 +114,14 @@ public class UlozTo extends PluginForHost {
             if (dllink == null) break;
             URLConnectionAdapter con = null;
             try {
+                br2.setDebug(true);
                 con = br2.openGetConnection(dllink);
                 if (!con.getContentType().contains("html")) {
                     failed = false;
                     break;
                 } else {
+                    br2.followConnection();
+                    if (br2.containsHTML("Stránka nenalezena")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                     br.clearCookies("http://www.uloz.to/");
                     handleDownloadUrl(downloadLink);
                     continue;

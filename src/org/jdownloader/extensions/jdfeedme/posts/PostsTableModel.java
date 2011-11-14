@@ -2,14 +2,14 @@ package org.jdownloader.extensions.jdfeedme.posts;
 
 import java.util.ArrayList;
 
+import jd.gui.swing.components.table.JDTableModel;
+
 import org.jdownloader.extensions.jdfeedme.JDFeedMeFeed;
 import org.jdownloader.extensions.jdfeedme.posts.columns.DownloadColumn;
 import org.jdownloader.extensions.jdfeedme.posts.columns.StatusColumn;
 import org.jdownloader.extensions.jdfeedme.posts.columns.TimestampColumn;
 import org.jdownloader.extensions.jdfeedme.posts.columns.TitleColumn;
 import org.jdownloader.extensions.jdfeedme.posts.columns.VisitColumn;
-
-import jd.gui.swing.components.table.JDTableModel;
 
 public class PostsTableModel extends JDTableModel 
 {

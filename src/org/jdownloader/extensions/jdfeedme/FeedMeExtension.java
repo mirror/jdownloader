@@ -4,20 +4,17 @@ import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 
 import jd.controlling.AccountController;
-import jd.controlling.DistributeData;
 import jd.controlling.JDLogger;
-import jd.controlling.LinkGrabberController;
-import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.gui.swing.GuiRunnable;
+import jd.controlling.linkcollector.LinkCollectingJob;
+import jd.controlling.linkcollector.LinkCollector;
 import jd.gui.swing.components.table.JDTableModel;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.HTMLParser;
 import jd.plugins.Account;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
 
 import org.appwork.utils.Regex;
+import org.appwork.utils.swing.EDTHelper;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionConfigPanel;
@@ -241,10 +238,10 @@ public class FeedMeExtension extends AbstractExtension<FeedMeConfig> implements 
 
                 // since post was probably updates, show changes in the table
                 if (table != null) {
-                    new GuiRunnable<Object>() {
+                    new EDTHelper<Object>() {
 
                         @Override
-                        public Object runSave() {
+                        public Object edtRun() {
 
                             table.refreshModel();
                             table.fireTableDataChanged();
@@ -406,13 +403,9 @@ public class FeedMeExtension extends AbstractExtension<FeedMeConfig> implements 
 
         // LinkGrabberController.getInstance().addLinks(downloadLinks,
         // skipGrabber, autostart);
-        new DistributeData(linksText, skipGrabber).start();
+        LinkCollector.getInstance().addCrawlerJob(new LinkCollectingJob(linksText));
 
         // see if we need to start downloads
-
-        if (gui.getConfig().getStartdownloads()) {
-            DownloadWatchDog.getInstance().startDownloads();
-        }
 
         return true;
     }
@@ -424,27 +417,7 @@ public class FeedMeExtension extends AbstractExtension<FeedMeConfig> implements 
 
         boolean skip_grabber = feed.getSkiplinkgrabber();
         boolean autostart = gui.getConfig().getStartdownloads();
-
-        // handle a direct download
-        if (skip_grabber) {
-            // get all the links from the text
-            ArrayList<DownloadLink> links = new DistributeData(linksText).findLinks();
-
-            // create a new package for the data
-            FilePackage fp = FilePackage.getInstance();
-            fp.setName(post.getTitle() + " [JDFeedMe]");
-            fp.addLinks(links);
-
-            // download the package
-            LinkGrabberController.getInstance().addLinks(links, skip_grabber, autostart);
-
-            // restart the downloads if needed
-            if (autostart) DownloadWatchDog.getInstance().startDownloads();
-        } else // throw into the link grabber using the old code
-        {
-            new DistributeData(linksText, skip_grabber).start();
-        }
-
+        LinkCollector.getInstance().addCrawlerJob(new LinkCollectingJob(linksText));
         return true;
     }
 
@@ -484,10 +457,10 @@ public class FeedMeExtension extends AbstractExtension<FeedMeConfig> implements 
                     // sync the rss feeds if needed
                     if (running) {
                         try {
-                            new GuiRunnable<Object>() {
+                            new EDTHelper<Object>() {
 
                                 @Override
-                                public Object runSave() {
+                                public Object edtRun() {
                                     syncRss();
                                     return null;
                                 }

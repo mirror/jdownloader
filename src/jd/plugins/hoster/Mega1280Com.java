@@ -20,10 +20,10 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mega.1280.com2" }, urls = { "wrh46868ujhewz579htultu7lori6tntoiUNUSED_REGEX" }, flags = { 0 })
 public class Mega1280Com extends PluginForHost {

@@ -8,15 +8,15 @@ import javax.swing.JPanel;
 import javax.swing.ListSelectionModel;
 import javax.swing.SwingUtilities;
 
-import org.jdownloader.extensions.omnibox.OmniboxExtension;
-import org.jdownloader.extensions.omnibox.omni.gui.jlist.AwesomeProposalJList;
-import org.jdownloader.extensions.omnibox.omni.gui.jlist.AwesomeProposalListModel;
-import org.jdownloader.extensions.omnibox.omni.gui.jlist.AwesomeProposalListSelectionModel;
-
 import jd.gui.swing.jdgui.JDGui;
 import net.miginfocom.layout.CC;
 import net.miginfocom.layout.LC;
 import net.miginfocom.swing.MigLayout;
+
+import org.jdownloader.extensions.omnibox.OmniboxExtension;
+import org.jdownloader.extensions.omnibox.omni.gui.jlist.AwesomeProposalJList;
+import org.jdownloader.extensions.omnibox.omni.gui.jlist.AwesomeProposalListModel;
+import org.jdownloader.extensions.omnibox.omni.gui.jlist.AwesomeProposalListSelectionModel;
 
 public class AwesomeProposalPanel extends JPanel{
     private static final long serialVersionUID = 7051440058679012728L;

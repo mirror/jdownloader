@@ -23,11 +23,11 @@ import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pornbanana.com" }, urls = { "http://(www\\.)?pornbanana\\.com/video\\.aspx\\?(\\&)?id=\\d+" }, flags = { 0 })
 public class PornBananaCom extends PluginForHost {

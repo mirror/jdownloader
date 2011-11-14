@@ -49,15 +49,9 @@ import jd.Main;
 import jd.config.ConfigContainer;
 import jd.controlling.JDController;
 import jd.controlling.JDLogger;
-import jd.controlling.LinkCheck;
-import jd.controlling.LinkGrabberDistributeEvent;
-import jd.controlling.downloadcontroller.DownloadController;
-import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.event.ControlEvent;
 import jd.gui.UIConstants;
-import jd.gui.UserIF;
 import jd.gui.UserIO;
-import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.SwingGui;
 import jd.gui.swing.components.Balloon;
 import jd.gui.swing.jdgui.components.StatusBarImpl;
@@ -65,16 +59,12 @@ import jd.gui.swing.jdgui.components.toolbar.MainToolBar;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.gui.swing.jdgui.interfaces.View;
 import jd.gui.swing.jdgui.menu.JDMenuBar;
-import jd.gui.swing.jdgui.views.linkgrabber.LinkGrabberPanel;
-import jd.gui.swing.jdgui.views.linkgrabber.LinkgrabberView;
 import jd.gui.swing.jdgui.views.settings.ConfigurationView;
 import jd.gui.swing.jdgui.views.settings.sidebar.AddonConfig;
 import jd.nutils.JDFlags;
 import jd.nutils.JDImage;
 import jd.nutils.OSDetector;
 import jd.nutils.Screen;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
 import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
 
@@ -92,10 +82,9 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.downloads.DownloadsView;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberView;
 import org.jdownloader.images.NewTheme;
-import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 
-public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
+public class JDGui extends SwingGui {
 
     private static final long serialVersionUID = 1048792964102830601L;
     private static JDGui      INSTANCE;
@@ -108,9 +97,9 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
      */
     public static JDGui getInstance() {
         if (JDGui.INSTANCE == null) {
-            JDGui.INSTANCE = new GuiRunnable<JDGui>() {
+            JDGui.INSTANCE = new EDTHelper<JDGui>() {
                 @Override
-                public JDGui runSave() {
+                public JDGui edtRun() {
                     try {
                         return new JDGui();
                     } finally {
@@ -189,46 +178,6 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
         });
     }
 
-    public void addLinks(final ArrayList<DownloadLink> links, final boolean hidegrabber, final boolean autostart) {
-        if (links.size() == 0) { return; }
-        if (hidegrabber || autostart) {
-            new Thread() {
-                @Override
-                public void run() {
-                    /* TODO: hier autopackaging ? */
-                    final ArrayList<FilePackage> fps = new ArrayList<FilePackage>();
-                    final FilePackage fp = FilePackage.getInstance();
-                    fp.setName("Added " + System.currentTimeMillis());
-                    for (final DownloadLink link : links) {
-                        if (link.getFilePackage() == FilePackage.getDefaultFilePackage()) {
-                            fp.add(link);
-                            if (!fps.contains(fp)) {
-                                fps.add(fp);
-                            }
-                        } else {
-                            if (!fps.contains(link.getFilePackage())) {
-                                fps.add(link.getFilePackage());
-                            }
-                        }
-                    }
-                    LinkCheck.getLinkChecker().checkLinksandWait(links);
-                    if (JsonConfig.create(GeneralSettings.class).isAddNewLinksOnTop()) {
-
-                        DownloadController.getInstance().addAllAt(fps, 0);
-                    } else {
-                        DownloadController.getInstance().addAll(fps);
-                    }
-                    if (autostart) {
-                        DownloadWatchDog.getInstance().startDownloads();
-                    }
-                }
-            }.start();
-        } else {
-            LinkGrabberPanel.getLinkGrabber().addLinks(links);
-            this.requestPanel(UserIF.Panels.LINKGRABBER, null);
-        }
-    }
-
     @Override
     public void closeWindow() {
         if (JDFlags.hasSomeFlags(UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.NO_COUNTDOWN | UserIO.DONT_SHOW_AGAIN_IGNORES_CANCEL, _GUI._.sys_ask_rlyclose()), UserIO.RETURN_OK)) {
@@ -299,7 +248,6 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
         this.linkgrabberView = new LinkGrabberView();
         this.mainTabbedPane.addTab(downloadView);
         this.mainTabbedPane.addTab(this.linkgrabberView);
-        this.mainTabbedPane.addTab(LinkgrabberView.getInstance());
 
         if (JsonConfig.create(GraphicalUserInterfaceSettings.class).isConfigViewVisible()) {
             this.mainTabbedPane.addTab(ConfigurationView.getInstance());
@@ -327,9 +275,9 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
                 private static final long serialVersionUID = 9149139888018750308L;
 
                 public void actionPerformed(ActionEvent e) {
-                    new GuiRunnable<Object>() {
+                    new EDTHelper<Object>() {
                         @Override
-                        public Object runSave() {
+                        public Object edtRun() {
                             JDGui.this.getMainFrame().setVisible(false);
                             return null;
                         }
@@ -417,9 +365,9 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
     }
 
     protected void internalSetWaiting(final boolean b) {
-        new GuiRunnable<Object>() {
+        new EDTHelper<Object>() {
             @Override
-            public Object runSave() {
+            public Object edtRun() {
                 JDGui.this.getMainFrame().setGlassPane(JDGui.this.waitingPane);
                 JDGui.this.waitingPane.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
                 JDGui.this.getMainFrame().getGlassPane().setVisible(b);
@@ -462,9 +410,9 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
 
     @Override
     public void requestPanel(final Panels panel, final Object param) {
-        new GuiRunnable<Object>() {
+        new EDTHelper<Object>() {
             @Override
-            public Object runSave() {
+            public Object edtRun() {
                 switch (panel) {
                 case DOWNLOADLIST:
                     JDGui.this.mainTabbedPane.setSelectedComponent(JDGui.this.downloadView);
@@ -570,9 +518,9 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
     }
 
     public void setWindowTitle(final String msg) {
-        new GuiRunnable<Object>() {
+        new EDTHelper<Object>() {
             @Override
-            public Object runSave() {
+            public Object edtRun() {
                 JDGui.this.mainFrame.setTitle(msg);
                 return null;
             }
@@ -632,9 +580,9 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
              * without trayicon also dont close/exit for macos
              */
             if (OSDetector.isMac()) {
-                new GuiRunnable<Object>() {
+                new EDTHelper<Object>() {
                     @Override
-                    public Object runSave() {
+                    public Object edtRun() {
                         /* set visible state */
                         JDGui.this.getMainFrame().setVisible(false);
                         return null;

@@ -18,10 +18,10 @@ package org.jdownloader.extensions.schedule.columns;
 
 import java.text.SimpleDateFormat;
 
-import org.jdownloader.extensions.schedule.Actions;
-
 import jd.gui.swing.components.table.JDTableModel;
 import jd.gui.swing.components.table.JDTextTableColumn;
+
+import org.jdownloader.extensions.schedule.Actions;
 
 public class TimeColumn extends JDTextTableColumn {
 

@@ -33,13 +33,13 @@ import javax.swing.JSpinner;
 import javax.swing.SpinnerNumberModel;
 
 import jd.gui.UserIO;
-import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.jdgui.actions.ToolBarAction;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.gui.swing.jdgui.views.ViewToolbar;
 import jd.nutils.JDFlags;
 import net.miginfocom.swing.MigLayout;
 
+import org.appwork.utils.swing.EDTHelper;
 import org.jdownloader.extensions.jdfeedme.dialogs.AddFeedDialog;
 import org.jdownloader.extensions.jdfeedme.dialogs.ComboDialog;
 import org.jdownloader.extensions.jdfeedme.posts.JDFeedMePost;
@@ -113,10 +113,10 @@ public class JDFeedMeGui extends SwitchPanel implements KeyListener, ActionListe
             @Override
             public void onAction(final ActionEvent e) {
                 table.editingStopped(null);
-                new GuiRunnable<Object>() {
+                new EDTHelper<Object>() {
 
                     @Override
-                    public Object runSave() {
+                    public Object edtRun() {
 
                         /*
                          * CODE_FOR_INTERFACE_5_START int flags =
@@ -179,10 +179,10 @@ public class JDFeedMeGui extends SwitchPanel implements KeyListener, ActionListe
 
             @Override
             public void onAction(ActionEvent e) {
-                new GuiRunnable<Object>() {
+                new EDTHelper<Object>() {
 
                     @Override
-                    public Object runSave() {
+                    public Object edtRun() {
                         int[] rows = table.getSelectedRows();
                         table.editingStopped(null);
                         if (rows.length == 0) return null;
@@ -235,10 +235,10 @@ public class JDFeedMeGui extends SwitchPanel implements KeyListener, ActionListe
             @Override
             public void onAction(ActionEvent e) {
 
-                new GuiRunnable<Object>() {
+                new EDTHelper<Object>() {
 
                     @Override
-                    public Object runSave() {
+                    public Object edtRun() {
                         table.editingStopped(null);
                         int[] rows = table.getSelectedRows();
                         if (rows.length == 0) return null;
@@ -305,10 +305,10 @@ public class JDFeedMeGui extends SwitchPanel implements KeyListener, ActionListe
             @Override
             public void onAction(ActionEvent e) {
 
-                new GuiRunnable<Object>() {
+                new EDTHelper<Object>() {
 
                     @Override
-                    public Object runSave() {
+                    public Object edtRun() {
                         table.editingStopped(null);
                         FeedMeExtension.syncNowEvent();
                         return null;

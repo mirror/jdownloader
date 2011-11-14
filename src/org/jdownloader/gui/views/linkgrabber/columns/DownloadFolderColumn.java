@@ -14,6 +14,7 @@ import net.miginfocom.swing.MigLayout;
 import org.appwork.swing.action.BasicAction;
 import org.appwork.swing.components.ExtButton;
 import org.appwork.swing.exttable.columns.ExtTextColumn;
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.OpenDownloadFolderAction;
@@ -122,7 +123,8 @@ public class DownloadFolderColumn extends ExtTextColumn<AbstractNode> {
 
     @Override
     protected void setStringValue(String value, AbstractNode object) {
-        if (object instanceof CrawledPackage && value != null) {
+        if (StringUtils.isEmpty(value)) return;
+        if (object instanceof CrawledPackage) {
             File file = new File(value);
             if (SetDownloadFolderAction.isDownloadFolderValid(file)) ((CrawledPackage) object).setDownloadFolder(value);
         }

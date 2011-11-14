@@ -3,9 +3,9 @@ package org.jdownloader.extensions.jdfeedme;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import org.jdownloader.extensions.jdfeedme.posts.JDFeedMePost;
-
 import jd.gui.swing.components.table.JDTable;
+
+import org.jdownloader.extensions.jdfeedme.posts.JDFeedMePost;
 
 public class JDFeedMeTable extends JDTable {
 	

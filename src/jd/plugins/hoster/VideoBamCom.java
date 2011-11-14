@@ -24,11 +24,11 @@ import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "videobam.com" }, urls = { "http://(www\\.)?videobam\\.com/(?!user|faq|login|dmca|signup|terms)(videos/download/)?[A-Za-z0-9]+" }, flags = { 0 })
 public class VideoBamCom extends PluginForHost {

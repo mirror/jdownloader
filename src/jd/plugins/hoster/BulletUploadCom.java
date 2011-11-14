@@ -32,18 +32,18 @@ import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.parser.html.HTMLParser;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision: 15196 $", interfaceVersion = 2, names = { "bulletupload.com" }, urls = { "http://(www\\.)?bulletupload\\.com/[a-z0-9]{12}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bulletupload.com" }, urls = { "http://(www\\.)?bulletupload\\.com/[a-z0-9]{12}" }, flags = { 0 })
 public class BulletUploadCom extends PluginForHost {
 
     public BulletUploadCom(PluginWrapper wrapper) {

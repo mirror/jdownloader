@@ -16,10 +16,10 @@
 
 package org.jdownloader.extensions.schedule.columns;
 
-import org.jdownloader.extensions.schedule.Actions;
-
 import jd.gui.swing.components.table.JDCheckBoxTableColumn;
 import jd.gui.swing.components.table.JDTableModel;
+
+import org.jdownloader.extensions.schedule.Actions;
 
 public class EnabledColumn extends JDCheckBoxTableColumn {
 

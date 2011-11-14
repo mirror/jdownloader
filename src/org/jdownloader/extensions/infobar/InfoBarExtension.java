@@ -6,11 +6,11 @@ import java.util.ArrayList;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.ConfigGroup;
-import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.plugins.AddonPanel;
 
 import org.appwork.utils.Application;
+import org.appwork.utils.swing.EDTHelper;
 import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.StartException;
@@ -57,10 +57,10 @@ public class InfoBarExtension extends AbstractExtension<InfoBarConfig> {
         } else {
             newValue = Integer.parseInt(value.toString());
         }
-        new GuiRunnable<Object>() {
+        new EDTHelper<Object>() {
 
             @Override
-            public Object runSave() {
+            public Object edtRun() {
                 try {
                     com.sun.awt.AWTUtilities.setWindowOpacity(infoDialog, (float) (newValue / 100.0));
                 } catch (final Throwable e) {

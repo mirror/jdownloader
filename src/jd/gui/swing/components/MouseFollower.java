@@ -22,7 +22,7 @@ import java.awt.Point;
 import javax.swing.JComponent;
 import javax.swing.JWindow;
 
-import jd.gui.swing.GuiRunnable;
+import org.appwork.utils.swing.EDTHelper;
 
 public class MouseFollower {
 
@@ -44,12 +44,12 @@ public class MouseFollower {
                             follower = null;
                             return;
                         }
-                        new GuiRunnable<Object>() {
+                        new EDTHelper<Object>() {
 
                             private Point loc;
 
                             @Override
-                            public Object runSave() {
+                            public Object edtRun() {
                                 try {
                                     loc = MouseInfo.getPointerInfo().getLocation();
                                     loc.x += 10;

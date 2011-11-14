@@ -43,7 +43,6 @@ import javax.swing.SpinnerNumberModel;
 
 import jd.captcha.easy.EasyMethodFile;
 import jd.captcha.translate.T;
-import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.components.JDTextField;
 import jd.http.Browser;
 import jd.nutils.JDImage;
@@ -52,6 +51,8 @@ import jd.parser.html.Form;
 import jd.parser.html.HTMLParser;
 import jd.parser.html.InputField;
 import jd.utils.JDUtilities;
+
+import org.appwork.utils.swing.EDTHelper;
 
 public class LoadCaptchas {
     private static final long    serialVersionUID = 1L;
@@ -115,8 +116,8 @@ public class LoadCaptchas {
             selectedImage = LoadImage.loadFile(host);
             loadinfo = getLoadInfo(selectedImage);
             if (loadinfo == null) return false;
-            final JDialog dialog = new GuiRunnable<JDialog>() {
-                public JDialog runSave() {
+            final JDialog dialog = new EDTHelper<JDialog>() {
+                public JDialog edtRun() {
                     return new JDialog(owner);
                 }
             }.getReturnValue();
@@ -187,8 +188,8 @@ public class LoadCaptchas {
                     final int width = (int) (captchaImage.getWidth(null) / faktor);
                     final int height = (int) (captchaImage.getHeight(null) / faktor);
                     try {
-                        JButton ic = new GuiRunnable<JButton>() {
-                            public JButton runSave() {
+                        JButton ic = new EDTHelper<JButton>() {
+                            public JButton edtRun() {
                                 return new JButton(new ImageIcon(captchaImage.getScaledInstance(width, height, Image.SCALE_SMOOTH)));
                             }
                         }.getReturnValue();
@@ -205,8 +206,8 @@ public class LoadCaptchas {
                     }
 
                 }
-                final JPanel panel = new GuiRunnable<JPanel>() {
-                    public JPanel runSave() {
+                final JPanel panel = new EDTHelper<JPanel>() {
+                    public JPanel edtRun() {
                         return new JPanel(new GridLayout((int) Math.ceil(((double) bts.size()) / 5), 5));
                     }
                 }.getReturnValue();
@@ -214,8 +215,8 @@ public class LoadCaptchas {
                     panel.add(button);
 
                 }
-                new GuiRunnable<Object>() {
-                    public Object runSave() {
+                new EDTHelper<Object>() {
+                    public Object edtRun() {
                         dialog.add(new JScrollPane(panel));
 
                         dialog.pack();
@@ -306,8 +307,8 @@ public class LoadCaptchas {
      * @param dir
      */
     private static void openDir(final String dir) {
-        new GuiRunnable<Object>() {
-            public Object runSave() {
+        new EDTHelper<Object>() {
+            public Object edtRun() {
                 if (JOptionPane.showConfirmDialog(null, "Captcha Ordner:" + dir + " jetzt öffnen?") == JOptionPane.YES_OPTION) JDUtilities.openExplorer(new File(dir));
 
                 return null;
@@ -322,16 +323,16 @@ public class LoadCaptchas {
      * @return
      */
     private LoadInfo getLoadInfo(final LoadImage loadImage) {
-        final JDialog dialog = new GuiRunnable<JDialog>() {
-            public JDialog runSave() {
+        final JDialog dialog = new EDTHelper<JDialog>() {
+            public JDialog edtRun() {
                 return new JDialog(owner);
             }
         }.getReturnValue();
         dialog.setModal(true);
         dialog.setAlwaysOnTop(true);
 
-        final JPanel p = new GuiRunnable<JPanel>() {
-            public JPanel runSave() {
+        final JPanel p = new EDTHelper<JPanel>() {
+            public JPanel edtRun() {
                 JPanel ret = new JPanel(new GridLayout(6, 2));
                 ret.add(new JLabel(T._.easycaptcha_loadcaptchas_link() + ":"));
                 return ret;
@@ -339,24 +340,24 @@ public class LoadCaptchas {
             }
         }.getReturnValue();
 
-        final JDTextField tfl = new GuiRunnable<JDTextField>() {
-            public JDTextField runSave() {
+        final JDTextField tfl = new EDTHelper<JDTextField>() {
+            public JDTextField edtRun() {
                 return new JDTextField();
             }
         }.getReturnValue();
         tfl.setBorder(BorderFactory.createEtchedBorder());
 
         p.add(tfl);
-        JSpinner sm = new GuiRunnable<JSpinner>() {
-            public JSpinner runSave() {
+        JSpinner sm = new EDTHelper<JSpinner>() {
+            public JSpinner edtRun() {
                 p.add(new JLabel(T._.easycaptcha_loadcaptchas_howmuch() + ":"));
                 if (loadImage != null) tfl.setText(loadImage.baseUrl);
                 return new JSpinner(new SpinnerNumberModel(100, 1, 4000, 1));
             }
         }.getReturnValue();
         p.add(sm);
-        JCheckBox followLinks = new GuiRunnable<JCheckBox>() {
-            public JCheckBox runSave() {
+        JCheckBox followLinks = new EDTHelper<JCheckBox>() {
+            public JCheckBox edtRun() {
                 p.add(new JLabel(T._.easycaptcha_loadcaptchas_followlinks() + ":"));
                 JCheckBox checkBox = new JCheckBox();
                 checkBox.setSelected(false);
@@ -364,8 +365,8 @@ public class LoadCaptchas {
                 return checkBox;
             }
         }.getReturnValue();
-        JCheckBox threadedCheck = new GuiRunnable<JCheckBox>() {
-            public JCheckBox runSave() {
+        JCheckBox threadedCheck = new EDTHelper<JCheckBox>() {
+            public JCheckBox edtRun() {
                 p.add(new JLabel(T._.easycaptcha_loadcaptchas_threaded() + ":"));
                 JCheckBox checkBox = new JCheckBox();
                 checkBox.setSelected(false);
@@ -373,8 +374,8 @@ public class LoadCaptchas {
                 return checkBox;
             }
         }.getReturnValue();
-        JCheckBox loadDirect = new GuiRunnable<JCheckBox>() {
-            public JCheckBox runSave() {
+        JCheckBox loadDirect = new EDTHelper<JCheckBox>() {
+            public JCheckBox edtRun() {
                 p.add(new JLabel(T._.easycaptcha_loadcaptchas_loaddirect() + ":"));
                 JCheckBox checkBox = new JCheckBox();
                 checkBox.setSelected(true);
@@ -382,8 +383,8 @@ public class LoadCaptchas {
                 return checkBox;
             }
         }.getReturnValue();
-        JButton ok = new GuiRunnable<JButton>() {
-            public JButton runSave() {
+        JButton ok = new EDTHelper<JButton>() {
+            public JButton edtRun() {
                 return new JButton(T._.gui_btn_ok());
             }
         }.getReturnValue();
@@ -419,8 +420,8 @@ public class LoadCaptchas {
             public void windowOpened(WindowEvent e) {
             }
         };
-        JButton cancel = new GuiRunnable<JButton>() {
-            public JButton runSave() {
+        JButton cancel = new EDTHelper<JButton>() {
+            public JButton edtRun() {
                 return new JButton(T._.gui_btn_cancel());
             }
         }.getReturnValue();
@@ -435,8 +436,8 @@ public class LoadCaptchas {
 
         dialog.addWindowListener(l);
         dialog.add(p);
-        new GuiRunnable<Object>() {
-            public Object runSave() {
+        new EDTHelper<Object>() {
+            public Object edtRun() {
                 dialog.setLocation(Screen.getCenterOfComponent(owner, dialog));
                 dialog.pack();
                 dialog.setAlwaysOnTop(true);

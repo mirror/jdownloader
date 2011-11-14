@@ -10,6 +10,11 @@ import org.jdownloader.gui.translate._GUI;
 
 public class CommentColumn extends ExtTextAreaColumn<AbstractNode> {
 
+    /**
+     * 
+     */
+    private static final long serialVersionUID = 3276217379318150024L;
+
     public CommentColumn() {
         super(_GUI._.CommentColumn_CommentColumn_());
     }
@@ -32,18 +37,12 @@ public class CommentColumn extends ExtTextAreaColumn<AbstractNode> {
             dl = ((CrawledLink) object).getDownloadLink();
         }
         if (dl != null) {
-            dl.setSourcePluginComment(value);
+            dl.setComment(value);
             return;
         }
         if (object instanceof FilePackage) {
             ((FilePackage) object).setComment(value);
         }
-    }
-
-    @Override
-    public void resetEditor() {
-        super.resetEditor();
-        // editor.setBorder(null);
     }
 
     @Override

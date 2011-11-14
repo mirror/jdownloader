@@ -17,18 +17,14 @@
 package jd.gui.swing.jdgui.menu.actions;
 
 import java.awt.event.ActionEvent;
-import java.util.ArrayList;
 import java.util.LinkedList;
 
 import jd.controlling.IOEQ;
-import jd.controlling.LinkGrabberController;
 import jd.controlling.downloadcontroller.DownloadController;
 import jd.gui.UserIO;
 import jd.gui.swing.jdgui.actions.ToolBarAction;
-import jd.gui.swing.jdgui.views.linkgrabber.LinkGrabberPanel;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.plugins.LinkGrabberFilePackage;
 
 import org.jdownloader.gui.translate._GUI;
 
@@ -47,38 +43,24 @@ public class RemoveDisabledAction extends ToolBarAction {
             public void run() {
                 if (!UserIO.isOK(UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.DONT_SHOW_AGAIN_IGNORES_CANCEL, _GUI._.jd_gui_swing_jdgui_menu_actions_RemoveDisabledAction_message()))) return;
 
-                if (!LinkGrabberPanel.getLinkGrabber().isNotVisible()) {
-                    synchronized (LinkGrabberController.ControllerLock) {
-                        synchronized (LinkGrabberController.getInstance().getPackages()) {
-                            ArrayList<LinkGrabberFilePackage> selected_packages = new ArrayList<LinkGrabberFilePackage>(LinkGrabberController.getInstance().getPackages());
-                            selected_packages.add(LinkGrabberController.getInstance().getFilterPackage());
-                            for (LinkGrabberFilePackage fp2 : selected_packages) {
-                                ArrayList<DownloadLink> links = new ArrayList<DownloadLink>(fp2.getDownloadLinks());
-                                for (DownloadLink dl : links) {
-                                    if (!dl.isEnabled()) fp2.remove(dl);
-                                }
+                DownloadController dlc = DownloadController.getInstance();
+                LinkedList<DownloadLink> downloadstodelete = new LinkedList<DownloadLink>();
+                final boolean readL = DownloadController.getInstance().readLock();
+                try {
+                    for (FilePackage fp : dlc.getPackages()) {
+                        synchronized (fp) {
+                            for (DownloadLink dl : fp.getChildren()) {
+                                if (!dl.isEnabled()) downloadstodelete.add(dl);
                             }
                         }
                     }
-                } else {
-                    DownloadController dlc = DownloadController.getInstance();
-                    LinkedList<DownloadLink> downloadstodelete = new LinkedList<DownloadLink>();
-                    final boolean readL = DownloadController.getInstance().readLock();
-                    try {
-                        for (FilePackage fp : dlc.getPackages()) {
-                            synchronized (fp) {
-                                for (DownloadLink dl : fp.getChildren()) {
-                                    if (!dl.isEnabled()) downloadstodelete.add(dl);
-                                }
-                            }
-                        }
-                    } finally {
-                        dlc.readUnlock(readL);
-                    }
-                    for (DownloadLink dl : downloadstodelete) {
-                        dl.getFilePackage().remove(dl);
-                    }
+                } finally {
+                    dlc.readUnlock(readL);
                 }
+                for (DownloadLink dl : downloadstodelete) {
+                    dl.getFilePackage().remove(dl);
+                }
+
             }
 
         });

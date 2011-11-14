@@ -1,12 +1,12 @@
 package org.jdownloader.extensions.folderwatch;
 
 import java.awt.event.ActionEvent;
+import java.io.File;
 
 import javax.swing.JScrollPane;
 
 import jd.controlling.JSonWrapper;
 import jd.gui.UserIO;
-import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.jdgui.actions.ToolBarAction;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.gui.swing.jdgui.views.InfoPanel;
@@ -14,6 +14,7 @@ import jd.gui.swing.jdgui.views.ViewToolbar;
 import jd.nutils.JDFlags;
 import net.miginfocom.swing.MigLayout;
 
+import org.appwork.utils.swing.EDTHelper;
 import org.jdownloader.extensions.folderwatch.data.History;
 import org.jdownloader.extensions.folderwatch.data.HistoryEntry;
 import org.jdownloader.extensions.folderwatch.translate.T;
@@ -52,9 +53,9 @@ public class FolderWatchPanel extends SwitchPanel {
 
             @Override
             public void onAction(final ActionEvent e) {
-                new GuiRunnable<Object>() {
+                new EDTHelper<Object>() {
                     @Override
-                    public Object runSave() {
+                    public Object edtRun() {
                         if (JDFlags.hasSomeFlags(UserIO.getInstance().requestConfirmDialog(UserIO.NO_COUNTDOWN, T._.action_folderwatch_clear_message()), UserIO.RETURN_OK)) {
                             History.clear();
                             config.setProperty(FolderWatchConstants.PROPERTY_HISTORY, null);
@@ -92,16 +93,16 @@ public class FolderWatchPanel extends SwitchPanel {
 
             @Override
             public void onAction(final ActionEvent e) {
-                new GuiRunnable<Object>() {
+                new EDTHelper<Object>() {
                     @Override
-                    public Object runSave() {
+                    public Object edtRun() {
 
                         if (table.getSelectedRowCount() > 0) {
                             int[] rows = table.getSelectedRows();
 
                             for (int row : rows) {
                                 HistoryEntry container = (HistoryEntry) table.getValueAt(row, 2);
-                                owner.importContainer(container.getAbsolutePath());
+                                owner.importContainer(new File(container.getAbsolutePath()));
                             }
                         }
                         return null;
@@ -161,9 +162,9 @@ public class FolderWatchPanel extends SwitchPanel {
         }
 
         public void update() {
-            new GuiRunnable<Object>() {
+            new EDTHelper<Object>() {
                 @Override
-                public Object runSave() {
+                public Object edtRun() {
                     HistoryEntry container = (HistoryEntry) table.getValueAt(table.getSelectedRow(), 3);
 
                     String info = "";

@@ -5,10 +5,10 @@ import java.io.File;
 import java.util.ArrayList;
 
 import jd.gui.UserIO;
-import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.jdgui.interfaces.ContextMenuAction;
 import jd.plugins.FilePackage;
 
+import org.appwork.utils.swing.EDTHelper;
 import org.jdownloader.gui.translate._GUI;
 
 public class PackageDirectoryAction extends ContextMenuAction {
@@ -34,9 +34,9 @@ public class PackageDirectoryAction extends ContextMenuAction {
     }
 
     public void actionPerformed(ActionEvent e) {
-        new GuiRunnable<Object>() {
+        new EDTHelper<Object>() {
             @Override
-            public Object runSave() {
+            public Object edtRun() {
                 File[] files = UserIO.getInstance().requestFileChooser(null, null, UserIO.DIRECTORIES_ONLY, null, null, new File(packages.get(0).getDownloadDirectory()), null);
                 if (files == null) return null;
 
@@ -45,6 +45,7 @@ public class PackageDirectoryAction extends ContextMenuAction {
                 }
                 return null;
             }
+
         }.start();
     }
 

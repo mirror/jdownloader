@@ -29,7 +29,6 @@ import javax.swing.JSeparator;
 import javax.swing.JTextPane;
 import javax.swing.JWindow;
 
-import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.SwingGui;
 import jd.gui.swing.components.linkbutton.JLink;
 import jd.gui.swing.jdgui.interfaces.JDMouseAdapter;
@@ -38,6 +37,7 @@ import jd.nutils.Screen;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.storage.config.JsonConfig;
+import org.appwork.utils.swing.EDTHelper;
 import org.jdesktop.swingworker.SwingWorker;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
@@ -65,10 +65,10 @@ public class Balloon {
 
         LASTSTRING = title + message;
 
-        new GuiRunnable<Object>() {
+        new EDTHelper<Object>() {
 
             @Override
-            public Object runSave() {
+            public Object edtRun() {
 
                 final JWindow w = new JWindow() {
 

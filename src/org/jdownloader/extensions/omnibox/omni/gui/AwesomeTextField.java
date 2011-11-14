@@ -7,8 +7,8 @@ import java.awt.event.KeyListener;
 
 import javax.swing.JTextField;
 
-import org.jdownloader.extensions.omnibox.omni.Omni;
 import org.jdownloader.extensions.omnibox.omni.Action;
+import org.jdownloader.extensions.omnibox.omni.Omni;
 
 
 public class AwesomeTextField extends JTextField implements FocusListener, KeyListener {

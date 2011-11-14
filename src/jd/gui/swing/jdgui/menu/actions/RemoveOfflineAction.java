@@ -17,18 +17,14 @@
 package jd.gui.swing.jdgui.menu.actions;
 
 import java.awt.event.ActionEvent;
-import java.util.ArrayList;
 import java.util.LinkedList;
 
 import jd.controlling.IOEQ;
-import jd.controlling.LinkGrabberController;
 import jd.controlling.downloadcontroller.DownloadController;
 import jd.gui.UserIO;
 import jd.gui.swing.jdgui.actions.ToolBarAction;
-import jd.gui.swing.jdgui.views.linkgrabber.LinkGrabberPanel;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.plugins.LinkGrabberFilePackage;
 import jd.plugins.LinkStatus;
 
 import org.jdownloader.gui.translate._GUI;
@@ -52,32 +48,21 @@ public class RemoveOfflineAction extends ToolBarAction {
             public void run() {
                 if (!UserIO.isOK(UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.DONT_SHOW_AGAIN_IGNORES_CANCEL, _GUI._.jd_gui_swing_jdgui_menu_actions_RemoveOfflineAction_message()))) return;
 
-                if (!LinkGrabberPanel.getLinkGrabber().isNotVisible()) {
-                    synchronized (LinkGrabberController.ControllerLock) {
-                        synchronized (LinkGrabberController.getInstance().getPackages()) {
-                            ArrayList<LinkGrabberFilePackage> selected_packages = new ArrayList<LinkGrabberFilePackage>(LinkGrabberController.getInstance().getPackages());
-                            selected_packages.add(LinkGrabberController.getInstance().getFilterPackage());
-                            for (LinkGrabberFilePackage fp2 : selected_packages) {
-                                fp2.removeOffline();
-                            }
-                        }
+                DownloadController dlc = DownloadController.getInstance();
+                LinkedList<DownloadLink> downloadstodelete = new LinkedList<DownloadLink>();
+                final boolean readL = DownloadController.getInstance().readLock();
+                try {
+                    for (FilePackage fp : dlc.getPackages()) {
+                        downloadstodelete.addAll(DownloadController.getInstance().getDownloadLinksbyStatus(fp, LinkStatus.ERROR_FILE_NOT_FOUND));
                     }
-                } else {
-                    DownloadController dlc = DownloadController.getInstance();
-                    LinkedList<DownloadLink> downloadstodelete = new LinkedList<DownloadLink>();
-                    final boolean readL = DownloadController.getInstance().readLock();
-                    try {
-                        for (FilePackage fp : dlc.getPackages()) {
-                            downloadstodelete.addAll(DownloadController.getInstance().getDownloadLinksbyStatus(fp, LinkStatus.ERROR_FILE_NOT_FOUND));
-                        }
-                    } finally {
-                        DownloadController.getInstance().readUnlock(readL);
-                    }
-
-                    for (DownloadLink dl : downloadstodelete) {
-                        dl.getFilePackage().remove(dl);
-                    }
+                } finally {
+                    DownloadController.getInstance().readUnlock(readL);
                 }
+
+                for (DownloadLink dl : downloadstodelete) {
+                    dl.getFilePackage().remove(dl);
+                }
+
             }
         });
     }

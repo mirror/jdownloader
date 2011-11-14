@@ -674,6 +674,7 @@ public class LinkCrawler implements IOPermission {
             }
             boolean lctb = false;
             LinkCrawlerDistributer dist = null;
+            LinkCrawler previousCrawler = null;
             ArrayList<DownloadLink> decryptedPossibleLinks = null;
             try {
                 /*
@@ -710,12 +711,15 @@ public class LinkCrawler implements IOPermission {
                     /* mark thread to be used by decrypter plugin */
                     lctb = lct.isLinkCrawlerThreadUsedbyDecrypter();
                     lct.setLinkCrawlerThreadUsedbyDecrypter(true);
+                    previousCrawler = lct.getCurrentLinkCrawler();
+                    lct.setCurrentLinkCrawler(this);
                 }
                 decryptedPossibleLinks = plg.decryptContainer(cryptedLink);
             } finally {
                 if (lct != null) {
                     /* reset thread to last known used state */
                     lct.setLinkCrawlerThreadUsedbyDecrypter(lctb);
+                    lct.setCurrentLinkCrawler(previousCrawler);
                 }
             }
             if (decryptedPossibleLinks != null) {

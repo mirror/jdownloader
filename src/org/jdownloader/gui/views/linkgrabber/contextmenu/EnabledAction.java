@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import jd.controlling.IOEQ;
+import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
 import jd.controlling.packagecontroller.AbstractPackageNode;
@@ -86,6 +87,7 @@ public class EnabledAction extends AppAction {
                         a.setEnabled(enable);
                     }
                 }
+                LinkCollector.getInstance().refreshData();
             }
         }, true);
     }

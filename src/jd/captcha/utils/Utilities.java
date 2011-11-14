@@ -27,8 +27,9 @@ import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 
 import jd.controlling.JDLogger;
-import jd.gui.swing.GuiRunnable;
 import jd.utils.JDUtilities;
+
+import org.appwork.utils.swing.EDTHelper;
 
 /**
  * Diese Klasse beinhaltet mehrere Hilfsfunktionen
@@ -116,9 +117,9 @@ public final class Utilities {
      * @return Neues Bild
      */
     public static Image loadImage(final File file) {
-        final GuiRunnable<Image> run = new GuiRunnable<Image>() {
+        final EDTHelper<Image> run = new EDTHelper<Image>() {
             @Override
-            public Image runSave() {
+            public Image edtRun() {
                 final JFrame jf = new JFrame();
                 final Image img = jf.getToolkit().getImage(file.getAbsolutePath());
                 final MediaTracker mediaTracker = new MediaTracker(jf);

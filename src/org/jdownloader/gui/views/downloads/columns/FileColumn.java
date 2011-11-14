@@ -14,21 +14,25 @@ import jd.controlling.packagecontroller.AbstractPackageNode;
 import jd.plugins.DownloadLink;
 
 import org.appwork.swing.exttable.columns.ExtTextColumn;
+import org.appwork.utils.StringUtils;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 
 public class FileColumn extends ExtTextColumn<AbstractNode> {
 
-    private Border    leftGapBorder;
-    private ImageIcon iconPackageOpen;
-    private ImageIcon iconPackageClosed;
+    /**
+     * 
+     */
+    private static final long serialVersionUID = -2963955407564917958L;
+    private Border            leftGapBorder;
+    private ImageIcon         iconPackageOpen;
+    private ImageIcon         iconPackageClosed;
 
     public FileColumn() {
         super(_GUI._.filecolumn_title());
         leftGapBorder = BorderFactory.createEmptyBorder(0, 32, 0, 0);
         iconPackageOpen = NewTheme.I().getIcon("tree_package_open", 32);
         iconPackageClosed = NewTheme.I().getIcon("tree_package_closed", 32);
-
     }
 
     public boolean isPaintWidthLockIcon() {
@@ -45,7 +49,6 @@ public class FileColumn extends ExtTextColumn<AbstractNode> {
         return true;
     }
 
-    //
     @Override
     public int getDefaultWidth() {
         return 350;
@@ -53,15 +56,18 @@ public class FileColumn extends ExtTextColumn<AbstractNode> {
 
     @Override
     public boolean isEditable(AbstractNode obj) {
+        if (obj instanceof CrawledPackage) return true;
+        if (obj instanceof CrawledLink) return true;
         return true;
     }
 
     @Override
-    protected void setStringValue(String value, AbstractNode object) {
+    protected void setStringValue(final String value, final AbstractNode object) {
+        if (StringUtils.isEmpty(value)) return;
         if (object instanceof CrawledPackage) {
-            ((CrawledPackage) object).setAutoPackageName(value);
-        } else {
-            ((CrawledLink) object).getDownloadLink().setFinalFileName(value);
+            ((CrawledPackage) object).setName(value);
+        } else if (object instanceof CrawledLink) {
+            ((CrawledLink) object).setForcedName(value);
         }
     }
 
@@ -100,6 +106,7 @@ public class FileColumn extends ExtTextColumn<AbstractNode> {
     public void focusGained(final FocusEvent e) {
         String txt = editorField.getText();
         int point = txt.lastIndexOf(".");
+        /* select filename only, try to keep the extension/filetype */
         if (point > 0) {
             editorField.select(0, point);
         } else {

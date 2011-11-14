@@ -2,9 +2,9 @@ package org.jdownloader.extensions.jdfeedme.posts;
 
 import java.util.ArrayList;
 
-import org.jdownloader.extensions.jdfeedme.JDFeedMeFeed;
-
 import jd.gui.swing.components.table.JDTable;
+
+import org.jdownloader.extensions.jdfeedme.JDFeedMeFeed;
 
 public class PostsTable extends JDTable 
 {

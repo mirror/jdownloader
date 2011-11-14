@@ -23,7 +23,6 @@ import jd.controlling.linkcrawler.LinkCrawler;
 import jd.parser.html.HTMLParser;
 import jd.plugins.DownloadLink;
 
-import org.appwork.utils.Regex;
 import org.jdownloader.controlling.filter.LinkFilterController;
 
 /**
@@ -33,7 +32,7 @@ import org.jdownloader.controlling.filter.LinkFilterController;
  * 
  * @author astaldo
  */
-public class DistributeData extends Thread {
+public class DistributeData {
 
     /**
      * Die zu verteilenden Daten
@@ -51,14 +50,7 @@ public class DistributeData extends Thread {
      */
     @Deprecated
     public DistributeData(final String data) {
-        super("JD-DistributeData");
         this.data = data;
-    }
-
-    /* keep for comp. issues in other projects */
-    @Deprecated
-    public DistributeData(final String data, final boolean hideGrabber) {
-        this(data);
     }
 
     /* keep for comp. issues in other projects */
@@ -88,17 +80,6 @@ public class DistributeData extends Thread {
             }
         }
         return ret;
-    }
-
-    @Override
-    public void run() {
-        /*
-         * check if there are any links (we need at least a domain and
-         * protocoll)
-         */
-        if (data == null || data.length() == 0 || (!new Regex(data, "//.*?\\.").matches() && !new Regex(data, "jdlist://").matches())) return;
-        ArrayList<DownloadLink> links = findLinks();
-        if (links.size() > 0) LinkGrabberController.getInstance().addLinks(links, false, false);
     }
 
 }

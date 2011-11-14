@@ -11,7 +11,6 @@ import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
 import jd.PluginWrapper;
-import jd.controlling.LinkGrabberController;
 import jd.nutils.encoding.Base64;
 import jd.nutils.encoding.Encoding;
 import jd.nutils.io.JDIO;
@@ -40,7 +39,8 @@ public class AMZ extends PluginsC {
         String base64AMZ = JDIO.readFileToString(file);
         byte[] byteAMZ = Base64.decode(base64AMZ);
         /* google and you will find these keys public */
-
+        cls = new ArrayList<DownloadLink>();
+        dlU = new ArrayList<String>();
         byte[] iv = null;
         byte[] seckey = null;
         try {
@@ -78,8 +78,9 @@ public class AMZ extends PluginsC {
                     fps.put(track[1], fp);
                 }
                 links.add(link);
+                cls.add(link);
+                dlU.add(link.getDownloadURL());
             }
-            LinkGrabberController.getInstance().addLinks(links, false, false);
             cs.setStatus(ContainerStatus.STATUS_FINISHED);
             return cs;
         } catch (Exception e) {

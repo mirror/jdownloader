@@ -45,10 +45,11 @@ import jd.captcha.gui.ImageComponent;
 import jd.captcha.translate.T;
 import jd.captcha.utils.Utilities;
 import jd.gui.UserIO;
-import jd.gui.swing.GuiRunnable;
 import jd.nutils.JDHash;
 import jd.nutils.io.JDFileFilter;
 import jd.nutils.io.JDIO;
+
+import org.appwork.utils.swing.EDTHelper;
 
 public class BackGroundImageDialog implements ActionListener {
 
@@ -73,8 +74,8 @@ public class BackGroundImageDialog implements ActionListener {
     }
 
     public void actionPerformed(final ActionEvent e) {
-        new GuiRunnable<Object>() {
-            public Object runSave() {
+        new EDTHelper<Object>() {
+            public Object edtRun() {
                 BackGroundImageDialog.this.dialog.setAlwaysOnTop(false);
                 return null;
             }
@@ -85,16 +86,16 @@ public class BackGroundImageDialog implements ActionListener {
             this.workingImage.setColor(this.colorChooser.getColor().getRGB());
             this.bgim.clearCaptchaPreview(this.workingImage);
             final Image image2 = this.bgim.getScaledCaptchaImage();
-            new GuiRunnable<Object>() {
-                public Object runSave() {
+            new EDTHelper<Object>() {
+                public Object edtRun() {
                     BackGroundImageDialog.this.bgv.image = image2;
                     BackGroundImageDialog.this.bgv.repaint();
                     return null;
                 }
             }.waitForEDT();
         } else if (e.getSource() == this.btColorChoose) {
-            new GuiRunnable<Object>() {
-                public Object runSave() {
+            new EDTHelper<Object>() {
+                public Object edtRun() {
 
                     final JDialog dialog = JColorChooser.createDialog(BackGroundImageDialog.this.colorChooser, T._.easycaptcha_addbackgroundimagedialog_deletecolor(), true, BackGroundImageDialog.this.colorChooser, null, null);
                     dialog.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
@@ -107,8 +108,8 @@ public class BackGroundImageDialog implements ActionListener {
             // wird in der BackGroundImageGUIList gemacht
             // if (dialogImage != null) bgim.add(dialogImage);
 
-            new GuiRunnable<Object>() {
-                public Object runSave() {
+            new EDTHelper<Object>() {
+                public Object edtRun() {
                     BackGroundImageDialog.this.dialog.dispose();
 
                     return null;
@@ -134,8 +135,8 @@ public class BackGroundImageDialog implements ActionListener {
             this.btPreview.setEnabled(true);
             final Image image2 = this.bgim.getScaledCaptchaImage();
 
-            new GuiRunnable<Object>() {
-                public Object runSave() {
+            new EDTHelper<Object>() {
+                public Object edtRun() {
                     BackGroundImageDialog.this.bgv.image = image2;
                     BackGroundImageDialog.this.bgmask.image = BackGroundImageDialog.this.workingImage.getImage(BackGroundImageDialog.this.bgim.methode);
                     BackGroundImageDialog.this.bgmask.repaint();
@@ -156,8 +157,8 @@ public class BackGroundImageDialog implements ActionListener {
                 this.btPreview.setEnabled(true);
                 final Image image2 = this.bgim.getScaledCaptchaImage();
 
-                new GuiRunnable<Object>() {
-                    public Object runSave() {
+                new EDTHelper<Object>() {
+                    public Object edtRun() {
                         BackGroundImageDialog.this.bgv.image = image2;
                         BackGroundImageDialog.this.bgmask.image = BackGroundImageDialog.this.workingImage.getImage(BackGroundImageDialog.this.bgim.methode);
                         BackGroundImageDialog.this.bgmask.repaint();
@@ -169,8 +170,8 @@ public class BackGroundImageDialog implements ActionListener {
         } else if (e.getSource() == this.colorModeBox) {
             this.colorMode = ((ColorMode) this.colorModeBox.getSelectedItem()).mode;
         }
-        new GuiRunnable<Object>() {
-            public Object runSave() {
+        new EDTHelper<Object>() {
+            public Object edtRun() {
                 BackGroundImageDialog.this.dialog.setAlwaysOnTop(true);
                 return null;
             }
@@ -187,8 +188,8 @@ public class BackGroundImageDialog implements ActionListener {
     }
 
     private void addComponentsToDialog() {
-        new GuiRunnable<Object>() {
-            public Object runSave() {
+        new EDTHelper<Object>() {
+            public Object edtRun() {
                 final JPanel box = new JPanel();
                 box.setLayout(new GridBagLayout());
                 final GridBagConstraints gbc = Utilities.getGBC(0, 0, 1, 1);
@@ -233,8 +234,8 @@ public class BackGroundImageDialog implements ActionListener {
 
         final Image image = this.bgim.getScaledCaptchaImage();
 
-        new GuiRunnable<Object>() {
-            public Object runSave() {
+        new EDTHelper<Object>() {
+            public Object edtRun() {
                 BackGroundImageDialog.this.imagePanel = new JPanel();
 
                 BackGroundImageDialog.this.imagePanel.setBorder(new TitledBorder(T._.easycaptcha_images()));
@@ -277,8 +278,8 @@ public class BackGroundImageDialog implements ActionListener {
     }
 
     private void initComponents() {
-        new GuiRunnable<Object>() {
-            public Object runSave() {
+        new EDTHelper<Object>() {
+            public Object edtRun() {
                 BackGroundImageDialog.this.thresholdSpinner = new JSpinner(new SpinnerNumberModel(BackGroundImageDialog.this.threshold, 0, 360, 1));
                 BackGroundImageDialog.this.thresholdSpinner.setToolTipText("Threshold");
                 BackGroundImageDialog.this.btLoadBackgroundImage = new JButton(T._.easycaptcha_addbackgroundimagedialog_loadimage());
@@ -303,8 +304,8 @@ public class BackGroundImageDialog implements ActionListener {
     }
 
     private void initDialog() {
-        new GuiRunnable<Object>() {
-            public Object runSave() {
+        new EDTHelper<Object>() {
+            public Object edtRun() {
                 BackGroundImageDialog.this.dialog = new JDialog(BackGroundImageDialog.this.owner);
                 BackGroundImageDialog.this.dialog.setTitle(T._.easycaptcha_addbackgroundimagedialog_title());
                 BackGroundImageDialog.this.dialog.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);

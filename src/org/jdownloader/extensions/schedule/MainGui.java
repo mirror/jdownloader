@@ -27,10 +27,10 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
 
-import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import net.miginfocom.swing.MigLayout;
 
+import org.appwork.utils.swing.EDTHelper;
 import org.jdownloader.extensions.schedule.translate.T;
 
 public class MainGui extends SwitchPanel implements ActionListener, MouseListener {
@@ -173,8 +173,8 @@ public class MainGui extends SwitchPanel implements ActionListener, MouseListene
 
     @Override
     protected void onShow() {
-        new GuiRunnable<Object>() {
-            public Object runSave() {
+        new EDTHelper<Object>() {
+            public Object edtRun() {
                 table.getModel().refreshModel();
                 return null;
             }
@@ -182,8 +182,8 @@ public class MainGui extends SwitchPanel implements ActionListener, MouseListene
     }
 
     public void updateTable() {
-        new GuiRunnable<Object>() {
-            public Object runSave() {
+        new EDTHelper<Object>() {
+            public Object edtRun() {
                 table.getModel().refreshModel();
                 table.getModel().fireTableDataChanged();
                 return null;

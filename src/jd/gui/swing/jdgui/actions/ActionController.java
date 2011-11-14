@@ -26,7 +26,6 @@ import jd.config.Property;
 import jd.controlling.ClipboardHandler;
 import jd.controlling.IOEQ;
 import jd.controlling.JDController;
-import jd.controlling.LinkGrabberController;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.reconnect.Reconnecter;
 import jd.event.ControlEvent;
@@ -35,11 +34,9 @@ import jd.gui.UserIF;
 import jd.gui.UserIO;
 import jd.gui.swing.SwingGui;
 import jd.gui.swing.jdgui.components.premiumbar.PremiumStatus;
-import jd.gui.swing.jdgui.views.linkgrabber.LinkGrabberPanel;
 import jd.gui.swing.jdgui.views.settings.panels.addons.ExtensionManager;
 import jd.gui.swing.jdgui.views.settings.panels.passwords.PasswordList;
 import jd.nutils.JDFlags;
-import jd.plugins.LinkGrabberFilePackage;
 import jd.utils.JDUtilities;
 import jd.utils.WebUpdate;
 
@@ -155,24 +152,7 @@ public class ActionController {
 
                 @Override
                 public void onAction(final ActionEvent e) {
-                    IOEQ.add(new Runnable() {
-                        public void run() {
-                            if (!LinkGrabberPanel.getLinkGrabber().isNotVisible()) {
-                                ArrayList<LinkGrabberFilePackage> fps = new ArrayList<LinkGrabberFilePackage>(LinkGrabberController.getInstance().getPackages());
-                                synchronized (LinkGrabberController.ControllerLock) {
-                                    synchronized (LinkGrabberPanel.getLinkGrabber()) {
-                                        for (final LinkGrabberFilePackage fp : fps) {
-                                            LinkGrabberPanel.getLinkGrabber().confirmPackage(fp, null, -1);
-                                        }
-                                    }
-                                }
-                                fps = null;
-                                UserIF.getInstance().requestPanel(UserIF.Panels.DOWNLOADLIST, null);
-                            }
-                            DownloadWatchDog.getInstance().startDownloads();
-                        }
-                    });
-
+                    DownloadWatchDog.getInstance().startDownloads();
                 }
 
                 @Override

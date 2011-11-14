@@ -21,11 +21,11 @@ import java.io.IOException;
 import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "stahnu.to" }, urls = { "http://(www\\.)?stahnu\\.to/files/get/[A-Za-z0-9]+/[A-Za-z0-9_\\-% ]+" }, flags = { 0 })
 public class StahnuTo extends PluginForHost {

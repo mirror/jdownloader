@@ -34,7 +34,6 @@ import javax.swing.table.TableColumn;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.ConfigGroup;
-import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.jdgui.actions.ActionController;
 import jd.gui.swing.jdgui.actions.CustomToolbarAction;
 import jd.gui.swing.jdgui.actions.ToolBarAction;
@@ -43,6 +42,7 @@ import jd.gui.swing.jdgui.components.toolbar.MainToolBar;
 import jd.gui.swing.jdgui.components.toolbar.ToolBar;
 import jd.gui.swing.jdgui.views.settings.ConfigPanel;
 
+import org.appwork.utils.swing.EDTHelper;
 import org.jdesktop.swingx.JXTable;
 import org.jdesktop.swingx.renderer.DefaultTableRenderer;
 import org.jdesktop.swingx.renderer.JRendererLabel;
@@ -159,10 +159,10 @@ public class ToolbarController extends ConfigPanel {
         super.onShow();
         list = setActions(actions = ActionController.getActions());
 
-        new GuiRunnable<Object>() {
+        new EDTHelper<Object>() {
 
             @Override
-            public Object runSave() {
+            public Object edtRun() {
                 tableModel.fireTableDataChanged();
                 return null;
             }

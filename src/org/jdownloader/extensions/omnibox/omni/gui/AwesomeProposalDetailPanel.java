@@ -8,9 +8,9 @@ import javax.swing.event.ListDataListener;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
-import org.jdownloader.extensions.omnibox.omni.gui.jlist.AwesomeProposalJList;
-
 import net.miginfocom.swing.MigLayout;
+
+import org.jdownloader.extensions.omnibox.omni.gui.jlist.AwesomeProposalJList;
 
 
 public class AwesomeProposalDetailPanel extends JPanel implements ListSelectionListener, ListDataListener {

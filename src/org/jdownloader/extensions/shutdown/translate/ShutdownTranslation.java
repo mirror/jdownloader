@@ -1,5 +1,7 @@
 package org.jdownloader.extensions.shutdown.translate;
-import org.appwork.txtresource.*;
+import org.appwork.txtresource.Default;
+import org.appwork.txtresource.Defaults;
+import org.appwork.txtresource.TranslateInterface;
 @Defaults(lngs = { "en"})
 public interface ShutdownTranslation extends TranslateInterface {
 

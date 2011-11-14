@@ -25,11 +25,11 @@ import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "timsah.com" }, urls = { "http://(www\\.)?timsah\\.com/[A-Za-z0-9_\\-]+/[A-Za-z0-9]+" }, flags = { 0 })
 public class TimSahCom extends PluginForHost {

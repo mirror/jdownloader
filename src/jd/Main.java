@@ -40,7 +40,6 @@ import jd.controlling.ClipboardHandler;
 import jd.controlling.DynamicPluginInterface;
 import jd.controlling.JDController;
 import jd.controlling.JDLogger;
-import jd.controlling.LinkGrabberController;
 import jd.controlling.downloadcontroller.DownloadController;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.event.ControlEvent;
@@ -468,8 +467,6 @@ public class Main {
                         // GarbageController.getInstance();
                         /* load extensions */
                         ExtensionController.getInstance().init();
-                        /* init linkgrabber */
-                        LinkGrabberController.getInstance().setDistributer(JDGui.getInstance());
                         ClipboardHandler.getClipboard().setEnabled(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_CLIPBOARD_ALWAYS_ACTIVE, true));
                         ClipboardHandler.getClipboard().setTempDisabled(false);
                         /* check for available updates */

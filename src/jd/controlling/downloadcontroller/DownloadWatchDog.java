@@ -31,7 +31,6 @@ import jd.controlling.IOEQ;
 import jd.controlling.IOPermission;
 import jd.controlling.JDController;
 import jd.controlling.JDLogger;
-import jd.controlling.IOPermission.CAPTCHA;
 import jd.controlling.proxy.ProxyController;
 import jd.controlling.proxy.ProxyInfo;
 import jd.controlling.reconnect.Reconnecter;

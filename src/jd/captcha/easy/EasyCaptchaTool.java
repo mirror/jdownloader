@@ -42,13 +42,14 @@ import jd.captcha.JAntiCaptcha;
 import jd.captcha.easy.load.LoadCaptchas;
 import jd.captcha.translate.T;
 import jd.config.SubConfiguration;
-import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.jdgui.events.EDTEventQueue;
 import jd.gui.swing.jdgui.views.settings.JDLabelListRenderer;
 import jd.gui.swing.laf.LookAndFeelController;
 import jd.gui.userio.DummyFrame;
 import jd.nutils.Screen;
 import jd.utils.JDUtilities;
+
+import org.appwork.utils.swing.EDTHelper;
 
 public class EasyCaptchaTool {
     public static SubConfiguration config             = SubConfiguration.getConfig("EasyCaptcha");
@@ -58,8 +59,8 @@ public class EasyCaptchaTool {
 
     public static EasyMethodFile showMethodes() {
         final EasyMethodFile ef = new EasyMethodFile();
-        new GuiRunnable<Object>() {
-            public Object runSave() {
+        new EDTHelper<Object>() {
+            public Object edtRun() {
                 final JDialog cHosterDialog = new JDialog(ownerFrame);
                 cHosterDialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
                 cHosterDialog.setTitle(T._.easycaptcha_tool_mothodedialog_title());
@@ -115,8 +116,8 @@ public class EasyCaptchaTool {
     }
 
     private static EasyMethodFile getCaptchaMethode() {
-        return new GuiRunnable<EasyMethodFile>() {
-            public EasyMethodFile runSave() {
+        return new EDTHelper<EasyMethodFile>() {
+            public EasyMethodFile edtRun() {
                 final EasyMethodFile ef = new EasyMethodFile();
                 final JDialog dialog = new JDialog(ownerFrame);
                 dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
@@ -130,8 +131,8 @@ public class EasyCaptchaTool {
 
                     public void actionPerformed(ActionEvent e) {
                         ef.file = lastEF.file;
-                        new GuiRunnable<Object>() {
-                            public Object runSave() {
+                        new EDTHelper<Object>() {
+                            public Object edtRun() {
                                 dialog.dispose();
                                 return null;
                             }
@@ -156,8 +157,8 @@ public class EasyCaptchaTool {
                 btc.addActionListener(new ActionListener() {
 
                     public void actionPerformed(ActionEvent e) {
-                        new GuiRunnable<Object>() {
-                            public Object runSave() {
+                        new EDTHelper<Object>() {
+                            public Object edtRun() {
                                 final JDialog cHosterDialog = new JDialog(ownerFrame);
                                 cHosterDialog.setAlwaysOnTop(true);
                                 cHosterDialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
@@ -231,8 +232,8 @@ public class EasyCaptchaTool {
     }
 
     public static void checkReadyToTrain(final EasyMethodFile meth, final JButton btnTrain) {
-        new GuiRunnable<Object>() {
-            public Object runSave() {
+        new EDTHelper<Object>() {
+            public Object edtRun() {
                 btnTrain.setEnabled(meth.isReadyToTrain());
                 return null;
             }

@@ -31,9 +31,9 @@ import javax.swing.filechooser.FileFilter;
 
 import jd.config.SubConfiguration;
 import jd.gui.UserIO;
-import jd.gui.swing.GuiRunnable;
 import net.miginfocom.swing.MigLayout;
 
+import org.appwork.utils.swing.EDTHelper;
 import org.jdownloader.gui.translate._GUI;
 
 public class ComboBrowseFile extends JPanel implements ActionListener {
@@ -340,10 +340,10 @@ public class ComboBrowseFile extends JPanel implements ActionListener {
     }
 
     public void setText(final String text) {
-        new GuiRunnable<Object>() {
+        new EDTHelper<Object>() {
 
             @Override
-            public Object runSave() {
+            public Object edtRun() {
                 if (text == null) {
                     setCurrentPath(new File(""), true);
                 } else {

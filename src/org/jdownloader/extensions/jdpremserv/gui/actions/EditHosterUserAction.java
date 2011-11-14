@@ -5,7 +5,6 @@ import java.util.HashMap;
 
 import javax.swing.AbstractAction;
 
-
 import org.appwork.utils.Regex;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.swing.dialog.Dialog;

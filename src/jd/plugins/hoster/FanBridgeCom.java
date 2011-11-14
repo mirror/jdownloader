@@ -20,11 +20,11 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fanbridge.com" }, urls = { "http://(www\\.)?[a-z0-9]+\\.fanbridge\\.com/downloads/file\\.php\\?file_id=\\d+\\&anon=\\d\\&conf_code=[a-z0-9]+" }, flags = { 0 })
 public class FanBridgeCom extends PluginForHost {

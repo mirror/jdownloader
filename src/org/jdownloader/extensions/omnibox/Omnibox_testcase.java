@@ -8,14 +8,14 @@ import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.ListSelectionModel;
 
-import org.jdownloader.extensions.omnibox.omni.Omni;
+import net.miginfocom.swing.MigLayout;
+
 import org.jdownloader.extensions.omnibox.omni.Action;
+import org.jdownloader.extensions.omnibox.omni.Omni;
 import org.jdownloader.extensions.omnibox.omni.gui.AwesomeProposalDetailPanel;
 import org.jdownloader.extensions.omnibox.omni.gui.jlist.AwesomeProposalJList;
 import org.jdownloader.extensions.omnibox.omni.gui.jlist.AwesomeProposalListModel;
 import org.jdownloader.extensions.omnibox.omni.gui.jlist.AwesomeProposalListSelectionModel;
-
-import net.miginfocom.swing.MigLayout;
 
 public class Omnibox_testcase extends JFrame {
 

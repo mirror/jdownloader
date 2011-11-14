@@ -17,7 +17,6 @@
 package jd.gui;
 
 import jd.config.ConfigContainer;
-import jd.gui.swing.jdgui.views.linkgrabber.LinkgrabberView;
 import jd.gui.swing.jdgui.views.settings.ConfigPanel;
 import jd.gui.userio.NoUserIF;
 

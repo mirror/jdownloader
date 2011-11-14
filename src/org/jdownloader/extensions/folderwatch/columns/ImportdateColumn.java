@@ -16,10 +16,10 @@
 
 package org.jdownloader.extensions.folderwatch.columns;
 
-import org.jdownloader.extensions.folderwatch.data.HistoryEntry;
-
 import jd.gui.swing.components.table.JDTableModel;
 import jd.gui.swing.components.table.JDTextTableColumn;
+
+import org.jdownloader.extensions.folderwatch.data.HistoryEntry;
 
 public class ImportdateColumn extends JDTextTableColumn {
 

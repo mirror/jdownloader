@@ -5,8 +5,8 @@ import jd.controlling.reconnect.liveheader.remotecall.RouterData;
 import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
-import org.appwork.storage.config.annotations.DefaultJsonObject;
 import org.appwork.storage.config.annotations.DefaultFactory;
+import org.appwork.storage.config.annotations.DefaultJsonObject;
 
 public interface LiveHeaderReconnectSettings extends ConfigInterface {
     @AboutConfig

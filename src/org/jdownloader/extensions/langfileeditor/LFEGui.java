@@ -452,10 +452,10 @@ public class LFEGui extends SwitchPanel implements ActionListener {
                         }
                         cfgRequested = true;
                         try {
-                            new GuiRunnable<Object>() {
+                            new EDTHelper<Object>() {
 
                                 @Override
-                                public Object runSave() {
+                                public Object edtRun() {
                                     LFEGui.this.warning.setVisible(true);
                                     LFEGui.this.mnuFile.setEnabled(false);
                                     return null;
@@ -477,10 +477,10 @@ public class LFEGui extends SwitchPanel implements ActionListener {
                         LFEGui.this.subConfig.save();
                     }
                 }
-                new GuiRunnable<Object>() {
+                new EDTHelper<Object>() {
 
                     @Override
-                    public Object runSave() {
+                    public Object edtRun() {
                         LFEGui.this.warning.setVisible(false);
                         return null;
                     }
@@ -494,17 +494,17 @@ public class LFEGui extends SwitchPanel implements ActionListener {
                 LFEGui.this.populateLngMenu();
                 LFEGui.this.setEnabled(true);
                 if (LFEGui.this.menubar != null) {
-                    new GuiRunnable<Object>() {
+                    new EDTHelper<Object>() {
                         @Override
-                        public Object runSave() {
+                        public Object edtRun() {
                             LFEGui.this.menubar.setEnabled(true);
                             return null;
                         }
                     }.start();
                 }
-                new GuiRunnable<Object>() {
+                new EDTHelper<Object>() {
                     @Override
-                    public Object runSave() {
+                    public Object edtRun() {
                         LFEGui.this.mnuFile.setEnabled(true);
                         return null;
                     }
@@ -677,10 +677,10 @@ public class LFEGui extends SwitchPanel implements ActionListener {
     }
 
     private void populateLngMenu() {
-        new GuiRunnable<Object>() {
+        new EDTHelper<Object>() {
 
             @Override
-            public Object runSave() {
+            public Object edtRun() {
                 LFEGui.this.mnuLoad.removeAll();
                 for (final File f : LFEGui.this.dirLanguages.listFiles()) {
                     if (f.getName().endsWith(".loc")) {

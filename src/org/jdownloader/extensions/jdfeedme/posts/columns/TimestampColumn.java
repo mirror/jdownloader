@@ -1,9 +1,9 @@
 package org.jdownloader.extensions.jdfeedme.posts.columns;
 
-import org.jdownloader.extensions.jdfeedme.posts.JDFeedMePost;
-
 import jd.gui.swing.components.table.JDTableModel;
 import jd.gui.swing.components.table.JDTextEditorTableColumn;
+
+import org.jdownloader.extensions.jdfeedme.posts.JDFeedMePost;
 
 public class TimestampColumn extends JDTextEditorTableColumn {
 

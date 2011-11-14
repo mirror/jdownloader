@@ -7,7 +7,6 @@ import javax.swing.ImageIcon;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 
-
 import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
 

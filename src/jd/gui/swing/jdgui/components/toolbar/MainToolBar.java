@@ -24,9 +24,9 @@ import jd.Main;
 import jd.controlling.JDController;
 import jd.event.ControlEvent;
 import jd.event.ControlIDListener;
-import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.jdgui.components.speedmeter.SpeedMeterPanel;
 
+import org.appwork.utils.swing.EDTHelper;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.gui.views.downloads.QuickSettingsPopup;
 
@@ -71,10 +71,10 @@ public class MainToolBar extends ToolBar {
                 JDController.getInstance().addControlListener(new ControlIDListener(ControlEvent.CONTROL_DOWNLOAD_START, ControlEvent.CONTROL_DOWNLOAD_STOP) {
                     @Override
                     public void controlIDEvent(final ControlEvent event) {
-                        new GuiRunnable<Object>() {
+                        new EDTHelper<Object>() {
 
                             @Override
-                            public Object runSave() {
+                            public Object edtRun() {
                                 switch (event.getEventID()) {
                                 case ControlEvent.CONTROL_DOWNLOAD_START:
                                     if (speedmeter != null) speedmeter.start();

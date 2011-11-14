@@ -5,15 +5,15 @@ import java.util.List;
 
 import javax.swing.JLabel;
 
+import jd.config.Configuration;
+import jd.controlling.reconnect.Reconnecter;
+import jd.utils.JDUtilities;
+
 import org.jdownloader.extensions.omnibox.omni.Action;
 import org.jdownloader.extensions.omnibox.omni.Proposal;
 import org.jdownloader.extensions.omnibox.omni.ProposalRequest;
 import org.jdownloader.extensions.omnibox.omni.ProposalRequestListener;
 import org.jdownloader.extensions.omnibox.omni.Utils;
-
-import jd.config.Configuration;
-import jd.controlling.reconnect.Reconnecter;
-import jd.utils.JDUtilities;
 
 public class AwesomeReconnectListener implements ProposalRequestListener {
     private enum actionid {

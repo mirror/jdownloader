@@ -20,6 +20,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Locale;
 import java.util.Vector;
 
 import javax.swing.DefaultListModel;
@@ -33,16 +34,15 @@ import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.ConfigGroup;
 import jd.config.SubConfiguration;
-import jd.controlling.JDController;
 import jd.controlling.JSonWrapper;
-import jd.controlling.LinkGrabberController;
+import jd.controlling.linkcollector.LinkCollectingJob;
+import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcrawler.LinkCrawler;
 import jd.gui.UserIO;
 import jd.gui.swing.components.JDFileChooser;
-import jd.gui.swing.jdgui.views.linkgrabber.LinkGrabberPanel;
 import jd.nutils.JDFlags;
 import jd.nutils.JDHash;
 import jd.nutils.OSDetector;
-import jd.plugins.DownloadLink;
 import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
 
@@ -59,6 +59,7 @@ import org.jdownloader.extensions.folderwatch.translate.T;
 import org.jdownloader.extensions.remotecontrol.helppage.HelpPage;
 import org.jdownloader.extensions.remotecontrol.helppage.Table;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.plugins.controller.container.ContainerPluginController;
 
 public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig> implements FileMonitoringListener, ActionListener {
 
@@ -76,7 +77,6 @@ public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig> i
     private boolean                                    isOption_import;
     private boolean                                    isOption_importAndDelete;
     private boolean                                    isOption_history;
-    private boolean                                    isOption_downloadToContainerLoc;
 
     private JList                                      guiFolderList;
 
@@ -115,7 +115,6 @@ public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig> i
         isOption_import = subConfig.getBooleanProperty(FolderWatchConstants.PROPERTY_OPTION_IMPORT, false);
         isOption_importAndDelete = subConfig.getBooleanProperty(FolderWatchConstants.PROPERTY_OPTION_IMPORT_DELETE, false);
         isOption_history = subConfig.getBooleanProperty(FolderWatchConstants.PROPERTY_OPTION_HISTORY, false);
-        isOption_downloadToContainerLoc = subConfig.getBooleanProperty(FolderWatchConstants.PROPERTY_OPTION_DOWNLOAD_TO_CONTAINER_LOCATION, false);
     }
 
     @Override
@@ -175,45 +174,38 @@ public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig> i
         return false;
     }
 
+    public LinkCrawler importContainer(File container) {
+        if (isContainer(container)) { return LinkCollector.getInstance().addCrawlerJob(new LinkCollectingJob("file://" + container.getAbsolutePath())); }
+        return null;
+    }
+
     public void onMonitoringFileCreate(String absPath) {
         if (isContainer(absPath)) {
-            File file = new File(absPath);
+            final File file = new File(absPath);
             updateListModelEntry(folderlist.indexOf(file.getParent()));
 
             if (isOption_import || isOption_importAndDelete) {
-                importContainer(absPath);
-            }
-
-            if (isOption_importAndDelete) {
-                final String container = absPath;
-                Thread t = new Thread(new Runnable() {
-                    public void run() {
-                        try {
-                            while (LinkGrabberPanel.getLinkGrabber().isRunning()) {
-                                Thread.sleep(1000);
+                final LinkCrawler lc = LinkCollector.getInstance().addCrawlerJob(new LinkCollectingJob("file://" + absPath));
+                if (lc != null) {
+                    if (isOption_importAndDelete) {
+                        Thread t = new Thread(new Runnable() {
+                            public void run() {
+                                lc.waitForCrawling();
+                                file.delete();
+                                logger.info(file + " deleted");
                             }
-
-                            Thread.sleep(1000);
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
-                        }
-
-                        deleteContainer(container);
-                        logger.info(container + "deleted");
+                        });
+                        t.run();
                     }
-                });
-                t.run();
+                }
             }
 
             if (isOption_history) {
                 boolean isExisting = isOption_importAndDelete ? false : true;
-
                 HistoryEntry entry = new HistoryEntry(new File(absPath), JDHash.getMD5(new File(absPath)), isExisting);
-
                 if (!isOption_import && !isOption_importAndDelete) {
                     entry.setImportDate(null);
                 }
-
                 historyAdd(entry);
             }
         }
@@ -250,36 +242,6 @@ public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig> i
         if (historyGui != null) historyGui.refresh();
     }
 
-    public void importContainer(String path) {
-        importContainer(new File(path));
-    }
-
-    public void importContainer(File container) {
-        if (isContainer(container)) {
-            if (isOption_downloadToContainerLoc) {
-                ArrayList<DownloadLink> downloadLinks = JDController.getInstance().getContainerLinks(container);
-
-                for (DownloadLink link : downloadLinks) {
-                    link.getFilePackage().setDownloadDirectory(container.getParentFile().getAbsolutePath());
-                }
-
-                LinkGrabberController.getInstance().addLinks(downloadLinks, false, false);
-            } else {
-                JDController.loadContainerFile(container);
-            }
-        }
-    }
-
-    private void deleteContainer(String path) {
-        deleteContainer(new File(path));
-    }
-
-    private void deleteContainer(File container) {
-        if (isContainer(container)) {
-            container.delete();
-        }
-    }
-
     private void openInFilebrowser(String path) {
         File dir = new File(path);
 
@@ -314,7 +276,11 @@ public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig> i
     }
 
     private boolean isContainer(String path) {
-        return path.matches(".+\\.(dlc|ccf|rsdf)");
+        String exto = org.appwork.utils.Files.getExtension(path);
+        if (exto == null) return false;
+        exto = exto.toLowerCase(Locale.ENGLISH);
+        String supported = ContainerPluginController.getInstance().getContainerExtensions(exto).toLowerCase(Locale.ENGLISH);
+        return supported.contains(exto);
     }
 
     private int getNumberOfContainerFiles(String path) {

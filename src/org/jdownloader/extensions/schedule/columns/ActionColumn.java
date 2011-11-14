@@ -18,11 +18,11 @@ package org.jdownloader.extensions.schedule.columns;
 
 import java.util.ArrayList;
 
-import org.jdownloader.extensions.schedule.Actions;
-import org.jdownloader.extensions.schedule.Executions;
-
 import jd.gui.swing.components.table.JDTableModel;
 import jd.gui.swing.components.table.JDTextTableColumn;
+
+import org.jdownloader.extensions.schedule.Actions;
+import org.jdownloader.extensions.schedule.Executions;
 
 public class ActionColumn extends JDTextTableColumn {
 

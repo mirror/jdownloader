@@ -12,7 +12,6 @@ import jd.controlling.packagecontroller.AbstractNode;
 
 import org.appwork.swing.exttable.ExtColumn;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.gui.views.linkgrabber.DownloadPasswordColumn;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberTable;
 import org.jdownloader.images.NewTheme;
 
@@ -32,14 +31,13 @@ public class ContextMenuFactory {
         CrawledPackage pkg = isPkgContext ? (CrawledPackage) contextObject : null;
         JPopupMenu p = new JPopupMenu();
         JMenu m;
-        p.add(new ConfirmAction(selection));
+        p.add(new ConfirmAction(selection).toContextMenuAction());
         p.add(new EnabledAction(selection).toContextMenuAction());
         if (isLinkContext) {
             m = new JMenu(_GUI._.ContextMenuFactory_createPopup_link());
             m.setIcon(link.getIcon());
-            m.add(new OpenUrlAction(link));
-            m.add(new EditUrlAction(link).toContextMenuAction());
-            m.add(new EditFilenameAction(link).toContextMenuAction());
+            m.add(new OpenUrlAction(link).toContextMenuAction());
+            m.add(new SetDownloadPassword(link, getChildren(selection)).toContextMenuAction());
             p.add(m);
         }
         if (isPkgContext) {
@@ -47,15 +45,12 @@ public class ContextMenuFactory {
             m.setIcon(NewTheme.I().getIcon("package_open", 18));
             m.add(new OpenDownloadFolderAction(contextObject).toContextMenuAction());
             m.add(new SetDownloadFolderAction(contextObject, getPackages(selection)).toContextMenuAction());
-            m.add(new RenamePackageAction(pkg).toContextMenuAction());
-            m.add(new SortAction(selection, column));
+            m.add(new SortAction(selection, column).toContextMenuAction());
             p.add(m);
         }
         p.add(new MergeToPackageAction(selection).toContextMenuAction());
         p.add(new FileCheckAction(selection).toContextMenuAction());
         p.add(new CreateDLCAction(selection).toContextMenuAction());
-        if (column instanceof DownloadPasswordColumn) p.add(new SetDownloadPassword(selection).toContextMenuAction());
-
         p.add(new SplitPackagesByHost(getPackages(selection)).toContextMenuAction());
         p.add(new JSeparator());
         /* remove menu */
@@ -74,6 +69,18 @@ public class ContextMenuFactory {
         ArrayList<CrawledPackage> ret = new ArrayList<CrawledPackage>();
         for (AbstractNode a : selection) {
             if (a instanceof CrawledPackage) ret.add((CrawledPackage) a);
+        }
+        return ret;
+    }
+
+    private ArrayList<CrawledLink> getChildren(ArrayList<AbstractNode> selection) {
+        ArrayList<CrawledLink> ret = new ArrayList<CrawledLink>();
+        for (AbstractNode a : selection) {
+            if (a instanceof CrawledLink) {
+                ret.add((CrawledLink) a);
+            } else if (a instanceof CrawledPackage) {
+                ret.addAll(((CrawledPackage) a).getChildren());
+            }
         }
         return ret;
     }

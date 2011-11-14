@@ -28,7 +28,6 @@ import jd.controlling.reconnect.liveheader.translate.T;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.gui.UserIO;
-import jd.gui.swing.GuiRunnable;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.storage.config.JsonConfig;
@@ -40,6 +39,7 @@ import org.appwork.swing.components.ExtPasswordField;
 import org.appwork.swing.components.ExtTextField;
 import org.appwork.utils.event.ProcessCallBack;
 import org.appwork.utils.logging.Log;
+import org.appwork.utils.swing.EDTHelper;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.SwingUtils;
 import org.appwork.utils.swing.dialog.Dialog;
@@ -291,10 +291,10 @@ public class LiveHeaderReconnect extends RouterPlugin implements ControlListener
                         new GetIPAction(LiveHeaderReconnect.this).actionPerformed(null);
                     }
 
-                    new GuiRunnable<Object>() {
+                    new EDTHelper<Object>() {
 
                         @Override
-                        public Object runSave() {
+                        public Object edtRun() {
 
                             final Gui jd = new Gui(settings.getRouterIP());
                             try {

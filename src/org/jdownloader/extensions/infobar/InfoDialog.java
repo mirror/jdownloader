@@ -17,7 +17,6 @@ import javax.swing.JWindow;
 import javax.swing.SwingUtilities;
 
 import jd.controlling.downloadcontroller.DownloadInformations;
-import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.SwingGui;
 import jd.gui.swing.jdgui.GUIUtils;
 import jd.gui.swing.jdgui.components.JDProgressBar;
@@ -26,6 +25,7 @@ import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.nutils.Formatter;
 import net.miginfocom.swing.MigLayout;
 
+import org.appwork.utils.swing.EDTHelper;
 import org.jdownloader.extensions.infobar.translate.T;
 import org.jdownloader.images.NewTheme;
 
@@ -123,9 +123,9 @@ public class InfoDialog extends JWindow implements ActionListener, MouseListener
     }
 
     public void setEnableDropLocation(final boolean enableDropLocation) {
-        new GuiRunnable<Object>() {
+        new EDTHelper<Object>() {
             @Override
-            public Object runSave() {
+            public Object edtRun() {
                 if (enableDropLocation) {
                     setTransferHandler(ddh);
                     lblHelp.setVisible(true);

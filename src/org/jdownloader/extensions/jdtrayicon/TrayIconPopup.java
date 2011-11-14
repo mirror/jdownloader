@@ -44,7 +44,6 @@ import javax.swing.event.ChangeListener;
 import jd.config.Property;
 import jd.controlling.JSonWrapper;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.components.JDSpinner;
 import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.actions.ActionController;
@@ -53,6 +52,7 @@ import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.storage.config.JsonConfig;
+import org.appwork.utils.swing.EDTHelper;
 import org.jdownloader.extensions.jdtrayicon.translate.T;
 import org.jdownloader.settings.GeneralSettings;
 
@@ -150,9 +150,9 @@ public final class TrayIconPopup extends JWindow implements MouseListener, Chang
                 } catch (InterruptedException e) {
                 }
                 if (!enteredPopup) {
-                    new GuiRunnable<Object>() {
+                    new EDTHelper<Object>() {
                         @Override
-                        public Object runSave() {
+                        public Object edtRun() {
                             hideThreadrunning = false;
                             dispose();
                             return null;

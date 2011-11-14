@@ -28,12 +28,12 @@ import javax.swing.JSeparator;
 import javax.swing.JToggleButton;
 
 import jd.controlling.JDLogger;
-import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.SwingGui;
 import jd.gui.swing.jdgui.actions.ActionController;
 import jd.gui.swing.jdgui.actions.ToolBarAction;
 import net.miginfocom.swing.MigLayout;
 
+import org.appwork.utils.swing.EDTHelper;
 import org.jdownloader.images.NewTheme;
 
 public class ViewToolbar extends JPanel {
@@ -213,9 +213,9 @@ public class ViewToolbar extends JPanel {
      */
     protected void updateToolbar() {
         if (current == null) return;
-        new GuiRunnable<Object>() {
+        new EDTHelper<Object>() {
             @Override
-            public Object runSave() {
+            public Object edtRun() {
                 setVisible(false);
                 removeAll();
                 initToolbar(current);

@@ -34,7 +34,6 @@ import jd.controlling.IOEQ;
 import jd.controlling.JDLogger;
 import jd.controlling.accountchecker.AccountChecker;
 import jd.gui.UserIF;
-import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.nutils.Formatter;
 import jd.plugins.Account;
@@ -44,6 +43,7 @@ import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.scheduler.DelayedRunnable;
+import org.appwork.utils.swing.EDTHelper;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
@@ -158,9 +158,9 @@ public class PremiumStatus extends JPanel implements MouseListener {
     }
 
     private void redraw() {
-        new GuiRunnable<Object>() {
+        new EDTHelper<Object>() {
             @Override
-            public Object runSave() {
+            public Object edtRun() {
                 int ii = 0;
                 try {
                     for (int i = 0; i < BARCOUNT; i++) {

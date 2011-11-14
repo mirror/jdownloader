@@ -33,7 +33,6 @@ import javax.swing.KeyStroke;
 import javax.swing.SwingConstants;
 
 import jd.controlling.JDLogger;
-import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.SwingGui;
 import jd.gui.swing.jdgui.actions.ActionController;
 import jd.gui.swing.jdgui.actions.CustomToolbarAction;
@@ -41,6 +40,7 @@ import jd.gui.swing.jdgui.actions.ToolBarAction;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.utils.Application;
+import org.appwork.utils.swing.EDTHelper;
 import org.appwork.utils.swing.EDTRunner;
 
 public class ToolBar extends JToolBar {
@@ -143,20 +143,20 @@ public class ToolBar extends JToolBar {
 
                             public void propertyChange(final PropertyChangeEvent evt) {
                                 if (evt.getPropertyName() == Action.SELECTED_KEY) {
-                                    new GuiRunnable<Object>() {
+                                    new EDTHelper<Object>() {
 
                                         @Override
-                                        public Object runSave() {
+                                        public Object edtRun() {
                                             button.setSelected((Boolean) evt.getNewValue());
                                             return null;
                                         }
 
                                     }.start();
                                 } else if (evt.getPropertyName() == Action.LARGE_ICON_KEY) {
-                                    new GuiRunnable<Object>() {
+                                    new EDTHelper<Object>() {
 
                                         @Override
-                                        public Object runSave() {
+                                        public Object edtRun() {
                                             button.setIcon((Icon) evt.getNewValue());
                                             return null;
                                         }

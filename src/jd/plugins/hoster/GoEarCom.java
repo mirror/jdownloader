@@ -19,11 +19,11 @@ package jd.plugins.hoster;
 import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 
 //goear.com hoster plugin by HerrDaur
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "goear.com" }, urls = { "http://(www\\.)?(goear\\.com/listen/[0-9a-f]+/|youares\\.com/reproducir/[a-z0-9]+/[0-9a-f]+/)" }, flags = { 0 })

@@ -23,11 +23,11 @@ import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wetransfer.com" }, urls = { "http(s)?://(www\\.)?(wtrns\\.fr/[A-Za-z0-9\\-]+|wetransfer\\.com/dl/[A-Za-z0-9]+/[a-z0-9]+)" }, flags = { 0 })
 public class WeTransferCom extends PluginForHost {

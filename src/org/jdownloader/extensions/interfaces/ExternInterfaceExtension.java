@@ -30,9 +30,9 @@ import jd.config.ConfigEntry;
 import jd.config.ConfigGroup;
 import jd.controlling.DistributeData;
 import jd.controlling.JDLogger;
-import jd.controlling.LinkGrabberController;
+import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcrawler.CrawledLink;
 import jd.gui.UserIO;
-import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.SwingGui;
 import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.nutils.JDFlags;
@@ -49,6 +49,7 @@ import jd.utils.JDUtilities;
 import jd.utils.WebUpdate;
 
 import org.appwork.utils.Regex;
+import org.appwork.utils.swing.EDTHelper;
 import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.StartException;
@@ -211,8 +212,16 @@ public class ExternInterfaceExtension extends AbstractExtension<ExternInterfaceC
                 l.setBrowserUrl(source);
             }
         }
-        LinkGrabberController.getInstance().addLinks(links, false, false);
+        addDownloadLinks(links);
+    }
 
+    private static void addDownloadLinks(ArrayList<DownloadLink> links) {
+        if (links == null || links.size() == 0) return;
+        ArrayList<CrawledLink> clinks = new ArrayList<CrawledLink>();
+        for (DownloadLink link : links) {
+            clinks.add(new CrawledLink(link));
+        }
+        LinkCollector.getInstance().addCrawlerJob(clinks);
     }
 
     /**
@@ -263,10 +272,10 @@ public class ExternInterfaceExtension extends AbstractExtension<ExternInterfaceC
                     String ref = request.getHeader("referer");
 
                     if (!ref.equalsIgnoreCase("http://jdownloader.org/beta") && !ref.equalsIgnoreCase("http://jdownloader.net:8081/beta")) return;
-                    new GuiRunnable<Object>() {
+                    new EDTHelper<Object>() {
 
                         @Override
-                        public Object runSave() {
+                        public Object edtRun() {
                             SwingGui.getInstance().getMainFrame().toFront();
                             SwingGui.getInstance().getMainFrame().setExtendedState(JFrame.MAXIMIZED_BOTH);
                             return null;
@@ -293,14 +302,14 @@ public class ExternInterfaceExtension extends AbstractExtension<ExternInterfaceC
                                 ArrayList<DownloadLink> links = new DistributeData(Encoding.htmlDecode(request.getParameters().get("urls"))).findLinks();
                                 for (DownloadLink link : links) {
                                     link.addSourcePluginPasswords(passwords);
-                                    if (comment != null) link.setSourcePluginComment(comment);
+                                    if (comment != null) link.setComment(comment);
                                     if (source != null) link.setBrowserUrl(source);
                                 }
-                                LinkGrabberController.getInstance().addLinks(links, false, false);
-                                new GuiRunnable<Object>() {
+                                addDownloadLinks(links);
+                                new EDTHelper<Object>() {
 
                                     @Override
-                                    public Object runSave() {
+                                    public Object edtRun() {
                                         SwingGui.getInstance().getMainFrame().toFront();
 
                                         return null;
@@ -319,12 +328,12 @@ public class ExternInterfaceExtension extends AbstractExtension<ExternInterfaceC
                             tmp.deleteOnExit();
 
                             JDIO.saveToFile(tmp, dlc.getBytes());
-                            ArrayList<DownloadLink> links = JDUtilities.getController().getContainerLinks(tmp);
+                            ArrayList<DownloadLink> links = new DistributeData("file://" + tmp.getAbsolutePath()).findLinks();
 
-                            LinkGrabberController.getInstance().addLinks(links, false, false);
-                            new GuiRunnable<Object>() {
+                            addDownloadLinks(links);
+                            new EDTHelper<Object>() {
                                 @Override
-                                public Object runSave() {
+                                public Object edtRun() {
                                     SwingGui.getInstance().getMainFrame().toFront();
                                     return null;
                                 }
@@ -342,9 +351,9 @@ public class ExternInterfaceExtension extends AbstractExtension<ExternInterfaceC
                                 decrypt(crypted, jk, k, passwords, source);
 
                                 response.addContent(addJSONPCallback("success", request));
-                                new GuiRunnable<Object>() {
+                                new EDTHelper<Object>() {
                                     @Override
-                                    public Object runSave() {
+                                    public Object edtRun() {
                                         SwingGui.getInstance().getMainFrame().toFront();
                                         return null;
                                     }
@@ -400,7 +409,6 @@ public class ExternInterfaceExtension extends AbstractExtension<ExternInterfaceC
                     } else {
                         fp.setName("FlashGot");
                     }
-                    fp.setProperty(LinkGrabberController.DONTFORCEPACKAGENAME, "yes");
                     if (request.getParameters().get("dir") != null) {
                         dir = Encoding.urlDecode(request.getParameters().get("dir"), false).trim();
                         fp.setDownloadDirectory(dir);
@@ -422,7 +430,7 @@ public class ExternInterfaceExtension extends AbstractExtension<ExternInterfaceC
                             if (foundlinks.size() > 0) {
                                 for (DownloadLink dl : foundlinks) {
                                     if (!dl.gotBrowserUrl()) dl.setBrowserUrl(referer);
-                                    if (i < desc.length) dl.setSourcePluginComment(desc[i]);
+                                    if (i < desc.length) dl.setComment(desc[i]);
                                 }
                                 links.addAll(foundlinks);
                             } else {
@@ -432,7 +440,7 @@ public class ExternInterfaceExtension extends AbstractExtension<ExternInterfaceC
                                 String name = Plugin.getFileNameFromURL(new URL(url));
                                 DownloadLink direct = new DownloadLink(defaultplg, name, "DirectHTTP", url, true);
                                 direct.setBrowserUrl(referer);
-                                if (i < desc.length) direct.setSourcePluginComment(desc[i]);
+                                if (i < desc.length) direct.setComment(desc[i]);
                                 direct.setProperty("cookies", cookies);
                                 direct.setProperty("post", post);
                                 direct.setProperty("referer", referer);
@@ -442,11 +450,11 @@ public class ExternInterfaceExtension extends AbstractExtension<ExternInterfaceC
                             }
                         }
                         fp.addLinks(links);
-                        LinkGrabberController.getInstance().addLinks(links, autostart, autostart);
-                        new GuiRunnable<Object>() {
+                        addDownloadLinks(links);
+                        new EDTHelper<Object>() {
 
                             @Override
-                            public Object runSave() {
+                            public Object edtRun() {
                                 SwingGui.getInstance().getMainFrame().toFront();
 
                                 return null;

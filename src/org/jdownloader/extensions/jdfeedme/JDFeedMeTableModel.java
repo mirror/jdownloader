@@ -3,6 +3,8 @@ package org.jdownloader.extensions.jdfeedme;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import jd.gui.swing.components.table.JDTableModel;
+
 import org.jdownloader.extensions.jdfeedme.columns.AddressColumn;
 import org.jdownloader.extensions.jdfeedme.columns.DescriptionColumn;
 import org.jdownloader.extensions.jdfeedme.columns.EnabledColumn;
@@ -13,8 +15,6 @@ import org.jdownloader.extensions.jdfeedme.columns.SkipColumn;
 import org.jdownloader.extensions.jdfeedme.columns.StatusColumn;
 import org.jdownloader.extensions.jdfeedme.columns.TimestampColumn;
 import org.jdownloader.extensions.jdfeedme.posts.JDFeedMePost;
-
-import jd.gui.swing.components.table.JDTableModel;
 
 
 public class JDFeedMeTableModel extends JDTableModel {

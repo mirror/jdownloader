@@ -28,6 +28,8 @@ import java.util.List;
 import java.util.StringTokenizer;
 
 import jd.config.Configuration;
+import jd.controlling.linkcollector.LinkCollectingJob;
+import jd.controlling.linkcollector.LinkCollector;
 import jd.nutils.OSDetector;
 import jd.utils.JDUtilities;
 
@@ -196,21 +198,12 @@ public final class ClipboardHandler extends Thread {
                                 /* check if we have unhandled uri */
                                 if (sb.length() > 0) {
                                     final String parse = sb.toString();
-
-                                    new DistributeData(parse).start();
+                                    LinkCollector.getInstance().addCrawlerJob(new LinkCollectingJob(parse));
 
                                 }
-                            } else if (what == urlFlavor || what == stringFlavor) {
+                            } else if (what == urlFlavor || what == stringFlavor || what == htmlFlavor) {
                                 /* parse plaintext content */
-
-                                System.out.println("parse");
-                                new DistributeData(currentString).start();
-
-                            } else if (what == htmlFlavor) {
-                                /* parse html content, get all links */
-
-                                new DistributeData(currentString).start();
-
+                                LinkCollector.getInstance().addCrawlerJob(new LinkCollectingJob(currentString));
                             }
                             lastString = currentString;
                         } else {

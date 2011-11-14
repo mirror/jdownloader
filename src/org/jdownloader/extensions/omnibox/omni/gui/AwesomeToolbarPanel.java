@@ -2,9 +2,9 @@ package org.jdownloader.extensions.omnibox.omni.gui;
 
 import javax.swing.JPanel;
 
-import org.jdownloader.extensions.omnibox.OmniboxExtension;
-
 import net.miginfocom.swing.MigLayout;
+
+import org.jdownloader.extensions.omnibox.OmniboxExtension;
 
 public class AwesomeToolbarPanel extends JPanel {
     private static final long serialVersionUID = -4240120832785592416L;

@@ -21,9 +21,10 @@ import java.util.HashMap;
 import jd.controlling.AccountController;
 import jd.controlling.AccountControllerEvent;
 import jd.controlling.AccountControllerListener;
-import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.jdgui.actions.ToolBarAction;
 import jd.gui.swing.jdgui.menu.MenuAction;
+
+import org.appwork.utils.swing.EDTHelper;
 
 /**
  * This calss maps a MenItem to an account, and help to synchronize states like
@@ -52,10 +53,10 @@ public class AccountMenuItemSyncer implements AccountControllerListener {
 
     public void onAccountControllerEvent(final AccountControllerEvent event) {
 
-        new GuiRunnable<Object>() {
+        new EDTHelper<Object>() {
 
             @Override
-            public Object runSave() {
+            public Object edtRun() {
                 ToolBarAction item = map.get(event.getAccount());
                 if (item != null) item.setSelected(event.getAccount().isEnabled());
                 return null;

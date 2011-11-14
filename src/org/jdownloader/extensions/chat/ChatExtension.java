@@ -53,7 +53,6 @@ import jd.controlling.reconnect.Reconnecter;
 import jd.controlling.reconnect.ReconnecterEvent;
 import jd.controlling.reconnect.ReconnecterListener;
 import jd.gui.UserIO;
-import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.SwingGui;
 import jd.gui.swing.components.Balloon;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
@@ -170,13 +169,13 @@ public class ChatExtension extends AbstractExtension<ChatConfig> {
         final String user = user2.trim();
         if (user.equals(this.conn.getNick().trim())) { return; }
         this.pms.put(user.toLowerCase(), new JDChatPMS(user));
-        new GuiRunnable<Object>() {
+        new EDTHelper<Object>() {
             @Override
-            public Object runSave() {
+            public Object edtRun() {
                 ChatExtension.this.tabbedPane.add(user, ChatExtension.this.pms.get(user.toLowerCase()).getScrollPane());
                 return null;
             }
-        }.invokeLater();
+        }.start(true);
     }
 
     public void addToText(final User user, final String style, final String msg) {
@@ -211,10 +210,10 @@ public class ChatExtension extends AbstractExtension<ChatConfig> {
             sb.append("<span>").append(msg).append("</span>");
         }
 
-        new GuiRunnable<Object>() {
+        new EDTHelper<Object>() {
 
             @Override
-            public Object runSave() {
+            public Object edtRun() {
 
                 if (!SwingGui.getInstance().getMainFrame().isActive() && ChatExtension.this.conn != null && msg2.contains(ChatExtension.this.conn.getNick())) {
                     // JDSounds.PT("sound.gui.selectPackage");
@@ -258,10 +257,10 @@ public class ChatExtension extends AbstractExtension<ChatConfig> {
     }
 
     public void delPMS(final String user) {
-        new GuiRunnable<Object>() {
+        new EDTHelper<Object>() {
 
             @Override
-            public Object runSave() {
+            public Object edtRun() {
                 ChatExtension.this.pms.remove(user.toLowerCase());
                 for (int x = 0; x < ChatExtension.this.tabbedPane.getComponentCount(); x++) {
                     if (ChatExtension.this.tabbedPane.getTitleAt(x).toLowerCase().equals(user.toLowerCase())) {
@@ -271,7 +270,7 @@ public class ChatExtension extends AbstractExtension<ChatConfig> {
                 }
                 return null;
             }
-        }.invokeLater();
+        }.start(true);
 
     }
 
@@ -291,32 +290,32 @@ public class ChatExtension extends AbstractExtension<ChatConfig> {
             for (int x = 0; x < this.tabbedPane.getTabCount(); x++) {
                 if (this.tabbedPane.getTitleAt(x).equals(usr.name)) {
                     final int t = x;
-                    new GuiRunnable<Object>() {
+                    new EDTHelper<Object>() {
                         @Override
-                        public Object runSave() {
+                        public Object edtRun() {
                             ChatExtension.this.tabbedPane.setSelectedIndex(t);
                             return null;
                         }
-                    }.invokeLater();
+                    }.start(true);
                     break;
                 }
             }
         } else {
-            new GuiRunnable<Object>() {
+            new EDTHelper<Object>() {
                 @Override
-                public Object runSave() {
+                public Object edtRun() {
                     ChatExtension.this.textField.setText(ChatExtension.this.textField.getText().trim() + " " + usr.name + " ");
                     return null;
                 }
-            }.invokeLater();
+            }.start(true);
         }
-        new GuiRunnable<Object>() {
+        new EDTHelper<Object>() {
             @Override
-            public Object runSave() {
+            public Object edtRun() {
                 ChatExtension.this.textField.requestFocus();
                 return null;
             }
-        }.invokeLater();
+        }.start(true);
     }
 
     public String getNick() {
@@ -665,9 +664,9 @@ public class ChatExtension extends AbstractExtension<ChatConfig> {
     }
 
     public void notifyPMS(final String user, final String text2) {
-        new GuiRunnable<Object>() {
+        new EDTHelper<Object>() {
             @Override
-            public Object runSave() {
+            public Object edtRun() {
                 for (int x = 0; x < ChatExtension.this.tabbedPane.getTabCount(); x++) {
                     if (ChatExtension.this.tabbedPane.getTitleAt(x).equals(user)) {
                         final int t = x;
@@ -685,7 +684,7 @@ public class ChatExtension extends AbstractExtension<ChatConfig> {
                 }
                 return null;
             }
-        }.invokeLater();
+        }.start(true);
     }
 
     public void onConnected() {
@@ -749,10 +748,10 @@ public class ChatExtension extends AbstractExtension<ChatConfig> {
     }
 
     public void renamePMS(final String userOld, final String userNew) {
-        new GuiRunnable<Object>() {
+        new EDTHelper<Object>() {
 
             @Override
-            public Object runSave() {
+            public Object edtRun() {
                 ChatExtension.this.pms.put(userNew.trim().toLowerCase(), ChatExtension.this.pms.get(userOld.trim().toLowerCase()));
                 for (int x = 0; x < ChatExtension.this.tabbedPane.getComponentCount(); x++) {
                     if (ChatExtension.this.tabbedPane.getTitleAt(x).equalsIgnoreCase(userOld)) {
@@ -764,7 +763,7 @@ public class ChatExtension extends AbstractExtension<ChatConfig> {
                 ChatExtension.this.tabbedPane.add(userNew.trim(), ChatExtension.this.pms.get(userNew.trim().toLowerCase()).getScrollPane());
                 return null;
             }
-        }.invokeLater();
+        }.start(true);
     }
 
     public void renameUser(final String name, final String name2) {
@@ -800,14 +799,14 @@ public class ChatExtension extends AbstractExtension<ChatConfig> {
             final String cmd = text.substring(1, end).trim();
             final String rest = text.substring(end).trim();
             if (org.appwork.utils.Regex.matches(cmd, ChatExtension.CMD_PM)) {
-                new GuiRunnable<Object>() {
+                new EDTHelper<Object>() {
 
                     @Override
-                    public Object runSave() {
+                    public Object edtRun() {
                         ChatExtension.this.textField.setText("");
                         return null;
                     }
-                }.invokeLater();
+                }.start(true);
                 end = rest.indexOf(" ");
                 if (end < 0) {
                     end = rest.length();
@@ -853,14 +852,14 @@ public class ChatExtension extends AbstractExtension<ChatConfig> {
                 final String t;
                 t = JDL.translate(tofrom[0], tofrom[1], Utils.prepareMsg(rest.substring(end).trim())).getTranslated();
                 this.lastCommand = "/translate " + rest.substring(0, end).trim() + " ";
-                new GuiRunnable<Object>() {
+                new EDTHelper<Object>() {
 
                     @Override
-                    public Object runSave() {
+                    public Object edtRun() {
                         ChatExtension.this.textField.setText(t);
                         return null;
                     }
-                }.invokeLater();
+                }.start(true);
             } else if (org.appwork.utils.Regex.matches(cmd, ChatExtension.CMD_TOPIC)) {
                 this.conn.doTopic(getCurrentChannel(), this.prepareToSend(rest));
                 this.lastCommand = "/topic ";
@@ -895,15 +894,15 @@ public class ChatExtension extends AbstractExtension<ChatConfig> {
             this.conn.doPrivmsg(channel2, this.prepareToSend(text));
             this.addToText(this.getUser(this.conn.getNick()), ChatExtension.STYLE_SELF, Utils.prepareMsg(text));
         }
-        new GuiRunnable<Object>() {
+        new EDTHelper<Object>() {
 
             @Override
-            public Object runSave() {
+            public Object edtRun() {
                 ChatExtension.this.textField.setText("");
                 ChatExtension.this.textField.requestFocus();
                 return null;
             }
-        }.invokeLater();
+        }.start(true);
     }
 
     public void setLoggedIn(final boolean loggedIn) {
@@ -935,10 +934,10 @@ public class ChatExtension extends AbstractExtension<ChatConfig> {
 
     public void setTopic(final String msg) {
         this.addToText(null, ChatExtension.STYLE_SYSTEM_MESSAGE, "<b>Topic is: " + msg + "</b>");
-        new GuiRunnable<Object>() {
+        new EDTHelper<Object>() {
 
             @Override
-            public Object runSave() {
+            public Object edtRun() {
                 ChatExtension.this.top.setText(msg);
                 return null;
             }
@@ -993,10 +992,10 @@ public class ChatExtension extends AbstractExtension<ChatConfig> {
         sb.append("</ul>");
 
         if (this.right != null) {
-            new GuiRunnable<Object>() {
+            new EDTHelper<Object>() {
 
                 @Override
-                public Object runSave() {
+                public Object edtRun() {
                     ChatExtension.this.right.setText(ChatExtension.USERLIST_STYLE + sb);
                     return null;
                 }

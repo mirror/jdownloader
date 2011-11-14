@@ -10,16 +10,17 @@ import javax.swing.JPanel;
 import javax.swing.JWindow;
 import javax.swing.SwingUtilities;
 
-import jd.gui.swing.GuiRunnable;
 import net.miginfocom.swing.MigLayout;
+
+import org.appwork.utils.swing.EDTHelper;
 
 public abstract class JWindowTooltip extends JWindow {
 
     private static final long serialVersionUID = -7191050140766206744L;
 
-    private TooltipUpdater updater;
+    private TooltipUpdater    updater;
 
-    private Point point;
+    private Point             point;
 
     public JWindowTooltip() {
         JPanel panel = new JPanel(new MigLayout("ins 0", "[fill, grow]", "[fill, grow]"));
@@ -43,10 +44,10 @@ public abstract class JWindowTooltip extends JWindow {
     }
 
     public void hideTooltip() {
-        new GuiRunnable<Object>() {
+        new EDTHelper<Object>() {
 
             @Override
-            public Object runSave() {
+            public Object edtRun() {
                 if (isVisible()) setVisible(false);
                 return null;
             }
@@ -55,8 +56,8 @@ public abstract class JWindowTooltip extends JWindow {
     }
 
     private void setLocation() {
-        new GuiRunnable<Object>() {
-            public Object runSave() {
+        new EDTHelper<Object>() {
+            public Object edtRun() {
                 Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
                 int limitX = (int) screenSize.getWidth() / 2;
                 int limitY = (int) screenSize.getHeight() / 2;
