@@ -26,6 +26,7 @@ import jd.PluginWrapper;
 import jd.controlling.JDLogger;
 import jd.http.Browser;
 import jd.http.RandomUserAgent;
+import jd.http.Request;
 import jd.http.URLConnectionAdapter;
 import jd.http.ext.BasicBrowserEnviroment;
 import jd.http.ext.ExtBrowser;
@@ -48,6 +49,7 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.lobobrowser.html.domimpl.HTMLElementImpl;
 import org.lobobrowser.html.domimpl.HTMLLinkElementImpl;
+import org.lobobrowser.html.domimpl.HTMLScriptElementImpl;
 import org.lobobrowser.html.style.AbstractCSS2Properties;
 import org.w3c.dom.html2.HTMLCollection;
 
@@ -246,7 +248,43 @@ public class MediafireCom extends PluginForHost {
             // we enable css evaluation, because we need this to find invisible
             // links
             // internal css is enough.
-            eb.setBrowserEnviroment(new BasicBrowserEnviroment(new String[] { ".*?googleapis.com.+", ".*?connect.facebook.net.+", ".*?google.+", ".*facebook.+", ".*pmsrvr.com.+", ".*yahoo.com.+", ".*templates/linkto.+", ".*cdn.mediafire.com/css/.+", ".*/blank.html" }, null) {
+            eb.setBrowserEnviroment(new BasicBrowserEnviroment(new String[] { ".*?googleapis.com.+", ".*?connect.facebook.net.+", ".*?encoder.*?", ".*?google.+", ".*facebook.+", ".*pmsrvr.com.+", ".*yahoo.com.+", ".*templates/linkto.+", ".*cdn.mediafire.com/css/.+", ".*/blank.html" }, null) {
+
+                @Override
+                public void prepareContents(Request request) {
+
+                    super.prepareContents(request);
+                }
+
+                @Override
+                public boolean doLoadContent(Request request) {
+                    return super.doLoadContent(request);
+                }
+
+                @Override
+                public String doScriptFilter(HTMLScriptElementImpl htmlScriptElementImpl, String text) {
+                    // if (text.startsWith("BUILD_VERSION='68578';")) { return
+                    // super.doScriptFilter(htmlScriptElementImpl, text); }
+                    // if (text.contains("google-analytics.com/ga.js")) return
+                    // "";
+                    // if
+                    // (text.contains("top.location.href=self.location.href"))
+                    // return "";
+                    // if (text.contains("FBAppId='124578887583575'")) return
+                    // "";
+                    // if (text.contains("notloggedin_wrapper")) return "";
+                    // if (text.contains("download-dark-screen")) return "";
+                    // // if
+                    // //
+                    // (text.contains("var gV=document.getElementById('pagename')"))
+                    // // return "";
+                    // if (text.contains("FB.getLoginStatus")) return "";
+                    // if (text.contains("$(document).ready(function()")) return
+                    // "";
+                    // text = text.replace("function vg()",
+                    // "function DoNotCallMe()");
+                    return super.doScriptFilter(htmlScriptElementImpl, text);
+                }
 
                 @Override
                 public boolean isInternalCSSEnabled() {
@@ -255,12 +293,20 @@ public class MediafireCom extends PluginForHost {
 
             });
             // Start Evaluation of br
+            String html = br.getRequest().getHtmlCode();
+
+            // replace global variables
+            String pkr = br.getRegex("pKr='(.*?)'").getMatch(0);
+            html = html.replace("'+pKr", pkr + "'");
+            br.getRequest().setHtmlCode(html);
             eb.eval(this.br);
             // wait for workframe2, but max 30 seconds
             eb.waitForFrame("workframe2", 30000);
             // dummy waittime. sometimes it seems that wiat for frame is not
             // enough
+
             sleep(5000, downloadLink);
+            String txt = eb.getHtmlText();
             // get all links now
             final HTMLCollection links = eb.getDocument().getLinks();
 
@@ -268,7 +314,7 @@ public class MediafireCom extends PluginForHost {
                 final HTMLLinkElementImpl l = (HTMLLinkElementImpl) links.item(i);
                 // check if the link is visible in browser
                 System.out.println(l.getOuterHTML());
-                if (l.getInnerHTML().toLowerCase().contains("start download")) {
+                if (l.getInnerHTML().toLowerCase().contains("download")) {
                     System.out.println("Download start");
                     if (MediafireCom.isVisible(l)) {
                         System.out.println("visible");
@@ -330,6 +376,7 @@ public class MediafireCom extends PluginForHost {
                 break;
             }
             this.requestFileInformation(downloadLink);
+            Form[] forms = br.getForms();
             try {
                 final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
                 final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(this.br);
@@ -531,6 +578,7 @@ public class MediafireCom extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException, InterruptedException {
         this.setBrowserExclusive();
         this.br.setFollowRedirects(false);
+        br.forceDebug(true);
         downloadLink.setProperty("type", "");
         final String url = downloadLink.getDownloadURL();
         AvailableStatus status = AvailableStatus.TRUE;
@@ -572,6 +620,16 @@ public class MediafireCom extends PluginForHost {
                                 }
                             }
                         }
+                    }
+
+                    br.getPage(redirectURL);
+                    String name = br.getRegex("<div class=\"download_file_title\"> (.*?) </div>").getMatch(0);
+                    String size = br.getRegex(" <input type=\"hidden\" id=\"sharedtabsfileinfo1-fs\" value=\"(.*?)\">").getMatch(0);
+
+                    if (name != null) {
+                        downloadLink.setFinalFileName(Encoding.htmlDecode(name.trim()));
+                        downloadLink.setDownloadSize(SizeFormatter.getSize(size));
+                        return AvailableStatus.TRUE;
                     }
                     if (!downloadLink.getStringProperty("origin", "").equalsIgnoreCase("decrypter")) {
                         downloadLink.setName(Plugin.extractFileNameFromURL(redirectURL));
