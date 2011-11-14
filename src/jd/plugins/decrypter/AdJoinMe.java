@@ -51,7 +51,7 @@ public class AdJoinMe extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private String decodeDownloadLink(final String s, final CryptedLink param) throws Exception {
+    private String decodeDownloadLink(final String s, final CryptedLink param, ProgressController progress) throws Exception {
         Object result = new Object();
         final ScriptEngineManager manager = new ScriptEngineManager();
         final ScriptEngine engine = manager.getEngineByName("javascript");
@@ -66,7 +66,7 @@ public class AdJoinMe extends PluginForDecrypt {
         br2.setReadTimeout(120 * 1000);
         final String res = "url\":\"(.*?)\"";
         int waittime = 10;
-
+        progress.setRange(4);
         String[] args = new Regex(result, "\\$\\.post\\(\\'(.*?)\\',\\{opt:\\'(.*?)\\',args:\\{lid:(\\d+),oid:(\\d+)\\}").getRow(0);
         final String wait = new Regex(result, "else\\{.+?=(\\d+)\\}\\}").getMatch(0);
         if (args == null || args.length != 4) { return null; }
@@ -77,7 +77,7 @@ public class AdJoinMe extends PluginForDecrypt {
 
         // req#1
         br2.postPage(args[0], postData);
-
+        progress.increase(1);
         if (!br2.getRegex("url\":\"#\"").matches()) {
             if (wait != null) {
                 logger.info(" Waittime detected, waiting " + wait + " seconds from now on...");
@@ -89,12 +89,12 @@ public class AdJoinMe extends PluginForDecrypt {
             br2.postPage(args[0], postData);
             if (!br2.getRegex("url\":\"#\"").matches()) { return null; }
         }
-
+        progress.increase(1);
         args = new Regex(result, "skip_ad\\.click\\(function\\(\\)\\{\\$\\.post\\(\\'(.*?)\\',\\{opt:\\'(.*?)\\',args:\\{aid:(\\d+),lid:(\\d+),oid:(\\d+),ref:\\'(.*?)\\'\\}").getRow(0);
         if (args == null || args.length != 6) { return null; }
         // req#3
         br2.postPage(args[0], "opt=" + args[1] + "&args%5Baid%5D=" + args[2] + "&args%5Blid%5D=" + args[3] + "&args%5Boid%5D=" + args[4] + "args%5Bref%5D=" + args[5]);
-
+        progress.increase(1);
         return br2.getRegex(res).getMatch(0);
     }
 
@@ -112,7 +112,7 @@ public class AdJoinMe extends PluginForDecrypt {
             final String cryptedScripts[] = br.getRegex("eval(.*?)\n").getColumn(0);
             if (cryptedScripts != null && cryptedScripts.length != 0) {
                 for (final String crypted : cryptedScripts) {
-                    link = decodeDownloadLink(crypted, param);
+                    link = decodeDownloadLink(crypted, param, progress);
                     if (link != null) {
                         link = link.replaceAll("\\\\", "");
                         break;
@@ -148,6 +148,7 @@ public class AdJoinMe extends PluginForDecrypt {
             // If we don't wait we have to enter reCaptchas more often which
             // would need even more time for ;)
             sleep(3000, param);
+            progress.increase(1);
             decryptedLinks.add(createDownloadlink(link));
         }
         return decryptedLinks;
