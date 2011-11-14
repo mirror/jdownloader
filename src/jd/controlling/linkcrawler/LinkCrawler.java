@@ -2,10 +2,11 @@ package jd.controlling.linkcrawler;
 
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -34,27 +35,40 @@ import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 
 public class LinkCrawler implements IOPermission {
 
-    private static PluginForHost      directHTTP           = null;
-    private ArrayList<CrawledLink>    crawledLinks         = new ArrayList<CrawledLink>();
-    private AtomicInteger             crawledLinksCounter  = new AtomicInteger(0);
-    private ArrayList<CrawledLink>    filteredLinks        = new ArrayList<CrawledLink>();
-    private AtomicInteger             filteredLinksCounter = new AtomicInteger(0);
-    private AtomicInteger             crawler              = new AtomicInteger(0);
-    private HashSet<String>           duplicateFinder      = new HashSet<String>();
-    private LinkCrawlerHandler        handler              = null;
-    private static ThreadPoolExecutor threadPool           = null;
+    private static PluginForHost        directHTTP           = null;
+    private ArrayList<CrawledLink>      crawledLinks         = new ArrayList<CrawledLink>();
+    private AtomicInteger               crawledLinksCounter  = new AtomicInteger(0);
+    private ArrayList<CrawledLink>      filteredLinks        = new ArrayList<CrawledLink>();
+    private AtomicInteger               filteredLinksCounter = new AtomicInteger(0);
+    private AtomicInteger               crawler              = new AtomicInteger(0);
+    private HashSet<String>             duplicateFinder      = new HashSet<String>();
+    private LinkCrawlerHandler          handler              = null;
+    private static ThreadPoolExecutor   threadPool           = null;
 
-    private HashSet<String>           captchaBlockedHoster = new HashSet<String>();
-    private boolean                   captchaBlockedAll    = false;
-    private LinkCrawlerFilter         filter               = null;
-    private volatile boolean          allowCrawling        = true;
-    private AtomicInteger             crawlerGeneration    = new AtomicInteger(0);
-    private LinkCrawler               parentCrawler        = null;
+    private HashSet<String>             captchaBlockedHoster = new HashSet<String>();
+    private boolean                     captchaBlockedAll    = false;
+    private LinkCrawlerFilter           filter               = null;
+    private volatile boolean            allowCrawling        = true;
+    private AtomicInteger               crawlerGeneration    = new AtomicInteger(0);
+    private LinkCrawler                 parentCrawler        = null;
+    /*
+     * customized comparator we use to prefer faster decrypter plugins over
+     * slower ones
+     */
+    private static Comparator<Runnable> comparator           = new Comparator<Runnable>() {
+
+                                                                 public int compare(Runnable o1, Runnable o2) {
+                                                                     if (o1 == o2) return 0;
+                                                                     return Long.compare(((LinkCrawlerRunnable) o1).getAverageRuntime(), ((LinkCrawlerRunnable) o2).getAverageRuntime());
+                                                                 }
+
+                                                             };
 
     static {
         int maxThreads = Math.max(JsonConfig.create(LinkCrawlerConfig.class).getMaxThreads(), 1);
         int keepAlive = Math.max(JsonConfig.create(LinkCrawlerConfig.class).getThreadKeepAlive(), 100);
-        threadPool = new ThreadPoolExecutor(0, maxThreads, keepAlive, TimeUnit.MILLISECONDS, new LinkedBlockingDeque<Runnable>(), new ThreadFactory() {
+
+        threadPool = new ThreadPoolExecutor(0, maxThreads, keepAlive, TimeUnit.MILLISECONDS, new PriorityBlockingQueue<Runnable>(100, comparator), new ThreadFactory() {
 
             public Thread newThread(Runnable r) {
                 /*
@@ -503,6 +517,10 @@ public class LinkCrawler implements IOPermission {
                                                 if (!checkStartNotify()) return;
                                                 threadPool.execute(new LinkCrawlerRunnable(LinkCrawler.this, generation) {
 
+                                                    public long getAverageRuntime() {
+                                                        return pDecrypt.getAverageCrawlRuntime();
+                                                    }
+
                                                     @Override
                                                     void crawling() {
                                                         LinkCrawler.this.crawl(decryptThis);
@@ -721,10 +739,11 @@ public class LinkCrawler implements IOPermission {
                 return;
             }
             if (cryptedLink == null || cryptedLink.getdPlugin() == null || cryptedLink.getCryptedLink() == null) return;
-            PluginForDecrypt plg = cryptedLink.getdPlugin().getNewInstance();
-            plg.setIOPermission(this);
-            plg.setBrowser(new Browser());
-            plg.setLogger(new JDPluginLogger(cryptedLink.getURL()));
+            PluginForDecrypt oplg = cryptedLink.getdPlugin();
+            PluginForDecrypt wplg = oplg.getNewInstance();
+            wplg.setIOPermission(this);
+            wplg.setBrowser(new Browser());
+            wplg.setLogger(new JDPluginLogger(cryptedLink.getURL()));
             /* now we run the plugin and let it find some links */
             LinkCrawlerThread lct = null;
             if (Thread.currentThread() instanceof LinkCrawlerThread) {
@@ -739,7 +758,7 @@ public class LinkCrawler implements IOPermission {
                  * set LinkCrawlerDistributer in case the plugin wants to add
                  * links in realtime
                  */
-                plg.setDistributer(dist = new LinkCrawlerDistributer() {
+                wplg.setDistributer(dist = new LinkCrawlerDistributer() {
 
                     public void distribute(DownloadLink... links) {
                         if (links == null || links.length == 0) return;
@@ -772,7 +791,10 @@ public class LinkCrawler implements IOPermission {
                     previousCrawler = lct.getCurrentLinkCrawler();
                     lct.setCurrentLinkCrawler(this);
                 }
-                decryptedPossibleLinks = plg.decryptLink(cryptedLink);
+                long startTime = System.currentTimeMillis();
+                decryptedPossibleLinks = wplg.decryptLink(cryptedLink);
+                long endTime = System.currentTimeMillis() - startTime;
+                oplg.getLazyC().updateCrawlRuntime(endTime);
             } finally {
                 if (lct != null) {
                     /* reset thread to last known used state */
@@ -780,7 +802,7 @@ public class LinkCrawler implements IOPermission {
                     lct.setCurrentLinkCrawler(previousCrawler);
                 }
                 /* remove distributer from plugin */
-                plg.setDistributer(null);
+                wplg.setDistributer(null);
             }
             if (decryptedPossibleLinks != null) {
                 dist.distribute(decryptedPossibleLinks.toArray(new DownloadLink[decryptedPossibleLinks.size()]));

@@ -18,4 +18,24 @@ public class LazyCrawlerPlugin extends LazyPlugin<PluginForDecrypt> {
         ret.setLazyC(this);
         return ret;
     }
+
+    private long decrypts        = 0;
+    private long decryptsRuntime = 0;
+
+    public long getAverageCrawlRuntime() {
+        synchronized (this) {
+            if (decrypts == 0 || decryptsRuntime == 0) return 0;
+            long ret = decryptsRuntime / decrypts;
+            return ret;
+        }
+    }
+
+    public void updateCrawlRuntime(long r) {
+        synchronized (this) {
+            if (r >= 0) {
+                decrypts++;
+                decryptsRuntime += r;
+            }
+        }
+    }
 }

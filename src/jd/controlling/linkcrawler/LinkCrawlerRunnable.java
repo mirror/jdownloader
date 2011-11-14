@@ -27,4 +27,7 @@ public abstract class LinkCrawlerRunnable implements Runnable {
 
     abstract void crawling();
 
+    public long getAverageRuntime() {
+        return 0;
+    }
 }

@@ -164,12 +164,10 @@ public class HostPluginController extends PluginController<PluginForHost> {
     }
 
     public List<LazyHostPlugin> list() {
-
         return list;
     }
 
     public LazyHostPlugin get(String displayName) {
-
         for (LazyHostPlugin p : list) {
             if (p.getDisplayName().equalsIgnoreCase(displayName)) return p;
         }
