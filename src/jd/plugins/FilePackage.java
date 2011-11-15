@@ -28,12 +28,12 @@ import java.util.List;
 import java.util.Set;
 
 import jd.config.Property;
-import jd.controlling.UniqueID;
 import jd.controlling.packagecontroller.AbstractPackageNode;
 import jd.controlling.packagecontroller.PackageController;
 import jd.nutils.io.JDIO;
 import jd.utils.JDUtilities;
 
+import org.jdownloader.controlling.UniqueID;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.translate._JDT;
 

@@ -1,4 +1,4 @@
-package jd.controlling;
+package org.jdownloader.controlling;
 
 import java.util.concurrent.atomic.AtomicLong;
 

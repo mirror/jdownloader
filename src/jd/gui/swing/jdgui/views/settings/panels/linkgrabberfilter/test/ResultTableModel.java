@@ -265,7 +265,7 @@ public class ResultTableModel extends ExtTableModel<CrawledLink> {
 
                 CrawledLink p = value;
                 String last = p.getURL();
-                while ((p = p.getParentLink()) != null) {
+                while ((p = p.getSourceLink()) != null) {
                     if (last != null && last.equals(p.getURL())) continue;
                     sb.append("∟");
                     sb.append(p.getURL());

@@ -290,8 +290,7 @@ public class LazyExtension implements Storable, CheckBoxedEntry {
 
             return AbstractExtension.createStore(getClassname(), (Class<? extends ExtensionConfigInterface>) Class.forName(this.getConfigInterface()));
         } catch (Throwable e) {
-            e.printStackTrace();
-            return null;
+            throw new WTFException(e);
         }
     }
 

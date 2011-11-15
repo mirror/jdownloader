@@ -616,7 +616,7 @@ public class LinkCrawler implements IOPermission {
 
     private void forwardCrawledLinkInfos(CrawledLink source, CrawledLink dest) {
         if (source == null || dest == null) return;
-        dest.setParentLink(source);
+        dest.setSourceLink(source);
         dest.setMatchingFilter(source.getMatchingFilter());
         dest.setSourceJob(source.getSourceJob());
     }

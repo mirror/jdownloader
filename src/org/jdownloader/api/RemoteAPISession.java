@@ -1,9 +1,9 @@
 package org.jdownloader.api;
 
-import jd.controlling.UniqueID;
 
 import org.appwork.utils.net.httpserver.session.HttpSession;
 import org.appwork.utils.net.httpserver.session.HttpSessionController;
+import org.jdownloader.controlling.UniqueID;
 
 public class RemoteAPISession implements HttpSession {
 

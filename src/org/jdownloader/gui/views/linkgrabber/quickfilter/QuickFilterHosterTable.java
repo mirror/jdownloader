@@ -8,19 +8,14 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import javax.swing.JPopupMenu;
-
 import jd.controlling.FavIconController;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
 
-import org.appwork.swing.exttable.ExtColumn;
 import org.jdownloader.controlling.filter.LinkFilterSettings;
 import org.jdownloader.gui.views.linkgrabber.Header;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberTable;
-import org.jdownloader.gui.views.linkgrabber.sidebar.actions.DropHosterAction;
-import org.jdownloader.gui.views.linkgrabber.sidebar.actions.KeepOnlyAction;
 
 public class QuickFilterHosterTable extends FilterTable {
 
@@ -37,18 +32,6 @@ public class QuickFilterHosterTable extends FilterTable {
 
     public void init() {
         filterMap = new LinkedHashMap<String, Filter>();
-    }
-
-    @Override
-    protected JPopupMenu onContextMenu(JPopupMenu popup, Filter contextObject, ArrayList<Filter> selection, ExtColumn<Filter> column) {
-        ArrayList<String> ret = new ArrayList<String>();
-        for (Filter f : selection) {
-            ret.add(f.getName());
-        }
-        popup.add(new DropHosterAction(ret).toContextMenuAction());
-        popup.add(new KeepOnlyAction(ret).toContextMenuAction());
-
-        return popup;
     }
 
     @SuppressWarnings("unchecked")

@@ -13,6 +13,7 @@ import org.appwork.swing.exttable.ExtColumn;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
+import org.jdownloader.controlling.packagizer.PackagizerController;
 import org.jdownloader.controlling.packagizer.PackagizerRule;
 
 public class PackagizerFilterTable extends BasicJDTable<PackagizerRule> {
@@ -55,6 +56,7 @@ public class PackagizerFilterTable extends BasicJDTable<PackagizerRule> {
             e1.printStackTrace();
         }
         getExtTableModel().fireTableDataChanged();
+        PackagizerController.getInstance().update();
     }
 
     /*

@@ -2746,10 +2746,10 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Auto extract Archives after download finished." })
     String PackagizerFilterRuleDialog_layoutDialogContent_extract_desc();
 
-    @Default(lngs = { "en" }, values = { "Auto Start" })
+    @Default(lngs = { "en" }, values = { "Auto Start Package" })
     String PackagizerFilterRuleDialog_layoutDialogContent_autostart();
 
-    @Default(lngs = { "en" }, values = { "Auto Accept" })
+    @Default(lngs = { "en" }, values = { "Auto Accept Package" })
     String PackagizerFilterRuleDialog_layoutDialogContent_autoadd();
 
     @Default(lngs = { "en" }, values = { "Auto Confirm Links in Linkgrabber and add them to the Download View." })
@@ -3210,5 +3210,17 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Hide Selection" })
     String EnabledAllAction_EnabledAllAction_object_hide();
+
+    @Default(lngs = { "en" }, values = { "Filename" })
+    String PackagizerFilterRuleDialog_layoutDialogContent_filename();
+
+    @Default(lngs = { "en" }, values = { "Enter Package Name Pattern..." })
+    String PackagizerFilterRuleDialog_layoutDialogContent_packagename_help_();
+
+    @Default(lngs = { "en" }, values = { "Enter Filename Pattern..." })
+    String PackagizerFilterRuleDialog_layoutDialogContent_filename_help_();
+
+    @Default(lngs = { "en" }, values = { "Enter absolute or relative Path..." })
+    String PackagizerFilterRuleDialog_layoutDialogContent_dest_help();
 
 }

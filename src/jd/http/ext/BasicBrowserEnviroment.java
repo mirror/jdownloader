@@ -10,8 +10,8 @@ import org.lobobrowser.html.domimpl.HTMLScriptElementImpl;
 
 public class BasicBrowserEnviroment implements BrowserEnviroment {
 
-    private String[] blackList = null;
-    private String[] whiteList = null;
+    private String[]           blackList = null;
+    private String[]           whiteList = null;
     private AdBlockerInterface adblocker;
 
     public BasicBrowserEnviroment(String[] blackList, String[] whitelist) {
@@ -51,14 +51,14 @@ public class BasicBrowserEnviroment implements BrowserEnviroment {
                     String m = new Regex(request.getUrl().toString(), b).getMatch(-1);
                     if (m != null && m.equals(request.getUrl().toString())) {
                         ret = false;
-                        System.out.println("BLACK: " + b);
+                        System.out.println("FILTERED BLACK: " + b);
                         break;
                     }
                 }
 
             }
         }
-        System.out.println(request.getUrl() + "  choosen : " + ret);
+        System.out.println("Filter: Accept:  " + request.getUrl() + "?  choosen : " + ret);
         return ret;
     }
 

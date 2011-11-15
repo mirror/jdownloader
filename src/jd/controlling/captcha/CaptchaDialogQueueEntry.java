@@ -5,7 +5,6 @@ import java.net.MalformedURLException;
 
 import jd.controlling.IOPermission;
 import jd.controlling.IOPermission.CAPTCHA;
-import jd.controlling.UniqueID;
 import jd.gui.swing.dialog.CaptchaDialog;
 import jd.gui.swing.dialog.CaptchaDialogInterface;
 import jd.gui.swing.dialog.CaptchaDialogInterface.DialogType;
@@ -23,6 +22,7 @@ import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.DomainInfo;
+import org.jdownloader.controlling.UniqueID;
 import org.jdownloader.gui.uiserio.NewUIO;
 import org.jdownloader.translate._JDT;
 

@@ -9,7 +9,6 @@ import java.util.Iterator;
 import java.util.Map.Entry;
 
 import javax.swing.ImageIcon;
-import javax.swing.JPopupMenu;
 
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcrawler.CrawledLink;
@@ -18,7 +17,6 @@ import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.Exc
 import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.FilterRuleDialog;
 
 import org.appwork.exceptions.WTFException;
-import org.appwork.swing.exttable.ExtColumn;
 import org.appwork.utils.Hash;
 import org.appwork.utils.event.predefined.changeevent.ChangeEvent;
 import org.appwork.utils.event.predefined.changeevent.ChangeListener;
@@ -62,11 +60,6 @@ public class QuickFilterExceptionsTable extends FilterTable {
         setup(fileFilter);
         setup(urlFilter);
 
-    }
-
-    @Override
-    protected JPopupMenu onContextMenu(JPopupMenu popup, Filter contextObject, ArrayList<Filter> selection, ExtColumn<Filter> column) {
-        return super.onContextMenu(popup, contextObject, selection, column);
     }
 
     protected void init() {

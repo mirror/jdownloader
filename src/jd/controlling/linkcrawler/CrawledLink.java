@@ -11,6 +11,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginsC;
 
+import org.jdownloader.controlling.Priority;
 import org.jdownloader.controlling.filter.FilterRule;
 
 public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>, CheckableLink {
@@ -22,13 +23,22 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
         TEMP_UNKNOWN
     }
 
-    private CrawledPackage    parent       = null;
-    private PluginForDecrypt  dPlugin      = null;
-    private LinkCollectingJob sourceJob    = null;
-    private long              created      = -1;
-    private boolean           isDupeAllow  = false;
-    private String            realHost     = null;
-    boolean                   enabledState = true;
+    private CrawledPackage    parent             = null;
+    private PluginForDecrypt  dPlugin            = null;
+    private LinkCollectingJob sourceJob          = null;
+    private long              created            = -1;
+    private boolean           isDupeAllow        = false;
+    private String            realHost           = null;
+    boolean                   enabledState       = true;
+    private PackageInfo       desiredPackageInfo = new PackageInfo();
+
+    public PackageInfo getDesiredPackageInfo() {
+        return desiredPackageInfo;
+    }
+
+    public void setDesiredPackageInfo(PackageInfo desiredPackageInfo) {
+        this.desiredPackageInfo = desiredPackageInfo;
+    }
 
     /**
      * @return the isDupeAllow
@@ -126,7 +136,7 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
 
     private CryptedLink cLink      = null;
     private String      url;
-    private CrawledLink parentLink = null;
+    private CrawledLink sourceLink = null;
     private FilterRule  matchingFilter;
 
     public CrawledLink(DownloadLink dlLink) {
@@ -145,6 +155,16 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
     public String getName() {
         if (dlLink != null) return dlLink.getName();
         return "DUMMY";
+    }
+
+    public int getChunks() {
+        if (dlLink != null) return dlLink.getChunks();
+        return -1;
+    }
+
+    public void setChunks(int chunks) {
+        if (dlLink != null) dlLink.setChunks(chunks);
+
     }
 
     public void setForcedName(String name) {
@@ -176,11 +196,6 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
         return null;
     }
 
-    public int getPriority() {
-        if (dlLink != null) return dlLink.getPriority();
-        return 0;
-    }
-
     public String getURL() {
         if (dlLink != null) return dlLink.getDownloadURL();
         if (cLink != null) return cLink.getCryptedUrl();
@@ -190,7 +205,7 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
 
     @Override
     public String toString() {
-        CrawledLink parentL = parentLink;
+        CrawledLink parentL = sourceLink;
         StringBuilder sb = new StringBuilder();
         if (parentL != null) {
             sb.append(parentL.toString() + "-->");
@@ -232,17 +247,17 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
         return 0;
     }
 
-    public CrawledLink getParentLink() {
-        return parentLink;
+    public CrawledLink getSourceLink() {
+        return sourceLink;
     }
 
     public CrawledLink getOriginLink() {
-        if (parentLink == null) return this;
-        return parentLink.getOriginLink();
+        if (sourceLink == null) return this;
+        return sourceLink.getOriginLink();
     }
 
-    public void setParentLink(CrawledLink parent) {
-        this.parentLink = parent;
+    public void setSourceLink(CrawledLink parent) {
+        this.sourceLink = parent;
     }
 
     public void setMatchingFilter(FilterRule matchedFilter) {
@@ -252,8 +267,7 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
     /**
      * If this Link got filtered by {@link CaptchaController}, you can get the
      * matching deny rule here.<br>
-     * may return org.jdownloader.controlling.filter.LinkFilterController.
-     * VIRTUAL_DENY_RULE <br>
+     * <br>
      * 
      * @return
      */
@@ -277,6 +291,22 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
             }
         }
         return LinkState.UNKNOWN;
+    }
+
+    public void setChunks() {
+    }
+
+    public Priority getPriority() {
+        try {
+            if (dlLink == null) return Priority.DEFAULT;
+            return Priority.values()[dlLink.getPriority() + 1];
+        } catch (Throwable e) {
+            return Priority.DEFAULT;
+        }
+    }
+
+    public void setPriority(Priority priority) {
+        if (dlLink != null) dlLink.setPriority(priority.ordinal());
     }
 
 }

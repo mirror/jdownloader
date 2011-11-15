@@ -40,6 +40,7 @@ public class NewAction extends AbstractAddAction {
                 }
 
             }, true);
+
         } catch (DialogClosedException e1) {
             e1.printStackTrace();
         } catch (DialogCanceledException e1) {

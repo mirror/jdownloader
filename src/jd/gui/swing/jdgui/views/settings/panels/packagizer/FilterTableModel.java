@@ -80,6 +80,7 @@ public class FilterTableModel extends ExtTableModel<PackagizerRule> implements C
             @Override
             protected void setBooleanValue(boolean value, PackagizerRule object) {
                 object.setEnabled(value);
+                PackagizerController.getInstance().update();
             }
         });
 
@@ -88,6 +89,15 @@ public class FilterTableModel extends ExtTableModel<PackagizerRule> implements C
             @Override
             public boolean isEnabled(PackagizerRule obj) {
                 return obj.isEnabled();
+            }
+
+            protected Icon getIcon(final PackagizerRule value) {
+                String key = value.getIconKey();
+                if (key == null) {
+                    return null;
+                } else {
+                    return NewTheme.I().getIcon(key, 18);
+                }
             }
 
             @Override

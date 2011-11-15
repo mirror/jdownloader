@@ -45,6 +45,8 @@ public class ExtensionController {
 
     private ExtensionControllerEventSender eventSender;
 
+    private boolean                        rebuildCache = false;
+
     /**
      * Create a new instance of ExtensionController. This is a singleton class.
      * Access the only existing instance by using {@link #getInstance()}.
@@ -123,21 +125,21 @@ public class ExtensionController {
         getEventSender().fireEvent(new ExtensionControllerEvent(this, ExtensionControllerEvent.Type.UPDATED));
     }
 
-    private ArrayList<LazyExtension> loadFromCache() {
+    private ArrayList<LazyExtension> loadFromCache() throws InstantiationException, IllegalAccessException, ClassNotFoundException, StartException {
         ArrayList<LazyExtension> cache = JSonStorage.restoreFrom(getCache(), true, null, new TypeRef<ArrayList<LazyExtension>>() {
         }, new ArrayList<LazyExtension>());
 
         ArrayList<LazyExtension> lst = new ArrayList<LazyExtension>(cache);
         for (Iterator<LazyExtension> it = lst.iterator(); it.hasNext();) {
+
             LazyExtension l = it.next();
             if (l._isEnabled()) {
-                try {
-                    l.init();
-                } catch (Throwable e) {
-                    e.printStackTrace();
-                    it.remove();
-                }
+                // if exception occures here, we do a complete rescan. cache
+                // might be out of date
+                l.init();
+
             }
+
         }
         return lst;
     }

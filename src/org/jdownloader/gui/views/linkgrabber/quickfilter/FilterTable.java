@@ -10,7 +10,6 @@ import java.util.Iterator;
 import java.util.List;
 
 import javax.swing.JLabel;
-import javax.swing.JMenu;
 import javax.swing.JPopupMenu;
 import javax.swing.KeyStroke;
 import javax.swing.ListSelectionModel;
@@ -35,7 +34,6 @@ import org.appwork.swing.exttable.ExtTable;
 import org.appwork.swing.exttable.columns.ExtCheckColumn;
 import org.appwork.utils.ColorUtils;
 import org.appwork.utils.swing.EDTRunner;
-import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTableModel;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTableModelFilter;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberTable;
@@ -43,10 +41,8 @@ import org.jdownloader.gui.views.linkgrabber.actions.ConfirmAction;
 import org.jdownloader.gui.views.linkgrabber.addlinksdialog.LinkgrabberSettings;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.CreateDLCAction;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.MergeToPackageAction;
-import org.jdownloader.gui.views.linkgrabber.contextmenu.RemoveIncompleteArchives;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.RemoveNonSelectedAction;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.RemoveSelectionAction;
-import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 
 public abstract class FilterTable extends ExtTable<Filter> implements PackageControllerTableModelFilter<CrawledPackage, CrawledLink>, GenericConfigEventListener<Boolean> {
@@ -212,13 +208,11 @@ public abstract class FilterTable extends ExtTable<Filter> implements PackageCon
         popup.add(new ConfirmAction(false, matches));
         popup.add(new MergeToPackageAction(matches));
         popup.add(new CreateDLCAction(matches));
-        JMenu m = new JMenu(_GUI._.ContextMenuFactory_createPopup_cleanup());
-        m.setIcon(NewTheme.I().getIcon("clear", 18));
-        m.add(new RemoveNonSelectedAction(getLinkgrabberTable(), matches).toContextMenuAction());
-        m.add(new RemoveSelectionAction(getLinkgrabberTable(), matches).toContextMenuAction());
+        popup.add(new RemoveNonSelectedAction(getLinkgrabberTable(), matches).toContextMenuAction());
+        popup.add(new RemoveSelectionAction(getLinkgrabberTable(), matches).toContextMenuAction());
+        // popup.add(new
+        // RemoveIncompleteArchives(matches).toContextMenuAction());
 
-        m.add(new RemoveIncompleteArchives(matches).toContextMenuAction());
-        popup.add(m);
         // }
 
         return popup;

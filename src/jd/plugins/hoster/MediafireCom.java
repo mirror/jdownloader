@@ -560,7 +560,9 @@ public class MediafireCom extends PluginForHost {
         if (MediafireCom.CONFIGURATION_KEYS.get(account) == null) {
             this.br.getPage("http://www.mediafire.com/myaccount/download_options.php?enable=1");
             String red = br.getRedirectLocation();
-            if (red != null && red.contains("select_account_type.php")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            if (red != null) {
+
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE); }
             String configurationKey = getAPIKEY(br);
             if (configurationKey == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
             MediafireCom.CONFIGURATION_KEYS.put(account, configurationKey);

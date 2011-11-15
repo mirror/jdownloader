@@ -120,7 +120,7 @@ public class PriorityColumn extends ExtIconColumn<AbstractNode> {
         if (value instanceof DownloadLink) {
             p = ((DownloadLink) value).getPriority();
         } else if (value instanceof CrawledLink) {
-            p = ((CrawledLink) value).getPriority();
+            p = ((CrawledLink) value).getPriority().getId();
         }
         if (p != null) {
             switch (p) {

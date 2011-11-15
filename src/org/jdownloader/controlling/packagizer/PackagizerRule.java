@@ -3,10 +3,33 @@ package org.jdownloader.controlling.packagizer;
 import org.appwork.storage.Storable;
 import org.jdownloader.controlling.Priority;
 import org.jdownloader.controlling.filter.FilterRule;
+import org.jdownloader.translate._JDT;
 
 public class PackagizerRule extends FilterRule implements Storable {
     public PackagizerRule() {
         // required by STorable
+    }
+
+    public PackagizerRule duplicate() {
+        PackagizerRule ret = new PackagizerRule();
+
+        ret.setEnabled(isEnabled());
+        ret.setIconKey(getIconKey());
+        ret.setFilenameFilter(getFilenameFilter());
+        ret.setFilesizeFilter(getFilesizeFilter());
+        ret.setFiletypeFilter(getFiletypeFilter());
+        ret.setOnlineStatusFilter(getOnlineStatusFilter());
+        ret.setHosterURLFilter(getHosterURLFilter());
+        ret.setName(_JDT._.LinkgrabberFilterRule_duplicate(getName()));
+        ret.setSourceURLFilter(getSourceURLFilter());
+        ret.autoAddEnabled = autoAddEnabled;
+        ret.autoExtractionEnabled = autoExtractionEnabled;
+        ret.autoStartEnabled = autoStartEnabled;
+        ret.chunks = chunks;
+        ret.downloadDestination = downloadDestination;
+        ret.packageName = packageName;
+        ret.priority = priority;
+        return ret;
     }
 
     private String downloadDestination;
@@ -70,9 +93,22 @@ public class PackagizerRule extends FilterRule implements Storable {
 
     private boolean autoStartEnabled;
     private int     chunks;
+    private String  filename;
+
+    public void setFilename(String filename) {
+        this.filename = filename;
+    }
 
     public void setDownloadDestination(String string) {
         downloadDestination = string;
+    }
+
+    public PackagizerRuleWrapper compile() {
+        return new PackagizerRuleWrapper(this);
+    }
+
+    public String getFilename() {
+        return filename;
     }
 
 }

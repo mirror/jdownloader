@@ -34,7 +34,6 @@ import javax.swing.ImageIcon;
 
 import jd.config.Property;
 import jd.controlling.JDLogger;
-import jd.controlling.UniqueID;
 import jd.controlling.downloadcontroller.DownloadController;
 import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.controlling.linkcrawler.CheckableLink;
@@ -50,6 +49,7 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.DomainInfo;
+import org.jdownloader.controlling.UniqueID;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
@@ -91,6 +91,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     private static final long                  serialVersionUID        = 1981079856214268373L;
 
     public static final String                 UNKNOWN_FILE_NAME       = "unknownFileName.file";
+    private static final String                PROPERTY_CHUNKS         = "CHUNKS";
 
     private transient AvailableStatus          availableStatus         = AvailableStatus.UNCHECKED;
 
@@ -267,6 +268,15 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
 
     public int getPriority() {
         return this.getIntegerProperty(PROPERTY_PRIORITY, 0);
+    }
+
+    public int getChunks() {
+        return getIntegerProperty(PROPERTY_CHUNKS, -1);
+    }
+
+    public void setChunks(int chunks) {
+        setProperty(PROPERTY_CHUNKS, chunks);
+
     }
 
     public void setPriority(int pr) {
