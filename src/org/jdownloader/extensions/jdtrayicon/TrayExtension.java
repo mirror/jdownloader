@@ -538,8 +538,8 @@ public class TrayExtension extends AbstractExtension<TrayConfig> implements Mous
     }
 
     public void onLinkCollectorEvent(LinkCollectorEvent event) {
-        if (LinkCollectorEvent.TYPE.COLLECTOR_START.equals(event.getType())) {
-            if ((subConfig.getBooleanProperty(PROPERTY_SHOW_ON_LINKGRAB, true) && !guiFrame.isVisible()) || subConfig.getBooleanProperty(PROPERTY_SHOW_ON_LINKGRAB2, false)) {
+        if (LinkCollectorEvent.TYPE.REFRESH_STRUCTURE.equals(event.getType())) {
+            if ((!guiFrame.isVisible() && subConfig.getBooleanProperty(PROPERTY_SHOW_ON_LINKGRAB, true)) || subConfig.getBooleanProperty(PROPERTY_SHOW_ON_LINKGRAB2, false)) {
                 /* dont try to restore jd if password required */
                 if (subConfig.getBooleanProperty(PROPERTY_PASSWORD_REQUIRED, false)) return;
                 if (!guiFrame.isVisible()) {

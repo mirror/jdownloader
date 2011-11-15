@@ -14,7 +14,11 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 
 public class AddOptionsAction extends AbstractAction {
-    private JButton positionComp;
+    /**
+     * 
+     */
+    private static final long serialVersionUID = -1041794723138925672L;
+    private JButton           positionComp;
 
     {
         putValue(SMALL_ICON, NewTheme.I().getIcon("popupButton", -1));

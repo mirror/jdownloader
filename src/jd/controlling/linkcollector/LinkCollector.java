@@ -3,7 +3,6 @@ package jd.controlling.linkcollector;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.controlling.IOEQ;
 import jd.controlling.UniqueID;
@@ -33,8 +32,6 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
     private static LinkCollector                                             INSTANCE    = new LinkCollector();
     private LinkChecker<CrawledLink>                                         linkChecker = null;
-    private AtomicInteger                                                    collStarts  = new AtomicInteger(0);
-    private AtomicInteger                                                    collStops   = new AtomicInteger(0);
 
     private class dupeCheck {
         int counter = 1;
@@ -74,10 +71,6 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         if (linkChecker != null) linkChecker.stopChecking();
     }
 
-    public boolean isRunning() {
-        return collStarts.get() > collStops.get();
-    }
-
     public void addListener(final LinkCollectorListener l) {
         broadcaster.addListener(l);
     }
@@ -107,6 +100,18 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         UniqueID id = packageMapReverse.remove(pkg);
         if (id != null) packageMap.remove(id);
         broadcaster.fireEvent(new LinkCollectorEvent(LinkCollector.this, LinkCollectorEvent.TYPE.REMOVE_CONTENT, pkg, priority));
+        synchronized (pkg) {
+            for (CrawledLink link : pkg.getChildren()) {
+                /* update dupeMap */
+                dupeCheck dupes = dupeMap.get(link.getURL());
+                if (dupes != null) {
+                    dupes.counter--;
+                    if (dupes.counter <= 0) {
+                        dupeMap.remove(link.getURL());
+                    }
+                }
+            }
+        }
     }
 
     @Override
@@ -181,14 +186,6 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         } else {
             addCrawledLink(link);
         }
-    }
-
-    public void linkCheckStarted() {
-        checkRunningState(true);
-    }
-
-    public void linkCheckStopped() {
-        checkRunningState(false);
     }
 
     /**
@@ -294,19 +291,6 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
             }
         }
         return ret.toString();
-    }
-
-    private void checkRunningState(boolean start) {
-        if (start) {
-            this.collStarts.incrementAndGet();
-        } else {
-            this.collStops.incrementAndGet();
-        }
-        if (this.collStarts.get() == this.collStops.get()) {
-            broadcaster.fireEvent(new LinkCollectorEvent(LinkCollector.this, LinkCollectorEvent.TYPE.COLLECTOR_STOP));
-        } else {
-            broadcaster.fireEvent(new LinkCollectorEvent(LinkCollector.this, LinkCollectorEvent.TYPE.COLLECTOR_START));
-        }
     }
 
     public void merge(final CrawledPackage dest, final ArrayList<CrawledLink> srcLinks, final ArrayList<CrawledPackage> srcPkgs) {
@@ -437,16 +421,18 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         }
     }
 
-    public void linkCrawlerStarted() {
-        checkRunningState(true);
-    }
-
-    public void linkCrawlerStopped() {
-        checkRunningState(false);
-    }
-
     public void handleFilteredLink(CrawledLink link) {
         addFilteredStuff(link);
     }
 
+    public void confirmCrawledPackage(CrawledPackage pkg) {
+        IOEQ.getQueue().add(new QueueAction<Void, RuntimeException>() {
+
+            @Override
+            protected Void run() throws RuntimeException {
+                return null;
+            }
+
+        });
+    }
 }

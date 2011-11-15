@@ -39,10 +39,6 @@ public class LinkCollectorEvent extends SimpleEvent<LinkCollector, Object, LinkC
         FILTERED_AVAILABLE,
         /* all filtered stuff is gone */
         FILTERED_EMPTY,
-        /* linkcollector started */
-        COLLECTOR_START,
-        /* linkcollector stopped */
-        COLLECTOR_STOP,
         /* only refresh the content data */
         REFRESH_DATA,
         /* refresh content structure */

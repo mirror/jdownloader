@@ -26,6 +26,7 @@ import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 public class LinkChecker<E extends CheckableLink> {
 
     /* static variables */
+    private static AtomicInteger                                                    CHECKER                = new AtomicInteger(0);
     private static AtomicInteger                                                    LINKCHECKER_THREAD_NUM = new AtomicInteger(0);
     private final static int                                                        MAX_THREADS;
     private final static int                                                        KEEP_ALIVE;
@@ -40,6 +41,11 @@ public class LinkChecker<E extends CheckableLink> {
     private boolean                                                                 forceRecheck           = false;
     private LinkCheckerHandler<E>                                                   handler                = null;
     private static int                                                              SPLITSIZE              = 80;
+    private static LinkCheckerEventSender                                           EVENTSENDER            = new LinkCheckerEventSender();
+
+    public static LinkCheckerEventSender getEventSender() {
+        return EVENTSENDER;
+    }
 
     static {
         MAX_THREADS = Math.max(JsonConfig.create(LinkCheckerConfig.class).getMaxThreads(), 1);
@@ -79,10 +85,15 @@ public class LinkChecker<E extends CheckableLink> {
     protected void linkChecked(CheckableLink link) {
         if (link == null) return;
         boolean stopped = linksDone.incrementAndGet() == linksRequested.get();
+        if (stopped) {
+            synchronized (CHECKER) {
+                CHECKER.decrementAndGet();
+            }
+            EVENTSENDER.fireEvent(new LinkCheckerEvent(this, LinkCheckerEvent.Type.STOPPED));
+        }
         LinkCheckerHandler<E> h = handler;
         if (h != null) {
             h.linkCheckDone((E) link);
-            if (stopped) h.linkCheckStopped();
         }
     }
 
@@ -115,9 +126,11 @@ public class LinkChecker<E extends CheckableLink> {
             if (linksRequested.get() == linksDone.get()) started = true;
             linksRequested.incrementAndGet();
         }
-        LinkCheckerHandler<E> h = handler;
-        if (h != null && started) {
-            h.linkCheckStarted();
+        if (started) {
+            synchronized (CHECKER) {
+                CHECKER.incrementAndGet();
+            }
+            EVENTSENDER.fireEvent(new LinkCheckerEvent(this, LinkCheckerEvent.Type.STARTED));
         }
         synchronized (LOCK) {
             ArrayList<LinkChecker<? extends CheckableLink>> checker = LINKCHECKER.get(host);
@@ -151,6 +164,10 @@ public class LinkChecker<E extends CheckableLink> {
 
     public long checksDone() {
         return linksDone.get();
+    }
+
+    public static boolean isChecking() {
+        return CHECKER.get() > 0;
     }
 
     /* wait till all requested links are done */

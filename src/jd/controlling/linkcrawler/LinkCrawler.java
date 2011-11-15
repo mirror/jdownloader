@@ -35,34 +35,36 @@ import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 
 public class LinkCrawler implements IOPermission {
 
-    private static PluginForHost        directHTTP           = null;
-    private ArrayList<CrawledLink>      crawledLinks         = new ArrayList<CrawledLink>();
-    private AtomicInteger               crawledLinksCounter  = new AtomicInteger(0);
-    private ArrayList<CrawledLink>      filteredLinks        = new ArrayList<CrawledLink>();
-    private AtomicInteger               filteredLinksCounter = new AtomicInteger(0);
-    private AtomicInteger               crawler              = new AtomicInteger(0);
-    private HashSet<String>             duplicateFinder      = new HashSet<String>();
-    private LinkCrawlerHandler          handler              = null;
-    private static ThreadPoolExecutor   threadPool           = null;
+    private PluginForHost                 directHTTP           = null;
+    private ArrayList<CrawledLink>        crawledLinks         = new ArrayList<CrawledLink>();
+    private AtomicInteger                 crawledLinksCounter  = new AtomicInteger(0);
+    private ArrayList<CrawledLink>        filteredLinks        = new ArrayList<CrawledLink>();
+    private AtomicInteger                 filteredLinksCounter = new AtomicInteger(0);
+    private AtomicInteger                 crawler              = new AtomicInteger(0);
+    private static AtomicInteger          CRAWLER              = new AtomicInteger(0);
+    private HashSet<String>               duplicateFinder      = new HashSet<String>();
+    private LinkCrawlerHandler            handler              = null;
+    private static ThreadPoolExecutor     threadPool           = null;
 
-    private HashSet<String>             captchaBlockedHoster = new HashSet<String>();
-    private boolean                     captchaBlockedAll    = false;
-    private LinkCrawlerFilter           filter               = null;
-    private volatile boolean            allowCrawling        = true;
-    private AtomicInteger               crawlerGeneration    = new AtomicInteger(0);
-    private LinkCrawler                 parentCrawler        = null;
+    private HashSet<String>               captchaBlockedHoster = new HashSet<String>();
+    private boolean                       captchaBlockedAll    = false;
+    private LinkCrawlerFilter             filter               = null;
+    private volatile boolean              allowCrawling        = true;
+    private AtomicInteger                 crawlerGeneration    = new AtomicInteger(0);
+    private LinkCrawler                   parentCrawler        = null;
+
     /*
      * customized comparator we use to prefer faster decrypter plugins over
      * slower ones
      */
-    private static Comparator<Runnable> comparator           = new Comparator<Runnable>() {
+    private static Comparator<Runnable>   comparator           = new Comparator<Runnable>() {
 
-                                                                 public int compare(Runnable o1, Runnable o2) {
-                                                                     if (o1 == o2) return 0;
-                                                                     return Long.compare(((LinkCrawlerRunnable) o1).getAverageRuntime(), ((LinkCrawlerRunnable) o2).getAverageRuntime());
-                                                                 }
+                                                                   public int compare(Runnable o1, Runnable o2) {
+                                                                       if (o1 == o2) return 0;
+                                                                       return Long.compare(((LinkCrawlerRunnable) o1).getAverageRuntime(), ((LinkCrawlerRunnable) o2).getAverageRuntime());
+                                                                   }
 
-                                                             };
+                                                               };
 
     static {
         int maxThreads = Math.max(JsonConfig.create(LinkCrawlerConfig.class).getMaxThreads(), 1);
@@ -103,14 +105,12 @@ public class LinkCrawler implements IOPermission {
 
         };
         threadPool.allowCoreThreadTimeOut(true);
+    }
 
-        for (LazyHostPlugin pHost : HostPluginController.getInstance().list()) {
-            if ("http links".equals(pHost.getDisplayName())) {
-                /* for direct access to the directhttp plugin */
-                directHTTP = pHost.newInstance();
-                break;
-            }
-        }
+    private static LinkCrawlerEventSender EVENTSENDER          = new LinkCrawlerEventSender();
+
+    public static LinkCrawlerEventSender getEventSender() {
+        return EVENTSENDER;
     }
 
     public LinkCrawler() {
@@ -124,6 +124,13 @@ public class LinkCrawler implements IOPermission {
             /* forward crawlerGeneration from parent to this child */
             LinkCrawlerThread thread = (LinkCrawlerThread) Thread.currentThread();
             parentCrawler = thread.getCurrentLinkCrawler();
+        }
+        for (LazyHostPlugin pHost : HostPluginController.getInstance().list()) {
+            if ("http links".equals(pHost.getDisplayName())) {
+                /* for direct access to the directhttp plugin */
+                directHTTP = pHost.getPrototype();
+                break;
+            }
         }
     }
 
@@ -309,6 +316,10 @@ public class LinkCrawler implements IOPermission {
         boolean stopped = false;
         synchronized (this) {
             if (crawler.decrementAndGet() == 0) {
+                /* this LinkCrawler instance stopped, notify static counter */
+                synchronized (CRAWLER) {
+                    CRAWLER.decrementAndGet();
+                }
                 synchronized (crawler) {
                     crawler.notifyAll();
                 }
@@ -321,7 +332,9 @@ public class LinkCrawler implements IOPermission {
                 stopped = true;
             }
         }
-        if (stopped) handler.linkCrawlerStopped();
+        if (stopped) {
+            EVENTSENDER.fireEvent(new LinkCrawlerEvent(this, LinkCrawlerEvent.Type.STOPPED));
+        }
     }
 
     private boolean checkStartNotify() {
@@ -330,10 +343,16 @@ public class LinkCrawler implements IOPermission {
             if (!allowCrawling) return false;
             if (crawler.get() == 0) {
                 started = true;
+                /* this LinkCrawler instance started, notify static counter */
+                synchronized (CRAWLER) {
+                    CRAWLER.incrementAndGet();
+                }
             }
             crawler.incrementAndGet();
         }
-        if (started) handler.linkCrawlerStarted();
+        if (started) {
+            EVENTSENDER.fireEvent(new LinkCrawlerEvent(this, LinkCrawlerEvent.Type.STARTED));
+        }
         return true;
     }
 
@@ -651,6 +670,10 @@ public class LinkCrawler implements IOPermission {
         return crawler.get() == 0;
     }
 
+    public static boolean isCrawling() {
+        return CRAWLER.get() > 0;
+    }
+
     protected void container(final CrawledLink cryptedLink) {
         final int generation = this.getCrawlerGeneration(true);
         if (!checkStartNotify()) return;
@@ -872,12 +895,6 @@ public class LinkCrawler implements IOPermission {
                 synchronized (crawledLinks) {
                     crawledLinks.add(link);
                 }
-            }
-
-            public void linkCrawlerStarted() {
-            }
-
-            public void linkCrawlerStopped() {
             }
 
             public void handleFilteredLink(CrawledLink link) {

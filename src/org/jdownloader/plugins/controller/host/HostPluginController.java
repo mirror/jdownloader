@@ -46,7 +46,7 @@ public class HostPluginController extends PluginController<PluginForHost> {
      * Access the only existing instance by using {@link #getInstance()}.
      */
     private HostPluginController() {
-        this.list = null;
+        this.list = new ArrayList<LazyHostPlugin>();
     }
 
     public void init() {
@@ -168,7 +168,8 @@ public class HostPluginController extends PluginController<PluginForHost> {
     }
 
     public LazyHostPlugin get(String displayName) {
-        for (LazyHostPlugin p : list) {
+        List<LazyHostPlugin> llist = list;
+        for (LazyHostPlugin p : llist) {
             if (p.getDisplayName().equalsIgnoreCase(displayName)) return p;
         }
         return null;

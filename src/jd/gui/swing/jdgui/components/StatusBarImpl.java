@@ -26,9 +26,13 @@ import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 
 import jd.Main;
+import jd.controlling.linkchecker.LinkChecker;
+import jd.controlling.linkchecker.LinkCheckerEvent;
+import jd.controlling.linkchecker.LinkCheckerListener;
 import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.linkcollector.LinkCollectorEvent;
-import jd.controlling.linkcollector.LinkCollectorListener;
+import jd.controlling.linkcrawler.LinkCrawler;
+import jd.controlling.linkcrawler.LinkCrawlerEvent;
+import jd.controlling.linkcrawler.LinkCrawlerListener;
 import jd.controlling.reconnect.Reconnecter;
 import jd.gui.swing.jdgui.components.premiumbar.PremiumStatus;
 import jd.gui.swing.laf.LookAndFeelController;
@@ -203,33 +207,21 @@ public class StatusBarImpl extends JPanel {
         Main.GUI_COMPLETE.executeWhenReached(new Runnable() {
 
             public void run() {
-                LinkCollector.getInstance().addListener(new LinkCollectorListener() {
+                LinkCrawler.getEventSender().addListener(new LinkCrawlerListener() {
 
-                    public void onLinkCollectorEvent(LinkCollectorEvent event) {
-                        switch (event.getType()) {
-                        case COLLECTOR_START:
-                            new EDTRunner() {
-                                @Override
-                                protected void runInEDT() {
-                                    linkGrabberIndicator.setEnabled(true);
-                                    linkGrabberIndicator.setIndeterminate(true);
-                                    linkGrabberIndicator.setDescription(_GUI._.StatusBarImpl_initGUI_linkgrabber_desc());
-                                }
-                            };
-                            break;
-                        case COLLECTOR_STOP:
-                            new EDTRunner() {
-                                @Override
-                                protected void runInEDT() {
-                                    linkGrabberIndicator.setEnabled(false);
-                                    linkGrabberIndicator.setIndeterminate(false);
-                                    linkGrabberIndicator.setDescription(_GUI._.StatusBarImpl_initGUI_linkgrabber_desc_inactive());
-                                }
-                            };
-                            break;
-                        }
+                    public void onLinkCrawlerEvent(LinkCrawlerEvent event) {
+                        updateLinkGrabberIndicator();
                     }
+
                 });
+                LinkChecker.getEventSender().addListener(new LinkCheckerListener() {
+
+                    public void onLinkCheckerEvent(LinkCheckerEvent event) {
+                        updateLinkGrabberIndicator();
+                    }
+
+                });
+
             }
 
         });
@@ -249,7 +241,22 @@ public class StatusBarImpl extends JPanel {
         add(reconnectIndicator, "height 22!,width 22!");
         add(linkGrabberIndicator, "height 22!,width 22!");
         add(extractIndicator, "height 22!,width 22!");
+    }
 
+    private void updateLinkGrabberIndicator() {
+        final boolean enabled = LinkChecker.isChecking() | LinkCrawler.isCrawling();
+        new EDTRunner() {
+            @Override
+            protected void runInEDT() {
+                linkGrabberIndicator.setEnabled(enabled);
+                linkGrabberIndicator.setIndeterminate(enabled);
+                if (enabled) {
+                    linkGrabberIndicator.setDescription(_GUI._.StatusBarImpl_initGUI_linkgrabber_desc());
+                } else {
+                    linkGrabberIndicator.setDescription(_GUI._.StatusBarImpl_initGUI_linkgrabber_desc_inactive());
+                }
+            }
+        };
     }
     // private void colorizeSpinnerSpeed() {
     // /* färbt den spinner ein, falls speedbegrenzung aktiv */

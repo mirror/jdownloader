@@ -135,14 +135,14 @@ public class SflnkgNt extends PluginForDecrypt {
                 if (!link.contains("safelinking.net/")) {
                     decryptedLinks.add(createDownloadlink(link));
                 } else {
-                    if (!link.matches(".*?safelinking\\.net/d/")) continue;
+                    if (!link.matches(".*?safelinking\\.net/d/.+")) continue;
                     br.getPage(link);
                     String finallink = br.getRedirectLocation();
                     if (finallink == null) {
                         logger.warning("Decrypter broken, decryption stopped at link: " + link);
-                        return null;
+                    } else {
+                        if (!parameter.equals(finallink)) decryptedLinks.add(createDownloadlink(finallink));
                     }
-                    if (!parameter.equals(finallink)) decryptedLinks.add(createDownloadlink(finallink));
                 }
                 progress.increase(1);
             }
@@ -166,18 +166,25 @@ public class SflnkgNt extends PluginForDecrypt {
         }
         String test = Encoding.htmlDecode(containerLink);
         File file = null;
-        URLConnectionAdapter con = brc.openGetConnection(test);
-        if (con.getResponseCode() == 200) {
-            file = JDUtilities.getResourceFile("tmp/safelinknet/" + test.replaceAll("(:|/|\\?)", "") + format);
-            if (file == null) return null;
-            file.deleteOnExit();
-            brc.downloadConnection(file, con);
-            if (file != null && file.exists() && file.length() > 100) {
-                decryptedLinks = JDUtilities.getController().getContainerLinks(file);
+        URLConnectionAdapter con = null;
+        try {
+            con = brc.openGetConnection(test);
+            if (con.getResponseCode() == 200) {
+                file = JDUtilities.getResourceFile("tmp/safelinknet/" + test.replaceAll("(:|/|\\?)", "") + format);
+                if (file == null) return null;
+                file.deleteOnExit();
+                brc.downloadConnection(file, con);
+                if (file != null && file.exists() && file.length() > 100) {
+                    decryptedLinks = JDUtilities.getController().getContainerLinks(file);
+                }
+            } else {
+                return null;
             }
-        } else {
-            con.disconnect();
-            return null;
+        } finally {
+            try {
+                con.disconnect();
+            } catch (final Throwable e) {
+            }
         }
 
         if (file != null && file.exists() && file.length() > 100) {
