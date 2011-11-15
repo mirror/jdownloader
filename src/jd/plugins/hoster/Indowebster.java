@@ -19,11 +19,11 @@ package jd.plugins.hoster;
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -85,7 +85,7 @@ public class Indowebster extends PluginForHost {
         if (!ad_url.startsWith("http://")) ad_url = "http://www.indowebster.com/" + ad_url;
         br.getPage(ad_url);
         String dllink = br.getRegex("id=\"link\\-download\" align=\"center\"><a href=\"(http://.*?)\"").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("\"(http://v\\d+\\.indowebster\\.com/downloads/jgjbcf/[a-z0-9]+/\\d+)\"").getMatch(0);
+        if (dllink == null) dllink = br.getRegex("\"(http://cdn\\.(x|\\s+)\\.indowebster\\.com/download\\-vip/\\d+/.*?)\"").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dllink = dllink.trim();
         String waittime = br.getRegex("var sec = (\\d+);").getMatch(0);
@@ -96,6 +96,7 @@ public class Indowebster extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
+            if (br.containsHTML(">404 Not Found<")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000l);
             if (br.containsHTML(">Indowebster\\.com under maintenance")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.indowebster.undermaintenance", "Under maintenance"), 30 * 60 * 1000l);
             if (br.containsHTML("But Our Download Server Can be Accessed from Indonesia Only")) throw new PluginException(LinkStatus.ERROR_FATAL, "Download Server Can be Accessed from Indonesia Only");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

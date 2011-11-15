@@ -38,12 +38,12 @@ import jd.parser.html.HTMLParser;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -163,7 +163,7 @@ public class XFileSharingProBasic extends PluginForHost {
         if (dllink == null) {
             Form dlForm = br.getFormbyProperty("name", "F1");
             if (dlForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            long timeBefore = System.currentTimeMillis();
+            final long timeBefore = System.currentTimeMillis();
             boolean password = false;
             boolean skipWaittime = false;
             if (new Regex(BRBEFORE, PASSWORDTEXT).matches()) {
