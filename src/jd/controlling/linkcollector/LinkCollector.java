@@ -2,7 +2,9 @@ package jd.controlling.linkcollector;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map.Entry;
 
 import jd.controlling.IOEQ;
 import jd.controlling.UniqueID;
@@ -14,10 +16,13 @@ import jd.controlling.linkcrawler.LinkCrawler;
 import jd.controlling.linkcrawler.LinkCrawlerFilter;
 import jd.controlling.linkcrawler.LinkCrawlerHandler;
 import jd.controlling.packagecontroller.PackageController;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 
 import org.appwork.utils.event.Eventsender;
 import org.appwork.utils.event.queue.Queue.QueuePriority;
 import org.appwork.utils.event.queue.QueueAction;
+import org.appwork.utils.logging.Log;
 import org.jdownloader.controlling.filter.LinkFilterController;
 
 public class LinkCollector extends PackageController<CrawledPackage, CrawledLink> implements LinkCheckerHandler<CrawledLink>, LinkCrawlerHandler {
@@ -425,14 +430,91 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         addFilteredStuff(link);
     }
 
-    public void confirmCrawledPackage(CrawledPackage pkg) {
-        IOEQ.getQueue().add(new QueueAction<Void, RuntimeException>() {
+    public FilePackage removeAndConvert(final CrawledPackage pkg) {
+        if (pkg == null) return null;
+        return IOEQ.getQueue().addWait(new QueueAction<FilePackage, RuntimeException>() {
 
             @Override
-            protected Void run() throws RuntimeException {
-                return null;
+            protected FilePackage run() throws RuntimeException {
+                if (LinkCollector.this != pkg.getControlledBy()) {
+                    Log.exception(new Throwable("not controlled by this packagecontroller"));
+                    return null;
+                }
+                /* remove CrawledPackage from controller first */
+                removePackage(pkg);
+                /* get new FilePackage Instance */
+                return createFilePackage(pkg, null);
+            }
+        });
+    }
+
+    /*
+     * converts a CrawledPackage into a FilePackage
+     * 
+     * if plinks is not set, then the original children of the CrawledPackage
+     * will get added to the FilePackage
+     * 
+     * if plinks is set, then only plinks will get added to the FilePackage
+     */
+    private FilePackage createFilePackage(final CrawledPackage pkg, ArrayList<CrawledLink> plinks) {
+        FilePackage ret = FilePackage.getInstance();
+        /* set values */
+        ret.setName(pkg.getName());
+        ret.setDownloadDirectory(pkg.getDownloadFolder());
+        ret.setCreated(pkg.getCreated());
+        ret.setExpanded(pkg.isExpanded());
+        ret.setComment(pkg.getComment());
+        synchronized (pkg) {
+            /* add Children from CrawledPackage to FilePackage */
+            ArrayList<DownloadLink> links = new ArrayList<DownloadLink>(pkg.getChildren().size());
+            List<CrawledLink> pkgLinks = pkg.getChildren();
+            if (plinks != null && plinks.size() > 0) pkgLinks = new ArrayList<CrawledLink>(plinks);
+            for (CrawledLink link : pkgLinks) {
+                /* extract DownloadLink from CrawledLink */
+                DownloadLink dl = link.getDownloadLink();
+                if (dl != null) {
+                    links.add(dl);
+                    /* set correct Parent node */
+                    dl.setParentNode(ret);
+                }
+            }
+            /* add all children to FilePackage */
+            ret.getChildren().addAll(links);
+        }
+        return ret;
+    }
+
+    public ArrayList<FilePackage> removeAndConvert(final ArrayList<CrawledLink> links) {
+        if (links == null || links.size() == 0) return null;
+        return IOEQ.getQueue().addWait(new QueueAction<ArrayList<FilePackage>, RuntimeException>() {
+
+            @Override
+            protected ArrayList<FilePackage> run() throws RuntimeException {
+                ArrayList<FilePackage> ret = new ArrayList<FilePackage>();
+                HashMap<CrawledPackage, ArrayList<CrawledLink>> map = new HashMap<CrawledPackage, ArrayList<CrawledLink>>();
+                for (CrawledLink link : links) {
+                    CrawledPackage parent = link.getParentNode();
+                    if (parent == null || parent.getControlledBy() != LinkCollector.this) {
+                        Log.exception(new Throwable("not controlled by this packagecontroller"));
+                        continue;
+                    }
+                    ArrayList<CrawledLink> pkg_links = map.get(parent);
+                    if (pkg_links == null) {
+                        pkg_links = new ArrayList<CrawledLink>();
+                        map.put(parent, pkg_links);
+                    }
+                    pkg_links.add(link);
+                }
+                Iterator<Entry<CrawledPackage, ArrayList<CrawledLink>>> it = map.entrySet().iterator();
+                while (it.hasNext()) {
+                    Entry<CrawledPackage, ArrayList<CrawledLink>> next = it.next();
+                    LinkCollector.this.removeChildren(next.getKey(), next.getValue(), true);
+                    ret.add(createFilePackage(next.getKey(), next.getValue()));
+                }
+                return ret;
             }
 
         });
     }
+
 }

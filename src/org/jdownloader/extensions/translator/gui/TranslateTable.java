@@ -1,6 +1,7 @@
 package org.jdownloader.extensions.translator.gui;
 
 import java.awt.Color;
+import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 
 import javax.swing.JPopupMenu;
@@ -24,7 +25,7 @@ public class TranslateTable extends BasicJDTable<TranslateEntry> {
     private ExtOverlayRowHighlighter rhDefault;
 
     @Override
-    protected JPopupMenu onContextMenu(JPopupMenu popup, TranslateEntry contextObject, ArrayList<TranslateEntry> selection, ExtColumn<TranslateEntry> column) {
+    protected JPopupMenu onContextMenu(JPopupMenu popup, TranslateEntry contextObject, ArrayList<TranslateEntry> selection, ExtColumn<TranslateEntry> column, MouseEvent ev) {
 
         popup.add(new SetDefaultAction(selection));
 

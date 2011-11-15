@@ -47,6 +47,10 @@ public class RemoveNonSelectedAction extends AppAction {
                             return !selected.contains(node);
                         }
 
+                        public int returnMaxResults() {
+                            return -1;
+                        }
+
                     });
                     LinkCollector.getInstance().removeChildren(nonselected);
                 }

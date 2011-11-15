@@ -31,6 +31,8 @@ import java.util.Vector;
 
 import jd.PluginWrapper;
 import jd.controlling.JDLogger;
+import jd.controlling.linkcollector.LinkCollectingJob;
+import jd.controlling.linkcollector.LinkCollector;
 import jd.http.Browser;
 import jd.http.requests.FormData;
 import jd.http.requests.PostFormDataRequest;
@@ -40,7 +42,6 @@ import jd.plugins.ContainerPlugin;
 import jd.plugins.ContainerStatus;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginsC;
-import jd.utils.JDUtilities;
 
 @ContainerPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "CCF" }, urls = { "file://.+\\.ccf" })
 public class C extends PluginsC {
@@ -142,7 +143,7 @@ public class C extends PluginsC {
             if (dlc != null) {
                 lc = new File(lc.getAbsolutePath().substring(0, lc.getAbsolutePath().length() - 3) + "dlc");
                 JDIO.writeLocalFile(lc, dlc);
-                JDUtilities.getController().loadContainerFile(lc);
+                LinkCollector.getInstance().addCrawlerJob(new LinkCollectingJob("file://" + lc.getAbsolutePath()));
                 cs.setStatus(ContainerStatus.STATUS_FINISHED);
 
                 return cs;

@@ -19,7 +19,8 @@ package jd.gui.swing.jdgui.menu.actions;
 import java.awt.event.ActionEvent;
 import java.io.File;
 
-import jd.controlling.JDController;
+import jd.controlling.linkcollector.LinkCollectingJob;
+import jd.controlling.linkcollector.LinkCollector;
 import jd.gui.UserIO;
 import jd.gui.swing.jdgui.actions.ToolBarAction;
 import jd.nutils.io.JDFileFilter;
@@ -39,9 +40,13 @@ public class AddContainerAction extends ToolBarAction {
     public void onAction(ActionEvent e) {
         File[] ret = UserIO.getInstance().requestFileChooser("_LOADSAVEDLC", _GUI._.gui_filechooser_loaddlc(), UserIO.FILES_ONLY, new JDFileFilter(null, ContainerPluginController.getInstance().getContainerExtensions(null), true), true);
         if (ret == null) return;
+        StringBuilder sb = new StringBuilder();
         for (File r : ret) {
-            JDController.loadContainerFile(r);
+            if (sb.length() > 0) sb.append("\r\n");
+            sb.append("file://");
+            sb.append(r.getAbsolutePath());
         }
+        LinkCollector.getInstance().addCrawlerJob(new LinkCollectingJob(sb.toString()));
     }
 
     @Override

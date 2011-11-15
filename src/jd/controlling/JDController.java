@@ -18,14 +18,11 @@ package jd.controlling;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.LinkedList;
 import java.util.logging.Logger;
 
 import jd.Main;
 import jd.config.Configuration;
 import jd.config.DatabaseConnector;
-import jd.config.SubConfiguration;
-import jd.controlling.downloadcontroller.DownloadController;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.controlling.linkcollector.LinkCollectingJob;
@@ -36,10 +33,8 @@ import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.gui.UserIO;
 import jd.http.Browser;
-import jd.nutils.JDFlags;
 import jd.nutils.io.JDIO;
 import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginsC;
 import jd.utils.JDUtilities;
@@ -48,7 +43,6 @@ import org.appwork.utils.event.Eventsender;
 import org.jdownloader.controlling.filter.LinkFilterController;
 import org.jdownloader.plugins.controller.container.ContainerPluginController;
 import org.jdownloader.plugins.controller.container.LazyContainerPlugin;
-import org.jdownloader.translate._JDT;
 import org.jdownloader.update.RestartController;
 
 /**
@@ -451,15 +445,6 @@ public class JDController implements ControlListener {
         fireControlEvent(c);
     }
 
-    /**
-     * Der Zurückgegeben ArrayList darf nur gelesen werden!!
-     * 
-     * @return
-     */
-    public LinkedList<FilePackage> getPackages() {
-        return JDUtilities.getDownloadController().getPackages();
-    }
-
     public ArrayList<DownloadLink> getContainerLinks(final File file) {
         LinkCrawler lc = new LinkCrawler();
         lc.setFilter(LinkFilterController.getInstance());
@@ -481,10 +466,6 @@ public class JDController implements ControlListener {
      */
     public synchronized void removeControlListener(final ControlListener listener) {
         eventSender.removeListener(listener);
-    }
-
-    public static void loadContainerFile(final File file) {
-        LinkCollector.getInstance().addCrawlerJob(new LinkCollectingJob("file://" + file.getAbsolutePath()));
     }
 
     /**
@@ -511,46 +492,12 @@ public class JDController implements ControlListener {
         if (xml != null) {
             final String cipher = encryptDLC(plg, xml);
             if (cipher != null) {
-                final SubConfiguration cfg = SubConfiguration.getConfig("DLCrypt");
                 JDIO.writeLocalFile(file, cipher);
-                if (cfg.getBooleanProperty("SHOW_INFO_AFTER_CREATE", false)) {
-                    // Nur Falls Die Meldung nicht deaktiviert wurde {
-                    if (JDFlags.hasSomeFlags(UserIO.getInstance().requestConfirmDialog(UserIO.NO_COUNTDOWN, _JDT._.sys_dlc_success()), UserIO.RETURN_OK)) {
-                        loadContainerFile(file);
-                        return;
-                    }
-                }
                 return;
             }
         }
         LOGGER.severe("Container creation failed");
         UserIO.getInstance().requestMessageDialog("Container encryption failed");
-    }
-
-    public DownloadLink getDownloadLinkByFileOutput(final File file, final Integer linkstatus) {
-        final ArrayList<DownloadLink> links = JDUtilities.getDownloadController().getAllDownloadLinks();
-        try {
-            for (final DownloadLink nextDownloadLink : links) {
-                if (new File(nextDownloadLink.getFileOutput()).getAbsoluteFile().equals(file.getAbsoluteFile())) {
-                    if (linkstatus != null) {
-                        if (nextDownloadLink.getLinkStatus().hasStatus(linkstatus)) return nextDownloadLink;
-                    } else {
-                        return nextDownloadLink;
-                    }
-                }
-            }
-        } catch (final Exception e) {
-            JDLogger.exception(e);
-        }
-        return null;
-    }
-
-    public LinkedList<DownloadLink> getDownloadLinksByNamePattern(final String matcher) {
-        return DownloadController.getInstance().getDownloadLinksByNamePattern(matcher);
-    }
-
-    public LinkedList<DownloadLink> getDownloadLinksByPathPattern(final String matcher) {
-        return DownloadController.getInstance().getDownloadLinksByPathPattern(matcher);
     }
 
 }

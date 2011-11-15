@@ -17,6 +17,7 @@ public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledP
     private String                                         autoPackageName  = null;
     private boolean                                        allowAutoPackage = true;
     private transient CrawledPackageInfo                   fpInfo           = null;
+    private String                                         comment          = null;
     private String                                         downloadFolder   = JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder();
 
     public String getDownloadFolder() {
@@ -138,6 +139,21 @@ public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledP
     }
 
     public void notifyPropertyChanges() {
+    }
+
+    /**
+     * @param comment
+     *            the comment to set
+     */
+    public void setComment(String comment) {
+        this.comment = comment;
+    }
+
+    /**
+     * @return the comment
+     */
+    public String getComment() {
+        return comment;
     }
 
 }

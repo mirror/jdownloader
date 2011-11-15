@@ -23,6 +23,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
+import java.util.List;
 
 import javax.swing.filechooser.FileFilter;
 
@@ -30,6 +31,7 @@ import jd.controlling.JDController;
 import jd.controlling.JDLogger;
 import jd.controlling.downloadcontroller.DownloadController;
 import jd.controlling.downloadcontroller.SingleDownloadController;
+import jd.controlling.packagecontroller.AbstractPackageChildrenNodeFilter;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.gui.UserIO;
@@ -217,16 +219,28 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
      * @param file
      * @return
      */
-    private Archive buildDummyArchive(File file) {
-        DownloadLink link = JDUtilities.getController().getDownloadLinkByFileOutput(file, LinkStatus.FINISHED);
-        if (link == null) {
+    private Archive buildDummyArchive(final File file) {
+        final String lfile = file.getAbsolutePath();
+        List<DownloadLink> links = DownloadController.getInstance().getChildrenByFilter(new AbstractPackageChildrenNodeFilter<DownloadLink>() {
+
+            public boolean isChildrenNodeFiltered(DownloadLink node) {
+                if (node.getFileOutput().equals(lfile)) {
+                    if (node.getLinkStatus().hasStatus(LinkStatus.FINISHED)) return true;
+                }
+                return false;
+            }
+
+            public int returnMaxResults() {
+                return 1;
+            }
+        });
+        if (links == null || links.size() == 0) {
             /* link no longer in list */
             DummyDownloadLink link0 = new DummyDownloadLink(file.getName());
             link0.setFile(file);
             return buildArchive(link0);
         }
-
-        return buildArchive(link);
+        return buildArchive(links.get(0));
     }
 
     /**

@@ -38,6 +38,10 @@ public class RemoveOfflineAction extends AppAction {
                             return LinkState.OFFLINE.equals(node.getLinkState());
                         }
 
+                        public int returnMaxResults() {
+                            return -1;
+                        }
+
                     });
                     LinkCollector.getInstance().removeChildren(offline);
                 }

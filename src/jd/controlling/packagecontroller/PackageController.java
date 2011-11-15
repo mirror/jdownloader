@@ -186,7 +186,7 @@ public abstract class PackageController<E extends AbstractPackageNode<V, E>, V e
                         pkg.setControlledBy(null);
                         writeLock();
                         try {
-                            removed = packages.remove(pkg);
+                            removed = controller.packages.remove(pkg);
                         } finally {
                             writeUnlock();
                         }
@@ -195,8 +195,10 @@ public abstract class PackageController<E extends AbstractPackageNode<V, E>, V e
                         remove = new ArrayList<V>(pkg.getChildren());
                     }
                     if (removed && remove != null) {
-                        if (remove.size() > 0) childrenChanged.incrementAndGet();
-                        controller._controllerParentlessLinks(remove, this.getQueuePrio());
+                        if (remove.size() > 0) {
+                            childrenChanged.incrementAndGet();
+                            controller._controllerParentlessLinks(remove, this.getQueuePrio());
+                        }
                     }
                     if (removed) {
                         controller.structureChanged.incrementAndGet();
@@ -260,6 +262,10 @@ public abstract class PackageController<E extends AbstractPackageNode<V, E>, V e
             for (E pkg : packages) {
                 synchronized (pkg) {
                     for (V child : pkg.getChildren()) {
+                        if (filter.returnMaxResults() > 0 && ret.size() == filter.returnMaxResults()) {
+                            /* max results found, lets return */
+                            return ret;
+                        }
                         if (filter.isChildrenNodeFiltered(child)) {
                             ret.add(child);
                         }

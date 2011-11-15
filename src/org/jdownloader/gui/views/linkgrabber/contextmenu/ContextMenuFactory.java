@@ -1,5 +1,6 @@
 package org.jdownloader.gui.views.linkgrabber.contextmenu;
 
+import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 
 import javax.swing.JMenu;
@@ -13,6 +14,7 @@ import jd.controlling.packagecontroller.AbstractNode;
 import org.appwork.swing.exttable.ExtColumn;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberTable;
+import org.jdownloader.gui.views.linkgrabber.actions.ConfirmAction;
 import org.jdownloader.images.NewTheme;
 
 public class ContextMenuFactory {
@@ -23,15 +25,16 @@ public class ContextMenuFactory {
         this.table = linkGrabberTable;
     }
 
-    public JPopupMenu createPopup(AbstractNode contextObject, ArrayList<AbstractNode> selection, ExtColumn<AbstractNode> column) {
+    public JPopupMenu createPopup(AbstractNode contextObject, ArrayList<AbstractNode> selection, ExtColumn<AbstractNode> column, MouseEvent event) {
         if (selection == null || selection.size() == 0) return null;
         boolean isLinkContext = contextObject instanceof CrawledLink;
+        boolean isShift = event.isShiftDown();
         boolean isPkgContext = contextObject instanceof CrawledPackage;
         CrawledLink link = isLinkContext ? (CrawledLink) contextObject : null;
         CrawledPackage pkg = isPkgContext ? (CrawledPackage) contextObject : null;
         JPopupMenu p = new JPopupMenu();
         JMenu m;
-        p.add(new ConfirmAction(selection).toContextMenuAction());
+        p.add(new ConfirmAction(isShift, selection).toContextMenuAction());
         p.add(new EnabledAction(selection).toContextMenuAction());
         if (isLinkContext) {
             m = new JMenu(_GUI._.ContextMenuFactory_createPopup_link());

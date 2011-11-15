@@ -26,7 +26,8 @@ import java.util.Date;
 import java.util.List;
 import java.util.regex.Pattern;
 
-import jd.controlling.JDController;
+import jd.controlling.downloadcontroller.DownloadController;
+import jd.controlling.packagecontroller.AbstractPackageChildrenNodeFilter;
 import jd.nutils.io.FileSignatures;
 import jd.nutils.io.Signature;
 import jd.plugins.DownloadLink;
@@ -128,9 +129,19 @@ public class Multi extends IExtraction {
                     }
                 }
             } else {
-                for (DownloadLink l : JDController.getInstance().getDownloadLinksByPathPattern(pattern)) {
-                    matches.add(l);
-                }
+                final Pattern pat = Pattern.compile(pattern, Pattern.CASE_INSENSITIVE);
+                List<DownloadLink> links = DownloadController.getInstance().getChildrenByFilter(new AbstractPackageChildrenNodeFilter<DownloadLink>() {
+
+                    public boolean isChildrenNodeFiltered(DownloadLink node) {
+                        return pat.matcher(node.getFileOutput()).matches();
+                    }
+
+                    public int returnMaxResults() {
+                        return 0;
+                    }
+                });
+                matches.addAll(links);
+
             }
         }
 
@@ -194,11 +205,25 @@ public class Multi extends IExtraction {
     }
 
     @Override
-    public Archive buildDummyArchive(String file) {
-        File file0 = new File(file);
-        DownloadLink link = JDController.getInstance().getDownloadLinkByFileOutput(file0, LinkStatus.FINISHED);
-        if (link == null) {
+    public Archive buildDummyArchive(final String file) {
+        List<DownloadLink> links = DownloadController.getInstance().getChildrenByFilter(new AbstractPackageChildrenNodeFilter<DownloadLink>() {
+
+            public boolean isChildrenNodeFiltered(DownloadLink node) {
+                if (node.getFileOutput().equals(file)) {
+                    if (node.getLinkStatus().hasStatus(LinkStatus.FINISHED)) return true;
+                }
+                return false;
+            }
+
+            public int returnMaxResults() {
+                return 1;
+            }
+        });
+        DownloadLink link = null;
+        if (links == null || links.size() == 0) {
             link = buildDownloadLinkFromFile(file);
+        } else {
+            link = links.get(0);
         }
         return buildArchive(link);
     }
@@ -475,6 +500,7 @@ public class Multi extends IExtraction {
             SevenZip.initSevenZipFromPlatformJAR();
         } catch (SevenZipNativeInitializationException e) {
             logger.warning("Could not initialize Multiunpacker");
+            return false;
         }
         return SevenZip.isInitializedSuccessfully();
     }
@@ -637,26 +663,22 @@ public class Multi extends IExtraction {
         }
 
         try {
-            if (multiopener != null) {
-                multiopener.close();
-            }
-
-            if (raropener != null) {
-                raropener.close();
-            }
-
-            if (stream != null) {
-                stream.close();
-            }
-
-            inArchive.close();
-        } catch (SevenZipException e) {
-            logger.warning("Tried to close a non existing archive");
-        } catch (IOException e) {
-            logger.warning("Tried to close an already closed archive");
-        } catch (NullPointerException e) {
-            logger.warning("Tried to close a non existing archive");
+            multiopener.close();
+        } catch (final Throwable e) {
         }
+        try {
+            raropener.close();
+        } catch (final Throwable e) {
+        }
+        try {
+            stream.close();
+        } catch (final Throwable e) {
+        }
+        try {
+            inArchive.close();
+        } catch (final Throwable e) {
+        }
+
     }
 
     @Override

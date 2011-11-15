@@ -1,6 +1,7 @@
 package jd.gui.swing.jdgui.views.settings.panels.basicauthentication;
 
 import java.awt.event.KeyEvent;
+import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 
 import javax.swing.JPopupMenu;
@@ -19,7 +20,7 @@ public class AuthTable extends BasicJDTable<AuthenticationInfo> {
     }
 
     @Override
-    protected JPopupMenu onContextMenu(JPopupMenu popup, AuthenticationInfo contextObject, ArrayList<AuthenticationInfo> selection, ExtColumn<AuthenticationInfo> col) {
+    protected JPopupMenu onContextMenu(JPopupMenu popup, AuthenticationInfo contextObject, ArrayList<AuthenticationInfo> selection, ExtColumn<AuthenticationInfo> col, MouseEvent ev) {
         popup.add(new NewAction(this));
         popup.add(new RemoveAction(this, selection, false));
         return popup;

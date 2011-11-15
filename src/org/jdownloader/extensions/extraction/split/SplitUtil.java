@@ -27,7 +27,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.regex.Pattern;
 
-import jd.controlling.JDController;
+import jd.controlling.downloadcontroller.DownloadController;
+import jd.controlling.packagecontroller.AbstractPackageChildrenNodeFilter;
 import jd.nutils.io.FileSignatures;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
@@ -76,9 +77,18 @@ class SplitUtil {
                 }
             }
         } else {
-            for (DownloadLink l : JDController.getInstance().getDownloadLinksByPathPattern(pattern)) {
-                matches.add(l);
-            }
+            final Pattern pat = Pattern.compile(pattern, Pattern.CASE_INSENSITIVE);
+            List<DownloadLink> links = DownloadController.getInstance().getChildrenByFilter(new AbstractPackageChildrenNodeFilter<DownloadLink>() {
+
+                public boolean isChildrenNodeFiltered(DownloadLink node) {
+                    return pat.matcher(node.getFileOutput()).matches();
+                }
+
+                public int returnMaxResults() {
+                    return 0;
+                }
+            });
+            matches.addAll(links);
         }
 
         archive.setDownloadLinks(matches);
@@ -111,10 +121,25 @@ class SplitUtil {
      *            Regex for the startfile.
      * @return The archive.
      */
-    static Archive buildDummyArchive(String file, String pattern, String startfile) {
-        DownloadLink link = JDController.getInstance().getDownloadLinkByFileOutput(new File(file), LinkStatus.FINISHED);
-        if (link == null) {
+    static Archive buildDummyArchive(final String file, String pattern, String startfile) {
+        List<DownloadLink> links = DownloadController.getInstance().getChildrenByFilter(new AbstractPackageChildrenNodeFilter<DownloadLink>() {
+
+            public boolean isChildrenNodeFiltered(DownloadLink node) {
+                if (node.getFileOutput().equals(file)) {
+                    if (node.getLinkStatus().hasStatus(LinkStatus.FINISHED)) return true;
+                }
+                return false;
+            }
+
+            public int returnMaxResults() {
+                return 1;
+            }
+        });
+        DownloadLink link = null;
+        if (links == null || links.size() == 0) {
             link = buildDownloadLinkFromFile(file);
+        } else {
+            link = links.get(0);
         }
         return buildArchive(link, pattern, startfile);
     }

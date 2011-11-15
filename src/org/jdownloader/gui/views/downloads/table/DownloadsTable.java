@@ -247,7 +247,7 @@ public class DownloadsTable extends PackageControllerTable<FilePackage, Download
     }
 
     @Override
-    protected JPopupMenu onContextMenu(final JPopupMenu popup, final AbstractNode contextObject, final ArrayList<AbstractNode> selection, ExtColumn<AbstractNode> column) {
+    protected JPopupMenu onContextMenu(final JPopupMenu popup, final AbstractNode contextObject, final ArrayList<AbstractNode> selection, ExtColumn<AbstractNode> column, MouseEvent ev) {
         /* split selection into downloadlinks and filepackages */
         final ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
         final ArrayList<FilePackage> fps = new ArrayList<FilePackage>();

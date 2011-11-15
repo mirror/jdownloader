@@ -39,8 +39,8 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTableModel;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTableModelFilter;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberTable;
+import org.jdownloader.gui.views.linkgrabber.actions.ConfirmAction;
 import org.jdownloader.gui.views.linkgrabber.addlinksdialog.LinkgrabberSettings;
-import org.jdownloader.gui.views.linkgrabber.contextmenu.ConfirmAction;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.CreateDLCAction;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.MergeToPackageAction;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.RemoveIncompleteArchives;
@@ -209,7 +209,7 @@ public abstract class FilterTable extends ExtTable<Filter> implements PackageCon
 
         // if (LinkgrabberSettings.QUICK_VIEW_SELECTION_ENABLED.getValue()) {
         ArrayList<AbstractNode> matches = getMatches(getSelectedFilters());
-        popup.add(new ConfirmAction(matches));
+        popup.add(new ConfirmAction(false, matches));
         popup.add(new MergeToPackageAction(matches));
         popup.add(new CreateDLCAction(matches));
         JMenu m = new JMenu(_GUI._.ContextMenuFactory_createPopup_cleanup());

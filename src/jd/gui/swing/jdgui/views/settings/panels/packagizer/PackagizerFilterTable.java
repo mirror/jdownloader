@@ -35,7 +35,7 @@ public class PackagizerFilterTable extends BasicJDTable<PackagizerRule> {
      * org.appwork.swing.exttable.ExtColumn)
      */
     @Override
-    protected JPopupMenu onContextMenu(JPopupMenu popup, PackagizerRule contextObject, ArrayList<PackagizerRule> selection, ExtColumn<PackagizerRule> column) {
+    protected JPopupMenu onContextMenu(JPopupMenu popup, PackagizerRule contextObject, ArrayList<PackagizerRule> selection, ExtColumn<PackagizerRule> column, MouseEvent ev) {
         popup.add(new JMenuItem(new NewAction(this).toContextMenuAction()));
         popup.add(new JMenuItem(new RemoveAction(this, selection, false).toContextMenuAction()));
 

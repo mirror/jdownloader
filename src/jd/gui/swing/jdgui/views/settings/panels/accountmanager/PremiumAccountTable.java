@@ -1,6 +1,7 @@
 package jd.gui.swing.jdgui.views.settings.panels.accountmanager;
 
 import java.awt.event.KeyEvent;
+import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 
 import javax.swing.JPopupMenu;
@@ -41,7 +42,7 @@ public class PremiumAccountTable extends BasicJDTable<Account> {
      * org.appwork.swing.exttable.ExtColumn)
      */
     @Override
-    protected JPopupMenu onContextMenu(JPopupMenu popup, Account contextObject, ArrayList<Account> selection, ExtColumn<Account> column) {
+    protected JPopupMenu onContextMenu(JPopupMenu popup, Account contextObject, ArrayList<Account> selection, ExtColumn<Account> column, MouseEvent ev) {
         if (popup != null) {
             if (selection == null) {
                 popup.add(new NewAction());

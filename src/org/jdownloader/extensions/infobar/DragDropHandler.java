@@ -8,8 +8,6 @@ import java.util.List;
 import javax.swing.JComponent;
 import javax.swing.TransferHandler;
 
-import jd.controlling.JDController;
-
 import org.appwork.utils.Regex;
 
 public class DragDropHandler extends TransferHandler {
@@ -54,7 +52,8 @@ public class DragDropHandler extends TransferHandler {
                 String linuxfiles[] = new Regex(files, "file://(.*?)(\r\n|\r|\n)").getColumn(0);
                 if (linuxfiles != null && linuxfiles.length > 0) {
                     for (String file : linuxfiles) {
-                        JDController.loadContainerFile(new File(file.trim()));
+                        // JDController.loadContainerFile(new
+                        // File(file.trim()));
                     }
                 } else {
                     // JDController.distributeLinks(files);
@@ -72,7 +71,7 @@ public class DragDropHandler extends TransferHandler {
                 // files.toArray(new File[] {}));
 
                 for (File file : files) {
-                    JDController.loadContainerFile(file);
+                    // JDController.loadContainerFile(file);
                 }
 
                 return true;

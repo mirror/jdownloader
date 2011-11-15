@@ -43,6 +43,10 @@ import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 
 public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListener, GenericConfigEventListener<Boolean> {
+    /**
+     * 
+     */
+    private static final long                        serialVersionUID = 1L;
     private LinkGrabberTableModel                    tableModel;
     private LinkGrabberTable                         table;
     private JScrollPane                              tableScrollPane;
@@ -68,6 +72,11 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
         tableScrollPane = new JScrollPane(table);
         // tableScrollPane.setBorder(null);
         filteredAdd = new ExtButton(new AppAction() {
+            /**
+             * 
+             */
+            private static final long serialVersionUID = 1L;
+
             {
                 setIconKey("filter");
             }
@@ -99,22 +108,42 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
         confirmAll = new JButton(new ConfirmAllAction());
         clearAll = new JButton(new ClearAction());
         popup = new JButton(new AddOptionsAction(addLinks)) {
+            /**
+             * 
+             */
+            private static final long serialVersionUID = 1L;
+
             public void setBounds(int x, int y, int width, int height) {
                 super.setBounds(x - 2, y, width + 2, height);
             }
         };
         popupRemove = new JButton(new RemoveOptionsAction(table, clearAll)) {
+            /**
+             * 
+             */
+            private static final long serialVersionUID = 1L;
+
             public void setBounds(int x, int y, int width, int height) {
                 super.setBounds(x - 2, y, width + 2, height);
             }
         };
         popupConfirm = new JButton(new ConfirmOptionsAction(table, confirmAll)) {
+            /**
+             * 
+             */
+            private static final long serialVersionUID = 1L;
+
             public void setBounds(int x, int y, int width, int height) {
                 super.setBounds(x - 2, y, width + 2, height);
             }
         };
 
         showHideSidebar = new JToggleButton(new AppAction() {
+            /**
+             * 
+             */
+            private static final long serialVersionUID = 1L;
+
             {
 
                 putValue(SMALL_ICON, NewTheme.I().getIcon("sidebar", -1));
@@ -211,6 +240,11 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
         sidebar = new LinkGrabberSidebar(table);
 
         sidebarScrollPane = new HeaderScrollPane(sidebar) {
+
+            /**
+             * 
+             */
+            private static final long serialVersionUID = 1L;
             // protected int getHeaderHeight() {
             // return (int)
             // table.getTableHeader().getPreferredSize().getHeight();

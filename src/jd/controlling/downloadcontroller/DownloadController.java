@@ -26,7 +26,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 
 import jd.config.Configuration;
@@ -170,7 +169,11 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                     /* add loaded Packages to this controller */
                     try {
                         for (final FilePackage filePackage : lpackages2) {
+                            for (DownloadLink dl : filePackage.getChildren()) {
+                                dl.setParentNode(filePackage);
+                            }
                             filePackage.setControlledBy(DownloadController.this);
+
                         }
                         packages.addAll(0, lpackages2);
                     } finally {
@@ -652,32 +655,6 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
         /* TODO: rewrite */
     }
 
-    public static ArrayList<ArrayList<DownloadLink>> splitByFilePackage(final ArrayList<DownloadLink> links) {
-        final ArrayList<ArrayList<DownloadLink>> ret = new ArrayList<ArrayList<DownloadLink>>();
-        boolean added = false;
-        for (final DownloadLink link : links) {
-            if (ret.size() == 0) {
-                final ArrayList<DownloadLink> tmp = new ArrayList<DownloadLink>();
-                tmp.add(link);
-                ret.add(tmp);
-            } else {
-                added = false;
-                for (final ArrayList<DownloadLink> check : ret) {
-                    if (link.getFilePackage() == check.get(0).getFilePackage()) {
-                        added = true;
-                        check.add(link);
-                    }
-                }
-                if (added == false) {
-                    final ArrayList<DownloadLink> tmp = new ArrayList<DownloadLink>();
-                    tmp.add(link);
-                    ret.add(tmp);
-                }
-            }
-        }
-        return ret;
-    }
-
     public void fireDataUpdate(Object o) {
         if (o != null) {
             broadcaster.fireEvent(new DownloadControllerEvent(this, DownloadControllerEvent.TYPE.REFRESH_DATA, o));
@@ -688,60 +665,6 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
 
     public void fireDataUpdate() {
         fireDataUpdate(null);
-    }
-
-    /**
-     * return all DownloadLinks that match given Regex for Filename
-     * 
-     * @param matcher
-     * @return
-     */
-    public LinkedList<DownloadLink> getDownloadLinksByNamePattern(final String matcher) {
-        final LinkedList<DownloadLink> ret = new LinkedList<DownloadLink>();
-        if (matcher == null || matcher.length() == 0) return ret;
-        Pattern pat = Pattern.compile(matcher, Pattern.CASE_INSENSITIVE);
-        final boolean readL = readLock();
-        try {
-            for (final FilePackage fp : packages) {
-                synchronized (fp) {
-                    for (final DownloadLink nextDownloadLink : fp.getChildren()) {
-                        if (pat.matcher(nextDownloadLink.getName()).matches()) {
-                            ret.add(nextDownloadLink);
-                        }
-                    }
-                }
-            }
-        } finally {
-            readUnlock(readL);
-        }
-        return ret;
-    }
-
-    /**
-     * return all DownloadLinks that match a given Regex for OutputPath
-     * 
-     * @param matcher
-     * @return
-     */
-    public LinkedList<DownloadLink> getDownloadLinksByPathPattern(final String matcher) {
-        final LinkedList<DownloadLink> ret = new LinkedList<DownloadLink>();
-        if (matcher == null || matcher.length() == 0) return ret;
-        Pattern pat = Pattern.compile(matcher, Pattern.CASE_INSENSITIVE);
-        final boolean readL = readLock();
-        try {
-            for (final FilePackage fp : packages) {
-                synchronized (fp) {
-                    for (final DownloadLink nextDownloadLink : fp.getChildren()) {
-                        if (pat.matcher(nextDownloadLink.getFileOutput()).matches()) {
-                            ret.add(nextDownloadLink);
-                        }
-                    }
-                }
-            }
-        } finally {
-            readUnlock(readL);
-        }
-        return ret;
     }
 
     @Override

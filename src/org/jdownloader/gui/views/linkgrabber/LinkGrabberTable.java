@@ -44,8 +44,9 @@ public class LinkGrabberTable extends PackageControllerTable<CrawledPackage, Cra
 
     }
 
-    protected JPopupMenu onContextMenu(final JPopupMenu popup, final AbstractNode contextObject, final ArrayList<AbstractNode> selection, final ExtColumn<AbstractNode> column) {
-        return contextMenuFactory.createPopup(contextObject, selection, column);
+    @Override
+    protected JPopupMenu onContextMenu(final JPopupMenu popup, final AbstractNode contextObject, final ArrayList<AbstractNode> selection, final ExtColumn<AbstractNode> column, MouseEvent event) {
+        return contextMenuFactory.createPopup(contextObject, selection, column, event);
     }
 
     @Override

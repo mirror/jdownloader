@@ -1,6 +1,7 @@
 package jd.gui.swing.jdgui.views.settings.panels.downloadandnetwork;
 
 import java.awt.event.KeyEvent;
+import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 
 import javax.swing.JMenuItem;
@@ -34,7 +35,7 @@ public class ProxyTable extends BasicJDTable<ProxyInfo> {
      * org.appwork.swing.exttable.ExtColumn)
      */
     @Override
-    protected JPopupMenu onContextMenu(JPopupMenu popup, ProxyInfo contextObject, ArrayList<ProxyInfo> selection, ExtColumn<ProxyInfo> column) {
+    protected JPopupMenu onContextMenu(JPopupMenu popup, ProxyInfo contextObject, ArrayList<ProxyInfo> selection, ExtColumn<ProxyInfo> column, MouseEvent ev) {
         popup.add(new JMenuItem(new ProxyAddAction()));
         popup.add(new JMenuItem(new ProxyDeleteAction(selection, false)));
         return popup;

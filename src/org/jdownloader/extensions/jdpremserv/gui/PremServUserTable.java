@@ -2,6 +2,7 @@ package org.jdownloader.extensions.jdpremserv.gui;
 
 import java.awt.Color;
 import java.awt.event.KeyEvent;
+import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 
 import javax.swing.JPopupMenu;
@@ -52,7 +53,7 @@ public class PremServUserTable extends ExtTable<PremServUser> {
     }
 
     @Override
-    protected JPopupMenu onContextMenu(JPopupMenu popup, PremServUser contextObject, ArrayList<PremServUser> selection, ExtColumn<PremServUser> col) {
+    protected JPopupMenu onContextMenu(JPopupMenu popup, PremServUser contextObject, ArrayList<PremServUser> selection, ExtColumn<PremServUser> col, MouseEvent ev) {
 
         popup.add(new AddUserAction());
         if (contextObject != null) {

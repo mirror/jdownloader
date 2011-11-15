@@ -1,24 +1,40 @@
 package org.jdownloader.gui.views.linkgrabber.actions;
 
+import java.awt.Image;
 import java.awt.event.ActionEvent;
+import java.util.ArrayList;
 
-import javax.swing.AbstractAction;
+import javax.swing.ImageIcon;
 
+import jd.controlling.IOEQ;
+import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.packagecontroller.AbstractNode;
 
-import org.appwork.utils.logging.Log;
+import org.appwork.utils.ImageProvider.ImageProvider;
+import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 
-public class ConfirmAllAction extends AbstractAction {
-    private AbstractNode value;
-    private boolean      force;
+public class ConfirmAllAction extends AppAction {
+    /**
+     * 
+     */
+    private static final long serialVersionUID = 4794612717641894527L;
 
-    public ConfirmAllAction(boolean force) {
-        putValue(SMALL_ICON, force ? NewTheme.I().getIcon("media-playback-start_forced", 16) : NewTheme.I().getIcon("media-playback-start", 16));
+    private boolean           autostart;
 
-        putValue(NAME, force ? _GUI._.ConfirmAllAction_ConfirmAllAction_force() : _GUI._.ConfirmAllAction_ConfirmAllAction_());
-        this.force = force;
+    public ConfirmAllAction(boolean autostart) {
+        if (autostart) {
+            setName(_GUI._.ConfirmAction_ConfirmAction_context_add_and_start());
+            Image add = NewTheme.I().getImage("media-playback-start", 20);
+            Image play = NewTheme.I().getImage("add", 12);
+            setSmallIcon(new ImageIcon(ImageProvider.merge(add, play, 0, 0, 9, 10)));
+            this.autostart = true;
+        } else {
+            setName(_GUI._.ConfirmAction_ConfirmAction_context_add());
+            setSmallIcon(NewTheme.I().getIcon("add", 20));
+            this.autostart = false;
+        }
 
     }
 
@@ -27,7 +43,14 @@ public class ConfirmAllAction extends AbstractAction {
     }
 
     public void actionPerformed(ActionEvent e) {
-        Log.L.finer("Start " + value);
+        IOEQ.add(new Runnable() {
+
+            public void run() {
+                ArrayList<AbstractNode> pkgs = new ArrayList<AbstractNode>(LinkCollector.getInstance().getPackages());
+                new ConfirmAction(autostart, pkgs).actionPerformed(null);
+            }
+
+        }, true);
     }
 
 }

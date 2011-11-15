@@ -3,7 +3,8 @@ package org.jdownloader.gui.views.linkgrabber.actions;
 import java.awt.event.ActionEvent;
 import java.io.File;
 
-import jd.controlling.JDController;
+import jd.controlling.linkcollector.LinkCollectingJob;
+import jd.controlling.linkcollector.LinkCollector;
 import jd.nutils.io.JDFileFilter;
 
 import org.appwork.utils.swing.dialog.Dialog;
@@ -34,9 +35,13 @@ public class AddContainerAction extends AppAction {
             ret = Dialog.getInstance().showFileChooser("loaddlc", _GUI._.AddContainerAction_actionPerformed_(), FileChooserSelectionMode.FILES_ONLY, new JDFileFilter(_GUI._.AddContainerAction_actionPerformed_extensions(exts), exts, true), false, FileChooserType.OPEN_DIALOG, null);
 
             if (ret == null) return;
+            StringBuilder sb = new StringBuilder();
             for (File r : ret) {
-                JDController.loadContainerFile(r);
+                if (sb.length() > 0) sb.append("\r\n");
+                sb.append("file://");
+                sb.append(r.getAbsolutePath());
             }
+            LinkCollector.getInstance().addCrawlerJob(new LinkCollectingJob(sb.toString()));
         } catch (DialogNoAnswerException e1) {
         }
     }

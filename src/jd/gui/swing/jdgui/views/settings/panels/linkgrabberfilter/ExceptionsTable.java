@@ -37,7 +37,7 @@ public class ExceptionsTable extends AbstractFilterTable {
      * org.appwork.swing.exttable.ExtColumn)
      */
     @Override
-    protected JPopupMenu onContextMenu(JPopupMenu popup, LinkgrabberFilterRule contextObject, ArrayList<LinkgrabberFilterRule> selection, ExtColumn<LinkgrabberFilterRule> column) {
+    protected JPopupMenu onContextMenu(JPopupMenu popup, LinkgrabberFilterRule contextObject, ArrayList<LinkgrabberFilterRule> selection, ExtColumn<LinkgrabberFilterRule> column, MouseEvent ev) {
         popup.add(new JMenuItem(new NewAction(this).toContextMenuAction()));
         popup.add(new JMenuItem(new RemoveAction(this, selection, false).toContextMenuAction()));
 
