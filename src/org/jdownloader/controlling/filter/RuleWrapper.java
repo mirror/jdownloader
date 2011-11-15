@@ -87,17 +87,44 @@ public class RuleWrapper<T extends FilterRule> {
         return onlineStatusFilter;
     }
 
+    public static void main(String[] args) {
+        test("(.*)\\QBauer7\\E(.*?)\\Q.part\\E(.*)", "*Bauer7*.part*");
+        test("\\QBauer7\\E(.*?)\\Q.part\\E", "Bauer7*.part");
+        test("\\QBauer7\\E(.*?)\\Q.part\\E", "Bauer7*.part");
+        test("\\QBauer7\\E", "Bauer7");
+        test("\\QBauer7\\E", "");
+    }
+
+    private static void test(String string, String string2) {
+        System.out.println("Test compile " + string2 + ": " + (string.equals(createPattern(string2, false).toString())));
+    }
+
     public static Pattern createPattern(String regex, boolean simpleRegex) {
         if (simpleRegex) {
             return Pattern.compile(regex, Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
         } else {
             String[] parts = regex.split("\\*+");
             StringBuilder sb = new StringBuilder();
+            if (regex.startsWith("*")) sb.append("(.*)");
+            int actualParts = 0;
             for (int i = 0; i < parts.length; i++) {
-                if (sb.length() > 0) sb.append("(.*)");
-                if (parts[i].length() != 0) sb.append(Pattern.quote(parts[i]));
+
+                if (parts[i].length() != 0) {
+                    if (actualParts > 0) {
+                        sb.append("(.*?)");
+                    }
+                    sb.append(Pattern.quote(parts[i]));
+                    actualParts++;
+                }
             }
-            if (sb.length() == 0) sb.append("(.*)");
+            if (sb.length() == 0) {
+                sb.append("(.*?)");
+            } else {
+                if (regex.endsWith("*")) {
+                    sb.append("(.*)");
+                }
+
+            }
             return Pattern.compile(sb.toString(), Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
         }
     }

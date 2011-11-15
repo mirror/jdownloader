@@ -1,6 +1,8 @@
 package org.jdownloader.controlling.packagizer;
 
 import java.util.ArrayList;
+import java.util.Locale;
+import java.util.regex.Pattern;
 
 import jd.controlling.IOEQ;
 import jd.controlling.linkcollector.PackagizerInterface;
@@ -13,6 +15,7 @@ import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.event.predefined.changeevent.ChangeEvent;
 import org.appwork.utils.event.predefined.changeevent.ChangeEventSender;
 import org.jdownloader.controlling.filter.NoDownloadLinkException;
@@ -197,17 +200,19 @@ public class PackagizerController implements PackagizerInterface {
         if (lgr.getRule().getChunks() >= 0) {
             link.setChunks(lgr.getRule().getChunks());
         }
-        if (lgr.getRule().getDownloadDestination() != null) {
+        if (!StringUtils.isEmpty(lgr.getRule().getDownloadDestination())) {
             String path = replaceVariables(lgr.getRule().getDownloadDestination(), link, lgr);
 
             link.getDesiredPackageInfo().setDestinationFolder(lgr.getRule().getDownloadDestination());
         }
-        if (lgr.getRule().getPackageName() != null) {
+        if (!StringUtils.isEmpty(lgr.getRule().getPackageName())) {
             String name = replaceVariables(lgr.getRule().getPackageName(), link, lgr);
-            link.getDesiredPackageInfo().setName(lgr.getRule().getPackageName());
+            link.getDesiredPackageInfo().setName(name);
         }
         link.setPriority(lgr.getRule().getPriority());
-        link.setForcedName(replaceVariables(lgr.getRule().getFilename(), link, lgr));
+        if (!StringUtils.isEmpty(lgr.getRule().getFilename())) {
+            link.setForcedName(replaceVariables(lgr.getRule().getFilename(), link, lgr));
+        }
         lgr.getRule().isAutoAddEnabled();
         link.getDesiredPackageInfo().setAutoExtractionEnabled(lgr.getRule().isAutoExtractionEnabled());
         link.getDesiredPackageInfo().setAutoAddEnabled(lgr.getRule().isAutoAddEnabled());
@@ -216,12 +221,27 @@ public class PackagizerController implements PackagizerInterface {
     }
 
     private String replaceVariables(String txt, CrawledLink link, PackagizerRuleWrapper lgr) {
-        String[] matches = new Regex(txt, "<jd:(.+?)>").getRow(0);
-        for (String m : matches) {
+        String[] matches = new Regex(txt, "<jd:(.+?)>").getColumn(0);
+        if (matches != null) {
+            for (String m : matches) {
+                if ("packagename".equalsIgnoreCase(m)) {
+                    // keep
+                }
+                if (m.toLowerCase(Locale.ENGLISH).startsWith("filename:")) {
+                    System.out.println(link.getName() + " - " + lgr.getFileNameRule().getPattern());
+                    txt = Pattern.compile("<jd:filename:" + m.substring(9) + "/?>").matcher(txt).replaceAll(new Regex(link.getName(), lgr.getFileNameRule().getPattern()).getRow(0)[Integer.parseInt(m.substring(9)) - 1]);
+                } else if ("filename".equalsIgnoreCase(m)) {
+                    txt = Pattern.compile("<jd:filename/?>").matcher(txt).replaceAll(compileFilename(link, lgr));
 
+                }
+            }
         }
         return txt;
 
+    }
+
+    private String compileFilename(CrawledLink link, PackagizerRuleWrapper lgr) {
+        return null;
     }
 
 }

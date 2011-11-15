@@ -11,6 +11,10 @@ public class CompiledRegexFilter extends RegexFilter {
         pattern = LinkgrabberFilterRuleWrapper.createPattern(filter.getRegex());
     }
 
+    public Pattern getPattern() {
+        return pattern;
+    }
+
     public boolean matches(String string) {
 
         switch (getMatchType()) {

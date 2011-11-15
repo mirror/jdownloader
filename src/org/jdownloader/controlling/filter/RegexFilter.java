@@ -1,7 +1,9 @@
 package org.jdownloader.controlling.filter;
 
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import org.appwork.storage.Storable;
-import org.appwork.storage.config.JsonConfig;
 import org.jdownloader.gui.translate._GUI;
 
 public class RegexFilter extends Filter implements Storable {
@@ -56,11 +58,18 @@ public class RegexFilter extends Filter implements Storable {
     }
 
     public int calcPlaceholderCount() {
-        if (JsonConfig.create(LinkFilterSettings.class).isRuleconditionsRegexEnabled()) {
-            return (" " + regex + " ").split("\\(.*?\\)").length - 1;
-        } else {
-            return (" " + regex + " ").split("\\*").length - 1;
+        int i = 0;
+        try {
+            System.out.println(1);
+            Matcher matcher = Pattern.compile("\\(.*?\\)", Pattern.CASE_INSENSITIVE).matcher(LinkgrabberFilterRuleWrapper.createPattern(regex).pattern());
+            while (matcher.find()) {
+                // System.out.println(matcher.group());
+                i++;
+            }
+        } catch (Throwable e) {
+            e.printStackTrace();
         }
+        return i;
 
     }
 

@@ -2728,7 +2728,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Dynamic Variables" })
     String PackagizerFilterRuleDialog_createVariablesMenu_menu();
 
-    @Default(lngs = { "en" }, values = { "Filename" })
+    @Default(lngs = { "en" }, values = { "Complete Final Filename" })
     String PackagizerFilterRuleDialog_createVariablesMenu_filename_complete();
 
     @Default(lngs = { "en" }, values = { "Filename Match #%s1" })
@@ -3222,5 +3222,8 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Enter absolute or relative Path..." })
     String PackagizerFilterRuleDialog_layoutDialogContent_dest_help();
+
+    @Default(lngs = { "en" }, values = { "Original Filename" })
+    String PackagizerFilterRuleDialog_createVariablesMenu_filename_org();
 
 }

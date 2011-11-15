@@ -31,6 +31,7 @@ import org.appwork.swing.components.ExtCheckBox;
 import org.appwork.swing.components.ExtSpinner;
 import org.appwork.swing.components.ExtTextField;
 import org.appwork.swing.components.pathchooser.PathChooser;
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
@@ -39,7 +40,13 @@ import org.jdownloader.controlling.packagizer.PackagizerRule;
 import org.jdownloader.gui.translate._GUI;
 
 public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> {
-    public Priority prio = Priority.DEFAULT;
+    private static final String PACKAGENAME = "packagename";
+    private static final String SIMPLEDATE  = "simpledate";
+    private static final String SOURCE      = "source";
+    private static final String HOSTER      = "hoster";
+    private static final String ORGFILENAME = "orgfilename";
+    private static final String FILENAME    = "filename";
+    public Priority             prio        = Priority.DEFAULT;
 
     private class PriorityAction extends AbstractAction {
 
@@ -154,9 +161,9 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
         cbStart.setSelected(rule.isAutoStartEnabled());
         cbAdd.setSelected(rule.isAutoAddEnabled());
         cbChunks.setSelected(rule.getChunks() > 0);
-        cbName.setSelected(rule.getFilename() != null);
-        cbDest.setSelected(rule.getDownloadDestination() != null);
-        cbPackagename.setSelected(rule.getPackageName() != null);
+        cbName.setSelected(!StringUtils.isEmpty(rule.getFilename()));
+        cbDest.setSelected(!StringUtils.isEmpty(rule.getDownloadDestination()));
+        cbPackagename.setSelected(!StringUtils.isEmpty(rule.getPackageName()));
         cbPriority.setSelected(true);
         prio = rule.getPriority();
         switch (rule.getPriority()) {
@@ -223,7 +230,7 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
             public JPopupMenu getPopupMenu(ExtTextField txt, CutAction cutAction, CopyAction copyAction, PasteAction pasteAction, DeleteAction deleteAction, SelectAction selectAction) {
                 JPopupMenu menu = new JPopupMenu();
                 JMenu sub = createVariablesMenu(txt);
-                sub.add(new VariableAction(txt, _GUI._.PackagizerFilterRuleDialog_createVariablesMenu_packagename(), "<jd:packagename>"));
+
                 menu.add(sub);
                 menu.add(new JSeparator());
                 menu.add(cutAction);
@@ -366,20 +373,28 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
         // ret.add(new VariableAction(txtPackagename2,
         // _GUI._.PackagizerFilterRuleDialog_createVariablesMenu_source(),
         // "<jd:source>"));
-        ret.add(new VariableAction(txtPackagename2, _GUI._.PackagizerFilterRuleDialog_createVariablesMenu_date(), "<jd:simpledate:dd.MM.yyyy>"));
+        ret.add(new VariableAction(txtPackagename2, _GUI._.PackagizerFilterRuleDialog_createVariablesMenu_date(), "<jd:" + SIMPLEDATE + ":dd.MM.yyyy>"));
         int num = getFilenameFilter().calcPlaceholderCount();
-        ret.add(new VariableAction(txtPackagename2, _GUI._.PackagizerFilterRuleDialog_createVariablesMenu_filename_complete(), "<jd:filename>"));
-        for (int i = 0; i < num; i++) {
-            ret.add(new VariableAction(txtPackagename2, _GUI._.PackagizerFilterRuleDialog_createVariablesMenu_filename((i + 1)), "<jd:filename:" + (i + 1) + ">"));
+        ret.add(new VariableAction(txtPackagename2, _GUI._.PackagizerFilterRuleDialog_createVariablesMenu_filename_org(), "<jd:" + ORGFILENAME + ">"));
+        if (txtPackagename2 != this.txtNewFilename) {
+            ret.add(new VariableAction(txtPackagename2, _GUI._.PackagizerFilterRuleDialog_createVariablesMenu_filename_complete(), "<jd:" + FILENAME + ">"));
+            for (int i = 0; i < num; i++) {
+                ret.add(new VariableAction(txtPackagename2, _GUI._.PackagizerFilterRuleDialog_createVariablesMenu_filename((i + 1)), "<jd:" + FILENAME + ":" + (i + 1) + ">"));
+            }
+            if (getHosterFilter().isEnabled()) {
+                for (int i = 0; i < getHosterFilter().calcPlaceholderCount(); i++) {
+                    ret.add(new VariableAction(txtPackagename2, _GUI._.PackagizerFilterRuleDialog_createVariablesMenu_hoster((i + 1)), "<jd:" + HOSTER + ":" + (i + 1) + ">"));
+                }
+            }
         }
-
-        for (int i = 0; i < getHosterFilter().calcPlaceholderCount(); i++) {
-            ret.add(new VariableAction(txtPackagename2, _GUI._.PackagizerFilterRuleDialog_createVariablesMenu_hoster((i + 1)), "<jd:hoster:" + (i + 1) + ">"));
+        if (getSourceFilter().isEnabled()) {
+            for (int i = 0; i < getSourceFilter().calcPlaceholderCount(); i++) {
+                ret.add(new VariableAction(txtPackagename2, _GUI._.PackagizerFilterRuleDialog_createVariablesMenu_source((i + 1)), "<jd:" + SOURCE + ":" + (i + 1) + ">"));
+            }
         }
-        for (int i = 0; i < getSourceFilter().calcPlaceholderCount(); i++) {
-            ret.add(new VariableAction(txtPackagename2, _GUI._.PackagizerFilterRuleDialog_createVariablesMenu_source((i + 1)), "<jd:source:" + (i + 1) + ">"));
+        if (txtPackagename2 != txtPackagename) {
+            ret.add(new VariableAction(txtPackagename2, _GUI._.PackagizerFilterRuleDialog_createVariablesMenu_packagename(), "<jd:" + PACKAGENAME + ">"));
         }
-
         return ret;
     }
 

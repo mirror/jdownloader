@@ -5,6 +5,7 @@ import java.awt.event.ActionEvent;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.JTextComponent;
 
+import org.appwork.utils.StringUtils;
 import org.jdownloader.actions.AppAction;
 
 public class VariableAction extends AppAction {
@@ -20,13 +21,18 @@ public class VariableAction extends AppAction {
     }
 
     public void actionPerformed(ActionEvent e) {
-        int car = txtComp.getCaretPosition();
-        System.out.println(car);
-        try {
-            txtComp.getDocument().insertString(car, pattern, null);
-        } catch (BadLocationException e1) {
-            e1.printStackTrace();
+        if (StringUtils.isEmpty(txtComp.getText())) {
+            txtComp.setText(pattern);
+        } else {
+            int car = txtComp.getCaretPosition();
+
+            try {
+                txtComp.getDocument().insertString(car, pattern, null);
+            } catch (BadLocationException e1) {
+                e1.printStackTrace();
+            }
         }
+
     }
 
 }
