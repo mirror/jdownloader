@@ -206,7 +206,8 @@ public class MediafireCom extends PluginForHost {
             return ai;
         }
         account.setValid(true);
-        this.br.getPage("https://www.mediafire.com/myaccount.php");
+        br.setFollowRedirects(true);
+        this.br.getPage("http://www.mediafire.com/myaccount.php");
         String trafficleft = this.br.getRegex("View Statistics.*?class=\"lg-txt\">(.*?)</div").getMatch(0);
         if (trafficleft != null) {
             trafficleft = trafficleft.trim();
@@ -298,7 +299,7 @@ public class MediafireCom extends PluginForHost {
             // enough
 
             sleep(5000, downloadLink);
-            String txt = eb.getHtmlText();
+            eb.getHtmlText();
             // get all links now
             final HTMLCollection links = eb.getDocument().getLinks();
 
@@ -368,7 +369,6 @@ public class MediafireCom extends PluginForHost {
                 break;
             }
             this.requestFileInformation(downloadLink);
-            Form[] forms = br.getForms();
             try {
                 final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
                 final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(this.br);
@@ -541,40 +541,43 @@ public class MediafireCom extends PluginForHost {
     }
 
     public void login(final Account account) throws Exception {
-        this.setBrowserExclusive();
-        this.br.setFollowRedirects(false);
-        this.br.getPage("http://www.mediafire.com/");
-        Form form = this.br.getFormbyProperty("name", "form_login1");
-        if (form == null) {
-            form = this.br.getFormBySubmitvalue("login_email");
-        }
-        if (form == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-        form.put("login_email", Encoding.urlEncode(account.getUser()));
-        form.put("login_pass", Encoding.urlEncode(account.getPass()));
-        this.br.submitForm(form);
-        this.br.getPage("https://www.mediafire.com/myfiles.php");
-        final String cookie = this.br.getCookie("http://www.mediafire.com", "user");
-        if ("x".equals(cookie) || cookie == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-        if (MediafireCom.CONFIGURATION_KEYS.get(account) == null) {
-            this.br.getPage("https://www.mediafire.com/myaccount/download_options.php?enable=1");
-            String red = br.getRedirectLocation();
-            if (red != null) {
-
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE); }
-            String configurationKey = getAPIKEY(br);
-            // if (configurationKey == null) throw new
-            // PluginException(LinkStatus.ERROR_PREMIUM,
-            // PluginException.VALUE_ID_PREMIUM_DISABLE);
-            MediafireCom.CONFIGURATION_KEYS.put(account, "DUMMYHACK");
+        boolean red = br.isFollowingRedirects();
+        try {
+            this.setBrowserExclusive();
+            this.br.setFollowRedirects(true);
+            this.br.getPage("http://www.mediafire.com/");
+            Form form = this.br.getFormbyProperty("name", "form_login1");
+            if (form == null) {
+                form = this.br.getFormBySubmitvalue("login_email");
+            }
+            if (form == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+            form.put("login_email", Encoding.urlEncode(account.getUser()));
+            form.put("login_pass", Encoding.urlEncode(account.getPass()));
+            this.br.submitForm(form);
+            this.br.getPage("http://www.mediafire.com/myfiles.php");
+            final String cookie = this.br.getCookie("http://www.mediafire.com", "user");
+            if ("x".equals(cookie) || cookie == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            if (MediafireCom.CONFIGURATION_KEYS.get(account) == null) {
+                this.br.getPage("http://www.mediafire.com/myaccount/download_options.php?enable=1");
+                // String configurationKey = getAPIKEY(br);
+                // if (configurationKey == null) throw new
+                // PluginException(LinkStatus.ERROR_PREMIUM,
+                // PluginException.VALUE_ID_PREMIUM_DISABLE);
+                MediafireCom.CONFIGURATION_KEYS.put(account, "DUMMYHACK");
+            }
+        } finally {
+            br.setFollowRedirects(red);
         }
     }
 
-    private String getAPIKEY(Browser br) {
-        if (br == null) return null;
-        String configurationKey = this.br.getRegex("Configuration Key:.*? value=\"(.*?)\"").getMatch(0);
-        if (configurationKey == null) configurationKey = this.br.getRegex("Configuration Key.*? value=\"(.*?)\"").getMatch(0);
-        return configurationKey;
-    }
+    // private String getAPIKEY(Browser br) {
+    // if (br == null) return null;
+    // String configurationKey =
+    // this.br.getRegex("Configuration Key:.*? value=\"(.*?)\"").getMatch(0);
+    // if (configurationKey == null) configurationKey =
+    // this.br.getRegex("Configuration Key.*? value=\"(.*?)\"").getMatch(0);
+    // return configurationKey;
+    // }
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException, InterruptedException {
