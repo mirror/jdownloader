@@ -208,10 +208,13 @@ public class GrooveShark extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         setBrowserExclusive();
-        final String url = downloadLink.getDownloadURL();
+        String url = downloadLink.getDownloadURL();
         if (new Regex(url, "grooveshark\\.com\\/song\\/\\d+").matches()) {
             return AvailableStatus.TRUE;
         } else {
+            /* 0.95xx comp */
+            url = url.contains("%20") ? url.replace("%20", "+") : url;
+
             br.getPage(url);
             if (br.containsHTML("not found")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
             final String[] filenm = br.getRegex("<h1 class=\"song\">(.*?)by\\s+<a href=\".*?\" rel=\"artist parent\" rev=\"child\">(.*?)</a>.*?on.*?<a href=.*? rel=\"album parent\" rev=\"child\">(.*?)</a>.*?</h1>").getRow(0);
