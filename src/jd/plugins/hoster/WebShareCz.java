@@ -29,7 +29,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "webshare.cz" }, urls = { "http://(www\\.)?webshare\\.cz/(\\?fhash=[A-Za-z0-9]+|[A-Za-z0-9]+\\-)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "webshare.cz" }, urls = { "http://(www\\.)?webshare\\.cz/(\\?fhash=[A-Za-z0-9]+|[A-Za-z0-9]{10}.*)" }, flags = { 0 })
 public class WebShareCz extends PluginForHost {
 
     public WebShareCz(PluginWrapper wrapper) {
@@ -42,7 +42,7 @@ public class WebShareCz extends PluginForHost {
     }
 
     public void correctDownloadLink(DownloadLink link) {
-        String fid = new Regex(link.getDownloadURL(), "webshare\\.cz/([A-Za-z0-9]+)\\-").getMatch(0);
+        String fid = new Regex(link.getDownloadURL(), "webshare\\.cz/([A-Za-z0-9]{10}).*").getMatch(0);
         if (fid != null) link.setUrlDownload("http://webshare.cz/?fhash=" + fid);
     }
 
@@ -51,7 +51,8 @@ public class WebShareCz extends PluginForHost {
         this.setBrowserExclusive();
         br.setCustomCharset("utf-8");
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("<h3>Požadovaný soubor nebyl nalezen\\!</h3>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("<h3>Požadovaný soubor nebyl nalezen")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("<h1>Requested file not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<h3>Stahujete soubor: </h3>[\t\n\r ]+<div class=\"textbox\">(.*?)</div>").getMatch(0);
         String filesize = br.getRegex("<h3>Velikost souboru je: </h3>[\t\n\r ]+<div class=\"textbox\">(.*?)</div>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -64,13 +65,13 @@ public class WebShareCz extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(false);
-        String dllink = br.getRegex("<a style=\"text-decoration: none;\" href=\"(http://.*?)\"").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("\"(http://(www\\.)?webshare\\.cz/[A-Za-z0-9]+\\-\\d+\\-.*?)\"").getMatch(0);
+        String dllink = br.getRegex("<a style=\"text-decoration: none;\" id=\"download_link\" href=\"(http://.*?)\"").getMatch(0);
+        if (dllink == null) dllink = br.getRegex("\"(http://.*?webshare\\.cz/[A-Za-z0-9]+\\-\\d+\\-.*?)\"").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
-            if (br.containsHTML("(>Požadovaný soubor nebyl nalezen\\.<|>Requested file not found\\.<)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (br.containsHTML("(>Požadovaný soubor nebyl nalezen|>Requested file not found)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
