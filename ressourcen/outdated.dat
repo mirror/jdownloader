@@ -639,3 +639,6 @@ jd/plugins/decrypter/Fl2pldNtFldr.class
 jd/plugins/hoster/File2UploadDotNet.class
 jd/plugins/hoster/LizShareCom.class
 jd/plugins/hoster/BuFilesCom.class
+jd/plugins/hoster/EasyShareCom.class
+jd/plugins/hoster/Mega1280Com.class
+jd/plugins/hoster/FileFrontCom.class
