@@ -94,6 +94,11 @@ public class PackagizerRule extends FilterRule implements Storable {
     private boolean autoStartEnabled;
     private int     chunks;
     private String  filename;
+    private int     order = 0;
+
+    public void setOrder(int order) {
+        this.order = order;
+    }
 
     public void setFilename(String filename) {
         this.filename = filename;
@@ -109,6 +114,10 @@ public class PackagizerRule extends FilterRule implements Storable {
 
     public String getFilename() {
         return filename;
+    }
+
+    public int getOrder() {
+        return order;
     }
 
 }

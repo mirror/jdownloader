@@ -24,6 +24,7 @@ public class PackagizerFilterTable extends BasicJDTable<PackagizerRule> {
         super(new FilterTableModel("PackagizerFilterTable"));
         this.setSearchEnabled(true);
         getTableHeader().setReorderingAllowed(false);
+        this.setDragEnabled(true);
 
     }
 

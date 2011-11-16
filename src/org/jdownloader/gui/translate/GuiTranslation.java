@@ -3226,4 +3226,10 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Original Filename" })
     String PackagizerFilterRuleDialog_createVariablesMenu_filename_org();
 
+    @Default(lngs = { "en" }, values = { "Priority" })
+    String settings_linkgrabber_filter_columns_exepriority();
+
+    @Default(lngs = { "en" }, values = { "Rules with higher Priority always overwrite lower ones." })
+    String FilterTableModel_getTooltipText_prio_();
+
 }
