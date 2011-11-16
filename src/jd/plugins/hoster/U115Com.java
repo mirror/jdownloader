@@ -21,12 +21,13 @@ import java.io.IOException;
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.RandomUserAgent;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -55,6 +56,7 @@ public class U115Com extends PluginForHost {
     private void prepareBrowser(final Browser br) {
         try {
             if (br == null) { return; }
+            br.setReadTimeout(2 * 60 * 1000);
             br.setCookie("http://u.115.com/", "lang", "en");
             br.getHeaders().put("User-Agent", ua);
             br.setCustomCharset("utf-8");
@@ -72,6 +74,7 @@ public class U115Com extends PluginForHost {
     private static final String NOFREESLOTS           = "网络繁忙时段，非登陆用户其它下载地址暂时关闭。推荐您使用优蛋下载";
     private static final String ACCOUNTNEEDED         = "(为加强知识产权的保护力度，营造健康有益的网络环境，115网盘暂时停止影视资源外链服务。|is_no_check=\"1\")";
     private static final String ACCOUNTNEEDEDUSERTEXT = "Account is needed to download this link";
+    private static final String EXACTLINKREGEX        = "\"(http://\\d+\\.\\d+\\.\\d+\\.\\d+/down_group\\d+/[^<>\"\\']+)\"";
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
@@ -117,7 +120,7 @@ public class U115Com extends PluginForHost {
     public void handleFree(DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         requestFileInformation(link);
-        if (br.getRedirectLocation() != null && br.getRedirectLocation().equals(UNDERMAINTENANCEURL)) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.U115Com.undermaintenance", UNDERMAINTENANCETEXT));
+        if (UNDERMAINTENANCEURL.equals(br.getRedirectLocation())) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.U115Com.undermaintenance", UNDERMAINTENANCETEXT));
         if (br.containsHTML(NOFREESLOTS)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "No free slots available at the moment");
         /**
          * I don't know what this text means (google couldn't help) so i handle
@@ -127,7 +130,7 @@ public class U115Com extends PluginForHost {
             logger.warning("Only downloadable via account: " + link.getDownloadURL());
             throw new PluginException(LinkStatus.ERROR_FATAL, ACCOUNTNEEDEDUSERTEXT);
         }
-        String dllink = findLink();
+        String dllink = findLink(link);
         if (dllink == null) {
             logger.warning("dllink is null, seems like the regexes are defect!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -142,10 +145,25 @@ public class U115Com extends PluginForHost {
         dl.startDownload();
     }
 
-    public String findLink() throws Exception {
-        String linkToDownload = br.getRegex("\"(http://\\d+\\.\\d+\\.\\d+\\.\\d+/down_group\\d+/[^<>\"\\']+)\"").getMatch(0);
+    public String findLink(DownloadLink link) throws Exception {
+        String linkToDownload = br.getRegex(EXACTLINKREGEX).getMatch(0);
         if (linkToDownload == null) {
             linkToDownload = br.getRegex("<div class=\"btn\\-wrap\">[\t\n\r ]+<a href=\"(http://\\d+\\.\\d+\\.\\d+\\.\\d+/[^\"\\'<>]+)\"").getMatch(0);
+            if (linkToDownload == null) {
+                final String pickLink = br.getRegex("\"(/\\?ct=pickcode\\&.*?)\"").getMatch(0);
+                if (pickLink != null) {
+                    int wait = 30;
+                    String waittime = br.getRegex("id=\"js_get_download_second\">(\\d+)</b>").getMatch(0);
+                    if (waittime == null) waittime = br.getRegex("var second = (\\d+);").getMatch(0);
+                    if (waittime != null) wait = Integer.parseInt(waittime);
+                    sleep(wait * 1001l, link);
+                    br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                    br.getPage("http://115.com" + pickLink);
+                    String correctedBR = br.toString().replace("\\", "");
+                    linkToDownload = new Regex(correctedBR, "\"url\":\"(http:.*?)\"").getMatch(0);
+                    if (linkToDownload == null) linkToDownload = new Regex(correctedBR, EXACTLINKREGEX).getMatch(0);
+                }
+            }
         }
         return linkToDownload;
     }
