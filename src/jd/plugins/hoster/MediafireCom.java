@@ -206,16 +206,8 @@ public class MediafireCom extends PluginForHost {
             return ai;
         }
         account.setValid(true);
-        this.br.getPage("http://www.mediafire.com/myaccount.php");
-        final String hostedFiles = this.br.getRegex("> From.*?(\\d+).*?total files <").getMatch(0);
-        if (hostedFiles != null) {
-            ai.setFilesNum(Long.parseLong(hostedFiles));
-        }
-        final String usedspace = this.br.getRegex("Total Storage Used </div> <div style=\".*?div style=\"font-size.*?\">(.*?)</div").getMatch(0);
-        if (usedspace != null) {
-            ai.setUsedSpace(usedspace.trim());
-        }
-        String trafficleft = this.br.getRegex("Available Bandwidth </div> <div style=.*?<div style=\"font\\-size.*?\">(.*?)</div").getMatch(0);
+        this.br.getPage("https://www.mediafire.com/myaccount.php");
+        String trafficleft = this.br.getRegex("View Statistics.*?class=\"lg-txt\">(.*?)</div").getMatch(0);
         if (trafficleft != null) {
             trafficleft = trafficleft.trim();
             if (Regex.matches(trafficleft, Pattern.compile("(tb|tbyte|terabyte|tib)", Pattern.CASE_INSENSITIVE))) {
@@ -434,37 +426,43 @@ public class MediafireCom extends PluginForHost {
         this.login(account);
         String url = dlURL;
         boolean passwordprotected = false;
-        if (url == null) {
-            this.fileID = new Regex(downloadLink.getDownloadURL(), "\\?([a-zA-Z0-9]+)").getMatch(0);
-            if (this.fileID == null) {
-                this.fileID = new Regex(downloadLink.getDownloadURL(), "file/([^/]+)").getMatch(0);
-            }
-            this.br.postPageRaw("http://www.mediafire.com/basicapi/premiumapi.php", "premium_key=" + MediafireCom.CONFIGURATION_KEYS.get(account) + "&files=" + this.fileID);
-            url = this.br.getRegex("<url>(http.*?)</url>").getMatch(0);
-            if ("-202".equals(this.br.getRegex("<flags>(.*?)</").getMatch(0))) { throw new PluginException(LinkStatus.ERROR_FATAL, "Private file. No Download possible"); }
-            if ("-204".equals(this.br.getRegex("<flags>(.*?)</").getMatch(0))) {
-                passwordprotected = true;
-                new PasswordSolver(this, this.br, downloadLink) {
-
-                    @Override
-                    protected void handlePassword(final String password) throws Exception {
-                        this.br.postPageRaw("http://www.mediafire.com/basicapi/premiumapi.php", "file_1=" + MediafireCom.this.fileID + "&password_1=" + password + "&premium_key=" + MediafireCom.CONFIGURATION_KEYS.get(account) + "&files=" + MediafireCom.this.fileID);
-
-                    }
-
-                    @Override
-                    protected boolean isCorrect() {
-                        return this.br.getRegex("<url>(http.*?)</url>").getMatch(0) != null;
-                    }
-
-                }.run();
-
+        if (true) {
+            br.setFollowRedirects(false);
+            br.getPage(downloadLink.getDownloadURL());
+            url = br.getRedirectLocation();
+        } else {
+            if (url == null) {
+                this.fileID = new Regex(downloadLink.getDownloadURL(), "\\?([a-zA-Z0-9]+)").getMatch(0);
+                if (this.fileID == null) {
+                    this.fileID = new Regex(downloadLink.getDownloadURL(), "file/([^/]+)").getMatch(0);
+                }
+                this.br.postPageRaw("http://www.mediafire.com/basicapi/premiumapi.php", "premium_key=" + MediafireCom.CONFIGURATION_KEYS.get(account) + "&files=" + this.fileID);
                 url = this.br.getRegex("<url>(http.*?)</url>").getMatch(0);
+                if ("-202".equals(this.br.getRegex("<flags>(.*?)</").getMatch(0))) { throw new PluginException(LinkStatus.ERROR_FATAL, "Private file. No Download possible"); }
+                if ("-204".equals(this.br.getRegex("<flags>(.*?)</").getMatch(0))) {
+                    passwordprotected = true;
+                    new PasswordSolver(this, this.br, downloadLink) {
 
-            }
-            if ("-105".equals(this.br.getRegex("<flags>(.*?)</").getMatch(0))) {
-                logger.info("Insufficient bandwidth");
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                        @Override
+                        protected void handlePassword(final String password) throws Exception {
+                            this.br.postPageRaw("http://www.mediafire.com/basicapi/premiumapi.php", "file_1=" + MediafireCom.this.fileID + "&password_1=" + password + "&premium_key=" + MediafireCom.CONFIGURATION_KEYS.get(account) + "&files=" + MediafireCom.this.fileID);
+
+                        }
+
+                        @Override
+                        protected boolean isCorrect() {
+                            return this.br.getRegex("<url>(http.*?)</url>").getMatch(0) != null;
+                        }
+
+                    }.run();
+
+                    url = this.br.getRegex("<url>(http.*?)</url>").getMatch(0);
+
+                }
+                if ("-105".equals(this.br.getRegex("<flags>(.*?)</").getMatch(0))) {
+                    logger.info("Insufficient bandwidth");
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                }
             }
         }
         if (url == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
@@ -554,18 +552,20 @@ public class MediafireCom extends PluginForHost {
         form.put("login_email", Encoding.urlEncode(account.getUser()));
         form.put("login_pass", Encoding.urlEncode(account.getPass()));
         this.br.submitForm(form);
-        this.br.getPage("http://www.mediafire.com/myfiles.php");
+        this.br.getPage("https://www.mediafire.com/myfiles.php");
         final String cookie = this.br.getCookie("http://www.mediafire.com", "user");
         if ("x".equals(cookie) || cookie == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         if (MediafireCom.CONFIGURATION_KEYS.get(account) == null) {
-            this.br.getPage("http://www.mediafire.com/myaccount/download_options.php?enable=1");
+            this.br.getPage("https://www.mediafire.com/myaccount/download_options.php?enable=1");
             String red = br.getRedirectLocation();
             if (red != null) {
 
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE); }
             String configurationKey = getAPIKEY(br);
-            if (configurationKey == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-            MediafireCom.CONFIGURATION_KEYS.put(account, configurationKey);
+            // if (configurationKey == null) throw new
+            // PluginException(LinkStatus.ERROR_PREMIUM,
+            // PluginException.VALUE_ID_PREMIUM_DISABLE);
+            MediafireCom.CONFIGURATION_KEYS.put(account, "DUMMYHACK");
         }
     }
 

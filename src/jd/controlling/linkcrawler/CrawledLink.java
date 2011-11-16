@@ -293,9 +293,6 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
         return LinkState.UNKNOWN;
     }
 
-    public void setChunks() {
-    }
-
     public Priority getPriority() {
         try {
             if (dlLink == null) return Priority.DEFAULT;

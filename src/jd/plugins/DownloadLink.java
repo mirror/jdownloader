@@ -275,8 +275,11 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     }
 
     public void setChunks(int chunks) {
-        setProperty(PROPERTY_CHUNKS, chunks);
-
+        if (chunks <= 0) {
+            setProperty(PROPERTY_CHUNKS, Property.NULL);
+        } else {
+            setProperty(PROPERTY_CHUNKS, chunks);
+        }
     }
 
     public void setPriority(int pr) {

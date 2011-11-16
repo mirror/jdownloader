@@ -44,7 +44,6 @@ public class LinkFilterController implements LinkCrawlerFilter {
     private ArrayList<LinkgrabberFilterRuleWrapper> acceptUrlFilter;
 
     private ChangeEventSender                       eventSender;
-    private ArrayList<LinkgrabberFilterRule>        list;
 
     /**
      * Create a new instance of LinkFilterController. This is a singleton class.

@@ -42,7 +42,9 @@ import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
 
+import org.appwork.exceptions.WTFException;
 import org.appwork.scheduler.DelayedRunnable;
+import org.appwork.utils.logging.Log;
 import org.appwork.utils.swing.EDTHelper;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.plugins.controller.host.HostPluginController;
@@ -172,7 +174,6 @@ public class PremiumStatus extends JPanel implements MouseListener {
 
                         ArrayList<Account> accs = AccountController.getInstance().getAllAccounts(host);
                         if (accs.size() > 0) {
-                            PluginForHost plugin = wrapper.getPrototype();
                             long max = 0l;
                             long left = 0l;
                             enabled = false;
@@ -209,6 +210,21 @@ public class PremiumStatus extends JPanel implements MouseListener {
                                 }
                             }
                             if (!enabled) continue;
+                            PluginForHost plugin = null;
+                            try {
+                                plugin = wrapper.getPrototype();
+                                if (plugin == null) throw new WTFException();
+                            } catch (final Throwable e) {
+                                /*
+                                 * in case something went wrong with prototype,
+                                 * we disable the accounts
+                                 */
+                                Log.exception(e);
+                                for (Account a : accs) {
+                                    a.setEnabled(false);
+                                }
+                                continue;
+                            }
                             bars[ii].setVisible(true);
                             bars[ii].setIcon(plugin.getHosterIcon());
                             bars[ii].setPlugin(plugin);
