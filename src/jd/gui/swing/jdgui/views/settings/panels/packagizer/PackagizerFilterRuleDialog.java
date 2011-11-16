@@ -45,7 +45,11 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
 
     private class PriorityAction extends AbstractAction {
 
-        private Priority priority;
+        /**
+         * 
+         */
+        private static final long serialVersionUID = 1L;
+        private Priority          priority;
 
         public PriorityAction(Priority priority) {
 
@@ -68,6 +72,11 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
     }
 
     private class RadioButton extends JRadioButton {
+
+        /**
+         * 
+         */
+        private static final long serialVersionUID = 1L;
 
         public RadioButton(PriorityAction pa_1) {
             super(pa_1);
@@ -224,6 +233,11 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
 
         fpDest = new PathChooser("PackagizerDest") {
 
+            /**
+             * 
+             */
+            private static final long serialVersionUID = 1L;
+
             @Override
             public JPopupMenu getPopupMenu(ExtTextField txt, CutAction cutAction, CopyAction copyAction, PasteAction pasteAction, DeleteAction deleteAction, SelectAction selectAction) {
                 JPopupMenu menu = new JPopupMenu();
@@ -272,6 +286,11 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
         fpPriority.add(getLbl(pa3));
         fpPriority.add(p3);
         txtPackagename = new ExtTextField() {
+            /**
+             * 
+             */
+            private static final long serialVersionUID = 1L;
+
             @Override
             public JPopupMenu getPopupMenu(CutAction cutAction, CopyAction copyAction, PasteAction pasteAction, DeleteAction deleteAction, SelectAction selectAction) {
                 JPopupMenu menu = new JPopupMenu();
@@ -287,6 +306,11 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
         };
         txtPackagename.setHelpText(_GUI._.PackagizerFilterRuleDialog_layoutDialogContent_packagename_help_());
         txtNewFilename = new ExtTextField() {
+            /**
+             * 
+             */
+            private static final long serialVersionUID = 1L;
+
             @Override
             public JPopupMenu getPopupMenu(CutAction cutAction, CopyAction copyAction, PasteAction pasteAction, DeleteAction deleteAction, SelectAction selectAction) {
                 JPopupMenu menu = new JPopupMenu();

@@ -11,8 +11,10 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginsC;
 
+import org.appwork.utils.StringUtils;
 import org.jdownloader.controlling.Priority;
 import org.jdownloader.controlling.filter.FilterRule;
+import org.jdownloader.controlling.packagizer.PackagizerController;
 
 public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>, CheckableLink {
 
@@ -23,15 +25,16 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
         TEMP_UNKNOWN
     }
 
-    private CrawledPackage    parent             = null;
-    private PluginForDecrypt  dPlugin            = null;
-    private LinkCollectingJob sourceJob          = null;
-    private long              created            = -1;
+    protected static final String PACKAGETAG         = "<jd:" + PackagizerController.PACKAGENAME + ">";
 
-    private String            realHost           = null;
-    boolean                   enabledState       = true;
-    private PackageInfo       desiredPackageInfo = new PackageInfo();
-    private String            linkID;
+    private CrawledPackage        parent             = null;
+    private PluginForDecrypt      dPlugin            = null;
+    private LinkCollectingJob     sourceJob          = null;
+    private long                  created            = -1;
+
+    private String                realHost           = null;
+    boolean                       enabledState       = true;
+    private PackageInfo           desiredPackageInfo = null;
 
     public PackageInfo getDesiredPackageInfo() {
         return desiredPackageInfo;
@@ -53,11 +56,8 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
      * @return
      */
     public String getLinkID() {
-        return linkID == null ? getURL() : linkID;
-    }
-
-    public void setLinkID(String linkID) {
-        this.linkID = linkID;
+        if (dlLink != null) return dlLink.getLinkID();
+        return getURL();
     }
 
     /**
@@ -142,6 +142,7 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
     private CryptedLink cLink      = null;
     private String      url;
     private CrawledLink sourceLink = null;
+    private String      name       = null;
     private FilterRule  matchingFilter;
 
     public CrawledLink(DownloadLink dlLink) {
@@ -158,7 +159,14 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
     }
 
     public String getName() {
+        String lname = name;
+        if (lname != null) {
+            CrawledPackage lparent = this.getParentNode();
+            if (lparent == null) return lname;
+            /* special case of PackageCustomizer Filename */
+            return name.replace(PACKAGETAG, lparent.getName());
 
+        }
         if (dlLink != null) return dlLink.getName();
         return "DUMMY";
     }
@@ -170,11 +178,18 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
 
     public void setChunks(int chunks) {
         if (dlLink != null) dlLink.setChunks(chunks);
-
     }
 
-    public void setForcedName(String name) {
-        if (dlLink != null) dlLink.forceFileName(name);
+    public void setName(String name) {
+        if (StringUtils.isEmpty(name)) {
+            name = null;
+        } else {
+            this.name = name;
+        }
+    }
+
+    public boolean isNameSet() {
+        return name != null;
     }
 
     public ImageIcon getHosterIcon() {

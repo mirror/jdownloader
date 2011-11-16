@@ -127,16 +127,14 @@ public class DownloadFolderColumn extends ExtTextColumn<AbstractNode> {
         if (StringUtils.isEmpty(value)) return;
         if (object instanceof CrawledPackage) {
             ((CrawledPackage) object).setDownloadFolder(value);
-
         }
     }
 
     @Override
     public String getStringValue(AbstractNode value) {
         if (value instanceof CrawledPackage) {
-
             String folder = ((CrawledPackage) value).getDownloadFolder();
-            if (new File(folder).isAbsolute()) {
+            if (isAbsolute(folder)) {
                 return folder;
             } else {
                 return new File(GeneralSettings.DOWNLOAD_FOLDER.getValue(), folder).toString();
@@ -144,6 +142,14 @@ public class DownloadFolderColumn extends ExtTextColumn<AbstractNode> {
         } else {
             return null;
         }
+    }
+
+    private boolean isAbsolute(String path) {
+        if (StringUtils.isEmpty(path)) return false;
+        if (CrossSystem.isWindows() && path.matches(".://.+")) return true;
+        if (CrossSystem.isWindows() && path.matches(".:\\\\.+")) return true;
+        if (path.startsWith("/")) return true;
+        return false;
     }
 
 }

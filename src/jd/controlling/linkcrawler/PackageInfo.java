@@ -2,40 +2,42 @@ package jd.controlling.linkcrawler;
 
 import java.util.HashSet;
 
+import jd.controlling.linkcollector.LinknameCleaner;
+
 import org.appwork.utils.StringUtils;
 import org.jdownloader.controlling.UniqueID;
 
 public class PackageInfo {
     private UniqueID uniqueId              = null;
-    private boolean  autoExtractionEnabled = true;
+    private Boolean  autoExtractionEnabled = null;
 
-    public boolean isAutoExtractionEnabled() {
+    public Boolean isAutoExtractionEnabled() {
         return autoExtractionEnabled;
     }
 
-    public void setAutoExtractionEnabled(boolean autoExtractionEnabled) {
+    public void setAutoExtractionEnabled(Boolean autoExtractionEnabled) {
         this.autoExtractionEnabled = autoExtractionEnabled;
     }
 
-    private boolean autoAddEnabled;
+    private Boolean autoAddEnabled;
 
-    public boolean isAutoAddEnabled() {
+    public Boolean isAutoAddEnabled() {
         return autoAddEnabled;
     }
 
-    public void setAutoAddEnabled(boolean autoAddEnabled) {
+    public void setAutoAddEnabled(Boolean autoAddEnabled) {
         this.autoAddEnabled = autoAddEnabled;
     }
 
-    public boolean isAutoStartEnabled() {
+    public Boolean isAutoStartEnabled() {
         return autoStartEnabled;
     }
 
-    public void setAutoStartEnabled(boolean autoStartEnabled) {
+    public void setAutoStartEnabled(Boolean autoStartEnabled) {
         this.autoStartEnabled = autoStartEnabled;
     }
 
-    private boolean autoStartEnabled;
+    private Boolean autoStartEnabled;
 
     public UniqueID getUniqueId() {
         return uniqueId;
@@ -93,6 +95,28 @@ public class PackageInfo {
         if (!StringUtils.isEmpty(getDestinationFolder())) sb.append(getDestinationFolder());
         if (!StringUtils.isEmpty(getName())) sb.append(getName());
         return sb.length() == 0 ? null : sb.toString();
+    }
+
+    public static CrawledPackage createCrawledPackage(CrawledLink link) {
+        PackageInfo dpi = link.getDesiredPackageInfo();
+        if (dpi == null) return null;
+        CrawledPackage ret = new CrawledPackage();
+        /* fetch desired Packagename from info */
+        String pkgName = dpi.getName();
+        if (StringUtils.isEmpty(pkgName)) {
+            /* no info available, so lets cleanup filename */
+            pkgName = LinknameCleaner.cleanFileName(link.getName());
+        }
+        ret.setName(pkgName);
+        ret.setCreated(link.getCreated());
+        ret.setComment(dpi.getComment());
+        if (dpi.isAutoExtractionEnabled() != null) ret.setAutoExtractionEnabled(dpi.isAutoExtractionEnabled());
+        if (dpi.isAutoAddEnabled() != null) ret.setAutoAddEnabled(dpi.isAutoAddEnabled());
+        if (dpi.isAutoStartEnabled() != null) ret.setAutoStartEnabled(dpi.isAutoStartEnabled());
+        if (!StringUtils.isEmpty(dpi.getDestinationFolder())) {
+            ret.setDownloadFolder(dpi.getDestinationFolder());
+        }
+        return ret;
     }
 
 }

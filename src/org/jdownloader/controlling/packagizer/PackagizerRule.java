@@ -50,11 +50,11 @@ public class PackagizerRule extends FilterRule implements Storable {
         this.packageName = packageName;
     }
 
-    public boolean isAutoExtractionEnabled() {
+    public Boolean isAutoExtractionEnabled() {
         return autoExtractionEnabled;
     }
 
-    public void setAutoExtractionEnabled(boolean autoExtractionEnabled) {
+    public void setAutoExtractionEnabled(Boolean autoExtractionEnabled) {
         this.autoExtractionEnabled = autoExtractionEnabled;
     }
 
@@ -72,26 +72,26 @@ public class PackagizerRule extends FilterRule implements Storable {
 
     private Priority priority    = null;
     private String   packageName = null;
-    private boolean  autoExtractionEnabled;
-    private boolean  autoAddEnabled;
+    private Boolean  autoExtractionEnabled;
+    private Boolean  autoAddEnabled;
 
-    public boolean isAutoAddEnabled() {
+    public Boolean isAutoAddEnabled() {
         return autoAddEnabled;
     }
 
-    public void setAutoAddEnabled(boolean autoAddEnabled) {
+    public void setAutoAddEnabled(Boolean autoAddEnabled) {
         this.autoAddEnabled = autoAddEnabled;
     }
 
-    public boolean isAutoStartEnabled() {
+    public Boolean isAutoStartEnabled() {
         return autoStartEnabled;
     }
 
-    public void setAutoStartEnabled(boolean autoStartEnabled) {
+    public void setAutoStartEnabled(Boolean autoStartEnabled) {
         this.autoStartEnabled = autoStartEnabled;
     }
 
-    private boolean autoStartEnabled;
+    private Boolean autoStartEnabled;
     private int     chunks;
     private String  filename;
     private int     order = 0;

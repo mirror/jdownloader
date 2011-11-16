@@ -52,6 +52,7 @@ public class LinkCrawler implements IOPermission {
     private volatile boolean              allowCrawling        = true;
     private AtomicInteger                 crawlerGeneration    = new AtomicInteger(0);
     private LinkCrawler                   parentCrawler        = null;
+    private final long                    created;
 
     /*
      * customized comparator we use to prefer faster decrypter plugins over
@@ -132,12 +133,12 @@ public class LinkCrawler implements IOPermission {
                 break;
             }
         }
+        this.created = System.currentTimeMillis();
     }
 
-    public LinkCrawler(LinkCrawler parentCrawler) {
-        setHandler(defaulHandlerFactory());
-        setFilter(defaultFilterFactory());
-        this.parentCrawler = parentCrawler;
+    public long getCreated() {
+        if (parentCrawler != null) return parentCrawler.getCreated();
+        return created;
     }
 
     /**
@@ -849,12 +850,10 @@ public class LinkCrawler implements IOPermission {
 
     protected void handleCrawledLink(CrawledLink link) {
         if (link == null) return;
-        link.setCreated(System.currentTimeMillis());
+        link.setCreated(getCreated());
         if (link.getDownloadLink() != null && link.getDownloadLink().getBooleanProperty("ALLOW_DUPE", false)) {
             /* forward dupeAllow info from DownloadLink to CrawledLinkInfo */
             link.getDownloadLink().setProperty("ALLOW_DUPE", Property.NULL);
-            // later, crawler plugins should set the id on their own.
-            link.setLinkID(link.getURL() + System.currentTimeMillis());
         }
 
         /* check if we already handled this url */

@@ -362,7 +362,8 @@ public class TbCm extends PluginForDecrypt {
                     final DestinationFormat convertTo = next.getKey();
                     // create a package, for each quality.
                     final FilePackage filePackage = FilePackage.getInstance();
-                    filePackage.setName("YouTube " + convertTo.getText() + "(" + convertTo.getExtFirst() + ")");
+                    filePackage.setProperty("ALLOW_MERGE", true);
+                    filePackage.setName("YouTube " + convertTo.getText());
                     for (final Info info : next.getValue()) {
                         final DownloadLink thislink = this.createDownloadlink(info.link.replaceFirst("http", "httpJDYoutube"));
                         thislink.setProperty("ALLOW_DUPE", true);
@@ -371,19 +372,23 @@ public class TbCm extends PluginForDecrypt {
                         thislink.setFinalFileName(YT_FILENAME + info.desc + convertTo.getExtFirst());
                         thislink.setSourcePluginComment("Convert to " + convertTo.getText());
                         thislink.setProperty("size", info.size);
+                        String name = null;
                         if (convertTo != DestinationFormat.AUDIOMP3) {
-                            thislink.setProperty("name", YT_FILENAME + info.desc + convertTo.getExtFirst());
+                            name = YT_FILENAME + info.desc + convertTo.getExtFirst();
+                            thislink.setProperty("name", name);
                         } else {
                             /*
                              * because demuxer will fail when mp3 file already
                              * exists
                              */
-                            thislink.setProperty("name", YT_FILENAME + info.desc + ".tmp");
+                            name = YT_FILENAME + info.desc + ".tmp";
+                            thislink.setProperty("name", name);
                         }
                         thislink.setProperty("convertto", convertTo.name());
                         thislink.setProperty("videolink", parameter);
                         thislink.setProperty("valid", true);
                         thislink.setProperty("fmtNew", info.fmt);
+                        thislink.setProperty("LINKDUPEID", name);
                         decryptedLinks.add(thislink);
                     }
                 }

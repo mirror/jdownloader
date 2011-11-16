@@ -269,7 +269,6 @@ public abstract class FilterTable extends ExtTable<Filter> implements PackageCon
     }
 
     protected void updateNow() {
-
         reset();
         ArrayList<Filter> newData = updateQuickFilerTableData();
         for (Iterator<Filter> it = newData.iterator(); it.hasNext();) {
@@ -279,9 +278,7 @@ public abstract class FilterTable extends ExtTable<Filter> implements PackageCon
         }
         setVisible(newData.size() > 0);
         filters = newData;
-
         if (visibleKeyHandler.getValue()) getExtTableModel()._fireTableStructureChanged(newData, true);
-        // updateSelection();
 
     }
 

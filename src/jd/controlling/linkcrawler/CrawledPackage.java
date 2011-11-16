@@ -26,7 +26,6 @@ public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledP
     public String getDownloadFolder() {
         // replace variables in downloadfolder
         return downloadFolder.replace(PACKAGETAG, getName());
-
     }
 
     public HashSet<String> getExtractionPasswords() {
@@ -65,7 +64,9 @@ public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledP
     private HashSet<String> extractionPasswords = new HashSet<String>();
 
     public void setDownloadFolder(String downloadFolder) {
-        if (downloadFolder != null) this.downloadFolder = downloadFolder;
+        if (downloadFolder != null) {
+            this.downloadFolder = downloadFolder;
+        }
     }
 
     /**

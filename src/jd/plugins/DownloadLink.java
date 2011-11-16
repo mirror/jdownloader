@@ -81,6 +81,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     private static final String                PROPERTY_FINISHTIME     = "FINISHTIME";
     private static final String                PROPERTY_ENABLED        = "ENABLED";
     private static final String                PROPERTY_PWLIST         = "PWLIST";
+    private static final String                PROPERTY_LINKDUPEID     = "LINKDUPEID";
 
     public static final int                    LINKTYPE_CONTAINER      = 1;
 
@@ -533,6 +534,21 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         return this.getStringProperty(PROPERTY_FORCEDFILENAME, null);
     }
 
+    public String getLinkID() {
+        String ret = this.getStringProperty(PROPERTY_LINKDUPEID, null);
+        if (ret == null) return this.getBrowserUrl();
+        return ret;
+    }
+
+    /* DO NOT USE in plugins for stable 09581, use set Property instead */
+    public void setLinkID(String id) {
+        if (StringUtils.isEmpty(id)) {
+            this.setProperty(PROPERTY_LINKDUPEID, Property.NULL);
+        } else {
+            this.setProperty(PROPERTY_LINKDUPEID, id);
+        }
+    }
+
     /**
      * @return true falls der Download abgebrochen wurde
      */
@@ -811,7 +827,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     }
 
     private void setSubdirectory(String subdirectory) {
-        if (subdirectory == null || subdirectory.length() == 0) {
+        if (StringUtils.isEmpty(subdirectory)) {
             this.setProperty(PROPERTY_SUBFOLDER, Property.NULL);
         } else {
             this.setProperty(PROPERTY_SUBFOLDER, subdirectory);
