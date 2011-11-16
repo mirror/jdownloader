@@ -1,12 +1,14 @@
 package jd.controlling.linkcrawler;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 
 import jd.controlling.packagecontroller.AbstractPackageNode;
 import jd.controlling.packagecontroller.PackageController;
 
 import org.appwork.storage.config.JsonConfig;
+import org.jdownloader.controlling.packagizer.PackagizerController;
 import org.jdownloader.settings.GeneralSettings;
 
 public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledPackage> {
@@ -19,10 +21,48 @@ public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledP
     private transient CrawledPackageInfo                   fpInfo           = null;
     private String                                         comment          = null;
     private String                                         downloadFolder   = JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder();
+    protected static final String                          PACKAGETAG       = "<jd:" + PackagizerController.PACKAGENAME + ">";
 
     public String getDownloadFolder() {
-        return downloadFolder;
+        // replace variables in downloadfolder
+        return downloadFolder.replace(PACKAGETAG, getName());
+
     }
+
+    public HashSet<String> getExtractionPasswords() {
+        return extractionPasswords;
+    }
+
+    private boolean autoAddEnabled;
+
+    public boolean isAutoAddEnabled() {
+        return autoAddEnabled;
+    }
+
+    private boolean autoExtractionEnabled = true;
+
+    public boolean isAutoExtractionEnabled() {
+        return autoExtractionEnabled;
+    }
+
+    public void setAutoExtractionEnabled(boolean autoExtractionEnabled) {
+        this.autoExtractionEnabled = autoExtractionEnabled;
+    }
+
+    public void setAutoAddEnabled(boolean autoAddEnabled) {
+        this.autoAddEnabled = autoAddEnabled;
+    }
+
+    public boolean isAutoStartEnabled() {
+        return autoStartEnabled;
+    }
+
+    public void setAutoStartEnabled(boolean autoStartEnabled) {
+        this.autoStartEnabled = autoStartEnabled;
+    }
+
+    private boolean         autoStartEnabled;
+    private HashSet<String> extractionPasswords = new HashSet<String>();
 
     public void setDownloadFolder(String downloadFolder) {
         if (downloadFolder != null) this.downloadFolder = downloadFolder;

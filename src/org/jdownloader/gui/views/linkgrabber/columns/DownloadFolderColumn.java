@@ -20,6 +20,7 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.OpenDownloadFolderAction;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.SetDownloadFolderAction;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.settings.GeneralSettings;
 
 public class DownloadFolderColumn extends ExtTextColumn<AbstractNode> {
     /**
@@ -125,15 +126,21 @@ public class DownloadFolderColumn extends ExtTextColumn<AbstractNode> {
     protected void setStringValue(String value, AbstractNode object) {
         if (StringUtils.isEmpty(value)) return;
         if (object instanceof CrawledPackage) {
-            File file = new File(value);
-            if (SetDownloadFolderAction.isDownloadFolderValid(file)) ((CrawledPackage) object).setDownloadFolder(value);
+            ((CrawledPackage) object).setDownloadFolder(value);
+
         }
     }
 
     @Override
     public String getStringValue(AbstractNode value) {
         if (value instanceof CrawledPackage) {
-            return ((CrawledPackage) value).getDownloadFolder();
+
+            String folder = ((CrawledPackage) value).getDownloadFolder();
+            if (new File(folder).isAbsolute()) {
+                return folder;
+            } else {
+                return new File(GeneralSettings.DOWNLOAD_FOLDER.getValue(), folder).toString();
+            }
         } else {
             return null;
         }

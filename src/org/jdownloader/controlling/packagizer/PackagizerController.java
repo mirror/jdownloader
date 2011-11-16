@@ -1,6 +1,8 @@
 package org.jdownloader.controlling.packagizer;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.Locale;
 import java.util.regex.Pattern;
 
@@ -32,6 +34,12 @@ public class PackagizerController implements PackagizerInterface {
     private ChangeEventSender                eventSender;
     private ArrayList<PackagizerRuleWrapper> fileFilter;
     private ArrayList<PackagizerRuleWrapper> urlFilter;
+    public static final String               FILENAME    = "filename";
+    public static final String               ORGFILENAME = "orgfilename";
+    public static final String               HOSTER      = "hoster";
+    public static final String               SOURCE      = "source";
+    public static final String               SIMPLEDATE  = "simpledate";
+    public static final String               PACKAGENAME = "packagename";
 
     private PackagizerController() {
 
@@ -101,6 +109,7 @@ public class PackagizerController implements PackagizerInterface {
 
                 if (!compiled.isRequiresLinkcheck()) {
                     urlFilter.add(compiled);
+                    fileFilter.add(compiled);
                 } else {
                     fileFilter.add(compiled);
                 }
@@ -158,11 +167,12 @@ public class PackagizerController implements PackagizerInterface {
                 throw new WTFException();
             }
             if (!lgr.checkSource(link)) continue;
-            if (!lgr.checkOnlineStatus(link)) continue;
-
-            if (!lgr.checkFileName(link)) continue;
-            if (!lgr.checkFileSize(link)) continue;
-            if (!lgr.checkFileType(link)) continue;
+            if (lgr.isRequiresLinkcheck()) {
+                if (!lgr.checkOnlineStatus(link)) continue;
+                if (!lgr.checkFileName(link)) continue;
+                if (!lgr.checkFileSize(link)) continue;
+                if (!lgr.checkFileType(link)) continue;
+            }
 
             set(link, lgr);
 
@@ -203,17 +213,17 @@ public class PackagizerController implements PackagizerInterface {
         if (!StringUtils.isEmpty(lgr.getRule().getDownloadDestination())) {
             String path = replaceVariables(lgr.getRule().getDownloadDestination(), link, lgr);
 
-            link.getDesiredPackageInfo().setDestinationFolder(lgr.getRule().getDownloadDestination());
+            link.getDesiredPackageInfo().setDestinationFolder(path);
         }
         if (!StringUtils.isEmpty(lgr.getRule().getPackageName())) {
             String name = replaceVariables(lgr.getRule().getPackageName(), link, lgr);
             link.getDesiredPackageInfo().setName(name);
         }
-        link.setPriority(lgr.getRule().getPriority());
+        if (lgr.getRule().getPriority() != null) link.setPriority(lgr.getRule().getPriority());
         if (!StringUtils.isEmpty(lgr.getRule().getFilename())) {
             link.setForcedName(replaceVariables(lgr.getRule().getFilename(), link, lgr));
         }
-        lgr.getRule().isAutoAddEnabled();
+
         link.getDesiredPackageInfo().setAutoExtractionEnabled(lgr.getRule().isAutoExtractionEnabled());
         link.getDesiredPackageInfo().setAutoAddEnabled(lgr.getRule().isAutoAddEnabled());
         link.getDesiredPackageInfo().setAutoStartEnabled(lgr.getRule().isAutoStartEnabled());
@@ -224,15 +234,54 @@ public class PackagizerController implements PackagizerInterface {
         String[] matches = new Regex(txt, "<jd:(.+?)>").getColumn(0);
         if (matches != null) {
             for (String m : matches) {
-                if ("packagename".equalsIgnoreCase(m)) {
-                    // keep
-                }
-                if (m.toLowerCase(Locale.ENGLISH).startsWith("filename:")) {
-                    System.out.println(link.getName() + " - " + lgr.getFileNameRule().getPattern());
-                    txt = Pattern.compile("<jd:filename:" + m.substring(9) + "/?>").matcher(txt).replaceAll(new Regex(link.getName(), lgr.getFileNameRule().getPattern()).getRow(0)[Integer.parseInt(m.substring(9)) - 1]);
-                } else if ("filename".equalsIgnoreCase(m)) {
-                    txt = Pattern.compile("<jd:filename/?>").matcher(txt).replaceAll(compileFilename(link, lgr));
+                try {
+                    if (m.toLowerCase(Locale.ENGLISH).startsWith(SOURCE + ":")) {
+                        int id = Integer.parseInt(m.substring(SOURCE.length() + 1));
+                        CrawledLink src = link;
+                        while ((src = src.getSourceLink()) != null) {
+                            Regex regex = new Regex(src.getURL(), lgr.getSourceRule().getPattern());
+                            if (regex.matches()) {
+                                String[] values = regex.getRow(0);
 
+                                txt = Pattern.compile("<jd:" + SOURCE + ":" + id + "/?>").matcher(txt).replaceAll(values[id - 1]);
+                            }
+                        }
+
+                    }
+                    if (m.toLowerCase(Locale.ENGLISH).startsWith(SIMPLEDATE + ":")) {
+                        String format = m.substring(SIMPLEDATE.length() + 1);
+                        String dateString = new SimpleDateFormat(format).format(new Date());
+                        txt = Pattern.compile("<jd:" + SIMPLEDATE + ":" + format + "/?>").matcher(txt).replaceAll(dateString);
+                    }
+                    if (m.toLowerCase(Locale.ENGLISH).startsWith(HOSTER + ":")) {
+                        int id = Integer.parseInt(m.substring(HOSTER.length() + 1));
+                        CrawledLink src = link;
+
+                        Regex regex = new Regex(link.getURL(), lgr.getHosterRule().getPattern());
+                        if (regex.matches()) {
+                            String[] values = regex.getRow(0);
+
+                            txt = Pattern.compile("<jd:" + HOSTER + ":" + id + "/?>").matcher(txt).replaceAll(values[id - 1]);
+                        }
+
+                    }
+
+                    if (ORGFILENAME.equalsIgnoreCase(m)) {
+                        txt = Pattern.compile("<jd:" + ORGFILENAME + "/?>").matcher(txt).replaceAll(link.getName());
+
+                    }
+                    if (PACKAGENAME.equalsIgnoreCase(m)) {
+                        // keep
+                    }
+                    if (m.toLowerCase(Locale.ENGLISH).startsWith(ORGFILENAME + ":")) {
+                        String id = m.substring(ORGFILENAME.length() + 1);
+                        txt = Pattern.compile("<jd:" + ORGFILENAME + ":" + id + "/?>").matcher(txt).replaceAll(new Regex(link.getName(), lgr.getFileNameRule().getPattern()).getRow(0)[Integer.parseInt(id) - 1]);
+                    } else if (FILENAME.equalsIgnoreCase(m)) {
+                        txt = Pattern.compile("<jd:" + FILENAME + "/?>").matcher(txt).replaceAll(compileFilename(link, lgr));
+
+                    }
+                } catch (Throwable e) {
+                    e.printStackTrace();
                 }
             }
         }

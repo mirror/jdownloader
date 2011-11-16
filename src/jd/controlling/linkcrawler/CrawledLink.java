@@ -27,10 +27,11 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
     private PluginForDecrypt  dPlugin            = null;
     private LinkCollectingJob sourceJob          = null;
     private long              created            = -1;
-    private boolean           isDupeAllow        = false;
+
     private String            realHost           = null;
     boolean                   enabledState       = true;
     private PackageInfo       desiredPackageInfo = new PackageInfo();
+    private String            linkID;
 
     public PackageInfo getDesiredPackageInfo() {
         return desiredPackageInfo;
@@ -41,18 +42,22 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
     }
 
     /**
-     * @return the isDupeAllow
+     * Linkid should be unique for a certain link. in most cases, this is the
+     * url itself, but somtimes (youtube e.g.) the id contains info about how to
+     * prozess the file afterwards.
+     * 
+     * example:<br>
+     * 2 youtube links may have the same url, but the one will be converted into
+     * mp3, and the other stays flv. url is the same, but linkID different.
+     * 
+     * @return
      */
-    public boolean isDupeAllow() {
-        return isDupeAllow;
+    public String getLinkID() {
+        return linkID == null ? getURL() : linkID;
     }
 
-    /**
-     * @param isDupeAllow
-     *            the isDupeAllow to set
-     */
-    public void setDupeAllow(boolean isDupeAllow) {
-        this.isDupeAllow = isDupeAllow;
+    public void setLinkID(String linkID) {
+        this.linkID = linkID;
     }
 
     /**
@@ -153,6 +158,7 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
     }
 
     public String getName() {
+
         if (dlLink != null) return dlLink.getName();
         return "DUMMY";
     }

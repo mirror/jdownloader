@@ -2,6 +2,7 @@ package jd.controlling.linkcollector;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
@@ -18,42 +19,39 @@ import jd.controlling.packagecontroller.PackageController;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.event.Eventsender;
 import org.appwork.utils.event.queue.Queue.QueuePriority;
 import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.logging.Log;
-import org.jdownloader.controlling.UniqueID;
 import org.jdownloader.controlling.filter.LinkFilterController;
 import org.jdownloader.controlling.packagizer.PackagizerController;
 
 public class LinkCollector extends PackageController<CrawledPackage, CrawledLink> implements LinkCheckerHandler<CrawledLink>, LinkCrawlerHandler {
 
-    private transient Eventsender<LinkCollectorListener, LinkCollectorEvent> broadcaster = new Eventsender<LinkCollectorListener, LinkCollectorEvent>() {
+    protected static final String                                            PACKAGETAG    = "<jd:" + PackagizerController.PACKAGENAME + ">";
 
-                                                                                             @Override
-                                                                                             protected void fireEvent(final LinkCollectorListener listener, final LinkCollectorEvent event) {
-                                                                                                 listener.onLinkCollectorEvent(event);
-                                                                                             };
-                                                                                         };
+    private transient Eventsender<LinkCollectorListener, LinkCollectorEvent> broadcaster   = new Eventsender<LinkCollectorListener, LinkCollectorEvent>() {
 
-    private static LinkCollector                                             INSTANCE    = new LinkCollector();
-    private LinkChecker<CrawledLink>                                         linkChecker = null;
+                                                                                               @Override
+                                                                                               protected void fireEvent(final LinkCollectorListener listener, final LinkCollectorEvent event) {
+                                                                                                   listener.onLinkCollectorEvent(event);
+                                                                                               };
+                                                                                           };
 
-    private class dupeCheck {
-        int counter = 1;
-    }
+    private static LinkCollector                                             INSTANCE      = new LinkCollector();
+    private LinkChecker<CrawledLink>                                         linkChecker   = null;
 
     /**
      * NOTE: only access these fields inside the IOEQ
      */
-    private HashMap<String, dupeCheck>        dupeMap           = new HashMap<String, dupeCheck>();
-    private HashMap<UniqueID, CrawledPackage> packageMap        = new HashMap<UniqueID, CrawledPackage>();
-    private HashMap<CrawledPackage, UniqueID> packageMapReverse = new HashMap<CrawledPackage, UniqueID>();
+    private HashSet<String>                                                  dupeCheckMap  = new HashSet<String>();
+    private HashMap<String, CrawledPackage>                                  packageMap    = new HashMap<String, CrawledPackage>();
 
     /* sync on filteredStuff itself when accessing it */
-    private ArrayList<CrawledLink>            filteredStuff     = new ArrayList<CrawledLink>();
+    private ArrayList<CrawledLink>                                           filteredStuff = new ArrayList<CrawledLink>();
 
-    private LinkCrawlerFilter                 crawlerFilter     = null;
+    private LinkCrawlerFilter                                                crawlerFilter = null;
 
     public static LinkCollector getInstance() {
         return INSTANCE;
@@ -91,32 +89,27 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         broadcaster.fireEvent(new LinkCollectorEvent(LinkCollector.this, LinkCollectorEvent.TYPE.REMOVE_CONTENT, links, priority));
         for (CrawledLink link : links) {
             /* update dupeMap */
-            dupeCheck dupes = dupeMap.get(link.getURL());
-            if (dupes != null) {
-                dupes.counter--;
-                if (dupes.counter <= 0) {
-                    dupeMap.remove(link.getURL());
-                }
-            }
+            dupeCheckMap.remove(link.getLinkID());
+
         }
     }
 
     @Override
     protected void _controllerPackageNodeRemoved(CrawledPackage pkg, QueuePriority priority) {
         /* update packageMap */
-        UniqueID id = packageMapReverse.remove(pkg);
-        if (id != null) packageMap.remove(id);
+        for (Iterator<Entry<String, CrawledPackage>> iterator = packageMap.entrySet().iterator(); iterator.hasNext();) {
+            Entry<String, CrawledPackage> type = iterator.next();
+            if (type.getValue() == pkg) {
+                packageMap.remove(type.getKey());
+                break;
+            }
+
+        }
+
         broadcaster.fireEvent(new LinkCollectorEvent(LinkCollector.this, LinkCollectorEvent.TYPE.REMOVE_CONTENT, pkg, priority));
         synchronized (pkg) {
             for (CrawledLink link : pkg.getChildren()) {
-                /* update dupeMap */
-                dupeCheck dupes = dupeMap.get(link.getURL());
-                if (dupes != null) {
-                    dupes.counter--;
-                    if (dupes.counter <= 0) {
-                        dupeMap.remove(link.getURL());
-                    }
-                }
+                dupeCheckMap.remove(link.getLinkID());
             }
         }
     }
@@ -196,26 +189,6 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
             }
             addCrawledLink(link);
         }
-    }
-
-    /**
-     * NOTE: use only inside the IOEQ
-     */
-    private boolean dupeCheck(CrawledLink link) {
-        if (!link.isDupeAllow() && dupeMap.containsKey(link.getURL())) {
-            return false;
-        } else {
-            dupeCheck dupes = dupeMap.get(link.getURL());
-            if (dupes == null) {
-                dupes = new dupeCheck();
-                /* counter is already 1 here */
-                dupeMap.put(link.getURL(), dupes);
-            } else {
-                /* increase counter */
-                dupes.counter++;
-            }
-        }
-        return true;
     }
 
     private PackagizerInterface packagizer = null;
@@ -317,76 +290,86 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
     private void addCrawledLink(final CrawledLink link) {
 
-        final UniqueID wanted = link.getDesiredPackageInfo().getUniqueId();
+        final String packageID = link.getDesiredPackageInfo().createPackageID();
 
-        if (wanted != null) {
-            /* custom package was set, try to find it or create new one */
-            IOEQ.getQueue().add(new QueueAction<Void, RuntimeException>() {
-                @Override
-                protected Void run() throws RuntimeException {
-                    /* update dupeCheck map */
-                    if (dupeCheck(link) == false) return null;
-                    CrawledPackage match = packageMap.get(wanted);
-                    if (match == null) {
-                        match = new CrawledPackage();
-                        match.setAllowAutoPackage(false);
-                        packageMap.put(wanted, match);
-                        packageMapReverse.put(match, wanted);
-                        /*
-                         * forward name from FilePackage Instance to
-                         * CrawledPackageInfo
-                         */
-                        match.setName(link.getDownloadLink().getFilePackage().getName());
-                        match.setCreated(link.getCreated());
+        /* try to find good matching package or create new one */
+
+        IOEQ.getQueue().add(new QueueAction<Void, RuntimeException>() {
+
+            @Override
+            protected Void run() throws RuntimeException {
+                /* update dupeCheck map */
+                if (!dupeCheckMap.add(link.getLinkID())) return null;
+
+                CrawledPackage pkgMatch = packageMap.get(packageID);
+                if (pkgMatch == null && packageID != null) {
+                    pkgMatch = new CrawledPackage();
+                    pkgMatch.setAllowAutoPackage(false);
+                    String pkgName = link.getDesiredPackageInfo().getName();
+                    if (StringUtils.isEmpty(pkgName)) {
+                        pkgName = LinknameCleaner.cleanFileName(link.getName());
                     }
-                    List<CrawledLink> add = new ArrayList<CrawledLink>(1);
-                    add.add(link);
-                    LinkCollector.this.addmoveChildren(match, add, -1);
-                    return null;
-                }
-            });
-        } else {
-            /* try to find good matching package or create new one */
-            final String packageName = LinknameCleaner.cleanFileName(link.getName());
-            IOEQ.getQueue().add(new QueueAction<Void, RuntimeException>() {
+                    pkgMatch.setName(pkgName);
+                    pkgMatch.setCreated(link.getCreated());
+                    packageMap.put(packageID, pkgMatch);
+                    pkgMatch.setComment(link.getDesiredPackageInfo().getComment());
+                    if (!StringUtils.isEmpty(link.getDesiredPackageInfo().getDestinationFolder())) {
+                        pkgMatch.setDownloadFolder(link.getDesiredPackageInfo().getDestinationFolder());
+                    }
+                } else if (pkgMatch != null && packageID != null) {
 
-                @Override
-                protected Void run() throws RuntimeException {
-                    /* update dupeCheck map */
-                    if (dupeCheck(link) == false) return null;
-                    String name = packageName;
+                } else {
+                    String packageName = LinknameCleaner.cleanFileName(link.getName());
+
                     int bestMatch = 0;
-                    CrawledPackage bestPackage = null;
-                    boolean readL = readLock();
-                    try {
-                        for (CrawledPackage pkg : packages) {
-                            if (pkg.isAllowAutoPackage() == false) continue;
-                            int sim = LinknameCleaner.comparepackages(pkg.getAutoPackageName(), name);
-                            if (sim > bestMatch) {
-                                bestMatch = sim;
-                                bestPackage = pkg;
+
+                    if (packageName != link.getDesiredPackageInfo().getName()) {
+                        boolean readL = readLock();
+                        try {
+                            for (CrawledPackage pkg : packages) {
+                                if (pkg.isAllowAutoPackage() == false) continue;
+                                int sim = LinknameCleaner.comparepackages(pkg.getAutoPackageName(), packageName);
+                                if (sim > bestMatch) {
+                                    bestMatch = sim;
+                                    pkgMatch = pkg;
+                                }
                             }
+                        } finally {
+                            readUnlock(readL);
                         }
-                    } finally {
-                        readUnlock(readL);
+                        if (bestMatch < 99 || pkgMatch == null) {
+                            /* create new Package */
+                            pkgMatch = new CrawledPackage();
+                            pkgMatch.setCreated(link.getCreated());
+                        } else {
+                            /* rename existing one */
+                            packageName = getSimString(pkgMatch.getAutoPackageName(), packageName);
+                        }
+                        pkgMatch.setAutoPackageName(packageName);
+                        /* add link to LinkCollector */
+
+                        return null;
                     }
-                    if (bestMatch < 99 || bestPackage == null) {
-                        /* create new Package */
-                        bestPackage = new CrawledPackage();
-                        bestPackage.setCreated(link.getCreated());
-                    } else {
-                        /* rename existing one */
-                        name = getSimString(bestPackage.getAutoPackageName(), name);
-                    }
-                    bestPackage.setAutoPackageName(name);
-                    /* add link to LinkCollector */
-                    List<CrawledLink> add = new ArrayList<CrawledLink>(1);
-                    add.add(link);
-                    LinkCollector.this.addmoveChildren(bestPackage, add, -1);
-                    return null;
+
                 }
-            });
-        }
+                List<CrawledLink> add = new ArrayList<CrawledLink>(1);
+                String name = link.getName();
+
+                if (name.contains(PACKAGETAG)) {
+                    link.setForcedName(name.replace(PACKAGETAG, pkgMatch.getName()));
+                }
+                add.add(link);
+                LinkCollector.this.addmoveChildren(pkgMatch, add, -1);
+                pkgMatch.setComment(link.getDesiredPackageInfo().getComment());
+                pkgMatch.setAutoAddEnabled(link.getDesiredPackageInfo().isAutoAddEnabled());
+                pkgMatch.setAutoStartEnabled(link.getDesiredPackageInfo().isAutoStartEnabled());
+
+                pkgMatch.setAutoExtractionEnabled(link.getDesiredPackageInfo().isAutoExtractionEnabled());
+                pkgMatch.getExtractionPasswords().addAll(link.getDesiredPackageInfo().getExtractionPasswords());
+                return null;
+            }
+        });
+
     }
 
     private String getSimString(String a, String b) {

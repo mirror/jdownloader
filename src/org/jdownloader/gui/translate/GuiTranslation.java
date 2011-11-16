@@ -2731,13 +2731,13 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Complete Final Filename" })
     String PackagizerFilterRuleDialog_createVariablesMenu_filename_complete();
 
-    @Default(lngs = { "en" }, values = { "Filename Match #%s1" })
+    @Default(lngs = { "en" }, values = { "Original Filename Wildcard(*) #%s1" })
     String PackagizerFilterRuleDialog_createVariablesMenu_filename(int i);
 
-    @Default(lngs = { "en" }, values = { "Hoster Url Match #%s1" })
+    @Default(lngs = { "en" }, values = { "Hoster Url Wildcard(*) #%s1" })
     String PackagizerFilterRuleDialog_createVariablesMenu_hoster(int i);
 
-    @Default(lngs = { "en" }, values = { "Source Url Match #%s1" })
+    @Default(lngs = { "en" }, values = { "Source Url Wildcard(*) #%s1" })
     String PackagizerFilterRuleDialog_createVariablesMenu_source(int i);
 
     @Default(lngs = { "en" }, values = { "Packagename" })

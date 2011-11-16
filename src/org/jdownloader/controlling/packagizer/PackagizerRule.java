@@ -70,7 +70,7 @@ public class PackagizerRule extends FilterRule implements Storable {
         return downloadDestination;
     }
 
-    private Priority priority    = Priority.DEFAULT;
+    private Priority priority    = null;
     private String   packageName = null;
     private boolean  autoExtractionEnabled;
     private boolean  autoAddEnabled;

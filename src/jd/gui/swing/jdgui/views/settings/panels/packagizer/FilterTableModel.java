@@ -295,6 +295,7 @@ public class FilterTableModel extends ExtTableModel<PackagizerRule> implements C
 
             @Override
             protected Icon getIcon(PackagizerRule value) {
+                if (value.getPriority() == null) return null;
                 return value.getPriority().loadIcon(18);
             }
 

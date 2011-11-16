@@ -853,17 +853,18 @@ public class LinkCrawler implements IOPermission {
         if (link.getDownloadLink() != null && link.getDownloadLink().getBooleanProperty("ALLOW_DUPE", false)) {
             /* forward dupeAllow info from DownloadLink to CrawledLinkInfo */
             link.getDownloadLink().setProperty("ALLOW_DUPE", Property.NULL);
-            link.setDupeAllow(true);
+            // later, crawler plugins should set the id on their own.
+            link.setLinkID(link.getURL() + System.currentTimeMillis());
         }
-        if (link.isDupeAllow() == false) {
-            /* check if we already handled this url */
-            CrawledLink origin = link.getOriginLink();
-            /* specialHandling: Crypted A - > B - > Final C , and A equals C */
-            boolean specialHandling = (origin != link) && (origin.getURL().equals(link.getURL()));
-            synchronized (duplicateFinder) {
-                if (!duplicateFinder.add(link.getURL()) && !specialHandling) { return; }
-            }
+
+        /* check if we already handled this url */
+        CrawledLink origin = link.getOriginLink();
+        /* specialHandling: Crypted A - > B - > Final C , and A equals C */
+        boolean specialHandling = (origin != link) && (origin.getLinkID().equals(link.getLinkID()));
+        synchronized (duplicateFinder) {
+            if (!duplicateFinder.add(link.getLinkID()) && !specialHandling) { return; }
         }
+
         if (isCrawledLinkFiltered(link) == false) {
             /* link is not filtered, so we can process it normally */
             crawledLinksCounter.incrementAndGet();

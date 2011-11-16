@@ -2,6 +2,7 @@ package jd.controlling.linkcrawler;
 
 import java.util.HashSet;
 
+import org.appwork.utils.StringUtils;
 import org.jdownloader.controlling.UniqueID;
 
 public class PackageInfo {
@@ -10,6 +11,10 @@ public class PackageInfo {
 
     public boolean isAutoExtractionEnabled() {
         return autoExtractionEnabled;
+    }
+
+    public void setAutoExtractionEnabled(boolean autoExtractionEnabled) {
+        this.autoExtractionEnabled = autoExtractionEnabled;
     }
 
     private boolean autoAddEnabled;
@@ -31,10 +36,6 @@ public class PackageInfo {
     }
 
     private boolean autoStartEnabled;
-
-    public void setAutoExtractionEnabled(boolean autoExtractionEnabled) {
-        this.autoExtractionEnabled = autoExtractionEnabled;
-    }
 
     public UniqueID getUniqueId() {
         return uniqueId;
@@ -72,9 +73,26 @@ public class PackageInfo {
         return extractionPasswords;
     }
 
+    private HashSet<String> extractionPasswords = new HashSet<String>();
     private String          name                = null;
     private String          destinationFolder   = null;
     private String          comment             = null;
-    private HashSet<String> extractionPasswords = new HashSet<String>();
+
+    /**
+     * Returns a packageID or null, of no id specific values are set. if this
+     * method returns a value !=null, it should get an own package, which is not
+     * part of autopackaging.
+     * 
+     * @return
+     */
+    public String createPackageID() {
+        StringBuilder sb = new StringBuilder();
+        if (getUniqueId() != null) {
+            sb.append(getUniqueId().toString());
+        }
+        if (!StringUtils.isEmpty(getDestinationFolder())) sb.append(getDestinationFolder());
+        if (!StringUtils.isEmpty(getName())) sb.append(getName());
+        return sb.length() == 0 ? null : sb.toString();
+    }
 
 }
