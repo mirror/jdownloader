@@ -18,20 +18,25 @@ package jd.plugins.hoster;
 
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
+import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(names = { "box.net" }, urls = { "(http://www\\.box\\.net/(shared/static/|rssdownload/).*)|(http://www\\.box\\.net/index\\.php\\?rm=box_download_shared_file\\&file_id=.+?\\&shared_name=\\w+)" }, flags = { 0 }, revision = "$Revision$", interfaceVersion = 2)
+import org.appwork.utils.formatter.SizeFormatter;
+
+@HostPlugin(names = { "box.net" }, urls = { "(http://www\\.box\\.net/(shared/static/|rssdownload/).*)|(http://www\\.box\\.net/index\\.php\\?rm=box_download_shared_file\\&file_id=.+?\\&shared_name=\\w+|http://www\\.box\\.net/s/[a-z0-9]+)" }, flags = { 0 }, revision = "$Revision$", interfaceVersion = 2)
 public class BoxNet extends PluginForHost {
-    private static final String TOS_LINK = "https://www.box.net/static/html/terms.html";
+    private static final String TOS_LINK               = "https://www.box.net/static/html/terms.html";
 
-    private static final String OUT_OF_BANDWITH_MSG = "out of bandwidth";
+    private static final String OUT_OF_BANDWITH_MSG    = "out of bandwidth";
     private static final String REDIRECT_DOWNLOAD_LINK = "http://www\\.box\\.net/index\\.php\\?rm=box_download_shared_file\\&file_id=.+?\\&shared_name=\\w+";
+    private static final String SLINK                  = "http://www\\.box.net/s/[a-z0-9]+";
 
     public BoxNet(PluginWrapper wrapper) {
         super(wrapper);
@@ -46,7 +51,22 @@ public class BoxNet extends PluginForHost {
     public void handleFree(DownloadLink link) throws Exception {
         // setup referer and cookies for single file downloads
         requestFileInformation(link);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getDownloadURL(), true, 0);
+        String finallink = link.getDownloadURL();
+        if (link.getDownloadURL().matches(SLINK)) {
+            String fid = br.getRegex("var file_id = \\'(\\d+)\\';").getMatch(0);
+            if (fid == null) {
+                fid = br.getRegex(",typed_id: \\'f_(\\d+)\\'").getMatch(0);
+                if (fid == null) {
+                    fid = br.getRegex("\\&amp;file_id=f_(\\d+)\\&amp").getMatch(0);
+                    if (fid == null) {
+                        fid = br.getRegex("var single_item_collection = \\{ (\\d+) : item \\};").getMatch(0);
+                    }
+                }
+            }
+            if (fid == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            finallink = "http://www.box.net/download/external/f_" + fid + "/0/" + link.getName() + "?shared_file_page=1&shared_name=" + new Regex(link.getDownloadURL(), "http://www\\.box\\.net/s/(.+)").getMatch(0);
+        }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, finallink, true, 0);
         if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -61,6 +81,17 @@ public class BoxNet extends PluginForHost {
         // setup referer and cookies for single file downloads
         if (parameter.getDownloadURL().matches(REDIRECT_DOWNLOAD_LINK)) {
             br.getPage(parameter.getBrowserUrl());
+        } else if (parameter.getDownloadURL().matches(SLINK)) {
+            br.getPage(parameter.getBrowserUrl());
+            if (br.containsHTML("(this shared file or folder link has been removed|<title>Box \\- Free Online File Storage, Internet File Sharing, RSS Sharing, Access Documents \\&amp; Files Anywhere, Backup Data, Share Files</title>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            Regex fileInfo = br.getRegex("<h2 class=\"gallery_pseudo_icon_text_title bolder white ellipsis ellipsis_\\d+\">(.*?)\\&nbsp;\\(([a-z0-9\\. ]+)\\)");
+            String filename = fileInfo.getMatch(0);
+            if (filename == null) filename = br.getRegex("<title>(.*?) \\- File Shared from Box \\- Free Online File Storage</title>").getMatch(0);
+            if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            String filesize = fileInfo.getMatch(1);
+            parameter.setName(filename.trim());
+            if (filesize != null) parameter.setDownloadSize(SizeFormatter.getSize(filesize));
+            return AvailableStatus.TRUE;
         }
         URLConnectionAdapter urlConnection = null;
         try {
@@ -77,7 +108,7 @@ public class BoxNet extends PluginForHost {
                 br.getPage(originalpage);
                 String dlpage = br.getRegex("href=\"(http://www\\.box\\.net/index\\.php\\?rm=box_download_shared_file\\&amp;file_id=.*?)\"").getMatch(0);
                 if (dlpage == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                dlpage = dlpage.replace("amp;", "");
+                dlpage = Encoding.htmlDecode(dlpage);
                 urlConnection = br.openGetConnection(dlpage);
             }
             String name = urlConnection.getHeaderField("Content-Disposition");
