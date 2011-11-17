@@ -172,7 +172,7 @@ public class PackagizerController implements PackagizerInterface {
             list.clear();
             list.addAll(tableData);
             config.setRuleList(list);
-            System.out.println("Update " + list);
+
             update();
         }
     }
@@ -268,6 +268,9 @@ public class PackagizerController implements PackagizerInterface {
             dp.setProperty(ALLOW_MERGE, Property.NULL);
             for (String s : dp.getPasswordList()) {
                 fpi.getExtractionPasswords().add(s);
+            }
+            if (link.getDownloadLink().getSourcePluginPasswordList() != null) {
+                fpi.getExtractionPasswords().addAll(link.getDownloadLink().getSourcePluginPasswordList());
             }
             link.setDesiredPackageInfo(fpi);
             return fpi;

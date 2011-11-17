@@ -191,7 +191,7 @@ public abstract class FilterTable extends ExtTable<Filter> implements PackageCon
         return newSelection;
     }
 
-    protected JPopupMenu onContextMenu(final JPopupMenu popup, final Filter contextObject, final ArrayList<Filter> selection, final ExtColumn<Filter> column) {
+    protected JPopupMenu onContextMenu(final JPopupMenu popup, final Filter contextObject, final ArrayList<Filter> selection, final ExtColumn<Filter> column, final MouseEvent mouseEvent) {
         ArrayList<String> ret = new ArrayList<String>();
         for (Filter f : selection) {
             ret.add(f.getName());

@@ -536,7 +536,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
 
     public String getLinkID() {
         String ret = this.getStringProperty(PROPERTY_LINKDUPEID, null);
-        if (ret == null) return this.getBrowserUrl();
+        if (ret == null) return this.getDownloadURL();
         return ret;
     }
 

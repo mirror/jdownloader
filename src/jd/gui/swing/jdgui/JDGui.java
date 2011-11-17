@@ -288,6 +288,10 @@ public class JDGui extends SwingGui {
 
     }
 
+    public StatusBarImpl getStatusBar() {
+        return statusBar;
+    }
+
     private void initDefaults() {
         this.mainFrame.setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
         this.mainFrame.addWindowListener(this);

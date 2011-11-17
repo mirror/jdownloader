@@ -620,6 +620,7 @@ public class LinkCrawler implements IOPermission {
         dest.setSourceLink(source);
         dest.setMatchingFilter(source.getMatchingFilter());
         dest.setSourceJob(source.getSourceJob());
+
     }
 
     @SuppressWarnings("deprecation")

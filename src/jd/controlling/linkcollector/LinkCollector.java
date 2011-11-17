@@ -292,6 +292,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
     }
 
     private void addCrawledLink(final CrawledLink link) {
+        System.out.println(2);
         /* try to find good matching package or create new one */
         IOEQ.getQueue().add(new QueueAction<Void, RuntimeException>() {
 

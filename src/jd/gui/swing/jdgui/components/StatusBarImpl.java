@@ -243,6 +243,10 @@ public class StatusBarImpl extends JPanel {
         add(extractIndicator, "height 22!,width 22!");
     }
 
+    public IconedProcessIndicator getLinkGrabberIndicator() {
+        return linkGrabberIndicator;
+    }
+
     private void updateLinkGrabberIndicator() {
         final boolean enabled = LinkChecker.isChecking() | LinkCrawler.isCrawling();
         new EDTRunner() {

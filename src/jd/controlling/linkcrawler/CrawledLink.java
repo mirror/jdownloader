@@ -147,6 +147,7 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
 
     public CrawledLink(DownloadLink dlLink) {
         this.dlLink = dlLink;
+
     }
 
     public CrawledLink(CryptedLink cLink) {

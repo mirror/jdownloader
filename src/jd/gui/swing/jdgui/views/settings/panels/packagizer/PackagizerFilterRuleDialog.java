@@ -1,5 +1,6 @@
 package jd.gui.swing.jdgui.views.settings.panels.packagizer;
 
+import java.awt.Component;
 import java.awt.event.ActionEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
@@ -7,12 +8,15 @@ import java.awt.event.MouseListener;
 import javax.swing.AbstractAction;
 import javax.swing.ButtonGroup;
 import javax.swing.ImageIcon;
+import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
+import javax.swing.JList;
 import javax.swing.JMenu;
 import javax.swing.JPopupMenu;
 import javax.swing.JRadioButton;
 import javax.swing.JSeparator;
+import javax.swing.ListCellRenderer;
 import javax.swing.SpinnerNumberModel;
 import javax.swing.text.JTextComponent;
 
@@ -32,6 +36,7 @@ import org.appwork.swing.components.ExtSpinner;
 import org.appwork.swing.components.ExtTextField;
 import org.appwork.swing.components.pathchooser.PathChooser;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.ImageProvider.ImageProvider;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
@@ -39,6 +44,7 @@ import org.jdownloader.controlling.Priority;
 import org.jdownloader.controlling.packagizer.PackagizerController;
 import org.jdownloader.controlling.packagizer.PackagizerRule;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.images.NewTheme;
 
 public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> {
     public Priority prio = Priority.DEFAULT;
@@ -91,6 +97,9 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
     private JLabel         lblPackagename;
     private JLabel         lblExtract;
     private JLabel         lblChunks;
+    private JComboBox      cobExtract;
+    private JComboBox      cobAutostart;
+    private JComboBox      cobAutoAdd;
 
     public PackagizerFilterRuleDialog(PackagizerRule filterRule) {
         super();
@@ -137,9 +146,9 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
         rule.setPriority(cbPriority.isSelected() ? prio : null);
         rule.setPackageName(cbPackagename.isSelected() ? txtPackagename.getText() : null);
         rule.setFilename(cbName.isSelected() ? txtNewFilename.getText() : null);
-        rule.setAutoExtractionEnabled(cbExtract.isSelected());
-        rule.setAutoAddEnabled(cbAdd.isSelected());
-        rule.setAutoStartEnabled(cbStart.isSelected());
+        rule.setAutoExtractionEnabled(cbExtract.isSelected() ? cobExtract.getSelectedIndex() == 0 : null);
+        rule.setAutoAddEnabled(cbAdd.isSelected() ? cobAutoAdd.getSelectedIndex() == 0 : null);
+        rule.setAutoStartEnabled(cbStart.isSelected() ? cobAutostart.getSelectedIndex() == 0 : null);
         rule.setIconKey(getIconKey());
         rule.setOnlineStatusFilter(getOnlineStatusFilter());
 
@@ -157,18 +166,24 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
         txtPackagename.setText(rule.getPackageName());
         txtNewFilename.setText(rule.getFilename());
         fpDest.setPath(rule.getDownloadDestination());
-        cbExtract.setSelected(rule.isAutoExtractionEnabled());
+        cbExtract.setSelected(rule.isAutoExtractionEnabled() != null);
+
         if (rule.getChunks() > 0) {
             spChunks.setValue(rule.getChunks());
 
         }
-        cbStart.setSelected(rule.isAutoStartEnabled());
-        cbAdd.setSelected(rule.isAutoAddEnabled());
+        cbStart.setSelected(rule.isAutoStartEnabled() != null);
+        cbAdd.setSelected(rule.isAutoAddEnabled() != null);
+
+        cobAutoAdd.setSelectedIndex((rule.isAutoAddEnabled() == null || rule.isAutoAddEnabled()) ? 0 : 1);
+        cobAutostart.setSelectedIndex((rule.isAutoStartEnabled() == null || rule.isAutoStartEnabled()) ? 0 : 1);
+        cobExtract.setSelectedIndex((rule.isAutoExtractionEnabled() == null || rule.isAutoExtractionEnabled()) ? 0 : 1);
         cbChunks.setSelected(rule.getChunks() > 0);
         cbName.setSelected(!StringUtils.isEmpty(rule.getFilename()));
         cbDest.setSelected(!StringUtils.isEmpty(rule.getDownloadDestination()));
         cbPackagename.setSelected(!StringUtils.isEmpty(rule.getPackageName()));
         cbPriority.setSelected(rule.getPriority() != null);
+
         prio = rule.getPriority();
         if (prio == null) {
             prio = Priority.DEFAULT;
@@ -193,6 +208,28 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
 
         }
 
+    }
+
+    @SuppressWarnings({ "unchecked", "rawtypes" })
+    private JComboBox createEnabledBox() {
+        final JComboBox ret = new JComboBox(new String[] { _GUI._.PackagizerFilterRuleDialog_updateGUI_enabled_(), _GUI._.PackagizerFilterRuleDialog_updateGUI_disabled_() });
+        final ListCellRenderer org = ret.getRenderer();
+        ret.setRenderer(new ListCellRenderer() {
+
+            public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+                JLabel r = (JLabel) org.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+                if (index < 0) {
+                    r.setIcon(ret.getSelectedIndex() == 1 ? NewTheme.I().getIcon("checkbox_false", 14) : NewTheme.I().getIcon("checkbox_true", 14));
+                } else {
+                    r.setIcon(index == 1 ? NewTheme.I().getIcon("checkbox_false", 14) : NewTheme.I().getIcon("checkbox_true", 14));
+                }
+                if (!ret.isEnabled()) {
+                    r.setIcon(ImageProvider.getDisabledIcon(r.getIcon()));
+                }
+                return r;
+            }
+        });
+        return ret;
     }
 
     private PathChooser  fpDest;
@@ -230,7 +267,9 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
         lblAutostart = createLbl(_GUI._.PackagizerFilterRuleDialog_layoutDialogContent_autostart());
         lblautoadd = createLbl(_GUI._.PackagizerFilterRuleDialog_layoutDialogContent_autoadd());
         lblChunks = createLbl(_GUI._.PackagizerFilterRuleDialog_layoutDialogContent_chunks());
-
+        cobExtract = createEnabledBox();
+        cobAutostart = createEnabledBox();
+        cobAutoAdd = createEnabledBox();
         fpDest = new PathChooser("PackagizerDest") {
 
             /**
@@ -330,9 +369,9 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
         cbDest = new ExtCheckBox(fpDest);
         cbPriority = new ExtCheckBox(fpPriority);
         cbPackagename = new ExtCheckBox(txtPackagename);
-        cbExtract = new ExtCheckBox();
-        cbStart = new ExtCheckBox();
-        cbAdd = new ExtCheckBox(cbStart, lblAutostart);
+        cbExtract = new ExtCheckBox(cobExtract);
+        cbStart = new ExtCheckBox(cobAutostart);
+        cbAdd = new ExtCheckBox(cobAutoAdd);
         cbChunks = new ExtCheckBox(spChunks);
         cbName = new ExtCheckBox(txtNewFilename);
 
@@ -363,25 +402,21 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
 
         ret.add(cbExtract);
         ret.add(lblExtract, "spanx 2");
-        JLabel descExtract = new JLabel(_GUI._.PackagizerFilterRuleDialog_layoutDialogContent_extract_desc());
-        descExtract.setEnabled(false);
-        ret.add(descExtract, "spanx");
-        link(cbExtract, lblExtract, descExtract);
+        ret.add(cobExtract, "spanx,growx,pushx");
+
+        link(cbExtract, lblExtract, cobExtract);
 
         ret.add(cbAdd);
         ret.add(lblautoadd, "spanx 2");
-        JLabel descAdd = new JLabel(_GUI._.PackagizerFilterRuleDialog_layoutDialogContent_add_desc());
-        JLabel descStart = new JLabel(_GUI._.PackagizerFilterRuleDialog_layoutDialogContent_start_desc());
-        descAdd.setEnabled(false);
-        ret.add(descAdd, "spanx");
-        link(cbAdd, lblautoadd, descAdd, descStart, lblAutostart);
+        ret.add(cobAutoAdd, "spanx,growx,pushx");
+
+        link(cbAdd, lblautoadd, cobAutoAdd);
 
         ret.add(cbStart);
         ret.add(lblAutostart, "spanx 2");
+        ret.add(cobAutostart, "spanx,growx,pushx");
 
-        descStart.setEnabled(false);
-        ret.add(descStart, "spanx");
-        link(cbAdd, lblAutostart, descStart);
+        link(cbStart, lblAutostart, cobAutostart);
 
         updateGUI();
         return ret;

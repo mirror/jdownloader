@@ -3241,4 +3241,37 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Invalid Condition - Please check rule!" })
     String FilterTableModel_initColumns_invalid_condition_();
 
+    @Default(lngs = { "en" }, values = { "Enabled" })
+    String PackagizerFilterRuleDialog_updateGUI_enabled_();
+
+    @Default(lngs = { "en" }, values = { "Disabled" })
+    String PackagizerFilterRuleDialog_updateGUI_disabled_();
+
+    @Default(lngs = { "en" }, values = { "Crawling for Downloads" })
+    String AddLinksProgress_AddLinksProgress_();
+
+    @Default(lngs = { "en" }, values = { "Searching for Downloads in %s1..." })
+    String AddLinksProgress_layoutDialogContent_header_(String string);
+
+    @Default(lngs = { "en" }, values = { "Duration:" })
+    String AddLinksProgress_layoutDialogContent_duration();
+
+    @Default(lngs = { "en" }, values = { "Downloads found:" })
+    String AddLinksProgress_found();
+
+    @Default(lngs = { "en" }, values = { "Filtered Links - Check LinkFilter Settings" })
+    String AddLinksProgress_filter();
+
+    @Default(lngs = { "en" }, values = { "Hide" })
+    String literally_hide();
+
+    @Default(lngs = { "en" }, values = { "Abort" })
+    String literally_abort();
+
+    @Default(lngs = { "en" }, values = { "Crawler Window hidden!" })
+    String AddLinksProgress_setReturnmask_title_();
+
+    @Default(lngs = { "en" }, values = { "You hid the Crawler Window. \r\nNo reason to worry! You can see the Linkcrawler Status here." })
+    String AddLinksProgress_setReturnmask_msg_();
+
 }
