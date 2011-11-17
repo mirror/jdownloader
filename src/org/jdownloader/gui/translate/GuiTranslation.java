@@ -3232,4 +3232,13 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Rules with higher Priority always overwrite lower ones." })
     String FilterTableModel_getTooltipText_prio_();
 
+    @Default(lngs = { "en" }, values = { "Condition" })
+    String settings_linkgrabber_filter_columns_cond();
+
+    @Default(lngs = { "en" }, values = { "%s1 (Invalid Condition)" })
+    String FilterTableModel_getStringValue_name_invalid(String name);
+
+    @Default(lngs = { "en" }, values = { "Invalid Condition - Please check rule!" })
+    String FilterTableModel_initColumns_invalid_condition_();
+
 }

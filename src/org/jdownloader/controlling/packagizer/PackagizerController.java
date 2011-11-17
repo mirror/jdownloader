@@ -34,7 +34,7 @@ public class PackagizerController implements PackagizerInterface {
     private ChangeEventSender                   eventSender;
     private ArrayList<PackagizerRuleWrapper>    fileFilter;
     private ArrayList<PackagizerRuleWrapper>    urlFilter;
-    public static final String                  FILENAME             = "filename";
+
     public static final String                  ORGFILENAME          = "orgfilename";
     public static final String                  HOSTER               = "hoster";
     public static final String                  SOURCE               = "source";
@@ -141,21 +141,6 @@ public class PackagizerController implements PackagizerInterface {
 
         });
 
-        addReplacer(new PackagizerReplacer() {
-            private Pattern pat = Pattern.compile("<jd:filename/?>");
-
-            public String replace(String modifiers, CrawledLink link, String input, PackagizerRuleWrapper lgr) {
-                return pat.matcher(input).replaceAll(compileFilename(link, lgr));
-            }
-
-            public String getID() {
-                return FILENAME;
-            }
-
-            private String compileFilename(CrawledLink link, PackagizerRuleWrapper lgr) {
-                return null;
-            }
-        });
     }
 
     private void addReplacer(PackagizerReplacer replacer) {
@@ -182,6 +167,16 @@ public class PackagizerController implements PackagizerInterface {
 
     }
 
+    public void setList(ArrayList<PackagizerRule> tableData) {
+        synchronized (this) {
+            list.clear();
+            list.addAll(tableData);
+            config.setRuleList(list);
+            System.out.println("Update " + list);
+            update();
+        }
+    }
+
     public void update() {
         IOEQ.add(new Runnable() {
 
@@ -198,14 +193,16 @@ public class PackagizerController implements PackagizerInterface {
         // linkcheck
         ArrayList<PackagizerRuleWrapper> urlFilter = new ArrayList<PackagizerRuleWrapper>();
         ArrayList<PackagizerRuleWrapper> fileFilter = new ArrayList<PackagizerRuleWrapper>();
-        for (PackagizerRule lgr : list) {
-            if (lgr.isEnabled() && lgr.isValid()) {
-                PackagizerRuleWrapper compiled = lgr.compile();
-                if (!compiled.isRequiresLinkcheck()) {
-                    urlFilter.add(compiled);
-                    fileFilter.add(compiled);
-                } else {
-                    fileFilter.add(compiled);
+        synchronized (this) {
+            for (PackagizerRule lgr : list) {
+                if (lgr.isEnabled() && lgr.isValid()) {
+                    PackagizerRuleWrapper compiled = lgr.compile();
+                    if (!compiled.isRequiresLinkcheck()) {
+                        urlFilter.add(compiled);
+                        fileFilter.add(compiled);
+                    } else {
+                        fileFilter.add(compiled);
+                    }
                 }
             }
         }

@@ -2,14 +2,20 @@ package jd.gui.swing.jdgui.views.settings.panels.packagizer;
 
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
+import java.awt.event.MouseMotionListener;
 import java.util.ArrayList;
 
+import javax.swing.DropMode;
 import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
+import javax.swing.ListSelectionModel;
 
 import jd.gui.swing.jdgui.BasicJDTable;
 
+import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.swing.exttable.ExtColumn;
+import org.appwork.swing.exttable.ExtTransferHandler;
+import org.appwork.utils.Application;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
@@ -26,6 +32,44 @@ public class PackagizerFilterTable extends BasicJDTable<PackagizerRule> {
         getTableHeader().setReorderingAllowed(false);
         this.setDragEnabled(true);
 
+        setTransferHandler(new ExtTransferHandler<PackagizerRule>());
+        if (Application.getJavaVersion() >= Application.JAVA16) setDropMode(DropMode.INSERT_ROWS);
+
+        setRowHeight(24);
+
+        addMouseMotionListener(new MouseMotionListener() {
+            private DelayedRunnable delayer;
+            private int             index;
+
+            // {
+            // delayer = new DelayedRunnable(IOEQ.TIMINGQUEUE, 20, 50) {
+            //
+            // @Override
+            // public void delayedrun() {
+            // new EDTRunner() {
+            //
+            // @Override
+            // protected void runInEDT() {
+            //
+            // }
+            // };
+            //
+            // }
+            //
+            // };
+            // }
+
+            public void mouseMoved(MouseEvent e) {
+                index = getRowIndexByPoint(e.getPoint());
+                getSelectionModel().setSelectionInterval(index, index);
+
+            }
+
+            public void mouseDragged(MouseEvent e) {
+            }
+        });
+
+        setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
     }
 
     /*

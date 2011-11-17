@@ -1,6 +1,8 @@
 package jd.gui.swing.jdgui.views.settings.panels.packagizer;
 
 import java.awt.Component;
+import java.util.ArrayList;
+import java.util.List;
 
 import javax.swing.Icon;
 import javax.swing.JTable;
@@ -9,11 +11,9 @@ import javax.swing.table.JTableHeader;
 import org.appwork.swing.exttable.ExtTableHeaderRenderer;
 import org.appwork.swing.exttable.ExtTableModel;
 import org.appwork.swing.exttable.columns.ExtCheckColumn;
-import org.appwork.swing.exttable.columns.ExtSpinnerColumn;
 import org.appwork.swing.exttable.columns.ExtTextColumn;
 import org.appwork.utils.event.predefined.changeevent.ChangeEvent;
 import org.appwork.utils.event.predefined.changeevent.ChangeListener;
-import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.controlling.packagizer.PackagizerController;
 import org.jdownloader.controlling.packagizer.PackagizerRule;
 import org.jdownloader.gui.translate._GUI;
@@ -21,8 +21,8 @@ import org.jdownloader.images.NewTheme;
 
 public class FilterTableModel extends ExtTableModel<PackagizerRule> implements ChangeListener {
 
-    private static final long                serialVersionUID = -7756459932564776739L;
-    private ExtSpinnerColumn<PackagizerRule> prio;
+    private static final long serialVersionUID = -7756459932564776739L;
+    private OrderColumn       prio;
 
     public FilterTableModel(String id) {
         super(id);
@@ -89,65 +89,8 @@ public class FilterTableModel extends ExtTableModel<PackagizerRule> implements C
                 PackagizerController.getInstance().update();
             }
         });
-        addColumn(prio = new ExtSpinnerColumn<PackagizerRule>(_GUI._.settings_linkgrabber_filter_columns_exepriority()) {
+        addColumn(prio = new OrderColumn());
 
-            @Override
-            public boolean isEnabled(PackagizerRule obj) {
-                return obj.isEnabled();
-            }
-
-            @Override
-            public boolean isSortable(final PackagizerRule obj) {
-                return false;
-            }
-
-            @Override
-            protected String getTooltipText(PackagizerRule obj) {
-                return _GUI._.FilterTableModel_getTooltipText_prio_();
-            }
-
-            @Override
-            public int getDefaultWidth() {
-                return 60;
-            }
-
-            // @Override
-            // protected String getNextSortIdentifier() {
-            // return super.getNextSortIdentifier();
-            // }
-
-            @Override
-            protected boolean isDefaultResizable() {
-
-                return false;
-            }
-
-            @Override
-            public boolean isEditable(final PackagizerRule obj) {
-                return true;
-            }
-
-            @Override
-            public boolean isPaintWidthLockIcon() {
-                return false;
-            }
-
-            @Override
-            protected Number getNumber(PackagizerRule value) {
-                return value.getOrder();
-            }
-
-            @Override
-            protected void setNumberValue(Number value, PackagizerRule object) {
-                object.setOrder(value.intValue());
-                refreshSort(getTableData());
-            }
-
-            @Override
-            public String getStringValue(PackagizerRule value) {
-                return value.getOrder() + "";
-            }
-        });
         addColumn(new ExtTextColumn<PackagizerRule>(_GUI._.settings_linkgrabber_filter_columns_name()) {
 
             @Override
@@ -171,20 +114,66 @@ public class FilterTableModel extends ExtTableModel<PackagizerRule> implements C
 
             @Override
             public String getStringValue(PackagizerRule value) {
+                if (!value.isValid()) { return _GUI._.FilterTableModel_getStringValue_name_invalid(value.getName()); }
                 return value.getName();
             }
         });
-        setSortColumn(prio);
+
+        addColumn(new ExtTextColumn<PackagizerRule>(_GUI._.settings_linkgrabber_filter_columns_cond()) {
+
+            @Override
+            public boolean isEnabled(PackagizerRule obj) {
+                if (!obj.isValid()) { return true; }
+                return obj.isEnabled();
+            }
+
+            @Override
+            public boolean isSortable(final PackagizerRule obj) {
+                return false;
+            }
+
+            protected Icon getIcon(final PackagizerRule value) {
+                if (!value.isValid()) { return NewTheme.I().getIcon("error", 18); }
+                return null;
+            }
+
+            @Override
+            public String getStringValue(PackagizerRule value) {
+                if (!value.isValid()) {
+
+                return _GUI._.FilterTableModel_initColumns_invalid_condition_(); }
+                return value.toString();
+            }
+        });
+
+    }
+
+    @Override
+    public boolean move(ArrayList<PackagizerRule> transferData, int dropRow) {
+
+        try {
+            ArrayList<PackagizerRule> list = PackagizerController.getInstance().list();
+            final ArrayList<PackagizerRule> newdata = new ArrayList<PackagizerRule>();
+            List<PackagizerRule> before = new ArrayList<PackagizerRule>(list.subList(0, dropRow));
+            List<PackagizerRule> after = new ArrayList<PackagizerRule>(list.subList(dropRow, list.size()));
+            before.removeAll(transferData);
+            after.removeAll(transferData);
+            newdata.addAll(before);
+            newdata.addAll(transferData);
+            newdata.addAll(after);
+            PackagizerController.getInstance().setList(newdata);
+            this._fireTableStructureChanged(newdata, true);
+            return true;
+        } catch (Throwable t) {
+            t.printStackTrace();
+        }
+
+        return false;
     }
 
     public void onChangeEvent(ChangeEvent event) {
-        new EDTRunner() {
 
-            @Override
-            protected void runInEDT() {
-                _fireTableStructureChanged(PackagizerController.getInstance().list(), true);
-            }
-        };
+        _fireTableStructureChanged(PackagizerController.getInstance().list(), true);
 
     }
 }

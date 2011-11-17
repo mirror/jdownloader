@@ -398,9 +398,7 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
         ret.add(new VariableAction(txtPackagename2, _GUI._.PackagizerFilterRuleDialog_createVariablesMenu_date(), "<jd:" + PackagizerController.SIMPLEDATE + ":dd.MM.yyyy>"));
         int num = getFilenameFilter().calcPlaceholderCount();
         ret.add(new VariableAction(txtPackagename2, _GUI._.PackagizerFilterRuleDialog_createVariablesMenu_filename_org(), "<jd:" + PackagizerController.ORGFILENAME + ">"));
-        if (txtPackagename2 != this.txtNewFilename) {
-            ret.add(new VariableAction(txtPackagename2, _GUI._.PackagizerFilterRuleDialog_createVariablesMenu_filename_complete(), "<jd:" + PackagizerController.FILENAME + ">"));
-        }
+
         for (int i = 0; i < num; i++) {
             ret.add(new VariableAction(txtPackagename2, _GUI._.PackagizerFilterRuleDialog_createVariablesMenu_filename((i + 1)), "<jd:" + PackagizerController.ORGFILENAME + ":" + (i + 1) + ">"));
         }
