@@ -24,11 +24,11 @@ import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
@@ -58,8 +58,10 @@ public class UniBytesCom extends PluginForHost {
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("<p>File not found or removed</p>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML(FATALSERVERERROR)) return AvailableStatus.UNCHECKABLE;
-        String filename = br.getRegex("style=\" font-weight: bold; color:#252525;\">(.*?)</span><br/>").getMatch(0);
-        String filesize = br.getRegex("\\(([0-9\\.]+ [A-Za-z]+)\\)</h3><p").getMatch(0);
+        String filename = br.getRegex("id=\"fileName\" style=\"[^\"\\']+\">(.*?)</span>").getMatch(0);
+        String filesize = br.getRegex("\\((\\d+\\.\\d+ [A-Za-z]+)\\)</h3><script>").getMatch(0);
+        filesize = null;
+        if (filesize == null) filesize = br.getRegex("</span>[\t\n\r ]+\\((.*?)\\)</h3><script>").getMatch(0);
         if (filename == null || filesize == null) {
             // Leave this in
             logger.warning("Fatal error happened in the availableCheck...");
