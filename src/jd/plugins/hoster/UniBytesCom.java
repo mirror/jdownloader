@@ -60,7 +60,6 @@ public class UniBytesCom extends PluginForHost {
         if (br.containsHTML(FATALSERVERERROR)) return AvailableStatus.UNCHECKABLE;
         String filename = br.getRegex("id=\"fileName\" style=\"[^\"\\']+\">(.*?)</span>").getMatch(0);
         String filesize = br.getRegex("\\((\\d+\\.\\d+ [A-Za-z]+)\\)</h3><script>").getMatch(0);
-        filesize = null;
         if (filesize == null) filesize = br.getRegex("</span>[\t\n\r ]+\\((.*?)\\)</h3><script>").getMatch(0);
         if (filename == null || filesize == null) {
             // Leave this in
