@@ -37,7 +37,6 @@ import javax.swing.JSpinner;
 import javax.swing.JTextField;
 import javax.swing.SpinnerNumberModel;
 
-import jd.JDInit;
 import jd.captcha.JAntiCaptcha;
 import jd.captcha.easy.load.LoadCaptchas;
 import jd.captcha.translate.T;
@@ -361,11 +360,6 @@ public class EasyCaptchaTool {
     }
 
     public static void main(String[] args) {
-        try {
-            new JDInit().loadConfiguration();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
         LookAndFeelController.getInstance().setUIManager();
         EDTEventQueue.initEventQueue();
 

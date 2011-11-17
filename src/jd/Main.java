@@ -44,12 +44,13 @@ import jd.controlling.downloadcontroller.DownloadController;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.event.ControlEvent;
 import jd.gui.UserIF;
-import jd.gui.UserIO;
 import jd.gui.swing.MacOSApplicationAdapter;
 import jd.gui.swing.SwingGui;
 import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.jdgui.events.EDTEventQueue;
 import jd.gui.swing.laf.LookAndFeelController;
 import jd.http.Browser;
+import jd.http.ext.security.JSPermissionRestricter;
 import jd.nutils.JDImage;
 import jd.nutils.OSDetector;
 import jd.utils.JDUtilities;
@@ -67,6 +68,8 @@ import org.appwork.utils.singleapp.AnotherInstanceRunningException;
 import org.appwork.utils.singleapp.InstanceMessageListener;
 import org.appwork.utils.singleapp.SingleAppInstance;
 import org.appwork.utils.swing.EDTHelper;
+import org.appwork.utils.swing.dialog.Dialog;
+import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.api.RemoteAPIController;
 import org.jdownloader.extensions.ExtensionController;
 import org.jdownloader.gui.uiserio.JDSwingUserIO;
@@ -166,11 +169,11 @@ public class Main {
             Main.LOG.warning("Javacheck: Wrong Java Version! JDownloader needs at least Java 1.5 or higher!");
             System.exit(0);
         }
-
         if (Application.isOutdatedJavaVersion(true)) {
-            final int returnValue = UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.NO_CANCEL_OPTION, _JDT._.gui_javacheck_newerjavaavailable_title(Application.getJavaVersion()), _JDT._.gui_javacheck_newerjavaavailable_msg(), NewTheme.I().getIcon("warning", 32), null, null);
-            if ((returnValue & UserIO.RETURN_DONT_SHOW_AGAIN) == 0) {
+            try {
+                Dialog.getInstance().showConfirmDialog(Dialog.BUTTONS_HIDE_CANCEL, _JDT._.gui_javacheck_newerjavaavailable_title(Application.getJavaVersion()), _JDT._.gui_javacheck_newerjavaavailable_msg(), NewTheme.I().getIcon("warning", 32), null, null);
                 CrossSystem.openURLOrShowMessage("http://jdownloader.org/download/index?updatejava=1");
+            } catch (DialogNoAnswerException e) {
             }
         }
     }
@@ -432,26 +435,20 @@ public class Main {
             JDLogger.removeConsoleHandler();
         }
         /* these can be initiated without a gui */
-        new Thread() {
+        final Thread thread = new Thread() {
             @Override
             public void run() {
                 JDInit.initBrowser();
-                if (JDInit.loadConfiguration() == null) {
-                    /* TODO: we load database just to check an entry?! */
-                    UserIO.getInstance().requestMessageDialog("JDownloader cannot create the config files. Make sure, that JD_HOME/config/ exists and is writeable");
-                }
             }
-
-        }.start();
+        };
+        thread.start();
         new EDTHelper<Void>() {
             @Override
             public Void edtRun() {
-
                 LookAndFeelController.getInstance().setUIManager();
                 return null;
             }
         }.waitForEDT();
-
         Locale.setDefault(Locale.ENGLISH);
         GUI_COMPLETE.executeWhenReached(new Runnable() {
 
@@ -459,6 +456,12 @@ public class Main {
                 new Thread() {
                     @Override
                     public void run() {
+                        /* setup JSPermission */
+                        try {
+                            JSPermissionRestricter.init();
+                        } catch (final Throwable e) {
+                            Log.exception(e);
+                        }
                         HostPluginController.getInstance().init();
                         /* load links */
                         DownloadController.getInstance().initDownloadLinks();
@@ -486,9 +489,10 @@ public class Main {
         new EDTHelper<Void>() {
             @Override
             public Void edtRun() {
-                JDInit.initGUI();
+                /* init gui here */
+                JDGui.getInstance();
+                EDTEventQueue.initEventQueue();
                 Log.L.info("GUIDONE->" + (System.currentTimeMillis() - Main.startup));
-                // System.exit(0);
                 return null;
             }
         }.waitForEDT();
@@ -496,6 +500,11 @@ public class Main {
         SwingGui.setInstance(JDGui.getInstance());
         UserIF.setInstance(SwingGui.getInstance());
         JDController.getInstance().addControlListener(SwingGui.getInstance());
+        try {
+            /* thread should be finished here */
+            thread.join(5000);
+        } catch (InterruptedException e) {
+        }
         Main.GUI_COMPLETE.setReached();
         Main.LOG.info("Initialisation finished");
         final HashMap<String, String> head = new HashMap<String, String>();

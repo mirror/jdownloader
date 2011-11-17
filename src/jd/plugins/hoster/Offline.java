@@ -20,11 +20,11 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 
 /*
  * The idea behind this is to speed up linkchecking for host providers that go permanently offline. URLs tend to stay cached/archived on the intrawebs longer than host provider.
@@ -55,6 +55,7 @@ public class Offline extends PluginForHost {
 
     @Override
     public void handleFree(DownloadLink link) throws Exception {
+        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Permanently Offline: Host provider no longer exists");
     }
 
     @Override
@@ -63,6 +64,18 @@ public class Offline extends PluginForHost {
 
     @Override
     public void resetDownloadlink(DownloadLink link) {
+    }
+
+    @Override
+    public boolean checkLinks(DownloadLink[] urls) {
+        if (urls != null) {
+            for (DownloadLink link : urls) {
+                link.getLinkStatus().addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
+                link.getLinkStatus().setErrorMessage("Permanently Offline: Host provider no longer exists");
+                link.setAvailable(false);
+            }
+        }
+        return true;
     }
 
 }

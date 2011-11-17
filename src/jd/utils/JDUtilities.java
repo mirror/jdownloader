@@ -131,8 +131,15 @@ public class JDUtilities {
     /**
      * @return Configuration instanz
      */
-    public static Configuration getConfiguration() {
-        if (CONFIGURATION == null) CONFIGURATION = new Configuration();
+    public static synchronized Configuration getConfiguration() {
+        if (CONFIGURATION == null) {
+            final Object obj = JDUtilities.getDatabaseConnector().getData(Configuration.NAME);
+            if (obj != null) {
+                CONFIGURATION = (Configuration) obj;
+            } else {
+                CONFIGURATION = new Configuration();
+            }
+        }
         return CONFIGURATION;
     }
 

@@ -3,6 +3,9 @@ package org.jdownloader.settings;
 import java.io.File;
 import java.util.ArrayList;
 
+import jd.config.Configuration;
+import jd.utils.JDUtilities;
+
 import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.annotations.AboutConfig;
@@ -19,6 +22,7 @@ import org.appwork.storage.config.handler.IntegerKeyHandler;
 import org.appwork.storage.config.handler.StorageHandler;
 import org.appwork.storage.config.handler.StringKeyHandler;
 import org.appwork.utils.Application;
+import org.appwork.utils.StringUtils;
 
 public interface GeneralSettings extends ConfigInterface {
 
@@ -34,6 +38,12 @@ public interface GeneralSettings extends ConfigInterface {
 
         @Override
         public String getDefaultValue() {
+            /* convert old value */
+            String old = JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY, null);
+            if (!StringUtils.isEmpty(old)) {
+                File file = new File(old);
+                if (file.exists() && file.isDirectory()) return old;
+            }
             File home = new File(System.getProperty("user.home"));
             if (home.exists() && home.isDirectory()) {
                 // new File(home, "downloads").mkdirs();

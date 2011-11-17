@@ -7,11 +7,14 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.regex.Pattern;
 
+import jd.config.Property;
 import jd.controlling.IOEQ;
 import jd.controlling.linkcollector.PackagizerInterface;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.PackageInfo;
+import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.hoster.Offline;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.shutdown.ShutdownController;
@@ -22,6 +25,7 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.event.predefined.changeevent.ChangeEvent;
 import org.appwork.utils.event.predefined.changeevent.ChangeEventSender;
 import org.appwork.utils.logging.Log;
+import org.jdownloader.controlling.UniqueID;
 import org.jdownloader.controlling.filter.NoDownloadLinkException;
 
 public class PackagizerController implements PackagizerInterface {
@@ -30,15 +34,17 @@ public class PackagizerController implements PackagizerInterface {
     private ChangeEventSender                   eventSender;
     private ArrayList<PackagizerRuleWrapper>    fileFilter;
     private ArrayList<PackagizerRuleWrapper>    urlFilter;
-    public static final String                  FILENAME    = "filename";
-    public static final String                  ORGFILENAME = "orgfilename";
-    public static final String                  HOSTER      = "hoster";
-    public static final String                  SOURCE      = "source";
-    public static final String                  PACKAGENAME = "packagename";
-    public static final String                  SIMPLEDATE  = "simpledate";
+    public static final String                  FILENAME             = "filename";
+    public static final String                  ORGFILENAME          = "orgfilename";
+    public static final String                  HOSTER               = "hoster";
+    public static final String                  SOURCE               = "source";
+    public static final String                  PACKAGENAME          = "packagename";
+    public static final String                  SIMPLEDATE           = "simpledate";
+    public static final String                  ALLOW_MERGE          = "ALLOW_MERGE";
+    private static final UniqueID               PERMANENT_OFFLINE_ID = new UniqueID();
 
-    private static final PackagizerController   INSTANCE    = new PackagizerController();
-    private HashMap<String, PackagizerReplacer> replacers   = new HashMap<String, PackagizerReplacer>();
+    private static final PackagizerController   INSTANCE             = new PackagizerController();
+    private HashMap<String, PackagizerReplacer> replacers            = new HashMap<String, PackagizerReplacer>();
 
     public static PackagizerController getInstance() {
         return INSTANCE;
@@ -103,9 +109,11 @@ public class PackagizerController implements PackagizerInterface {
 
         addReplacer(new PackagizerReplacer() {
 
+            private Pattern pat = Pattern.compile("<jd:orgfilename/?>");
+
             public String replace(String modifiers, CrawledLink link, String input, PackagizerRuleWrapper lgr) {
                 if (modifiers != null) { return Pattern.compile("<jd:orgfilename:" + modifiers + "/?>").matcher(input).replaceAll(new Regex(link.getName(), lgr.getFileNameRule().getPattern()).getRow(0)[Integer.parseInt(modifiers) - 1]); }
-                return Pattern.compile("<jd:orgfilename/?>").matcher(input).replaceAll(link.getName());
+                return pat.matcher(input).replaceAll(link.getName());
             }
 
             public String getID() {
@@ -134,9 +142,10 @@ public class PackagizerController implements PackagizerInterface {
         });
 
         addReplacer(new PackagizerReplacer() {
+            private Pattern pat = Pattern.compile("<jd:filename/?>");
 
             public String replace(String modifiers, CrawledLink link, String input, PackagizerRuleWrapper lgr) {
-                return Pattern.compile("<jd:filename/?>").matcher(input).replaceAll(compileFilename(link, lgr));
+                return pat.matcher(input).replaceAll(compileFilename(link, lgr));
             }
 
             public String getID() {
@@ -229,6 +238,7 @@ public class PackagizerController implements PackagizerInterface {
 
     public void runByFile(CrawledLink link) {
         convertFilePackageInfos(link);
+        permanentOffline(link);
         ArrayList<PackagizerRuleWrapper> lfileFilter = fileFilter;
         for (PackagizerRuleWrapper lgr : lfileFilter) {
             try {
@@ -255,9 +265,10 @@ public class PackagizerController implements PackagizerInterface {
             fpi.setDestinationFolder(dp.getDownloadDirectory());
             fpi.setAutoExtractionEnabled(dp.isPostProcessing());
             fpi.setName(dp.getName());
-            if (Boolean.FALSE.equals(dp.getBooleanProperty("ALLOW_MERGE", false))) {
+            if (Boolean.FALSE.equals(dp.getBooleanProperty(ALLOW_MERGE, false))) {
                 fpi.setUniqueId(dp.getUniqueID());
             }
+            dp.setProperty(ALLOW_MERGE, Property.NULL);
             for (String s : dp.getPasswordList()) {
                 fpi.getExtractionPasswords().add(s);
             }
@@ -267,8 +278,22 @@ public class PackagizerController implements PackagizerInterface {
         return null;
     }
 
+    private void permanentOffline(CrawledLink link) {
+        DownloadLink dl = link.getDownloadLink();
+        if (dl != null && dl.getDefaultPlugin() instanceof Offline) {
+            PackageInfo dpi = link.getDesiredPackageInfo();
+            if (dpi == null) {
+                dpi = new PackageInfo();
+                link.setDesiredPackageInfo(dpi);
+            }
+            dpi.setName("Permanent Offline");
+            dpi.setUniqueId(PERMANENT_OFFLINE_ID);
+        }
+    }
+
     public void runByUrl(CrawledLink link) {
         convertFilePackageInfos(link);
+        permanentOffline(link);
         ArrayList<PackagizerRuleWrapper> lurlFilter = urlFilter;
         for (PackagizerRuleWrapper lgr : lurlFilter) {
             try {

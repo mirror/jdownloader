@@ -17,25 +17,17 @@
 package jd;
 
 import java.awt.event.ActionEvent;
-import java.io.File;
 import java.io.IOException;
 import java.util.logging.Logger;
 
 import javax.swing.AbstractAction;
 
 import jd.config.Configuration;
-import jd.config.Property;
 import jd.controlling.JDLogger;
 import jd.controlling.JSonWrapper;
-import jd.gui.UserIO;
-import jd.gui.swing.jdgui.JDGui;
-import jd.gui.swing.jdgui.events.EDTEventQueue;
-import jd.gui.swing.laf.LookAndFeelController;
 import jd.http.Browser;
-import jd.http.ext.security.JSPermissionRestricter;
 import jd.nutils.OSDetector;
 import jd.nutils.encoding.Encoding;
-import jd.nutils.io.JDIO;
 import jd.utils.JDUtilities;
 
 import org.appwork.storage.config.JsonConfig;
@@ -54,18 +46,8 @@ import org.lobobrowser.util.OS;
  */
 
 public class JDInit {
-    static {
-        try {
-            JSPermissionRestricter.init();
-        } catch (final Throwable e) {
-            e.printStackTrace();
-        }
 
-    }
-
-    private static final boolean TEST_INSTALLER = false;
-
-    private static final Logger  LOG            = JDLogger.getLogger();
+    private static final Logger LOG = JDLogger.getLogger();
 
     public JDInit() {
     }
@@ -156,73 +138,6 @@ public class JDInit {
             Browser.setGlobalProxy(pr);
         }
 
-    }
-
-    public static void initGUI() {
-        /* only do EDT stuff here to speedup the startup */
-        JDGui.getInstance();
-        EDTEventQueue.initEventQueue();
-    }
-
-    public static Configuration loadConfiguration() {
-        final Object obj = JDUtilities.getDatabaseConnector().getData(Configuration.NAME);
-
-        if (obj == null) {
-            JDInit.LOG.finest("Fresh install?");
-        }
-        try {
-            if (!JDInit.TEST_INSTALLER && obj != null && (((Configuration) obj).getStringProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY) != null || JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder() != null)) {
-                final Configuration configuration = (Configuration) obj;
-                JDUtilities.setConfiguration(configuration);
-
-            } else {
-                final File cfg = JDUtilities.getResourceFile("config");
-                if (!cfg.exists()) {
-                    if (!cfg.mkdirs()) {
-                        System.err.println("Could not create configdir");
-                        return null;
-                    }
-                    if (!cfg.canWrite()) {
-                        System.err.println("Cannot write to configdir");
-                        return null;
-                    }
-                }
-                final Configuration configuration = new Configuration();
-                JDUtilities.setConfiguration(configuration);
-
-                JDUtilities.getDatabaseConnector().saveConfiguration(Configuration.NAME, JDUtilities.getConfiguration());
-
-                LookAndFeelController.getInstance().setUIManager();
-                final Installer inst = new Installer();
-
-                if (!inst.isAborted()) {
-                    final File home = JDUtilities.getResourceFile(".");
-                    if (!home.canWrite()) {
-                        JDInit.LOG.severe("INSTALL abgebrochen");
-                        UserIO.getInstance().requestMessageDialog(_JDT._.installer_error_noWriteRights());
-                        JDIO.removeDirectoryOrFile(JDUtilities.getResourceFile("config"));
-                        System.exit(1);
-                    }
-                } else {
-                    JDInit.LOG.severe("INSTALL abgebrochen2");
-                    UserIO.getInstance().requestMessageDialog(_JDT._.installer_abortInstallation());
-                    JDIO.removeDirectoryOrFile(JDUtilities.getResourceFile("config"));
-                    System.exit(0);
-                }
-            }
-            return JDUtilities.getConfiguration();
-        } finally {
-            convert();
-        }
-    }
-
-    private static void convert() {
-        String ddl = JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY, null);
-        if (JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder() == null) {
-            JsonConfig.create(GeneralSettings.class).setDefaultDownloadFolder(ddl);
-            JDUtilities.getConfiguration().setProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY, Property.NULL);
-        }
-        JDUtilities.getConfiguration().save();
     }
 
     private static void submitVersion() {
