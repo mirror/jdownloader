@@ -75,7 +75,6 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     private static final String                PROPERTY_PASS           = "pass";
     private static final String                PROPERTY_FINALFILENAME  = "FINAL_FILENAME";
     private static final String                PROPERTY_FORCEDFILENAME = "FORCED_FILENAME";
-    private static final String                PROPERTY_SUBFOLDER      = "SUBFOLDER";
     private static final String                PROPERTY_COMMENT        = "COMMENT";
     private static final String                PROPERTY_PRIORITY       = "PRIORITY";
     private static final String                PROPERTY_FINISHTIME     = "FINISHTIME";
@@ -295,11 +294,6 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         }
     }
 
-    public void setSubdirectory(DownloadLink downloadLink) {
-        String subdirectory = downloadLink.getSubdirectory();
-        this.setSubdirectory(subdirectory);
-    }
-
     public int compareTo(DownloadLink o) {
         return this.getDownloadURL().compareTo(o.getDownloadURL());
     }
@@ -415,12 +409,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
 
     public String getFileOutput() {
         if (getFilePackage().getDownloadDirectory() != null && getFilePackage().getDownloadDirectory().length() > 0) {
-            String subFolder = this.getSubdirectory();
-            if (subFolder != null) {
-                return new File(new File(getFilePackage().getDownloadDirectory(), File.separator + subFolder), getName()).getAbsolutePath();
-            } else {
-                return new File(new File(getFilePackage().getDownloadDirectory()), getName()).getAbsolutePath();
-            }
+            return new File(new File(getFilePackage().getDownloadDirectory()), getName()).getAbsolutePath();
         } else {
             return null;
         }
@@ -805,37 +794,6 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      */
     public void setDownloadSize(long downloadMax) {
         this.downloadMax = downloadMax;
-    }
-
-    /**
-     * Setzt ein Subdirectory fuer den DeonloadLink neu
-     * 
-     * @param downloadPath
-     *            der neue downloadPfad
-     */
-    public void addSubdirectory(String subdir) {
-        String newSubFolder = null;
-        String oldSubFolder = getSubdirectory();
-        if (subdir != null && name.length() > 0) {
-            if (oldSubFolder != null) {
-                newSubFolder = new StringBuilder(oldSubFolder).append(File.separator).append(JDUtilities.removeEndingPoints(JDIO.validateFileandPathName(subdir))).toString();
-            } else {
-                newSubFolder = JDUtilities.removeEndingPoints(JDIO.validateFileandPathName(subdir));
-            }
-        }
-        setSubdirectory(newSubFolder);
-    }
-
-    private void setSubdirectory(String subdirectory) {
-        if (StringUtils.isEmpty(subdirectory)) {
-            this.setProperty(PROPERTY_SUBFOLDER, Property.NULL);
-        } else {
-            this.setProperty(PROPERTY_SUBFOLDER, subdirectory);
-        }
-    }
-
-    public String getSubdirectory() {
-        return this.getStringProperty(PROPERTY_SUBFOLDER, null);
     }
 
     /**

@@ -269,9 +269,6 @@ public class PackagizerController implements PackagizerInterface {
             for (String s : dp.getPasswordList()) {
                 fpi.getExtractionPasswords().add(s);
             }
-            if (link.getDownloadLink().getSourcePluginPasswordList() != null) {
-                fpi.getExtractionPasswords().addAll(link.getDownloadLink().getSourcePluginPasswordList());
-            }
             link.setDesiredPackageInfo(fpi);
             return fpi;
         }

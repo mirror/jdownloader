@@ -23,6 +23,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 
+import jd.Main;
 import jd.controlling.JDController;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.downloadcontroller.SingleDownloadController;
@@ -33,8 +34,6 @@ import jd.nutils.Executer;
 import jd.nutils.OSDetector;
 import jd.plugins.AddonPanel;
 import jd.plugins.DownloadLink;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.Application;
@@ -66,6 +65,13 @@ public class GrowlExtension extends AbstractExtension<GrowlConfig> implements Co
             throw new StartException(e);
         }
 
+        Main.GUI_COMPLETE.executeWhenReached(new Runnable() {
+
+            public void run() {
+                growlNotification(T._.jd_plugins_optional_JDGrowlNotification_started(), getDateAndTime(), "Programstart");
+            }
+
+        });
         JDController.getInstance().addControlListener(this);
     }
 
@@ -118,16 +124,12 @@ public class GrowlExtension extends AbstractExtension<GrowlConfig> implements Co
 
     public void controlEvent(ControlEvent event) {
         switch (event.getEventID()) {
-        case ControlEvent.CONTROL_INIT_COMPLETE:
-            growlNotification(T._.jd_plugins_optional_JDGrowlNotification_started(), getDateAndTime(), "Programstart");
-            break;
-        case ControlEvent.CONTROL_DOWNLOAD_STOP:
+        case ControlEvent.CONTROL_DOWNLOADWATCHDOG_STOP:
             if (DownloadWatchDog.getInstance().getDownloadssincelastStart() > 0) growlNotification(T._.jd_plugins_optional_JDGrowlNotification_allfinished(), "", "All downloads finished");
             break;
-        case ControlEvent.CONTROL_PLUGIN_INACTIVE:
-            if (!(event.getCaller() instanceof PluginForHost)) return;
-            DownloadLink lastLink = ((SingleDownloadController) event.getParameter()).getDownloadLink();
-            if (lastLink.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
+        case ControlEvent.CONTROL_DOWNLOAD_FINISHED:
+            if (event.getCaller() instanceof SingleDownloadController) {
+                DownloadLink lastLink = (DownloadLink) event.getParameter();
                 growlNotification(T._.jd_plugins_optional_JDGrowlNotification_finished(), lastLink.getName(), "Download complete");
             }
             break;

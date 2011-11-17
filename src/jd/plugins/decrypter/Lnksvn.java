@@ -23,7 +23,6 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.captcha.specials.Linksave;
 import jd.controlling.ProgressController;
-import jd.gui.swing.components.Balloon;
 import jd.http.Browser;
 import jd.http.RandomUserAgent;
 import jd.http.URLConnectionAdapter;
@@ -39,7 +38,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
-import jd.utils.locale.JDL;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "Linksave.in" }, urls = { "http://[\\w\\.]*?linksave\\.in/(view.php\\?id=)?[\\w]+" }, flags = { 0 })
 public class Lnksvn extends PluginForDecrypt {
@@ -214,10 +212,7 @@ public class Lnksvn extends PluginForDecrypt {
             }
         }
         if (decryptedLinks.size() == 0) {
-            if (br.getRegex("cnl\\.jpg").matches() && !isExternInterfaceActive()) {
-                Balloon.show(JDL.L("jd.controlling.CNL2.checkText.title", "Click'n'Load"), null, JDL.L("gui.config.linkgrabber.cnl2", "Enable Click'n'Load Support"));
-                return decryptedLinks;
-            }
+            if (br.getRegex("cnl\\.jpg").matches() && !isExternInterfaceActive()) { return decryptedLinks; }
             logger.warning("Decrypter out of date for link: " + parameter);
             return null;
         }

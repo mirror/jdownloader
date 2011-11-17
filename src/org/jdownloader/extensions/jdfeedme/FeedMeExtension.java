@@ -20,10 +20,7 @@ import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
-import org.jdownloader.extensions.interfaces.RemoteSupport;
 import org.jdownloader.extensions.jdfeedme.posts.JDFeedMePost;
-import org.jdownloader.extensions.remotecontrol.helppage.HelpPage;
-import org.jdownloader.extensions.remotecontrol.helppage.Table;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 
@@ -35,7 +32,7 @@ import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 // enable CODE_FOR_INTERFACE_5-START-END and disable CODE_FOR_INTERFACE_7-START-END
 // don't forget to change interface version from 7 to 5
 
-public class FeedMeExtension extends AbstractExtension<FeedMeConfig> implements RemoteSupport {
+public class FeedMeExtension extends AbstractExtension<FeedMeConfig> {
     // / stop using config and use XML instead
     // public static final String PROPERTY_SETTINGS = "FEEDS";
     public static final String     STORAGE_FEEDS  = "cfg/jdfeedme/feeds.xml";
@@ -523,26 +520,6 @@ public class FeedMeExtension extends AbstractExtension<FeedMeConfig> implements 
         } else if (cmd.matches("(?is).*/addon/feedme/action/reset")) { return "RSS feed has been resetted."; }
 
         return null;
-    }
-
-    // RemoteControl addon command description
-    public void initCmdTable() {
-        Table t = HelpPage.createTable(new Table(this.getName()));
-
-        t.setCommand("/addon/feedme/action/sync");
-        t.setInfo("Syncs all RSS feeds");
-
-        t.setCommand("/addon/feedme/action/add/(all|lastweek|last24hours|none)/(true|false)/%X%");
-        t.setInfo("Add RSS feed. Where %X% is the (urlencoded) URL. The two previous parameters are optional");
-
-        // TODO:
-        /*
-         * t.setCommand("/addon/feedme/action/remove");
-         * t.setInfo("Remove RSS feed");
-         * 
-         * t.setCommand("/addon/feedme/action/reset");
-         * t.setInfo("Reset RSS feed");
-         */
     }
 
     @Override

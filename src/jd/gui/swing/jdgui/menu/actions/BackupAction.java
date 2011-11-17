@@ -21,13 +21,10 @@ import java.io.File;
 
 import jd.controlling.IOEQ;
 import jd.controlling.JDController;
-import jd.gui.swing.components.Balloon;
 import jd.gui.swing.jdgui.actions.ToolBarAction;
 import jd.update.JDUpdateUtils;
-import jd.utils.JDUtilities;
 
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.images.NewTheme;
 
 public class BackupAction extends ToolBarAction {
 
@@ -48,11 +45,6 @@ public class BackupAction extends ToolBarAction {
             public void run() {
                 JDController.getInstance().syncDatabase();
                 File backupFile = JDUpdateUtils.backupDataBase();
-                if (backupFile == null) {
-                    Balloon.show(_GUI._.gui_balloon_backup_title(), NewTheme.I().getIcon("save", 32), _GUI._.gui_backup_finished_failed(JDUtilities.getResourceFile("backup/")));
-                } else {
-                    Balloon.show(_GUI._.gui_balloon_backup_title(), NewTheme.I().getIcon("save", 32), _GUI._.gui_backup_finished_success(backupFile.getAbsolutePath()));
-                }
             }
 
         });

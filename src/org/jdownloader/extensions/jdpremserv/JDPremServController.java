@@ -5,12 +5,10 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
 
-import jd.config.Configuration;
 import jd.controlling.DistributeData;
 import jd.controlling.downloadcontroller.DownloadController;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.utils.JDUtilities;
 
 public class JDPremServController {
 
@@ -35,7 +33,6 @@ public class JDPremServController {
         this.requestedDownloads = new HashMap<DownloadLink, Integer>();
         this.lastAccessLinks = new HashMap<DownloadLink, Long>();
         this.premServFilePackage = this.getPremServFilePackage();
-        JDUtilities.getConfiguration().setProperty(Configuration.PARAM_FINISHED_DOWNLOADS_ACTION, 3);
     }
 
     public synchronized int addRequestedDownload(final DownloadLink link) {

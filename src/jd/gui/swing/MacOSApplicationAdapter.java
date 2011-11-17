@@ -132,7 +132,7 @@ public class MacOSApplicationAdapter implements QuitHandler, AboutHandler, Prefe
         appReOpened(null);
         LOG.info("Handle open uri from Dock " + e.getURI().toString());
         String links = e.getURI().toString();
-        if (Main.isInitComplete()) {
+        if (Main.GUI_COMPLETE.isReached()) {
             LOG.info("Distribute links: " + links);
             LinkCollector.getInstance().addCrawlerJob(new LinkCollectingJob(links));
         } else {

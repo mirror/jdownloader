@@ -19,7 +19,6 @@ package org.jdownloader.extensions.jdpremclient;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import jd.Main;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.ConfigEntry.PropertyType;
@@ -99,11 +98,10 @@ public class PremiumCompoundExtension extends AbstractExtension<PremiumCompoundC
         jdpremServer = getPluginConfig().getStringProperty("SERVER", null);
         preferLocalAccounts = getPluginConfig().getBooleanProperty("PREFERLOCALACCOUNTS", false);
         synchronized (LOCK) {
-            if (Main.isInitComplete() && replaced == false) {
-                logger.info("JDPremium: cannot be initiated during runtime. JDPremium must be enabled at startup!");
-                return;
 
-            }
+            logger.info("JDPremium: cannot be initiated during runtime. JDPremium must be enabled at startup!");
+            if (true) return;
+
             if (!init) {
                 /* init our new plugins */
                 premShareHosts.put("jdownloader.org", "PremShare");

@@ -28,10 +28,8 @@ import java.util.Map.Entry;
 import java.util.TreeMap;
 import java.util.logging.Logger;
 
-import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.controlling.accountchecker.AccountChecker;
-import jd.gui.swing.components.Balloon;
 import jd.http.Browser;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
@@ -44,10 +42,9 @@ import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.event.Eventsender;
-import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.AccountData;
 import org.jdownloader.settings.AccountSettings;
-import org.jdownloader.translate._JDT;
+import org.jdownloader.settings.GeneralSettings;
 
 public class AccountController implements AccountControllerListener {
 
@@ -519,8 +516,7 @@ public class AccountController implements AccountControllerListener {
                     AccountChecker.getInstance().check(acc, true);
                 }
             }
-            JDUtilities.getConfiguration().setProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true);
-            JDUtilities.getConfiguration().save();
+            GeneralSettings.USE_AVAILABLE_ACCOUNTS.setValue(true);
             break;
         case AccountControllerEvent.ACCOUNT_UPDATE:
             acc = event.getAccount();
@@ -577,13 +573,6 @@ public class AccountController implements AccountControllerListener {
                     break;
                 }
             }
-        }
-        if (ret != null && !JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true)) {
-            if (System.currentTimeMillis() - lastballoon > BALLOON_INTERVAL) {
-                lastballoon = System.currentTimeMillis();
-                Balloon.show(_JDT._.gui_ballon_accountmanager_title(), NewTheme.I().getIcon("logout", 32), _JDT._.gui_accountcontroller_globpremdisabled());
-            }
-            ret = null;
         }
         return ret;
     }

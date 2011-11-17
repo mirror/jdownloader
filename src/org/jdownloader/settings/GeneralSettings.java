@@ -3,7 +3,6 @@ package org.jdownloader.settings;
 import java.io.File;
 import java.util.ArrayList;
 
-import jd.config.Configuration;
 import jd.utils.JDUtilities;
 
 import org.appwork.storage.config.ConfigInterface;
@@ -39,7 +38,7 @@ public interface GeneralSettings extends ConfigInterface {
         @Override
         public String getDefaultValue() {
             /* convert old value */
-            String old = JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY, null);
+            String old = JDUtilities.getConfiguration().getStringProperty("DOWNLOAD_DIRECTORY", null);
             if (!StringUtils.isEmpty(old)) {
                 File file = new File(old);
                 if (file.exists() && file.isDirectory()) return old;
@@ -63,12 +62,6 @@ public interface GeneralSettings extends ConfigInterface {
     boolean isAutoStartDownloadsOnStartupEnabled();
 
     void setAutoStartDownloadsOnStartupEnabled(boolean b);
-
-    @AboutConfig
-    @DefaultBooleanValue(true)
-    boolean isCreatePackageNameSubFolderEnabled();
-
-    void setCreatePackageNameSubFolderEnabled(boolean b);
 
     @AboutConfig
     boolean isAddNewLinksOnTop();
@@ -148,16 +141,12 @@ public interface GeneralSettings extends ConfigInterface {
 
     void setForcedFreeSpaceOnDisk(int mb);
 
-    // JSonWrapper.get("DOWNLOAD").getBooleanProperty("PARAM_DOWNLOAD_AUTORESUME_ON_RECONNECT",
-    // true);
     @AboutConfig
     @DefaultBooleanValue(true)
     boolean isInterruptResumeableDownloadsEnable();
 
     void setInterruptResumeableDownloadsEnable(boolean b);
 
-    // JSonWrapper.get("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN,
-    // 2);
     public static final IntegerKeyHandler MAX_SIMULTANE_DOWNLOADS = SH.getKeyHandler("MaxSimultaneDownloads", IntegerKeyHandler.class);
 
     @AboutConfig
@@ -168,8 +157,6 @@ public interface GeneralSettings extends ConfigInterface {
 
     void setMaxSimultaneDownloads(int num);
 
-    // JSonWrapper.get("DOWNLOAD").getBooleanProperty("PARAM_DOWNLOAD_PREFER_RECONNECT",
-    // true)
     @AboutConfig
     @Description("Do not start further downloads if others are waiting for a reconnect/new ip")
     @DefaultBooleanValue(true)
@@ -177,8 +164,6 @@ public interface GeneralSettings extends ConfigInterface {
 
     void setDownloadControllerPrefersReconnectEnabled(boolean b);
 
-    // JSonWrapper.get("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED,
-    // 0)
     public static final IntegerKeyHandler DOWNLOAD_SPEED_LIMIT = SH.getKeyHandler("DownloadSpeedLimit", IntegerKeyHandler.class);
 
     @AboutConfig
@@ -263,6 +248,8 @@ public interface GeneralSettings extends ConfigInterface {
 
     public static final BooleanKeyHandler DOWNLOAD_SPEED_LIMIT_ENABLED             = SH.getKeyHandler("DownloadSpeedLimitEnabled", BooleanKeyHandler.class);
     public static final BooleanKeyHandler MAX_SIMULTANE_DOWNLOADS_PER_HOST_ENABLED = SH.getKeyHandler("MaxDownloadsPerHostEnabled", BooleanKeyHandler.class);
+    public static final BooleanKeyHandler USE_AVAILABLE_ACCOUNTS                   = SH.getKeyHandler("UseAvailableAccounts", BooleanKeyHandler.class);
+    public static final BooleanKeyHandler AUTO_RECONNECT_ENABLED                   = SH.getKeyHandler("AutoReconnectEnabled", BooleanKeyHandler.class);
 
     @AboutConfig
     @DefaultBooleanValue(false)
@@ -280,5 +267,19 @@ public interface GeneralSettings extends ConfigInterface {
     boolean isFilterRegex();
 
     void setFilterRegex(boolean b);
+
+    @AboutConfig
+    @DefaultBooleanValue(true)
+    @Description("AutoReconnect enabled?")
+    boolean isAutoReconnectEnabled();
+
+    void setAutoReconnectEnabled(boolean b);
+
+    @AboutConfig
+    @DefaultBooleanValue(true)
+    @Description("Use available Accounts?")
+    boolean isUseAvailableAccounts();
+
+    void setUseAvailableAccounts(boolean b);
 
 }

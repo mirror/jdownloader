@@ -35,14 +35,12 @@ import java.util.logging.Logger;
 
 import jd.captcha.JACController;
 import jd.captcha.JAntiCaptcha;
-import jd.config.Configuration;
 import jd.controlling.ClipboardHandler;
 import jd.controlling.DynamicPluginInterface;
 import jd.controlling.JDController;
 import jd.controlling.JDLogger;
 import jd.controlling.downloadcontroller.DownloadController;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.event.ControlEvent;
 import jd.gui.UserIF;
 import jd.gui.swing.MacOSApplicationAdapter;
 import jd.gui.swing.SwingGui;
@@ -77,6 +75,7 @@ import org.jdownloader.gui.uiserio.NewUIO;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.settings.GeneralSettings;
+import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 import org.jdownloader.translate._JDT;
 import org.jdownloader.update.JDUpdater;
 
@@ -91,7 +90,7 @@ public class Main {
     private static boolean             instanceStarted            = false;
     public static SingleAppInstance    SINGLE_INSTANCE_CONTROLLER = null;
 
-    private static boolean             Init_Complete              = false;
+    public static SingleReachableState INIT_COMPLETE              = new SingleReachableState("INIT_COMPLETE");
     public static SingleReachableState GUI_COMPLETE               = new SingleReachableState("GUI_COMPLETE");
     public final static long           startup                    = System.currentTimeMillis();
 
@@ -155,10 +154,6 @@ public class Main {
         Application.setApplication(".jd_home");
         Application.getRoot(Main.class);
         NewUIO.setUserIO(new JDSwingUserIO());
-    }
-
-    public static boolean isInitComplete() {
-        return Main.Init_Complete;
     }
 
     /**
@@ -470,7 +465,7 @@ public class Main {
                         // GarbageController.getInstance();
                         /* load extensions */
                         ExtensionController.getInstance().init();
-                        ClipboardHandler.getClipboard().setEnabled(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_CLIPBOARD_ALWAYS_ACTIVE, true));
+                        ClipboardHandler.getClipboard().setEnabled(GraphicalUserInterfaceSettings.CLIPBOARD_MONITORED.isEnabled());
                         ClipboardHandler.getClipboard().setTempDisabled(false);
                         /* check for available updates */
                         // JDInit.checkUpdate();
@@ -518,7 +513,6 @@ public class Main {
         }
         Main.LOG.info("Revision: " + JDUtilities.getRevision());
         Main.LOG.finer("Runtype: " + JDUtilities.getRunType());
-        JDController.getInstance().fireControlEvent(new ControlEvent(new Object(), ControlEvent.CONTROL_INIT_COMPLETE, null));
-        Main.Init_Complete = true;
+        Main.INIT_COMPLETE.setReached();
     }
 }

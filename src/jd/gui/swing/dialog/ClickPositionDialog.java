@@ -32,14 +32,13 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextPane;
 
-import jd.config.Configuration;
-import jd.config.SubConfiguration;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.utils.images.IconIO;
 import org.appwork.utils.swing.dialog.AbstractDialog;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 
 public class ClickPositionDialog extends AbstractDialog<Point> implements ActionListener, MouseListener {
 
@@ -98,7 +97,7 @@ public class ClickPositionDialog extends AbstractDialog<Point> implements Action
             imageIcon = NewTheme.I().getIcon("ocr", 0);
         }
 
-        final int size = SubConfiguration.getConfig("JAC").getIntegerProperty(Configuration.PARAM_CAPTCHA_SIZE, 100);
+        final int size = GraphicalUserInterfaceSettings.CAPTCHA_SCALE_FACTOR.getValue();
         if (size != 100) {
             imageIcon = new ImageIcon(imageIcon.getImage().getScaledInstance((int) (imageIcon.getIconWidth() * size / 100.0f), (int) (imageIcon.getIconHeight() * size / 100.0f), Image.SCALE_SMOOTH));
         }
@@ -139,7 +138,7 @@ public class ClickPositionDialog extends AbstractDialog<Point> implements Action
 
     public void mouseReleased(final MouseEvent e) {
         this.result = e.getPoint();
-        final int size = SubConfiguration.getConfig("JAC").getIntegerProperty(Configuration.PARAM_CAPTCHA_SIZE, 100);
+        final int size = GraphicalUserInterfaceSettings.CAPTCHA_SCALE_FACTOR.getValue();
         if (size != 100) {
             this.result.setLocation(this.result.getX() / (size / 100.0f), this.result.getY() / (size / 100.0f));
         }

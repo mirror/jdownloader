@@ -2,9 +2,7 @@ package org.jdownloader.extensions.omnibox;
 
 import java.util.ArrayList;
 
-import jd.controlling.JDController;
-import jd.event.ControlEvent;
-import jd.event.ControlListener;
+import jd.Main;
 import jd.gui.swing.jdgui.actions.ActionController;
 import jd.gui.swing.jdgui.actions.CustomToolbarAction;
 import jd.gui.swing.jdgui.menu.MenuAction;
@@ -21,12 +19,12 @@ import org.jdownloader.extensions.omnibox.omni.gui.AwesomeCustomToolbarAction;
 import org.jdownloader.extensions.omnibox.omni.gui.AwesomeProposalPanel;
 import org.jdownloader.extensions.omnibox.omni.gui.AwesomeToolbarPanel;
 
-public class OmniboxExtension extends AbstractExtension<OmniboxConfig> implements ControlListener {
+public class OmniboxExtension extends AbstractExtension<OmniboxConfig> {
 
     private CustomToolbarAction  toolbarAction;
     private AwesomeToolbarPanel  toolbarPanel;
     private AwesomeProposalPanel proposalPanel = null;
-    private Omni              omni       = new Omni();
+    private Omni                 omni          = new Omni();
 
     public Omni getAwesome() {
         return omni;
@@ -61,14 +59,20 @@ public class OmniboxExtension extends AbstractExtension<OmniboxConfig> implement
 
     @Override
     protected void stop() throws StopException {
-        JDController.getInstance().removeControlListener(this);
         ActionController.unRegister(toolbarAction);
         ToolbarController.setActions(ActionController.getActions());
     }
 
     @Override
     protected void start() throws StartException {
-        JDController.getInstance().addControlListener(this);
+        Main.GUI_COMPLETE.executeWhenReached(new Runnable() {
+
+            public void run() {
+                ActionController.register(toolbarAction);
+                ToolbarController.setActions(ActionController.getActions());
+            }
+
+        });
     }
 
     /*
@@ -93,13 +97,6 @@ public class OmniboxExtension extends AbstractExtension<OmniboxConfig> implement
     @Override
     public ArrayList<MenuAction> getMenuAction() {
         return null;
-    }
-
-    public void controlEvent(ControlEvent event) {
-        if (event.getEventID() == ControlEvent.CONTROL_INIT_COMPLETE) {
-            ActionController.register(toolbarAction);
-            ToolbarController.setActions(ActionController.getActions());
-        }
     }
 
     @Override

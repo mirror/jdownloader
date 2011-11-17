@@ -62,13 +62,13 @@ public class ImprovedMacOSXDockExtension extends AbstractExtension<ImprovedMacOS
 
     public void controlEvent(ControlEvent event) {
         switch (event.getEventID()) {
-        case ControlEvent.CONTROL_DOWNLOAD_START:
+        case ControlEvent.CONTROL_DOWNLOADWATCHDOG_START:
             if (updateThread == null) {
                 updateThread = new MacDockIconChanger();
                 updateThread.start();
             }
             break;
-        case ControlEvent.CONTROL_DOWNLOAD_STOP:
+        case ControlEvent.CONTROL_DOWNLOADWATCHDOG_STOP:
             if (updateThread != null) {
                 updateThread.stopUpdating();
                 updateThread = null;

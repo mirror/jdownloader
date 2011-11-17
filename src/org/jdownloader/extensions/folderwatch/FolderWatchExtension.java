@@ -39,7 +39,6 @@ import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcrawler.LinkCrawler;
 import jd.gui.UserIO;
-import jd.gui.swing.components.JDFileChooser;
 import jd.nutils.JDFlags;
 import jd.nutils.JDHash;
 import jd.nutils.OSDetector;
@@ -47,6 +46,10 @@ import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.utils.swing.EDTRunner;
+import org.appwork.utils.swing.dialog.Dialog;
+import org.appwork.utils.swing.dialog.Dialog.FileChooserSelectionMode;
+import org.appwork.utils.swing.dialog.Dialog.FileChooserType;
+import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.StartException;
@@ -56,8 +59,6 @@ import org.jdownloader.extensions.folderwatch.core.FileMonitoringListener;
 import org.jdownloader.extensions.folderwatch.data.History;
 import org.jdownloader.extensions.folderwatch.data.HistoryEntry;
 import org.jdownloader.extensions.folderwatch.translate.T;
-import org.jdownloader.extensions.remotecontrol.helppage.HelpPage;
-import org.jdownloader.extensions.remotecontrol.helppage.Table;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.plugins.controller.container.ContainerPluginController;
 
@@ -316,51 +317,6 @@ public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig> i
         initOptionVars();
     }
 
-    // More commands to come ;)
-    public void initCmdTable() {
-        Table t = HelpPage.createTable(new Table(getName()));
-
-        t.setCommand("/addon/folderwatch/action/start");
-        t.setInfo("Starts FolderWatch watching service.");
-
-        t.setCommand("/addon/folderwatch/action/stop");
-        t.setInfo("Stops FolderWatch watching service.");
-
-        // not implemented yet:
-        /*
-         * t.setCommand("/addon/folderwatch/action/register/%X%");
-         * t.setInfo("");
-         * 
-         * t.setCommand("/addon/folderwatch/action/unregister/%X%");
-         * t.setInfo("");
-         * 
-         * t.setCommand("/addon/folderwatch/action/unregister/all");
-         * t.setInfo("");
-         * 
-         * t.setCommand("/addon/folderwatch/action/emptyfolders");
-         * t.setInfo("");
-         * 
-         * t.setCommand("/addon/folderwatch/action/clearhistory");
-         * t.setInfo("");
-         * 
-         * t.setCommand("/addon/folderwatch/get/history"); t.setInfo("");
-         * 
-         * t.setCommand("/addon/folderwatch/get/folders"); t.setInfo("");
-         * 
-         * t.setCommand("/addon/folderwatch/set/recursive/(true|false)");
-         * t.setInfo("");
-         * 
-         * t.setCommand("/addon/folderwatch/set/importdelete/(true|false)");
-         * t.setInfo("");
-         * 
-         * t.setCommand("/addon/folderwatch/set/history/(true|false)");
-         * t.setInfo("");
-         * 
-         * t.setCommand("/addon/folderwatch/set/autoimport/(true|false)");
-         * t.setInfo("");
-         */
-    }
-
     @Override
     protected void stop() throws StopException {
     }
@@ -377,10 +333,6 @@ public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig> i
 
     protected void initSettings(ConfigContainer config) {
 
-        final JDFileChooser filechooser = new JDFileChooser();
-        filechooser.setFileSelectionMode(JDFileChooser.DIRECTORIES_ONLY);
-        filechooser.setMultiSelectionEnabled(true);
-
         final DefaultListModel listModel = new DefaultListModel();
         guiFolderList = new JList(listModel);
         guiFolderList.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
@@ -394,15 +346,21 @@ public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig> i
         addButton.setIcon(NewTheme.I().getIcon("add", 16));
         addButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                filechooser.showOpenDialog(null);
+                File[] filechooser;
+                try {
+                    filechooser = Dialog.getInstance().showFileChooser("folderwatch", "Select", FileChooserSelectionMode.DIRECTORIES_ONLY, null, true, FileChooserType.OPEN_DIALOG, null);
 
-                for (File file : filechooser.getSelectedFiles()) {
-                    if (!folderlist.contains(file.getAbsolutePath())) {
-                        folderlist.add(file.getAbsolutePath());
-                        addListModelEntry(file.getAbsolutePath());
+                    if (filechooser != null) {
+                        for (File file : filechooser) {
+                            if (!folderlist.contains(file.getAbsolutePath())) {
+                                folderlist.add(file.getAbsolutePath());
+                                addListModelEntry(file.getAbsolutePath());
 
-                        folderlistHasChanged = true;
+                                folderlistHasChanged = true;
+                            }
+                        }
                     }
+                } catch (DialogNoAnswerException e1) {
                 }
             }
         });

@@ -28,7 +28,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.zip.ZipEntry;
 
-import jd.config.Configuration;
 import jd.controlling.IOEQ;
 import jd.controlling.JDLogger;
 import jd.controlling.packagecontroller.PackageController;
@@ -420,40 +419,32 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                      */
                     localLink.getLinkStatus().resetStatus(LinkStatus.ERROR_ALREADYEXISTS, LinkStatus.ERROR_FILE_NOT_FOUND, LinkStatus.FINISHED, LinkStatus.ERROR_FATAL);
 
-                    if (localLink.getLinkStatus().isFinished() && JDUtilities.getConfiguration().getIntegerProperty(Configuration.PARAM_FINISHED_DOWNLOADS_ACTION, 3) == 1) {
-                        it.remove();
-                        if (fp.size() == 0) {
-                            iterator.remove();
-                            continue;
-                        }
-                    } else {
-                        // Anhand des Hostnamens aus dem DownloadLink
-                        // wird ein passendes Plugin gesucht
+                    // Anhand des Hostnamens aus dem DownloadLink
+                    // wird ein passendes Plugin gesucht
+                    try {
+                        pluginForHost = null;
+                        pluginForHost = JDUtilities.getPluginForHost(localLink.getHost());
+                    } catch (final Throwable e) {
+                        JDLogger.exception(e);
+                    }
+                    if (pluginForHost == null) {
                         try {
-                            pluginForHost = null;
-                            pluginForHost = JDUtilities.getPluginForHost(localLink.getHost());
+                            pluginForHost = replacePluginForHost(localLink);
                         } catch (final Throwable e) {
-                            JDLogger.exception(e);
-                        }
-                        if (pluginForHost == null) {
-                            try {
-                                pluginForHost = replacePluginForHost(localLink);
-                            } catch (final Throwable e) {
-                                Log.exception(e);
-                            }
-                            if (pluginForHost != null) {
-                                Log.L.info("plugin " + pluginForHost.getHost() + " now handles " + localLink.getName());
-                            } else {
-                                Log.L.severe("could not find plugin " + localLink.getHost() + " for " + localLink.getName());
-                            }
+                            Log.exception(e);
                         }
                         if (pluginForHost != null) {
-                            /*
-                             * we set default plugin here, this plugin MUST NOT
-                             * be used for downloading
-                             */
-                            localLink.setDefaultPlugin(pluginForHost);
+                            Log.L.info("plugin " + pluginForHost.getHost() + " now handles " + localLink.getName());
+                        } else {
+                            Log.L.severe("could not find plugin " + localLink.getHost() + " for " + localLink.getName());
                         }
+                    }
+                    if (pluginForHost != null) {
+                        /*
+                         * we set default plugin here, this plugin MUST NOT be
+                         * used for downloading
+                         */
+                        localLink.setDefaultPlugin(pluginForHost);
                     }
                 }
             }

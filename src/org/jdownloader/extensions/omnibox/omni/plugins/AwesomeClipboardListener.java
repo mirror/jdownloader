@@ -5,17 +5,16 @@ import java.util.List;
 
 import javax.swing.JLabel;
 
-import jd.config.Configuration;
 import jd.controlling.ClipboardHandler;
 import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.LinkCollector;
-import jd.utils.JDUtilities;
 
 import org.jdownloader.extensions.omnibox.omni.Action;
 import org.jdownloader.extensions.omnibox.omni.Proposal;
 import org.jdownloader.extensions.omnibox.omni.ProposalRequest;
 import org.jdownloader.extensions.omnibox.omni.ProposalRequestListener;
 import org.jdownloader.extensions.omnibox.omni.Utils;
+import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 
 public class AwesomeClipboardListener implements ProposalRequestListener {
     private enum actionid {
@@ -27,18 +26,10 @@ public class AwesomeClipboardListener implements ProposalRequestListener {
     public void performAction(Action action) {
         switch ((actionid) action.getProposal().getActionID()) {
         case TURNOFF:
-            final Configuration configuration = JDUtilities.getConfiguration();
-            if (configuration.getBooleanProperty(Configuration.PARAM_CLIPBOARD_ALWAYS_ACTIVE, true) == true) {
-                configuration.setProperty(Configuration.PARAM_CLIPBOARD_ALWAYS_ACTIVE, false);
-                configuration.save();
-            }
+            GraphicalUserInterfaceSettings.CLIPBOARD_MONITORED.setValue(false);
             break;
         case TURNON:
-            final Configuration configuration2 = JDUtilities.getConfiguration();
-            if (configuration2.getBooleanProperty(Configuration.PARAM_CLIPBOARD_ALWAYS_ACTIVE, true) == false) {
-                configuration2.setProperty(Configuration.PARAM_CLIPBOARD_ALWAYS_ACTIVE, true);
-                configuration2.save();
-            }
+            GraphicalUserInterfaceSettings.CLIPBOARD_MONITORED.setValue(true);
             break;
         case ADDLINKS:
             LinkCollector.getInstance().addCrawlerJob(new LinkCollectingJob(ClipboardHandler.getClipboard().getCurrentClipboardLinks()));
@@ -58,7 +49,7 @@ public class AwesomeClipboardListener implements ProposalRequestListener {
 
         }
         if (request.isParamsEmpty() || request.getParams().startsWith("o")) {
-            if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_CLIPBOARD_ALWAYS_ACTIVE, true)) {
+            if (GraphicalUserInterfaceSettings.CLIPBOARD_MONITORED.getValue()) {
                 new Proposal(this, request, new JLabel("Turn automatic clipboard detection off"), actionid.TURNOFF, Utils.createProposalListElement(this, request.withParams("off")), 1.0f);
             } else {
                 new Proposal(this, request, new JLabel("Turn automatic clipboard detection on"), actionid.TURNON, Utils.createProposalListElement(this, request.withParams("on")), 1.0f);

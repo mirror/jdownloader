@@ -68,7 +68,7 @@ public class MainToolBar extends ToolBar {
                     }
                 };
 
-                JDController.getInstance().addControlListener(new ControlIDListener(ControlEvent.CONTROL_DOWNLOAD_START, ControlEvent.CONTROL_DOWNLOAD_STOP) {
+                JDController.getInstance().addControlListener(new ControlIDListener(ControlEvent.CONTROL_DOWNLOADWATCHDOG_START, ControlEvent.CONTROL_DOWNLOADWATCHDOG_STOP) {
                     @Override
                     public void controlIDEvent(final ControlEvent event) {
                         new EDTHelper<Object>() {
@@ -76,10 +76,10 @@ public class MainToolBar extends ToolBar {
                             @Override
                             public Object edtRun() {
                                 switch (event.getEventID()) {
-                                case ControlEvent.CONTROL_DOWNLOAD_START:
+                                case ControlEvent.CONTROL_DOWNLOADWATCHDOG_START:
                                     if (speedmeter != null) speedmeter.start();
                                     break;
-                                case ControlEvent.CONTROL_DOWNLOAD_STOP:
+                                case ControlEvent.CONTROL_DOWNLOADWATCHDOG_STOP:
                                     if (speedmeter != null) speedmeter.stop();
                                     break;
                                 }

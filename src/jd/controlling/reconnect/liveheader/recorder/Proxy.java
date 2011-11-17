@@ -32,16 +32,16 @@ import jd.utils.JDHexUtils;
 
 public class Proxy extends Thread {
 
-    public final static int FORWARD = 1 << 1;
+    public final static int FORWARD       = 1 << 1;
     public final static int RECORD_HEADER = 1 << 2;
     public final static int CHANGE_HEADER = 1 << 3;
 
-    private Socket socket;
-    private Vector<String> steps = null;
-    private String serverip;
-    private int port;
-    private boolean ishttps = false;
-    private boolean israw = false;
+    private Socket          socket;
+    private Vector<String>  steps         = null;
+    private String          serverip;
+    private int             port;
+    private boolean         ishttps       = false;
+    private boolean         israw         = false;
 
     public Proxy(Socket socket, Vector<String> steps, String serverip, int port, boolean ishttps, boolean israw) {
         super("JDProxy");
@@ -65,10 +65,12 @@ public class Proxy extends Thread {
                 outgoing = socketFactory.createSocket(serverip, port);
             }
             ProxyThread thread1 = new ProxyThread(incoming, outgoing, CHANGE_HEADER | RECORD_HEADER, steps, ishttps, israw);
+            thread1.setHost(serverip);
             thread1.setName("Client2Router");
             thread1.start();
 
             ProxyThread thread2 = new ProxyThread(outgoing, incoming, CHANGE_HEADER, steps, ishttps, israw);
+            thread2.setHost(serverip);
             thread2.setName("Router2Client");
             thread2.start();
             thread2.join();
@@ -95,15 +97,24 @@ public class Proxy extends Thread {
 
 class ProxyThread extends Thread {
 
-    private Socket incoming;
-    private Socket outgoing;
-    private Vector<String> steps = null;
-    private int dowhat = 0;
-    private boolean ishttps = false;
-    private boolean israw = true;
+    private Socket         incoming;
+    private Socket         outgoing;
+    private Vector<String> steps   = null;
+    private int            dowhat  = 0;
+    private boolean        ishttps = false;
+    private boolean        israw   = true;
+    private String         host    = null;
+
+    public String getHost() {
+        return host;
+    }
+
+    public void setHost(String host) {
+        this.host = host;
+    }
 
     boolean renewbuffer = false;
-    String buffer;
+    String  buffer;
 
     public ProxyThread(Socket incoming, Socket outgoing, int dowhat, Vector<String> steps, boolean ishttps, boolean israw) {
         this.incoming = incoming;

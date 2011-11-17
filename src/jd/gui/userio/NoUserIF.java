@@ -30,15 +30,8 @@ public class NoUserIF extends UserIF {
     }
 
     @Override
-    public void displayMiniWarning(String shortWarn, String longWarn) {
-        System.out.println("NoUserIF set!");
-    }
-
-    @Override
     public void setFrameStatus(int id) {
         System.out.println("NoUserIF set!");
     }
-
-  
 
 }

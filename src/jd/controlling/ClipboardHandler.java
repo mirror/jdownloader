@@ -27,13 +27,13 @@ import java.net.URL;
 import java.util.List;
 import java.util.StringTokenizer;
 
-import jd.config.Configuration;
 import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.nutils.OSDetector;
-import jd.utils.JDUtilities;
 
 import org.appwork.utils.Regex;
+import org.appwork.utils.logging.Log;
+import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 
 /**
  * Diese Klasse ist dafür da, zeitverzögert die Zwischenablage zu untersuchen
@@ -110,15 +110,6 @@ public final class ClipboardHandler extends Thread {
                 }
             }
         }.start();
-    }
-
-    /**
-     * Gibt an ob die clipboard überwachung aktiv ist
-     * 
-     * @return true/false
-     */
-    public boolean isEnabled() {
-        return JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_CLIPBOARD_ALWAYS_ACTIVE, true);
     }
 
     public DataFlavor getBestFlavor(final Transferable trans) {
@@ -356,14 +347,12 @@ public final class ClipboardHandler extends Thread {
     public boolean setEnabled(final boolean enabled2) {
         if (enabled == enabled2) return false;
         if (enabled2) {
-            JDLogger.getLogger().info("ClipBoard Observation enabled");
+            Log.L.info("ClipBoard Observation enabled");
         } else {
-            JDLogger.getLogger().info("ClipBoard Observation disabled");
+            Log.L.info("ClipBoard Observation disabled");
         }
         enabled = enabled2;
-        final Configuration configuration = JDUtilities.getConfiguration();
-        configuration.setProperty(Configuration.PARAM_CLIPBOARD_ALWAYS_ACTIVE, enabled2);
-        configuration.save();
+        GraphicalUserInterfaceSettings.CLIPBOARD_MONITORED.setValue(enabled2);
         synchronized (this) {
             if (waitFlag) {
                 waitFlag = false;
@@ -371,10 +360,6 @@ public final class ClipboardHandler extends Thread {
             }
         }
         return true;
-    }
-
-    public void toggleActivation() {
-        setEnabled(!isEnabled());
     }
 
 }

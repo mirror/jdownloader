@@ -22,7 +22,6 @@ import java.util.ArrayList;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
-import jd.config.Configuration;
 import jd.controlling.JDLogger;
 import jd.nutils.OSDetector;
 import jd.utils.JDUtilities;
@@ -185,11 +184,11 @@ public class JDAntiReconnectThread extends Thread implements Runnable {
         if (this.clients != clients2) {
             this.clients = clients2;
             if (clients2 == true) {
-                JDUtilities.getConfiguration().setProperty(Configuration.PARAM_ALLOW_RECONNECT, jdAntiReconnect.getPluginConfig().getBooleanProperty("CONFIG_NEWRECONNECT"));
+                JsonConfig.create(GeneralSettings.class).setAutoReconnectEnabled(jdAntiReconnect.getPluginConfig().getBooleanProperty("CONFIG_NEWRECONNECT"));
                 JsonConfig.create(GeneralSettings.class).setMaxSimultaneDownloads(jdAntiReconnect.getPluginConfig().getIntegerProperty("CONFIG_NEWDOWNLOADS"));
                 JsonConfig.create(GeneralSettings.class).setDownloadSpeedLimit(jdAntiReconnect.getPluginConfig().getIntegerProperty("CONFIG_NEWSPEED"));
             } else {
-                JDUtilities.getConfiguration().setProperty(Configuration.PARAM_ALLOW_RECONNECT, jdAntiReconnect.getPluginConfig().getBooleanProperty("CONFIG_OLDRECONNECT"));
+                JsonConfig.create(GeneralSettings.class).setAutoReconnectEnabled(jdAntiReconnect.getPluginConfig().getBooleanProperty("CONFIG_OLDRECONNECT"));
                 JsonConfig.create(GeneralSettings.class).setMaxSimultaneDownloads(jdAntiReconnect.getPluginConfig().getIntegerProperty("CONFIG_OLDDOWNLOADS"));
                 JsonConfig.create(GeneralSettings.class).setDownloadSpeedLimit(jdAntiReconnect.getPluginConfig().getIntegerProperty("CONFIG_OLDSPEED"));
             }

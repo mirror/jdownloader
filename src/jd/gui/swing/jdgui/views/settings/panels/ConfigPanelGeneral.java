@@ -52,13 +52,11 @@ public class ConfigPanelGeneral extends AbstractConfigPanel {
         super();
 
         downloadFolder = new FolderChooser("downloadfolder");
-        subfolder = new Checkbox();
         simpleContainer = new Checkbox();
 
         this.addHeader(_GUI._.gui_config_general_downloaddirectory(), NewTheme.I().getIcon("downloadpath", 32));
         this.addDescription(_JDT._.gui_settings_downloadpath_description());
         this.add(downloadFolder);
-        this.addPair(_GUI._.gui_config_general_createsubfolders(), null, subfolder);
 
         /* File Writing */
         autoCRC = new Checkbox();
@@ -79,7 +77,6 @@ public class ConfigPanelGeneral extends AbstractConfigPanel {
     public void save() {
         GeneralSettings st = JsonConfig.create(GeneralSettings.class);
         st.setDefaultDownloadFolder(downloadFolder.getText());
-        st.setCreatePackageNameSubFolderEnabled(subfolder.isSelected());
         st.setHashCheckEnabled(autoCRC.isSelected());
         st.setAutoOpenContainerAfterDownload(simpleContainer.isSelected());
     }
@@ -88,8 +85,7 @@ public class ConfigPanelGeneral extends AbstractConfigPanel {
     public void updateContents() {
         GeneralSettings st = JsonConfig.create(GeneralSettings.class);
         downloadFolder.setText(org.appwork.storage.config.JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder());
-        subfolder.setSelected(st.isCreatePackageNameSubFolderEnabled());
         autoCRC.setSelected(st.isHashCheckEnabled());
-        this.simpleContainer.setSelected(st.isAutoOpenContainerAfterDownload());
+        simpleContainer.setSelected(st.isAutoOpenContainerAfterDownload());
     }
 }

@@ -16,12 +16,10 @@
 
 package org.jdownloader.extensions.schedule.modules;
 
-import jd.config.Configuration;
-import jd.utils.JDUtilities;
-
 import org.jdownloader.extensions.schedule.SchedulerModule;
 import org.jdownloader.extensions.schedule.SchedulerModuleInterface;
 import org.jdownloader.extensions.schedule.translate.T;
+import org.jdownloader.settings.GeneralSettings;
 
 @SchedulerModule
 public class EnablePremium implements SchedulerModuleInterface {
@@ -33,8 +31,7 @@ public class EnablePremium implements SchedulerModuleInterface {
     }
 
     public void execute(String parameter) {
-        JDUtilities.getConfiguration().setProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true);
-        JDUtilities.getConfiguration().save();
+        GeneralSettings.USE_AVAILABLE_ACCOUNTS.setValue(true);
     }
 
     public String getTranslation() {

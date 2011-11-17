@@ -41,7 +41,6 @@ import jd.plugins.AddonPanel;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
-import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.event.queue.Queue;
@@ -487,14 +486,15 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
     public void controlEvent(ControlEvent event) {
         DownloadLink link;
         switch (event.getEventID()) {
-        case ControlEvent.CONTROL_PLUGIN_INACTIVE:
-            if (!(event.getCaller() instanceof PluginForHost)) return;
-            link = ((SingleDownloadController) event.getParameter()).getDownloadLink();
-            if (link.getFilePackage().isPostProcessing() && this.getPluginConfig().getBooleanProperty("ACTIVATED", true) && isLinkSupported(link.getFileOutput())) {
-                Archive archive = buildArchive(link);
+        case ControlEvent.CONTROL_DOWNLOAD_FINISHED:
+            if (event.getCaller() instanceof SingleDownloadController) {
+                link = ((SingleDownloadController) event.getCaller()).getDownloadLink();
+                if (link.getFilePackage().isPostProcessing() && this.getPluginConfig().getBooleanProperty("ACTIVATED", true) && isLinkSupported(link.getFileOutput())) {
+                    Archive archive = buildArchive(link);
 
-                if (!archive.isActive() && archive.getDownloadLinks().size() > 0 && archive.isComplete()) {
-                    this.addToQueue(archive);
+                    if (!archive.isActive() && archive.getDownloadLinks().size() > 0 && archive.isComplete()) {
+                        this.addToQueue(archive);
+                    }
                 }
             }
             break;

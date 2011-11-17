@@ -30,7 +30,6 @@ import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 import javax.swing.WindowConstants;
 
-import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.controlling.JDLogger;
 import jd.controlling.reconnect.ReconnectConfig;
@@ -43,7 +42,6 @@ import jd.controlling.reconnect.liveheader.remotecall.RouterData;
 import jd.controlling.reconnect.liveheader.translate.T;
 import jd.gui.UserIO;
 import jd.nutils.JDFlags;
-import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.storage.config.JsonConfig;
@@ -336,7 +334,6 @@ public class Gui extends AbstractDialog<Object> {
                     startwithhttps = true;
                 }
                 host = host.replaceAll("http://", "").replaceAll("https://", "");
-                JDUtilities.getConfiguration().setProperty(Configuration.PARAM_HTTPSEND_IP, host);
 
                 IPController.getInstance().invalidate();
                 ReconnectRecorder.startServer(host, this.rawmode.isSelected());

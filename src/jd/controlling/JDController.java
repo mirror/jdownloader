@@ -21,12 +21,8 @@ import java.util.ArrayList;
 import java.util.logging.Logger;
 
 import jd.Main;
-import jd.config.Configuration;
 import jd.config.DatabaseConnector;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.controlling.downloadcontroller.SingleDownloadController;
-import jd.controlling.linkcollector.LinkCollectingJob;
-import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.LinkCrawler;
 import jd.event.ControlEvent;
@@ -35,7 +31,6 @@ import jd.gui.UserIO;
 import jd.http.Browser;
 import jd.nutils.io.JDIO;
 import jd.plugins.DownloadLink;
-import jd.plugins.PluginForHost;
 import jd.plugins.PluginsC;
 import jd.utils.JDUtilities;
 
@@ -50,7 +45,7 @@ import org.jdownloader.update.RestartController;
  * 
  * @author JD-Team/astaldo
  */
-public class JDController implements ControlListener {
+public class JDController {
 
     public static JDController getInstance() {
         return INSTANCE;
@@ -76,14 +71,6 @@ public class JDController implements ControlListener {
             try {
                 fireEvent(event);
             } catch (final Throwable e) {
-                JDLogger.exception(e);
-            }
-            try {
-                /*
-                 * the last one to call is the JDController itself
-                 */
-                controlEvent(event);
-            } catch (final Exception e) {
                 JDLogger.exception(e);
             }
         }
@@ -221,53 +208,6 @@ public class JDController implements ControlListener {
             final String dlcKey = br.getRegex("<rc>(.*?)</rc>").getMatch(0);
             if (dlcKey.trim().length() < 80) return null;
             return dlcKey;
-        }
-    }
-
-    /**
-     * Hier werden ControlEvent ausgewertet
-     * 
-     * @param event
-     */
-    public void controlEvent(final ControlEvent event) {
-        if (event == null) {
-            LOGGER.warning("event= NULL");
-            return;
-        }
-        switch (event.getEventID()) {
-        case ControlEvent.CONTROL_ON_FILEOUTPUT:
-            final File[] list = (File[]) event.getParameter();
-            if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_RELOADCONTAINER, true)) {
-                StringBuilder sb = new StringBuilder();
-                for (final File file : list) {
-                    if (sb.length() > 0) {
-                        sb.append("\r\n");
-                    }
-                    sb.append("file://");
-                    sb.append(file.getPath());
-                }
-                LinkCollector.getInstance().addCrawlerJob(new LinkCollectingJob(sb.toString()));
-            }
-            break;
-        case ControlEvent.CONTROL_PLUGIN_INACTIVE:
-            // Nur Hostpluginevents auswerten
-            if (!(event.getCaller() instanceof PluginForHost)) return;
-            final DownloadLink lastDownloadFinished = ((SingleDownloadController) event.getParameter()).getDownloadLink();
-
-            // Prüfen ob das Paket fertig ist und entfernt werden soll
-            if (lastDownloadFinished.getFilePackage().getRemainingLinks() == 0) {
-                if (JDUtilities.getConfiguration().getIntegerProperty(Configuration.PARAM_FINISHED_DOWNLOADS_ACTION, 3) == 2) {
-                    JDUtilities.getDownloadController().removePackage(lastDownloadFinished.getFilePackage());
-                    break;
-                }
-            }
-
-            // Prüfen ob der Link entfernt werden soll
-            if (lastDownloadFinished.getLinkStatus().isFinished() && JDUtilities.getConfiguration().getIntegerProperty(Configuration.PARAM_FINISHED_DOWNLOADS_ACTION, 3) == 0) {
-                lastDownloadFinished.getFilePackage().remove(lastDownloadFinished);
-            }
-
-            break;
         }
     }
 

@@ -78,7 +78,7 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig> impleme
     public void controlEvent(ControlEvent event) {
 
         if (shutdownEnabled) {
-            if (event.getEventID() == ControlEvent.CONTROL_DOWNLOAD_STOP && DownloadWatchDog.getInstance().getDownloadssincelastStart() > 0) {
+            if (event.getEventID() == ControlEvent.CONTROL_DOWNLOADWATCHDOG_STOP && DownloadWatchDog.getInstance().getDownloadssincelastStart() > 0) {
                 if (shutdown != null) {
                     if (!shutdown.isAlive()) {
                         shutdown = new ShutDown();

@@ -19,7 +19,6 @@ package jd.plugins;
 import java.nio.charset.CharacterCodingException;
 
 import jd.gui.UserIO;
-import jd.gui.swing.components.Balloon;
 import jd.http.Browser;
 
 import org.appwork.utils.logging.Log;
@@ -66,16 +65,6 @@ public class PluginUtils {
 
     public static String askPassword(final String message, final String defaultmessage) {
         return UserIO.getInstance().requestInputDialog(0, message, defaultmessage);
-    }
-
-    /**
-     * Informs the user that the password has been wrong
-     * 
-     * @param plg
-     * @param password
-     */
-    public static void informPasswordWrong(final Plugin plg, final String password) {
-        Balloon.show(_JDT._.jd_plugins_PluginUtils_informPasswordWrong_title(password), UserIO.getInstance().getIcon(UserIO.ICON_ERROR), _JDT._.jd_plugins_PluginUtils_informPasswordWrong_message(plg.getHost()));
     }
 
     public static void evalJSPacker(final Browser br) {

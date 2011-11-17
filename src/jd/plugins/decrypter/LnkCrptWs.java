@@ -55,7 +55,6 @@ import jd.controlling.JDLogger;
 import jd.controlling.ProgressController;
 import jd.gui.UserIO;
 import jd.gui.swing.SwingGui;
-import jd.gui.swing.components.Balloon;
 import jd.http.Browser;
 import jd.http.RandomUserAgent;
 import jd.nutils.Screen;
@@ -1122,7 +1121,6 @@ public class LnkCrptWs extends PluginForDecrypt {
             logger.info("No links found, let's see if CNL2 is available!");
             if (map.containsKey("cnl")) {
                 LocalBrowser.openDefaultURL(new URL(parameter));
-                Balloon.show(JDL.L("jd.controlling.CNL2.checkText.title", "Click'n'Load"), null, JDL.L("jd.controlling.CNL2.checkText.message", "Click'n'Load URL opened"));
                 throw new DecrypterException(JDL.L("jd.controlling.CNL2.checkText.message", "Click'n'Load URL opened"));
             }
             logger.warning("Decrypter out of date for link: " + parameter);

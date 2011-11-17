@@ -19,9 +19,6 @@ package org.jdownloader.extensions.jdpremserv;
 import jd.Main;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
-import jd.controlling.JDController;
-import jd.event.ControlEvent;
-import jd.event.ControlListener;
 import jd.plugins.AddonPanel;
 
 import org.appwork.utils.swing.EDTRunner;
@@ -31,7 +28,7 @@ import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
 import org.jdownloader.extensions.jdpremserv.gui.JDPremServGui;
 
-public class PremServExtension extends AbstractExtension<PremServConfig> implements ControlListener {
+public class PremServExtension extends AbstractExtension<PremServConfig> {
 
     private JDPremServGui                           tab;
 
@@ -48,13 +45,6 @@ public class PremServExtension extends AbstractExtension<PremServConfig> impleme
     public PremServExtension() throws StartException {
         super(null);
 
-    }
-
-    public void controlEvent(ControlEvent event) {
-        switch (event.getEventID()) {
-        case ControlEvent.CONTROL_INIT_COMPLETE:
-            startServer();
-        }
     }
 
     private void startServer() {
@@ -87,14 +77,13 @@ public class PremServExtension extends AbstractExtension<PremServConfig> impleme
     @Override
     protected void stop() throws StopException {
         stopServer();
-        JDController.getInstance().removeControlListener(this);
     }
 
     @Override
     protected void start() throws StartException {
         // this method is called ones after the addon has been loaded
 
-        if (Main.isInitComplete()) startServer();
+        if (!Main.INIT_COMPLETE.isReached()) startServer();
         new EDTRunner() {
 
             @Override
@@ -102,7 +91,7 @@ public class PremServExtension extends AbstractExtension<PremServConfig> impleme
                 initGUI();
             }
         };
-        JDController.getInstance().addControlListener(this);
+
     }
 
     protected void initSettings(ConfigContainer config) {

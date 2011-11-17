@@ -16,30 +16,18 @@
 
 package jd;
 
-import java.awt.event.ActionEvent;
-import java.io.IOException;
 import java.util.logging.Logger;
 
-import javax.swing.AbstractAction;
-
-import jd.config.Configuration;
 import jd.controlling.JDLogger;
 import jd.controlling.JSonWrapper;
 import jd.http.Browser;
 import jd.nutils.OSDetector;
-import jd.nutils.encoding.Encoding;
 import jd.utils.JDUtilities;
 
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.update.updateclient.UpdaterConstants;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.appwork.utils.swing.dialog.Dialog;
-import org.appwork.utils.swing.dialog.DialogCanceledException;
-import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.settings.GeneralSettings;
-import org.jdownloader.translate._JDT;
-import org.lobobrowser.util.OS;
 
 /**
  * @author JD-Team
@@ -56,35 +44,42 @@ public class JDInit {
         new Thread(new Runnable() {
 
             public void run() {
-                if (JDUtilities.getRunType() == JDUtilities.RUNTYPE_LOCAL_JARED) {
-                    final String old = JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_UPDATE_VERSION, "");
-                    if (!old.equals(JDUtilities.getRevision())) {
-                        JDInit.LOG.info("Detected that JD just got updated");
-
-                        final ConfirmDialog dialog = new ConfirmDialog(Dialog.BUTTONS_HIDE_CANCEL, _JDT._.system_update_message_title(JDUtilities.getRevision()), _JDT._.system_update_message(), null, null, null);
-                        dialog.setLeftActions(new AbstractAction(_JDT._.system_update_showchangelogv2()) {
-
-                            private static final long serialVersionUID = 1L;
-
-                            public void actionPerformed(final ActionEvent e) {
-                                try {
-                                    OS.launchBrowser("http://jdownloader.org/changes/index");
-                                } catch (final IOException e1) {
-                                    e1.printStackTrace();
-                                }
-                            }
-
-                        });
-                        try {
-                            Dialog.getInstance().showDialog(dialog);
-                        } catch (DialogClosedException e1) {
-
-                        } catch (DialogCanceledException e1) {
-
-                        }
-                    }
-                }
-                submitVersion();
+                // if (JDUtilities.getRunType() ==
+                // JDUtilities.RUNTYPE_LOCAL_JARED) {
+                // final String old =
+                // JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_UPDATE_VERSION,
+                // "");
+                // if (!old.equals(JDUtilities.getRevision())) {
+                // JDInit.LOG.info("Detected that JD just got updated");
+                //
+                // final ConfirmDialog dialog = new
+                // ConfirmDialog(Dialog.BUTTONS_HIDE_CANCEL,
+                // _JDT._.system_update_message_title(JDUtilities.getRevision()),
+                // _JDT._.system_update_message(), null, null, null);
+                // dialog.setLeftActions(new
+                // AbstractAction(_JDT._.system_update_showchangelogv2()) {
+                //
+                // private static final long serialVersionUID = 1L;
+                //
+                // public void actionPerformed(final ActionEvent e) {
+                // try {
+                // OS.launchBrowser("http://jdownloader.org/changes/index");
+                // } catch (final IOException e1) {
+                // e1.printStackTrace();
+                // }
+                // }
+                //
+                // });
+                // try {
+                // Dialog.getInstance().showDialog(dialog);
+                // } catch (DialogClosedException e1) {
+                //
+                // } catch (DialogCanceledException e1) {
+                //
+                // }
+                // }
+                // }
+                // submitVersion();
             }
 
         }).start();
@@ -158,15 +153,23 @@ public class JDInit {
                     }
                     final Browser br = new Browser();
                     br.setConnectTimeout(15000);
-                    if (!JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_UPDATE_VERSION, "").equals(JDUtilities.getRevision())) {
-                        try {
-                            final String prev = JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_UPDATE_VERSION, "");
-                            br.postPage("http://service.jdownloader.org/tools/s.php", "v=" + JDUtilities.getRevision().replaceAll(",|\\.", "") + "&p=" + prev + "&os=" + os + "&tz=" + Encoding.urlEncode(tz));
-                            JDUtilities.getConfiguration().setProperty(Configuration.PARAM_UPDATE_VERSION, JDUtilities.getRevision());
-                            JDUtilities.getConfiguration().save();
-                        } catch (final Exception e) {
-                        }
-                    }
+                    // if
+                    // (!JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_UPDATE_VERSION,
+                    // "").equals(JDUtilities.getRevision())) {
+                    // try {
+                    // final String prev =
+                    // JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_UPDATE_VERSION,
+                    // "");
+                    // br.postPage("http://service.jdownloader.org/tools/s.php",
+                    // "v=" + JDUtilities.getRevision().replaceAll(",|\\.", "")
+                    // + "&p=" + prev + "&os=" + os + "&tz=" +
+                    // Encoding.urlEncode(tz));
+                    // JDUtilities.getConfiguration().setProperty(Configuration.PARAM_UPDATE_VERSION,
+                    // JDUtilities.getRevision());
+                    // JDUtilities.getConfiguration().save();
+                    // } catch (final Exception e) {
+                    // }
+                    // }
                 }
             }
         }).start();

@@ -58,9 +58,6 @@ public class MndCm extends PluginForDecrypt {
                 link.setName(Track[1]);
                 link.setAvailable(true);
                 fp.add(link);
-                if (getPluginConfig().getBooleanProperty(ENABLE_SUBFOLDERS)) {
-                    link.addSubdirectory(Album);
-                }
                 decryptedLinks.add(link);
             }
         } else {

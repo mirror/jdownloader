@@ -80,8 +80,6 @@ public abstract class UserIF {
      */
     public abstract void requestPanel(Panels panelID, Object parameter);
 
-    public abstract void displayMiniWarning(String shortWarn, String longWarn);
-
     /**
      * Minimiert die GUI. als ID können die WINDOW_STATUS_IDS aus
      * {@link UIConstants} verwendet werden

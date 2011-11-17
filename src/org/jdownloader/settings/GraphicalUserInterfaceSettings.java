@@ -126,6 +126,8 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
      **/
     public static final BooleanKeyHandler                              WINDOW_OPAQUE                             = SH.getKeyHandler("WindowOpaque", BooleanKeyHandler.class);
 
+    public static final BooleanKeyHandler                              CLIPBOARD_MONITORED                       = SH.getKeyHandler("ClipboardMonitored", BooleanKeyHandler.class);
+
     String getActiveConfigPanel();
 
     @AboutConfig
@@ -249,6 +251,13 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     @DefaultBooleanValue(false)
     @RequiresRestart
     boolean isWindowOpaque();
+
+    @AboutConfig
+    @Description("Enable/disable Enable/disable Clipboard monitoring")
+    @DefaultBooleanValue(false)
+    boolean isClipboardMonitored();
+
+    void setClipboardMonitored(boolean b);
 
     void setActiveConfigPanel(String name);
 

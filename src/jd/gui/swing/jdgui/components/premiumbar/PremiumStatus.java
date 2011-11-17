@@ -26,7 +26,6 @@ import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 
 import jd.Main;
-import jd.config.Configuration;
 import jd.controlling.AccountController;
 import jd.controlling.AccountControllerEvent;
 import jd.controlling.AccountControllerListener;
@@ -39,16 +38,20 @@ import jd.nutils.Formatter;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.scheduler.DelayedRunnable;
+import org.appwork.storage.config.ValidationException;
+import org.appwork.storage.config.events.GenericConfigEventListener;
+import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.swing.EDTHelper;
+import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
+import org.jdownloader.settings.GeneralSettings;
 
 public class PremiumStatus extends JPanel implements MouseListener {
 
@@ -73,10 +76,18 @@ public class PremiumStatus extends JPanel implements MouseListener {
             bars[i].setVisible(false);
             add(bars[i], "hidemode 3");
         }
-        updateGUI(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true));
 
         this.setOpaque(false);
+        updateGUI(GeneralSettings.USE_AVAILABLE_ACCOUNTS.getDefaultValue());
+        GeneralSettings.USE_AVAILABLE_ACCOUNTS.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
 
+            public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
+                updateGUI(newValue);
+            }
+
+            public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
+            }
+        });
         Main.GUI_COMPLETE.executeWhenReached(new Runnable() {
 
             public void run() {
@@ -103,7 +114,7 @@ public class PremiumStatus extends JPanel implements MouseListener {
 
                             @Override
                             public void delayedrun() {
-                                if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true)) redraw();
+                                redraw();
                             }
 
                         };
@@ -117,7 +128,7 @@ public class PremiumStatus extends JPanel implements MouseListener {
                                 case AccountControllerEvent.ACCOUNT_REMOVED:
                                 case AccountControllerEvent.ACCOUNT_EXPIRED:
                                 case AccountControllerEvent.ACCOUNT_INVALID:
-                                    redrawTimer.run();
+                                    if (GeneralSettings.USE_AVAILABLE_ACCOUNTS.isEnabled()) redrawTimer.run();
                                     break;
                                 default:
                                     break;
@@ -133,11 +144,17 @@ public class PremiumStatus extends JPanel implements MouseListener {
         });
     }
 
-    public void updateGUI(boolean enabled) {
-        if (bars == null) return;
-        for (int i = 0; i < BARCOUNT; i++) {
-            bars[i].setEnabled(enabled);
-        }
+    private void updateGUI(final boolean enabled) {
+        new EDTRunner() {
+
+            @Override
+            protected void runInEDT() {
+                if (bars == null) return;
+                for (int i = 0; i < BARCOUNT; i++) {
+                    bars[i].setEnabled(enabled);
+                }
+            }
+        };
     }
 
     private void refreshAccountStats() {

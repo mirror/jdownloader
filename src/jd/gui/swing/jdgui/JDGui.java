@@ -53,7 +53,6 @@ import jd.event.ControlEvent;
 import jd.gui.UIConstants;
 import jd.gui.UserIO;
 import jd.gui.swing.SwingGui;
-import jd.gui.swing.components.Balloon;
 import jd.gui.swing.jdgui.components.StatusBarImpl;
 import jd.gui.swing.jdgui.components.toolbar.MainToolBar;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
@@ -81,7 +80,6 @@ import org.appwork.utils.swing.dialog.SimpleTextBallon;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.downloads.DownloadsView;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberView;
-import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 
 public class JDGui extends SwingGui {
@@ -207,23 +205,7 @@ public class JDGui extends SwingGui {
                 }
             }.getReturnValue();
             break;
-        case ControlEvent.CONTROL_DOWNLOAD_START:
-            Balloon.showIfHidden(_GUI._.ballon_download_title(), NewTheme.I().getIcon("go-next", 32), _GUI._.ballon_download_finished_started());
-            break;
-        case ControlEvent.CONTROL_DOWNLOAD_STOP:
-            JDLogger.getLogger().info("All downloads finished");
-            Balloon.showIfHidden(_GUI._.ballon_download_title(), NewTheme.I().getIcon("media-playback-stop", 32), _GUI._.ballon_download_finished_stopped());
-            break;
         }
-    }
-
-    /**
-     * TODO: mal durch ein einheitliches notification system ersetzen, welches
-     * an das eventsystem gekoppelt ist
-     */
-    @Override
-    public void displayMiniWarning(final String shortWarn, final String longWarn) {
-        Balloon.show(shortWarn, NewTheme.I().getIcon("warning", 32), longWarn);
     }
 
     @Override

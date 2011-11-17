@@ -54,7 +54,6 @@ import jd.controlling.reconnect.ReconnecterEvent;
 import jd.controlling.reconnect.ReconnecterListener;
 import jd.gui.UserIO;
 import jd.gui.swing.SwingGui;
-import jd.gui.swing.components.Balloon;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.plugins.AddonPanel;
@@ -629,7 +628,6 @@ public class ChatExtension extends AbstractExtension<ChatConfig> {
             final String nick = this.getNickname();
             final String user = "jdChatuser";
             final String name = "jdChatuser";
-            Balloon.show("JD Chat", null, "Connecting to JDChat...");
             this.addToText(null, ChatExtension.STYLE_SYSTEM_MESSAGE, "Connecting to JDChat...");
             this.conn = new IRCConnection(host, new int[] { port }, pass, nick, user, name);
             this.conn.setTimeout(1000 * 60 * 60);
@@ -675,9 +673,6 @@ public class ChatExtension extends AbstractExtension<ChatConfig> {
                         ChatExtension.this.tabbedPane.setForegroundAt(t, Color.RED);
                         if (text.length() > 40) {
                             text = text.substring(0, 40).concat("...");
-                        }
-                        if (!ChatExtension.this.tabbedPane.getTitleAt(ChatExtension.this.tabbedPane.getSelectedIndex()).equals(user)) {
-                            Balloon.show("JD Chat", null, T._.jd_plugins_optional_jdchat_newmessage(user, text));
                         }
                         return null;
                     }

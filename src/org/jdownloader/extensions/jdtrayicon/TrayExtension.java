@@ -242,7 +242,7 @@ public class TrayExtension extends AbstractExtension<TrayConfig> implements Mous
     public void controlEvent(ControlEvent event) {
         if (event.getEventID() == ControlEvent.CONTROL_SYSTEM_EXIT) {
             shutdown = true;
-        } else if (event.getEventID() == ControlEvent.CONTROL_DOWNLOAD_START) {
+        } else if (event.getEventID() == ControlEvent.CONTROL_DOWNLOADWATCHDOG_START) {
             updateThread = new Thread("Tray Icon Updater") {
                 @Override
                 public void run() {
@@ -266,7 +266,7 @@ public class TrayExtension extends AbstractExtension<TrayConfig> implements Mous
                 }
             };
             updateThread.start();
-        } else if (event.getEventID() == ControlEvent.CONTROL_DOWNLOAD_STOP) {
+        } else if (event.getEventID() == ControlEvent.CONTROL_DOWNLOADWATCHDOG_STOP) {
             if (updateThread != null) updateThread.interrupt();
             JDGui.getInstance().setWindowTitle(JDUtilities.getJDTitle(0));
         }

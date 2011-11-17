@@ -107,8 +107,6 @@ public class ChoMikujPl extends PluginForHost {
         if (br.containsHTML(PREMIUMONLY)) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.chomikujpl.only4registered", PREMIUMONLYUSERTEXT));
         if (!videolink) getDllink(downloadLink, br);
         if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        String additionalPath = downloadLink.getStringProperty("path");
-        if (additionalPath != null) downloadLink.addSubdirectory(additionalPath);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();

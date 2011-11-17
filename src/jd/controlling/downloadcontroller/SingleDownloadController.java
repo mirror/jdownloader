@@ -24,22 +24,17 @@ import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.logging.Logger;
 
-import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.controlling.IOPermission;
 import jd.controlling.JDLogger;
 import jd.controlling.JDPluginLogger;
-import jd.controlling.linkcollector.LinkCollectingJob;
-import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.proxy.ProxyController;
 import jd.controlling.proxy.ProxyInfo;
 import jd.event.ControlEvent;
 import jd.gui.UserIO;
 import jd.gui.swing.SwingGui;
-import jd.gui.swing.components.Balloon;
 import jd.http.Browser;
 import jd.http.BrowserSettingsThread;
-import jd.nutils.Formatter;
 import jd.nutils.io.JDIO;
 import jd.plugins.Account;
 import jd.plugins.DownloadLink;
@@ -56,7 +51,6 @@ import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Exceptions;
 import org.appwork.utils.Regex;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
-import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.settings.IfFileExistsAction;
 import org.jdownloader.translate._JDT;
@@ -182,7 +176,6 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
         try {
             this.startTime = System.currentTimeMillis();
             linkStatus.setStatusText(_JDT._.gui_download_create_connection());
-            fireControlEvent(ControlEvent.CONTROL_PLUGIN_ACTIVE, currentPlugin);
             currentPlugin.init();
             if ((downloadLink.getLinkStatus().getRetryCount()) <= currentPlugin.getMaxRetries()) {
                 try {
@@ -272,14 +265,12 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
                 onErrorHostTemporarilyUnavailable(downloadLink, currentPlugin);
                 break;
             case LinkStatus.ERROR_FILE_NOT_FOUND:
-                if (SwingGui.getInstance() != null) Balloon.showIfHidden(_JDT._.ballon_download_error_title(), NewTheme.I().getIcon("false", 32), _JDT._.ballon_download_fnf_message(downloadLink.getName() + " (" + Formatter.formatReadable(downloadLink.getDownloadSize()) + ")"));
                 onErrorFileNotFound(downloadLink, currentPlugin);
                 break;
             case LinkStatus.ERROR_LINK_IN_PROGRESS:
                 onErrorLinkBlock(downloadLink, currentPlugin);
                 break;
             case LinkStatus.ERROR_FATAL:
-                if (SwingGui.getInstance() != null) Balloon.showIfHidden(_JDT._.ballon_download_error_title(), NewTheme.I().getIcon("false", 32), _JDT._.ballon_download_fatalerror_message(downloadLink.getHost()));
                 onErrorFatal(downloadLink, currentPlugin);
                 break;
             case LinkStatus.ERROR_CAPTCHA:
@@ -296,15 +287,12 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
                 break;
             case LinkStatus.ERROR_DOWNLOAD_FAILED:
                 onErrorChunkloadFailed(downloadLink, currentPlugin);
-                if (SwingGui.getInstance() != null) Balloon.showIfHidden(_JDT._.ballon_download_error_title(), NewTheme.I().getIcon("false", 32), _JDT._.ballon_download_failed_message(downloadLink.getName() + " (" + Formatter.formatReadable(downloadLink.getDownloadSize()) + ")"));
                 break;
             case LinkStatus.ERROR_PLUGIN_DEFECT:
                 onErrorPluginDefect(downloadLink, currentPlugin);
-                if (SwingGui.getInstance() != null) Balloon.showIfHidden(_JDT._.ballon_download_error_title(), NewTheme.I().getIcon("false", 32), _JDT._.ballon_download_plugindefect_message(downloadLink.getHost()));
                 break;
             case LinkStatus.ERROR_NO_CONNECTION:
             case LinkStatus.ERROR_TIMEOUT_REACHED:
-                if (SwingGui.getInstance() != null) Balloon.showIfHidden(_JDT._.ballon_download_error_title(), NewTheme.I().getIcon("false", 32), _JDT._.ballon_download_connectionlost_message(downloadLink.getHost()));
                 onErrorNoConnection(downloadLink, currentPlugin);
                 break;
             default:
@@ -365,7 +353,6 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
     }
 
     private void onDownloadFinishedSuccessFull(DownloadLink downloadLink) {
-        if ((System.currentTimeMillis() - startTime) > 30000 && SwingGui.getInstance() != null) Balloon.showIfHidden(_JDT._.ballon_download_successful_title(), NewTheme.I().getIcon("true", 32), _JDT._.ballon_download_successful_message(downloadLink.getName() + " (" + Formatter.formatReadable(downloadLink.getDownloadSize()) + ")"));
 
         // set all links to disabled that point to the same file location
         // - prerequisite: 'skip link' option selected
@@ -388,10 +375,6 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
         }
 
         if (SwingGui.getInstance() != null) DownloadController.getInstance().fireDataUpdate(downloadLink);
-        if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_RELOADCONTAINER, true)) {
-            LinkCollector.getInstance().addCrawlerJob(new LinkCollectingJob("file://" + downloadLink.getFileOutput()));
-        }
-
     }
 
     /**
@@ -700,12 +683,10 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
              */
             currentPlugin.setBrowser(new Browser());
             if (currentPlugin != null) {
-                fireControlEvent(new ControlEvent(currentPlugin, ControlEvent.CONTROL_PLUGIN_ACTIVE, this));
                 if (downloadLink.getDownloadURL() == null) {
                     downloadLink.getLinkStatus().setStatusText(_JDT._.controller_status_containererror());
                     downloadLink.getLinkStatus().setErrorMessage(_JDT._.controller_status_containererror());
                     downloadLink.setEnabled(false);
-                    fireControlEvent(new ControlEvent(currentPlugin, ControlEvent.CONTROL_PLUGIN_INACTIVE, this));
                     return;
                 }
                 /* check ob Datei existiert oder bereits geladen wird */
@@ -717,7 +698,6 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
                      */
                     if (DownloadInterface.preDownloadCheckFailed(downloadLink)) {
                         onErrorLinkBlock(downloadLink, currentPlugin);
-                        fireControlEvent(new ControlEvent(currentPlugin, ControlEvent.CONTROL_PLUGIN_INACTIVE, this));
                         return;
                     }
                     /*
@@ -736,6 +716,7 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
                     llogger.clear();
                     llogger.finest("\r\nFinished- " + downloadLink.getLinkStatus());
                     llogger.info("\r\nFinished- " + downloadLink.getName() + "->" + downloadLink.getFileOutput());
+                    fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_DOWNLOAD_FINISHED, downloadLink));
                 }
                 /* move download log into global log */
                 llogger.logInto(JDLogger.getLogger());
@@ -743,7 +724,6 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
             if (SwingGui.getInstance() != null) downloadLink.requestGuiUpdate();
         } finally {
             try {
-                fireControlEvent(new ControlEvent(currentPlugin, ControlEvent.CONTROL_PLUGIN_INACTIVE, this));
                 linkStatus.setInProgress(false);
                 /* cleanup the DownloadInterface/Controller references */
                 downloadLink.setDownloadLinkController(null);

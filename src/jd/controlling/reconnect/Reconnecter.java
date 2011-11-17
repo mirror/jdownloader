@@ -19,18 +19,16 @@ package jd.controlling.reconnect;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 
-import jd.config.Configuration;
 import jd.controlling.JDLogger;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.reconnect.ipcheck.IPController;
-import jd.gui.UserIF;
 import jd.gui.UserIO;
-import jd.utils.JDUtilities;
 
 import org.appwork.controlling.State;
 import org.appwork.controlling.StateMachine;
 import org.appwork.controlling.StateMachineInterface;
 import org.appwork.storage.config.JsonConfig;
+import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.translate._JDT;
 
 public final class Reconnecter implements StateMachineInterface {
@@ -284,21 +282,12 @@ public final class Reconnecter implements StateMachineInterface {
     }
 
     /**
-     * returns true if auto reconnect is enabled
-     * 
-     * @return
-     */
-    public boolean isAutoReconnectEnabled() {
-        return JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_ALLOW_RECONNECT, true);
-    }
-
-    /**
      * cheks if a reconnect is allowed right now.
      * 
      * @return
      */
     public boolean isReconnectAllowed() {
-        boolean ret = JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_ALLOW_RECONNECT, true);
+        boolean ret = GeneralSettings.AUTO_RECONNECT_ENABLED.getValue();
         /* TODO: check for running linkcrawler and linkchecker */
         ret &= DownloadWatchDog.getInstance().getForbiddenReconnectDownloadNum() == 0;
         return ret;
@@ -342,31 +331,10 @@ public final class Reconnecter implements StateMachineInterface {
                  * more than 5 failed reconnects in row, disable autoreconnect
                  * and show message
                  */
-
-                this.setAutoReconnectEnabled(false);
-
+                GeneralSettings.AUTO_RECONNECT_ENABLED.setValue(false);
                 UserIO.getInstance().requestMessageDialog(UserIO.DONT_SHOW_AGAIN | UserIO.DONT_SHOW_AGAIN_IGNORES_CANCEL, _JDT._.jd_controlling_reconnect_Reconnector_progress_failed2());
-
             }
-
         }
         return ret;
     }
-
-    /**
-     * Enables or disables autoreconnection
-     * 
-     * @param b
-     */
-    public void setAutoReconnectEnabled(final boolean b) {
-
-        JDUtilities.getConfiguration().setProperty(Configuration.PARAM_ALLOW_RECONNECT, b);
-        if (!b) {
-
-            UserIF.getInstance().displayMiniWarning(_JDT._.gui_warning_reconnect_hasbeendisabled(), _JDT._.gui_warning_reconnect_hasbeendisabled_tooltip());
-
-        }
-        JDUtilities.getConfiguration().save();
-    }
-
 }

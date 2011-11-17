@@ -35,14 +35,11 @@ import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
-import org.jdownloader.extensions.interfaces.RemoteSupport;
-import org.jdownloader.extensions.remotecontrol.helppage.HelpPage;
-import org.jdownloader.extensions.remotecontrol.helppage.Table;
 import org.jdownloader.extensions.scriptlauncher.translate.T;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
-public class ScriptLauncherExtension extends AbstractExtension<ScriptLauncherConfig> implements RemoteSupport, ActionListener {
+public class ScriptLauncherExtension extends AbstractExtension<ScriptLauncherConfig> implements ActionListener {
 
     private static final String              scriptdir    = "./scripts/";
 
@@ -217,16 +214,6 @@ public class ScriptLauncherExtension extends AbstractExtension<ScriptLauncherCon
             }
         }
         return null;
-    }
-
-    public void initCmdTable() {
-        Table t = HelpPage.createTable(new Table(this.getName()));
-
-        t.setCommand("/addon/scriptlauncher/getlist");
-        t.setInfo("Get list of all available scripts.");
-
-        t.setCommand("/addon/scriptlauncher/launch/%X%");
-        t.setInfo("Launches a script on the remote machine via JDScriptLauncher addon.");
     }
 
     @Override

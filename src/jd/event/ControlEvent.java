@@ -27,27 +27,13 @@ public class ControlEvent extends DefaultIntEvent {
 
     private static final long serialVersionUID                 = 1639354503246054870L;
 
-    /**
-     * Ein PLugin wird beendet. Source: ist jeweils das PLugin Parameter:
-     * Decrypter: decrypted Links Vector
-     */
-    public static final int   CONTROL_PLUGIN_INACTIVE          = 4;
+    public static final int   CONTROL_DOWNLOAD_FINISHED        = 4;
 
-    /**
-     * Ein Plugin fängt an zu arbeiten. Source ist das PLugin selbst Parameter:
-     * Decrypter: encryptedLinks
-     */
-    public static final int   CONTROL_PLUGIN_ACTIVE            = 5;
+    /* DownloadWatchDog stopped */
+    public static final int   CONTROL_DOWNLOADWATCHDOG_STOP    = 6;
 
-    /**
-     * Wird aufgerufen sobald der Downloadvorgang komplett gestoppt ist
-     */
-    public static final int   CONTROL_DOWNLOAD_STOP            = 6;
-
-    /**
-     * Gibt an, dass der Downloadvorgang gestartet wurde
-     */
-    public static final int   CONTROL_DOWNLOAD_START           = 13;
+    /* DownloadWatchDog started */
+    public static final int   CONTROL_DOWNLOADWATCHDOG_START   = 13;
 
     /**
      * wird verschickt wenn das Kontextmenü der Downloadlinks geöffnet wird
@@ -69,8 +55,6 @@ public class ControlEvent extends DefaultIntEvent {
 
     public static final int   CONTROL_JDPROPERTY_CHANGED       = 27;
 
-    public static final int   CONTROL_INIT_COMPLETE            = 30;
-
     /**
      * Wird verwendet wenn eine datei verarbeitet wurde.z.B. eine datei entpackt
      * wurde. Andere plugins und addons können dieses event abrufen und
@@ -78,11 +62,6 @@ public class ControlEvent extends DefaultIntEvent {
      * werden als File[] parameter übergeben
      */
     public static final int   CONTROL_ON_FILEOUTPUT            = 33;
-
-    /**
-     * Sammelt über DataBox.java daten ein
-     */
-    public static final int   CONTROL_COLLECT_DATA             = 34;
 
     /**
      * prepareShutDown is complete

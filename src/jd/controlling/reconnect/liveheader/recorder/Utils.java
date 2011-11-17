@@ -25,12 +25,10 @@ import java.util.Map.Entry;
 import java.util.Vector;
 import java.util.regex.Pattern;
 
-import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.controlling.JDLogger;
 import jd.nutils.encoding.Encoding;
 import jd.utils.JDHexUtils;
-import jd.utils.JDUtilities;
 
 import org.appwork.utils.Regex;
 
@@ -198,7 +196,7 @@ public final class Utils {
         if (host != null) {
             if (new Regex(host, "(.*?):?").getMatch(0) != null) {
                 final String oldhost = host;
-                host = JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_HTTPSEND_IP, null);
+                host = instance.getHost();
                 instance.buffer = instance.buffer.replaceAll(JDHexUtils.getHexString("Host: " + oldhost), JDHexUtils.getHexString("Host: " + host));
                 instance.renewbuffer = true;
             }
@@ -226,22 +224,22 @@ public final class Utils {
                 String ref2 = new Regex(ref, "https?://.*?/(.+)", Pattern.DOTALL).getMatch(0);
                 if (!oldref.startsWith("https")) {
                     if (ref2 != null) {
-                        ref = "http://" + JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_HTTPSEND_IP, null) + "/" + ref2.trim();
+                        ref = "http://" + instance.getHost() + "/" + ref2.trim();
                     } else {
                         if (new Regex(ref, "https?://.*?/", Pattern.DOTALL).matches()) {
-                            ref = "http://" + JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_HTTPSEND_IP, null) + "/";
+                            ref = "http://" + instance.getHost() + "/";
                         } else {
-                            ref = "http://" + JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_HTTPSEND_IP, null);
+                            ref = "http://" + instance.getHost();
                         }
                     }
                 } else {
                     if (ref2 != null) {
-                        ref = "https://" + JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_HTTPSEND_IP, null) + "/" + ref2.trim();
+                        ref = "https://" + instance.getHost() + "/" + ref2.trim();
                     } else {
                         if (new Regex(ref, "https?://.*?/", Pattern.DOTALL).matches()) {
-                            ref = "https://" + JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_HTTPSEND_IP, null) + "/";
+                            ref = "https://" + instance.getHost() + "/";
                         } else {
-                            ref = "https://" + JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_HTTPSEND_IP, null);
+                            ref = "https://" + instance.getHost();
                         }
                     }
                 }

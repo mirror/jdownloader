@@ -99,7 +99,7 @@ public class LookAndFeelController {
 
         ArrayList<LookAndFeelWrapper> ret = new ArrayList<LookAndFeelWrapper>();
 
-        if (Application.getJavaVersion() >= 16000000 && LookAndFeelController.class.getResource("/org/pushingpixels/substance") != null) {
+        if (Application.getJavaVersion() >= Application.JAVA16 && LookAndFeelController.class.getResource("/org/pushingpixels/substance") != null) {
             ret.add(new LookAndFeelWrapper(new LookAndFeelInfo("Substance Autumn", "org.pushingpixels.substance.api.skin.SubstanceAutumnLookAndFeel")));
             ret.add(new LookAndFeelWrapper(new LookAndFeelInfo("Substance Business Black Steel", "org.pushingpixels.substance.api.skin.SubstanceBusinessBlackSteelLookAndFeel")));
             ret.add(new LookAndFeelWrapper(new LookAndFeelInfo("Substance Business Blue Steel", "org.pushingpixels.substance.api.skin.SubstanceBusinessBlueSteelLookAndFeel")));

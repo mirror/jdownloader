@@ -5,19 +5,20 @@ import java.util.List;
 
 import javax.swing.JLabel;
 
-import jd.config.Configuration;
 import jd.controlling.reconnect.Reconnecter;
-import jd.utils.JDUtilities;
 
 import org.jdownloader.extensions.omnibox.omni.Action;
 import org.jdownloader.extensions.omnibox.omni.Proposal;
 import org.jdownloader.extensions.omnibox.omni.ProposalRequest;
 import org.jdownloader.extensions.omnibox.omni.ProposalRequestListener;
 import org.jdownloader.extensions.omnibox.omni.Utils;
+import org.jdownloader.settings.GeneralSettings;
 
 public class AwesomeReconnectListener implements ProposalRequestListener {
     private enum actionid {
-        TURNOFF, TURNON, RCNOW
+        TURNOFF,
+        TURNON,
+        RCNOW
     }
 
     public List<String> getKeywords() {
@@ -31,10 +32,10 @@ public class AwesomeReconnectListener implements ProposalRequestListener {
     public void performAction(final Action action) {
         switch ((actionid) action.getProposal().getActionID()) {
         case TURNOFF:
-            Reconnecter.getInstance().setAutoReconnectEnabled(false);
+            GeneralSettings.AUTO_RECONNECT_ENABLED.setValue(false);
             break;
         case TURNON:
-            Reconnecter.getInstance().setAutoReconnectEnabled(true);
+            GeneralSettings.AUTO_RECONNECT_ENABLED.setValue(true);
             break;
         case RCNOW:
             Reconnecter.getInstance().forceReconnect();
@@ -48,7 +49,7 @@ public class AwesomeReconnectListener implements ProposalRequestListener {
 
         }
         if (request.isParamsEmpty() || request.getParams().startsWith("o")) {
-            if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_ALLOW_RECONNECT, true)) {
+            if (GeneralSettings.AUTO_RECONNECT_ENABLED.getValue()) {
                 new Proposal(this, request, new JLabel("Turn automatic reconnect off"), actionid.TURNOFF, Utils.createProposalListElement(this, request.withParams("off")), 1.0f);
             } else {
                 new Proposal(this, request, new JLabel("Turn automatic reconnect on"), actionid.TURNON, Utils.createProposalListElement(this, request.withParams("on")), 1.0f);

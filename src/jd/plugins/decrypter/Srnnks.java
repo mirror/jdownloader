@@ -164,7 +164,6 @@ public class Srnnks extends PluginForDecrypt {
 
     @Override
     protected DownloadLink createDownloadlink(final String link) {
-        System.out.println(link);
         final DownloadLink dlink = super.createDownloadlink(link);
         dlink.addSourcePluginPasswords(Srnnks.passwords);
         try {

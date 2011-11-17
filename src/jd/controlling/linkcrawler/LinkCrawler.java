@@ -643,7 +643,6 @@ public class LinkCrawler implements IOPermission {
             }
             dl.getLinkStatus().setStatusText(source.getLinkStatus().getStatusString());
             dl.setDownloadSize(source.getDownloadSize());
-            dl.setSubdirectory(source);
         }
     }
 

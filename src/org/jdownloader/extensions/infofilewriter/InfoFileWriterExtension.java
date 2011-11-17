@@ -39,7 +39,6 @@ import jd.nutils.io.JDIO;
 import jd.plugins.AddonPanel;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.plugins.PluginForHost;
 import jd.utils.Replacer;
 import jd.utils.StringUtil;
 
@@ -95,25 +94,23 @@ public class InfoFileWriterExtension extends AbstractExtension<InfoFileWriterCon
     @SuppressWarnings("unchecked")
     public void controlEvent(ControlEvent event) {
         switch (event.getEventID()) {
-        case ControlEvent.CONTROL_PLUGIN_INACTIVE:
-            // Nur Hostpluginevents auswerten
-            if (!(event.getCaller() instanceof PluginForHost)) return;
-
-            DownloadLink dl = ((SingleDownloadController) event.getParameter()).getDownloadLink();
-
-            if (subConfig.getBooleanProperty(PARAM_ONLYPASSWORD, false)) {
-                // only set if password is availale
-                Set<String> pws = FilePackage.getPasswordAuto(dl.getFilePackage());
-                if ((pws.size() == 0)) return;
-            }
-            if (subConfig.getIntegerProperty(PARAM_CREATION, 0) == 0) {
-                FilePackage fp = dl.getFilePackage();
-                if (fp.getRemainingLinks() == 0 && fp.getBooleanProperty(PARAM_CREATE_FILE, true)) {
-                    writeInfoFile(dl);
+        case ControlEvent.CONTROL_DOWNLOAD_FINISHED:
+            if (event.getCaller() instanceof SingleDownloadController) {
+                DownloadLink dl = (DownloadLink) event.getParameter();
+                if (subConfig.getBooleanProperty(PARAM_ONLYPASSWORD, false)) {
+                    // only set if password is availale
+                    Set<String> pws = FilePackage.getPasswordAuto(dl.getFilePackage());
+                    if ((pws.size() == 0)) return;
                 }
-            } else {
-                if (dl.getBooleanProperty(PARAM_CREATE_FILE, true)) {
-                    writeInfoFile(dl);
+                if (subConfig.getIntegerProperty(PARAM_CREATION, 0) == 0) {
+                    FilePackage fp = dl.getFilePackage();
+                    if (fp.getRemainingLinks() == 0 && fp.getBooleanProperty(PARAM_CREATE_FILE, true)) {
+                        writeInfoFile(dl);
+                    }
+                } else {
+                    if (dl.getBooleanProperty(PARAM_CREATE_FILE, true)) {
+                        writeInfoFile(dl);
+                    }
                 }
             }
             break;

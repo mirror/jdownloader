@@ -29,7 +29,6 @@ import jd.controlling.JDLogger;
 import jd.controlling.JDPluginLogger;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.LinkCrawler;
-import jd.event.ControlEvent;
 import jd.gui.UserIO;
 import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.http.Browser;
@@ -378,27 +377,23 @@ public abstract class PluginsC extends Plugin {
 
         if (cls == null || cls.size() == 0) {
             logger.info("Init Container");
-            fireControlEvent(ControlEvent.CONTROL_PLUGIN_ACTIVE, this);
+
+            if (bs != null) k = bs;
             try {
-                if (bs != null) k = bs;
-                try {
-                    doDecryption(filename);
-                } catch (Throwable e) {
-                    logger.severe(e.toString());
+                doDecryption(filename);
+            } catch (Throwable e) {
+                logger.severe(e.toString());
+            }
+
+            logger.info(filename + " Parse");
+            if (cls != null && dlU != null) {
+
+                decryptLinkProtectorLinks();
+
+                final Iterator<DownloadLink> it = cls.iterator();
+                while (it.hasNext()) {
+                    it.next().setLinkType(DownloadLink.LINKTYPE_CONTAINER);
                 }
-
-                logger.info(filename + " Parse");
-                if (cls != null && dlU != null) {
-
-                    decryptLinkProtectorLinks();
-
-                    final Iterator<DownloadLink> it = cls.iterator();
-                    while (it.hasNext()) {
-                        it.next().setLinkType(DownloadLink.LINKTYPE_CONTAINER);
-                    }
-                }
-            } finally {
-                fireControlEvent(ControlEvent.CONTROL_PLUGIN_INACTIVE, this);
             }
         }
     }

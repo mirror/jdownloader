@@ -24,7 +24,6 @@ import java.util.HashMap;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.gui.swing.components.Balloon;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.nativeintegration.LocalBrowser;
@@ -185,7 +184,6 @@ public class NCryptIn extends PluginForDecrypt {
                     if (br.containsHTML("cnl2")) {
                         LocalBrowser.openDefaultURL(new URL(parameter));
                         CNL_URL_MAP.put(parameter, Boolean.TRUE);
-                        Balloon.show(JDL.L("jd.controlling.CNL2.checkText.title", "Click'n'Load"), null, JDL.L("jd.controlling.CNL2.checkText.message", "Click'n'Load URL opened"));
                         throw new DecrypterException(JDL.L("jd.controlling.CNL2.checkText.message", "Click'n'Load URL opened"));
                     }
                     logger.warning("Didn't find anything to decrypt, stopping...");

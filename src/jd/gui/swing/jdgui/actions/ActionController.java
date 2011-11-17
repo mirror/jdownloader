@@ -20,9 +20,6 @@ import java.awt.event.ActionEvent;
 import java.io.File;
 import java.util.ArrayList;
 
-import jd.config.ConfigPropertyListener;
-import jd.config.Configuration;
-import jd.config.Property;
 import jd.controlling.ClipboardHandler;
 import jd.controlling.IOEQ;
 import jd.controlling.JDController;
@@ -33,9 +30,7 @@ import jd.event.ControlIDListener;
 import jd.gui.UserIF;
 import jd.gui.UserIO;
 import jd.gui.swing.SwingGui;
-import jd.gui.swing.jdgui.components.premiumbar.PremiumStatus;
 import jd.gui.swing.jdgui.views.settings.panels.addons.ExtensionManager;
-import jd.gui.swing.jdgui.views.settings.panels.passwords.PasswordList;
 import jd.nutils.JDFlags;
 import jd.utils.JDUtilities;
 import jd.utils.WebUpdate;
@@ -47,6 +42,7 @@ import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.settings.GeneralSettings;
+import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 
 /**
  * Class to control toolbar actions
@@ -131,14 +127,14 @@ public class ActionController {
 
                 @Override
                 public void initAction() {
-                    JDController.getInstance().addControlListener(new ControlIDListener(ControlEvent.CONTROL_DOWNLOAD_START, ControlEvent.CONTROL_DOWNLOAD_STOP) {
+                    JDController.getInstance().addControlListener(new ControlIDListener(ControlEvent.CONTROL_DOWNLOADWATCHDOG_START, ControlEvent.CONTROL_DOWNLOADWATCHDOG_STOP) {
                         @Override
                         public void controlIDEvent(final ControlEvent event) {
                             switch (event.getEventID()) {
-                            case ControlEvent.CONTROL_DOWNLOAD_START:
+                            case ControlEvent.CONTROL_DOWNLOADWATCHDOG_START:
                                 setEnabled(false);
                                 break;
-                            case ControlEvent.CONTROL_DOWNLOAD_STOP:
+                            case ControlEvent.CONTROL_DOWNLOADWATCHDOG_STOP:
                                 setEnabled(true);
                                 break;
                             }
@@ -176,15 +172,15 @@ public class ActionController {
 
                 @Override
                 public void initAction() {
-                    JDController.getInstance().addControlListener(new ControlIDListener(ControlEvent.CONTROL_DOWNLOAD_START, ControlEvent.CONTROL_DOWNLOAD_STOP) {
+                    JDController.getInstance().addControlListener(new ControlIDListener(ControlEvent.CONTROL_DOWNLOADWATCHDOG_START, ControlEvent.CONTROL_DOWNLOADWATCHDOG_STOP) {
                         @Override
                         public void controlIDEvent(final ControlEvent event) {
                             switch (event.getEventID()) {
-                            case ControlEvent.CONTROL_DOWNLOAD_START:
+                            case ControlEvent.CONTROL_DOWNLOADWATCHDOG_START:
                                 setEnabled(true);
                                 setSelected(false);
                                 break;
-                            case ControlEvent.CONTROL_DOWNLOAD_STOP:
+                            case ControlEvent.CONTROL_DOWNLOADWATCHDOG_STOP:
                                 setEnabled(false);
                                 setSelected(false);
                                 break;
@@ -248,14 +244,14 @@ public class ActionController {
 
                 @Override
                 public void initAction() {
-                    JDController.getInstance().addControlListener(new ControlIDListener(ControlEvent.CONTROL_DOWNLOAD_START, ControlEvent.CONTROL_DOWNLOAD_STOP) {
+                    JDController.getInstance().addControlListener(new ControlIDListener(ControlEvent.CONTROL_DOWNLOADWATCHDOG_START, ControlEvent.CONTROL_DOWNLOADWATCHDOG_STOP) {
                         @Override
                         public void controlIDEvent(final ControlEvent event) {
                             switch (event.getEventID()) {
-                            case ControlEvent.CONTROL_DOWNLOAD_START:
+                            case ControlEvent.CONTROL_DOWNLOADWATCHDOG_START:
                                 setEnabled(true);
                                 break;
-                            case ControlEvent.CONTROL_DOWNLOAD_STOP:
+                            case ControlEvent.CONTROL_DOWNLOADWATCHDOG_STOP:
                                 setEnabled(false);
                                 break;
                             }
@@ -403,10 +399,13 @@ public class ActionController {
 
                 @Override
                 public void initAction() {
-                    JDController.getInstance().addControlListener(new ConfigPropertyListener(Configuration.PARAM_CLIPBOARD_ALWAYS_ACTIVE) {
-                        @Override
-                        public void onPropertyChanged(final Property source, final String key) {
-                            setSelected(source.getBooleanProperty(key, true));
+                    GraphicalUserInterfaceSettings.CLIPBOARD_MONITORED.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
+
+                        public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
+                            setSelected(newValue);
+                        }
+
+                        public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
                         }
                     });
                 }
@@ -414,7 +413,7 @@ public class ActionController {
                 @Override
                 public void initDefaults() {
                     this.setType(ToolBarAction.Types.TOGGLE);
-                    this.setSelected(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_CLIPBOARD_ALWAYS_ACTIVE, true));
+                    this.setSelected(GraphicalUserInterfaceSettings.CLIPBOARD_MONITORED.isEnabled());
                 }
 
                 @Override
@@ -443,23 +442,27 @@ public class ActionController {
 
                 @Override
                 public void initAction() {
-                    JDController.getInstance().addControlListener(new ConfigPropertyListener(Configuration.PARAM_ALLOW_RECONNECT) {
-                        @Override
-                        public void onPropertyChanged(final Property source, final String key) {
-                            setSelected(source.getBooleanProperty(key, true));
+                    GeneralSettings.AUTO_RECONNECT_ENABLED.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
+
+                        public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
+                        }
+
+                        public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
+                            setSelected(newValue);
                         }
                     });
+
                 }
 
                 @Override
                 public void initDefaults() {
                     this.setType(ToolBarAction.Types.TOGGLE);
-                    this.setSelected(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_ALLOW_RECONNECT, true));
+                    this.setSelected(GeneralSettings.AUTO_RECONNECT_ENABLED.isEnabled());
                 }
 
                 @Override
                 public void onAction(final ActionEvent e) {
-                    Reconnecter.getInstance().setAutoReconnectEnabled(!Reconnecter.getInstance().isAutoReconnectEnabled());
+                    GeneralSettings.AUTO_RECONNECT_ENABLED.toggle();
                 }
 
                 @Override
@@ -515,14 +518,14 @@ public class ActionController {
 
                 @Override
                 protected void initAction() {
-                    JDController.getInstance().addControlListener(new ControlIDListener(ControlEvent.CONTROL_DOWNLOAD_START, ControlEvent.CONTROL_DOWNLOAD_STOP) {
+                    JDController.getInstance().addControlListener(new ControlIDListener(ControlEvent.CONTROL_DOWNLOADWATCHDOG_START, ControlEvent.CONTROL_DOWNLOADWATCHDOG_STOP) {
                         @Override
                         public void controlIDEvent(final ControlEvent event) {
                             switch (event.getEventID()) {
-                            case ControlEvent.CONTROL_DOWNLOAD_START:
+                            case ControlEvent.CONTROL_DOWNLOADWATCHDOG_START:
                                 setEnabled(true);
                                 break;
-                            case ControlEvent.CONTROL_DOWNLOAD_STOP:
+                            case ControlEvent.CONTROL_DOWNLOADWATCHDOG_STOP:
                                 setEnabled(false);
                                 break;
                             }
@@ -614,29 +617,22 @@ public class ActionController {
                 @Override
                 public void initDefaults() {
                     this.setType(ToolBarAction.Types.TOGGLE);
-                    this.setSelected(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true));
+                    this.setSelected(GeneralSettings.USE_AVAILABLE_ACCOUNTS.isEnabled());
+                    GeneralSettings.USE_AVAILABLE_ACCOUNTS.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
 
-                    JDController.getInstance().addControlListener(new ConfigPropertyListener(Configuration.PARAM_USE_GLOBAL_PREMIUM) {
-                        @Override
-                        public void onPropertyChanged(final Property source, final String key) {
-                            final boolean b = source.getBooleanProperty(key, true);
-                            setSelected(b);
-                            PremiumStatus.getInstance().updateGUI(b);
+                        public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
+                        }
+
+                        public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
+                            setSelected(newValue);
                         }
                     });
+
                 }
 
                 @Override
                 public void onAction(final ActionEvent e) {
-                    if (!this.isSelected()) {
-                        final int answer = UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.DONT_SHOW_AGAIN_IGNORES_CANCEL, _GUI._.dialogs_premiumstatus_global_title(), _GUI._.dialogs_premiumstatus_global_message(), UserIO.getInstance().getIcon(UserIO.ICON_WARNING), _GUI._.gui_btn_yes(), _GUI._.gui_btn_no());
-                        if (JDFlags.hasAllFlags(answer, UserIO.RETURN_CANCEL)) {
-                            this.setSelected(true);
-                            return;
-                        }
-                    }
-                    JDUtilities.getConfiguration().setProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, this.isSelected());
-                    JDUtilities.getConfiguration().save();
+                    GeneralSettings.USE_AVAILABLE_ACCOUNTS.toggle();
                 }
 
                 @Override
@@ -683,33 +679,6 @@ public class ActionController {
                 }
             };
 
-            new ToolBarAction(_GUI._.action_passwordlist(), "action.passwordlist", PasswordList.getIconKey()) {
-                private static final long serialVersionUID = -4111402172655120550L;
-
-                @Override
-                public void initDefaults() {
-                }
-
-                @Override
-                public void onAction(final ActionEvent e) {
-                    SwingGui.getInstance().requestPanel(UserIF.Panels.CONFIGPANEL, PasswordList.class);
-                }
-
-                @Override
-                protected String createMnemonic() {
-                    return _GUI._.action_passwordlist_mnemonics();
-                }
-
-                @Override
-                protected String createAccelerator() {
-                    return _GUI._.action_passwordlist_accelerator();
-                }
-
-                @Override
-                protected String createTooltip() {
-                    return _GUI._.action_passwordlist_tooltip();
-                }
-            };
         }
     }
 

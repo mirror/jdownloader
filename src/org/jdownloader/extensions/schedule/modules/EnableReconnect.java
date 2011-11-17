@@ -16,11 +16,10 @@
 
 package org.jdownloader.extensions.schedule.modules;
 
-import jd.controlling.reconnect.Reconnecter;
-
 import org.jdownloader.extensions.schedule.SchedulerModule;
 import org.jdownloader.extensions.schedule.SchedulerModuleInterface;
 import org.jdownloader.extensions.schedule.translate.T;
+import org.jdownloader.settings.GeneralSettings;
 
 @SchedulerModule
 public class EnableReconnect implements SchedulerModuleInterface {
@@ -32,7 +31,7 @@ public class EnableReconnect implements SchedulerModuleInterface {
     }
 
     public void execute(final String parameter) {
-        Reconnecter.getInstance().setAutoReconnectEnabled(true);
+        GeneralSettings.AUTO_RECONNECT_ENABLED.setValue(true);
     }
 
     public String getTranslation() {
