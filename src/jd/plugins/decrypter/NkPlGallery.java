@@ -85,12 +85,16 @@ public class NkPlGallery extends PluginForDecrypt {
                 final String galleryID = new Regex(parameter, "album=(\\d+)").getMatch(0);
                 final String galleryCount = br.getRegex("data-count=\"(\\d+)\" data-album-id=\"" + galleryID + "\"").getMatch(0);
                 if (galleryCount == null) { return null; }
+                final String profileNumber = new Regex(parameter, "nk.pl/#profile/(\\d+)").getMatch(0);
+                final String profilName = br.getRegex("<h3><a href=\"/profile/" + profileNumber + "\">(.*?)</a></h3>").getMatch(0);
                 String galleryName = br.getRegex("album_name\" title=\"(.*?)\"").getMatch(0);
-                if (galleryName == null) {
-                    galleryName = "Gallery " + new Regex(parameter, "nk.pl/profile/(\\d+)").getMatch(0);
+                galleryName = galleryName == null ? "Album" : galleryName;
+                if (profilName == null) {
+                    galleryName += "_" + galleryID + "_profile" + profileNumber;
                 } else {
-                    galleryName += "_" + galleryID;
+                    galleryName += "_" + galleryID + "_" + profilName + "_profile" + profileNumber;
                 }
+                galleryName = galleryName.replaceAll("\\s+", "_");
 
                 // calculating ajax requests
                 final int count = Integer.parseInt(galleryCount);

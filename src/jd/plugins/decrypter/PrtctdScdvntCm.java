@@ -59,7 +59,7 @@ public class PrtctdScdvntCm extends PluginForDecrypt {
         }
         final String cpPage = br.getRegex("\"(plugin/.*?)\"").getMatch(0);
         final String sendCaptcha = "kpr.php";
-        final String getList = "links.php";
+        final String getList = "llinks.php";
         br.postPage(MAINPAGE + getList, "LinkName=" + postvar);
         final String[] linksCount = br.getRegex("(moc\\.tenvdacos\\.detcetorp//:ptth)").getColumn(0);
         if (linksCount == null || linksCount.length == 0) { return null; }
