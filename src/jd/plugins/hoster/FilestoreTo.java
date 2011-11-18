@@ -16,11 +16,12 @@
 
 package jd.plugins.hoster;
 
-import java.io.IOException;
+import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -32,6 +33,8 @@ import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filestore.to" }, urls = { "http://[\\w\\.]*?filestore\\.to/\\?d=[A-Z0-9]+" }, flags = { 0 })
 public class FilestoreTo extends PluginForHost {
+
+    private String aBrowser = "";
 
     public FilestoreTo(final PluginWrapper wrapper) {
         super(wrapper);
@@ -85,13 +88,32 @@ public class FilestoreTo extends PluginForHost {
         dl.startDownload();
     }
 
+    public void haveFun() throws Exception {
+        final ArrayList<String> someStuff = new ArrayList<String>();
+        final ArrayList<String> regexStuff = new ArrayList<String>();
+        regexStuff.add("(<.*?>)");
+        regexStuff.add("( )");
+        for (final String aRegex : regexStuff) {
+            aBrowser = br.toString();
+            final String replaces[] = br.getRegex(aRegex).getColumn(0);
+            if (replaces != null && replaces.length != 0) {
+                for (final String dingdang : replaces) {
+                    someStuff.add(dingdang);
+                }
+            }
+        }
+        for (final String gaMing : someStuff) {
+            aBrowser = aBrowser.replace(gaMing, "");
+        }
+    }
+
     @Override
     public void init() {
         Browser.setRequestIntervalLimitGlobal(getHost(), 500);
     }
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         setBrowserExclusive();
         // All other browsers seem to be blocked
         br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows; U; Windows NT 6.1; de; rv:1.9.2.17) Gecko/20110420 Firefox/3.6.17");
@@ -107,8 +129,9 @@ public class FilestoreTo extends PluginForHost {
             }
             if (br.containsHTML(">Download\\-Datei wurde nicht gefunden<")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
             if (br.containsHTML("Entweder wurde die Datei von unseren Servern entfernt oder der Download-Link war")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-            downloadName = br.getRegex(">(Datei|Dateiname|FileName):(</span>)?</td>[\t\n\r ]+<td>(<strong)? [^<>]+\">(.*?)(</strong>)?</td>").getMatch(3);
-            downloadSize = br.getRegex(">Dateigröße:(</span>)?</td>[\t\n\r ]+<td>(<strong)?([^<>]+\")?>(\\d+,\\d+ .{1,4})(</strong>)?</td>").getMatch(3);
+            haveFun();
+            downloadName = new Regex(aBrowser, "(Datei|Dateiname|FileName|Filename):\n(.*?)\n").getMatch(1);
+            downloadSize = new Regex(aBrowser, "(Dateigröße|Filesize):\n(.*?)\n").getMatch(1);
             if (downloadName != null) {
                 downloadLink.setName(Encoding.htmlDecode(downloadName));
                 if (downloadSize != null) {
@@ -133,4 +156,5 @@ public class FilestoreTo extends PluginForHost {
     @Override
     public void resetPluginGlobals() {
     }
+
 }
