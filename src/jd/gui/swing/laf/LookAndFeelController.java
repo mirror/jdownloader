@@ -264,12 +264,8 @@ public class LookAndFeelController {
             }
 
         } else if (isSubstance()) {
-            try {
-                final JDSubstanceFontPolicy fp = new JDSubstanceFontPolicy(org.pushingpixels.substance.api.SubstanceLookAndFeel.getFontPolicy().getFontSet("substance", null), fontName, fontSize);
-                org.pushingpixels.substance.api.SubstanceLookAndFeel.setFontPolicy(fp);
-            } catch (Throwable e) {
-                Log.exception(e);
-            }
+            doSubstance();
+
         } else {
             try {
                 Font font = Font.getFont(fontName);
@@ -289,6 +285,15 @@ public class LookAndFeelController {
             } catch (Throwable e) {
                 Log.exception(e);
             }
+        }
+    }
+
+    private void doSubstance() {
+        try {
+            final JDSubstanceFontPolicy fp = new JDSubstanceFontPolicy(org.pushingpixels.substance.api.SubstanceLookAndFeel.getFontPolicy().getFontSet("substance", null), fontName, fontSize);
+            org.pushingpixels.substance.api.SubstanceLookAndFeel.setFontPolicy(fp);
+        } catch (Throwable e) {
+            Log.exception(e);
         }
     }
 
