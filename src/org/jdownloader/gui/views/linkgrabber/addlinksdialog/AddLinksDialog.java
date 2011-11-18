@@ -9,6 +9,8 @@ import java.awt.event.HierarchyEvent;
 import java.awt.event.HierarchyListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.event.WindowEvent;
+import java.awt.event.WindowListener;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -82,6 +84,7 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
     private JLabel                 errorLabel;
 
     private DelayedRunnable        delayedValidate;
+    private WindowListener         listener    = null;
 
     public boolean isDeepAnalyse() {
         return deepAnalyse;
@@ -287,24 +290,82 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
         p.add(password, "pushx,growx,height 24!");
 
         updateExtractionOptions();
-        String newText = ClipboardHandler.getClipboard().getCurrentClipboardLinks();
-        String pre = config.getPresetDebugLinks();
-        if (!StringUtils.isEmpty(pre)) {
-            newText = pre;
-        }
-        if (config.isAddLinksPreParserEnabled()) {
-            if (newText != null) input.setText(list(HTMLParser.getHttpLinks(newText)));
-            if (Application.getJavaVersion() >= 17000000) {
-                J17DragAndDropDelegater dnd = new J17DragAndDropDelegater(input);
-                input.setTransferHandler(dnd);
-            } else {
-                DragAndDropDelegater dnd = new DragAndDropDelegater(input);
-                input.setTransferHandler(dnd);
-            }
+        if (Application.getJavaVersion() >= 17000000) {
+            J17DragAndDropDelegater dnd = new J17DragAndDropDelegater(input);
+            input.setTransferHandler(dnd);
         } else {
-            if (newText != null) input.setText(newText);
+            DragAndDropDelegater dnd = new DragAndDropDelegater(input);
+            input.setTransferHandler(dnd);
         }
-        delayedValidate.run();
+        input.setEditable(false);
+        this.getDialog().addWindowListener(listener = new WindowListener() {
+
+            public void windowOpened(WindowEvent e) {
+                new Thread() {
+
+                    @Override
+                    public void run() {
+                        inform();
+                        String newText = config.getPresetDebugLinks();
+                        if (StringUtils.isEmpty(newText)) {
+                            newText = ClipboardHandler.getClipboard().getCurrentClipboardLinks();
+                        }
+                        if (config.isAddLinksPreParserEnabled()) {
+                            if (!StringUtils.isEmpty(newText)) {
+                                new EDTRunner() {
+                                    @Override
+                                    protected void runInEDT() {
+                                        input.setText(_GUI._.AddLinksDialog_ParsingClipboard());
+                                    };
+                                };
+                                newText = (list(HTMLParser.getHttpLinks(newText)));
+                            }
+                        }
+                        final String txt = newText;
+                        if (!StringUtils.isEmpty(newText)) {
+                            new EDTRunner() {
+
+                                @Override
+                                protected void runInEDT() {
+                                    input.setText(txt);
+                                    input.setEditable(true);
+                                    delayedValidate.run();
+                                }
+                            };
+                        } else {
+                            new EDTRunner() {
+                                @Override
+                                protected void runInEDT() {
+                                    input.setText("");
+                                    input.setEditable(true);
+                                };
+                            };
+                        }
+
+                    }
+
+                }.start();
+                if (listener != null) getDialog().removeWindowListener(listener);
+            }
+
+            public void windowIconified(WindowEvent e) {
+            }
+
+            public void windowDeiconified(WindowEvent e) {
+            }
+
+            public void windowDeactivated(WindowEvent e) {
+            }
+
+            public void windowClosing(WindowEvent e) {
+            }
+
+            public void windowClosed(WindowEvent e) {
+            }
+
+            public void windowActivated(WindowEvent e) {
+            }
+        });
         return p;
     }
 
@@ -315,7 +376,6 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
         for (final String element : links) {
             if (ret.length() > 0) ret.append("\r\n");
             ret.append(element.trim());
-
         }
         return ret.toString();
     }
@@ -380,7 +440,7 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
         }
     }
 
-    protected void packed() {
+    private void inform() {
         new Thread() {
             public void run() {
                 try {

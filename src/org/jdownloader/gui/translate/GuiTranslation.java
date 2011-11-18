@@ -3277,4 +3277,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Permanently Offline" })
     String Permanently_Offline_Package();
 
+    @Default(lngs = { "en" }, values = { "Please wait: Parsing Clipboard content" })
+    String AddLinksDialog_ParsingClipboard();
+
 }
