@@ -9,6 +9,7 @@
 
 
 	<property name="working" value="update" />
+	
 	<property name="cls" value="${working}/bin" />
 	<property name="dist" value="${working}/dist" />
 	<property name="res" value="ressourcen" />
@@ -37,8 +38,9 @@
 
 	<!-- Deletes the old build -->
 	<target name="clean">
+
+		<delete dir="${working}/bin" />
 		<delete dir="${dist}" />
-		<delete dir="${dist}/bin" />
 		<mkdir dir="${dist}" />
 		<mkdir dir="${working}" />
 	</target>
@@ -49,28 +51,28 @@
 
 		<!-- Build dependencies -->
 
-		<javac srcdir="${dep.awu}/src" excludes="**/test/**" debug="${debug}" destdir="${cls}" encoding="UTF-8" source="1.5" target="1.5">
+		<javac srcdir="${dep.awu}/src" excludes="**/test/**" debug="${debug}" destdir="${cls}"  encoding="UTF-8" source="1.6" target="1.6" includeantruntime="false">
 			<classpath refid="classpath" />
 
 		</javac>
 
-		<javac srcdir="${dep.browser}/src" excludes="" debug="${debug}" destdir="${cls}" encoding="UTF-8" source="1.5" target="1.5">
+		<javac srcdir="${dep.browser}/src" excludes="" debug="${debug}" destdir="${cls}" encoding="UTF-8" source="1.6" target="1.6" includeantruntime="false">
 			<classpath refid="classpath" />
 
 		</javac>
 
 	
 
-		<javac srcdir="${dep.updateclient}/src" excludes="" debug="${debug}" destdir="${cls}" encoding="UTF-8" source="1.5" target="1.5">
+		<javac srcdir="${dep.updateclient}/src" excludes="" debug="${debug}" destdir="${cls}" encoding="UTF-8" source="1.6" target="1.6" includeantruntime="false">
 			<classpath refid="classpath" />
 
 		</javac>
-		<javac srcdir="${dep.update}/src" excludes="" debug="${debug}" destdir="${cls}" encoding="UTF-8" source="1.5" target="1.5">
+		<javac srcdir="${dep.update}/src" excludes="" debug="${debug}" destdir="${cls}" encoding="UTF-8" source="1.6" target="1.6" includeantruntime="false">
 			<classpath refid="classpath" />
 
 		</javac>
 
-		<javac srcdir="src" debug="${debug}" excludes="org/jdownloader/extensions/neembuu/**/*,org/jdownloader/extensions/remoteserv/**/*" destdir="${cls}" encoding="UTF-8" source="1.5" target="1.5">
+		<javac srcdir="src" debug="${debug}" excludes="org/jdownloader/extensions/langfileeditor/**/*,org/jdownloader/extensions/neembuu/**/*,org/jdownloader/extensions/remoteserv/**/*" destdir="${cls}" encoding="UTF-8" source="1.6" target="1.6" includeantruntime="false">
 			<classpath refid="classpath" />
 
 		</javac>
@@ -88,6 +90,9 @@
 		<copy todir="${dist}/libs">
 			<fileset dir="${res}/libs" includes="**/*" />
 		</copy>
+		<copy todir="${dist}/themes">
+				<fileset dir="themes" includes="**/*" />
+			</copy>
 		<copy todir="${dist}/licenses">
 			<fileset dir="${res}/licenses" includes="**/*" />
 		</copy>
@@ -153,13 +158,13 @@
 			<attribute name="Created-By" value="JD-Team and AppWork GmbH" />
 			<attribute name="Main-Class" value="jd.Main" />
 			<!-- plugins that serialize own classes have to be put in the classpath -->
-			<attribute name="Class-Path" value="${class-path} plugins/Customizer.jar plugins/JDScheduler.jar" />
+			<attribute name="Class-Path" value="${class-path} extensions/Customizer.jar  extensions/JDScheduler.jar extensions/Extraction.jar extensions/JDTray.jar" />
 		</manifest>
 		<jar file="${dist}/JDownloader.jar" manifest="${dist}/Manifest.MF">
 			<fileset dir="${cls}">
 				<include name="**/*.class" />
 
-				<exclude name="jd/controlling/reconnect/plugins/*/**" />
+				<exclude name="jd/controlling/reconnect/plugins/*/**/*" />
 				<exclude name="jd/captcha/**" />
 				<exclude name="org/appwork/**/*" />
 				<exclude name="jd/dynamics/**" />
@@ -169,7 +174,7 @@
 				<exclude name="jd/nutils/**" />
 				<exclude name="jd/plugins/hoster/**" />
 				<exclude name="jd/plugins/decrypter/**" />
-				<exclude name="org/jdownloader/extensions/**" />
+				<exclude name="org/jdownloader/extensions/*/**/*" />
 				<exclude name="jd/utils/dev/**" />
 				<exclude name="tests/**" />
 				<exclude name="**/test/**" />
@@ -182,13 +187,7 @@
 				<include name="**/*.lng" />
 				<include name="**/*.png" />
 			</fileset>
-			<!-- Put all plugins which should included in here -->
-			<fileset dir="${cls}">
-				<include name="jd/controlling/reconnect/plugins/extern/**" />
-				<include name="jd/controlling/reconnect/plugins/liveheader/**" />
-				<include name="jd/controlling/reconnect/plugins/upnp/**" />
-
-			</fileset>
+	
 
 			<fileset dir="${res}">
 				<include name="*.properties" />
@@ -290,11 +289,11 @@
 		<attribute name="include" />
 		<sequential>
 			<echo message="Creating @{package}" />
-			<mkdir dir="${dist}/plugins" />
+			<mkdir dir="${dist}/extensions" />
 
 
 
-			<jar jarfile="${dist}/plugins/@{package}.jar" manifest="${dist}/Manifest.MF">
+			<jar jarfile="${dist}/extensions/@{package}.jar" manifest="${dist}/Manifest.MF">
 				<fileset dir="${cls}">
 					<include name="org/jdownloader/extensions/@{include}" />
 				</fileset>
@@ -312,31 +311,15 @@
 			<attribute name="Created-By" value="JD-Team and Friends" />
 		</manifest>
 		<buildAddon package="JDChat" include="chat/**/*" />
-		<buildAddon package="JDWebinterface" include="webinterface/**/*" />
-		<!-- Build optional addon plugins -->
-		<mkdir dir="${dist}/plugins/webinterface/" />
-		<copy todir="${dist}/plugins/webinterface/">
-			<fileset dir="src/org/jdownloader/extensions/webinterface/html">
-				<exclude name="**/*.java" />
-			</fileset>
-		</copy>
 		<buildAddon package="infobar" include="infobar/**/*" />
-		<buildAddon package="lecturnity" include="lecturnity/**/*" />
-		<buildAddon package="JDRemoteControl" include="remotecontrol/**/*" />
 		<buildAddon package="JDScheduler" include="schedule/**/*" />
 		<buildAddon package="JDShutdown" include="shutdown/**/*" />
 		<buildAddon package="improveddock" include="improveddock/**/*" />
-		<buildAddon package="JDLangFileEditor" include="langfileeditor/**/*" />
 		<buildAddon package="JDInfoFileWriter" include="infofilewriter/**/*" />
-		<buildAddon package="JDUnrar" include="jdunrar/**/*" />
-		<buildAddon package="JDHJMerge" include="hjsplit/**/*" />
 		<buildAddon package="JDTray" include="jdtrayicon/**/*" />
-		<buildAddon package="ExternInterface" include="interfaces/**/*" />
 		<buildAddon package="JDPremium" include="jdpremclient/**/*" />
 		<buildAddon package="JDGrowl" include="growl/**/*" />
-		<buildAddon package="Customizer" include="customizer/**/*" />
 		<buildAddon package="AntiShutdown" include="antistandby/**/*" />
-		<buildAddon package="RouterDBEditor" include="routerdbeditor/**/*" />
 		<buildAddon package="scriptlauncher" include="scriptlauncher/**/*" />
 		<buildAddon package="JDFeedMe" include="jdfeedme/**/*" />
 		<buildAddon package="AntiReconnect" include="antireconnect/**/*" />
@@ -366,7 +349,7 @@
 			<attribute name="Created-By" value="JD-Team" />
 		</manifest>
 
-		<buildRecPlugin name="batch" />
+
 
 		<delete file="${dist}/Manifest.MF" failonerror="false" />
 	</target>
@@ -390,5 +373,7 @@
 	<target name="all" depends="clean,compile,copy_res,jarMain,copy_compiled,jarReconnectOptionals,jarWebupdater,jarOptionals,sign">
 		<echo message="Finished." />
 	</target>
-
+	<target name="withoutsign" depends="clean,compile,copy_res,jarMain,copy_compiled,jarReconnectOptionals,jarWebupdater,jarOptionals">
+			<echo message="Finished." />
+		</target>
 </project>

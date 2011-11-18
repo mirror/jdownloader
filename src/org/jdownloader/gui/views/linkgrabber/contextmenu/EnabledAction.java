@@ -52,8 +52,9 @@ public class EnabledAction extends AppAction {
             if (a instanceof AbstractPackageNode) {
                 /* check children of this package */
                 synchronized (a) {
-                    AbstractPackageNode<AbstractPackageChildrenNode, ?> pkg = (AbstractPackageNode<AbstractPackageChildrenNode, ?>) a;
-                    List<AbstractPackageChildrenNode> children = pkg.getChildren();
+                    @SuppressWarnings("unchecked")
+                    AbstractPackageNode<AbstractPackageChildrenNode<?>, ?> pkg = (AbstractPackageNode<AbstractPackageChildrenNode<?>, ?>) a;
+                    List<AbstractPackageChildrenNode<?>> children = pkg.getChildren();
                     for (AbstractPackageChildrenNode<?> child : children) {
                         if (first == null) first = child.isEnabled();
                         if (child.isEnabled() != first) { return State.MIXED; }
@@ -77,8 +78,9 @@ public class EnabledAction extends AppAction {
                 for (AbstractNode a : selection) {
                     if (a instanceof AbstractPackageNode) {
                         synchronized (a) {
-                            AbstractPackageNode<AbstractPackageChildrenNode, ?> pkg = (AbstractPackageNode<AbstractPackageChildrenNode, ?>) a;
-                            List<AbstractPackageChildrenNode> children = pkg.getChildren();
+                            @SuppressWarnings("unchecked")
+                            AbstractPackageNode<AbstractPackageChildrenNode<?>, ?> pkg = (AbstractPackageNode<AbstractPackageChildrenNode<?>, ?>) a;
+                            List<AbstractPackageChildrenNode<?>> children = pkg.getChildren();
                             for (AbstractPackageChildrenNode<?> child : children) {
                                 child.setEnabled(enable);
                             }

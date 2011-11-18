@@ -19,12 +19,12 @@ import java.util.regex.Pattern;
 import jd.config.Configuration;
 import jd.controlling.CodeVerifier;
 import jd.controlling.JDLogger;
-import jd.controlling.reconnect.batch.ExternBatchReconnectPlugin;
-import jd.controlling.reconnect.extern.ExternReconnectPlugin;
 import jd.controlling.reconnect.ipcheck.IPController;
-import jd.controlling.reconnect.liveheader.CLRConverter;
-import jd.controlling.reconnect.liveheader.LiveHeaderReconnect;
-import jd.controlling.reconnect.upnp.UPNPRouterPlugin;
+import jd.controlling.reconnect.pluginsinc.batch.ExternBatchReconnectPlugin;
+import jd.controlling.reconnect.pluginsinc.extern.ExternReconnectPlugin;
+import jd.controlling.reconnect.pluginsinc.liveheader.CLRConverter;
+import jd.controlling.reconnect.pluginsinc.liveheader.LiveHeaderReconnect;
+import jd.controlling.reconnect.pluginsinc.upnp.UPNPRouterPlugin;
 import jd.nutils.io.JDFileFilter;
 import jd.utils.JDUtilities;
 

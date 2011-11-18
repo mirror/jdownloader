@@ -48,7 +48,7 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
 
     private ScheduledThreadPoolExecutor queue = new ScheduledThreadPoolExecutor(1);
 
-    private DelayedRunnable                                                         asyncRecreateFast;
+    private DelayedRunnable             asyncRecreateFast;
 
     public PackageControllerTableModel(PackageController<PackageType, ChildrenType> pc, String id) {
         super(id);
@@ -121,8 +121,8 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
         refreshModel(true);
     }
 
-    public void sortPackageChildren(final AbstractPackageNode pkg, Comparator<AbstractNode> comparator) {
-        pc.sortPackageChildren((PackageType) pkg, (Comparator<ChildrenType>) comparator);
+    public void sortPackageChildren(final AbstractPackageNode pkg, Comparator<ChildrenType> comparator) {
+        pc.sortPackageChildren((PackageType) pkg, comparator);
     }
 
     public void toggleFilePackageExpand(final AbstractPackageNode fp2, final TOGGLEMODE mode) {

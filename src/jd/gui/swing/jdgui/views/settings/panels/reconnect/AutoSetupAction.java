@@ -10,9 +10,9 @@ import jd.controlling.reconnect.RouterPlugin;
 import jd.controlling.reconnect.RouterUtils;
 import jd.controlling.reconnect.WizardUtils;
 import jd.controlling.reconnect.ipcheck.IPController;
-import jd.controlling.reconnect.liveheader.LiveHeaderReconnectResult;
-import jd.controlling.reconnect.liveheader.ReconnectFindDialog;
-import jd.controlling.reconnect.liveheader.translate.T;
+import jd.controlling.reconnect.pluginsinc.liveheader.LiveHeaderReconnectResult;
+import jd.controlling.reconnect.pluginsinc.liveheader.ReconnectFindDialog;
+import jd.controlling.reconnect.pluginsinc.liveheader.translate.T;
 
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.swing.action.BasicAction;

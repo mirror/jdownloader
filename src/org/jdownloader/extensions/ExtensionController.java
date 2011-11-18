@@ -175,6 +175,7 @@ public class ExtensionController {
                     URL url;
                     while (urls.hasMoreElements()) {
                         url = urls.nextElement();
+                        System.out.println(url);
                         if ("jar".equalsIgnoreCase(url.getProtocol())) {
                             // jarred addon (JAR)
                             File jarFile = new File(new URL(url.getPath().substring(4, url.toString().lastIndexOf('!'))).toURI());

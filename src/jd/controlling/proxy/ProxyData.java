@@ -10,11 +10,14 @@ public class ProxyData implements Storable {
     }
 
     public static enum StatusID {
-        OK, OFFLINE, INVALIDAUTH
+        OK,
+        OFFLINE,
+        INVALIDAUTH
     }
 
     public static enum Type {
-        SOCKS5, HTTP
+        SOCKS5,
+        HTTP
     }
 
     private String host = null;
