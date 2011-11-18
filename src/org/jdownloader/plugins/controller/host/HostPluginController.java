@@ -86,7 +86,7 @@ public class HostPluginController extends PluginController<PluginForHost> {
             Log.L.severe("@HostPluginController: WTF, no plugins!");
         }
         try {
-            Collections.sort(list, new Comparator<LazyHostPlugin>() {
+            Collections.sort(plugins, new Comparator<LazyHostPlugin>() {
 
                 public int compare(LazyHostPlugin o1, LazyHostPlugin o2) {
                     return o1.getDisplayName().compareTo(o2.getDisplayName());
