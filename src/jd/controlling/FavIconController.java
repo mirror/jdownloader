@@ -15,9 +15,10 @@ import jd.captcha.utils.GifDecoder;
 import jd.config.SubConfiguration;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
-import jd.nutils.JDImage;
-import jd.utils.JDUtilities;
 import net.sf.image4j.codec.ico.ICODecoder;
+
+import org.appwork.utils.Application;
+import org.jdownloader.images.NewTheme;
 
 //final, because the constructor calls Thread.start(),
 //see http://findbugs.sourceforge.net/bugDescriptions.html#SC_START_IN_CTOR
@@ -34,8 +35,11 @@ public final class FavIconController extends SubConfiguration implements Runnabl
         if (host == null) return null;
         synchronized (LOCK) {
             /* check if we already have a favicon? */
-            ImageIcon image = JDImage.getImageIcon("favicons/" + host);
-            if (image != null) return image;
+            if (NewTheme.I().hasIcon("fav/" + host)) {
+                ImageIcon image = NewTheme.I().getIcon("fav/" + host, -1);
+                if (image != null) return image;
+            }
+
         }
         /* add to queue list */
         getInstance().add(host, requestor);
@@ -129,10 +133,13 @@ public final class FavIconController extends SubConfiguration implements Runnabl
                 } else {
                     try {
                         /* buffer favicon to disk */
-                        File imageFile = JDUtilities.getResourceFile("jd/img/favicons/" + host + ".png", true);
+
+                        File imageFile = Application.getResource(NewTheme.I().getPath() + "/images/fav/" + host + ".png");
+
+                        imageFile.getParentFile().mkdirs();
                         ImageIO.write(favicon, "png", imageFile);
                         /* load and scale it again */
-                        ImageIcon image = JDImage.getImageIcon("favicons/" + host);
+                        ImageIcon image = NewTheme.I().getIcon("fav/" + host, -1);
                         if (image != null && requestors != null) {
                             /* refresh icons for all queued plugins */
                             for (FavIconRequestor requestor : requestors) {
