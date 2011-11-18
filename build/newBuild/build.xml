@@ -4,7 +4,7 @@
 	<property name="dep.browser" value="../JDBrowser" />
 	<property name="dep.updateclient" value="../UpdateClient" />
 	<property name="dep.update" value="../JDUpdater" />
-	<property name="debug" value="false" />
+	<property name="debug" value="true" />
 
 
 
@@ -228,9 +228,12 @@
 				<include name="org/appwork/controlling/**/*" />
 				<include name="org/appwork/utils/logging/**/*" />
 				<include name="org/appwork/storage/**/*" />
+				<include name="org/appwork/exceptions/WTFException.class" />
 				<include name="org/appwork/utils/images/**/*" />
 				<include name="org/appwork/utils/swing/windowflasher/**/*" />
-
+				<include name="org/appwork/scheduler/**/*" />
+				<include name="org/appwork/resources/**/*" />
+				<include name="org/appwork/app/**/*" />	
 				<include name="org/appwork/shutdown/**/*" />
 				<include name="org/appwork/utils/net/**/*" />
 				<include name="org/appwork/utils/parser/ShellParser.class" />
@@ -246,8 +249,12 @@
 				<include name="org/appwork/utils/swing/dialog/**/*" />
 				<include name="org/appwork/utils/swing/*.class" />
 				<include name="org/appwork/utils/ImageProvider/**/*" />
+			
+			
 			</fileset>
-
+			<fileset dir="themes">
+				<include name="themes/standard/org/jdownloader/images/dialog/**/*" />
+		</fileset>
 			<fileset dir="${dep.updateclient}/src">
 				<include name="**/*.png" />
 				<include name="**/*.lng" />

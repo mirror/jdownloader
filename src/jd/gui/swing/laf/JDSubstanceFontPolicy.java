@@ -15,6 +15,11 @@ public class JDSubstanceFontPolicy implements FontPolicy {
         this.fontSet = new JDSubstanceFontSet(this.defaultFontSet, fontName, fontSize);
     }
 
+    public static void invoke(String name, int size) {
+        final jd.gui.swing.laf.JDSubstanceFontPolicy fp = new jd.gui.swing.laf.JDSubstanceFontPolicy(org.pushingpixels.substance.api.SubstanceLookAndFeel.getFontPolicy().getFontSet("substance", null), name, size);
+        org.pushingpixels.substance.api.SubstanceLookAndFeel.setFontPolicy(fp);
+    }
+
     public FontSet getFontSet(final String arg0, final UIDefaults arg1) {
         return this.fontSet;
     }

@@ -289,8 +289,8 @@ public class LookAndFeelController {
 
     private void doSubstance(String fontName, int fontSize) {
         try {
-            final JDSubstanceFontPolicy fp = new JDSubstanceFontPolicy(org.pushingpixels.substance.api.SubstanceLookAndFeel.getFontPolicy().getFontSet("substance", null), fontName, fontSize);
-            org.pushingpixels.substance.api.SubstanceLookAndFeel.setFontPolicy(fp);
+            Class.forName("jd.gui.swing.laf.JDSubstanceFontPolicy").getMethod("invoke", new Class[] { String.class, int.class }).invoke(null, fontName, fontSize);
+
         } catch (Throwable e) {
             Log.exception(e);
         }
