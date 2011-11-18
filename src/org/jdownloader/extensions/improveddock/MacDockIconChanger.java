@@ -18,17 +18,15 @@ package org.jdownloader.extensions.improveddock;
 
 import java.awt.Color;
 import java.awt.Graphics;
-import java.awt.image.BufferedImage;
 
 import jd.controlling.downloadcontroller.DownloadInformations;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.nutils.JDImage;
+
+import org.jdownloader.images.NewTheme;
 
 import com.apple.eawt.Application;
 
 public class MacDockIconChanger extends Thread implements Runnable {
-
-    private final BufferedImage        dockImage       = JDImage.getImage("logo/jd_logo_128_128");
 
     private final Color                frameColor      = Color.BLACK;
 
@@ -75,7 +73,7 @@ public class MacDockIconChanger extends Thread implements Runnable {
     }
 
     public void updateDockIconImage(int percentCompleted) {
-        Graphics g = dockImage.getGraphics();
+        Graphics g = NewTheme.I().getImage("logo/jd_logo_128_128", -1).getGraphics();
 
         // Draw Border
         g.setColor(this.frameColor);
@@ -98,7 +96,7 @@ public class MacDockIconChanger extends Thread implements Runnable {
 
         g.dispose();
 
-        Application.getApplication().setDockIconImage(dockImage);
+        Application.getApplication().setDockIconImage(NewTheme.I().getImage("logo/jd_logo_128_128", -1));
     }
 
     private void updateDockIconBadge(int completedDownloadCount) {

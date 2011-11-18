@@ -17,6 +17,7 @@
 package jd.gui.swing.jdgui.components.toolbar;
 
 import java.awt.Component;
+import java.awt.Dimension;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 
@@ -44,6 +45,7 @@ public class MainToolBar extends ToolBar {
 
     private MainToolBar() {
         super();
+        setPreferredSize(new Dimension(-1, 38));
         Main.GUI_COMPLETE.executeWhenReached(new Runnable() {
 
             public void run() {

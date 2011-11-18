@@ -145,7 +145,7 @@ public class HostPluginController extends PluginController<PluginForHost> {
                             l.setHasConfig(plg.hasConfig());
                             ret.add(l);
                             save.add(ap);
-                            Log.L.severe("@HostPlugin ok:" + simpleName + " " + names[i]);
+                            Log.L.finer("@HostPlugin ok:" + simpleName + " " + names[i]);
                         } catch (Throwable e) {
                             Log.L.severe("@HostPlugin failed:" + simpleName + " " + names[i]);
                             Log.exception(e);

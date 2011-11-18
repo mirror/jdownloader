@@ -4,7 +4,7 @@
 	<property name="dep.browser" value="../JDBrowser" />
 	<property name="dep.updateclient" value="../UpdateClient" />
 	<property name="dep.update" value="../JDUpdater" />
-	<property name="debug" value="true" />
+	<property name="debug" value="false" />
 
 
 
@@ -90,7 +90,7 @@
 		<copy todir="${dist}/libs">
 			<fileset dir="${res}/libs" includes="**/*" />
 		</copy>
-		<copy todir="${dist}/themes">
+		<copy todir="${dist}">
 				<fileset dir="themes" includes="**/*" />
 			</copy>
 		<copy todir="${dist}/licenses">
@@ -136,6 +136,18 @@
 			</fileset>
 		</jar>
 
+		<jar file="${dist}/libs/Dynamics.jar" manifest="${dist}/Manifest.MF">
+				<fileset dir="${cls}">
+					<include name="org/jdownloader/dynamic/**/*" />
+				</fileset>
+		</jar>
+		
+		<jar file="${dist}/libs/cons.jar" manifest="${dist}/Manifest.MF">
+					<fileset dir="${cls}">
+						<include name="org/jdownloader/container/**/*" />
+					</fileset>
+		</jar>
+	
 		<jar file="${dist}/libs/AppWorkUtilities.jar" manifest="${dist}/Manifest.MF">
 			<fileset dir="${cls}">
 				<include name="org/appwork/**/*" />
@@ -167,9 +179,13 @@
 				<exclude name="jd/controlling/reconnect/plugins/*/**/*" />
 				<exclude name="jd/captcha/**" />
 				<exclude name="org/appwork/**/*" />
+				<exclude name="org/jdownloader/dynamic/**/*" />
 				<exclude name="jd/dynamics/**" />
 				<exclude name="jd/gui/**" />
 				<exclude name="com/fastcgi/**" />
+				<exclude name="org/jdownloader/container/**/*" />
+			
+			
 				<exclude name="jd/http/**" />
 				<exclude name="jd/nutils/**" />
 				<exclude name="jd/plugins/hoster/**" />
@@ -274,12 +290,7 @@
 				<include name="**/*" />
 			</fileset>
 		</copy>
-		<mkdir dir="${dist}/jd/dynamics/" />
-		<copy todir="${dist}/jd/dynamics/">
-			<fileset dir="${cls}/jd/dynamics/">
-				<include name="*.class" />
-			</fileset>
-		</copy>
+		
 	</target>
 
 	<!-- Use this to build an addon -->

@@ -14,7 +14,7 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package jd.plugins.a;
+package org.jdownloader.container;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -22,24 +22,22 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 
-import jd.PluginWrapper;
-import jd.controlling.JDLogger;
 import jd.crypt.AESencrypt;
 import jd.crypt.Base16Decoder;
 import jd.crypt.BaseDecoder.IllegalAlphabetException;
 import jd.nutils.encoding.Base64;
 import jd.parser.Regex;
 import jd.parser.html.HTMLParser;
-import jd.plugins.ContainerPlugin;
 import jd.plugins.ContainerStatus;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginsC;
 
-@ContainerPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "RSDF" }, urls = { "file://.+\\.rsdf" })
+import org.appwork.utils.logging.Log;
+
 public class R extends PluginsC {
-    public R(PluginWrapper wrapper) {
-        super(wrapper);
+    public R() {
+        super("RSDF", "file://.+\\.rsdf", "$Revision$");
         // TODO Auto-generated constructor stub
     }
 
@@ -67,12 +65,12 @@ public class R extends PluginsC {
     public ContainerStatus callDecryption(File lc) {
         ContainerStatus cs = new ContainerStatus(lc);
         // byte[] k = getKey();
-        // logger.info(asHex(getKey()));
+        // Log.L.info(asHex(getKey()));
         // for( int i=0; i<k.length;i++){
         // k[i]+=i;
         // }
-        // logger.info(asHex(k));
-        // logger.info("Parse file: "+lc.getAbsolutePath());
+        // Log.L.info(asHex(k));
+        // Log.L.info("Parse file: "+lc.getAbsolutePath());
 
         try {
 
@@ -81,12 +79,12 @@ public class R extends PluginsC {
             dlU = new ArrayList<String>();
             String fileContent[] = loadFileContent(lc.getAbsolutePath());
             int c = 0;
-            // logger.info(fileContent.length+" links found");
+            // Log.L.info(fileContent.length+" links found");
             for (String element : fileContent) {
-                // logger.info(i+" - "+fileContent[i]);
+                // Log.L.info(i+" - "+fileContent[i]);
                 if (element != null && element.length() > 0) {
                     PluginForHost pHost = findHostPlugin(element);
-                    // logger.info("pHost: "+pHost);
+                    // Log.L.info("pHost: "+pHost);
                     if (pHost != null) {
 
                         newLink = new DownloadLink(pHost, element.substring(element.lastIndexOf("/") + 1), pHost.getHost(), null, true);
@@ -99,7 +97,7 @@ public class R extends PluginsC {
                     }
                 }
             }
-            logger.info("Links: " + cls);
+            Log.L.info("Links: " + cls);
             if (cls.size() > 0) {
 
                 cs.setStatus(ContainerStatus.STATUS_FINISHED);
@@ -110,10 +108,10 @@ public class R extends PluginsC {
 
         } catch (IllegalArgumentException e) {
             // TODO Auto-generated catch block
-            JDLogger.exception(e);
+            Log.exception(e);
         } catch (SecurityException e) {
             // TODO Auto-generated catch block
-            JDLogger.exception(e);
+            Log.exception(e);
         }
         cs.setStatus(ContainerStatus.STATUS_FAILED);
         return cs;
@@ -153,7 +151,7 @@ public class R extends PluginsC {
     // cipher.init(Cipher.ENCRYPT_MODE, skeySpec);
     //
     // byte[] original = cipher.doFinal(k);
-    // logger.info(asHex(original));
+    // Log.L.info(asHex(original));
     // return original;
     // }
     // catch (Exception e) {
@@ -177,7 +175,7 @@ public class R extends PluginsC {
 
         getEKey(k);
         if (k == null) {
-            logger.severe("RSDF Decryption failed.");
+            Log.L.severe("RSDF Decryption failed.");
             return new String[0];
         }
         AESencrypt aes = new AESencrypt(k, 6);
@@ -225,10 +223,10 @@ public class R extends PluginsC {
     private String filterRSDF(String rsdf) {
         // rsdf.split("\r")
         rsdf = rsdf.trim().toUpperCase();
-        logger.info("RSDF length: " + rsdf.length() + "   ");
+        Log.L.info("RSDF length: " + rsdf.length() + "   ");
         String ret = "";
         for (int i = 0; i < rsdf.length(); i++) {
-            // logger.info(new String(new char[] { rsdf.charAt(i) }));
+            // Log.L.info(new String(new char[] { rsdf.charAt(i) }));
             switch (rsdf.charAt(i)) {
             case '0':
             case '1':
@@ -252,7 +250,7 @@ public class R extends PluginsC {
                 break;
             default:
                 if (i > 0) {
-                    logger.info("iii" + i);
+                    Log.L.info("iii" + i);
 
                     return ret;
                 }
@@ -290,7 +288,7 @@ public class R extends PluginsC {
             return buffer.toString();
         } catch (IOException e) {
 
-            JDLogger.exception(e);
+            Log.exception(e);
         }
         return "";
     }
@@ -308,7 +306,7 @@ public class R extends PluginsC {
             return links;
         } catch (Exception e) {
 
-            JDLogger.exception(e);
+            Log.exception(e);
         }
         return null;
     }

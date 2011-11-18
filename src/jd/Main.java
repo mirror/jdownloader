@@ -19,12 +19,7 @@ package jd;
 
 import java.io.File;
 import java.io.IOException;
-import java.lang.reflect.Constructor;
-import java.net.URL;
-import java.net.URLClassLoader;
-import java.util.ArrayList;
 import java.util.Date;
-import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Properties;
@@ -36,7 +31,6 @@ import java.util.logging.Logger;
 import jd.captcha.JACController;
 import jd.captcha.JAntiCaptcha;
 import jd.controlling.ClipboardHandler;
-import jd.controlling.DynamicPluginInterface;
 import jd.controlling.JDController;
 import jd.controlling.JDLogger;
 import jd.controlling.downloadcontroller.DownloadController;
@@ -49,7 +43,6 @@ import jd.gui.swing.jdgui.events.EDTEventQueue;
 import jd.gui.swing.laf.LookAndFeelController;
 import jd.http.Browser;
 import jd.http.ext.security.JSPermissionRestricter;
-import jd.nutils.JDImage;
 import jd.nutils.OSDetector;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
@@ -69,6 +62,7 @@ import org.appwork.utils.swing.EDTHelper;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.api.RemoteAPIController;
+import org.jdownloader.dynamic.Dynamic;
 import org.jdownloader.extensions.ExtensionController;
 import org.jdownloader.gui.uiserio.JDSwingUserIO;
 import org.jdownloader.gui.uiserio.NewUIO;
@@ -102,7 +96,7 @@ public class Main {
     private static void initMACProperties() {
         // set DockIcon (most used in Building)
         try {
-            com.apple.eawt.Application.getApplication().setDockIconImage(JDImage.getImage("logo/jd_logo_128_128"));
+            com.apple.eawt.Application.getApplication().setDockIconImage(NewTheme.I().getImage("logo/jd_logo_128_128", -1));
         } catch (final Throwable e) {
             /* not every mac has this */
             Main.LOG.info("Error Initializing  Mac Look and Feel Special: " + e);
@@ -148,6 +142,12 @@ public class Main {
     }
 
     public static void statics() {
+
+        try {
+            Dynamic.runPreStatic();
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
         // USe Jacksonmapper in this project
         JSonStorage.setMapper(new JacksonMapper());
         // do this call to keep the correct root in Application Cache
@@ -178,81 +178,13 @@ public class Main {
      * 
      * @throws IOException
      */
-    public static void loadDynamics() throws Exception {
-        final ArrayList<String> classes = new ArrayList<String>();
-        final URLClassLoader classLoader = new URLClassLoader(new URL[] { JDUtilities.getJDHomeDirectoryFromEnvironment().toURI().toURL() }, Thread.currentThread().getContextClassLoader());
-        if (JDUtilities.getRunType() == JDUtilities.RUNTYPE_LOCAL) {
-            /* dynamics aus eclipse heraus laden */
-
-            final Enumeration<URL> resources = classLoader.getResources("jd/dynamics/");
-            final ArrayList<String> dynamics = new ArrayList<String>();
-            while (resources.hasMoreElements()) {
-                final URL resource = resources.nextElement();
-                if (resource.toURI().getPath() != null) {
-                    final String[] files = new File(resource.toURI().getPath()).list();
-                    if (files != null) {
-                        for (final String file : files) {
-                            dynamics.add(new File(file).getName());
-                        }
-                    }
-                }
-            }
-            if (dynamics.size() == 0) { return; }
-            for (final String dynamic : dynamics) {
-                if (!dynamic.contains("$") && !classes.contains("/jd/dynamics/" + dynamic) && !dynamic.equalsIgnoreCase("DynamicPluginInterface.class")) {
-                    System.out.println("Plugins: " + dynamic);
-                    classes.add("/jd/dynamics/" + dynamic);
-                }
-            }
-        } else {
-
-            /* dynamics in der public laden */
-            // Main.LOG.finest("Run dynamics");
-            // if (WebUpdater.getPluginList() == null) { return; }
-            // for (final Entry<String, FileUpdate> entry :
-            // WebUpdater.PLUGIN_LIST.entrySet()) {
-            // System.out.println("Plugins: " + entry.getKey());
-            // if (entry.getKey().startsWith("/jd/dynamics/") &&
-            // !entry.getKey().contains("DynamicPluginInterface")) {
-            // Main.LOG.finest("Found dynamic: " + entry.getKey());
-            // if (!entry.getValue().equals()) {
-            //
-            // if (!new WebUpdater().updateUpdatefile(entry.getValue())) {
-            // Main.LOG.warning("Could not update " + entry.getValue());
-            // continue;
-            // } else {
-            // Main.LOG.finest("Update OK!");
-            // }
-            // }
-            // if (!entry.getKey().contains("$") &&
-            // !classes.contains(entry.getKey())) {
-            // classes.add(entry.getKey());
-            // }
-            // }
-            // }
-        }
-        for (final String clazz : classes) {
-            try {
-                Class<?> plgClass;
-                Main.LOG.finest("Init Dynamic " + clazz);
-                plgClass = classLoader.loadClass(clazz.replace("/", ".").replace(".class", "").substring(1));
-                if (plgClass == null) {
-                    Main.LOG.info("Could not load " + clazz);
-                    continue;
-                }
-                if (plgClass == DynamicPluginInterface.class) {
-                    continue;
-                }
-                final Constructor<?> con = plgClass.getConstructor(new Class[] {});
-                final DynamicPluginInterface dplg = (DynamicPluginInterface) con.newInstance(new Object[] {});
-                dplg.execute();
-            } catch (final Throwable e) {
-                JDLogger.exception(Level.FINER, e);
-            }
-        }
-    }
 
     public static void main(final String args[]) {
+        try {
+            Dynamic.runMain(args);
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
         Main.LOG = JDLogger.getLogger();
         // Mac OS specific
         if (OSDetector.isMac()) {

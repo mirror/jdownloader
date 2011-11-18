@@ -27,28 +27,37 @@ import javax.swing.table.TableCellEditor;
 import javax.swing.table.TableCellRenderer;
 
 import jd.gui.swing.jdgui.components.StatusLabel;
-import jd.nutils.JDImage;
 
+import org.appwork.utils.ImageProvider.ImageProvider;
 import org.jdesktop.swingx.renderer.DefaultTableRenderer;
 import org.jdesktop.swingx.renderer.JRendererLabel;
 
 public abstract class JDTableColumn extends AbstractCellEditor implements TableCellEditor, TableCellRenderer {
 
-    private static final long serialVersionUID = -1748365070868647250L;
-    private String name;
-    private JDTableModel table;
+    private static final long    serialVersionUID   = -1748365070868647250L;
+    private String               name;
+    private JDTableModel         table;
     private DefaultTableRenderer defaultrenderer;
-    private boolean sortingToggle = false; /* eg Asc and Desc sorting, a toggle */
-    private Thread sortThread = null;
-    protected static Color background = null;
-    protected static Color foreground = null;
-    protected static Color backgroundselected = null;
-    protected static Color foregroundselected = null;
-    private Color currentbackground = null;
-    private Color currentforeground = null;
-    private StatusLabel sl = null;
-    private int clickcount = 1;
-    private int curWidth = -1;
+    private boolean              sortingToggle      = false;                /*
+                                                                              * eg
+                                                                              * Asc
+                                                                              * and
+                                                                              * Desc
+                                                                              * sorting
+                                                                              * ,
+                                                                              * a
+                                                                              * toggle
+                                                                              */
+    private Thread               sortThread         = null;
+    protected static Color       background         = null;
+    protected static Color       foreground         = null;
+    protected static Color       backgroundselected = null;
+    protected static Color       foregroundselected = null;
+    private Color                currentbackground  = null;
+    private Color                currentforeground  = null;
+    private StatusLabel          sl                 = null;
+    private int                  clickcount         = 1;
+    private int                  curWidth           = -1;
 
     public JDTableColumn(String name, JDTableModel table) {
         this.name = name;
@@ -178,7 +187,8 @@ public abstract class JDTableColumn extends AbstractCellEditor implements TableC
                  * to avoid the memory leak in java caused by the laf iconcache,
                  * we have to set the disabled icon here
                  */
-                ((JRendererLabel) c).setDisabledIcon(JDImage.getDisabledIcon(((JRendererLabel) c).getIcon()));
+
+                ((JRendererLabel) c).setDisabledIcon(ImageProvider.getDisabledIcon(((JRendererLabel) c).getIcon()));
                 c.setEnabled(false);
             } else if (c instanceof StatusLabel) {
                 /*

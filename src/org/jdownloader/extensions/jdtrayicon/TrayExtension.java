@@ -55,18 +55,19 @@ import jd.gui.swing.SwingGui;
 import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.nutils.Formatter;
-import jd.nutils.JDImage;
 import jd.nutils.OSDetector;
 import jd.plugins.AddonPanel;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.Application;
+import org.appwork.utils.images.IconIO;
 import org.appwork.utils.swing.EDTHelper;
 import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
 import org.jdownloader.extensions.jdtrayicon.translate.T;
+import org.jdownloader.images.NewTheme;
 
 public class TrayExtension extends AbstractExtension<TrayConfig> implements MouseListener, MouseMotionListener, WindowListener, WindowStateListener, ActionListener, ControlListener, LinkCollectorListener {
 
@@ -274,7 +275,7 @@ public class TrayExtension extends AbstractExtension<TrayConfig> implements Mous
 
     private void initGUI() {
         SystemTray systemTray = SystemTray.getSystemTray();
-        Image img = JDImage.getImage("logo/jd_logo_128_128").getScaledInstance((int) systemTray.getTrayIconSize().getWidth(), (int) systemTray.getTrayIconSize().getHeight(), Image.SCALE_SMOOTH);
+        Image img = IconIO.getScaledInstance(NewTheme.I().getImage("logo/jd_logo_64_64", -1), (int) systemTray.getTrayIconSize().getWidth(), (int) systemTray.getTrayIconSize().getHeight());
         /*
          * trayicon message must be set, else windows cannot handle icon right
          * (eg autohide feature)

@@ -1,4 +1,4 @@
-package jd.plugins.a;
+package org.jdownloader.container;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -27,7 +27,6 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
-import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.gui.UserIO;
 import jd.http.Browser;
@@ -36,7 +35,6 @@ import jd.nutils.encoding.Base64;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.HTMLParser;
-import jd.plugins.ContainerPlugin;
 import jd.plugins.ContainerStatus;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
@@ -47,6 +45,7 @@ import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.Hash;
+import org.appwork.utils.logging.Log;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -54,7 +53,6 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
-@ContainerPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "DLC" }, urls = { "file://.+\\.dlc" })
 public class D extends PluginsC {
 
     private byte[]                  b3;
@@ -62,8 +60,8 @@ public class D extends PluginsC {
     private byte[]                  kk;
     private HashMap<String, String> header;
 
-    public D(PluginWrapper wrapper) {
-        super(wrapper);
+    public D() {
+        super("DLC", "file://.+\\.dlc", "$Revision$");
         b3 = new byte[] { 77, 69, 84, 65, 45, 73, 78, 70, 47, 74, 68, 79, 87, 78, 76, 79, 65, 46, 68, 83, 65 };
         d = new byte[] { -44, 47, 74, 116, 56, -46, 20, 9, 17, -53, 0, 8, -47, 121, 1, 75 };
         // kk = (byte[]) SubConfiguration.getConfig(new String(new byte[] { 97,
@@ -83,7 +81,7 @@ public class D extends PluginsC {
         // try {
         // if (a.trim().startsWith("<dlc>")) return e(d);
         // } catch (Exception e) {
-        // jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,
+        // Log.L.log(java.util.logging.Level.SEVERE,
         // "Exception occured", e);
         // cs.setStatusText("DLC2 failed");
         // return cs;
@@ -98,8 +96,8 @@ public class D extends PluginsC {
         }
 
         String a0 = a.substring(a.length() - 88).trim();
-        // logger.info(dlcString);
-        // logger.info(key + " - " + key.length());
+        // Log.L.info(dlcString);
+        // Log.L.info(key + " - " + key.length());
         a = a.substring(0, a.length() - 88).trim();
 
         if (Encoding.filterString(a, "1234567890QAWSEDRFTGZHUJIKOLPMNBVCXY+/=qaywsxedcrfvtgbzhnujmikolp\r\n").length() != a.length()) {
@@ -108,7 +106,7 @@ public class D extends PluginsC {
             cs.setStatusText(JDL.L("sys.warning.dlcerror_invalid", "It seems that your dlc is not valid."));
             return cs;
         }
-        // logger.info(dlcString);
+        // Log.L.info(dlcString);
         ArrayList<URL> s1;
 
         try {
@@ -133,14 +131,14 @@ public class D extends PluginsC {
                     } else {
                         x = cs(s2, a0);
                         if (x != null && x.trim().equals("2YVhzRFdjR2dDQy9JL25aVXFjQ1RPZ")) {
-                            logger.severe("You recently opened to many DLCs. Please wait a few minutes.");
+                            Log.L.severe("You recently opened to many DLCs. Please wait a few minutes.");
                             ee += "DLC Limit reached." + " ";
                             continue;
 
                         }
-                        // logger.info("Dec key "+decodedKey);
+                        // Log.L.info("Dec key "+decodedKey);
                         if (x == null) {
-                            logger.severe("DLC Error(key): " + s2);
+                            Log.L.severe("DLC Error(key): " + s2);
                             ee += s2 + "" + JDL.L("sys.warning.dlcerror_key", "DLC: Key Fehler") + " ";
 
                             continue;
@@ -154,30 +152,30 @@ public class D extends PluginsC {
                         // dsk("8dEAMOh4EcaP8QgExlHZRNeCYL9EzB3cGJIdDG2prCE=");
                         p = Encoding.filterString(p);
                         if (p.length() != 16) {
-                            logger.severe("DLC Error2(key): " + s2);
+                            Log.L.severe("DLC Error2(key): " + s2);
                             ee += s2 + "" + JDL.L("sys.warning.dlcerror_version", "DLC Fehler(1) ") + " ";
 
                             continue;
                         }
-                        // logger.info("PLAIN KEY: " + plain);
-                        // logger.info("PLAIN dlc: " + dlcString);
+                        // Log.L.info("PLAIN KEY: " + plain);
+                        // Log.L.info("PLAIN dlc: " + dlcString);
                         // plain="11b857cd4c4edd19";
                     }
                     String dds1 = d5(a, p);
                     dds1 = fds(dds1);
                     if (dds1 == null) {
 
-                        logger.severe("DLC Error(xml): " + s2);
+                        Log.L.severe("DLC Error(xml): " + s2);
                         ee += s2 + "" + JDL.L("sys.warning.dlcerror_xml", "DLC: XML Fehler ") + " ";
 
                         continue;
                     }
                     dds1 = Encoding.filterString(dds1);
-                    // logger.info("Decr " + decryptedDlcString);
+                    // Log.L.info("Decr " + decryptedDlcString);
                     pxs(dds1, d);
 
                     if (dlU == null || dlU.size() == 0) {
-                        logger.severe("No Links found: " + s2);
+                        Log.L.severe("No Links found: " + s2);
                         ee += JDL.L("sys.warning.dlcerror_noLinks", "DLC: Keine Links gefunden!") + " ";
                         k = null;
                         continue;
@@ -190,26 +188,26 @@ public class D extends PluginsC {
                     ee += s2 + "" + JDL.L("sys.warning.dlcerror_java", "DLC: Outdated Javaversion ") + e.getMessage() + " ";
 
                 } catch (MalformedURLException e) {
-                    // jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                    // Log.L.log(java.util.logging.Level.SEVERE,"Exception occured",e);
                     ee += s2 + "" + JDL.L("sys.warning.dlcerror_url", "DLC: URL Fehler: ") + e.getMessage() + " ";
                 } catch (IOException e) {
-                    // jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                    // Log.L.log(java.util.logging.Level.SEVERE,"Exception occured",e);
                     ee += s2 + "" + JDL.L("sys.warning.dlcerror_io", "DLC: Server Fehler(offline? ") + e.getMessage() + " ";
 
                 } catch (SAXException e) {
                     ee += s2 + "" + JDL.L("sys.warning.dlcerror_version", "DLC Fehler: Veraltete JD Version (1) ") + " ";
 
-                    // jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                    // Log.L.log(java.util.logging.Level.SEVERE,"Exception occured",e);
                 } catch (ParserConfigurationException e) {
                     ee += s2 + "" + JDL.L("sys.warning.dlcerror_version", "DLC Fehler: Veraltete JD Version (2)") + " ";
-                    // jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                    // Log.L.log(java.util.logging.Level.SEVERE,"Exception occured",e);
                 }
 
                 catch (Exception e) {
                     e.printStackTrace();
                     ee += s2 + "" + JDL.L("sys.warning.dlcerror_unknown", "DLC Fehler: ") + e.getMessage() + " ";
 
-                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
+                    Log.L.log(java.util.logging.Level.SEVERE, "Exception occured", e);
                 }
             }
         } catch (Exception e) {
@@ -250,7 +248,7 @@ public class D extends PluginsC {
     // d9 += (b - d[d9]) + 1;
     // }
     // if (d9 != 16) {
-    // logger.info("Wrong JD Version");
+    // Log.L.info("Wrong JD Version");
     // return null;
     // }
     // k0 = null;
@@ -301,7 +299,7 @@ public class D extends PluginsC {
     //
     // pxs(dds, d4);
     // if (dlU == null || dlU.size() == 0) {
-    // logger.severe("No Links found: " + dss);
+    // Log.L.severe("No Links found: " + dss);
     //
     // return cs;
     // } else {
@@ -313,7 +311,7 @@ public class D extends PluginsC {
 
     // private String cs2(String s, String m) throws IOException {
     //
-    // logger.finer("Call  " + s);
+    // Log.L.finer("Call  " + s);
     // Browser br = new Browser();
     //
     // String rk = br.postPage(s, "dt=jdtc&st=dlc&d=" + Encoding.urlEncode(m));
@@ -332,9 +330,9 @@ public class D extends PluginsC {
         try {
             String rk = Hash.getMD5("" + c7).substring(0, 16);
             // randomKey = JDHash.getMD5("11").substring(0, 16);
-            // logger.info("Key: " + randomKey);
+            // Log.L.info("Key: " + randomKey);
             byte[] k = rk.getBytes();
-            // logger.info("ENcode " + base64);
+            // Log.L.info("ENcode " + base64);
             IvParameterSpec ivSpec = new IvParameterSpec(k);
             SecretKeySpec skeySpec = new SecretKeySpec(k, "AES");
 
@@ -347,8 +345,8 @@ public class D extends PluginsC {
             // return new BASE64Encoder().encode(original);
         } catch (Exception e) {
 
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
-            logger.severe("DLC encryption failed (5)");
+            Log.L.log(java.util.logging.Level.SEVERE, "Exception occured", e);
+            Log.L.severe("DLC encryption failed (5)");
             return null;
 
         }
@@ -376,7 +374,7 @@ public class D extends PluginsC {
             return bf.toString();
         } catch (IOException e) {
 
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
+            Log.L.log(java.util.logging.Level.SEVERE, "Exception occured", e);
         }
         return "";
     }
@@ -386,7 +384,7 @@ public class D extends PluginsC {
         int i = 0;
         while (true) {
             i++;
-            logger.finer("Call " + s9);
+            Log.L.finer("Call " + s9);
             Browser br = new Browser();
 
             HashMap<String, String> map = (HashMap<String, String>) JDUtilities.getConfiguration().getProperty("head", new HashMap<String, String>());
@@ -401,7 +399,7 @@ public class D extends PluginsC {
             // 0x60, (byte) 0x4a, (byte) 0x7c, (byte) 0x84, (byte) 0x0e, (byte)
             // 0x88, (byte) 0xd0, (byte) 0x3a, (byte) 0x67, (byte) 0xf6, (byte)
             // 0xb7, (byte) 0xd8};
-            // logger.info( ri.getHtmlCode());
+            // Log.L.info( ri.getHtmlCode());
 
             // a7b3b706e3cf3770931f081926ed0d95
             if (!br.getHttpConnection().isOK() || !br.containsHTML("rc")) {
@@ -461,11 +459,11 @@ public class D extends PluginsC {
             String pln = new String(Base64.decode(opl));
             rte = pln;
         } catch (Exception e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
+            Log.L.log(java.util.logging.Level.SEVERE, "Exception occured", e);
         }
 
         if (rte == null || rte.indexOf("<content") < 0) {
-            logger.info("Old DLC Version");
+            Log.L.info("Old DLC Version");
             try {
                 byte[] ii;
                 ii = Base64.decode(ct);
@@ -491,7 +489,7 @@ public class D extends PluginsC {
 
                 rte = po;
             } catch (Exception e) {
-                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
+                Log.L.log(java.util.logging.Level.SEVERE, "Exception occured", e);
 
                 rte = null;
 
@@ -499,7 +497,7 @@ public class D extends PluginsC {
 
         }
         if (rte == null) {
-            logger.severe("DLC Decryption failed (3)");
+            Log.L.severe("DLC Decryption failed (3)");
         }
         return rte;
     }
@@ -576,7 +574,7 @@ public class D extends PluginsC {
                         nl.addSourcePluginPasswordList(pws);
                         nl.setSourcePluginComment("from Container: " + d + " : " + pc);
                         cls.add(nl);
-                        // logger.info(""+links.get(linkCounter));
+                        // Log.L.info(""+links.get(linkCounter));
                         dlU.add(ls.get(lcs));
                         c++;
                         // }
@@ -683,7 +681,7 @@ public class D extends PluginsC {
          * alle inhalte sind base64 verschlüsselt. XML Str5uktur wurde angepasst
          */
 
-        logger.info("Parse v3");
+        Log.L.info("Parse v3");
         cls = new ArrayList<DownloadLink>();
         DownloadLink nl;
         dlU = new ArrayList<String>();
@@ -732,7 +730,7 @@ public class D extends PluginsC {
                             String[] lsr = HTMLParser.getHttpLinks(sls, null);
                             if (lsr.length == 0) {
                                 while (true) {
-                                    logger.warning("Failed DLC Decoding. Try to decode again");
+                                    Log.L.warning("Failed DLC Decoding. Try to decode again");
                                     String old = sls;
                                     sls = Encoding.Base64Decode(sls);
                                     if (old.equals(sls)) {
@@ -749,7 +747,7 @@ public class D extends PluginsC {
 
                             }
                             if (lsr.length > 1) {
-                                logger.severe("DLC Error. Generator Link split Error");
+                                Log.L.severe("DLC Error. Generator Link split Error");
                                 break;
                             }
                         }
@@ -810,13 +808,13 @@ public class D extends PluginsC {
     private void pxs(String cs, File dlc) throws SAXException, IOException, ParserConfigurationException, InstantiationException, IllegalAccessException {
 
         DocumentBuilderFactory f;
-        // logger.info(jdtc);
+        // Log.L.info(jdtc);
         InputSource is;
         Document doc;
 
         f = DocumentBuilderFactory.newInstance();
         f.setValidating(false);
-        // logger.info("encrypted: "+dlcString);
+        // Log.L.info("encrypted: "+dlcString);
         if (cs.trim().startsWith("<dlc")) {
             // New (cbc Änderung)
             is = new InputSource(new StringReader(cs));
@@ -876,7 +874,7 @@ public class D extends PluginsC {
                 }
             }
             if (node.getNodeName().equalsIgnoreCase("content")) {
-                logger.info("dlcxmlversion: " + header.get("dlcxmlversion"));
+                Log.L.info("dlcxmlversion: " + header.get("dlcxmlversion"));
                 if (header.containsKey("dlcxmlversion") && header.get("dlcxmlversion") != null && header.get("dlcxmlversion").equals("20_02_2008")) {
                     pcx3(node, dlc);
                 } else if (header.containsKey("generator.app") && header.get("generator.app").equals("jDownloader") && header.containsKey("generator.version") && Double.parseDouble(header.get("generator.version")) < 654.0) {
@@ -889,7 +887,7 @@ public class D extends PluginsC {
                 }
 
             }
-            // logger.info("Header " + header);
+            // Log.L.info("Header " + header);
         }
 
     }
@@ -930,7 +928,7 @@ public class D extends PluginsC {
             String xmlString = result.getWriter().toString();
             return xmlString;
         } catch (Exception e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
+            Log.L.log(java.util.logging.Level.SEVERE, "Exception occured", e);
         }
         return null;
     }
@@ -1059,7 +1057,7 @@ public class D extends PluginsC {
 
             return "<dlc>" + ret + "</dlc>";
         } catch (Exception e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
+            Log.L.log(java.util.logging.Level.SEVERE, "Exception occured", e);
         }
         return null;
     }

@@ -95,7 +95,8 @@ public class ChatExtension extends AbstractExtension<ChatConfig> {
     public static String                     STYLE;
     static {
         try {
-            STYLE = IO.readURLToString(Application.getRessourceURL(ChatExtension.class.getPackage().getName().replace(".", "/") + "/styles.css", false));
+
+            STYLE = IO.readURLToString(ChatExtension.class.getResource("styles.css"));
         } catch (IOException e) {
             STYLE = "";
             e.printStackTrace();
@@ -113,7 +114,7 @@ public class ChatExtension extends AbstractExtension<ChatConfig> {
     public static String                     USERLIST_STYLE;
     static {
         try {
-            USERLIST_STYLE = IO.readURLToString(Application.getRessourceURL(ChatExtension.class.getPackage().getName().replace(".", "/") + "/userliststyles.css", false));
+            USERLIST_STYLE = IO.readURLToString(ChatExtension.class.getResource("userliststyles.css"));
         } catch (IOException e) {
             USERLIST_STYLE = "";
             e.printStackTrace();

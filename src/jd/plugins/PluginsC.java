@@ -23,15 +23,9 @@ import java.util.Iterator;
 import java.util.logging.Level;
 import java.util.regex.Pattern;
 
-import jd.PluginWrapper;
-import jd.config.SubConfiguration;
-import jd.controlling.JDLogger;
-import jd.controlling.JDPluginLogger;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.LinkCrawler;
 import jd.gui.UserIO;
-import jd.gui.swing.jdgui.menu.MenuAction;
-import jd.http.Browser;
 import jd.nutils.JDFlags;
 import jd.nutils.encoding.Encoding;
 import jd.utils.JDUtilities;
@@ -42,7 +36,6 @@ import org.appwork.utils.IO;
 import org.appwork.utils.Regex;
 import org.appwork.utils.logging.Log;
 import org.jdownloader.controlling.filter.LinkFilterController;
-import org.jdownloader.plugins.controller.container.LazyContainerPlugin;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 
@@ -52,28 +45,23 @@ import org.jdownloader.plugins.controller.host.LazyHostPlugin;
  * @author astaldo/JD-Team
  */
 
-public abstract class PluginsC extends Plugin {
+public abstract class PluginsC {
 
-    protected JDPluginLogger    logger = null;
+    private Pattern pattern;
 
-    private LazyContainerPlugin lazyCo = null;
+    private String  name;
 
-    public LazyContainerPlugin getLazyCo() {
-        return lazyCo;
-    }
+    private int     version;
 
-    public void setLazyCo(LazyContainerPlugin lazyCo) {
-        this.lazyCo = lazyCo;
-    }
+    public PluginsC(String name, String pattern, String rev) {
 
-    public PluginsC(final PluginWrapper wrapper) {
-        super(wrapper);
-        this.lazyCo = (LazyContainerPlugin) wrapper.getLazy();
-    }
-
-    @Override
-    public SubConfiguration getPluginConfig() {
-        return SubConfiguration.getConfig(lazyCo.getDisplayName());
+        this.pattern = Pattern.compile(pattern, Pattern.CASE_INSENSITIVE);
+        this.name = name;
+        try {
+            version = Integer.parseInt(rev.substring(rev.indexOf(" ") + 1, rev.lastIndexOf(" ")));
+        } catch (Throwable e) {
+            version = -1;
+        }
     }
 
     private static final int          STATUS_NOTEXTRACTED     = 0;
@@ -104,24 +92,16 @@ public abstract class PluginsC extends Plugin {
         return null;
     }
 
-    @Override
     public Pattern getSupportedLinks() {
-        return lazyCo.getPattern();
+        return pattern;
     }
 
-    @Override
-    public String getHost() {
-        return lazyCo.getDisplayName();
+    public String getName() {
+        return name;
     }
 
-    @Override
-    public long getVersion() {
-        return lazyCo.getVersion();
-    }
-
-    @Override
-    public ArrayList<MenuAction> createMenuitems() {
-        return null;
+    public int getVersion() {
+        return version;
     }
 
     /**
@@ -212,14 +192,14 @@ public abstract class PluginsC extends Plugin {
      * @throws IOException
      */
     private synchronized void doDecryption(final String parameter) throws IOException {
-        logger.info("DO STEP");
+        Log.L.info("DO STEP");
         final String file = parameter;
         if (status == STATUS_ERROR_EXTRACTING) {
-            logger.severe("Expired JD Version. Could not extract links");
+            Log.L.severe("Expired JD Version. Could not extract links");
             return;
         }
         if (file == null) {
-            logger.severe("Containerfile == null");
+            Log.L.severe("Containerfile == null");
             return;
         }
         final File f = JDUtilities.getResourceFile(file);
@@ -234,7 +214,7 @@ public abstract class PluginsC extends Plugin {
                 IO.copyFile(f, res);
             }
             if (!res.exists()) {
-                logger.severe("Could not copy file to homedir");
+                Log.L.severe("Could not copy file to homedir");
             }
             containerStatus = callDecryption(res);
         }
@@ -376,16 +356,16 @@ public abstract class PluginsC extends Plugin {
         }
 
         if (cls == null || cls.size() == 0) {
-            logger.info("Init Container");
+            Log.L.info("Init Container");
 
             if (bs != null) k = bs;
             try {
                 doDecryption(filename);
             } catch (Throwable e) {
-                logger.severe(e.toString());
+                Log.L.severe(e.toString());
             }
 
-            logger.info(filename + " Parse");
+            Log.L.info(filename + " Parse");
             if (cls != null && dlU != null) {
 
                 decryptLinkProtectorLinks();
@@ -431,32 +411,13 @@ public abstract class PluginsC extends Plugin {
         return chits;
     }
 
-    public PluginsC getNewInstance() {
-        if (lazyCo == null) return null;
-        return lazyCo.newInstance();
-    }
-
-    public void setBrowser(Browser br) {
-        this.br = br;
-    }
-
-    public void setLogger(JDPluginLogger logger) {
-        this.logger = logger;
-    }
-
     public ArrayList<DownloadLink> decryptContainer(CrawledLink source) {
 
         if (source.getURL() == null) return null;
         ArrayList<DownloadLink> tmpLinks = null;
         boolean showException = true;
         try {
-            /*
-             * we now lets log into plugin specific loggers with all
-             * verbose/debug on
-             */
-            br.setLogger(logger);
-            br.setVerbose(true);
-            br.setDebug(true);
+
             /* extract filename from url */
             String file = new Regex(source.getURL(), "file://(.+)").getMatch(0);
             file = Encoding.urlDecode(file, false);
@@ -472,20 +433,15 @@ public abstract class PluginsC extends Plugin {
              * log
              */
 
-            logger.log(Level.SEVERE, "Exception", e);
+            Log.L.log(Level.SEVERE, "Exception", e);
         }
         if (tmpLinks == null && showException) {
             /*
              * null as return value? something must have happened, do not clear
              * log
              */
-            logger.severe("ContainerPlugin out of date: " + this + " :" + getVersion());
+            Log.L.severe("ContainerPlugin out of date: " + this + " :" + getVersion());
 
-            /* lets forward the log */
-            if (logger instanceof JDPluginLogger) {
-                /* make sure we use the right logger */
-                ((JDPluginLogger) logger).logInto(JDLogger.getLogger());
-            }
         }
         return tmpLinks;
     }

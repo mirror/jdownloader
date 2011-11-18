@@ -277,4 +277,16 @@ public interface LiveheaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "This service is currently not available.\r\nPlease try again later!" })
     String LiveHeaderDetectionWizard_runOnlineScan_notavailable_mm();
 
+    @Default(lngs = { "en" }, values = { "Share Settings" })
+    String RouterSendAction_RouterSendAction_();
+
+    @Default(lngs = { "en" }, values = { "Share your settings with others.\r\nThis Wizard helps you to upload your Reconnect Settings to our Server. \r\nThis helps to improve autodetection for all others." })
+    String RouterSendAction_RouterSendAction_tt();
+
+    @Default(lngs = { "en" }, values = { "Share Reconnect Settings" })
+    String RouterSendAction_actionPerformed_title();
+
+    @Default(lngs = { "en" }, values = { "We need your help to improve our reconnect database.\r\nPlease contribute to the 'JD Project' and send in our reconnect script.\r\nThis wizard will guide you through all required steps." })
+    String RouterSendAction_actionPerformed_msg2();
+
 }

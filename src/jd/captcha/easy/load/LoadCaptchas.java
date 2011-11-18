@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import javax.imageio.ImageIO;
 import javax.swing.BorderFactory;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
@@ -45,7 +46,6 @@ import jd.captcha.easy.EasyMethodFile;
 import jd.captcha.translate.T;
 import jd.gui.swing.components.JDTextField;
 import jd.http.Browser;
-import jd.nutils.JDImage;
 import jd.nutils.Screen;
 import jd.parser.html.Form;
 import jd.parser.html.HTMLParser;
@@ -174,7 +174,7 @@ public class LoadCaptchas {
                 for (int j = 0; j < images.size(); j++) {
                     final LoadImage f = images.get(j);
                     if (f == null || f.file == null || !f.file.exists() || f.file.length() < 100) continue;
-                    final BufferedImage captchaImage = JDImage.getImage(f.file);
+                    final BufferedImage captchaImage = ImageIO.read(f.file);
                     if (captchaImage == null) {
                         f.file.delete();
                         continue;

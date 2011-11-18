@@ -42,13 +42,13 @@ import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.gui.swing.jdgui.views.settings.panels.accountmanager.NewAction;
 import jd.http.Browser;
 import jd.nutils.Formatter;
-import jd.nutils.JDImage;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.download.DownloadInterface;
 
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Regex;
+import org.appwork.utils.images.IconIO;
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.DomainInfo;
 import org.jdownloader.gui.translate._GUI;
@@ -147,7 +147,8 @@ public abstract class PluginForHost extends Plugin {
             linkStatus.setStatusText(_JDT._.gui_downloadview_statustext_jac());
             try {
                 final BufferedImage img = ImageIO.read(file);
-                linkStatus.setStatusIcon(JDImage.getScaledImageIcon(img, 16, 16));
+
+                linkStatus.setStatusIcon(new ImageIcon(IconIO.getScaledInstance(img, 16, 16)));
             } catch (Exception e) {
                 e.printStackTrace();
             }

@@ -23,6 +23,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Vector;
 
+import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
 
 import jd.captcha.JAntiCaptcha;
@@ -33,11 +34,11 @@ import jd.captcha.utils.Utilities;
 import jd.gui.UserIO;
 import jd.gui.swing.components.JDLabelContainer;
 import jd.nutils.JDFlags;
-import jd.nutils.JDImage;
 import jd.nutils.io.JDIO;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.Regex;
+import org.appwork.utils.images.IconIO;
 import org.appwork.utils.swing.EDTHelper;
 
 public class EasyMethodFile implements JDLabelContainer, Serializable {
@@ -172,7 +173,8 @@ public class EasyMethodFile implements JDLabelContainer, Serializable {
         try {
             final File image = this.getExampleImage();
             if (image != null) {
-                final ImageIcon img = JDImage.getScaledImageIcon(JDImage.getImageIcon(image), 44, 24);
+
+                final ImageIcon img = new ImageIcon(IconIO.getScaledInstance(ImageIO.read(image), 44, 24));
                 return img;
 
             }

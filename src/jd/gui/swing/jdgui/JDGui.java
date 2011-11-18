@@ -61,7 +61,6 @@ import jd.gui.swing.jdgui.menu.JDMenuBar;
 import jd.gui.swing.jdgui.views.settings.ConfigurationView;
 import jd.gui.swing.jdgui.views.settings.sidebar.AddonConfig;
 import jd.nutils.JDFlags;
-import jd.nutils.JDImage;
 import jd.nutils.OSDetector;
 import jd.nutils.Screen;
 import jd.utils.JDUtilities;
@@ -80,6 +79,7 @@ import org.appwork.utils.swing.dialog.SimpleTextBallon;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.downloads.DownloadsView;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberView;
+import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 
 public class JDGui extends SwingGui {
@@ -290,7 +290,7 @@ public class JDGui extends SwingGui {
     private void initLocationAndDimension() {
         Dimension dim = GUIUtils.getLastDimension(this.mainFrame);
         if (dim == null) {
-            dim = new Dimension(800, 600);
+            dim = new Dimension(1024, 728);
         }
         this.mainFrame.setPreferredSize(dim);
         this.mainFrame.setSize(dim);
@@ -486,17 +486,17 @@ public class JDGui extends SwingGui {
             public void run() {
                 if (Application.getJavaVersion() >= 16000000) {
                     final ArrayList<Image> list = new ArrayList<Image>();
-                    list.add(JDImage.getImage("logo/logo_14_14"));
-                    list.add(JDImage.getImage("logo/logo_15_15"));
-                    list.add(JDImage.getImage("logo/logo_16_16"));
-                    list.add(JDImage.getImage("logo/logo_17_17"));
-                    list.add(JDImage.getImage("logo/logo_18_18"));
-                    list.add(JDImage.getImage("logo/logo_19_19"));
-                    list.add(JDImage.getImage("logo/logo_20_20"));
-                    list.add(JDImage.getImage("logo/jd_logo_64_64"));
+                    list.add(NewTheme.I().getImage("logo/logo_14_14", -1));
+                    list.add(NewTheme.I().getImage("logo/logo_15_15", -1));
+                    list.add(NewTheme.I().getImage("logo/logo_16_16", -1));
+                    list.add(NewTheme.I().getImage("logo/logo_17_17", -1));
+                    list.add(NewTheme.I().getImage("logo/logo_18_18", -1));
+                    list.add(NewTheme.I().getImage("logo/logo_19_19", -1));
+                    list.add(NewTheme.I().getImage("logo/logo_20_20", -1));
+                    list.add(NewTheme.I().getImage("logo/jd_logo_64_64", -1));
                     mainFrame.setIconImages(list);
                 } else {
-                    mainFrame.setIconImage(JDImage.getImage("logo/logo_17_17"));
+                    mainFrame.setIconImage(NewTheme.I().getImage("logo/logo_17_17", -1));
                 }
             }
 

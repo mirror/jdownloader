@@ -14,25 +14,22 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package jd.plugins.a;
+package org.jdownloader.container;
 
 import java.io.File;
 import java.util.ArrayList;
 
-import jd.PluginWrapper;
 import jd.nutils.io.JDIO;
-import jd.plugins.ContainerPlugin;
 import jd.plugins.ContainerStatus;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginsC;
 import jd.utils.JDUtilities;
 
-@ContainerPlugin(revision = "$Revision: 13393 $", interfaceVersion = 2, names = { "MetaLink" }, urls = { "file://.+\\.metalink" })
 public class MetaLink extends PluginsC {
 
-    public MetaLink(PluginWrapper wrapper) {
-        super(wrapper);
+    public MetaLink() {
+        super("MetaLink", "file://.+\\.metalink", "$Revision: 13393 $");
     }
 
     public ContainerStatus callDecryption(File lc) {

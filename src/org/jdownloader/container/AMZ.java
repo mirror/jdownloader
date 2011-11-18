@@ -1,21 +1,20 @@
-package jd.plugins.a;
+package org.jdownloader.container;
 
 import java.io.File;
 import java.security.spec.AlgorithmParameterSpec;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.regex.Pattern;
 
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
-import jd.PluginWrapper;
 import jd.nutils.encoding.Base64;
 import jd.nutils.encoding.Encoding;
 import jd.nutils.io.JDIO;
 import jd.parser.Regex;
-import jd.plugins.ContainerPlugin;
 import jd.plugins.ContainerStatus;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
@@ -25,11 +24,12 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@ContainerPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "Amazon MP3" }, urls = { "file://.+\\.amz" })
 public class AMZ extends PluginsC {
 
-    public AMZ(PluginWrapper wrapper) {
-        super(wrapper);
+    private Pattern pattern;
+
+    public AMZ() {
+        super("Amazon Mp3", "file://.+\\.amz", "$Revision$");
 
     }
 

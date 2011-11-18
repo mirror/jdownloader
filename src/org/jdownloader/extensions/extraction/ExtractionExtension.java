@@ -92,6 +92,11 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
         INSTANCE = this;
     }
 
+    @Override
+    public boolean isDefaultEnabled() {
+        return true;
+    }
+
     public static ExtractionExtension getIntance() {
         return INSTANCE;
     }

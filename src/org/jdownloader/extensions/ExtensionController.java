@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Enumeration;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.jar.JarEntry;
@@ -133,6 +134,7 @@ public class ExtensionController {
         for (Iterator<LazyExtension> it = lst.iterator(); it.hasNext();) {
 
             LazyExtension l = it.next();
+            if (l.getJarPath() == null || !new File(l.getJarPath()).exists()) { throw new InstantiationException("Jar Path " + l.getJarPath() + " is invalid"); }
             if (l._isEnabled()) {
                 // if exception occures here, we do a complete rescan. cache
                 // might be out of date
@@ -168,46 +170,61 @@ public class ExtensionController {
             }
         });
         if (addons != null) {
+            HashSet<File> dupes = new HashSet<File>();
+            HashSet<URL> urlDupes = new HashSet<URL>();
             main: for (File jar : addons) {
                 try {
-                    URLClassLoader cl = new URLClassLoader(new URL[] { jar.toURI().toURL() });
+
+                    URLClassLoader cl = new URLClassLoader(new URL[] { jar.toURI().toURL() }, null);
                     final Enumeration<URL> urls = cl.getResources(AbstractExtension.class.getPackage().getName().replace('.', '/'));
                     URL url;
+                    Pattern pattern = Pattern.compile(Pattern.quote(AbstractExtension.class.getPackage().getName().replace('.', '/')) + "/(\\w+)/(\\w+Extension)\\.class");
+
                     while (urls.hasMoreElements()) {
                         url = urls.nextElement();
-                        System.out.println(url);
-                        if ("jar".equalsIgnoreCase(url.getProtocol())) {
-                            // jarred addon (JAR)
-                            File jarFile = new File(new URL(url.getPath().substring(4, url.toString().lastIndexOf('!'))).toURI());
-                            FileInputStream fis = null;
-                            JarInputStream jis = null;
-                            try {
-                                jis = new JarInputStream(fis = new FileInputStream(jarFile));
-                                JarEntry e;
-                                while ((e = jis.getNextJarEntry()) != null) {
+                        if (urlDupes.add(url)) {
+
+                            if ("jar".equalsIgnoreCase(url.getProtocol())) {
+
+                                // jarred addon (JAR)
+                                File jarFile = new File(new URL(url.getPath().substring(0, url.getPath().lastIndexOf('!'))).toURI());
+
+                                if (dupes.add(jarFile)) {
+                                    FileInputStream fis = null;
+                                    JarInputStream jis = null;
                                     try {
-                                        Matcher matcher = Pattern.compile(Pattern.quote(AbstractExtension.class.getPackage().getName().replace('.', '/')) + "/(\\w+)/(\\w+Extension)\\.class").matcher(e.getName());
-                                        if (matcher.find()) {
-                                            String pkg = matcher.group(1);
-                                            String clazzName = matcher.group(2);
-                                            Class<?> clazz = cl.loadClass(AbstractExtension.class.getPackage().getName() + "." + pkg + "." + clazzName);
-                                            if (AbstractExtension.class.isAssignableFrom(clazz)) {
-                                                initModule((Class<AbstractExtension<?>>) clazz, ret);
-                                                continue main;
+                                        jis = new JarInputStream(fis = new FileInputStream(jarFile));
+                                        JarEntry e;
+                                        while ((e = jis.getNextJarEntry()) != null) {
+                                            try {
+
+                                                Matcher matcher = pattern.matcher(e.getName());
+
+                                                if (matcher.find()) {
+                                                    String pkg = matcher.group(1);
+                                                    String clazzName = matcher.group(2);
+                                                    Class<?> clazz = new URLClassLoader(new URL[] { jar.toURI().toURL() }).loadClass(AbstractExtension.class.getPackage().getName() + "." + pkg + "." + clazzName);
+
+                                                    if (AbstractExtension.class.isAssignableFrom(clazz)) {
+
+                                                        initModule((Class<AbstractExtension<?>>) clazz, ret, jarFile);
+                                                        continue main;
+                                                    }
+                                                }
+                                            } catch (Throwable e1) {
+                                                Log.exception(e1);
                                             }
                                         }
-                                    } catch (Throwable e1) {
-                                        Log.exception(e1);
+                                    } finally {
+                                        try {
+                                            jis.close();
+                                        } catch (final Throwable e) {
+                                        }
+                                        try {
+                                            fis.close();
+                                        } catch (final Throwable e) {
+                                        }
                                     }
-                                }
-                            } finally {
-                                try {
-                                    jis.close();
-                                } catch (final Throwable e) {
-                                }
-                                try {
-                                    fis.close();
-                                } catch (final Throwable e) {
                                 }
                             }
                         }
@@ -260,7 +277,7 @@ public class ExtensionController {
                         try {
                             cls = cl.loadClass(AbstractExtension.class.getPackage().getName() + "." + module.getParentFile().getName() + "." + module.getName().substring(0, module.getName().length() - 6));
                             if (AbstractExtension.class.isAssignableFrom(cls)) {
-                                initModule((Class<AbstractExtension<?>>) cls, retl);
+                                initModule((Class<AbstractExtension<?>>) cls, retl, f);
                                 loaded = true;
                                 continue main;
                             }
@@ -280,10 +297,13 @@ public class ExtensionController {
         return retl;
     }
 
-    private ArrayList<LazyExtension> initModule(Class<AbstractExtension<?>> cls, ArrayList<LazyExtension> list) throws InstantiationException, IllegalAccessException, StartException, IOException, ClassNotFoundException {
+    private ArrayList<LazyExtension> initModule(Class<AbstractExtension<?>> cls, ArrayList<LazyExtension> list, File jarFile) throws InstantiationException, IllegalAccessException, StartException, IOException, ClassNotFoundException {
         if (list == null) list = new ArrayList<LazyExtension>();
         String id = cls.getName().substring(27);
+
+        Log.L.fine("Load Extension: " + id);
         LazyExtension extension = LazyExtension.create(id, cls);
+        extension.setJarPath(jarFile.getAbsolutePath());
         extension._setPluginClass(cls);
         if (extension._isEnabled()) {
             extension.init();

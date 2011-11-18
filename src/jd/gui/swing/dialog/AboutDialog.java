@@ -30,7 +30,6 @@ import jd.controlling.ClipboardHandler;
 import jd.gui.UserIO;
 import jd.gui.swing.Factory;
 import jd.gui.swing.components.linkbutton.JLink;
-import jd.nutils.JDImage;
 import jd.nutils.io.JDIO;
 import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
@@ -112,7 +111,7 @@ public class AboutDialog extends AbstractDialog<Integer> {
         btn.setHorizontalTextPosition(JButton.CENTER);
 
         contentpane.setLayout(new MigLayout("ins 10, wrap 3", "[]15[]push[right]"));
-        contentpane.add(new JLabel(JDImage.getImageIcon("logo/jd_logo_128_128")), "aligny center, spany 6");
+        contentpane.add(new JLabel(NewTheme.I().getIcon("logo/jd_logo_128_128", -1)), "aligny center, spany 6");
         contentpane.add(lbl, "spanx");
         contentpane.add(new JLabel("© AppWork GmbH 2007-2011"), "spanx");
         contentpane.add(new JLabel(version), "gaptop 10");

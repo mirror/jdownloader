@@ -14,7 +14,7 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package jd.plugins.a;
+package org.jdownloader.container;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -29,7 +29,6 @@ import java.util.Comparator;
 import java.util.Iterator;
 import java.util.Vector;
 
-import jd.PluginWrapper;
 import jd.controlling.JDLogger;
 import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.LinkCollector;
@@ -38,16 +37,14 @@ import jd.http.requests.FormData;
 import jd.http.requests.PostFormDataRequest;
 import jd.nutils.io.JDIO;
 import jd.parser.Regex;
-import jd.plugins.ContainerPlugin;
 import jd.plugins.ContainerStatus;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginsC;
 
-@ContainerPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "CCF" }, urls = { "file://.+\\.ccf" })
 public class C extends PluginsC {
 
-    public C(PluginWrapper wrapper) {
-        super(wrapper);
+    public C() {
+        super("CFF", "file://.+\\.ccf", "$Revision$");
         // TODO Auto-generated constructor stub
     }
 

@@ -27,7 +27,6 @@ import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Regex;
 import org.appwork.utils.logging.Log;
 import org.jdownloader.plugins.controller.container.ContainerPluginController;
-import org.jdownloader.plugins.controller.container.LazyContainerPlugin;
 import org.jdownloader.plugins.controller.crawler.CrawlerPluginController;
 import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin;
 import org.jdownloader.plugins.controller.host.HostPluginController;
@@ -430,56 +429,52 @@ public class LinkCrawler implements IOPermission {
                      * first we will walk through all available container
                      * plugins
                      */
-                    for (final LazyContainerPlugin pCon : ContainerPluginController.getInstance().list()) {
+                    for (final PluginsC pCon : ContainerPluginController.getInstance().list()) {
                         if (pCon.canHandle(url)) {
                             try {
-                                PluginsC plg = pCon.getPrototype();
-                                if (plg != null) {
-                                    ArrayList<CrawledLink> allPossibleCryptedLinks = plg.getContainerLinks(url);
-                                    if (allPossibleCryptedLinks != null) {
-                                        for (final CrawledLink decryptThis : allPossibleCryptedLinks) {
+
+                                ArrayList<CrawledLink> allPossibleCryptedLinks = pCon.getContainerLinks(url);
+                                if (allPossibleCryptedLinks != null) {
+                                    for (final CrawledLink decryptThis : allPossibleCryptedLinks) {
+                                        /*
+                                         * forward important data to new ones
+                                         */
+                                        forwardCrawledLinkInfos(possibleCryptedLink, decryptThis);
+                                        if (possibleCryptedLink.getCryptedLink() != null) {
                                             /*
-                                             * forward important data to new
-                                             * ones
+                                             * source contains CryptedLink, so
+                                             * lets forward important infos
                                              */
-                                            forwardCrawledLinkInfos(possibleCryptedLink, decryptThis);
-                                            if (possibleCryptedLink.getCryptedLink() != null) {
-                                                /*
-                                                 * source contains CryptedLink,
-                                                 * so lets forward important
-                                                 * infos
-                                                 */
-                                                HashMap<String, Object> props = possibleCryptedLink.getCryptedLink().getProperties();
-                                                if (props != null && !props.isEmpty()) {
-                                                    decryptThis.getCryptedLink().setProperties(new HashMap<String, Object>(props));
+                                            HashMap<String, Object> props = possibleCryptedLink.getCryptedLink().getProperties();
+                                            if (props != null && !props.isEmpty()) {
+                                                decryptThis.getCryptedLink().setProperties(new HashMap<String, Object>(props));
+                                            }
+                                            decryptThis.getCryptedLink().setDecrypterPassword(possibleCryptedLink.getCryptedLink().getDecrypterPassword());
+                                        }
+
+                                        if (insideDecrypterPlugin()) {
+                                            /*
+                                             * direct decrypt this link because
+                                             * we are already inside a
+                                             * LinkCrawlerThread and this avoids
+                                             * deadlocks on plugin waiting for
+                                             * linkcrawler results
+                                             */
+                                            container(decryptThis);
+                                        } else {
+                                            /*
+                                             * enqueue this cryptedLink for
+                                             * decrypting
+                                             */
+                                            if (!checkStartNotify()) return;
+                                            threadPool.execute(new LinkCrawlerRunnable(LinkCrawler.this, generation) {
+
+                                                @Override
+                                                void crawling() {
+                                                    container(decryptThis);
                                                 }
-                                                decryptThis.getCryptedLink().setDecrypterPassword(possibleCryptedLink.getCryptedLink().getDecrypterPassword());
-                                            }
+                                            });
 
-                                            if (insideDecrypterPlugin()) {
-                                                /*
-                                                 * direct decrypt this link
-                                                 * because we are already inside
-                                                 * a LinkCrawlerThread and this
-                                                 * avoids deadlocks on plugin
-                                                 * waiting for linkcrawler
-                                                 * results
-                                                 */
-                                                container(decryptThis);
-                                            } else {
-                                                /*
-                                                 * enqueue this cryptedLink for
-                                                 * decrypting
-                                                 */
-                                                if (!checkStartNotify()) return;
-                                                threadPool.execute(new LinkCrawlerRunnable(LinkCrawler.this, generation) {
-
-                                                    @Override
-                                                    void crawling() {
-                                                        container(decryptThis);
-                                                    }
-                                                });
-                                            }
                                         }
                                     }
                                 }
@@ -688,9 +683,7 @@ public class LinkCrawler implements IOPermission {
                 return;
             }
             if (cryptedLink == null || cryptedLink.getcPlugin() == null || cryptedLink.getURL() == null) return;
-            PluginsC plg = cryptedLink.getcPlugin().getNewInstance();
-            plg.setBrowser(new Browser());
-            plg.setLogger(new JDPluginLogger(cryptedLink.getURL()));
+            PluginsC plg = cryptedLink.getcPlugin().getClass().newInstance();
             /* now we run the plugin and let it find some links */
             LinkCrawlerThread lct = null;
             if (Thread.currentThread() instanceof LinkCrawlerThread) {
@@ -749,6 +742,10 @@ public class LinkCrawler implements IOPermission {
             if (decryptedPossibleLinks != null) {
                 dist.distribute(decryptedPossibleLinks.toArray(new DownloadLink[decryptedPossibleLinks.size()]));
             }
+        } catch (InstantiationException e) {
+            e.printStackTrace();
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
         } finally {
             checkFinishNotify();
         }

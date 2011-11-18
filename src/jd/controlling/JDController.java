@@ -35,9 +35,8 @@ import jd.plugins.PluginsC;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.event.Eventsender;
+import org.jdownloader.container.D;
 import org.jdownloader.controlling.filter.LinkFilterController;
-import org.jdownloader.plugins.controller.container.ContainerPluginController;
-import org.jdownloader.plugins.controller.container.LazyContainerPlugin;
 import org.jdownloader.update.RestartController;
 
 /**
@@ -422,13 +421,9 @@ public class JDController {
         }
         String xml = null;
         PluginsC plg = null;
-        for (LazyContainerPlugin p : ContainerPluginController.getInstance().list()) {
-            if ("DLC".equalsIgnoreCase(p.getDisplayName())) {
-                plg = p.newInstance();
-                xml = plg.createContainerString(links);
-                break;
-            }
-        }
+
+        xml = new D().createContainerString(links);
+
         if (xml != null) {
             final String cipher = encryptDLC(plg, xml);
             if (cipher != null) {

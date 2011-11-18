@@ -1,25 +1,19 @@
 package org.jdownloader.plugins.controller.container;
 
-import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import jd.JDInitFlags;
-import jd.nutils.Formatter;
-import jd.plugins.ContainerPlugin;
 import jd.plugins.PluginsC;
 
-import org.appwork.exceptions.WTFException;
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.Application;
 import org.appwork.utils.Regex;
-import org.appwork.utils.logging.Log;
-import org.jdownloader.plugins.controller.PluginController;
-import org.jdownloader.plugins.controller.PluginInfo;
+import org.jdownloader.container.AMZ;
+import org.jdownloader.container.C;
+import org.jdownloader.container.D;
+import org.jdownloader.container.MetaLink;
+import org.jdownloader.container.R;
 
-public class ContainerPluginController extends PluginController<PluginsC> {
+public class ContainerPluginController {
 
     private static final ContainerPluginController INSTANCE = new ContainerPluginController();
 
@@ -27,118 +21,23 @@ public class ContainerPluginController extends PluginController<PluginsC> {
         return ContainerPluginController.INSTANCE;
     }
 
-    private List<LazyContainerPlugin> list;
+    private List<PluginsC> list;
 
     private ContainerPluginController() {
         list = null;
     }
 
-    private String getCache() {
-        return "tmp/container.ejs";
-    }
-
     public void init() {
-        List<LazyContainerPlugin> plugins = new ArrayList<LazyContainerPlugin>();
-        final long t = System.currentTimeMillis();
-        try {
-            if (JDInitFlags.REFRESH_CACHE || JDInitFlags.SWITCH_RETURNED_FROM_UPDATE) {
-                try {
-                    /* do a fresh scan */
-                    plugins = update();
-                } catch (Throwable e) {
-                    Log.L.severe("@ContainerPluginController: update failed!");
-                    Log.exception(e);
-                }
-            } else {
-                /* try to load from cache */
-                try {
-                    plugins = loadFromCache();
-                } catch (Throwable e) {
-                    Log.L.severe("@ContainerPluginController: cache failed!");
-                    Log.exception(e);
-                }
-                if (plugins.size() == 0) {
-                    try {
-                        /* do a fresh scan */
-                        plugins = update();
-                    } catch (Throwable e) {
-                        Log.L.severe("@ContainerPluginController: update failed!");
-                        Log.exception(e);
-                    }
-                }
-            }
-        } finally {
-            Log.L.info("@ContainerPluginController: init " + (System.currentTimeMillis() - t) + " :" + plugins.size());
-        }
-        if (plugins.size() == 0) {
-            Log.L.severe("@ContainerPluginController: WTF, no plugins!");
-        }
+        List<PluginsC> plugins = new ArrayList<PluginsC>();
+        plugins.add(new AMZ());
+        plugins.add(new C());
+        plugins.add(new D());
+        plugins.add(new MetaLink());
+        plugins.add(new R());
         list = Collections.unmodifiableList(plugins);
     }
 
-    private List<LazyContainerPlugin> loadFromCache() {
-        List<LazyContainerPlugin> ret = new ArrayList<LazyContainerPlugin>();
-        for (AbstractContainerPlugin ap : JSonStorage.restoreFrom(Application.getResource(getCache()), false, KEY, new TypeRef<ArrayList<AbstractContainerPlugin>>() {
-        }, new ArrayList<AbstractContainerPlugin>())) {
-            LazyContainerPlugin l = new LazyContainerPlugin(ap);
-            ret.add(l);
-        }
-        return ret;
-    }
-
-    static public byte[] KEY = new byte[] { 0x01, 0x03, 0x11, 0x01, 0x01, 0x54, 0x01, 0x01, 0x01, 0x01, 0x12, 0x01, 0x01, 0x01, 0x22, 0x01 };
-
-    private List<LazyContainerPlugin> update() throws MalformedURLException {
-        List<LazyContainerPlugin> ret = new ArrayList<LazyContainerPlugin>();
-        ArrayList<AbstractContainerPlugin> save = new ArrayList<AbstractContainerPlugin>();
-        for (PluginInfo<PluginsC> c : scan("jd/plugins/a")) {
-            String simpleName = c.getClazz().getSimpleName();
-            ContainerPlugin a = c.getClazz().getAnnotation(ContainerPlugin.class);
-            if (a != null) {
-                try {
-                    long revision = Formatter.getRevision(a.revision());
-                    String[] names = a.names();
-                    String[] patterns = a.urls();
-                    if (names.length == 0) {
-                        /* create multiple container plugins from one source */
-                        patterns = (String[]) c.getClazz().getDeclaredMethod("getAnnotationUrls", new Class[] {}).invoke(null, new Object[] {});
-                        names = (String[]) c.getClazz().getDeclaredMethod("getAnnotationNames", new Class[] {}).invoke(null, new Object[] {});
-                    }
-                    if (patterns.length != names.length) throw new WTFException("names.length != patterns.length");
-                    if (names.length == 0) { throw new WTFException("names.length=0"); }
-                    for (int i = 0; i < names.length; i++) {
-                        try {
-                            AbstractContainerPlugin ap = new AbstractContainerPlugin(c.getClazz().getSimpleName());
-                            ap.setDisplayName(names[i]);
-                            ap.setPattern(patterns[i]);
-                            ap.setVersion(revision);
-                            LazyContainerPlugin l = new LazyContainerPlugin(ap);
-                            l.getPrototype();
-                            ret.add(l);
-                            save.add(ap);
-                            Log.L.severe("@ContainerPlugin ok:" + simpleName + " " + names[i]);
-                        } catch (Throwable e) {
-                            Log.L.severe("@ContainerPlugin failed:" + simpleName + " " + names[i]);
-                            Log.exception(e);
-                        }
-                    }
-                } catch (final Throwable e) {
-                    Log.L.severe("@ContainerPlugin failed:" + simpleName);
-                    Log.exception(e);
-                }
-            } else {
-                Log.L.severe("@ContainerPlugin missing:" + simpleName);
-            }
-        }
-        save(save);
-        return ret;
-    }
-
-    private void save(List<AbstractContainerPlugin> save) {
-        JSonStorage.saveTo(Application.getResource(getCache()), false, KEY, JSonStorage.serializeToJson(save));
-    }
-
-    public List<LazyContainerPlugin> list() {
+    public List<PluginsC> list() {
         lazyInit();
         return list;
     }
@@ -151,10 +50,10 @@ public class ContainerPluginController extends PluginController<PluginsC> {
         }
     }
 
-    public LazyContainerPlugin get(String displayName) {
+    public PluginsC get(String displayName) {
         lazyInit();
-        for (LazyContainerPlugin p : list) {
-            if (p.getDisplayName().equalsIgnoreCase(displayName)) return p;
+        for (PluginsC p : list) {
+            if (p.getName().equalsIgnoreCase(displayName)) return p;
         }
         return null;
     }
@@ -162,9 +61,9 @@ public class ContainerPluginController extends PluginController<PluginsC> {
     public String getContainerExtensions(final String filter) {
         lazyInit();
         StringBuilder sb = new StringBuilder("");
-        for (final LazyContainerPlugin act : list) {
-            if (filter != null && !new Regex(act.getDisplayName(), filter).matches()) continue;
-            String exs[] = new Regex(act.getPattern().pattern(), "\\.([a-zA-Z0-9]+)").getColumn(0);
+        for (final PluginsC act : list) {
+            if (filter != null && !new Regex(act.getName(), filter).matches()) continue;
+            String exs[] = new Regex(act.getSupportedLinks().pattern(), "\\.([a-zA-Z0-9]+)").getColumn(0);
             for (String ex : exs) {
                 if (sb.length() > 0) sb.append("|");
                 sb.append(".").append(ex);

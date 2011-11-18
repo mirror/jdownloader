@@ -867,7 +867,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
 
     public void setLoadedPluginForContainer(PluginsC pluginForContainer) {
         this.pluginForContainer = pluginForContainer;
-        container = pluginForContainer.getHost();
+        container = pluginForContainer.getName();
     }
 
     /**

@@ -22,9 +22,9 @@ import java.util.ArrayList;
 import javax.swing.JFrame;
 
 import jd.gui.swing.SwingGui;
-import jd.nutils.JDImage;
 
 import org.appwork.utils.Application;
+import org.jdownloader.images.NewTheme;
 
 /**
  * Dumme JFRame from which dialogs can inherit the icon. workaround for 1.5
@@ -48,17 +48,18 @@ public class DummyFrame extends JFrame {
 
         if (Application.getJavaVersion() >= 16000000) {
             ArrayList<Image> list = new ArrayList<Image>();
-            list.add(JDImage.getImage("logo/logo_14_14"));
-            list.add(JDImage.getImage("logo/logo_15_15"));
-            list.add(JDImage.getImage("logo/logo_16_16"));
-            list.add(JDImage.getImage("logo/logo_17_17"));
-            list.add(JDImage.getImage("logo/logo_18_18"));
-            list.add(JDImage.getImage("logo/logo_19_19"));
-            list.add(JDImage.getImage("logo/logo_20_20"));
-            list.add(JDImage.getImage("logo/jd_logo_64_64"));
+
+            list.add(NewTheme.I().getImage("logo/logo_14_14", -1));
+            list.add(NewTheme.I().getImage("logo/logo_15_15", -1));
+            list.add(NewTheme.I().getImage("logo/logo_16_16", -1));
+            list.add(NewTheme.I().getImage("logo/logo_17_17", -1));
+            list.add(NewTheme.I().getImage("logo/logo_18_18", -1));
+            list.add(NewTheme.I().getImage("logo/logo_19_19", -1));
+            list.add(NewTheme.I().getImage("logo/logo_20_20", -1));
+            list.add(NewTheme.I().getImage("logo/jd_logo_64_64", -1));
             this.setIconImages(list);
         } else {
-            this.setIconImage(JDImage.getImage("logo/logo_17_17"));
+            this.setIconImage(NewTheme.I().getImage("logo/logo_17_17", -1));
         }
     }
 

@@ -2,6 +2,8 @@ package jd.controlling.reconnect.pluginsinc.liveheader;
 
 import java.awt.event.ActionEvent;
 
+import jd.controlling.reconnect.pluginsinc.liveheader.translate.T;
+
 import org.appwork.swing.action.BasicAction;
 import org.appwork.swing.components.tooltips.BasicTooltipFactory;
 import org.appwork.utils.event.ProcessCallBackAdapter;
@@ -10,7 +12,6 @@ import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.appwork.utils.swing.dialog.ProgressDialog;
 import org.appwork.utils.swing.dialog.ProgressDialog.ProgressGetter;
-import org.jdownloader.extensions.antireconnect.translate.T;
 import org.jdownloader.images.NewTheme;
 
 public class RouterSendAction extends BasicAction {
@@ -58,7 +59,7 @@ public class RouterSendAction extends BasicAction {
             }
         };
         try {
-            Dialog.I().showDialog(new ProgressDialog(pg, 0, T._.RouterSendAction_actionPerformed_title(), T._.RouterSendAction_actionPerformed_msg(), NewTheme.I().getIcon("upload", 32), null, null));
+            Dialog.I().showDialog(new ProgressDialog(pg, 0, T._.RouterSendAction_actionPerformed_title(), T._.RouterSendAction_actionPerformed_msg2(), NewTheme.I().getIcon("upload", 32), null, null));
         } catch (DialogClosedException e1) {
             e1.printStackTrace();
         } catch (DialogCanceledException e1) {
