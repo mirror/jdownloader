@@ -247,6 +247,10 @@ public class StatusBarImpl extends JPanel {
         return linkGrabberIndicator;
     }
 
+    public IconedProcessIndicator getExtractionIndicator() {
+        return extractIndicator;
+    }
+
     private void updateLinkGrabberIndicator() {
         final boolean enabled = LinkChecker.isChecking() | LinkCrawler.isCrawling();
         new EDTRunner() {

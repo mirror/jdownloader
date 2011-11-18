@@ -26,14 +26,14 @@ import java.util.TimerTask;
  * 
  */
 class UpdateDisplay extends TimerTask {
-    private ExtractionController con;
+    private ExtractionEvent event;
 
     UpdateDisplay(ExtractionController con) {
-        this.con = con;
+        event = new ExtractionEvent(con, ExtractionEvent.Type.EXTRACTING);
     }
 
     @Override
     public void run() {
-        con.fireEvent(ExtractionConstants.WRAPPER_ON_PROGRESS);
+        ExtractionExtension.getIntance().fireEvent(event);
     }
 }

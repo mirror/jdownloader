@@ -48,7 +48,6 @@ import org.appwork.utils.Regex;
 import org.appwork.utils.formatter.StringFormatter;
 import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.DummyDownloadLink;
-import org.jdownloader.extensions.extraction.ExtractionConstants;
 import org.jdownloader.extensions.extraction.ExtractionControllerConstants;
 import org.jdownloader.extensions.extraction.IExtraction;
 
@@ -231,14 +230,13 @@ public class Multi extends IExtraction {
     @Override
     public boolean findPassword(String password) {
         crack++;
-        controller.fireEvent(ExtractionConstants.WRAPPER_PASSWORT_CRACKING);
 
         try {
             if (inArchive != null) {
                 try {
                     inArchive.close();
                 } catch (SevenZipException e) {
-                    logger.warning("Unable to close archive");
+                    // logger.warning("Unable to close archive");
                 }
             }
 
@@ -401,7 +399,9 @@ public class Multi extends IExtraction {
 
                 archive.addExtractedFiles(extractTo);
 
-                MultiCallback call = new MultiCallback(extractTo, controller, config, item.getCRC() > 0 ? true : false);
+                // MultiCallback call = new MultiCallback(extractTo, controller,
+                // config, item.getCRC() > 0 ? true : false);
+                MultiCallback call = new MultiCallback(extractTo, controller, config, false);
                 ExtractOperationResult res;
                 try {
                     if (item.isEncrypted()) {

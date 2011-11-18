@@ -24,7 +24,6 @@ import jd.controlling.JDController;
 import jd.event.ControlEvent;
 import jd.gui.UserIO;
 import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginProgress;
 
@@ -44,19 +43,30 @@ public class ExtractionListenerList implements ExtractionListener {
         this.ex = ExtractionExtension.getIntance();
     }
 
-    public void onExtractionEvent(int id, ExtractionController controller) {
+    public void onExtractionEvent(ExtractionEvent event) {
+        ExtractionController controller = event.getCaller();
+
+        // if (controller.getProgressController() != null) return;
+
         LinkStatus ls = controller.getArchiv().getFirstDownloadLink().getLinkStatus();
         // Falls der link entfernt wird während dem entpacken
-        if (controller.getArchiv().getFirstDownloadLink().getFilePackage() == FilePackage.getDefaultFilePackage()) {
-            logger.warning("LINK GOT REMOVED_: " + controller.getArchiv().getFirstDownloadLink());
-        }
+        // if (controller.getArchiv().getFirstDownloadLink().getFilePackage() ==
+        // FilePackage.getDefaultFilePackage() &&
+        // controller.getProgressController() == null) {
+        // logger.warning("LINK GOT REMOVED_: " +
+        // controller.getArchiv().getFirstDownloadLink());
+        // ProgressController progress = new
+        // ProgressController(T._.plugins_optional_extraction_progress_extractfile(controller.getArchiv().getFirstDownloadLink().getFileOutput()),
+        // 100, ex.getIconKey());
+        // controller.setProgressController(progress);
+        // }
 
-        switch (id) {
-        case ExtractionConstants.WRAPPER_STARTED:
+        switch (event.getType()) {
+        case QUEUED:
             controller.getArchiv().getFirstDownloadLink().getLinkStatus().setStatusText(T._.plugins_optional_extraction_status_queued());
             controller.getArchiv().getFirstDownloadLink().requestGuiUpdate();
             break;
-        case ExtractionConstants.WRAPPER_EXTRACTION_FAILED:
+        case EXTRACTION_FAILED:
             for (DownloadLink link : controller.getArchiv().getDownloadLinks()) {
                 if (link == null) continue;
                 LinkStatus lls = link.getLinkStatus();
@@ -83,7 +93,7 @@ public class ExtractionListenerList implements ExtractionListener {
             controller.getArchiv().setActive(false);
             ex.onFinished(controller);
             break;
-        case ExtractionConstants.WRAPPER_PASSWORD_NEEDED_TO_CONTINUE:
+        case PASSWORD_NEEDED_TO_CONTINUE:
             controller.getArchiv().getFirstDownloadLink().requestGuiUpdate();
 
             if (ex.getSettings().isAskForUnknownPasswordsEnabled()) {
@@ -97,23 +107,23 @@ public class ExtractionListenerList implements ExtractionListener {
                 controller.getArchiv().setPassword(pass);
             }
             break;
-        case ExtractionConstants.WRAPPER_CRACK_PASSWORD:
+        case START_CRACK_PASSWORD:
             controller.getArchiv().getFirstDownloadLink().getLinkStatus().setStatusText(T._.plugins_optional_extraction_status_crackingpass());
             controller.getArchiv().getFirstDownloadLink().requestGuiUpdate();
             break;
-        case ExtractionConstants.WRAPPER_START_OPEN_ARCHIVE:
+        case START:
             controller.getArchiv().getFirstDownloadLink().getLinkStatus().setStatusText(T._.plugins_optional_extraction_status_openingarchive());
             controller.getArchiv().getFirstDownloadLink().requestGuiUpdate();
             break;
-        case ExtractionConstants.WRAPPER_OPEN_ARCHIVE_SUCCESS:
+        case OPEN_ARCHIVE_SUCCESS:
             ex.assignRealDownloadDir(controller);
             break;
-        case ExtractionConstants.WRAPPER_PASSWORD_FOUND:
+        case PASSWORD_FOUND:
             controller.getArchiv().getFirstDownloadLink().getLinkStatus().setStatusText(T._.plugins_optional_extraction_status_passfound());
             controller.getArchiv().getFirstDownloadLink().requestGuiUpdate();
             controller.getArchiv().getFirstDownloadLink().setPluginProgress(null);
             break;
-        case ExtractionConstants.WRAPPER_PASSWORT_CRACKING:
+        case PASSWORT_CRACKING:
             controller.getArchiv().getFirstDownloadLink().getLinkStatus().setStatusText(T._.plugins_optional_extraction_status_crackingpass());
             if (controller.getArchiv().getFirstDownloadLink().getPluginProgress() == null) {
                 controller.getArchiv().getFirstDownloadLink().setPluginProgress(new PluginProgress(controller.getCrackProgress(), controller.getPasswordListSize(), Color.GREEN.darker()));
@@ -122,7 +132,7 @@ public class ExtractionListenerList implements ExtractionListener {
             }
             controller.getArchiv().getFirstDownloadLink().requestGuiUpdate();
             break;
-        case ExtractionConstants.WRAPPER_ON_PROGRESS:
+        case EXTRACTING:
             controller.getArchiv().getFirstDownloadLink().getLinkStatus().setStatusText(T._.plugins_optional_extraction_status_extracting());
             if (controller.getArchiv().getFirstDownloadLink().getPluginProgress() == null) {
                 controller.getArchiv().getFirstDownloadLink().setPluginProgress(new PluginProgress(controller.getArchiv().getExtracted(), controller.getArchiv().getSize(), Color.YELLOW.darker()));
@@ -131,7 +141,7 @@ public class ExtractionListenerList implements ExtractionListener {
             }
             controller.getArchiv().getFirstDownloadLink().requestGuiUpdate();
             break;
-        case ExtractionConstants.WRAPPER_EXTRACTION_FAILED_CRC:
+        case EXTRACTION_FAILED_CRC:
             if (controller.getArchiv().getCrcError().size() != 0) {
                 for (DownloadLink link : controller.getArchiv().getCrcError()) {
                     if (link == null) continue;
@@ -161,7 +171,7 @@ public class ExtractionListenerList implements ExtractionListener {
             controller.getArchiv().setActive(false);
             ex.onFinished(controller);
             break;
-        case ExtractionConstants.WRAPPER_FINISHED_SUCCESSFUL:
+        case FINISHED:
             File[] files = new File[controller.getArchiv().getExtractedFiles().size()];
             int i = 0;
             for (File f : controller.getArchiv().getExtractedFiles()) {
@@ -180,7 +190,7 @@ public class ExtractionListenerList implements ExtractionListener {
             controller.getArchiv().setActive(false);
             ex.onFinished(controller);
             break;
-        case ExtractionConstants.NOT_ENOUGH_SPACE:
+        case NOT_ENOUGH_SPACE:
             for (DownloadLink link : controller.getArchiv().getDownloadLinks()) {
                 if (link == null) continue;
 
@@ -191,10 +201,10 @@ public class ExtractionListenerList implements ExtractionListener {
 
             ex.onFinished(controller);
             break;
-        case ExtractionConstants.REMOVE_ARCHIVE_METADATA:
+        case CLEANUP:
             ex.removeArchive(controller.getArchiv());
             break;
-        case ExtractionConstants.WRAPPER_FILE_NOT_FOUND:
+        case FILE_NOT_FOUND:
             if (controller.getArchiv().getCrcError().size() != 0) {
                 for (DownloadLink link : controller.getArchiv().getCrcError()) {
                     if (link == null) continue;

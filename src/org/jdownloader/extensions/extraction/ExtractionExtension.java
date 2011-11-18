@@ -35,6 +35,8 @@ import jd.controlling.packagecontroller.AbstractPackageChildrenNodeFilter;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.gui.UserIO;
+import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.jdgui.actions.ToolBarAction;
 import jd.gui.swing.jdgui.actions.ToolBarAction.Types;
 import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.plugins.AddonPanel;
@@ -57,31 +59,37 @@ import org.jdownloader.gui.views.downloads.table.DownloadsTable;
 import org.jdownloader.settings.GeneralSettings;
 
 public class ExtractionExtension extends AbstractExtension<ExtractionConfig> implements ControlListener, ActionListener {
-    private static final int             EXTRACT_LINK            = 1000;
+    private static final int             EXTRACT_LINK                   = 1000;
 
-    private static final int             EXTRACT_PACKAGE         = 1001;
+    private static final int             EXTRACT_PACKAGE                = 1001;
 
-    private static final int             OPEN_EXTRACT            = 1002;
+    private static final int             OPEN_EXTRACT                   = 1002;
 
-    private static final int             SET_EXTRACT_TO          = 1003;
+    private static final int             SET_EXTRACT_TO                 = 1003;
 
-    private static final int             SET_LINK_AUTOEXTRACT    = 1005;
+    private static final int             SET_LINK_AUTOEXTRACT           = 1005;
 
-    private static final int             SET_PACKAGE_AUTOEXTRACT = 1006;
+    private static final int             SET_PACKAGE_AUTOEXTRACT        = 1006;
 
-    private static final String          MENU_PACKAGES           = "MENU_EXTRACT_PACKAGE";
+    private static final String          MENU_PACKAGES                  = "MENU_EXTRACT_PACKAGE";
 
-    private static final String          MENU_LINKS              = "MENU_EXTRACT_LINK";
+    private static final String          MENU_LINKS                     = "MENU_EXTRACT_LINK";
 
-    private static MenuAction            menuAction              = null;
+    public static final String           DOWNLOADLINK_KEY_EXTRACTTOPATH = "EXTRAXT_TO_PATH";
 
-    private Queue                        ExtractionQueue         = new Queue("Extraction") {
+    public static final String           DOWNLOADLINK_KEY_EXTRACTEDPATH = "EXTRACTEDPATH";
 
-                                                                 };
+    private static MenuAction            menuAction                     = null;
 
-    private final ArrayList<IExtraction> extractors              = new ArrayList<IExtraction>();
+    private Queue                        ExtractionQueue                = new Queue("Extraction") {
 
-    private final ArrayList<Archive>     archives                = new ArrayList<Archive>();
+                                                                        };
+
+    private ExtractionEventSender        broadcaster                    = new ExtractionEventSender();
+
+    private final ArrayList<IExtraction> extractors                     = new ArrayList<IExtraction>();
+
+    private final ArrayList<Archive>     archives                       = new ArrayList<Archive>();
 
     private ExtractionConfigPanel        configPanel;
 
@@ -99,6 +107,14 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
 
     public static ExtractionExtension getIntance() {
         return INSTANCE;
+    }
+
+    public void addListener(ExtractionListener listener) {
+        broadcaster.addListener(listener);
+    }
+
+    public void removeListener(ExtractionListener listener) {
+        broadcaster.removeListener(listener);
     }
 
     /**
@@ -150,18 +166,12 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
 
         ExtractionController controller = new ExtractionController(archive, logger);
 
-        if (archive.getFirstDownloadLink() instanceof DummyDownloadLink) {
-            controller.addExtractionListener(new ExtractionListenerFile());
-        } else {
-            controller.addExtractionListener(new ExtractionListenerList());
-        }
-
         controller.setRemoveAfterExtract(getSettings().isDeleteArchiveFilesAfterExtraction());
 
         archive.setActive(true);
         extractor.setConfig(getSettings());
 
-        controller.fireEvent(ExtractionConstants.WRAPPER_STARTED);
+        fireEvent(new ExtractionEvent(controller, ExtractionEvent.Type.QUEUED));
         ExtractionQueue.addAsynch(controller);
     }
 
@@ -172,7 +182,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
      * @return
      */
     File getExtractToPath(DownloadLink link) {
-        if (link.getProperty(ExtractionConstants.DOWNLOADLINK_KEY_EXTRACTTOPATH) != null) return (File) link.getProperty(ExtractionConstants.DOWNLOADLINK_KEY_EXTRACTTOPATH);
+        if (link.getProperty(DOWNLOADLINK_KEY_EXTRACTTOPATH) != null) return (File) link.getProperty(DOWNLOADLINK_KEY_EXTRACTTOPATH);
         if (link instanceof DummyDownloadLink) return new File(link.getFileOutput()).getParentFile();
         String path;
 
@@ -254,7 +264,6 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
      */
     @SuppressWarnings("unchecked")
     private void actionPerformedOnMenuItem(MenuAction source) {
-
         ArrayList<DownloadLink> dlinks = (ArrayList<DownloadLink>) source.getProperty(MENU_LINKS);
         ArrayList<FilePackage> fps = (ArrayList<FilePackage>) source.getProperty(MENU_PACKAGES);
         switch (source.getActionID()) {
@@ -302,7 +311,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
         case OPEN_EXTRACT:
             DownloadLink link = (DownloadLink) source.getProperty("LINK");
             if (link == null) { return; }
-            String path = link.getStringProperty(ExtractionConstants.DOWNLOADLINK_KEY_EXTRACTEDPATH + "2");
+            String path = link.getStringProperty(DOWNLOADLINK_KEY_EXTRACTEDPATH + "2");
 
             if (!new File(path).exists()) {
                 UserIO.getInstance().requestMessageDialog(T._.plugins_optional_extraction_messages(path));
@@ -340,7 +349,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
             for (DownloadLink ll : dlinks) {
                 Archive archive0 = buildArchive(ll);
                 for (DownloadLink l : archive0.getDownloadLinks()) {
-                    l.setProperty(ExtractionConstants.DOWNLOADLINK_KEY_EXTRACTTOPATH, files[0]);
+                    l.setProperty(DOWNLOADLINK_KEY_EXTRACTTOPATH, files[0]);
                 }
             }
             break;
@@ -435,7 +444,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
 
             for (DownloadLink l : controller.getArchiv().getDownloadLinks()) {
                 if (l == null) continue;
-                l.setProperty(ExtractionConstants.DOWNLOADLINK_KEY_EXTRACTEDPATH, controller.getArchiv().getExtractTo().getAbsolutePath());
+                l.setProperty(DOWNLOADLINK_KEY_EXTRACTEDPATH, controller.getArchiv().getExtractTo().getAbsolutePath());
             }
         }
     }
@@ -459,15 +468,6 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
 
         return null;
     }
-
-    // @Override
-    // public Object interact(String command, Object parameter) {
-    // if (command.equals("isWorking")) {
-    // return queue.isAlive();
-    // } else {
-    // return null;
-    // }
-    // }
 
     /**
      * Finishes the extraction process.
@@ -525,7 +525,6 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
             ArrayList<MenuAction> items = (ArrayList<MenuAction>) event.getParameter();
             MenuAction m;
             MenuAction container = new MenuAction("Extract", "optional.extraction.linkmenu.container", 0) {
-
                 private static final long serialVersionUID = 6976229914297269865L;
 
                 @Override
@@ -549,7 +548,6 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
                 link = (DownloadLink) event.getCaller();
 
                 container.addMenuItem(m = new MenuAction("Extract Link", "optional.extraction.linkmenu.extract", EXTRACT_LINK) {
-
                     private static final long serialVersionUID = 8648569972779344623L;
 
                     @Override
@@ -580,7 +578,6 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
 
                 m.setProperty(MENU_LINKS, ((DownloadsTable) source).getSelectedChildren());
                 container.addMenuItem(m = new MenuAction("Autoextract", "optional.extraction.linkmenu.autoextract", SET_LINK_AUTOEXTRACT) {
-
                     private static final long serialVersionUID = -6049435417230844732L;
 
                     @Override
@@ -605,7 +602,6 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
                 }
                 m.setProperty(MENU_LINKS, ((DownloadsTable) source).getSelectedChildren());
                 container.addMenuItem(new MenuAction(Types.SEPARATOR) {
-
                     private static final long serialVersionUID = -8990247058181516475L;
 
                     @Override
@@ -624,7 +620,6 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
                     }
                 });
                 container.addMenuItem(m = new MenuAction("Extract To", "optional.extraction.linkmenu.setextract", SET_EXTRACT_TO) {
-
                     private static final long serialVersionUID = -7772646110444791318L;
 
                     @Override
@@ -659,7 +654,6 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
                 }
                 if (dir == null) break;
                 container.addMenuItem(m = new MenuAction("Open Extract folder", "optional.extraction.linkmenu.openextract3", OPEN_EXTRACT) {
-
                     private static final long serialVersionUID = 212186274511234351L;
 
                     @Override
@@ -685,13 +679,12 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
                     m.setEnabled(false);
                 }
 
-                link.setProperty(ExtractionConstants.DOWNLOADLINK_KEY_EXTRACTEDPATH + "2", dir.getAbsolutePath());
+                link.setProperty(DOWNLOADLINK_KEY_EXTRACTEDPATH + "2", dir.getAbsolutePath());
                 m.setProperty("LINK", link);
             } else {
                 FilePackage fp = (FilePackage) event.getCaller();
                 if (fp != null) {
                     container.addMenuItem(m = new MenuAction("Extract Package", "optional.extraction.linkmenu.package.extract", EXTRACT_PACKAGE) {
-
                         private static final long serialVersionUID = 5329598452469482639L;
 
                         @Override
@@ -712,7 +705,6 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
                     m.setIcon(getIconKey());
                     m.setActionListener(this);
                     container.addMenuItem(m = new MenuAction("Auto Extract Package", "optional.extraction.linkmenu.package.autoextract", SET_PACKAGE_AUTOEXTRACT) {
-
                         private static final long serialVersionUID = 8363153410685078199L;
 
                         @Override
@@ -751,88 +743,75 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
         JDController.getInstance().addControlListener(this);
     }
 
+    void fireEvent(ExtractionEvent event) {
+        broadcaster.fireEvent(event);
+    }
+
     @Override
     protected void initExtension() throws StartException {
-        // we will remove them soon anway
-        // ArrayList<PluginOptional> pluginsOptional = new
-        // ArrayList<OptionalPluginWrapper>(OptionalPluginWrapper.getOptionalWrapper());
-        // Collections.sort(pluginsOptional);
-        //
-        // for (OptionalPluginWrapper pow : pluginsOptional) {
-        // if (pow.getAnnotation().id().equals("unrar") ||
-        // pow.getAnnotation().id().equals("hjsplit")) {
-        // if (pow.isEnabled()) {
-        // logger.warning("Disable unrar and hjsplit to use this plugin");
-        // UserIO.getInstance().requestMessageDialog(0,
-        // "Disable unrar and hjsplit to use this plugin");
-        // return false;
-        // }
-        // }
-        // }
+        new ToolBarAction("extraction", "extraction", getIconKey()) { //
+            // TODO: remove
+            private static final long serialVersionUID = 1L;
 
-        // new ToolBarAction("extraction", "extraction", getIconKey()) { //
-        // TODO:
-        // // remove
-        // private static final long serialVersionUID = 1L;
-        //
-        // @Override
-        // protected String createMnemonic() {
-        // return null;
-        // }
-        //
-        // @Override
-        // protected String createAccelerator() {
-        // return null;
-        // }
-        //
-        // @Override
-        // protected String createTooltip() {
-        // return "Extraction";
-        // }
-        //
-        // @Override
-        // public void initDefaults() {
-        // }
-        //
-        // @Override
-        // public void onAction(final ActionEvent e) {
-        // FileFilter ff = new FileFilter() {
-        // @Override
-        // public boolean accept(File pathname) {
-        // if (pathname.isDirectory()) return true;
-        //
-        // for (IExtraction extractor : extractors) {
-        // if
-        // (extractor.isArchivSupportedFileFilter(pathname.getAbsolutePath())) {
-        // return true; }
-        // }
-        //
-        // return false;
-        // }
-        //
-        // @Override
-        // public String getDescription() {
-        // return T._.plugins_optional_extraction_filefilter();
-        // }
-        // };
-        //
-        // File[] files = UserIO.getInstance().requestFileChooser("_EXTRATION_",
-        // null, UserIO.FILES_ONLY, ff, true, null, null);
-        // if (files == null) return;
-        //
-        // for (File archiveStartFile : files) {
-        // final Archive archive = buildDummyArchive(archiveStartFile);
-        // new Thread() {
-        // @Override
-        // public void run() {
-        // if (archive.isComplete()) addToQueue(archive);
-        // }
-        // }.start();
-        // }
-        // }
-        // };
+            @Override
+            protected String createMnemonic() {
+                return null;
+            }
+
+            @Override
+            protected String createAccelerator() {
+                return null;
+            }
+
+            @Override
+            protected String createTooltip() {
+                return "Extraction";
+            }
+
+            @Override
+            public void initDefaults() {
+            }
+
+            @Override
+            public void onAction(final ActionEvent e) {
+                FileFilter ff = new FileFilter() {
+                    @Override
+                    public boolean accept(File pathname) {
+                        if (pathname.isDirectory()) return true;
+
+                        for (IExtraction extractor : extractors) {
+                            if (extractor.isArchivSupportedFileFilter(pathname.getAbsolutePath())) { return true; }
+                        }
+
+                        return false;
+                    }
+
+                    @Override
+                    public String getDescription() {
+                        return T._.plugins_optional_extraction_filefilter();
+                    }
+                };
+
+                File[] files = UserIO.getInstance().requestFileChooser("_EXTRATION_", null, UserIO.FILES_ONLY, ff, true, null, null);
+                if (files == null) return;
+
+                for (File archiveStartFile : files) {
+                    final Archive archive = buildDummyArchive(archiveStartFile);
+                    new Thread() {
+                        @Override
+                        public void run() {
+                            if (archive.isComplete()) addToQueue(archive);
+                        }
+                    }.start();
+                }
+            }
+        };
 
         initExtractors();
+
+        addListener(new ExtractionListenerIcon(JDGui.getInstance().getStatusBar().getExtractionIndicator()));
+        // addListener(new ExtractionListenerFile());
+        addListener(new ExtractionListenerList());
 
         Iterator<IExtraction> it = extractors.iterator();
         while (it.hasNext()) {

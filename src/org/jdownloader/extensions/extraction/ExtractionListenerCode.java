@@ -34,21 +34,19 @@ import org.jdownloader.extensions.extraction.translate.T;
  * @author botzi
  * 
  */
-public class ExtractionListenerFile implements ExtractionListener {
+public class ExtractionListenerCode implements ExtractionListener {
     private Logger              logger;
     private ExtractionExtension ex;
 
-    ExtractionListenerFile() {
+    ExtractionListenerCode() {
         this.ex = ExtractionExtension.getIntance();
     }
 
-    public void onExtractionEvent(int id, ExtractionController controller) {
+    public void onExtractionEvent(ExtractionEvent event) {
+        ExtractionController controller = event.getCaller();
 
-        switch (id) {
-        case ExtractionConstants.WRAPPER_STARTED:
-            break;
-        case ExtractionConstants.WRAPPER_EXTRACTION_FAILED:
-
+        switch (event.getType()) {
+        case EXTRACTION_FAILED:
             for (File f : controller.getArchiv().getExtractedFiles()) {
                 if (f.exists()) {
                     if (!f.delete()) {
@@ -61,8 +59,7 @@ public class ExtractionListenerFile implements ExtractionListener {
             ex.onFinished(controller);
 
             break;
-        case ExtractionConstants.WRAPPER_PASSWORD_NEEDED_TO_CONTINUE:
-
+        case PASSWORD_NEEDED_TO_CONTINUE:
             if (ex.getSettings().isAskForUnknownPasswordsEnabled()) {
                 String pass = UserIO.getInstance().requestInputDialog(0, T._.plugins_optional_extraction_askForPassword(controller.getArchiv().getFirstDownloadLink().getName()), "");
                 if (pass == null || pass.length() == 0) {
@@ -73,19 +70,10 @@ public class ExtractionListenerFile implements ExtractionListener {
             }
 
             break;
-        case ExtractionConstants.WRAPPER_PASSWORT_CRACKING:
-            break;
-        case ExtractionConstants.WRAPPER_START_OPEN_ARCHIVE:
-            break;
-        case ExtractionConstants.WRAPPER_OPEN_ARCHIVE_SUCCESS:
+        case OPEN_ARCHIVE_SUCCESS:
             ex.assignRealDownloadDir(controller);
             break;
-        case ExtractionConstants.WRAPPER_PASSWORD_FOUND:
-            break;
-        case ExtractionConstants.WRAPPER_ON_PROGRESS:
-            break;
-        case ExtractionConstants.WRAPPER_EXTRACTION_FAILED_CRC:
-
+        case EXTRACTION_FAILED_CRC:
             for (File f : controller.getArchiv().getExtractedFiles()) {
                 if (f.exists()) {
                     if (!f.delete()) {
@@ -97,7 +85,7 @@ public class ExtractionListenerFile implements ExtractionListener {
             controller.getArchiv().setActive(false);
             ex.onFinished(controller);
             break;
-        case ExtractionConstants.WRAPPER_FINISHED_SUCCESSFUL:
+        case FINISHED:
             File[] files = new File[controller.getArchiv().getExtractedFiles().size()];
             int i = 0;
             for (File f : controller.getArchiv().getExtractedFiles()) {
@@ -115,7 +103,7 @@ public class ExtractionListenerFile implements ExtractionListener {
             controller.getArchiv().setActive(false);
             ex.onFinished(controller);
             break;
-        case ExtractionConstants.NOT_ENOUGH_SPACE:
+        case NOT_ENOUGH_SPACE:
             for (DownloadLink link : controller.getArchiv().getDownloadLinks()) {
                 if (link == null) continue;
 
@@ -126,10 +114,10 @@ public class ExtractionListenerFile implements ExtractionListener {
 
             ex.onFinished(controller);
             break;
-        case ExtractionConstants.REMOVE_ARCHIVE_METADATA:
+        case CLEANUP:
             ex.removeArchive(controller.getArchiv());
             break;
-        case ExtractionConstants.WRAPPER_FILE_NOT_FOUND:
+        case FILE_NOT_FOUND:
             controller.getArchiv().setActive(false);
             ex.onFinished(controller);
             break;
