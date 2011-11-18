@@ -264,7 +264,7 @@ public class LookAndFeelController {
             }
 
         } else if (isSubstance()) {
-            doSubstance();
+            doSubstance(fontName, fontSize);
 
         } else {
             try {
@@ -288,7 +288,7 @@ public class LookAndFeelController {
         }
     }
 
-    private void doSubstance() {
+    private void doSubstance(String fontName, int fontSize) {
         try {
             final JDSubstanceFontPolicy fp = new JDSubstanceFontPolicy(org.pushingpixels.substance.api.SubstanceLookAndFeel.getFontPolicy().getFontSet("substance", null), fontName, fontSize);
             org.pushingpixels.substance.api.SubstanceLookAndFeel.setFontPolicy(fp);
