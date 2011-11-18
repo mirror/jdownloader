@@ -14,7 +14,6 @@ import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.PackageInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.plugins.hoster.Offline;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.shutdown.ShutdownController;
@@ -27,6 +26,7 @@ import org.appwork.utils.event.predefined.changeevent.ChangeEventSender;
 import org.appwork.utils.logging.Log;
 import org.jdownloader.controlling.UniqueID;
 import org.jdownloader.controlling.filter.NoDownloadLinkException;
+import org.jdownloader.gui.translate._GUI;
 
 public class PackagizerController implements PackagizerInterface {
     private PackagizerSettings                  config;
@@ -277,15 +277,19 @@ public class PackagizerController implements PackagizerInterface {
 
     private void permanentOffline(CrawledLink link) {
         DownloadLink dl = link.getDownloadLink();
-        if (dl != null && dl.getDefaultPlugin() instanceof Offline) {
-            PackageInfo dpi = link.getDesiredPackageInfo();
-            if (dpi == null) {
-                dpi = new PackageInfo();
-                link.setDesiredPackageInfo(dpi);
+        try {
+            if (dl != null && dl.getDefaultPlugin().getLazyP().getClassname().contains("Offline")) {
+                PackageInfo dpi = link.getDesiredPackageInfo();
+                if (dpi == null) {
+                    dpi = new PackageInfo();
+                    link.setDesiredPackageInfo(dpi);
+                }
+                dpi.setName(_GUI._.Permanently_Offline_Package());
+                dpi.setUniqueId(PERMANENT_OFFLINE_ID);
             }
-            dpi.setName("Permanent Offline");
-            dpi.setUniqueId(PERMANENT_OFFLINE_ID);
+        } catch (final Throwable e) {
         }
+
     }
 
     public void runByUrl(CrawledLink link) {

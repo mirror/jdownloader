@@ -315,27 +315,6 @@ public class DirectHTTP extends PluginForHost {
     }
 
     /**
-     * Returns the annotations flags array
-     */
-    public static int[] getAnnotationFlags() {
-        return new int[] { 0, 0 };
-    }
-
-    /**
-     * Returns the annotations names array
-     */
-    public static String[] getAnnotationNames() {
-        return new String[] { "DirectHTTP", "http links" };
-    }
-
-    /**
-     * Returns the annotation pattern array
-     */
-    public static String[] getAnnotationUrls() {
-        return new String[] { "directhttp://.+", "https?viajd://[\\d\\w\\.:\\-@]*/.*" + DirectHTTP.ENDINGS };
-    }
-
-    /**
      * TODO: Remove with next major-update!
      */
     public static ArrayList<String> removeDuplicates(final ArrayList<String> links) {

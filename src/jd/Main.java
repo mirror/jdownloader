@@ -457,7 +457,7 @@ public class Main {
                         } catch (final Throwable e) {
                             Log.exception(e);
                         }
-                        HostPluginController.getInstance().init();
+                        HostPluginController.getInstance().ensureLoaded();
                         /* load links */
                         DownloadController.getInstance().initDownloadLinks();
                         /* start remote api */

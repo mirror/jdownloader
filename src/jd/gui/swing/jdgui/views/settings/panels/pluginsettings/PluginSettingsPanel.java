@@ -3,8 +3,6 @@ package jd.gui.swing.jdgui.views.settings.panels.pluginsettings;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
 
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
@@ -69,24 +67,21 @@ public class PluginSettingsPanel extends JPanel implements SettingsComponent, Ac
         add(card, "growx,pushx");
         selector.addActionListener(this);
         fill();
+        if (selector.getItemCount() > 0) {
+            show((LazyPlugin<?>) selector.getItemAt(0));
+        }
     }
 
     private void fill() {
         ArrayList<LazyPlugin<?>> list = new ArrayList<LazyPlugin<?>>();
-        for (LazyHostPlugin plg : HostPluginController.getInstance().list()) {
-            if (plg.isHasConfig()) {
-                list.add(plg);
+        if (list != null) {
+            for (LazyHostPlugin plg : HostPluginController.getInstance().list()) {
+                if (plg.isHasConfig()) {
+                    list.add(plg);
+                }
             }
+            selector.setList(list);
         }
-
-        Collections.sort(list, new Comparator<LazyPlugin<?>>() {
-
-            public int compare(LazyPlugin<?> o1, LazyPlugin<?> o2) {
-                return o1.getDisplayName().compareTo(o2.getDisplayName());
-            }
-        });
-        selector.setList(list);
-
     }
 
     public String getConstraints() {

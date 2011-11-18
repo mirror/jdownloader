@@ -46,10 +46,10 @@ public class HostPluginController extends PluginController<PluginForHost> {
      * Access the only existing instance by using {@link #getInstance()}.
      */
     private HostPluginController() {
-        this.list = new ArrayList<LazyHostPlugin>();
+        this.list = null;
     }
 
-    public void init() {
+    private void init() {
         List<LazyHostPlugin> plugins = new ArrayList<LazyHostPlugin>();
         final long t = System.currentTimeMillis();
         try {
@@ -84,6 +84,16 @@ public class HostPluginController extends PluginController<PluginForHost> {
         }
         if (plugins.size() == 0) {
             Log.L.severe("@HostPluginController: WTF, no plugins!");
+        }
+        try {
+            Collections.sort(list, new Comparator<LazyHostPlugin>() {
+
+                public int compare(LazyHostPlugin o1, LazyHostPlugin o2) {
+                    return o1.getDisplayName().compareTo(o2.getDisplayName());
+                }
+            });
+        } catch (final Throwable e) {
+            Log.exception(e);
         }
         list = Collections.unmodifiableList(plugins);
     }
@@ -164,10 +174,20 @@ public class HostPluginController extends PluginController<PluginForHost> {
     }
 
     public List<LazyHostPlugin> list() {
+        ensureLoaded();
         return list;
     }
 
+    public void ensureLoaded() {
+        if (list != null) return;
+        synchronized (this) {
+            if (list != null) return;
+            init();
+        }
+    }
+
     public LazyHostPlugin get(String displayName) {
+        ensureLoaded();
         List<LazyHostPlugin> llist = list;
         for (LazyHostPlugin p : llist) {
             if (p.getDisplayName().equalsIgnoreCase(displayName)) return p;

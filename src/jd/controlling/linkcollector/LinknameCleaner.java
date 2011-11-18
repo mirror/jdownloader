@@ -2,8 +2,6 @@ package jd.controlling.linkcollector;
 
 import java.util.regex.Pattern;
 
-import jd.plugins.hoster.DirectHTTP;
-
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Regex;
 import org.jdownloader.settings.GeneralSettings;
@@ -23,8 +21,17 @@ public class LinknameCleaner {
     public static final Pattern[] zipPats     = new Pattern[] { pat6, pat7, pat8, pat9 };
 
     public static final Pattern   pat10       = Pattern.compile("(.*)\\._((_[a-z]{1})|([a-z]{2}))(\\.|$)");
-    public static final Pattern   pat11       = Pattern.compile("(.*)(\\.|_|-)[\\d]+(" + DirectHTTP.ENDINGS + "$)", Pattern.CASE_INSENSITIVE);
-    public static final Pattern[] ffsjPats    = new Pattern[] { pat10, pat11 };
+    public static Pattern         pat11       = null;
+    public static Pattern[]       ffsjPats    = null;
+    static {
+        try {
+            /* this should be done on a better way with next major update */
+            pat11 = Pattern.compile("(.*)(\\.|_|-)[\\d]+(" + jd.plugins.hoster.DirectHTTP.ENDINGS + "$)", Pattern.CASE_INSENSITIVE);
+            ffsjPats = new Pattern[] { pat10, pat11 };
+        } catch (final Throwable e) {
+            /* not loaded yet */
+        }
+    }
 
     public static final Pattern   pat12       = Pattern.compile("(CD\\d+)", Pattern.CASE_INSENSITIVE);
     public static final Pattern   pat13       = Pattern.compile("(part\\d+)", Pattern.CASE_INSENSITIVE);
@@ -38,7 +45,7 @@ public class LinknameCleaner {
     public static final Pattern   pat18       = Pattern.compile("(.*)\\.isz$", Pattern.CASE_INSENSITIVE);
     public static final Pattern   pat19       = Pattern.compile("(.*)\\.i\\d{2}$", Pattern.CASE_INSENSITIVE);
     public static final Pattern[] iszPats     = new Pattern[] { pat18, pat19 };
-    private static boolean        nameCleanup = false;                                                                                         ;
+    private static boolean        nameCleanup = false;                                                                                  ;
 
     static {
         nameCleanup = JsonConfig.create(GeneralSettings.class).isCleanUpFilenames();
@@ -75,10 +82,12 @@ public class LinknameCleaner {
          * FFSJ splitted files
          * 
          * */
-        before = name;
-        for (Pattern Pat : ffsjPats) {
-            name = getNameMatch(name, Pat);
-            if (!before.equalsIgnoreCase(name)) break;
+        if (ffsjPats != null) {
+            before = name;
+            for (Pattern Pat : ffsjPats) {
+                name = getNameMatch(name, Pat);
+                if (!before.equalsIgnoreCase(name)) break;
+            }
         }
 
         /**

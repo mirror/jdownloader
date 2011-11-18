@@ -27,11 +27,9 @@ import org.jdownloader.controlling.packagizer.PackagizerSettings;
 import org.jdownloader.extensions.ExtensionController;
 import org.jdownloader.extensions.ExtensionControllerListener;
 import org.jdownloader.extensions.LazyExtension;
-import org.jdownloader.extensions.extraction.ExtractionExtension;
-import org.jdownloader.extensions.jdtrayicon.TrayExtension;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 
-public class SettingsSidebarModel extends DefaultListModel implements GenericConfigEventListener<Boolean>, ExtensionControllerListener {
+public class SettingsSidebarModel extends DefaultListModel<Object> implements GenericConfigEventListener<Boolean>, ExtensionControllerListener {
 
     private static final long      serialVersionUID = -204494527404304349L;
     private Object                 LOCK             = new Object();
@@ -62,8 +60,18 @@ public class SettingsSidebarModel extends DefaultListModel implements GenericCon
             protected void runInEDT() {
                 synchronized (LOCK) {
                     removeAllElements();
-                    LazyExtension extract = ExtensionController.getInstance().getExtension(ExtractionExtension.class);
-                    LazyExtension tray = ExtensionController.getInstance().getExtension(TrayExtension.class);
+                    LazyExtension extract = null;
+                    try {
+                        extract = ExtensionController.getInstance().getExtension(org.jdownloader.extensions.extraction.ExtractionExtension.class);
+                    } catch (final Throwable e) {
+                        /* plugin not loaded yet */
+                    }
+                    LazyExtension tray = null;
+                    try {
+                        tray = ExtensionController.getInstance().getExtension(org.jdownloader.extensions.jdtrayicon.TrayExtension.class);
+                    } catch (final Throwable e) {
+                        /* plugin not loaded yet */
+                    }
 
                     if (cfg == null) cfg = new ConfigPanelGeneral();
                     addElement(cfg);

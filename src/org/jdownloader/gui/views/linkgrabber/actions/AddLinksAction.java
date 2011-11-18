@@ -13,6 +13,11 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.linkgrabber.addlinksdialog.AddLinksDialog;
 
 public class AddLinksAction extends AppAction {
+    /**
+     * 
+     */
+    private static final long serialVersionUID = -1824957567580275989L;
+
     public AddLinksAction() {
         setIconKey("add");
         putValue(NAME, _GUI._.AddLinksAction_());

@@ -3274,4 +3274,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "You hid the Crawler Window. \r\nNo reason to worry! You can see the Linkcrawler Status here." })
     String AddLinksProgress_setReturnmask_msg_();
 
+    @Default(lngs = { "en" }, values = { "Permanently Offline" })
+    String Permanently_Offline_Package();
+
 }

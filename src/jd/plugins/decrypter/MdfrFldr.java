@@ -17,20 +17,22 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
-import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.URLConnectionAdapter;
-import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.PluginForHost;
+import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mediafire.com" }, urls = { "http://[\\w\\.]*?(?!download)[\\w\\.]*?(mediafire\\.com|mfi\\.re)/(imageview.+|i/\\?.+|\\\\?sharekey=.+|(?!download|file|\\?JDOWNLOADER).+)" }, flags = { 0 })
 public class MdfrFldr extends PluginForDecrypt {
+
+    private static boolean pluginloaded = false;
 
     public MdfrFldr(PluginWrapper wrapper) {
         super(wrapper);
@@ -71,6 +73,7 @@ public class MdfrFldr extends PluginForDecrypt {
         br.setFollowRedirects(false);
         br.getPage(parameter);
         if (br.getRedirectLocation() != null) {
+            /* check for direct download stuff */
             String red = br.getRedirectLocation();
             if (red.matches("http://download\\d+\\.mediafire.+")) {
                 /* direct download */
@@ -105,7 +108,7 @@ public class MdfrFldr extends PluginForDecrypt {
         if (br.containsHTML("The page cannot be found")) return decryptedLinks;
         br.setFollowRedirects(true);
         Thread.sleep(500);
-        String reqlink = br.getRegex(Pattern.compile("LoadJS\\(\".*?/js/myfiles\\.php/(.*?)\"")).getMatch(0);
+        String reqlink = br.getRegex("(This is a shared Folder)").getMatch(0);
         if (reqlink == null) {
             String ID = new Regex(parameter, "\\.com/\\?(.+)").getMatch(0);
             if (ID == null) ID = new Regex(parameter, "\\.com/.*?/(.*?)/").getMatch(0);
@@ -116,22 +119,35 @@ public class MdfrFldr extends PluginForDecrypt {
             }
             return null;
         }
-        br.getPage("http://www.mediafire.com/js/myfiles.php/" + reqlink);
-        String links[][] = br.getRegex(Pattern.compile("[a-z]{2}\\[\\d+\\]=Array\\('\\d+','\\d+',\\d+,'([a-z0-9]*?)','[a-f0-9]*?','(.*?)','(\\d+)'", Pattern.CASE_INSENSITIVE)).getMatches();
-        progress.setRange(links.length);
+        String ID = new Regex(parameter, "\\.com/\\?(.+)").getMatch(0);
+        if (ID == null) ID = new Regex(parameter, "\\.com/.*?/(.*?)/").getMatch(0);
+        if (ID != null) {
+            br.getPage("http://www.mediafire.com/api/folder/get_info.php?r=nuul&recursive=yes&folder_key=" + ID + "&response_format=json&version=1");
+            String links[][] = br.getRegex("quickkey\":\"(.*?)\",\"filename\":\"(.*?)\".*?\"size\":\"(\\d+)").getMatches();
+            progress.setRange(links.length);
 
-        for (String[] element : links) {
-            if (!element[2].equalsIgnoreCase("0")) {
-                DownloadLink link = createDownloadlink("http://www.mediafire.com/download.php?" + element[0]);
-                link.setName(Encoding.htmlDecode(element[1]));
-                link.setDownloadSize(Long.parseLong(element[2]));
-                link.setProperty("origin", "decrypter");
-                decryptedLinks.add(link);
+            for (String[] element : links) {
+                if (!element[2].equalsIgnoreCase("0")) {
+                    DownloadLink link = createDownloadlink("http://www.mediafire.com/download.php?" + element[0]);
+                    link.setName(unescape(element[1]));
+                    link.setDownloadSize(Long.parseLong(element[2]));
+                    link.setProperty("origin", "decrypter");
+                    link.setAvailable(true);
+                    decryptedLinks.add(link);
+                }
+                progress.increase(1);
             }
-            progress.increase(1);
         }
-
         return decryptedLinks;
     }
 
+    private static synchronized String unescape(final String s) {
+        /* we have to make sure the youtube plugin is loaded */
+        if (pluginloaded == false) {
+            final PluginForHost plugin = JDUtilities.getPluginForHost("youtube.com");
+            if (plugin == null) throw new IllegalStateException("youtube plugin not found!");
+            pluginloaded = true;
+        }
+        return jd.plugins.hoster.Youtube.unescape(s);
+    }
 }
