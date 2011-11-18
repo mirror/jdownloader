@@ -59,7 +59,7 @@ public class MotherLessCom extends PluginForDecrypt {
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
-        if (br.containsHTML("player\\.swf")) {
+        if (br.containsHTML("(jwplayer\\(|jwplayer_playing|jwplayer_position)")) {
             DownloadLink dlink = createDownloadlink(param.replace("motherless.com/", "motherlessvideos.com/"));
             dlink.setProperty("dltype", "video");
             dlink.setBrowserUrl(param);

@@ -248,7 +248,7 @@ public class VKontakteRu extends PluginForDecrypt {
         /**
          * Find the highest possible quality, also every video is only available
          * in 1-2 formats so we HAVE to use the highest one, if we don't do that
-         * we get wrong lings
+         * we get wrong links
          */
         String quality = ".vk.flv";
         if (correctedBR.contains("\"hd\":1")) {
@@ -268,8 +268,13 @@ public class VKontakteRu extends PluginForDecrypt {
             quality = ".720.mp4";
             videoID = "";
         } else if (correctedBR.contains("\"no_flv\":0")) {
-            /** Last change done here on 07.11.2011 */
-            quality = ".flv";
+            /** Last big change done here on 07.11.2011 */
+            if (urlPart.contains("vkadre.ru")) {
+                additionalStuff = "assets/videos/";
+            } else {
+                quality = ".flv";
+                videoID = "";
+            }
         }
         String videoName = new Regex(correctedBR, "class=\"video_name\" />(.*?)</a>").getMatch(0);
         if (videoName == null) {

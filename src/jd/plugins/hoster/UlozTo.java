@@ -26,11 +26,11 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
@@ -48,20 +48,7 @@ public class UlozTo extends PluginForHost {
     }
 
     public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replaceAll("(uloz\\.to|ulozto\\.sk|ulozto\\.cz|ulozto\\.net)", "ulozto.net"));
-    }
-
-    public boolean rewriteHost(DownloadLink link) {
-        if (link.getHost().contains("ulozto.sk") || link.getHost().contains("ulozto.cz") || link.getHost().contains("ulozto.net")) {
-            correctDownloadLink(link);
-            /*
-             * not in public version, but rewriteHost is not used in 09580, so
-             * no problem
-             */
-            link.setHost("uloz.to");
-            return true;
-        }
-        return false;
+        link.setUrlDownload(link.getDownloadURL().replaceAll("(uloz\\.to|ulozto\\.sk|ulozto\\.cz|ulozto\\.net)", "uloz.to"));
     }
 
     @Override
@@ -77,7 +64,7 @@ public class UlozTo extends PluginForHost {
         }
         // Wrong links show the mainpage so here we check if we got the mainpage
         // or not
-        if (br.containsHTML("(multipart/form-data|Chybka 404 - požadovaná stránka nebyla nalezena<br>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("(multipart/form\\-data|Chybka 404 \\- požadovaná stránka nebyla nalezena<br>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex(Pattern.compile("\\&t=(.*?)\"")).getMatch(0);
         if (filename == null) filename = br.getRegex(Pattern.compile("cptm=;Pe/\\d+/(.*?)\\?b")).getMatch(0);
         String filesize = br.getRegex(Pattern.compile("style=\"top:\\-55px;\"><div>\\d+:\\d+ \\| (.*?)</div></div>")).getMatch(0);
@@ -184,11 +171,8 @@ public class UlozTo extends PluginForHost {
             return ai;
         }
         br.getPage("http://www.uloz.to/nastaveni/");
-        String trafficleft = br.getRegex("<td>Kredit:</td><td style=\"text-align: right; font-weight: bold;\">(.*?)</td></tr>").getMatch(0);
-        if (trafficleft == null) trafficleft = br.getRegex("class=\"credit\"><a href=\"/kredit/\" class=\"coins\" title=\"(.*?) = ").getMatch(0);
-        if (trafficleft != null) {
-            ai.setTrafficLeft(SizeFormatter.getSize(trafficleft));
-        }
+        String trafficleft = br.getRegex("class=\"credit\"><a href=\"/kredit/\" class=\"coins\" title=\"([^<>\"\\']+) = ").getMatch(0);
+        if (trafficleft != null) ai.setTrafficLeft(SizeFormatter.getSize(trafficleft));
         ai.setStatus("Premium User");
         account.setValid(true);
         return ai;
@@ -198,8 +182,8 @@ public class UlozTo extends PluginForHost {
         requestFileInformation(parameter);
         login(account);
         br.getPage(parameter.getDownloadURL());
-        String dllink = br.getRegex("\\(\\'/downloadsvip/\\'\\);\" style=\"margin: 26px 0pt 0pt 82px; float: none; color: #6D0D4C;\" href=\"(http.*?)\"").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("\"(http://dla\\d+\\.uloz\\.to/.*?)\"").getMatch(0);
+        String dllink = br.getRegex("\\(\\'/downloadsvip/\\'\\);\" style=\"[^\"\\'<>]+\" href=\"(http.*?)\"").getMatch(0);
+        if (dllink == null) dllink = br.getRegex("\"(http://dla(\\d+)?\\.uloz\\.to/.*?)\"").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dllink = Encoding.htmlDecode(dllink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, parameter, dllink, true, 0);

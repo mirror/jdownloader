@@ -25,11 +25,11 @@ import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "motherless.com" }, urls = { "http://(www\\.)?(members\\.)?(motherless\\.com/(movies|thumbs).*|(premium)?motherlesspictures(media)?\\.com/[a-zA-Z0-9/\\.]+|motherlessvideos\\.com/[a-zA-Z0-9]+)" }, flags = { 2 })
 public class MotherLessCom extends PluginForHost {
@@ -62,9 +62,9 @@ public class MotherLessCom extends PluginForHost {
         }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        if (parameter.getStringProperty("dltype") != null && "video".equals(parameter.getStringProperty("dltype"))) {
+        if ("video".equals(parameter.getStringProperty("dltype"))) {
             getVideoLink(parameter);
-        } else if (parameter.getStringProperty("dltype") != null && "image".equals(parameter.getStringProperty("dltype"))) {
+        } else if ("image".equals(parameter.getStringProperty("dltype"))) {
             getPictureLink(parameter);
         }
         if (DLLINK == null) DLLINK = parameter.getDownloadURL();
