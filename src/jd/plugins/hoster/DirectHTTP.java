@@ -669,7 +669,6 @@ public class DirectHTTP extends PluginForHost {
 
     private void setConfigElements() {
         if (oldStyle()) {
-            getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LISTCONTROLLED, HTACCESSController.getInstance(), JDL.L("plugins.http.htaccess", "List of all HTAccess passwords. Each line one password.")));
         } else {
             ConfigEntry ce;
             getConfig().addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), LASTMODIFIED, JDL.L("plugins.http.lastmodified", "Set file time to last modified time(server).")));

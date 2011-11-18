@@ -38,7 +38,6 @@ public class RemoveAction extends AbstractRemoveAction {
         IOEQ.add(new Runnable() {
             public void run() {
                 AuthenticationController.getInstance().remove(selection);
-                table.getExtTableModel()._fireTableStructureChanged(AuthenticationController.getInstance().list(), false);
             }
         });
 

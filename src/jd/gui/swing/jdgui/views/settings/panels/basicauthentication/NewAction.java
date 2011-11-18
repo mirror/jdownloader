@@ -13,10 +13,8 @@ public class NewAction extends AbstractAddAction {
      * 
      */
     private static final long serialVersionUID = 1L;
-    private AuthTable         table;
 
     public NewAction(AuthTable table) {
-        this.table = table;
         this.setIconKey("add");
     }
 
@@ -24,7 +22,6 @@ public class NewAction extends AbstractAddAction {
         IOEQ.add(new Runnable() {
             public void run() {
                 AuthenticationController.getInstance().add(new AuthenticationInfo());
-                table.getExtTableModel()._fireTableStructureChanged(AuthenticationController.getInstance().list(), false);
             }
         });
 

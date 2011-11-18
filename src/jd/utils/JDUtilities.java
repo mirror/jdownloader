@@ -50,6 +50,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 
 import org.appwork.utils.Application;
+import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.plugins.controller.crawler.CrawlerPluginController;
 import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin;
 import org.jdownloader.plugins.controller.host.HostPluginController;
@@ -383,15 +384,6 @@ public class JDUtilities {
         return DB_CONNECT;
     }
 
-    public static boolean openExplorer(final File path) {
-        try {
-            return GetExplorer.openExplorer(path);
-        } catch (Exception e) {
-            JDLogger.exception(e);
-            return false;
-        }
-    }
-
     public static Document parseXmlString(final String xmlString, final boolean validating) {
         if (xmlString == null) return null;
         try {
@@ -442,6 +434,11 @@ public class JDUtilities {
         final NamedNodeMap att = childNode.getAttributes();
         if (att == null || att.getNamedItem(key) == null) { return null; }
         return att.getNamedItem(key).getNodeValue();
+    }
+
+    @Deprecated
+    public static void openExplorer(File file) {
+        CrossSystem.openFile(file);
     }
 
 }

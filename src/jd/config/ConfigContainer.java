@@ -21,8 +21,6 @@ import java.util.ArrayList;
 
 import javax.swing.ImageIcon;
 
-import jd.controlling.ListController;
-
 /**
  * Diese Klasse speichert die GUI-Dialog Informationen. Jede GUI kann diese
  * Infos Abfragen und Entsprechend verarbeiten
@@ -124,7 +122,7 @@ public class ConfigContainer implements Serializable {
      * 
      * @see ConfigEntry#ConfigEntry(int, ListController, String)
      */
-    public static final int              TYPE_LISTCONTROLLED = 110;
+
     /**
      * ConfigElement ist ein Combobox dessen Index (und nicht Text) gespeichert
      * und geladen wird

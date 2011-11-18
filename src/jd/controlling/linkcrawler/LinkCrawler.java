@@ -432,7 +432,6 @@ public class LinkCrawler implements IOPermission {
                     for (final PluginsC pCon : ContainerPluginController.getInstance().list()) {
                         if (pCon.canHandle(url)) {
                             try {
-
                                 ArrayList<CrawledLink> allPossibleCryptedLinks = pCon.getContainerLinks(url);
                                 if (allPossibleCryptedLinks != null) {
                                     for (final CrawledLink decryptThis : allPossibleCryptedLinks) {

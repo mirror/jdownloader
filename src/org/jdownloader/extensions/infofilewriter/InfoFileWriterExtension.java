@@ -40,7 +40,6 @@ import jd.plugins.AddonPanel;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.utils.Replacer;
-import jd.utils.StringUtil;
 
 import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionConfigPanel;
@@ -168,7 +167,7 @@ public class InfoFileWriterExtension extends AbstractExtension<InfoFileWriterCon
         try {
             if (dest.createNewFile() && dest.canWrite()) {
                 String rawContent = subConfig.getStringProperty(PARAM_INFO_STRING, INFO_STRING_DEFAULT);
-                String content = Replacer.insertVariables(rawContent.replaceAll("(\r\n|\n)", StringUtil.LINE_SEPARATOR), lastDownloadFinished);
+                String content = Replacer.insertVariables(rawContent.replaceAll("(\r\n|\n)", System.getProperty("line.separator")), lastDownloadFinished);
 
                 JDIO.writeLocalFile(dest, content);
                 logger.severe("JDInfoFileWriter: info file " + dest.getAbsolutePath() + " successfully created");

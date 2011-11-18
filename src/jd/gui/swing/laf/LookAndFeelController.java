@@ -176,7 +176,6 @@ public class LookAndFeelController {
      * setups the correct Look and Feel
      */
     public void setUIManager() {
-
         if (uiInitated) return;
         uiInitated = true;
         long t = System.currentTimeMillis();

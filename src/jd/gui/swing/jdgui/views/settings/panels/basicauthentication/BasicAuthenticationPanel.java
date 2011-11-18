@@ -7,7 +7,6 @@ import javax.swing.JScrollPane;
 import jd.controlling.IOEQ;
 import jd.controlling.authentication.AuthenticationController;
 import jd.gui.swing.jdgui.views.settings.components.SettingsComponent;
-import jd.gui.swing.jdgui.views.settings.components.StateUpdateListener;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.app.gui.MigPanel;
@@ -52,10 +51,6 @@ public class BasicAuthenticationPanel extends JPanel implements SettingsComponen
 
     }
 
-    public void addStateUpdateListener(StateUpdateListener listener) {
-        throw new IllegalStateException("Not implemented");
-    }
-
     public String getConstraints() {
         return "wmin 10,height 60:n:n,pushy,growy";
     }
@@ -65,6 +60,7 @@ public class BasicAuthenticationPanel extends JPanel implements SettingsComponen
     }
 
     public void update() {
+        /* refresh table when we switch to it */
         IOEQ.add(new Runnable() {
 
             public void run() {

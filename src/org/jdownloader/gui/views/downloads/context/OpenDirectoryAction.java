@@ -4,8 +4,8 @@ import java.awt.event.ActionEvent;
 import java.io.File;
 
 import jd.gui.swing.jdgui.interfaces.ContextMenuAction;
-import jd.utils.JDUtilities;
 
+import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.gui.translate._GUI;
 
 public class OpenDirectoryAction extends ContextMenuAction {
@@ -16,7 +16,6 @@ public class OpenDirectoryAction extends ContextMenuAction {
 
     public OpenDirectoryAction(File folder) {
         this.folder = folder;
-
         init();
     }
 
@@ -31,7 +30,13 @@ public class OpenDirectoryAction extends ContextMenuAction {
     }
 
     public void actionPerformed(ActionEvent e) {
-        JDUtilities.openExplorer(folder);
+        if (!isEnabled()) return;
+        CrossSystem.openFile(folder);
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return CrossSystem.isOpenFileSupported() && folder != null && folder.exists();
     }
 
 }

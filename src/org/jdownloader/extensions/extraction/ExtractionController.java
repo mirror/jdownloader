@@ -60,6 +60,15 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
         passwordList = new ArrayList<String>();
     }
 
+    public ExtractionQueue getExtractionQueue() {
+        return (ExtractionQueue) super.getQueue();
+    }
+
+    @Override
+    protected boolean allowAsync() {
+        return true;
+    }
+
     /**
      * Checks if the extracted file(s) has enough space. Only works with Java 6
      * or higher.

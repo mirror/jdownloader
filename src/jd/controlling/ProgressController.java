@@ -16,13 +16,6 @@
 
 package jd.controlling;
 
-/**
- * Diese Klasse kann dazu verwendet werden einen Fortschritt in der GUI
- * anzuzeigen. Sie bildet dabei die schnittstelle zwischen Interactionen,
- * plugins etc und der GUI
- * 
- * @author JD-Team
- */
 public class ProgressController {
 
     public ProgressController() {

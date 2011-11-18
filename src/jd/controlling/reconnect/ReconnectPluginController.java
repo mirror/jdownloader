@@ -5,7 +5,6 @@ import java.io.FileFilter;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.URL;
-import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -17,7 +16,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import jd.config.Configuration;
-import jd.controlling.CodeVerifier;
 import jd.controlling.JDLogger;
 import jd.controlling.reconnect.ipcheck.IPController;
 import jd.controlling.reconnect.pluginsinc.batch.ExternBatchReconnectPlugin;
@@ -289,14 +287,10 @@ public class ReconnectPluginController {
 
                 for (int i = 0; i < length; i++) {
                     try {
-                        if (CodeVerifier.getInstance().isJarAllowed(files[i])) {
-                            urls.add(files[i].toURI().toURL());
-                            Application.addUrlToClassPath(files[i].toURI().toURL(), getClass().getClassLoader());
-                        }
-                    } catch (final IOException e) {
-                        e.printStackTrace();
-                    } catch (final NoSuchAlgorithmException e) {
-                        e.printStackTrace();
+                        urls.add(files[i].toURI().toURL());
+                        Application.addUrlToClassPath(files[i].toURI().toURL(), getClass().getClassLoader());
+                    } catch (final Throwable e) {
+                        Log.exception(e);
                     }
                 }
             }

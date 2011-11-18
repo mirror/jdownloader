@@ -98,7 +98,6 @@ public class GUIConfigEntry implements GuiConfigListener, ActionListener, Change
             doc.addDocumentListener(this);
             break;
         case ConfigContainer.TYPE_TEXTAREA:
-        case ConfigContainer.TYPE_LISTCONTROLLED:
             input = new JDTextArea();
             doc = ((JDTextArea) input).getDocument();
             doc.addDocumentListener(this);
@@ -219,7 +218,6 @@ public class GUIConfigEntry implements GuiConfigListener, ActionListener, Change
             return new String(((JPasswordField) input).getPassword());
         case ConfigContainer.TYPE_TEXTFIELD:
         case ConfigContainer.TYPE_TEXTAREA:
-        case ConfigContainer.TYPE_LISTCONTROLLED:
             return ((JTextComponent) input).getText();
         case ConfigContainer.TYPE_CHECKBOX:
             return ((JCheckBox) input).isSelected();
@@ -289,7 +287,6 @@ public class GUIConfigEntry implements GuiConfigListener, ActionListener, Change
         switch (configEntry.getType()) {
         case ConfigContainer.TYPE_PASSWORDFIELD:
         case ConfigContainer.TYPE_TEXTFIELD:
-        case ConfigContainer.TYPE_LISTCONTROLLED:
         case ConfigContainer.TYPE_TEXTAREA:
             ((JTextComponent) input).setText(text == null ? "" : text.toString());
             break;

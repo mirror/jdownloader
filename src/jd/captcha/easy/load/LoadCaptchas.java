@@ -52,6 +52,7 @@ import jd.parser.html.HTMLParser;
 import jd.parser.html.InputField;
 import jd.utils.JDUtilities;
 
+import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.EDTHelper;
 
 public class LoadCaptchas {
@@ -309,7 +310,7 @@ public class LoadCaptchas {
     private static void openDir(final String dir) {
         new EDTHelper<Object>() {
             public Object edtRun() {
-                if (JOptionPane.showConfirmDialog(null, "Captcha Ordner:" + dir + " jetzt öffnen?") == JOptionPane.YES_OPTION) JDUtilities.openExplorer(new File(dir));
+                if (JOptionPane.showConfirmDialog(null, "Captcha Ordner:" + dir + " jetzt öffnen?") == JOptionPane.YES_OPTION) CrossSystem.openFile(new File(dir));
 
                 return null;
             }

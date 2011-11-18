@@ -32,13 +32,13 @@ import jd.gui.UserIO;
 import jd.gui.swing.SwingGui;
 import jd.gui.swing.jdgui.views.settings.panels.addons.ExtensionManager;
 import jd.nutils.JDFlags;
-import jd.utils.JDUtilities;
 import jd.utils.WebUpdate;
 
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
+import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.settings.GeneralSettings;
@@ -493,7 +493,12 @@ public class ActionController {
                 public void onAction(final ActionEvent e) {
                     final String dlDir = JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder();
                     if (dlDir == null) { return; }
-                    JDUtilities.openExplorer(new File(dlDir));
+                    CrossSystem.openFile(new File(dlDir));
+                }
+
+                @Override
+                public boolean isEnabled() {
+                    return CrossSystem.isOpenFileSupported();
                 }
 
                 @Override

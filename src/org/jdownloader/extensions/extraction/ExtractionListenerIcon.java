@@ -1,7 +1,5 @@
 package org.jdownloader.extensions.extraction;
 
-import java.util.LinkedHashSet;
-
 import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.components.IconedProcessIndicator;
 
@@ -9,17 +7,12 @@ import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.extensions.extraction.translate.T;
 
 public class ExtractionListenerIcon implements ExtractionListener {
-    private IconedProcessIndicator pi;
-    private LinkedHashSet<String>  queue;
 
-    private String                 cacheQueue     = "";
-    private String                 cacheJobName   = "";
-    private String                 cacheJobStatus = "No Job active";
-    private boolean                running        = false;
+    private String cacheQueue     = "";
+    private String cacheJobName   = "";
+    private String cacheJobStatus = "No Job active";
 
-    public ExtractionListenerIcon(final IconedProcessIndicator pi) {
-        this.pi = pi;
-        queue = new LinkedHashSet<String>();
+    public ExtractionListenerIcon() {
     }
 
     public void onExtractionEvent(final ExtractionEvent event) {
@@ -27,16 +20,10 @@ public class ExtractionListenerIcon implements ExtractionListener {
 
         switch (event.getType()) {
         case QUEUED:
-            if (pi == null) pi = JDGui.getInstance().getStatusBar().getExtractionIndicator();
-            queue.add(con.getArchiv().getFirstDownloadLink().getName());
-            updateQueue();
             break;
         case START:
-            queue.remove(con.getArchiv().getFirstDownloadLink().getName());
             cacheJobName = con.getArchiv().getFirstDownloadLink().getName();
             cacheJobStatus = T._.plugins_optional_extraction_status_openingarchive();
-            running = true;
-            updateQueue();
             break;
         case START_CRACK_PASSWORD:
             cacheJobStatus = "Start password finding";
@@ -62,53 +49,43 @@ public class ExtractionListenerIcon implements ExtractionListener {
         case CLEANUP:
             cacheJobName = "";
             cacheJobStatus = "No Job active";
-            running = false;
             break;
         }
+        final StringBuilder sb = new StringBuilder();
 
+        if (!cacheQueue.equals("")) sb.append(cacheQueue);
+        if (!cacheJobName.equals("")) sb.append(cacheJobName);
+        sb.append(cacheJobStatus);
+        final IconedProcessIndicator pi = JDGui.getInstance().getStatusBar().getExtractionIndicator();
         new EDTRunner() {
             @Override
             protected void runInEDT() {
                 switch (event.getType()) {
+                case START:
                 case QUEUED:
-                    if (queue.size() == 1 && !running) {
-                        pi.setEnabled(true);
-                        pi.setIndeterminate(true);
+                    if (con.getExtractionQueue().size() > 0) {
+                        if (pi != null && !pi.isEnabled()) {
+                            pi.setIndeterminate(true);
+                            pi.setEnabled(true);
+                        }
                     }
                     break;
                 case FINISHED:
-                    if (queue.size() == 0) {
-                        pi.setIndeterminate(false);
-                        pi.setEnabled(false);
+                    if (con.getExtractionQueue().size() <= 1) {
+                        /*
+                         * <=1 because current element is still running at this
+                         * point
+                         */
+                        if (pi != null && pi.isEnabled()) {
+                            pi.setIndeterminate(false);
+                            pi.setEnabled(false);
+                        }
                     }
                     break;
                 }
-
-                StringBuilder sb = new StringBuilder();
-
-                if (!cacheQueue.equals("")) sb.append(cacheQueue);
-                if (!cacheJobName.equals("")) sb.append(cacheJobName);
-                sb.append(cacheJobStatus);
-
-                pi.setDescription(sb.toString());
+                if (pi != null) pi.setDescription(sb.toString());
             }
         };
     }
 
-    private void updateQueue() {
-        final StringBuilder sb = new StringBuilder();
-
-        if (queue.size() > 0) {
-            sb.append("Queue:\n");
-
-            int i = 1;
-            for (String link : queue) {
-                sb.append(" " + i++ + ": " + link + "\n");
-            }
-
-            sb.append("\nCurrent:\n");
-        }
-
-        cacheQueue = sb.toString();
-    }
 }

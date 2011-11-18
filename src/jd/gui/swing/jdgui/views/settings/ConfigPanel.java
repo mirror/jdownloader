@@ -103,7 +103,6 @@ public abstract class ConfigPanel extends SwitchPanel {
         if (guiEntry.getDecoration() != null) {
             switch (entry.getType()) {
             case ConfigContainer.TYPE_TEXTAREA:
-            case ConfigContainer.TYPE_LISTCONTROLLED:
                 panel.add(guiEntry.getDecoration(), gapLeft + "spanx");
                 break;
             case ConfigContainer.TYPE_COMPONENT:
@@ -121,7 +120,6 @@ public abstract class ConfigPanel extends SwitchPanel {
                 panel.add(guiEntry.getInput(), (guiEntry.getDecoration() == null ? gapLeft + "spanx," : "") + "wmax 250");
                 break;
             case ConfigContainer.TYPE_TEXTAREA:
-            case ConfigContainer.TYPE_LISTCONTROLLED:
                 panel.add(new JScrollPane(guiEntry.getInput()), gapLeft + "spanx, growy, pushy");
                 break;
             default:

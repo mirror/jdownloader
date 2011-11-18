@@ -5,6 +5,9 @@ import java.util.ArrayList;
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
 import org.appwork.storage.config.JsonConfig;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.event.predefined.changeevent.ChangeEvent;
+import org.appwork.utils.event.predefined.changeevent.ChangeEventSender;
 
 public class AuthenticationController {
     private static final AuthenticationController INSTANCE = new AuthenticationController();
@@ -21,6 +24,7 @@ public class AuthenticationController {
 
     private AuthenticationControllerSettings config;
     private ArrayList<AuthenticationInfo>    list;
+    private ChangeEventSender                eventSender = new ChangeEventSender();
 
     /**
      * Create a new instance of AuthenticationController. This is a singleton
@@ -28,7 +32,7 @@ public class AuthenticationController {
      */
     private AuthenticationController() {
         config = JsonConfig.create(AuthenticationControllerSettings.class);
-        list = config.getList();
+        list = cleanup(config.getList());
         if (list == null) list = new ArrayList<AuthenticationInfo>();
         ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
             @Override
@@ -45,8 +49,23 @@ public class AuthenticationController {
         });
     }
 
+    public ChangeEventSender getEventSender() {
+        return eventSender;
+    }
+
     public synchronized ArrayList<AuthenticationInfo> list() {
         return new ArrayList<AuthenticationInfo>(list);
+    }
+
+    private ArrayList<AuthenticationInfo> cleanup(ArrayList<AuthenticationInfo> input) {
+        if (input == null) return null;
+        ArrayList<AuthenticationInfo> ret = new ArrayList<AuthenticationInfo>(input.size());
+        for (AuthenticationInfo item : input) {
+            if (StringUtils.isEmpty(item.getHostmask())) continue;
+            if (StringUtils.isEmpty(item.getPassword()) && StringUtils.isEmpty(item.getPassword())) continue;
+            ret.add(item);
+        }
+        return ret;
     }
 
     public void add(AuthenticationInfo a) {
@@ -55,6 +74,7 @@ public class AuthenticationController {
             list.add(a);
             config.setList(list);
         }
+        eventSender.fireEvent(new ChangeEvent(this));
     }
 
     public void remove(AuthenticationInfo a) {
@@ -63,6 +83,7 @@ public class AuthenticationController {
             list.remove(a);
             config.setList(list);
         }
+        eventSender.fireEvent(new ChangeEvent(this));
     }
 
     public void remove(ArrayList<AuthenticationInfo> selectedObjects) {
@@ -71,6 +92,7 @@ public class AuthenticationController {
             list.removeAll(selectedObjects);
             config.setList(list);
         }
+        eventSender.fireEvent(new ChangeEvent(this));
     }
 
 }

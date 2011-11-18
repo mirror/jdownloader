@@ -232,6 +232,7 @@ public class StatusBarImpl extends JPanel {
 
         extractIndicator = new IconedProcessIndicator(NewTheme.I().getIcon("archive", 16));
         extractIndicator.setEnabled(false);
+        extractIndicator.setVisible(false);
         extractIndicator.setTitle(_GUI._.StatusBarImpl_initGUI_extract());
         // extractIndicator.setToolTipText("<html><img src=\"" +
         // NewTheme.I().getImageUrl("archive") +
@@ -240,7 +241,7 @@ public class StatusBarImpl extends JPanel {
         add(Box.createHorizontalGlue());
         add(reconnectIndicator, "height 22!,width 22!");
         add(linkGrabberIndicator, "height 22!,width 22!");
-        add(extractIndicator, "height 22!,width 22!");
+        add(extractIndicator, "height 22!,width 22!,hidemode 2");
     }
 
     public IconedProcessIndicator getLinkGrabberIndicator() {
@@ -266,94 +267,5 @@ public class StatusBarImpl extends JPanel {
             }
         };
     }
-    // private void colorizeSpinnerSpeed() {
-    // /* färbt den spinner ein, falls speedbegrenzung aktiv */
-    // if (spMaxSpeed.getValue() > 0) {
-    // spMaxSpeed.setColor(new Color(255, 12, 3));
-    // } else {
-    // spMaxSpeed.setColor(null);
-    // }
-    // }
-
-    // /**
-    // * Setzt die Downloadgeschwindigkeit
-    // *
-    // * @param speed
-    // * bytes pro sekunde
-    // */
-    // public void setSpeed(int speed) {
-    // if (speed <= 0) {
-    // spMaxSpeed.setText(_GUI._.gui_statusbar_speed());
-    // } else {
-    // spMaxSpeed.setText("(" + Formatter.formatReadable(speed) + "/s)");
-    // }
-    // }
-
-    // public void setSpinnerSpeed(Integer speed) {
-    // try {
-    // spMaxSpeed.setValue(speed);
-    // colorizeSpinnerSpeed();
-    // } catch (Throwable e) {
-    // }
-    // }
-
-    // public void stateChanged(ChangeEvent e) {
-    // if (e.getSource() == spMaxSpeed.getSpinner()) {
-    // // dlConfig.setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED,
-    // // spMaxSpeed.getValue());
-    // // dlConfig.save();
-    // config.setDownloadSpeedLimit(spMaxSpeed.getValue());
-    // } else if (e.getSource() == spMaxDls.getSpinner()) {
-    // // dlConfig.setProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN,
-    // // spMaxDls.getValue());
-    // // dlConfig.save();
-    // config.setMaxSimultaneDownloads(spMaxDls.getValue());
-    // } else if (e.getSource() == spMaxChunks.getSpinner()) {
-    // // dlConfig.setProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS,
-    // // spMaxChunks.getValue());
-    // // dlConfig.save();
-    // config.setMaxChunksPerFile(spMaxChunks.getValue());
-    // }
-    // }
-    //
-    // public void onConfigValidatorError(ConfigInterface config, Throwable
-    // validateException, KeyHandler methodHandler) {
-    // }
-    //
-    // public void onConfigValueModified(ConfigInterface config2, String key,
-    // Object newValue) {
-    //
-    // if ("downloadSpeedLimit".equalsIgnoreCase(key)) {
-    // SwingUtilities.invokeLater(new Runnable() {
-    // public void run() {
-    // DownloadWatchDog.getInstance().getConnectionManager().setIncommingBandwidthLimit(config.getDownloadSpeedLimit()
-    // * 1024);
-    // setSpinnerSpeed(config.getDownloadSpeedLimit());
-    // }
-    // });
-    // } else if ("MaxSimultaneDownloads".equalsIgnoreCase(key)) {
-    // SwingUtilities.invokeLater(new Runnable() {
-    // public void run() {
-    // try {
-    // spMaxDls.setValue(config.getMaxSimultaneDownloads());
-    // } catch (Throwable e) {
-    // config.setMaxSimultaneDownloads(2);
-    // spMaxDls.setValue(2);
-    // }
-    // }
-    // });
-    // } else if ("MaxChunksPerFile".equalsIgnoreCase(key)) {
-    // SwingUtilities.invokeLater(new Runnable() {
-    // public void run() {
-    // try {
-    // spMaxChunks.setValue(config.getMaxChunksPerFile());
-    // } catch (Throwable e) {
-    // spMaxChunks.setValue(1);
-    // config.setMaxChunksPerFile(1);
-    // }
-    // }
-    // });
-    // }
-    // }
 
 }

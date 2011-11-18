@@ -21,7 +21,6 @@ import javax.swing.Timer;
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.event.ControlEvent;
 import jd.gui.swing.jdgui.JDGui;
-import jd.gui.swing.jdgui.actions.ActionController;
 import jd.gui.swing.jdgui.actions.ToolBarAction;
 import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.plugins.DownloadLink;
@@ -312,7 +311,6 @@ public class DownloadsTable extends PackageControllerTable<FilePackage, Download
 
         ret.add(new RatedMenuItem(new SetPasswordAction(alllinks), 0));
         ret.add(new RatedMenuItem(new CopyPasswordAction(alllinks), 0));
-        ret.add(new RatedMenuItem(ActionController.getToolBarAction("action.passwordlist"), 0));
         ret.add(new RatedMenuItem(new DeleteAction(alllinks), 0));
         ret.add(new RatedMenuItem(new DeleteFromDiskAction(alllinks), 0));
 

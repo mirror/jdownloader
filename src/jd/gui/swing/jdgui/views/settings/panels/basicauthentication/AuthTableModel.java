@@ -7,6 +7,7 @@ import javax.swing.DefaultComboBoxModel;
 import javax.swing.JTable;
 import javax.swing.table.JTableHeader;
 
+import jd.controlling.authentication.AuthenticationController;
 import jd.controlling.authentication.AuthenticationInfo;
 
 import org.appwork.swing.exttable.ExtTableHeaderRenderer;
@@ -15,14 +16,17 @@ import org.appwork.swing.exttable.columns.ExtCheckColumn;
 import org.appwork.swing.exttable.columns.ExtComboColumn;
 import org.appwork.swing.exttable.columns.ExtPasswordEditorColumn;
 import org.appwork.swing.exttable.columns.ExtTextColumn;
+import org.appwork.utils.event.predefined.changeevent.ChangeEvent;
+import org.appwork.utils.event.predefined.changeevent.ChangeListener;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 
-public class AuthTableModel extends ExtTableModel<AuthenticationInfo> {
+public class AuthTableModel extends ExtTableModel<AuthenticationInfo> implements ChangeListener {
     private static final long serialVersionUID = 1L;
 
     public AuthTableModel() {
         super("AuthTableModel");
+        AuthenticationController.getInstance().getEventSender().addListener(this, true);
     }
 
     @Override
@@ -221,5 +225,9 @@ public class AuthTableModel extends ExtTableModel<AuthenticationInfo> {
             }
         });
 
+    }
+
+    public void onChangeEvent(ChangeEvent event) {
+        this._fireTableStructureChanged(AuthenticationController.getInstance().list(), false);
     }
 }

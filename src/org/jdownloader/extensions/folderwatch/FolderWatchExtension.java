@@ -42,9 +42,9 @@ import jd.gui.UserIO;
 import jd.nutils.JDFlags;
 import jd.nutils.JDHash;
 import jd.nutils.OSDetector;
-import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
 
+import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.Dialog.FileChooserSelectionMode;
@@ -247,9 +247,7 @@ public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig> i
         File dir = new File(path);
 
         if (dir.exists()) {
-            JDUtilities.openExplorer(dir);
-        } else {
-            UserIO.getInstance().requestConfirmDialog(UserIO.NO_COUNTDOWN, T._.plugins_optional_folderwatch_JDFolderWatch_action_openfolder_errormessage());
+            CrossSystem.openFile(dir);
         }
     }
 

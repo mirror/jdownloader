@@ -46,8 +46,6 @@ public class ExtensionController {
 
     private ExtensionControllerEventSender eventSender;
 
-    private boolean                        rebuildCache = false;
-
     /**
      * Create a new instance of ExtensionController. This is a singleton class.
      * Access the only existing instance by using {@link #getInstance()}.
@@ -102,13 +100,16 @@ public class ExtensionController {
             if (ret.size() == 0) {
                 Log.L.severe("@ExtensionController: WTF, no extensions!");
             }
+            try {
+                Collections.sort(ret, new Comparator<LazyExtension>() {
 
-            Collections.sort(ret, new Comparator<LazyExtension>() {
-
-                public int compare(LazyExtension o1, LazyExtension o2) {
-                    return o1.getName().compareTo(o2.getName());
-                }
-            });
+                    public int compare(LazyExtension o1, LazyExtension o2) {
+                        return o1.getName().compareTo(o2.getName());
+                    }
+                });
+            } catch (final Throwable e) {
+                Log.exception(e);
+            }
             list = Collections.unmodifiableList(ret);
             Main.GUI_COMPLETE.executeWhenReached(new Runnable() {
 

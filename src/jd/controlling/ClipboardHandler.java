@@ -213,6 +213,7 @@ public final class ClipboardHandler extends Thread {
                         }
                     }
                 } catch (final Exception e2) {
+
                     // JDLogger.exception(e2);
                 }
                 try {
@@ -323,7 +324,7 @@ public final class ClipboardHandler extends Thread {
                     }
                 }
             } catch (final Exception e) {
-                // JDLogger.exception(e);
+                e.printStackTrace();
             }
             return what;
         }

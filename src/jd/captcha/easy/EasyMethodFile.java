@@ -39,6 +39,7 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.Regex;
 import org.appwork.utils.images.IconIO;
+import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.EDTHelper;
 
 public class EasyMethodFile implements JDLabelContainer, Serializable {
@@ -260,7 +261,7 @@ public class EasyMethodFile implements JDLabelContainer, Serializable {
      * öffnet den Captchaordner
      */
     public void openCaptchaFolder() {
-        JDUtilities.openExplorer(this.getCaptchaFolder());
+        CrossSystem.openFile(this.getCaptchaFolder());
     }
 
     public void setFile(final File file) {

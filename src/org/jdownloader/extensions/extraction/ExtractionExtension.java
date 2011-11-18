@@ -27,6 +27,7 @@ import java.util.List;
 
 import javax.swing.filechooser.FileFilter;
 
+import jd.Main;
 import jd.controlling.JDController;
 import jd.controlling.JDLogger;
 import jd.controlling.downloadcontroller.DownloadController;
@@ -43,9 +44,9 @@ import jd.plugins.AddonPanel;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
-import jd.utils.JDUtilities;
 
-import org.appwork.utils.event.queue.Queue;
+import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.StartException;
@@ -81,9 +82,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
 
     private static MenuAction            menuAction                     = null;
 
-    private Queue                        ExtractionQueue                = new Queue("Extraction") {
-
-                                                                        };
+    private ExtractionQueue              ExtractionQueue                = new ExtractionQueue();
 
     private ExtractionEventSender        broadcaster                    = new ExtractionEventSender();
 
@@ -94,6 +93,8 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
     private ExtractionConfigPanel        configPanel;
 
     private static ExtractionExtension   INSTANCE;
+
+    private ExtractionListenerIcon       statusbarListener              = null;
 
     public ExtractionExtension() throws StartException {
         super(T._.name());
@@ -316,7 +317,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
             if (!new File(path).exists()) {
                 UserIO.getInstance().requestMessageDialog(T._.plugins_optional_extraction_messages(path));
             } else {
-                JDUtilities.openExplorer(new File(path));
+                CrossSystem.openFile(new File(path));
             }
 
             break;
@@ -736,11 +737,51 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
     @Override
     protected void stop() throws StopException {
         JDController.getInstance().removeControlListener(this);
+
+        Main.GUI_COMPLETE.executeWhenReached(new Runnable() {
+
+            public void run() {
+                new EDTRunner() {
+
+                    @Override
+                    protected void runInEDT() {
+                        new EDTRunner() {
+
+                            @Override
+                            protected void runInEDT() {
+                                JDGui.getInstance().getStatusBar().getExtractionIndicator().setVisible(false);
+                            }
+                        };
+                        if (statusbarListener != null) removeListener(statusbarListener);
+                    }
+                };
+            }
+        });
+
     }
 
     @Override
     protected void start() throws StartException {
         JDController.getInstance().addControlListener(this);
+        Main.GUI_COMPLETE.executeWhenReached(new Runnable() {
+            public void run() {
+                new EDTRunner() {
+
+                    @Override
+                    protected void runInEDT() {
+                        new EDTRunner() {
+
+                            @Override
+                            protected void runInEDT() {
+                                JDGui.getInstance().getStatusBar().getExtractionIndicator().setVisible(true);
+                                JDGui.getInstance().getStatusBar().getExtractionIndicator().setDescription("No Job active");
+                            }
+                        };
+                        addListener(statusbarListener = new ExtractionListenerIcon());
+                    }
+                };
+            }
+        });
     }
 
     void fireEvent(ExtractionEvent event) {
@@ -809,7 +850,6 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
 
         initExtractors();
 
-        addListener(new ExtractionListenerIcon(JDGui.getInstance().getStatusBar().getExtractionIndicator()));
         // addListener(new ExtractionListenerFile());
         addListener(new ExtractionListenerList());
 

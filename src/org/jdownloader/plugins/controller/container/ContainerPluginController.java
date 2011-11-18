@@ -7,6 +7,7 @@ import java.util.List;
 import jd.plugins.PluginsC;
 
 import org.appwork.utils.Regex;
+import org.appwork.utils.logging.Log;
 import org.jdownloader.container.AMZ;
 import org.jdownloader.container.C;
 import org.jdownloader.container.D;
@@ -29,11 +30,15 @@ public class ContainerPluginController {
 
     public void init() {
         List<PluginsC> plugins = new ArrayList<PluginsC>();
-        plugins.add(new AMZ());
-        plugins.add(new C());
-        plugins.add(new D());
-        plugins.add(new MetaLink());
-        plugins.add(new R());
+        try {
+            plugins.add(new AMZ());
+            plugins.add(new C());
+            plugins.add(new D());
+            plugins.add(new MetaLink());
+            plugins.add(new R());
+        } catch (final Throwable e) {
+            Log.exception(e);
+        }
         list = Collections.unmodifiableList(plugins);
     }
 

@@ -522,7 +522,7 @@ public class AccountController implements AccountControllerListener {
             acc = event.getAccount();
             /* we do a new accountcheck as this account got updated */
             /* WARNING: DO NOT FORCE check here, it might end up in a loop */
-            if (acc != null && acc.isEnabled()) AccountChecker.getInstance().check(acc, false);
+            if (acc != null && acc.isEnabled() && this == acc.getAccountController()) AccountChecker.getInstance().check(acc, false);
             break;
         case AccountControllerEvent.ACCOUNT_REMOVED:
         case AccountControllerEvent.ACCOUNT_EXPIRED:

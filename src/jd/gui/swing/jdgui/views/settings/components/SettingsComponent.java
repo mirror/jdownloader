@@ -12,5 +12,4 @@ public interface SettingsComponent {
 
     public void setToolTipText(String text);
 
-    public void addStateUpdateListener(StateUpdateListener listener);
 }

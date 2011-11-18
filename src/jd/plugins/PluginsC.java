@@ -26,6 +26,7 @@ import java.util.regex.Pattern;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.LinkCrawler;
 import jd.gui.UserIO;
+import jd.nutils.Formatter;
 import jd.nutils.JDFlags;
 import jd.nutils.encoding.Encoding;
 import jd.utils.JDUtilities;
@@ -51,14 +52,14 @@ public abstract class PluginsC {
 
     private String  name;
 
-    private int     version;
+    private long    version;
 
     public PluginsC(String name, String pattern, String rev) {
 
         this.pattern = Pattern.compile(pattern, Pattern.CASE_INSENSITIVE);
         this.name = name;
         try {
-            version = Integer.parseInt(rev.substring(rev.indexOf(" ") + 1, rev.lastIndexOf(" ")));
+            version = Formatter.getRevision(rev);
         } catch (Throwable e) {
             version = -1;
         }
@@ -69,8 +70,6 @@ public abstract class PluginsC {
     private static final int          STATUS_ERROR_EXTRACTING = 1;
 
     protected ArrayList<DownloadLink> cls                     = new ArrayList<DownloadLink>();
-
-    private ContainerStatus           containerStatus         = null;
 
     protected ArrayList<String>       dlU;
 
@@ -100,7 +99,7 @@ public abstract class PluginsC {
         return name;
     }
 
-    public int getVersion() {
+    public long getVersion() {
         return version;
     }
 
@@ -216,7 +215,7 @@ public abstract class PluginsC {
             if (!res.exists()) {
                 Log.L.severe("Could not copy file to homedir");
             }
-            containerStatus = callDecryption(res);
+            callDecryption(res);
         }
         return;
     }
