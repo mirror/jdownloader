@@ -70,6 +70,7 @@ public class AnnonHostNet extends PluginForHost {
     private String              BRBEFORE            = "";
     private static final String PASSWORDTEXT        = "(<br><b>Password:</b> <input|<br><b>Passwort:</b> <input)";
     private static final String COOKIE_HOST         = "https://annonhost.net";
+    private static final String COOKIE_HOST2        = "https://www.annonhost.net";
     private static final String MAINTENANCE         = ">This server is in maintenance mode";
     private static final String MAINTENANCEUSERTEXT = "This server is under Maintenance";
     private static final Object LOCK                = new Object();
@@ -86,7 +87,7 @@ public class AnnonHostNet extends PluginForHost {
             link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.xfilesharingprobasic.undermaintenance", MAINTENANCEUSERTEXT));
             return AvailableStatus.TRUE;
         }
-        String filename = new Regex(BRBEFORE, "You have requested.*?https?://(www\\.)?" + COOKIE_HOST.replace("http://", "") + "/[a-z0-9]{12}/(.*?)</font>").getMatch(1);
+        String filename = new Regex(BRBEFORE, "You have requested.*?https?://(www\\.)?" + COOKIE_HOST.replaceAll("https?://", "") + "/[a-z0-9]{12}/(.*?)</font>").getMatch(1);
         if (filename == null) {
             filename = new Regex(BRBEFORE, "fname\"( type=\"hidden\")? value=\"(.*?)\"").getMatch(1);
             if (filename == null) {
@@ -285,14 +286,14 @@ public class AnnonHostNet extends PluginForHost {
                 }
             }
             br.setCookie(COOKIE_HOST, "lang", "english");
-            br.getPage(COOKIE_HOST + "/login.html");
+            br.getPage(COOKIE_HOST2 + "/login.html");
             Form loginform = br.getForm(0);
             if (loginform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             loginform.put("login", Encoding.urlEncode(account.getUser()));
             loginform.put("password", Encoding.urlEncode(account.getPass()));
             br.submitForm(loginform);
             if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-            br.getPage(COOKIE_HOST + "/?op=my_account");
+            br.getPage(COOKIE_HOST2 + "/?op=my_account");
             doSomething();
             if (!new Regex(BRBEFORE, "(Premium\\-Account expire|Upgrade to premium|>Renew premium<)").matches()) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
             if (!new Regex(BRBEFORE, "(Premium\\-Account expire|>Renew premium<)").matches()) account.setProperty("nopremium", "true");

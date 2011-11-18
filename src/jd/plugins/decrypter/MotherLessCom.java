@@ -22,12 +22,10 @@ import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.locale.JDL;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "motherless.com" }, urls = { "http://(www\\.)?(members\\.)?motherless\\.com/((?!movies|thumbs|uploads|gi/)g/[A-Za-z0-9\\-_]+/[A-Z0-9]+|[A-Z0-9]+)" }, flags = { 0 })
 public class MotherLessCom extends PluginForDecrypt {
@@ -42,7 +40,7 @@ public class MotherLessCom extends PluginForDecrypt {
         br.setFollowRedirects(true);
         String param = parameter.toString().replaceAll("motherless\\.com/g/[A-Za-z0-9_\\-]+/", "motherless.com/");
         br.getPage(param);
-        if (br.containsHTML("Not Available") || br.containsHTML("not found") || br.containsHTML("You will be redirected to")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+        if (br.containsHTML("Not Available") || br.containsHTML("not found") || br.containsHTML("You will be redirected to")) return decryptedLinks;
         // Common bug: It can happen that the texts that we use to differ
         // between the kinds of links change so the decrypter breaks down,
         // always check that first!

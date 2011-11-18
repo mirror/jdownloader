@@ -23,12 +23,12 @@ import java.util.Map;
 import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 
 //Links are coming from a decrypter
@@ -74,7 +74,7 @@ public class VKontakteRuHoster extends PluginForHost {
         for (Map.Entry<String, String> entry : cookies.entrySet()) {
             this.br.setCookie(DOMAIN, entry.getKey(), entry.getValue());
         }
-        br.postPage("http://vk.com/al_photos.php", "act=show&al=1&list=" + albumID + "&photo=" + photoID);
+        br.postPage("http://vkontakte.ru/al_photos.php", "act=show&al=1&list=" + albumID + "&photo=" + photoID);
         String correctedBR = br.toString().replace("\\", "");
         /** Try to get best quality */
         String finallink = new Regex(correctedBR, "\"id\":\"" + photoID + "\",\"w_src\":\"(http://.*?)\"").getMatch(0);

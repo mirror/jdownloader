@@ -86,7 +86,7 @@ public class XFileSharingProBasic extends PluginForHost {
             link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.xfilesharingprobasic.undermaintenance", MAINTENANCEUSERTEXT));
             return AvailableStatus.TRUE;
         }
-        String filename = new Regex(BRBEFORE, "You have requested.*?https?://(www\\.)?" + COOKIE_HOST.replace("http://", "") + "/[a-z0-9]{12}/(.*?)</font>").getMatch(1);
+        String filename = new Regex(BRBEFORE, "You have requested.*?https?://(www\\.)?" + COOKIE_HOST.replaceAll("https?://", "") + "/[a-z0-9]{12}/(.*?)</font>").getMatch(1);
         if (filename == null) {
             filename = new Regex(BRBEFORE, "fname\"( type=\"hidden\")? value=\"(.*?)\"").getMatch(1);
             if (filename == null) {
