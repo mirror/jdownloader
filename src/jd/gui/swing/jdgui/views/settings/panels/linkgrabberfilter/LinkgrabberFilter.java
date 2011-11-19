@@ -13,8 +13,6 @@ import javax.swing.JList;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.ListCellRenderer;
-import javax.swing.event.TableModelEvent;
-import javax.swing.event.TableModelListener;
 
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.gui.swing.jdgui.views.settings.components.SettingsComponent;
@@ -116,12 +114,6 @@ public class LinkgrabberFilter extends JPanel implements SettingsComponent {
             }
         });
 
-        filterTable.getExtTableModel().addTableModelListener(new TableModelListener() {
-
-            public void tableChanged(TableModelEvent e) {
-                btExport.setEnabled(filterTable.getRowCount() > 0);
-            }
-        });
         exceptionsTable.getSelectionModel().addListSelectionListener(new MinimumSelectionObserver(exceptionsTable, btRemove.getAction(), 1));
         filterTable.getSelectionModel().addListSelectionListener(new MinimumSelectionObserver(filterTable, btRemove.getAction(), 1));
         setView(filterTable);
@@ -151,6 +143,10 @@ public class LinkgrabberFilter extends JPanel implements SettingsComponent {
 
     }
 
+    public AbstractFilterTable getView() {
+        return view;
+    }
+
     private void initComponents() {
         filterTable = new FilterTable(this);
         exceptionsTable = new ExceptionsTable(this);
@@ -167,7 +163,7 @@ public class LinkgrabberFilter extends JPanel implements SettingsComponent {
             }
         });
         btImport = new ExtButton(new ImportAction(this));
-        btExport = new ExtButton(new ExportAction());
+        btExport = new ExtButton(new ExportAction(this));
         this.card = new JScrollPane();
 
     }

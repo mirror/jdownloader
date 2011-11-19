@@ -1,6 +1,8 @@
 package jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog;
 
+import java.awt.Color;
 import java.awt.Component;
+import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.FocusEvent;
@@ -14,6 +16,8 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.logging.Level;
 
+import javax.swing.BorderFactory;
+import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
@@ -21,6 +25,7 @@ import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JPopupMenu;
 import javax.swing.JSeparator;
+import javax.swing.JToggleButton;
 import javax.swing.ListCellRenderer;
 import javax.swing.ListSelectionModel;
 import javax.swing.SpinnerNumberModel;
@@ -31,12 +36,19 @@ import javax.swing.event.ListSelectionListener;
 import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.ClickDelegater;
 import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.OnlineStatusFilter.OnlineStatus;
 import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.OnlineStatusFilter.OnlineStatusMatchtype;
+import jd.gui.swing.laf.LookAndFeelController;
 
 import org.appwork.app.gui.MigPanel;
+import org.appwork.app.gui.copycutpaste.CopyAction;
+import org.appwork.app.gui.copycutpaste.CutAction;
+import org.appwork.app.gui.copycutpaste.DeleteAction;
+import org.appwork.app.gui.copycutpaste.PasteAction;
+import org.appwork.app.gui.copycutpaste.SelectAction;
 import org.appwork.swing.components.ExtCheckBox;
 import org.appwork.swing.components.ExtTextField;
 import org.appwork.swing.components.SizeSpinner;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.ImageProvider.ImageProvider;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.swing.SwingUtils;
 import org.appwork.utils.swing.dialog.AbstractDialog;
@@ -52,12 +64,21 @@ import org.jdownloader.controlling.filter.FiletypeFilter;
 import org.jdownloader.controlling.filter.FiletypeFilter.TypeMatchType;
 import org.jdownloader.controlling.filter.RegexFilter;
 import org.jdownloader.controlling.filter.RegexFilter.MatchType;
+import org.jdownloader.controlling.filter.RuleWrapper;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 
 public abstract class ConditionDialog<T> extends AbstractDialog<T> {
 
     protected ExtTextField txtName;
+
+    private JToggleButton  cbRegFilename;
+
+    private JToggleButton  cbRegFileType;
+
+    private JToggleButton  cbRegSource;
+
+    private JToggleButton  cbRegHoster;
 
     public String getName() {
         return txtName.getText();
@@ -72,10 +93,11 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
         cbFilename.setSelected(filter.isEnabled());
         cobFilename.setSelectedIndex(filter.getMatchType().ordinal());
         txtFilename.setText(filter.getRegex());
+        cbRegFilename.setSelected(filter.isUseRegex());
     }
 
     public RegexFilter getFilenameFilter() {
-        return new RegexFilter(cbFilename.isSelected(), MatchType.values()[cobFilename.getSelectedIndex()], txtFilename.getText());
+        return new RegexFilter(cbFilename.isSelected(), MatchType.values()[cobFilename.getSelectedIndex()], txtFilename.getText(), cbRegFilename.isSelected());
     }
 
     public void setOnlineStatusFilter(OnlineStatusFilter f) {
@@ -108,10 +130,12 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
         cbImage.setSelected(f.isImagesEnabled());
         cbVideo.setSelected(f.isVideoFilesEnabled());
         cobType.setSelectedIndex(f.getMatchType().ordinal());
+
+        cbRegFileType.setSelected(f.isUseRegex());
     }
 
     public FiletypeFilter getFiletypeFilter() {
-        return new FiletypeFilter(TypeMatchType.values()[cobType.getSelectedIndex()], cbType.isSelected(), cbAudio.isSelected(), cbVideo.isSelected(), cbArchive.isSelected(), cbImage.isSelected(), cbCustom.isSelected() ? txtCustumMime.getText() : null);
+        return new FiletypeFilter(TypeMatchType.values()[cobType.getSelectedIndex()], cbType.isSelected(), cbAudio.isSelected(), cbVideo.isSelected(), cbArchive.isSelected(), cbImage.isSelected(), cbCustom.isSelected() ? txtCustumMime.getText() : null, cbRegFileType.isSelected());
     }
 
     public OnlineStatusFilter getOnlineStatusFilter() {
@@ -123,10 +147,11 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
         cbSource.setSelected(filter.isEnabled());
         cobSource.setSelectedIndex(filter.getMatchType().ordinal());
         txtSource.setText(filter.getRegex());
+        cbRegSource.setSelected(filter.isUseRegex());
     }
 
     public RegexFilter getSourceFilter() {
-        return new RegexFilter(cbSource.isSelected(), MatchType.values()[cobSource.getSelectedIndex()], txtSource.getText());
+        return new RegexFilter(cbSource.isSelected(), MatchType.values()[cobSource.getSelectedIndex()], txtSource.getText(), cbRegSource.isSelected());
     }
 
     public void setHosterFilter(RegexFilter filter) {
@@ -134,10 +159,11 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
         cbHoster.setSelected(filter.isEnabled());
         cobHoster.setSelectedIndex(filter.getMatchType().ordinal());
         txtHoster.setText(filter.getRegex());
+        cbRegHoster.setSelected(filter.isUseRegex());
     }
 
     public RegexFilter getHosterFilter() {
-        return new RegexFilter(cbHoster.isSelected(), MatchType.values()[cobHoster.getSelectedIndex()], txtHoster.getText());
+        return new RegexFilter(cbHoster.isSelected(), MatchType.values()[cobHoster.getSelectedIndex()], txtHoster.getText(), cbRegHoster.isSelected());
     }
 
     protected ExtCheckBox      cbFilename;
@@ -205,6 +231,12 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
 
     @Override
     public JComponent layoutDialogContent() {
+
+        cbRegFilename = createToggle();
+        cbRegFileType = createToggle();
+        cbRegHoster = createToggle();
+        cbRegSource = createToggle();
+
         panel = new MigPanel("ins 5,wrap 6", "[][][fill][][][grow,fill]", "[]");
         panel.add(createHeader(_GUI._.FilterRuleDialog_layoutDialogContent_name()), "spanx,growx,pushx");
         txtName = new ExtTextField() {
@@ -280,11 +312,26 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
         panel.add(createHeader(getIfText()), "gaptop 10,spanx,growx,pushx");
 
         cobFilename = new JComboBox(new String[] { _GUI._.FilterRuleDialog_layoutDialogContent_contains(), _GUI._.FilterRuleDialog_layoutDialogContent_equals(), _GUI._.FilterRuleDialog_layoutDialogContent_contains_not(), _GUI._.FilterRuleDialog_layoutDialogContent_equals_not() });
-        txtFilename = new ExtTextField();
+        txtFilename = new ExtTextField() {
+
+            @Override
+            public JPopupMenu getPopupMenu(CutAction cutAction, CopyAction copyAction, PasteAction pasteAction, DeleteAction deleteAction, SelectAction selectAction) {
+                JPopupMenu menu = new JPopupMenu();
+                menu.add(new TestAction(getFilenameFilter(), _GUI._.ConditionDialog_getPopupMenu_filename_()));
+                menu.add(new JSeparator());
+                menu.add(cutAction);
+                menu.add(copyAction);
+                menu.add(pasteAction);
+                menu.add(deleteAction);
+                menu.add(selectAction);
+                return menu;
+            }
+
+        };
         txtFilename.setHelpText(_GUI._.FilterRuleDialog_layoutDialogContent_ht_filename());
 
         JLabel lblFilename = getLabel(_GUI._.FilterRuleDialog_layoutDialogContent_lbl_filename());
-        cbFilename = new ExtCheckBox(cobFilename, txtFilename) {
+        cbFilename = new ExtCheckBox(cobFilename, txtFilename, cbRegFilename) {
 
             @Override
             public void updateDependencies() {
@@ -305,10 +352,12 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
         };
         txtFilename.addMouseListener(ml);
         cobFilename.addMouseListener(ml);
+        cbRegFilename.addMouseListener(ml);
         panel.add(cbFilename);
         panel.add(lblFilename);
         panel.add(cobFilename);
-        panel.add(txtFilename, "spanx,pushx,growx");
+        panel.add(txtFilename, "spanx,pushx,growx,split 2");
+        panel.add(cbRegFilename, "height 22!,width 22!");
 
         size = createSizeFilter();
         cobSize = new JComboBox(new String[] { _GUI._.FilterRuleDialog_layoutDialogContent_is_between(), _GUI._.FilterRuleDialog_layoutDialogContent_is_not_between() });
@@ -433,7 +482,22 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
         // various
 
         ico = new JLabel(NewTheme.I().getIcon("help", 18));
-        txtCustumMime = new ExtTextField();
+        txtCustumMime = new ExtTextField() {
+
+            @Override
+            public JPopupMenu getPopupMenu(CutAction cutAction, CopyAction copyAction, PasteAction pasteAction, DeleteAction deleteAction, SelectAction selectAction) {
+                JPopupMenu menu = new JPopupMenu();
+                menu.add(new TestAction(getFiletypeFilter(), _GUI._.ConditionDialog_getPopupMenu_filename_()));
+                menu.add(new JSeparator());
+                menu.add(cutAction);
+                menu.add(copyAction);
+                menu.add(pasteAction);
+                menu.add(deleteAction);
+                menu.add(selectAction);
+                return menu;
+            }
+
+        };
         txtCustumMime.setHelpText(_GUI._.FilterRuleDialog_createTypeFilter_mime_custom_help());
         txtCustumMime.addFocusListener(new FocusListener() {
 
@@ -450,10 +514,12 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
         ico.addMouseListener(new ClickDelegater(cbCustom));
         panel.add(ico, "skip 3");
         panel.add(cbCustom);
-        panel.add(txtCustumMime, "spanx");
+        panel.add(txtCustumMime, "spanx,split 2");
+        panel.add(cbRegFileType, "width 22!,height 22!");
         comp.add(ico);
         comp.add(cbCustom);
         comp.add(txtCustumMime);
+        comp.add(cbRegFileType);
 
         ml = new MouseAdapter() {
 
@@ -470,10 +536,25 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
         cbType.setDependencies(comp.toArray(new JComponent[] {}));
         // hoster
         cobHoster = new JComboBox(new String[] { _GUI._.FilterRuleDialog_layoutDialogContent_contains(), _GUI._.FilterRuleDialog_layoutDialogContent_equals(), _GUI._.FilterRuleDialog_layoutDialogContent_contains_not(), _GUI._.FilterRuleDialog_layoutDialogContent_equals_not() });
-        txtHoster = new ExtTextField();
+        txtHoster = new ExtTextField() {
+
+            @Override
+            public JPopupMenu getPopupMenu(CutAction cutAction, CopyAction copyAction, PasteAction pasteAction, DeleteAction deleteAction, SelectAction selectAction) {
+                JPopupMenu menu = new JPopupMenu();
+                menu.add(new TestAction(getHosterFilter(), _GUI._.ConditionDialog_getPopupMenu_hosterurl_()));
+                menu.add(new JSeparator());
+                menu.add(cutAction);
+                menu.add(copyAction);
+                menu.add(pasteAction);
+                menu.add(deleteAction);
+                menu.add(selectAction);
+                return menu;
+            }
+
+        };
         txtHoster.setHelpText(_GUI._.FilterRuleDialog_layoutDialogContent_lbl_hoster_help());
 
-        cbHoster = new ExtCheckBox(cobHoster, txtHoster);
+        cbHoster = new ExtCheckBox(cobHoster, txtHoster, cbRegHoster);
         ml = new MouseAdapter() {
 
             @Override
@@ -485,17 +566,35 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
         };
         cobHoster.addMouseListener(ml);
         txtHoster.addMouseListener(ml);
+        cbRegHoster.addMouseListener(ml);
         panel.add(cbHoster);
         panel.add(new JLabel(_GUI._.FilterRuleDialog_layoutDialogContent_lbl_hoster()));
         panel.add(cobHoster);
-        panel.add(txtHoster, "spanx,pushx,growx");
+        panel.add(txtHoster, "spanx,pushx,growx,split 2");
+        panel.add(cbRegHoster, "width 22!,height 22!");
         // crawler
 
         cobSource = new JComboBox(new String[] { _GUI._.FilterRuleDialog_layoutDialogContent_contains(), _GUI._.FilterRuleDialog_layoutDialogContent_equals(), _GUI._.FilterRuleDialog_layoutDialogContent_contains_not(), _GUI._.FilterRuleDialog_layoutDialogContent_equals_not() });
-        txtSource = new ExtTextField();
+        txtSource = new ExtTextField() {
+
+            @Override
+            public JPopupMenu getPopupMenu(CutAction cutAction, CopyAction copyAction, PasteAction pasteAction, DeleteAction deleteAction, SelectAction selectAction) {
+                JPopupMenu menu = new JPopupMenu();
+                menu.add(new TestAction(getSourceFilter(), _GUI._.ConditionDialog_getPopupMenu_sourceurl_()));
+                menu.add(new JSeparator());
+                menu.add(cutAction);
+                menu.add(copyAction);
+                menu.add(pasteAction);
+                menu.add(deleteAction);
+                menu.add(selectAction);
+                return menu;
+            }
+
+        };
+
         txtSource.setHelpText(_GUI._.FilterRuleDialog_layoutDialogContent_lbl_source_help());
 
-        cbSource = new ExtCheckBox(cobSource, txtSource);
+        cbSource = new ExtCheckBox(cobSource, txtSource, cbRegSource);
         ml = new MouseAdapter() {
 
             @Override
@@ -507,10 +606,12 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
         };
         txtSource.addMouseListener(ml);
         cobSource.addMouseListener(ml);
+        cbRegSource.addMouseListener(ml);
         panel.add(cbSource);
         panel.add(new JLabel(_GUI._.FilterRuleDialog_layoutDialogContent_lbl_source()));
         panel.add(cobSource);
-        panel.add(txtSource, "spanx,pushx,growx");
+        panel.add(txtSource, "spanx,pushx,growx,split 2");
+        panel.add(cbRegSource, "width 22!,height 22!");
 
         // offline
 
@@ -534,6 +635,102 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
         cobOnline.addMouseListener(ml);
         cobOnlineOptions.addMouseListener(ml);
         return panel;
+    }
+
+    private JToggleButton createToggle() {
+        JToggleButton ret = new JToggleButton(new AppAction() {
+            {
+                setTooltipText(_GUI._.ConditionDialog_layoutDialogContent_regex_tooltip_());
+
+            }
+
+            public void actionPerformed(ActionEvent e) {
+            }
+        });
+        Image back = NewTheme.I().getImage("regexStar", 18);
+        ret.setIcon(new ImageIcon(ImageProvider.merge(back, NewTheme.I().getImage("checkbox_false", 12), 2, 0, 0, back.getHeight(null) - 12 + 2)));
+
+        ret.setSelectedIcon(new ImageIcon(ImageProvider.merge(back, NewTheme.I().getImage("checkbox_true", 12), 2, 0, 0, back.getHeight(null) - 12 + 2)));
+
+        return ret;
+
+    }
+
+    private void convertRegex(boolean regex) {
+        txtFilename.setText(convert(txtFilename.getText(), regex));
+        txtHoster.setText(convert(txtHoster.getText(), regex));
+        txtSource.setText(convert(txtSource.getText(), regex));
+        txtCustumMime.setText(convert(txtCustumMime.getText(), regex));
+
+    }
+
+    public void actionPerformed(final ActionEvent e) {
+
+        if (e.getSource() == this.okButton) {
+
+            if (validate()) {
+                super.actionPerformed(e);
+            } else {
+                return;
+            }
+        }
+        super.actionPerformed(e);
+    }
+
+    private boolean validate() {
+        txtFilename.setBorder(txtName.getBorder());
+        txtCustumMime.setBorder(txtName.getBorder());
+        txtHoster.setBorder(txtName.getBorder());
+        txtSource.setBorder(txtName.getBorder());
+        boolean ok = true;
+        if (cbFilename.isSelected()) {
+            try {
+
+                RuleWrapper.createPattern(txtFilename.getText(), cbRegFilename.isSelected());
+
+            } catch (Throwable e) {
+                ok = false;
+                txtFilename.setBorder(BorderFactory.createMatteBorder(1, 1, 1, 1, new Color(LookAndFeelController.getInstance().getLAFOptions().getErrorForeground())));
+            }
+        }
+
+        if (cbCustom.isSelected() && cbType.isSelected()) {
+            try {
+                RuleWrapper.createPattern(txtCustumMime.getText(), cbRegFileType.isSelected());
+
+            } catch (Throwable e) {
+                ok = false;
+                txtCustumMime.setBorder(BorderFactory.createMatteBorder(1, 1, 1, 1, new Color(LookAndFeelController.getInstance().getLAFOptions().getErrorForeground())));
+            }
+        }
+        if (cbHoster.isSelected()) {
+            try {
+                RuleWrapper.createPattern(txtHoster.getText(), cbRegHoster.isSelected());
+
+            } catch (Throwable e) {
+                ok = false;
+                txtHoster.setBorder(BorderFactory.createMatteBorder(1, 1, 1, 1, new Color(LookAndFeelController.getInstance().getLAFOptions().getErrorForeground())));
+            }
+        }
+        if (cbSource.isSelected()) {
+            try {
+                RuleWrapper.createPattern(txtSource.getText(), cbRegSource.isSelected());
+
+            } catch (Throwable e) {
+                ok = false;
+                txtSource.setBorder(BorderFactory.createMatteBorder(1, 1, 1, 1, new Color(LookAndFeelController.getInstance().getLAFOptions().getErrorForeground())));
+            }
+        }
+        if (!ok) {
+            Dialog.getInstance().showErrorDialog(_GUI._.ConditionDialog_validate_object_());
+            return false;
+        }
+        return true;
+    }
+
+    private String convert(String text, boolean regex2) {
+
+        return null;
     }
 
     protected void updateOnline() {

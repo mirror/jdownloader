@@ -60,6 +60,7 @@ public class ExceptionsRuleDialog extends ConditionDialog<LinkgrabberFilterRule>
     }
 
     private void updateGUI() {
+
         setIconKey(rule.getIconKey());
         setFilenameFilter(rule.getFilenameFilter());
         setHosterFilter(rule.getHosterURLFilter());

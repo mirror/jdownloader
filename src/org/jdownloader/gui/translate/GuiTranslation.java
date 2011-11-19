@@ -3280,4 +3280,58 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Please wait: Parsing Clipboard content" })
     String AddLinksDialog_ParsingClipboard();
 
+    @Default(lngs = { "en" }, values = { "Regular Expressions" })
+    String ConditionDialog_actionPerformed_regex_();
+
+    @Default(lngs = { "en" }, values = { "Enable/Disable Regular Expressions for this Condition" })
+    String ConditionDialog_layoutDialogContent_regex_tooltip_();
+
+    @Default(lngs = { "en" }, values = { "Your conditions are not valid. Please check expressions in the highlighted fields." })
+    String ConditionDialog_validate_object_();
+
+    @Default(lngs = { "en" }, values = { "Test %s1 Expression" })
+    String TestAction_TestAction_object_(String name);
+
+    @Default(lngs = { "en" }, values = { "Please enter %s1" })
+    String TestAction_actionPerformed_test_title_(String str);
+
+    @Default(lngs = { "en" }, values = { "To test your expression %s1, please enter the matching %s2" })
+    String TestAction_actionPerformed_msg_(String expression, String name);
+
+    @Default(lngs = { "en" }, values = { "Source Url" })
+    String ConditionDialog_getPopupMenu_sourceurl_();
+
+    @Default(lngs = { "en" }, values = { "Your Input %s1 does not equal %s2!" })
+    String TestAction_actionPerformed_nomatch_(String input, String pattern);
+
+    @Default(lngs = { "en" }, values = { "Your Input %s1 does not contain %s2!" })
+    String TestAction_actionPerformed_nomatch_contain(String input, String pattern);
+
+    @Default(lngs = { "en" }, values = { "%s1: %s2" })
+    String TestAction_actionPerformed_match_(int i, String m);
+
+    @Default(lngs = { "en" }, values = { "Your input %s1 contains %s2. \r\nWildcard Matches:\r\n%s3" })
+    String TestAction_actionPerformed_object_(String input, String pattern, String string);
+
+    @Default(lngs = { "en" }, values = { "Your input %s1 equals %s2. \r\nWildcard Matches:\r\n%s3" })
+    String TestAction_actionPerformed_object_matches(String input, String pattern, String string);
+
+    @Default(lngs = { "en" }, values = { "Hoster Url" })
+    String ConditionDialog_getPopupMenu_hosterurl_();
+
+    @Default(lngs = { "en" }, values = { "Filename" })
+    String ConditionDialog_getPopupMenu_filename_();
+
+    @Default(lngs = { "en" }, values = { "Your input %s1 contains %s2!" })
+    String TestAction_actionPerformed_contains_(String input, String pattern);
+
+    @Default(lngs = { "en" }, values = { "Your input %s1 equals %s2!" })
+    String TestAction_actionPerformed_equals_(String input, String pattern);
+
+    @Default(lngs = { "en" }, values = { "Filename %s1 matches your Filetype Filter: %s2." })
+    String TestAction_actionPerformed_match_ext_(String input, String ext);
+
+    @Default(lngs = { "en" }, values = { "Filename %s1 does not match your Filetype Filter." })
+    String TestAction_actionPerformed_nomatch_ext_(String input);
+
 }

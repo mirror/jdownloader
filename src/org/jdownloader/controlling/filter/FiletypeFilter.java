@@ -79,6 +79,7 @@ public class FiletypeFilter extends Filter implements Storable {
 
     private boolean       audioFilesEnabled;
     private TypeMatchType matchType = TypeMatchType.IS;
+    private boolean       useRegex;
 
     public boolean isAudioFilesEnabled() {
         return audioFilesEnabled;
@@ -92,8 +93,9 @@ public class FiletypeFilter extends Filter implements Storable {
      * @param archivesEnabled
      * @param imagesEnabled
      * @param customs
+     * @param regex
      */
-    public FiletypeFilter(TypeMatchType typeMatchType, boolean enabled, boolean audioFilesEnabled, boolean videoFilesEnabled, boolean archivesEnabled, boolean imagesEnabled, String customs) {
+    public FiletypeFilter(TypeMatchType typeMatchType, boolean enabled, boolean audioFilesEnabled, boolean videoFilesEnabled, boolean archivesEnabled, boolean imagesEnabled, String customs, boolean regex) {
         super();
         this.enabled = enabled;
         this.audioFilesEnabled = audioFilesEnabled;
@@ -101,7 +103,17 @@ public class FiletypeFilter extends Filter implements Storable {
         this.archivesEnabled = archivesEnabled;
         this.imagesEnabled = imagesEnabled;
         this.customs = customs;
+        this.useRegex = regex;
         this.matchType = typeMatchType;
+
+    }
+
+    public boolean isUseRegex() {
+        return useRegex;
+    }
+
+    public void setUseRegex(boolean useRegex) {
+        this.useRegex = useRegex;
     }
 
     public TypeMatchType getMatchType() {

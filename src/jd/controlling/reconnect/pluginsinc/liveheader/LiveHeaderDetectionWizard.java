@@ -3,9 +3,9 @@ package jd.controlling.reconnect.pluginsinc.liveheader;
 import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
@@ -25,6 +25,7 @@ import jd.controlling.reconnect.ReconnectConfig;
 import jd.controlling.reconnect.ReconnectException;
 import jd.controlling.reconnect.ReconnectPluginController;
 import jd.controlling.reconnect.ReconnectResult;
+import jd.controlling.reconnect.Reconnecter;
 import jd.controlling.reconnect.RouterUtils;
 import jd.controlling.reconnect.ipcheck.IP;
 import jd.controlling.reconnect.ipcheck.IPController;
@@ -742,9 +743,10 @@ public class LiveHeaderDetectionWizard {
         mc = mc.substring(0, 6);
         BufferedReader f = null;
         InputStreamReader isr = null;
-        FileInputStream fis = null;
+        InputStream fis = null;
         try {
-            f = new BufferedReader(isr = new InputStreamReader(fis = new FileInputStream(JDUtilities.getResourceFile("jd/router/manlist.txt")), "UTF8"));
+
+            f = new BufferedReader(isr = new InputStreamReader(fis = Reconnecter.class.getResource("manlist.txt").openStream(), "UTF8"));
             String line;
 
             while ((line = f.readLine()) != null) {

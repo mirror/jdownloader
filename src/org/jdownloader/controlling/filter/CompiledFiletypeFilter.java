@@ -3,7 +3,6 @@ package org.jdownloader.controlling.filter;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
-import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.logging.Log;
 import org.jdownloader.controlling.filter.FiletypeFilter.TypeMatchType;
 import org.jdownloader.gui.translate._GUI;
@@ -11,6 +10,10 @@ import org.jdownloader.gui.translate._GUI;
 public class CompiledFiletypeFilter {
     private Pattern[]     list = new Pattern[0];
     private TypeMatchType matchType;
+
+    public TypeMatchType getMatchType() {
+        return matchType;
+    }
 
     public static interface ExtensionsFilterInterface {
         public Pattern compiledAllPattern();
@@ -255,12 +258,12 @@ public class CompiledFiletypeFilter {
         }
         try {
             if (filetypeFilter.getCustoms() != null) {
-                if (JsonConfig.create(LinkFilterSettings.class).isRuleconditionsRegexEnabled()) {
+                if (filetypeFilter.isUseRegex()) {
                     list.add(Pattern.compile(filetypeFilter.getCustoms(), Pattern.DOTALL | Pattern.CASE_INSENSITIVE));
                 } else {
 
                     for (String s : filetypeFilter.getCustoms().split("\\,")) {
-                        list.add(LinkgrabberFilterRuleWrapper.createPattern(s));
+                        list.add(LinkgrabberFilterRuleWrapper.createPattern(s, false));
                     }
                 }
             }
@@ -296,6 +299,10 @@ public class CompiledFiletypeFilter {
         }
 
         return false;
+    }
+
+    public Pattern[] getList() {
+        return list;
     }
 
 }

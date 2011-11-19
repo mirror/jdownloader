@@ -8,7 +8,6 @@ import java.util.ArrayList;
 import javax.swing.filechooser.FileFilter;
 
 import org.appwork.storage.JSonStorage;
-import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.swing.dialog.Dialog;
@@ -17,7 +16,6 @@ import org.appwork.utils.swing.dialog.Dialog.FileChooserType;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.actions.AppAction;
-import org.jdownloader.controlling.filter.LinkFilterSettings;
 import org.jdownloader.controlling.packagizer.PackagizerController;
 import org.jdownloader.controlling.packagizer.PackagizerRule;
 import org.jdownloader.gui.translate._GUI;
@@ -50,20 +48,15 @@ public class ExportAction extends AppAction {
     public void actionPerformed(ActionEvent e) {
         try {
             final String extension;
-            if (JsonConfig.create(LinkFilterSettings.class).isRuleconditionsRegexEnabled()) {
-                extension = ImportAction.EXT_ADVANCED;
-            } else {
-                extension = ImportAction.EXT;
-            }
+
+            extension = ImportAction.EXT;
+
             File[] filterFiles = Dialog.getInstance().showFileChooser(ImportAction.EXT, _GUI._.LinkgrabberFilter_export_dialog_title(), FileChooserSelectionMode.FILES_ONLY, new FileFilter() {
 
                 @Override
                 public String getDescription() {
-                    if (JsonConfig.create(LinkFilterSettings.class).isRuleconditionsRegexEnabled()) {
-                        return "*" + ImportAction.EXT_ADVANCED;
-                    } else {
-                        return "*" + ImportAction.EXT;
-                    }
+
+                    return "*" + ImportAction.EXT;
 
                 }
 

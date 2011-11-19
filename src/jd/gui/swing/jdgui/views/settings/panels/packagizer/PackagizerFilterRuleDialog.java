@@ -155,6 +155,7 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
     }
 
     private void updateGUI() {
+
         setIconKey(rule.getIconKey());
         setFilenameFilter(rule.getFilenameFilter());
         setHosterFilter(rule.getHosterURLFilter());

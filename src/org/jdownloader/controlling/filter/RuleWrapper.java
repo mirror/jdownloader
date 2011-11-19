@@ -5,7 +5,6 @@ import java.util.regex.Pattern;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledLink.LinkState;
 
-import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Files;
 
 public class RuleWrapper<T extends FilterRule> {
@@ -99,8 +98,8 @@ public class RuleWrapper<T extends FilterRule> {
         System.out.println("Test compile " + string2 + ": " + (string.equals(createPattern(string2, false).toString())));
     }
 
-    public static Pattern createPattern(String regex, boolean simpleRegex) {
-        if (simpleRegex) {
+    public static Pattern createPattern(String regex, boolean useRegex) {
+        if (useRegex) {
             return Pattern.compile(regex, Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
         } else {
             String[] parts = regex.split("\\*+");
@@ -127,11 +126,6 @@ public class RuleWrapper<T extends FilterRule> {
             }
             return Pattern.compile(sb.toString(), Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
         }
-    }
-
-    public static Pattern createPattern(String regex) {
-        return createPattern(regex, JsonConfig.create(LinkFilterSettings.class).isRuleconditionsRegexEnabled());
-
     }
 
     public boolean checkFileType(CrawledLink link) {

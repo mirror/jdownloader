@@ -7,8 +7,8 @@ public class CompiledRegexFilter extends RegexFilter {
     private Pattern pattern;
 
     public CompiledRegexFilter(RegexFilter filter) {
-        super(filter.enabled, filter.getMatchType(), filter.getRegex());
-        pattern = LinkgrabberFilterRuleWrapper.createPattern(filter.getRegex());
+        super(filter.enabled, filter.getMatchType(), filter.getRegex(), filter.isUseRegex());
+        pattern = LinkgrabberFilterRuleWrapper.createPattern(filter.getRegex(), filter.isUseRegex());
     }
 
     public Pattern getPattern() {

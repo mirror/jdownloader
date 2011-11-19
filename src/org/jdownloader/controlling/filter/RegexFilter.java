@@ -43,11 +43,21 @@ public class RegexFilter extends Filter implements Storable {
 
     private MatchType matchType = MatchType.CONTAINS;
     private String    regex;
+    private boolean   useRegex;
 
-    public RegexFilter(boolean enabled, MatchType matchType, String text) {
+    public RegexFilter(boolean enabled, MatchType matchType, String text, boolean regex2) {
         this.enabled = enabled;
         this.matchType = matchType;
         this.regex = text;
+        this.useRegex = regex2;
+    }
+
+    public boolean isUseRegex() {
+        return useRegex;
+    }
+
+    public void setUseRegex(boolean useRegex) {
+        this.useRegex = useRegex;
     }
 
     public static enum MatchType {
@@ -60,8 +70,8 @@ public class RegexFilter extends Filter implements Storable {
     public int calcPlaceholderCount() {
         int i = 0;
         try {
-            System.out.println(1);
-            Matcher matcher = Pattern.compile("\\(.*?\\)", Pattern.CASE_INSENSITIVE).matcher(LinkgrabberFilterRuleWrapper.createPattern(regex).pattern());
+
+            Matcher matcher = Pattern.compile("\\(.*?\\)", Pattern.CASE_INSENSITIVE).matcher(LinkgrabberFilterRuleWrapper.createPattern(regex, useRegex).pattern());
             while (matcher.find()) {
                 // System.out.println(matcher.group());
                 i++;

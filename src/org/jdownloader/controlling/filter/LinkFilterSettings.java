@@ -33,7 +33,6 @@ public interface LinkFilterSettings extends ConfigInterface {
     public static final BooleanKeyHandler                  LINKGRABBER_FILETYPE_QUICKFILTER_ENABLED   = SH.getKeyHandler("LinkgrabberFiletypeQuickfilterEnabled", BooleanKeyHandler.class);
     public static final BooleanKeyHandler                  LINKGRABBER_AUTO_START_ENABLED             = SH.getKeyHandler("LinkgrabberAutoStartEnabled", BooleanKeyHandler.class);
     public static final BooleanKeyHandler                  LINKGRABBER_HOSTER_QUICKFILTER_ENABLED     = SH.getKeyHandler("LinkgrabberHosterQuickfilterEnabled", BooleanKeyHandler.class);
-    public static final BooleanKeyHandler                  RULECONDITIONS_REGEX_ENABLED               = SH.getKeyHandler("RuleconditionsRegexEnabled", BooleanKeyHandler.class);
     public static final ObjectKeyHandler                   FILTER_LIST                                = SH.getKeyHandler("FilterList", ObjectKeyHandler.class);
     public static final BooleanKeyHandler                  LINKGRABBER_AUTO_CONFIRM_ENABLED           = SH.getKeyHandler("LinkgrabberAutoConfirmEnabled", BooleanKeyHandler.class);
     public static final BooleanKeyHandler                  LINKGRABBER_EXCEPTIONS_QUICKFILTER_ENABLED = SH.getKeyHandler("LinkgrabberExceptionsQuickfilterEnabled", BooleanKeyHandler.class);
@@ -96,11 +95,6 @@ public interface LinkFilterSettings extends ConfigInterface {
     boolean isLinkgrabberAutoConfirmEnabled();
 
     void setLinkgrabberAutoConfirmEnabled(boolean selected);
-
-    @DefaultBooleanValue(false)
-    boolean isRuleconditionsRegexEnabled();
-
-    void setRuleconditionsRegexEnabled(boolean b);
 
     @DefaultBooleanValue(true)
     boolean isLinkgrabberExceptionsQuickfilterEnabled();
