@@ -126,15 +126,15 @@ public class Zippysharecom extends PluginForHost {
             DLLINK = br.getRegex("var fulllink = '(.*?)';").getMatch(0);
             if (DLLINK != null) {
                 final String var = new Regex(DLLINK, "'\\+(.*?)\\+'").getMatch(0);
-                String data = br.getRegex("var " + var + " = (.*?)\n").getMatch(0);
+                String data = br.getRegex("var " + var + " = (.*?)\r?\n").getMatch(0);
                 data = execJS(data);
                 if (DLLINK.contains(var)) {
                     DLLINK = DLLINK.replace("'+" + var + "+'", data);
                 }
             } else {
                 DLLINK = br.getRegex("document\\.getElementById\\('dlbutton'\\).href = \"/(.*?)\";").getMatch(0);
-                String math = br.getRegex("\n<script type=\"text/javascript\">(.*?)</script>\n").getMatch(0);
-                math = math.replaceAll("document\\.getElementById\\('dlbutton'\\)\\.|\n", "");
+                String math = br.getRegex("\r?\n<script type=\"text/javascript\">(.*?)</script>\r?\n").getMatch(0);
+                math = math.replaceAll("document\\.getElementById\\('dlbutton'\\)\\.|\r?\n", "");
                 if (DLLINK != null && math != null) {
                     final String var = new Regex(DLLINK, "\"\\+(.*?)\\+\"").getMatch(0);
                     if (var != null) {
