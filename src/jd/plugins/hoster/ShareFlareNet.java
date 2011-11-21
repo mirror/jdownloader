@@ -57,6 +57,11 @@ public class ShareFlareNet extends PluginForHost {
     private static final Object LOCK = new Object();
 
     @Override
+    public void correctDownloadLink(DownloadLink link) throws Exception {
+        link.setUrlDownload(link.getDownloadURL().replaceAll("\\?", "%3F"));
+    }
+
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setCustomCharset("utf-8");

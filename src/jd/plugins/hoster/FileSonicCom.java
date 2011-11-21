@@ -420,7 +420,10 @@ public class FileSonicCom extends PluginForHost implements ControlListener {
 
             downloadUrl = getDownloadURL(ajax);
         }
-        if (downloadUrl == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        if (downloadUrl == null) {
+            logger.severe(ajax.toString());
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         /*
          * limited to 1 chunk at the moment cause don't know if its a server
          * error that more are possible and resume should also not work ;)

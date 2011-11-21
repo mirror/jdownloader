@@ -47,7 +47,7 @@ public class SflnkgNt extends PluginForDecrypt {
     }
 
     private static final String RECAPTCHATEXT         = "(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)";
-    private static String       CAPTCHAREGEX1         = "\"(http://safelinking\\.net/includes/captcha_factory/securimage/securimage_show\\.php\\?sid=[a-z0-9]+)\"";
+    private static String       CAPTCHAREGEX1         = "(http://safelinking\\.net/includes/captcha_factory/securimage/securimage_show\\.php\\?hash=[a-z0-9]+)";
     private static String       CAPTCHAREGEX2         = "\"(http://safelinking\\.net/includes/captcha_factory/3dcaptcha/3DCaptcha\\.php)\"";
     private static String       CAPTCHATEXT3          = "class=\"captcha_image ajax\\-fc\\-container\"";
     private static String       PASSWORDPROTECTEDTEXT = "type=\"password\" name=\"link-password\"";

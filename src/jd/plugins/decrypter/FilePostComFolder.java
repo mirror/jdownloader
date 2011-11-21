@@ -16,6 +16,7 @@
 
 package jd.plugins.decrypter;
 
+import java.io.IOException;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
@@ -41,26 +42,42 @@ public class FilePostComFolder extends PluginForDecrypt {
         String parameter = param.toString().replace("fp.io/", "filepost.com/");
         br.setCookie("http://filepost.com", "lang", "english");
         br.getPage(parameter);
+        String id = new Regex(parameter, "filepost\\.com/folder/([a-z0-9]+)").getMatch(0);
         if (br.containsHTML(">This folder is empty<")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the folder no longer exists."));
         String fpName = br.getRegex("<h1>(.*?)</h1>").getMatch(0);
-        String[] links = br.getRegex("<div class=\"file (.*?)\"><a href=\"(https?://.*?/files/.*?)/?\"").getColumn(1);
-        String[] folders = br.getRegex("<div class=\"file folder\"><a href=\"(https?://filepost\\.com/folder/[a-z0-9]+)/?\"").getColumn(0);
-        if (links == null || links.length == 0) links = br.getRegex("\"(https?://filepost\\.com/files/[a-z0-9]+/?\"").getColumn(0);
-        if ((links == null || links.length == 0) && (folders == null || folders.length == 0)) return null;
-        if (links != null && links.length != 0) {
-            for (String dl : links)
-                decryptedLinks.add(createDownloadlink(dl));
-        }
-        if (folders != null && folders.length != 0) {
-            String id = new Regex(parameter, "filepost\\.com/folder/([a-z0-9]+)").getMatch(0);
-            for (String aFolder : folders)
-                if (!aFolder.contains(id)) decryptedLinks.add(createDownloadlink(aFolder));
-        }
+        parsePage(decryptedLinks, id);
+        parseNextPage(decryptedLinks, id);
         if (fpName != null) {
             FilePackage fp = FilePackage.getInstance();
             fp.setName(fpName.trim());
             fp.addLinks(decryptedLinks);
         }
         return decryptedLinks;
+    }
+
+    private void parsePage(ArrayList<DownloadLink> ret, String id) {
+        String[] links = br.getRegex("<div class=\"file (.*?)\"><a href=\"(https?://.*?/files/.*?)/?\"").getColumn(1);
+        String[] folders = br.getRegex("<div class=\"file folder\"><a href=\"(https?://filepost\\.com/folder/[a-z0-9]+)/?\"").getColumn(0);
+        if (links == null || links.length == 0) links = br.getRegex("\"(https?://filepost\\.com/files/[a-z0-9]+/?\"").getColumn(0);
+        if ((links == null || links.length == 0) && (folders == null || folders.length == 0)) return;
+        if (links != null && links.length != 0) {
+            for (String dl : links)
+                ret.add(createDownloadlink(dl));
+        }
+        if (folders != null && folders.length != 0) {
+            for (String aFolder : folders)
+                if (!aFolder.contains(id)) ret.add(createDownloadlink(aFolder));
+        }
+    }
+
+    private boolean parseNextPage(ArrayList<DownloadLink> ret, String id) throws IOException {
+        String nextPage = br.getRegex("class=\"pager-link\" .*?(http://filepost.com/folder/" + id + "/\\d+/?)\">Next").getMatch(0);
+        if (nextPage != null) {
+            br.getPage(nextPage);
+            parsePage(ret, id);
+            parseNextPage(ret, id);
+            return true;
+        }
+        return false;
     }
 }
