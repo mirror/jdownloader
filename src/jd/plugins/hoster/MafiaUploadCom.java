@@ -72,8 +72,9 @@ public class MafiaUploadCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        sleep(3 * 1000l, downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, "http://www.mafiaupload.com/do.php?down=" + new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0), true, 0);
+        /** Can be skipped */
+        // sleep(3 * 1000l, downloadLink);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, "http://www.mafiaupload.com/do.php?down=" + new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0), true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
