@@ -905,7 +905,7 @@ public class D extends PluginsC {
 
     private byte[] gk() {
         try {
-            return (byte[]) getClass().forName("jd.plugins.a.Config").getField("D").get(null);
+            return (byte[]) getClass().forName(getClass().getPackage().getName() + ".Config").getField("D").get(null);
         } catch (Throwable e) {
         }
         return null;
