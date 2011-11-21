@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import jd.controlling.FavIconController;
+import jd.controlling.faviconcontroller.FavIcons;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
@@ -56,7 +56,7 @@ public class QuickFilterHosterTable extends FilterTable {
                      * create new filter entry and set its icon
                      */
                     filter = createFilter(hoster);
-                    filter.setIcon(FavIconController.getFavIcon(hoster, filter, true));
+                    filter.setIcon(FavIcons.getFavIcon(hoster, filter, true));
                     filterMap.put(hoster, filter);
                 }
                 filtersInUse.add(filter);
@@ -85,7 +85,7 @@ public class QuickFilterHosterTable extends FilterTable {
                                  * create new filter entry and set its icon
                                  */
                                 filter = createFilter(hoster);
-                                filter.setIcon(FavIconController.getFavIcon(hoster, filter, true));
+                                filter.setIcon(FavIcons.getFavIcon(hoster, filter, true));
                                 filterMap.put(hoster, filter);
                             }
                             filtersInUse.add(filter);

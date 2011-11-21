@@ -8,8 +8,8 @@ import java.util.HashMap;
 
 import javax.swing.ImageIcon;
 
-import jd.controlling.FavIconController;
-import jd.controlling.FavIconRequestor;
+import jd.controlling.faviconcontroller.FavIconRequestor;
+import jd.controlling.faviconcontroller.FavIcons;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
@@ -61,7 +61,7 @@ public class DomainInfo implements FavIconRequestor {
         if (!hosterIconRequested) {
             hosterIconRequested = true;
             // load it
-            ia = FavIconController.getFavIcon(getTld(), this, true);
+            ia = FavIcons.getFavIcon(getTld(), this, true);
             if (ia != null) {
                 ia = setFavIcon(ia);
                 return ia;
@@ -85,7 +85,7 @@ public class DomainInfo implements FavIconRequestor {
                 icon = hosterIcon.get();
             }
             if (icon == null) {
-                icon = new ImageIcon(FavIconController.createDefaultFavIcon(getTld()));
+                icon = FavIcons.getFavIcon(getTld(), this, true);
             }
         } else {
             icon = new ImageIcon(IconIO.getScaledInstance(icon.getImage(), WIDTH, HEIGHT, Interpolation.BICUBIC, true));
@@ -148,7 +148,7 @@ public class DomainInfo implements FavIconRequestor {
 
         }
         if (!hosterIconRequested) getFavIcon();
-        ret = FavIconController.getFavIcon(getTld(), null, true);
+        ret = FavIcons.getFavIcon(getTld(), null, true);
         if (ret.getIconHeight() >= size && ret.getIconWidth() >= size) { return new ImageIcon(IconIO.getScaledInstance((BufferedImage) ret.getImage(), size, size)); }
         return null;
     }

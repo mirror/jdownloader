@@ -2,7 +2,7 @@ package org.jdownloader.gui.views.linkgrabber.quickfilter;
 
 import javax.swing.ImageIcon;
 
-import jd.controlling.FavIconRequestor;
+import jd.controlling.faviconcontroller.FavIconRequestor;
 import jd.controlling.linkcrawler.CrawledLink;
 
 import org.appwork.storage.config.JsonConfig;

@@ -24,5 +24,4 @@ public class JDInitFlags {
     public static boolean SWITCH_NEW_INSTANCE         = false;
     public static boolean STOP                        = false;
     public static boolean REFRESH_CACHE               = false;
-    public static boolean REFRESH_FAVS;
 }

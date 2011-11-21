@@ -264,8 +264,6 @@ public class JDController {
             }
             LOGGER.info("Save Downloadlist");
             JDUtilities.getDownloadController().saveDownloadLinks();
-            LOGGER.info("Sync FavIconController");
-            FavIconController.getInstance().saveSyncnonThread();
             LOGGER.info("Save Passwordlist");
             PasswordListController.getInstance().saveSync();
             LOGGER.info("Save HTACCESSlist");
@@ -293,8 +291,6 @@ public class JDController {
         if (DatabaseConnector.isDatabaseShutdown()) return;
         LOGGER.info("Sync Downloadlist");
         JDUtilities.getDownloadController().saveDownloadLinks();
-        LOGGER.info("Sync FavIconController");
-        FavIconController.getInstance().saveSyncnonThread();
         LOGGER.info("Sync Passwordlist");
         PasswordListController.getInstance().saveSync();
 

@@ -218,8 +218,6 @@ public class Main {
 
             } else if (p.equalsIgnoreCase("-scan") || p.equalsIgnoreCase("--scan")) {
                 JDInitFlags.REFRESH_CACHE = true;
-            } else if (p.equalsIgnoreCase("-fav") || p.equalsIgnoreCase("--fav")) {
-                JDInitFlags.REFRESH_FAVS = true;
             } else if (p.equalsIgnoreCase("-trdebug")) {
                 JDL.DEBUG = true;
                 Main.LOG.info("Translation DEBUG Modus aktiv");

@@ -20,7 +20,7 @@ import java.util.Map.Entry;
 
 import javax.imageio.ImageIO;
 
-import jd.controlling.FavIconController;
+import jd.controlling.faviconcontroller.FavIcons;
 import jd.controlling.reconnect.ReconnectConfig;
 import jd.controlling.reconnect.ReconnectException;
 import jd.controlling.reconnect.ReconnectPluginController;
@@ -506,7 +506,7 @@ public class LiveHeaderDetectionWizard {
             this.sslFrameTagCount = sslResponse.split("<frame").length;
             // get favicon and build hash
             try {
-                final BufferedImage image = FavIconController.getInstance().downloadFavIcon(this.gatewayAdressHost);
+                final BufferedImage image = FavIcons.downloadFavIcon(this.gatewayAdressHost);
                 final File imageFile = JDUtilities.getResourceFile("tmp/routerfav.png", true);
                 imageFile.delete();
                 imageFile.deleteOnExit();
@@ -542,7 +542,7 @@ public class LiveHeaderDetectionWizard {
             this.frameTagCount = response.split("<frame").length;
             // get favicon and build hash
             try {
-                final BufferedImage image = FavIconController.getInstance().downloadFavIcon(this.gatewayAdressHost);
+                final BufferedImage image = FavIcons.downloadFavIcon(this.gatewayAdressHost);
                 final File imageFile = JDUtilities.getResourceFile("tmp/routerfav.png", true);
                 imageFile.delete();
                 imageFile.deleteOnExit();
