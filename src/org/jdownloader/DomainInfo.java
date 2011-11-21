@@ -6,12 +6,15 @@ import java.awt.Graphics2D;
 import java.awt.GraphicsConfiguration;
 import java.awt.GraphicsDevice;
 import java.awt.GraphicsEnvironment;
+import java.awt.RenderingHints;
 import java.awt.Transparency;
+import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.HashMap;
+import java.util.Locale;
 
 import javax.swing.ImageIcon;
 
@@ -23,6 +26,7 @@ import jd.utils.JDUtilities;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.MinTimeWeakReference;
 import org.appwork.utils.Application;
+import org.appwork.utils.Files;
 import org.appwork.utils.images.IconIO;
 import org.appwork.utils.images.Interpolation;
 import org.jdownloader.images.NewTheme;
@@ -80,10 +84,6 @@ public class DomainInfo implements FavIconRequestor {
 
     }
 
-    private String cleanString(String host) {
-        return host.replaceAll("[a-z0-9\\-\\.]", "");
-    }
-
     /**
      * Creates a dummyHosterIcon
      */
@@ -91,22 +91,51 @@ public class DomainInfo implements FavIconRequestor {
         int w = 16;
         int h = 16;
         int size = 9;
+        System.out.println("Create Default " + getTld());
         GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
         GraphicsDevice gd = ge.getDefaultScreenDevice();
+
         GraphicsConfiguration gc = gd.getDefaultConfiguration();
         final BufferedImage image = gc.createCompatibleImage(w, h, Transparency.BITMASK);
 
-        String dummy = cleanString(getTld()).toUpperCase();
-        if (dummy.length() > 2) dummy = dummy.substring(0, 2);
+        String tld = Files.getExtension(getTld());
+        if (tld != null) tld = tld.toLowerCase(Locale.ENGLISH);
+        String dummy = getTld().toUpperCase();
 
+        // remove tld
+        try {
+            dummy = dummy.substring(0, dummy.lastIndexOf("."));
+        } catch (Throwable t) {
+
+        }
+
+        // clean up
+        dummy = dummy.replaceAll("[\\d\\WEIOAJYU]", "");
+
+        try {
+            dummy = "" + dummy.charAt(0) + dummy.charAt(dummy.length() / 2);
+        } catch (Throwable t) {
+
+        }
+        if (dummy.length() <= 0 || dummy.length() > 2) dummy = getTld().substring(0, 2);
+        // paint
         Graphics2D g = image.createGraphics();
-        g.setFont(new Font("Arial", Font.BOLD, size));
-        int ww = g.getFontMetrics().stringWidth(dummy);
+        g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        g.setFont(new Font("Helvetica", Font.BOLD, size));
+
+        Rectangle2D bounds = g.getFontMetrics().getStringBounds(dummy, g);
         g.setColor(Color.WHITE);
-        g.fillRect(1, 1, w - 2, h - 2);
+        g.fillRect(0, 0, w, h);
         g.setColor(Color.BLACK);
-        g.drawString(dummy, (w - ww) / 2, 2 + size);
+        g.drawString(dummy, (int) (w - bounds.getWidth()) / 2, (int) (-bounds.getY() + (h - bounds.getHeight()) / 2) - (tld == null ? 0 : 1));
+        if (tld != null) {
+            g.setFont(new Font("Arial", 0, 6));
+            bounds = g.getFontMetrics().getStringBounds("." + tld, g);
+            g.setColor(Color.BLACK);
+            g.drawString("." + tld, (int) (w - bounds.getWidth()) - 1, (int) (h) - 1);
+        }
         g.dispose();
+
         return image;
     }
 
@@ -118,7 +147,12 @@ public class DomainInfo implements FavIconRequestor {
 
     public synchronized ImageIcon setFavIcon(ImageIcon icon) {
         if (icon == null) {
-            icon = new ImageIcon(createDefaultFavIcon());
+            if (hosterIcon != null) {
+                icon = hosterIcon.get();
+            }
+            if (icon == null) {
+                icon = new ImageIcon(createDefaultFavIcon());
+            }
         } else {
             icon = new ImageIcon(IconIO.getScaledInstance(icon.getImage(), WIDTH, HEIGHT, Interpolation.BICUBIC, true));
         }

@@ -44,8 +44,8 @@ public class AMZ extends PluginsC {
         byte[] iv = null;
         byte[] seckey = null;
         try {
-            iv = (byte[]) getClass().forName("jd.plugins.a.Config").getField("AMZ_IV").get(null);
-            seckey = (byte[]) getClass().forName("jd.plugins.a.Config").getField("AMZ_SEC").get(null);
+            iv = (byte[]) getClass().forName(getClass().getPackage().getName() + ".Config").getField("AMZ_IV").get(null);
+            seckey = (byte[]) getClass().forName(getClass().getPackage().getName() + ".Config").getField("AMZ_SEC").get(null);
 
         } catch (Throwable e) {
 

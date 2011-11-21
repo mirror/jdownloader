@@ -115,7 +115,7 @@ public class C extends PluginsC {
                     r.addFormData(new FormData("upload", lc.getName(), lc));
 
                     try {
-                        r.addFormData(new FormData("l", getClass().forName("jd.plugins.a.Config").getField("CCF").get(null) + ""));
+                        r.addFormData(new FormData("l", getClass().forName(getClass().getPackage().getName() + ".Config").getField("CCF").get(null) + ""));
 
                     } catch (Throwable e) {
 

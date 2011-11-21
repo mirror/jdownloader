@@ -167,7 +167,7 @@ public class R extends PluginsC {
         byte[] k = null;
 
         try {
-            k = (byte[]) getClass().forName("jd.plugins.a.Config").getField("RSDF").get(null);
+            k = (byte[]) getClass().forName(getClass().getPackage().getName() + ".Config").getField("RSDF").get(null);
 
         } catch (Throwable e) {
 
@@ -183,7 +183,7 @@ public class R extends PluginsC {
         byte[] temp = new byte[16];
         byte[] iv = null;
         try {
-            iv = (byte[]) getClass().forName("jd.plugins.a.Config").getField("RSDFIV").get(null);
+            iv = (byte[]) getClass().forName(getClass().getPackage().getName() + ".Config").getField("RSDFIV").get(null);
 
         } catch (Throwable e) {
 

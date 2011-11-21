@@ -123,6 +123,7 @@ public final class FavIconController extends SubConfiguration implements Runnabl
             }
             /* Download FavIcon */
             BufferedImage favicon = downloadFavIcon(host);
+
             // JDLogger.getLogger().severe("downloading favicon from: " + host +
             // (favicon == null ? " failed!" : " ok!"));
             synchronized (LOCK) {
