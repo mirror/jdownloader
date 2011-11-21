@@ -1,5 +1,15 @@
 package jd.controlling;
 
+import java.awt.Color;
+import java.awt.Font;
+import java.awt.Graphics2D;
+import java.awt.GraphicsConfiguration;
+import java.awt.GraphicsDevice;
+import java.awt.GraphicsEnvironment;
+import java.awt.RenderingHints;
+import java.awt.Transparency;
+import java.awt.geom.Rectangle2D;
+import java.awt.geom.RoundRectangle2D;
 import java.awt.image.BufferedImage;
 import java.io.BufferedInputStream;
 import java.io.File;
@@ -7,17 +17,20 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 
 import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
 
 import jd.captcha.utils.GifDecoder;
 import jd.config.SubConfiguration;
+import jd.gui.swing.laf.LookAndFeelController;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import net.sf.image4j.codec.ico.ICODecoder;
 
 import org.appwork.utils.Application;
+import org.appwork.utils.Files;
 import org.jdownloader.images.NewTheme;
 
 //final, because the constructor calls Thread.start(),
@@ -283,6 +296,78 @@ public final class FavIconController extends SubConfiguration implements Runnabl
             setProperty("lastRefresh", Long.valueOf(0));
             save();
         }
+    }
+
+    /**
+     * Creates a dummyHosterIcon
+     */
+    public static BufferedImage createDefaultFavIcon(String host) {
+        int w = 16;
+        int h = 16;
+        int size = 9;
+        Color fg = Color.BLACK;
+        Color bg = Color.WHITE;
+        try {
+            bg = new Color(LookAndFeelController.getInstance().getLAFOptions().getPanelHeaderColor());
+        } catch (Throwable e) {
+
+        }
+        try {
+            fg = new Color(LookAndFeelController.getInstance().getLAFOptions().getPanelHeaderForegroundColor());
+        } catch (Throwable e) {
+
+        }
+
+        System.out.println("Create Default " + host);
+        GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
+        GraphicsDevice gd = ge.getDefaultScreenDevice();
+
+        GraphicsConfiguration gc = gd.getDefaultConfiguration();
+        final BufferedImage image = gc.createCompatibleImage(w, h, Transparency.BITMASK);
+
+        String tld = Files.getExtension(host);
+        if (tld != null) tld = tld.toLowerCase(Locale.ENGLISH);
+        String dummy = host.toUpperCase();
+
+        // remove tld
+        try {
+            dummy = dummy.substring(0, dummy.lastIndexOf("."));
+        } catch (Throwable t) {
+
+        }
+
+        // clean up
+        dummy = dummy.replaceAll("[\\d\\WEIOAJU]", "");
+
+        try {
+            dummy = "" + dummy.charAt(0) + dummy.charAt(dummy.length() / 2);
+        } catch (Throwable t) {
+
+        }
+        if (dummy.length() <= 0 || dummy.length() > 2) dummy = host.substring(0, 2);
+        // paint
+        Graphics2D g = image.createGraphics();
+        g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        g.setFont(new Font("Helvetica", Font.BOLD, size));
+
+        RoundRectangle2D roundedRectangle = new RoundRectangle2D.Float(0, 0, w - 1, h - 1, 5, 5);
+        g.setColor(bg);
+        g.fill(roundedRectangle);
+        g.setColor(bg.darker());
+        g.draw(roundedRectangle);
+        g.setColor(fg);
+        Rectangle2D bounds = g.getFontMetrics().getStringBounds(dummy, g);
+
+        g.drawString(dummy, (int) (w - bounds.getWidth()) / 2, (int) (-bounds.getY() + (h - bounds.getHeight()) / 2) - (tld == null ? 0 : 1));
+        if (tld != null) {
+            g.setFont(new Font("Arial", 0, 6));
+            bounds = g.getFontMetrics().getStringBounds("." + tld, g);
+
+            g.drawString("." + tld, (int) (w - bounds.getWidth()) - 2, (int) (h) - 2);
+        }
+        g.dispose();
+
+        return image;
     }
 
 }
