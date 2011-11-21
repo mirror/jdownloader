@@ -35,12 +35,13 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "grooveshark.com" }, urls = { "http://grooveshark\\.viajd/(s/.*?/[a-zA-Z0-9]+|song/\\d+)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "grooveshark.com" }, urls = { "http://grooveshark\\.viajd/(s/.*?/\\w+|song/\\d+)" }, flags = { 0 })
 public class GrooveShark extends PluginForHost {
 
-    private static final String LISTEN = "http://grooveshark.com/";
-    private static final String USERID = UUID.randomUUID().toString().toUpperCase();
-    private static String       token  = "";
+    private String              CLIENTREVISION = null;
+    private static final String LISTEN         = "http://grooveshark.com/";
+    private static final String USERUID        = UUID.randomUUID().toString().toUpperCase();
+    private static String       TOKEN          = "";
 
     public GrooveShark(final PluginWrapper wrapper) {
         super(wrapper);
@@ -91,22 +92,22 @@ public class GrooveShark extends PluginForHost {
         ajax.getHeaders().put("Referer", parameter);
         final String sid = br.getCookie(parameter, "PHPSESSID");
         final String secretKey = getSecretKey(ajax, JDHash.getMD5(sid), sid);
-        final String str = "{\"header\":{\"client\":\"htmlshark\",\"clientRevision\":\"20110606\",\"privacy\":0," + country + ",\"uuid\":\"" + USERID + "\",\"session\":\"" + sid + "\",\"token\":\"" + getToken(method, secretKey) + "\"},\"method\":\"" + method + "\",";
+        final String str = "{\"header\":{\"client\":\"htmlshark\",\"clientRevision\":\"" + CLIENTREVISION + "\",\"privacy\":0," + country + ",\"uuid\":\"" + USERUID + "\",\"session\":\"" + sid + "\",\"token\":\"" + getToken(method, secretKey) + "\"},\"method\":\"" + method + "\",";
         return str;
     }
 
     private String getSecretKey(final Browser ajax, final String token, final String sid) throws IOException {
         ajax.getHeaders().put("Content-Type", "application/json");
-        String secretKey = "{\"parameters\":{\"secretKey\":\"" + token + "\"},\"header\":{\"client\":\"htmlshark\",\"clientRevision\":\"20110606.04\",\"session\":\"" + sid + "\",\"uuid\":\"" + USERID + "\"},\"method\":\"getCommunicationToken\"}";
+        String secretKey = "{\"parameters\":{\"secretKey\":\"" + token + "\"},\"header\":{\"client\":\"htmlshark\",\"clientRevision\":\"" + CLIENTREVISION + "\",\"session\":\"" + sid + "\",\"uuid\":\"" + USERUID + "\"},\"method\":\"getCommunicationToken\"}";
         ajax.postPageRaw(LISTEN + "more.php?getCommunicationToken", secretKey);
         secretKey = ajax.getRegex("result\":\"(.*?)\"").getMatch(0);
         return secretKey;
     }
 
     private String getToken(final String method, final String secretKey) {
-        String topSecretKey = Encoding.Base64Decode("YmV3YXJlT2ZCZWFyc2hhcmt0b3B1cw==");
+        String topSecretKey = Encoding.Base64Decode("dGhlVGlja2V0c0FyZU5vd0RpYW1vbmRz");
         if (method.matches("(getSongFromToken|getTokenForSong)")) {
-            topSecretKey = Encoding.Base64Decode("YmFja1RvVGhlU2NpZW5jZUxhYg==");
+            topSecretKey = Encoding.Base64Decode("aW1PbkFIb3JzZQ==");
         }
         final String lastRandomizer = makeNewRandomizer();
         final String z = lastRandomizer + JDHash.getSHA1(method + ":" + secretKey + ":" + topSecretKey + ":" + lastRandomizer);
@@ -118,7 +119,7 @@ public class GrooveShark extends PluginForHost {
         // pro Request ein neuer Tokenhash(getToken)
         final String secretKey = getSecretKey(br, JDHash.getMD5(sid), sid);
         // get songID
-        String songID = "{\"header\":{\"client\":\"htmlshark\",\"clientRevision\":\"20110606\",\"privacy\":0," + country + ",\"uuid\":\"" + USERID + "\",\"session\":\"" + sid + "\",\"token\":\"" + getToken("getSongFromToken", secretKey) + "\"},\"method\":\"getSongFromToken\",\"parameters\":{\"token\":\"" + token + "\"," + country + "}}";
+        String songID = "{\"header\":{\"client\":\"htmlshark\",\"clientRevision\":\"" + CLIENTREVISION + "\",\"privacy\":0," + country + ",\"uuid\":\"" + USERUID + "\",\"session\":\"" + sid + "\",\"token\":\"" + getToken("getSongFromToken", secretKey) + "\"},\"method\":\"getSongFromToken\",\"parameters\":{\"token\":\"" + TOKEN + "\"," + country + "}}";
         br.getHeaders().put("Content-Type", "application/json");
         br.postPageRaw(LISTEN + "more.php?getSongFromToken", songID);
         songID = br.getRegex("SongID\":\"(\\d+)\"").getMatch(0);
@@ -126,7 +127,7 @@ public class GrooveShark extends PluginForHost {
         br.getHeaders().put("Content-Type", "application/json");
         br.getHeaders().put("Referer", "http://grooveshark.com/JSQueue.swf?20101203.14");
         br.getHeaders().put("x-flash-version", "10,1,53,64");
-        String streamKey = "{\"parameters\":{" + country + ",\"prefetch\":true,\"songID\":" + songID + ",\"mobile\":false},\"header\":{\"privacy\":0,\"token\":\"" + getToken("getStreamKeyFromSongIDEx", secretKey) + "\",\"session\":\"" + sid + "\"," + country + ",\"uuid\":\"" + USERID + "\",\"client\":\"jsqueue\",\"clientRevision\":\"20110606.04\"},\"method\":\"getStreamKeyFromSongIDEx\"}";
+        String streamKey = "{\"parameters\":{" + country + ",\"prefetch\":true,\"songID\":" + songID + ",\"mobile\":false},\"header\":{\"privacy\":0,\"token\":\"" + getToken("getStreamKeyFromSongIDEx", secretKey) + "\",\"session\":\"" + sid + "\"," + country + ",\"uuid\":\"" + USERUID + "\",\"client\":\"jsqueue\",\"clientRevision\":\"" + CLIENTREVISION + "\"},\"method\":\"getStreamKeyFromSongIDEx\"}";
         br.postPageRaw(LISTEN + "more.php?getStreamKeyFromSongIDEx", streamKey);
         streamKey = br.getRegex("streamKey\":\"(\\w+)\"").getMatch(0);
         if (streamKey == null) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 300 * 1000L); }
@@ -149,48 +150,45 @@ public class GrooveShark extends PluginForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         br.getPage(LISTEN);
+        CLIENTREVISION = downloadLink.getStringProperty("clientrev");
+        CLIENTREVISION = CLIENTREVISION == null ? "20110906" : CLIENTREVISION;
         final String url = downloadLink.getDownloadURL();
-        if (new Regex(url, "grooveshark\\.com\\/song\\/\\d+").matches()) {
+        final String sid = br.getCookie(LISTEN, "PHPSESSID");
+        final String country = br.getRegex(Pattern.compile("\"country(.*?)}", Pattern.UNICODE_CASE)).getMatch(-1);
+        if (new Regex(url, "grooveshark\\.com/song/\\d+").matches()) {
             // converts from a virtual link to a real link
             // we pass virtual links from decrypter, because we do not want
             // to do a linkcheck when adding the link ... this would do too
             // much requests.
             final Browser ajax = br;
-            final String sid = br.getCookie(LISTEN, "PHPSESSID");
-            final String country = br.getRegex(Pattern.compile("\"country(.*?)}", Pattern.UNICODE_CASE)).getMatch(-1);
             String rawPost = getPostParameterString(ajax, LISTEN, "getTokenForSong", country);
             rawPost = rawPost + "\"parameters\":{\"songID\":\"" + downloadLink.getStringProperty("SongID") + "\"," + country + "}}";
             ajax.getHeaders().put("Content-Type", "application/json");
             ajax.postPageRaw(LISTEN + "more.php?getTokenForSong", rawPost);
-            token = ajax.getRegex("Token\":\"(\\w+)\"").getMatch(0);
+            TOKEN = ajax.getRegex("Token\":\"(\\w+)\"").getMatch(0);
+            // valid secret key?
+            if (TOKEN == null && ajax.containsHTML("\"message\":\"invalid token\"")) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
             // Limitations after ~20 Songs
-            if (token == null) {
+            if (TOKEN == null) {
                 if (ajax.containsHTML("attacker") || ajax.containsHTML("\"Token\":false")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 300 * 1000L); }
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             String Name = downloadLink.getStringProperty("Name");
             Name = cleanNameForURL(Name);
-            final String dllink = LISTEN + "s/" + Name + "/" + token;
+            final String dllink = LISTEN + "s/" + Name + "/" + TOKEN;
             downloadLink.setUrlDownload(dllink);
             br.getHeaders().put("Content-Type", "application/json");
             br.getHeaders().put("Referer", downloadLink.getDownloadURL());
-            handleDownload(downloadLink, country, sid);
-        } else {
+        } else if (new Regex(url, "grooveshark\\.com/.*?/\\w+").matches()) {
             // direct links..
-            // countrystring
-            final String country = br.getRegex(Pattern.compile("\"country(.*?)}", Pattern.UNICODE_CASE)).getMatch(-1);
-            // get SongID
             br.getHeaders().put("Content-Type", "application/json");
             br.getHeaders().put("Referer", downloadLink.getDownloadURL());
-            final String sid = br.getCookie(LISTEN, "PHPSESSID");
-            token = downloadLink.getDownloadURL().substring(downloadLink.getDownloadURL().lastIndexOf("/") + 1);
-            // Limitations after ~20 Songs
-            if (token == null) {
-                if (br.containsHTML("attacker") || br.containsHTML("\"Token\":false")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 300 * 1000L); }
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            handleDownload(downloadLink, country, sid);
+            TOKEN = url.substring(url.lastIndexOf("/") + 1);
+            if (TOKEN.equals("404")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        } else {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        handleDownload(downloadLink, country, sid);
     }
 
     private String makeNewRandomizer() {
