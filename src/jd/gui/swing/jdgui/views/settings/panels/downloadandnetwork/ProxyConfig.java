@@ -1,6 +1,8 @@
 package jd.gui.swing.jdgui.views.settings.panels.downloadandnetwork;
 
 import java.util.ArrayList;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
 import javax.swing.ImageIcon;
 import javax.swing.JScrollPane;
@@ -27,13 +29,15 @@ public class ProxyConfig extends AbstractConfigPanel implements DefaultEventList
         return _JDT._.gui_settings_proxy_title();
     }
 
-    private static final long serialVersionUID = -521958649780869375L;
+    private static final long  serialVersionUID = -521958649780869375L;
 
-    private ProxyTable        table;
+    private ProxyTable         table;
 
-    private ExtButton         btnAdd;
+    private ExtButton          btnAdd;
 
-    private ExtButton         btnRemove;
+    private ExtButton          btnRemove;
+
+    private ScheduledFuture<?> timer            = null;
 
     public ProxyConfig() {
         super();
@@ -63,7 +67,6 @@ public class ProxyConfig extends AbstractConfigPanel implements DefaultEventList
                         }
                     }
                 }
-
                 action.setEnabled(canremove);
             }
         });
@@ -103,6 +106,16 @@ public class ProxyConfig extends AbstractConfigPanel implements DefaultEventList
     @Override
     protected void onShow() {
         super.onShow();
+        synchronized (this) {
+            if (timer != null) timer.cancel(false);
+            timer = IOEQ.TIMINGQUEUE.scheduleWithFixedDelay(new Runnable() {
+
+                public void run() {
+                    table.repaint();
+                }
+
+            }, 250, 1000, TimeUnit.MILLISECONDS);
+        }
         ProxyController.getInstance().getEventSender().addListener(this);
     }
 
@@ -114,6 +127,12 @@ public class ProxyConfig extends AbstractConfigPanel implements DefaultEventList
     @Override
     protected void onHide() {
         super.onHide();
+        synchronized (this) {
+            if (timer != null) {
+                timer.cancel(false);
+                timer = null;
+            }
+        }
         ProxyController.getInstance().getEventSender().removeListener(this);
     }
 
@@ -128,7 +147,7 @@ public class ProxyConfig extends AbstractConfigPanel implements DefaultEventList
             };
             break;
         default:
-            updateContents();
+            table.getExtTableModel()._fireTableStructureChanged(ProxyController.getInstance().getList(), false);
             break;
         }
     }

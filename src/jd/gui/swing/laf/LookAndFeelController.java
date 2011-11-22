@@ -25,7 +25,6 @@ import javax.swing.plaf.FontUIResource;
 
 import jd.JDInitFlags;
 import jd.controlling.JDLogger;
-import jd.nutils.OSDetector;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
@@ -154,11 +153,11 @@ public class LookAndFeelController {
                 LookAndFeelWrapper lafm = new LookAndFeelWrapper(lafis[i]);
                 lafm.setName("Windows Style");
                 ret.add(lafm);
-            } else if (clname.endsWith("MetalLookAndFeel") && OSDetector.isLinux()) {
+            } else if (clname.endsWith("MetalLookAndFeel") && CrossSystem.isLinux()) {
                 LookAndFeelWrapper lafm = new LookAndFeelWrapper(lafis[i]);
                 lafm.setName("Light(Metal)");
                 ret.add(lafm);
-            } else if (clname.endsWith("GTKLookAndFeel") && OSDetector.isLinux()) {
+            } else if (clname.endsWith("GTKLookAndFeel") && CrossSystem.isLinux()) {
                 LookAndFeelWrapper lafm = new LookAndFeelWrapper(lafis[i]);
                 lafm.setName("Light(GTK)");
                 ret.add(lafm);

@@ -485,6 +485,10 @@ public class DirectHTTP extends PluginForHost {
         }
         String lastModified = dl.getConnection().getHeaderField("Last-Modified");
         if (!this.dl.startDownload()) {
+            try {
+                if (dl.externalDownloadStop()) return;
+            } catch (final Throwable e) {
+            }
             if (downloadLink.getLinkStatus().getErrorMessage() != null && downloadLink.getLinkStatus().getErrorMessage().startsWith(JDL.L("download.error.message.rangeheaders", "Server does not support chunkload"))) {
                 if (downloadLink.getBooleanProperty(DirectHTTP.NORESUME, false) == false) {
                     downloadLink.setChunksProgress(null);

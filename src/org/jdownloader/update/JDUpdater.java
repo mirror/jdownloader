@@ -7,7 +7,6 @@ import java.util.logging.Level;
 import javax.swing.JFrame;
 
 import jd.JDInitFlags;
-import jd.controlling.JSonWrapper;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.gui.swing.SwingGui;
@@ -40,17 +39,12 @@ public class JDUpdater extends Updater implements Runnable, ControlListener {
         return JDUpdater.INSTANCE;
     }
 
-    public static final String    PARAM_BRANCH    = "BRANCH";
-    public static final String    BRANCHINUSE     = "BRANCHINUSE";
-    protected static final String UPDATE_INTERVAL = "UPDATEINTERVAL";
-    private JSonWrapper           storage;
-
-    private UpdaterGUI            gui;
-    private boolean               silentCheck;
-    private int                   waitingUpdates  = 0;
-    private boolean               updateRunning   = false;
-    private Thread                updaterThread;
-    private Thread                updateChecker;
+    private UpdaterGUI gui;
+    private boolean    silentCheck;
+    private int        waitingUpdates = 0;
+    private boolean    updateRunning  = false;
+    private Thread     updaterThread;
+    private Thread     updateChecker;
 
     /**
      * unsynched access to gui. may return null
@@ -86,7 +80,6 @@ public class JDUpdater extends Updater implements Runnable, ControlListener {
     private JDUpdater() {
         super(new UpdaterHttpClientImpl(), new Options());
         getOptions().setDebug(JDInitFlags.SWITCH_DEBUG);
-        storage = JSonWrapper.get("WEBUPDATE");
 
         JDUtilities.getController().addControlListener(this);
         this.getEventSender().addListener(new UpdaterListener() {
@@ -134,10 +127,7 @@ public class JDUpdater extends Updater implements Runnable, ControlListener {
     }
 
     public void setBranchInUse(String branch) {
-        storage.setProperty(PARAM_BRANCH, branch);
-
-        storage.setProperty(BRANCHINUSE, branch);
-        storage.save();
+        getOptions().setBranch(branch);
     }
 
     public void startUpdate(final boolean silentCheck) {
@@ -358,23 +348,6 @@ public class JDUpdater extends Updater implements Runnable, ControlListener {
             updaterThread.interrupt();
             super.requestExit();
         }
-    }
-
-    public void startChecker() {
-        updateChecker = new Thread("UpdateChecker") {
-            public void run() {
-                startUpdate(true);
-                while (true) {
-                    try {
-                        Thread.sleep(storage.getIntegerProperty(UPDATE_INTERVAL, 30 * 60000));
-                    } catch (InterruptedException e) {
-                        return;
-                    }
-                    startUpdate(true);
-                }
-            }
-        };
-        updateChecker.start();
     }
 
     public void controlEvent(ControlEvent event) {

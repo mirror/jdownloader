@@ -45,7 +45,6 @@ public class ProxyTableModel extends ExtTableModel<ProxyInfo> {
                 case NONE:
                 case DIRECT:
                     return false;
-
                 default:
                     return true;
                 }
@@ -370,6 +369,21 @@ public class ProxyTableModel extends ExtTableModel<ProxyInfo> {
                     }
                 });
             }
+        });
+        this.addColumn(new ExtTextColumn<ProxyInfo>(_GUI._.gui_column_proxyconnects(), this) {
+
+            private static final long serialVersionUID = -7209180150340921804L;
+
+            @Override
+            public boolean isHidable() {
+                return true;
+            }
+
+            @Override
+            public String getStringValue(ProxyInfo value) {
+                return value.getProxy().getCurrentConnections().get() + "/" + value.getProxy().getUsedConnections().get();
+            }
+
         });
     }
 }

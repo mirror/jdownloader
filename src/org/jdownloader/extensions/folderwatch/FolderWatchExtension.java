@@ -41,7 +41,6 @@ import jd.controlling.linkcrawler.LinkCrawler;
 import jd.gui.UserIO;
 import jd.nutils.JDFlags;
 import jd.nutils.JDHash;
-import jd.nutils.OSDetector;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.utils.os.CrossSystem;
@@ -107,7 +106,7 @@ public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig> i
             subConfig.setProperty(FolderWatchConstants.PROPERTY_FOLDER_LIST, folderlist);
         }
 
-        if (OSDetector.isWindows()) {
+        if (CrossSystem.isWindows()) {
             isOption_recursive = subConfig.getBooleanProperty(FolderWatchConstants.PROPERTY_OPTION_RECURSIVE, false);
         } else {
             isOption_recursive = false;
@@ -304,7 +303,7 @@ public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig> i
 
         // TODO: unregister directories, so you don't have to
         // restart service
-        if (folderlistHasChanged || (recursiveOptionChanged && OSDetector.isWindows())) {
+        if (folderlistHasChanged || (recursiveOptionChanged && CrossSystem.isWindows())) {
             logger.info("Options have been changed that require the service to restart...");
 
             startWatching(false);
@@ -416,7 +415,7 @@ public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig> i
 
         config.setGroup(new ConfigGroup(T._.plugins_optional_folderwatch_JDFolderWatch_gui_label_options(), getIconKey()));
 
-        if (OSDetector.isWindows()) {
+        if (CrossSystem.isWindows()) {
             config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, FolderWatchConstants.PROPERTY_OPTION_RECURSIVE, T._.plugins_optional_folderwatch_JDFolderWatch_gui_option_recursive()).setDefaultValue(false));
         }
 

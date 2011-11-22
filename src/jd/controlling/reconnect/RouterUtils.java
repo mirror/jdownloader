@@ -35,7 +35,6 @@ import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.DynByteBuffer;
 import jd.nutils.Executer;
-import jd.nutils.OSDetector;
 import jd.nutils.ProcessListener;
 import jd.nutils.Threader;
 import jd.nutils.Threader.WorkerListener;
@@ -170,7 +169,7 @@ public class RouterUtils {
 
     private static String callArpTool(final String ipAddress) throws IOException, InterruptedException {
 
-        if (OSDetector.isWindows()) {
+        if (CrossSystem.isWindows()) {
             return RouterUtils.callArpToolWindows(ipAddress);
         } else {
 
@@ -395,7 +394,7 @@ public class RouterUtils {
     public static InetAddress getIPFromRouteCommand() {
         if (new File("/sbin/route").exists()) {
 
-            if (OSDetector.isMac()) {
+            if (CrossSystem.isMac()) {
                 /* TODO: needs to get checked by a mac user */
                 final Executer exec = new Executer("/sbin/route");
                 exec.addParameters(new String[] { "-n", "get", "default" });

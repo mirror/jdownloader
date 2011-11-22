@@ -19,9 +19,9 @@ package org.jdownloader.extensions.antistandby;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.ConfigGroup;
-import jd.nutils.OSDetector;
 import jd.plugins.AddonPanel;
 
+import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.StartException;
@@ -74,18 +74,18 @@ public class AntiStandbyExtension extends AbstractExtension<AntiStandbyConfig> {
     @Override
     protected void start() throws StartException {
 
-        switch (OSDetector.getID()) {
-        case OSDetector.OS_WINDOWS_2003:
-        case OSDetector.OS_WINDOWS_VISTA:
-        case OSDetector.OS_WINDOWS_XP:
-        case OSDetector.OS_WINDOWS_7:
-        case OSDetector.OS_WINDOWS_2000:
-        case OSDetector.OS_WINDOWS_NT:
+        switch (CrossSystem.getID()) {
+        case CrossSystem.OS_WINDOWS_2003:
+        case CrossSystem.OS_WINDOWS_VISTA:
+        case CrossSystem.OS_WINDOWS_XP:
+        case CrossSystem.OS_WINDOWS_7:
+        case CrossSystem.OS_WINDOWS_2000:
+        case CrossSystem.OS_WINDOWS_NT:
             asthread = new JDAntiStandbyThread(this);
             asthread.start();
 
         default:
-            logger.fine("JDAntiStandby: System is not supported (" + OSDetector.getOSString() + ")");
+            logger.fine("JDAntiStandby: System is not supported (" + CrossSystem.getOSString() + ")");
         }
 
     }

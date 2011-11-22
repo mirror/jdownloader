@@ -6,8 +6,8 @@ import javax.swing.JMenuItem;
 import jd.Main;
 import jd.gui.swing.jdgui.menu.actions.ExitAction;
 import jd.gui.swing.jdgui.menu.actions.RestartAction;
-import jd.nutils.OSDetector;
 
+import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.gui.translate._GUI;
 
 public class FileMenu extends JMenu {
@@ -29,7 +29,7 @@ public class FileMenu extends JMenu {
                 // add exit action, used by tray extension
                 JMenuItem exitItem = add(new ExitAction());
                 // but hide it from menu action list in case we are on Mac
-                if (OSDetector.isMac()) {
+                if (CrossSystem.isMac()) {
                     exitItem.setVisible(false);
                 }
             }

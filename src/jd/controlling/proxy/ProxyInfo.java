@@ -3,7 +3,6 @@ package jd.controlling.proxy;
 import java.util.HashMap;
 
 import jd.controlling.proxy.ProxyData.StatusID;
-import jd.controlling.proxy.ProxyData.Type;
 
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 
@@ -34,19 +33,13 @@ public class ProxyInfo {
     public ProxyData toProxyData() {
         ProxyData ret = new ProxyData();
         ret.setProxyRotationEnabled(this.isProxyRotationEnabled());
-        ret.setHost(proxy.getHost());
-        ret.setUser(proxy.getUser());
-        ret.setPort(proxy.getPort());
-        ret.setType(Type.valueOf(proxy.getType().name()));
         ret.setStatus(StatusID.valueOf(proxy.getStatus().name()));
-
+        ret.setProxy(HTTPProxy.getStorable(proxy));
         return ret;
     }
 
     public ProxyInfo(ProxyData proxyData) {
-        this.proxy = new HTTPProxy(HTTPProxy.TYPE.valueOf(proxyData.getType().name()), proxyData.getHost(), proxyData.getPort());
-        this.proxy.setPass(proxyData.getPass());
-        this.proxy.setUser(proxyData.getUser());
+        this.proxy = HTTPProxy.getHTTPProxy(proxyData.getProxy());
         this.proxy.setStatus(HTTPProxy.STATUS.valueOf(proxyData.getStatus().name()));
         this.proxyRotationEnabled = proxyData.isProxyRotationEnabled();
     }

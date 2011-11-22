@@ -23,10 +23,10 @@ import java.util.Collections;
 import java.util.logging.Logger;
 
 import jd.controlling.JDLogger;
-import jd.nutils.OSDetector;
 import jd.nutils.io.JDIO;
 import jd.utils.JDUtilities;
 
+import org.appwork.utils.os.CrossSystem;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -126,9 +126,9 @@ public class JACMethod implements Comparable<JACMethod> {
 
     private static boolean isAvailableExternMethod(String content) {
         if (content != null && content.contains("extern")) {
-            if (OSDetector.isLinux() && !content.contains("linux")) return false;
-            if (OSDetector.isMac() && !content.contains("mac")) return false;
-            if (OSDetector.isWindows() && !content.contains("windows")) return false;
+            if (CrossSystem.isLinux() && !content.contains("linux")) return false;
+            if (CrossSystem.isMac() && !content.contains("mac")) return false;
+            if (CrossSystem.isWindows() && !content.contains("windows")) return false;
         }
         return true;
     }

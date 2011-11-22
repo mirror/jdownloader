@@ -31,13 +31,13 @@ import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.nutils.Executer;
-import jd.nutils.OSDetector;
 import jd.plugins.AddonPanel;
 import jd.plugins.DownloadLink;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
+import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.StartException;
@@ -137,7 +137,7 @@ public class GrowlExtension extends AbstractExtension<GrowlConfig> implements Co
     }
 
     private void growlNotification(String headline, String message, String title) {
-        if (OSDetector.isMac()) {
+        if (CrossSystem.isMac()) {
             Executer exec = new Executer("/usr/bin/osascript");
             exec.addParameter(JDUtilities.getResourceFile(GrowlExtension.TMP_GROWL_NOTIFICATION_SCPT).getAbsolutePath());
             exec.addParameter(headline);

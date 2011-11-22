@@ -9,7 +9,9 @@ public class ProxyEvent<E> extends SimpleEvent<ProxyController, ProxyInfo, Proxy
     }
 
     public static enum Types {
-        ADDED, REMOVED, REFRESH
+        ADDED,
+        REMOVED,
+        REFRESH
     }
 
 }

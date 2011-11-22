@@ -55,12 +55,12 @@ import jd.gui.swing.SwingGui;
 import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.nutils.Formatter;
-import jd.nutils.OSDetector;
 import jd.plugins.AddonPanel;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.Application;
 import org.appwork.utils.images.IconIO;
+import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.EDTHelper;
 import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionConfigPanel;
@@ -328,7 +328,7 @@ public class TrayExtension extends AbstractExtension<TrayConfig> implements Mous
     public void mousePressed(MouseEvent e) {
         trayIconTooltip.hideTooltip();
         if (e.getSource() instanceof TrayIcon) {
-            if (!OSDetector.isMac()) {
+            if (!CrossSystem.isMac()) {
                 if (e.getClickCount() >= (subConfig.getBooleanProperty(PROPERTY_SINGLE_CLICK, false) ? 1 : 2) && !SwingUtilities.isRightMouseButton(e)) {
                     miniIt(guiFrame.isVisible());
                 } else {
@@ -391,7 +391,7 @@ public class TrayExtension extends AbstractExtension<TrayConfig> implements Mous
                 Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
                 int limitX = (int) screenSize.getWidth() / 2;
                 int limitY = (int) screenSize.getHeight() / 2;
-                if (!OSDetector.isMac()) {
+                if (!CrossSystem.isMac()) {
                     if (p.x <= limitX) {
                         if (p.y <= limitY) {
                             // top left

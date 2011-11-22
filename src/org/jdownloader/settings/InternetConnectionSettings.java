@@ -2,7 +2,6 @@ package org.jdownloader.settings;
 
 import java.util.ArrayList;
 
-import jd.controlling.proxy.DirectGatewayData;
 import jd.controlling.proxy.ProxyData;
 
 import org.appwork.storage.config.ConfigInterface;
@@ -22,10 +21,10 @@ public interface InternetConnectionSettings extends ConfigInterface {
 
     @AboutConfig
     @Description("List of all available direct gateways. Invalid entries will be removed")
-    void setDirectGatewayList(ArrayList<DirectGatewayData> ret);
+    void setDirectGatewayList(ArrayList<ProxyData> ret);
 
     @DefaultJsonObject("[]")
-    ArrayList<DirectGatewayData> getDirectGatewayList();
+    ArrayList<ProxyData> getDirectGatewayList();
 
     @AboutConfig
     @Description("Is direct connection (no proxy) the default connection?")

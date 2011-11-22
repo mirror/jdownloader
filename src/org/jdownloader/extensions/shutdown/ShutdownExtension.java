@@ -37,12 +37,12 @@ import jd.gui.swing.jdgui.actions.ToolBarAction;
 import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.nutils.Executer;
 import jd.nutils.JDFlags;
-import jd.nutils.OSDetector;
 import jd.plugins.AddonPanel;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
+import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.StartException;
@@ -101,15 +101,15 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig> impleme
         logger.info("shutdown");
         JDController.getInstance().prepareShutdown(false);
         int id = 0;
-        switch (id = OSDetector.getID()) {
-        case OSDetector.OS_WINDOWS_2003:
-        case OSDetector.OS_WINDOWS_VISTA:
-        case OSDetector.OS_WINDOWS_XP:
-        case OSDetector.OS_WINDOWS_7:
+        switch (id = CrossSystem.getID()) {
+        case CrossSystem.OS_WINDOWS_2003:
+        case CrossSystem.OS_WINDOWS_VISTA:
+        case CrossSystem.OS_WINDOWS_XP:
+        case CrossSystem.OS_WINDOWS_7:
             /* modern windows versions */
-        case OSDetector.OS_WINDOWS_2000:
-        case OSDetector.OS_WINDOWS_NT:
-        case OSDetector.OS_WINDOWS_SERVER_2008:
+        case CrossSystem.OS_WINDOWS_2000:
+        case CrossSystem.OS_WINDOWS_NT:
+        case CrossSystem.OS_WINDOWS_SERVER_2008:
             /* not so modern windows versions */
             if (getPluginConfig().getBooleanProperty(CONFIG_FORCESHUTDOWN, false)) {
                 /* force shutdown */
@@ -132,7 +132,7 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig> impleme
                 } catch (Exception e) {
                 }
             }
-            if (id == OSDetector.OS_WINDOWS_2000 || id == OSDetector.OS_WINDOWS_NT) {
+            if (id == CrossSystem.OS_WINDOWS_2000 || id == CrossSystem.OS_WINDOWS_NT) {
                 /* also try extra methods for windows2000 and nt */
                 try {
 
@@ -150,7 +150,7 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig> impleme
                 }
             }
             break;
-        case OSDetector.OS_WINDOWS_OTHER:
+        case CrossSystem.OS_WINDOWS_OTHER:
             /* older windows versions */
             try {
                 JDUtilities.runCommand("RUNDLL32.EXE", new String[] { "user,ExitWindows" }, null, 0);
@@ -161,7 +161,7 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig> impleme
             } catch (Exception e) {
             }
             break;
-        case OSDetector.OS_MAC_OTHER:
+        case CrossSystem.OS_MAC_OTHER:
             /* mac os */
             if (getPluginConfig().getBooleanProperty(CONFIG_FORCESHUTDOWN, false)) {
                 /* force shutdown */
@@ -208,14 +208,14 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig> impleme
     }
 
     private void hibernate() {
-        switch (OSDetector.getID()) {
-        case OSDetector.OS_WINDOWS_2003:
-        case OSDetector.OS_WINDOWS_VISTA:
-        case OSDetector.OS_WINDOWS_XP:
-        case OSDetector.OS_WINDOWS_7:
+        switch (CrossSystem.getID()) {
+        case CrossSystem.OS_WINDOWS_2003:
+        case CrossSystem.OS_WINDOWS_VISTA:
+        case CrossSystem.OS_WINDOWS_XP:
+        case CrossSystem.OS_WINDOWS_7:
             /* modern windows versions */
-        case OSDetector.OS_WINDOWS_2000:
-        case OSDetector.OS_WINDOWS_NT:
+        case CrossSystem.OS_WINDOWS_2000:
+        case CrossSystem.OS_WINDOWS_NT:
             /* not so modern windows versions */
             prepareHibernateOrStandby();
             try {
@@ -235,12 +235,12 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig> impleme
                 }
             }
             break;
-        case OSDetector.OS_WINDOWS_OTHER:
+        case CrossSystem.OS_WINDOWS_OTHER:
             /* older windows versions */
             logger.info("no hibernate support, use shutdown");
             shutdown();
             break;
-        case OSDetector.OS_MAC_OTHER:
+        case CrossSystem.OS_MAC_OTHER:
             /* mac os */
             prepareHibernateOrStandby();
             logger.info("no hibernate support, use shutdown");
@@ -258,14 +258,14 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig> impleme
     }
 
     private void standby() {
-        switch (OSDetector.getID()) {
-        case OSDetector.OS_WINDOWS_2003:
-        case OSDetector.OS_WINDOWS_VISTA:
-        case OSDetector.OS_WINDOWS_XP:
-        case OSDetector.OS_WINDOWS_7:
+        switch (CrossSystem.getID()) {
+        case CrossSystem.OS_WINDOWS_2003:
+        case CrossSystem.OS_WINDOWS_VISTA:
+        case CrossSystem.OS_WINDOWS_XP:
+        case CrossSystem.OS_WINDOWS_7:
             /* modern windows versions */
-        case OSDetector.OS_WINDOWS_2000:
-        case OSDetector.OS_WINDOWS_NT:
+        case CrossSystem.OS_WINDOWS_2000:
+        case CrossSystem.OS_WINDOWS_NT:
             /* not so modern windows versions */
             prepareHibernateOrStandby();
             try {
@@ -285,12 +285,12 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig> impleme
                 }
             }
             break;
-        case OSDetector.OS_WINDOWS_OTHER:
+        case CrossSystem.OS_WINDOWS_OTHER:
             /* older windows versions */
             logger.info("no standby support, use shutdown");
             shutdown();
             break;
-        case OSDetector.OS_MAC_OTHER:
+        case CrossSystem.OS_MAC_OTHER:
             /* mac os */
             prepareHibernateOrStandby();
             try {
@@ -482,7 +482,7 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig> impleme
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, CONFIG_FORCESHUTDOWN, T._.gui_config_jdshutdown_forceshutdown()).setDefaultValue(false));
 
         /* enable force shutdown for Mac OSX */
-        if (OSDetector.isMac()) {
+        if (CrossSystem.isMac()) {
             config.addEntry(new ConfigEntry(ConfigContainer.TYPE_BUTTON, new ActionListener() {
 
                 public void actionPerformed(ActionEvent e) {

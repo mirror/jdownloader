@@ -3,14 +3,12 @@ package jd.gui.swing.jdgui.views.settings.panels.downloadandnetwork;
 import java.awt.event.ActionEvent;
 
 import jd.controlling.IOEQ;
-import jd.controlling.JDLogger;
 import jd.controlling.proxy.ProxyController;
 import jd.gui.swing.dialog.ProxyDialog;
 
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.appwork.utils.swing.dialog.Dialog;
-import org.appwork.utils.swing.dialog.DialogCanceledException;
-import org.appwork.utils.swing.dialog.DialogClosedException;
+import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.gui.views.components.AbstractAddAction;
 
 public class ProxyAddAction extends AbstractAddAction {
@@ -41,10 +39,7 @@ public class ProxyAddAction extends AbstractAddAction {
                     ProxyController.getInstance().addProxy(proxy);
                 }
             });
-        } catch (final DialogClosedException e1) {
-        } catch (final DialogCanceledException e1) {
-        } catch (final Throwable e1) {
-            JDLogger.exception(e1);
+        } catch (final DialogNoAnswerException e1) {
         }
     }
 }

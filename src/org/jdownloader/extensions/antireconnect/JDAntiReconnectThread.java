@@ -23,11 +23,11 @@ import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
 import jd.controlling.JDLogger;
-import jd.nutils.OSDetector;
 import jd.utils.JDUtilities;
 
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Regex;
+import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.settings.GeneralSettings;
 
 public class JDAntiReconnectThread extends Thread implements Runnable {
@@ -197,7 +197,7 @@ public class JDAntiReconnectThread extends Thread implements Runnable {
 
     private static boolean callArpTool(final String ipAddress) throws IOException, InterruptedException {
 
-        if (OSDetector.isWindows()) { return callArpToolWindows(ipAddress); }
+        if (CrossSystem.isWindows()) { return callArpToolWindows(ipAddress); }
 
         if (callArpToolDefault(ipAddress) == null) {
             return false;

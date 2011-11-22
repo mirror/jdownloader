@@ -29,10 +29,10 @@ import java.util.StringTokenizer;
 
 import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.LinkCollector;
-import jd.nutils.OSDetector;
 
 import org.appwork.utils.Regex;
 import org.appwork.utils.logging.Log;
+import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 
 /**
@@ -278,7 +278,7 @@ public final class ClipboardHandler extends Thread {
                             try {
                                 final String charSet = new Regex(htmlFlavor.toString(), "charset=(.*?)]").getMatch(0);
                                 byte[] html = (byte[]) cur.getTransferData(htmlFlavor);
-                                if (OSDetector.isLinux()) {
+                                if (CrossSystem.isLinux()) {
                                     /*
                                      * workaround for firefox bug
                                      * https://bugzilla .mozilla.org/show_bug

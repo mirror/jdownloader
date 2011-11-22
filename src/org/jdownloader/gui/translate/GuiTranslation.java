@@ -672,6 +672,9 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Username" })
     String gui_column_user();
 
+    @Default(lngs = { "en" }, values = { "Connections" })
+    String gui_column_proxyconnects();
+
     @Default(lngs = { "en" }, values = { "Version" })
     String gui_column_version();
 

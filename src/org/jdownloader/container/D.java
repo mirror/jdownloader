@@ -14,7 +14,6 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.Map;
 
 import javax.crypto.Cipher;
 import javax.crypto.spec.IvParameterSpec;
@@ -379,7 +378,6 @@ public class D extends PluginsC {
         return "";
     }
 
-    @SuppressWarnings("unchecked")
     private String cs(URL s9, String bin) throws Exception {
         int i = 0;
         while (true) {
@@ -387,8 +385,7 @@ public class D extends PluginsC {
             Log.L.finer("Call " + s9);
             Browser br = new Browser();
 
-            HashMap<String, String> map = (HashMap<String, String>) JDUtilities.getConfiguration().getProperty("head", new HashMap<String, String>());
-            br.getHeaders().putAll((Map<String, String>) map);
+            br.getHeaders().put("rev", JDUtilities.getRevision());
 
             //
             br.postPage(s9 + "", "destType=jdtc6&b=" + SubConfiguration.getConfig("WEBUPDATE").getStringProperty(WebUpdater.BRANCHINUSE) + "&srcType=dlc&data=" + bin + "&v=" + JDUtilities.getRevision());
@@ -422,7 +419,6 @@ public class D extends PluginsC {
         String str = dk9;
 
         byte[] j = Base64.decode(str);
-        ;
         SecretKeySpec skeySpec = new SecretKeySpec(k, "AES");
         Cipher c = Cipher.getInstance("AES/ECB/NoPadding");
         c.init(Cipher.DECRYPT_MODE, skeySpec);

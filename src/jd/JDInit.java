@@ -21,13 +21,11 @@ import java.util.logging.Logger;
 import jd.controlling.JDLogger;
 import jd.controlling.JSonWrapper;
 import jd.http.Browser;
-import jd.nutils.OSDetector;
 import jd.utils.JDUtilities;
 
-import org.appwork.storage.config.JsonConfig;
 import org.appwork.update.updateclient.UpdaterConstants;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
-import org.jdownloader.settings.GeneralSettings;
+import org.appwork.utils.os.CrossSystem;
 
 /**
  * @author JD-Team
@@ -86,11 +84,6 @@ public class JDInit {
     }
 
     public static void initBrowser() {
-        Browser.setGlobalLogger(JDLogger.getLogger());
-
-        /* init default global Timeouts */
-        Browser.setGlobalReadTimeout(JsonConfig.create(GeneralSettings.class).getHttpReadTimeout());
-        Browser.setGlobalConnectTimeout(JsonConfig.create(GeneralSettings.class).getHttpConnectTimeout());
 
         if (JSonWrapper.get("DOWNLOAD").getBooleanProperty(UpdaterConstants.USE_PROXY, false)) {
             final String host = JSonWrapper.get("DOWNLOAD").getStringProperty(UpdaterConstants.PROXY_HOST, "");
@@ -140,11 +133,11 @@ public class JDInit {
             public void run() {
                 if (JDUtilities.getRunType() == JDUtilities.RUNTYPE_LOCAL_JARED) {
                     String os = "unk";
-                    if (OSDetector.isLinux()) {
+                    if (CrossSystem.isLinux()) {
                         os = "lin";
-                    } else if (OSDetector.isMac()) {
+                    } else if (CrossSystem.isMac()) {
                         os = "mac";
-                    } else if (OSDetector.isWindows()) {
+                    } else if (CrossSystem.isWindows()) {
                         os = "win";
                     }
                     String tz = System.getProperty("user.timezone");

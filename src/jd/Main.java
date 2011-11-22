@@ -20,7 +20,6 @@ package jd;
 import java.io.File;
 import java.io.IOException;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.Locale;
 import java.util.Properties;
 import java.util.Random;
@@ -35,6 +34,9 @@ import jd.controlling.JDController;
 import jd.controlling.JDLogger;
 import jd.controlling.downloadcontroller.DownloadController;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.proxy.ProxyController;
+import jd.controlling.proxy.ProxyEvent;
+import jd.controlling.proxy.ProxyInfo;
 import jd.gui.UserIF;
 import jd.gui.swing.MacOSApplicationAdapter;
 import jd.gui.swing.SwingGui;
@@ -43,7 +45,6 @@ import jd.gui.swing.jdgui.events.EDTEventQueue;
 import jd.gui.swing.laf.LookAndFeelController;
 import jd.http.Browser;
 import jd.http.ext.security.JSPermissionRestricter;
-import jd.nutils.OSDetector;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -53,7 +54,9 @@ import org.appwork.storage.JSonStorage;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.jackson.JacksonMapper;
 import org.appwork.utils.Application;
+import org.appwork.utils.event.DefaultEventListener;
 import org.appwork.utils.logging.Log;
+import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.singleapp.AnotherInstanceRunningException;
 import org.appwork.utils.singleapp.InstanceMessageListener;
@@ -142,7 +145,6 @@ public class Main {
     }
 
     public static void statics() {
-
         try {
             Dynamic.runPreStatic();
         } catch (Throwable e) {
@@ -187,7 +189,7 @@ public class Main {
         }
         Main.LOG = JDLogger.getLogger();
         // Mac OS specific
-        if (OSDetector.isMac()) {
+        if (CrossSystem.isMac()) {
             // Set MacApplicationName
             // Must be in Main
             System.setProperty("com.apple.mrj.application.apple.menu.about.name", "JDownloader");
@@ -201,7 +203,12 @@ public class Main {
         System.setProperty("java.net.preferIPv4Stack", "true");
         // Disable the GUI rendering on the graphic card
         System.setProperty("sun.java2d.d3d", "false");
-
+        final Properties pr = System.getProperties();
+        final TreeSet<Object> propKeys = new TreeSet<Object>(pr.keySet());
+        for (final Object it : propKeys) {
+            final String key = it.toString();
+            Main.LOG.finer(key + "=" + pr.get(key));
+        }
         Main.LOG.info("Start JDownloader");
 
         for (final String p : args) {
@@ -365,7 +372,32 @@ public class Main {
         final Thread thread = new Thread() {
             @Override
             public void run() {
-                JDInit.initBrowser();
+                /* setup JSPermission */
+                try {
+                    JSPermissionRestricter.init();
+                } catch (final Throwable e) {
+                    Log.exception(e);
+                }
+                /* set gloabel logger for browser */
+                Browser.setGlobalLogger(JDLogger.getLogger());
+                /* init default global Timeouts */
+                Browser.setGlobalReadTimeout(JsonConfig.create(GeneralSettings.class).getHttpReadTimeout());
+                Browser.setGlobalConnectTimeout(JsonConfig.create(GeneralSettings.class).getHttpConnectTimeout());
+                /* init proxy stuff */
+                Browser.setGlobalProxy(ProxyController.getInstance().getDefaultProxy().getProxy());
+                ProxyController.getInstance().getEventSender().addListener(new DefaultEventListener<ProxyEvent<ProxyInfo>>() {
+
+                    public void onEvent(ProxyEvent<ProxyInfo> event) {
+                        if (event.getType().equals(ProxyEvent.Types.REFRESH)) {
+                            HTTPProxy proxy = null;
+                            if ((proxy = ProxyController.getInstance().getDefaultProxy().getProxy()) != Browser._getGlobalProxy()) {
+                                Log.L.info("Set new DefaultProxy: " + proxy);
+                                Browser.setGlobalProxy(proxy);
+                            }
+                        }
+
+                    }
+                });
             }
         };
         thread.start();
@@ -383,12 +415,6 @@ public class Main {
                 new Thread() {
                     @Override
                     public void run() {
-                        /* setup JSPermission */
-                        try {
-                            JSPermissionRestricter.init();
-                        } catch (final Throwable e) {
-                            Log.exception(e);
-                        }
                         HostPluginController.getInstance().ensureLoaded();
                         /* load links */
                         DownloadController.getInstance().initDownloadLinks();
@@ -429,22 +455,13 @@ public class Main {
         JDController.getInstance().addControlListener(SwingGui.getInstance());
         try {
             /* thread should be finished here */
-            thread.join(5000);
+            thread.join(10000);
         } catch (InterruptedException e) {
         }
         Main.GUI_COMPLETE.setReached();
         Main.LOG.info("Initialisation finished");
-        final HashMap<String, String> head = new HashMap<String, String>();
-        head.put("rev", JDUtilities.getRevision());
-        JDUtilities.getConfiguration().setProperty("head", head);
-        final Properties pr = System.getProperties();
-        final TreeSet<Object> propKeys = new TreeSet<Object>(pr.keySet());
-        for (final Object it : propKeys) {
-            final String key = it.toString();
-            Main.LOG.finer(key + "=" + pr.get(key));
-        }
         Main.LOG.info("Revision: " + JDUtilities.getRevision());
-        Main.LOG.finer("Runtype: " + JDUtilities.getRunType());
+        Main.LOG.info("Runtype: " + JDUtilities.getRunType());
         Main.INIT_COMPLETE.setReached();
     }
 }

@@ -6,7 +6,6 @@ import java.lang.management.ManagementFactory;
 import java.util.ArrayList;
 import java.util.List;
 
-import jd.nutils.OSDetector;
 import jd.utils.JDUtilities;
 
 import org.appwork.shutdown.ShutdownController;
@@ -116,7 +115,7 @@ public class RestartController implements ShutdownVetoListener {
 
             jvmParameter.add("-Xms64m");
         }
-        if (OSDetector.isLinux()) {
+        if (CrossSystem.isLinux()) {
 
             if (!useconc) {
                 jvmParameter.add("-XX:+UseConcMarkSweepGC");

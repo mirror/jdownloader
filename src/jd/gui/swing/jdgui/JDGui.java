@@ -61,7 +61,6 @@ import jd.gui.swing.jdgui.menu.JDMenuBar;
 import jd.gui.swing.jdgui.views.settings.ConfigurationView;
 import jd.gui.swing.jdgui.views.settings.sidebar.AddonConfig;
 import jd.nutils.JDFlags;
-import jd.nutils.OSDetector;
 import jd.nutils.Screen;
 import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
@@ -249,7 +248,7 @@ public class JDGui extends SwingGui {
 
         });
 
-        if (OSDetector.isMac()) {
+        if (CrossSystem.isMac()) {
             // add handling for Command+W for closing window on Mac OS
             KeyStroke closeKey = KeyStroke.getKeyStroke(KeyEvent.VK_W, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask());
             this.mainTabbedPane.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(closeKey, "closeWindow");
@@ -565,7 +564,7 @@ public class JDGui extends SwingGui {
             /*
              * without trayicon also dont close/exit for macos
              */
-            if (OSDetector.isMac()) {
+            if (CrossSystem.isMac()) {
                 new EDTHelper<Object>() {
                     @Override
                     public Object edtRun() {
