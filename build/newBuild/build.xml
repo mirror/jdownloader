@@ -252,29 +252,29 @@
 			
 			
 			</fileset>
-			<fileset dir="themes">
-				<include name="themes/standard/org/jdownloader/images/dialog/**/*" />
+		
+			<fileset dir="${dep.update}/themes">
+				<include name="themes/standard/org/jdownloader/updater/**/*" />
 		</fileset>
 			<fileset dir="${dep.updateclient}/src">
-				<include name="**/*.png" />
+			
 				<include name="**/*.lng" />
 				<include name="tbs.jar" />
-				<include name="version.dat" />
+			
 			</fileset>
 			<fileset dir="${dep.update}/src">
-				<include name="**/*.png" />
+	
 				<include name="**/*.lng" />
 
 			</fileset>
 			<fileset dir="src">
 				<include name="**/*.lng" />
-				<include name="**/*.png" />
+		
 			</fileset>
 			<fileset dir="${dep.awu}/src">
-				<include name="**/*.lng" />
-				<include name="**/*.png" />
+				<include name="**/*.lng" />	
 				<include name="tbs.jar" />
-				<include name="version.dat" />
+			
 			</fileset>
 
 		</jar>
@@ -392,6 +392,9 @@
 		<echo message="Finished." />
 	</target>
 	<target name="withoutsign" depends="clean,compile,copy_res,jarMain,copy_compiled,jarReconnectOptionals,jarWebupdater,jarOptionals">
+			<echo message="Finished." />
+		</target>
+	<target name="updater" depends="clean,compile,copy_compiled,jarWebupdater">
 			<echo message="Finished." />
 		</target>
 </project>

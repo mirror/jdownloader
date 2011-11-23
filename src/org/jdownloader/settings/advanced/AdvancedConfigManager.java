@@ -21,6 +21,7 @@ import org.jdownloader.settings.AccountSettings;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 import org.jdownloader.settings.InternetConnectionSettings;
+import org.jdownloader.update.WebupdateSettings;
 
 public class AdvancedConfigManager {
     private static final AdvancedConfigManager INSTANCE = new AdvancedConfigManager();
@@ -47,6 +48,7 @@ public class AdvancedConfigManager {
         register(JsonConfig.create(ReconnectConfig.class));
         register(JsonConfig.create(RemoteAPIConfig.class));
         register(JsonConfig.create(PackagizerSettings.class));
+        register(JsonConfig.create(WebupdateSettings.class));
 
     }
 

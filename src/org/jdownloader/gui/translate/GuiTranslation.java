@@ -3337,4 +3337,13 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Filename %s1 does not match your Filetype Filter." })
     String TestAction_actionPerformed_nomatch_ext_(String input);
 
+    @Default(lngs = { "en" }, values = { "New Version found!" })
+    String JDUpdater_start_updater_update_title();
+
+    @Default(lngs = { "en" }, values = { "JDownloader has to restart now to perform an update." })
+    String JDUpdater_start_updater_update_msg();
+
+    @Default(lngs = { "en" }, values = { "Update & Restart now!" })
+    String JDUpdater_start_restart_update_now_();
+
 }

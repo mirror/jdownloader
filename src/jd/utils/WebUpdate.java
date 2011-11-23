@@ -26,6 +26,7 @@ public class WebUpdate {
      *            deaktiviert hat
      */
     public static synchronized void doUpdateCheck(final boolean forceguiCall) {
+
         JDUpdater.getInstance().startUpdate(!forceguiCall);
     }
 

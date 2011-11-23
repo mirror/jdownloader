@@ -868,7 +868,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
             public void run() {
                 if (DownloadWatchDog.this.stateMachine.isFinal()) {
                     /* downloadwatchdog was in stopped state, so reset it */
-                    DownloadWatchDog.this.stateMachine.reset();
+                    DownloadWatchDog.this.stateMachine.reset(false);
                 }
                 if (!DownloadWatchDog.this.stateMachine.isStartState()) {
                     /* only allow to start when in FinalState(NOT_RUNNING) */

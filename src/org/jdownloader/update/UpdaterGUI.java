@@ -16,18 +16,17 @@ import javax.swing.WindowConstants;
 import jd.gui.swing.jdgui.JDGui;
 import net.miginfocom.swing.MigLayout;
 
+import org.appwork.resources.AWUTheme;
 import org.appwork.update.updateclient.UpdaterState;
 import org.appwork.update.updateclient.event.UpdaterEvent;
 import org.appwork.update.updateclient.event.UpdaterListener;
 import org.appwork.update.updateclient.gui.UpdaterCoreGui;
-import org.appwork.utils.images.IconIO;
 import org.appwork.utils.locale._AWU;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.SwingUtils;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
-import org.jdownloader.update.gui.JDStandaloneUpdaterGui;
 import org.jdownloader.update.translate.T;
 
 public class UpdaterGUI extends JFrame implements ActionListener, UpdaterListener {
@@ -112,10 +111,10 @@ public class UpdaterGUI extends JFrame implements ActionListener, UpdaterListene
         setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
         final ArrayList<Image> list = new ArrayList<Image>();
 
-        list.add(IconIO.getImage(JDStandaloneUpdaterGui.class.getResource("resource/updaterIcon128.png")));
-        list.add(IconIO.getImage(JDStandaloneUpdaterGui.class.getResource("resource/updaterIcon64.png")));
-        list.add(IconIO.getImage(JDStandaloneUpdaterGui.class.getResource("resource/updaterIcon32.png")));
-        list.add(IconIO.getImage(JDStandaloneUpdaterGui.class.getResource("resource/updaterIcon16.png")));
+        list.add(AWUTheme.I().getImage("updatericon", 64));
+        list.add(AWUTheme.I().getImage("updatericon", 48));
+        list.add(AWUTheme.I().getImage("updatericon", 32));
+        list.add(AWUTheme.I().getImage("updatericon", 16));
         setIconImages(list);
         layoutGUI();
 
@@ -289,6 +288,14 @@ public class UpdaterGUI extends JFrame implements ActionListener, UpdaterListene
                 onNoUpdates();
             }
 
+        } else if (JDUpdater.getInstance().isFailed()) {
+            new EDTRunner() {
+
+                @Override
+                protected void runInEDT() {
+                    cancel.setText(T._.exit());
+                }
+            };
         }
     }
 
