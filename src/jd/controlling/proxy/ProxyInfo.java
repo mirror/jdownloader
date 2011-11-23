@@ -2,13 +2,10 @@ package jd.controlling.proxy;
 
 import java.util.HashMap;
 
-import jd.controlling.proxy.ProxyData.StatusID;
-
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 
-public class ProxyInfo {
+public class ProxyInfo extends HTTPProxy {
 
-    private final HTTPProxy                proxy;
     private boolean                        proxyRotationEnabled = true;
 
     private final HashMap<String, Integer> activeHosts          = new HashMap<String, Integer>();
@@ -33,23 +30,17 @@ public class ProxyInfo {
     public ProxyData toProxyData() {
         ProxyData ret = new ProxyData();
         ret.setProxyRotationEnabled(this.isProxyRotationEnabled());
-        ret.setStatus(StatusID.valueOf(proxy.getStatus().name()));
-        ret.setProxy(HTTPProxy.getStorable(proxy));
+        ret.setProxy(HTTPProxy.getStorable(this));
         return ret;
     }
 
     public ProxyInfo(ProxyData proxyData) {
-        this.proxy = HTTPProxy.getHTTPProxy(proxyData.getProxy());
-        this.proxy.setStatus(HTTPProxy.STATUS.valueOf(proxyData.getStatus().name()));
+        this.cloneProxy(HTTPProxy.getHTTPProxy(proxyData.getProxy()));
         this.proxyRotationEnabled = proxyData.isProxyRotationEnabled();
     }
 
     public ProxyInfo(HTTPProxy proxy) {
-        this.proxy = proxy;
-    }
-
-    public final HTTPProxy getProxy() {
-        return proxy;
+        cloneProxy(proxy);
     }
 
     protected long getRemainingIPBlockWaittime(final String host) {
@@ -149,8 +140,4 @@ public class ProxyInfo {
         }
     }
 
-    @Override
-    public String toString() {
-        return proxy.toString();
-    }
 }

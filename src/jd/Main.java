@@ -383,14 +383,15 @@ public class Main {
                 /* init default global Timeouts */
                 Browser.setGlobalReadTimeout(JsonConfig.create(GeneralSettings.class).getHttpReadTimeout());
                 Browser.setGlobalConnectTimeout(JsonConfig.create(GeneralSettings.class).getHttpConnectTimeout());
-                /* init proxy stuff */
-                Browser.setGlobalProxy(ProxyController.getInstance().getDefaultProxy().getProxy());
+                /* init global proxy stuff */
+                Browser.setGlobalProxy(ProxyController.getInstance().getDefaultProxy());
+                /* add global proxy change listener */
                 ProxyController.getInstance().getEventSender().addListener(new DefaultEventListener<ProxyEvent<ProxyInfo>>() {
 
                     public void onEvent(ProxyEvent<ProxyInfo> event) {
                         if (event.getType().equals(ProxyEvent.Types.REFRESH)) {
                             HTTPProxy proxy = null;
-                            if ((proxy = ProxyController.getInstance().getDefaultProxy().getProxy()) != Browser._getGlobalProxy()) {
+                            if ((proxy = ProxyController.getInstance().getDefaultProxy()) != Browser._getGlobalProxy()) {
                                 Log.L.info("Set new DefaultProxy: " + proxy);
                                 Browser.setGlobalProxy(proxy);
                             }

@@ -19,19 +19,19 @@ public class HostColumn extends ExtTextColumn<ProxyInfo> {
 
     @Override
     public String getStringValue(ProxyInfo value) {
-        switch (value.getProxy().getType()) {
+        switch (value.getType()) {
         case NONE:
             return "";
         case DIRECT:
-            return value.getProxy().getLocalIP().getHostAddress();
+            return value.getLocalIP().getHostAddress();
         default:
-            return value.getProxy().getHost();
+            return value.getHost();
         }
     }
 
     @Override
     public boolean isEditable(ProxyInfo obj) {
-        return !obj.getProxy().isLocal();
+        return !obj.isLocal();
     }
 
     @Override

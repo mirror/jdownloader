@@ -61,7 +61,7 @@ public class ProxyConfig extends AbstractConfigPanel implements DefaultEventList
                 ArrayList<ProxyInfo> selected = ProxyConfig.this.table.getExtTableModel().getSelectedObjects();
                 if (selected != null) {
                     for (ProxyInfo pi : selected) {
-                        if (pi.getProxy().isRemote()) {
+                        if (pi.isRemote()) {
                             canremove = true;
                             break;
                         }

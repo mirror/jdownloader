@@ -19,12 +19,9 @@ package jd;
 import java.util.logging.Logger;
 
 import jd.controlling.JDLogger;
-import jd.controlling.JSonWrapper;
 import jd.http.Browser;
 import jd.utils.JDUtilities;
 
-import org.appwork.update.updateclient.UpdaterConstants;
-import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.appwork.utils.os.CrossSystem;
 
 /**
@@ -84,47 +81,6 @@ public class JDInit {
     }
 
     public static void initBrowser() {
-
-        if (JSonWrapper.get("DOWNLOAD").getBooleanProperty(UpdaterConstants.USE_PROXY, false)) {
-            final String host = JSonWrapper.get("DOWNLOAD").getStringProperty(UpdaterConstants.PROXY_HOST, "");
-            final int port = JSonWrapper.get("DOWNLOAD").getIntegerProperty(UpdaterConstants.PROXY_PORT, 8080);
-            final String user = JSonWrapper.get("DOWNLOAD").getStringProperty(UpdaterConstants.PROXY_USER, "");
-            final String pass = JSonWrapper.get("DOWNLOAD").getStringProperty(UpdaterConstants.PROXY_PASS, "");
-            if ("".equals(host.trim())) {
-                JDInit.LOG.warning("Proxy disabled. No host");
-                JSonWrapper.get("DOWNLOAD").setProperty(UpdaterConstants.USE_PROXY, false);
-                return;
-            }
-
-            final HTTPProxy pr = new HTTPProxy(HTTPProxy.TYPE.HTTP, host, port);
-            if (user != null && user.trim().length() > 0) {
-                pr.setUser(user);
-            }
-            if (pass != null && pass.trim().length() > 0) {
-                pr.setPass(pass);
-            }
-            Browser.setGlobalProxy(pr);
-        }
-        if (JSonWrapper.get("DOWNLOAD").getBooleanProperty(UpdaterConstants.USE_SOCKS, false)) {
-            final String user = JSonWrapper.get("DOWNLOAD").getStringProperty(UpdaterConstants.PROXY_USER_SOCKS, "");
-            final String pass = JSonWrapper.get("DOWNLOAD").getStringProperty(UpdaterConstants.PROXY_PASS_SOCKS, "");
-            final String host = JSonWrapper.get("DOWNLOAD").getStringProperty(UpdaterConstants.SOCKS_HOST, "");
-            final int port = JSonWrapper.get("DOWNLOAD").getIntegerProperty(UpdaterConstants.SOCKS_PORT, 1080);
-            if ("".equals(host.trim())) {
-                JDInit.LOG.warning("Socks Proxy disabled. No host");
-                JSonWrapper.get("DOWNLOAD").setProperty(UpdaterConstants.USE_SOCKS, false);
-                return;
-            }
-
-            final HTTPProxy pr = new HTTPProxy(HTTPProxy.TYPE.SOCKS5, host, port);
-            if (user != null && user.trim().length() > 0) {
-                pr.setUser(user);
-            }
-            if (pass != null && pass.trim().length() > 0) {
-                pr.setPass(pass);
-            }
-            Browser.setGlobalProxy(pr);
-        }
 
     }
 

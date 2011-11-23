@@ -28,7 +28,6 @@ import jd.config.SubConfiguration;
 import jd.controlling.IOPermission;
 import jd.controlling.JDLogger;
 import jd.controlling.JDPluginLogger;
-import jd.controlling.proxy.ProxyController;
 import jd.controlling.proxy.ProxyInfo;
 import jd.event.ControlEvent;
 import jd.gui.UserIO;
@@ -50,7 +49,6 @@ import org.appwork.controlling.StateMonitor;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Exceptions;
 import org.appwork.utils.Regex;
-import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.settings.IfFileExistsAction;
 import org.jdownloader.translate._JDT;
@@ -136,8 +134,7 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
         this.proxyInfo = proxy;
         if (proxyInfo != null) {
             /* mark this host active in proxyInfo */
-            super.setCurrentProxy(proxyInfo.getProxy());
-            setCurrentProxy(proxyInfo.getProxy());
+            setCurrentProxy(proxyInfo);
             proxyInfo.increaseActiveDownloads(dlink.getHost());
         }
     }
@@ -183,19 +180,10 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
                         currentPlugin.handle(downloadLink, account);
                     } catch (jd.http.Browser.BrowserException e) {
                         /* damit browserexceptions korrekt weitergereicht werden */
-                        e.closeConnection();
                         if (e.getException() != null) {
                             throw e.getException();
                         } else {
                             throw e;
-                        }
-                    } finally {
-                        if (proxyInfo != null && !proxyInfo.getProxy().getStatus().equals(HTTPProxy.STATUS.OK)) {
-                            /*
-                             * disable proxy in case something went wrong with
-                             * it
-                             */
-                            ProxyController.getInstance().setproxyRotationEnabled(proxyInfo, false);
                         }
                     }
                 } catch (PluginException e) {
@@ -737,9 +725,6 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
                 currentPlugin = null;
                 downloadLink.setLivePlugin(null);
                 if (proxyInfo != null) {
-                    if (!proxyInfo.getProxy().getStatus().equals(HTTPProxy.STATUS.OK)) {
-                        ProxyController.getInstance().setproxyRotationEnabled(proxyInfo, false);
-                    }
                     proxyInfo.decreaseActiveDownloads(downloadLink.getHost());
                 }
             } finally {
@@ -747,11 +732,6 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
                 linkStatus.setActive(false);
             }
         }
-    }
-
-    @Override
-    public void setCurrentProxy(HTTPProxy proxy) {
-        /* we dont allow external changes */
     }
 
     @Override

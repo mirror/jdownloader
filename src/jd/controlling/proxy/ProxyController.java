@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.prefs.Preferences;
 
+import jd.controlling.JSonWrapper;
 import jd.plugins.Account;
 import jd.plugins.PluginForHost;
 
@@ -18,6 +19,7 @@ import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.update.updateclient.UpdateHttpClientOptions;
+import org.appwork.update.updateclient.UpdaterConstants;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.event.DefaultEventSender;
@@ -96,9 +98,13 @@ public class ProxyController {
     private void exportUpdaterConfig() {
         updaterConfig.setConnectTimeout(generalConfig.getHttpConnectTimeout());
         updaterConfig.setReadTimeout(generalConfig.getHttpReadTimeout());
+        exportUpdaterProxy();
+    }
+
+    private void exportUpdaterProxy() {
         ProxyInfo ldefaultproxy = defaultproxy;
         if (ldefaultproxy != null) {
-            HTTPProxyStorable storable = HTTPProxy.getStorable(ldefaultproxy.getProxy());
+            HTTPProxyStorable storable = HTTPProxy.getStorable(ldefaultproxy);
             updaterConfig.setProxy(storable);
         }
     }
@@ -255,7 +261,45 @@ public class ProxyController {
         }
         config.setNoneDefault(none == ldefaultproxy);
         config.setNoneRotationEnabled(none.isProxyRotationEnabled());
+    }
 
+    private List<HTTPProxy> restoreFromOldConfig() {
+        ArrayList<HTTPProxy> ret = new ArrayList<HTTPProxy>();
+        if (JSonWrapper.get("DOWNLOAD").getBooleanProperty(UpdaterConstants.USE_PROXY, false)) {
+            /* import old http proxy settings */
+            final String host = JSonWrapper.get("DOWNLOAD").getStringProperty(UpdaterConstants.PROXY_HOST, "");
+            final int port = JSonWrapper.get("DOWNLOAD").getIntegerProperty(UpdaterConstants.PROXY_PORT, 8080);
+            final String user = JSonWrapper.get("DOWNLOAD").getStringProperty(UpdaterConstants.PROXY_USER, "");
+            final String pass = JSonWrapper.get("DOWNLOAD").getStringProperty(UpdaterConstants.PROXY_PASS, "");
+            if (!StringUtils.isEmpty(host)) {
+                final HTTPProxy pr = new HTTPProxy(HTTPProxy.TYPE.HTTP, host, port);
+                if (!StringUtils.isEmpty(user)) {
+                    pr.setUser(user);
+                }
+                if (!StringUtils.isEmpty(pass)) {
+                    pr.setPass(pass);
+                }
+                ret.add(pr);
+            }
+        }
+        if (JSonWrapper.get("DOWNLOAD").getBooleanProperty(UpdaterConstants.USE_SOCKS, false)) {
+            /* import old socks5 settings */
+            final String user = JSonWrapper.get("DOWNLOAD").getStringProperty(UpdaterConstants.PROXY_USER_SOCKS, "");
+            final String pass = JSonWrapper.get("DOWNLOAD").getStringProperty(UpdaterConstants.PROXY_PASS_SOCKS, "");
+            final String host = JSonWrapper.get("DOWNLOAD").getStringProperty(UpdaterConstants.SOCKS_HOST, "");
+            final int port = JSonWrapper.get("DOWNLOAD").getIntegerProperty(UpdaterConstants.SOCKS_PORT, 1080);
+            if (!StringUtils.isEmpty(host)) {
+                final HTTPProxy pr = new HTTPProxy(HTTPProxy.TYPE.SOCKS5, host, port);
+                if (!StringUtils.isEmpty(user)) {
+                    pr.setUser(user);
+                }
+                if (!StringUtils.isEmpty(pass)) {
+                    pr.setPass(pass);
+                }
+                ret.add(pr);
+            }
+        }
+        return ret;
     }
 
     private void loadProxySettings() {
@@ -266,20 +310,21 @@ public class ProxyController {
         ArrayList<HTTPProxy> dupeCheck = new ArrayList<HTTPProxy>();
         ProxyInfo proxy = null;
         {
+            /* restore customs proxies */
             /* use own scope */
             ArrayList<ProxyData> ret = config.getCustomProxyList();
             if (ret != null) {
-                // restore customs
+                /* config available */
                 restore: for (ProxyData proxyData : ret) {
                     try {
                         proxy = new ProxyInfo(proxyData);
                         for (HTTPProxy p : dupeCheck) {
-                            if (p.sameProxy(proxy.getProxy())) {
+                            if (p.sameProxy(proxy)) {
                                 /* proxy already got restored */
                                 continue restore;
                             }
                         }
-                        dupeCheck.add(proxy.getProxy());
+                        dupeCheck.add(proxy);
                         proxies.add(proxy);
                         if (proxyData.isDefaultProxy()) {
                             newDefaultProxy = proxy;
@@ -288,6 +333,47 @@ public class ProxyController {
                     } catch (final Throwable e) {
                         Log.exception(e);
                     }
+                }
+            } else {
+                /* convert from old system */
+                List<HTTPProxy> reto = restoreFromOldConfig();
+                restore: for (HTTPProxy proxyData : reto) {
+                    try {
+                        proxy = new ProxyInfo(proxyData);
+                        for (HTTPProxy p : dupeCheck) {
+                            if (p.sameProxy(proxy)) {
+                                /* proxy already got restored */
+                                continue restore;
+                            }
+                        }
+                        dupeCheck.add(proxy);
+                        proxies.add(proxy);
+                        /* in old system we only had one possible proxy */
+                        newDefaultProxy = proxy;
+                        if (proxy.isProxyRotationEnabled()) rotCheck = true;
+                    } catch (final Throwable e) {
+                        Log.exception(e);
+                    }
+                }
+            }
+            /* import proxies from system properties */
+            List<HTTPProxy> sproxy = HTTPProxy.getFromSystemProperties();
+            restore: for (HTTPProxy proxyData : sproxy) {
+                try {
+                    proxy = new ProxyInfo(proxyData);
+                    for (HTTPProxy p : dupeCheck) {
+                        if (p.sameProxy(proxy)) {
+                            /* proxy already got restored */
+                            continue restore;
+                        }
+                    }
+                    dupeCheck.add(proxy);
+                    proxies.add(proxy);
+                    /* in old system we only had one possible proxy */
+                    newDefaultProxy = proxy;
+                    if (proxy.isProxyRotationEnabled()) rotCheck = true;
+                } catch (final Throwable e) {
+                    Log.exception(e);
                 }
             }
         }
@@ -302,23 +388,23 @@ public class ProxyController {
                     try {
                         proxy = new ProxyInfo(proxyData);
                         for (HTTPProxy p : dupeCheck) {
-                            if (p.sameProxy(proxy.getProxy())) {
+                            if (p.sameProxy(proxy)) {
                                 /* proxy already got restored */
                                 continue restore;
                             }
                         }
                         boolean localIPAvailable = false;
                         for (HTTPProxy p : availableDirects) {
-                            if (p.sameProxy(proxy.getProxy())) {
+                            if (p.sameProxy(proxy)) {
                                 localIPAvailable = true;
                                 break;
                             }
                         }
-                        if (localIPAvailable) {
+                        if (localIPAvailable == false) {
                             /* local ip no longer available */
                             continue restore;
                         }
-                        dupeCheck.add(proxy.getProxy());
+                        dupeCheck.add(proxy);
                         directs.add(proxy);
                         if (proxyData.isDefaultProxy()) {
                             newDefaultProxy = proxy;
@@ -338,7 +424,6 @@ public class ProxyController {
             }
             newDefaultProxy = none;
         }
-        setDefaultProxy(newDefaultProxy);
         /* is NONE Proxy included in rotation */
         none.setProxyRotationEnabled(config.isNoneRotationEnabled());
         if (none.isProxyRotationEnabled()) rotCheck = true;
@@ -348,6 +433,7 @@ public class ProxyController {
             config.setNoneRotationEnabled(true);
         }
         if (newDefaultProxy == null || newDefaultProxy == none) config.setNoneDefault(true);
+        setDefaultProxy(newDefaultProxy);
         /* set new proxies live */
         this.directs = directs;
         this.proxies = proxies;
@@ -383,13 +469,14 @@ public class ProxyController {
      * @param def
      */
     public void setDefaultProxy(ProxyInfo def) {
-        if (defaultproxy == def) return;
+        if (def != null && defaultproxy == def) return;
         if (def == null) {
             defaultproxy = none;
         } else {
             defaultproxy = def;
         }
         eventSender.fireEvent(new ProxyEvent<ProxyInfo>(this, ProxyEvent.Types.REFRESH, null));
+        exportUpdaterProxy();
     }
 
     /**
@@ -403,8 +490,8 @@ public class ProxyController {
         synchronized (LOCK) {
             ArrayList<ProxyInfo> nproxies = new ArrayList<ProxyInfo>(proxies);
             for (ProxyInfo info : nproxies) {
-                HTTPProxy pro = info.getProxy();
-                if (pro.sameProxy(proxy)) return;
+                /* duplicate check */
+                if (info.sameProxy(proxy)) return;
             }
             nproxies.add(ret = new ProxyInfo(proxy));
             proxies = nproxies;

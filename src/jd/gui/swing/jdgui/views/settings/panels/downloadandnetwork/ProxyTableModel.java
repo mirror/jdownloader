@@ -40,7 +40,7 @@ public class ProxyTableModel extends ExtTableModel<ProxyInfo> {
             @Override
             public boolean isEditable(ProxyInfo obj) {
 
-                switch (obj.getProxy().getType()) {
+                switch (obj.getType()) {
 
                 case NONE:
                 case DIRECT:
@@ -62,7 +62,7 @@ public class ProxyTableModel extends ExtTableModel<ProxyInfo> {
 
             @Override
             public String getStringValue(ProxyInfo value) {
-                switch (value.getProxy().getType()) {
+                switch (value.getType()) {
 
                 case NONE:
                     return _GUI._.gui_column_proxytype_no_proxy();
@@ -76,7 +76,7 @@ public class ProxyTableModel extends ExtTableModel<ProxyInfo> {
 
             @Override
             protected String getTooltipText(ProxyInfo obj) {
-                switch (obj.getProxy().getType()) {
+                switch (obj.getType()) {
 
                 case NONE:
                     return _GUI._.gui_column_proxytype_no_proxy_tt();
@@ -103,7 +103,7 @@ public class ProxyTableModel extends ExtTableModel<ProxyInfo> {
 
             @Override
             protected int getSelectedIndex(ProxyInfo value) {
-                switch (value.getProxy().getType()) {
+                switch (value.getType()) {
                 case DIRECT:
                 case NONE:
                     return -1;
@@ -133,10 +133,10 @@ public class ProxyTableModel extends ExtTableModel<ProxyInfo> {
                 // object.getProxy().setType(HTTPProxy.TYPE.DIRECT);
                 // return;
                 case 0:
-                    object.getProxy().setType(HTTPProxy.TYPE.HTTP);
+                    object.setType(HTTPProxy.TYPE.HTTP);
                     return;
                 case 1:
-                    object.getProxy().setType(HTTPProxy.TYPE.SOCKS5);
+                    object.setType(HTTPProxy.TYPE.SOCKS5);
                     return;
                 default:
                     throw new RuntimeException("Unknown Proxy Type");
@@ -151,7 +151,7 @@ public class ProxyTableModel extends ExtTableModel<ProxyInfo> {
 
             @Override
             public boolean isEditable(final ProxyInfo obj) {
-                if (obj.getProxy().isLocal()) return false;
+                if (obj.isLocal()) return false;
                 return true;
             }
 
@@ -162,14 +162,14 @@ public class ProxyTableModel extends ExtTableModel<ProxyInfo> {
 
             @Override
             protected void setStringValue(String value, ProxyInfo object) {
-                if (object.getProxy().isLocal()) return;
-                object.getProxy().setUser(value);
+                if (object.isLocal()) return;
+                object.setUser(value);
             }
 
             @Override
             public String getStringValue(ProxyInfo value) {
-                if (value.getProxy().isLocal()) return "";
-                return value.getProxy().getUser();
+                if (value.isLocal()) return "";
+                return value.getUser();
             }
 
         });
@@ -179,7 +179,7 @@ public class ProxyTableModel extends ExtTableModel<ProxyInfo> {
 
             @Override
             public boolean isEditable(final ProxyInfo obj) {
-                if (obj.getProxy().isLocal()) return false;
+                if (obj.isLocal()) return false;
                 return true;
             }
 
@@ -190,21 +190,21 @@ public class ProxyTableModel extends ExtTableModel<ProxyInfo> {
 
             @Override
             protected void setStringValue(String value, ProxyInfo object) {
-                if (object.getProxy().isLocal()) return;
-                object.getProxy().setPass(value);
+                if (object.isLocal()) return;
+                object.setPass(value);
             }
 
             @Override
             public String getStringValue(ProxyInfo value) {
 
-                if (value.getProxy().isLocal()) return "";
+                if (value.isLocal()) return "";
                 return super.getStringValue(value);
             }
 
             @Override
             protected String getPlainStringValue(ProxyInfo value) {
-                if (value.getProxy().isLocal()) return "";
-                return value.getProxy().getPass();
+                if (value.isLocal()) return "";
+                return value.getPass();
             }
 
         });
@@ -212,7 +212,7 @@ public class ProxyTableModel extends ExtTableModel<ProxyInfo> {
 
             @Override
             protected Number getNumber(ProxyInfo value) {
-                return value.getProxy().getPort();
+                return value.getPort();
             }
 
             @Override
@@ -222,19 +222,19 @@ public class ProxyTableModel extends ExtTableModel<ProxyInfo> {
 
             @Override
             public boolean isEditable(final ProxyInfo obj) {
-                if (obj.getProxy().isLocal()) return false;
+                if (obj.isLocal()) return false;
                 return true;
             }
 
             @Override
             protected void setNumberValue(Number value, ProxyInfo object) {
-                object.getProxy().setPort(value.intValue());
+                object.setPort(value.intValue());
             }
 
             @Override
             public String getStringValue(ProxyInfo value) {
-                if (value.getProxy().isLocal()) return "";
-                return value.getProxy().getPort() + "";
+                if (value.isLocal()) return "";
+                return value.getPort() + "";
             }
         });
 
@@ -249,8 +249,8 @@ public class ProxyTableModel extends ExtTableModel<ProxyInfo> {
 
             @Override
             public String getStringValue(ProxyInfo value) {
-
-                return value.getProxy().getStatus().name();
+                return "BAL";
+                // return value.getStatus().name();
             }
         });
         this.addColumn(new ExtCheckColumn<ProxyInfo>(_GUI._.gui_column_use(), this) {
@@ -369,21 +369,6 @@ public class ProxyTableModel extends ExtTableModel<ProxyInfo> {
                     }
                 });
             }
-        });
-        this.addColumn(new ExtTextColumn<ProxyInfo>(_GUI._.gui_column_proxyconnects(), this) {
-
-            private static final long serialVersionUID = -7209180150340921804L;
-
-            @Override
-            public boolean isHidable() {
-                return true;
-            }
-
-            @Override
-            public String getStringValue(ProxyInfo value) {
-                return value.getProxy().getCurrentConnections().get() + "/" + value.getProxy().getUsedConnections().get();
-            }
-
         });
     }
 }

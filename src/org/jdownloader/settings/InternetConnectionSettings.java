@@ -16,7 +16,6 @@ public interface InternetConnectionSettings extends ConfigInterface {
     @Description("List of all external Proxies")
     void setCustomProxyList(ArrayList<ProxyData> ret);
 
-    @DefaultJsonObject("[]")
     ArrayList<ProxyData> getCustomProxyList();
 
     @AboutConfig
