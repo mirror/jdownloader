@@ -17,6 +17,7 @@ import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.config.JsonConfig;
+import org.appwork.update.exchange.UpdateFile;
 import org.appwork.update.exchange.UpdatePackage;
 import org.appwork.update.updateclient.InstalledFile;
 import org.appwork.update.updateclient.Updater;
@@ -75,6 +76,20 @@ public class JDUpdater extends Updater implements Runnable {
      */
     private UpdaterGUI getExistingGUI() {
         return gui;
+    }
+
+    @Override
+    public boolean canUnInstallDirect(File localFile, InstalledFile ifile) {
+        return super.canUnInstallDirect(localFile, ifile);
+    }
+
+    @Override
+    public boolean canInstallDirect(File next, UpdateFile uf) {
+        return super.canInstallDirect(next, uf);
+    }
+
+    public boolean installDirectFilesEnabled() {
+        return true;
     }
 
     private UpdaterGUI getGUI() {

@@ -34,7 +34,7 @@ public class RestartViaUpdaterEvent extends ShutdownEvent {
         final File root = Application.getResource(RestartController.JARNAME);
         if (!root.exists()) {
             System.err.println(root + " is missing");
-            return;
+            // return;
         }
 
         final String tiny[] = new String[] { RestartController.JAVA_INTERPRETER, "-jar", RestartController.UPDATER_JARNAME, "-restart", RestartController.getRestartCommandLine() };
