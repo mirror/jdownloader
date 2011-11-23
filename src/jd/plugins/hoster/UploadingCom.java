@@ -77,29 +77,20 @@ public class UploadingCom extends PluginForHost {
 
     public boolean isPremium(Account account, boolean force) throws IOException {
         boolean isPremium = false;
-        try {
-            synchronized (LOCK) {
-                final Object ret = account.getProperty("role", null);
-                if (ret == null || !(ret instanceof Boolean)) {
-                    boolean follow = br.isFollowingRedirects();
-                    br.setFollowRedirects(true);
-                    br.getPage("http://uploading.com/");
-                    br.setFollowRedirects(follow);
-                    if (br.containsHTML("UPGRADE TO PREMIUM")) {
-                        isPremium = false;
-                    } else if (br.containsHTML("Membership: Premium")) {
-                        isPremium = true;
-                    } else {
-                        isPremium = false;
-                    }
-                } else {
-                    isPremium = (Boolean) ret;
-                }
+        synchronized (LOCK) {
+            boolean follow = br.isFollowingRedirects();
+            br.setFollowRedirects(true);
+            br.getPage("http://uploading.com/profile/");
+            br.setFollowRedirects(follow);
+            if (br.containsHTML("UPGRADE TO PREMIUM")) {
+                isPremium = false;
+            } else if (br.containsHTML("<dt>Membership:</dt>[\t\n\r ]+<dd>Premium</dd")) {
+                isPremium = true;
+            } else {
+                isPremium = false;
             }
-            return isPremium;
-        } finally {
-            account.setProperty("role", isPremium);
         }
+        return isPremium;
     }
 
     public void login(Account account, boolean forceLogin) throws IOException, PluginException {
@@ -125,7 +116,9 @@ public class UploadingCom extends PluginForHost {
                     }
                 }
                 br.getPage(MAINPAGE);
-                br.postPage("http://uploading.com/general/login_form/?JsHttpRequest=" + System.currentTimeMillis() + "-xml", "email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&remember=on");
+                final String damnCookie = br.getCookie(MAINPAGE, "SID");
+                if (damnCookie == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                br.postPage("http://uploading.com/general/login_form/?SID=" + damnCookie + "&JsHttpRequest=" + System.currentTimeMillis() + "-xml", "email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&remember=on");
                 if (br.containsHTML("captcha\":\"") && loginCaptcha) {
                     String captchaID = br.getRegex("captcha\":\"(.*?)\"").getMatch(0);
                     String cf = "http://uploading.com/general/captcha/" + captchaID + "/?ts=" + System.currentTimeMillis();
@@ -168,7 +161,6 @@ public class UploadingCom extends PluginForHost {
         } finally {
             if (valid == false) {
                 account.setProperty("cookies", null);
-                account.setProperty("role", null);
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
         }
@@ -199,7 +191,7 @@ public class UploadingCom extends PluginForHost {
         }
         account.setValid(true);
         ai.setStatus("Premium Membership");
-        String validUntil = br.getRegex("Valid Until:(.*?)<").getMatch(0);
+        String validUntil = br.getRegex("<dt>Valid Until:</dt>[\t\n\r ]+<dd>(.*?) \\(<a").getMatch(0);
         if (validUntil != null) {
             ai.setValidUntil(TimeFormatter.getMilliSeconds(validUntil.trim(), "MMM dd, yyyy", null));
         } else {
