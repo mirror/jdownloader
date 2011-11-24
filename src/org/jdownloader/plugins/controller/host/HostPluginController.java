@@ -49,15 +49,11 @@ public class HostPluginController extends PluginController<PluginForHost> {
         this.list = null;
     }
 
-    public void reInit() {
-        init();
-    }
-
-    private void init() {
+    public void init(boolean noCache) {
         List<LazyHostPlugin> plugins = new ArrayList<LazyHostPlugin>();
         final long t = System.currentTimeMillis();
         try {
-            if (JDInitFlags.REFRESH_CACHE || JDInitFlags.SWITCH_RETURNED_FROM_UPDATE) {
+            if (noCache) {
                 try {
                     /* do a fresh scan */
                     plugins = update();
@@ -186,7 +182,7 @@ public class HostPluginController extends PluginController<PluginForHost> {
         if (list != null) return;
         synchronized (this) {
             if (list != null) return;
-            init();
+            init(JDInitFlags.REFRESH_CACHE || JDInitFlags.SWITCH_RETURNED_FROM_UPDATE);
         }
     }
 

@@ -225,19 +225,29 @@ public class JDUpdater extends Updater implements Runnable {
             }
 
             public void onDirectInstalls(ArrayList<File> parameter) {
-                boolean hasPlugins = false;
+                boolean hasHostPlugins = false;
+                boolean hasCrawlPlugins = false;
                 for (File f : parameter) {
-                    if (f.getName().endsWith(".class")) {
-                        hasPlugins = true;
-                        break;
+                    String[] matches = new Regex(f.getAbsolutePath(), ".*[\\\\/]jd[\\\\/]plugins[\\\\/](.*?)[\\\\/](.+?)\\.class").getRow(0);
+                    if (matches != null && "hoster".equalsIgnoreCase(matches[0])) {
+                        hasHostPlugins = true;
+                        if (hasCrawlPlugins) break;
+                    } else if (matches != null && "decrypter".equalsIgnoreCase(matches[0])) {
+                        hasCrawlPlugins = true;
+                        if (hasHostPlugins) break;
                     }
                 }
-                if (hasPlugins) {
-                    JDInitFlags.REFRESH_CACHE = true;
-                    HostPluginController.getInstance().reInit();
-                    CrawlerPluginController.getInstance().reInit();
-                    JDInitFlags.REFRESH_CACHE = false;
+                if (hasHostPlugins) {
+
+                    HostPluginController.getInstance().init(true);
+
                 }
+                if (hasCrawlPlugins) {
+
+                    CrawlerPluginController.getInstance().init(true);
+
+                }
+
             }
         });
 

@@ -46,11 +46,11 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
         list = null;
     }
 
-    public void init() {
+    public void init(boolean noCache) {
         List<LazyCrawlerPlugin> plugins = new ArrayList<LazyCrawlerPlugin>();
         final long t = System.currentTimeMillis();
         try {
-            if (JDInitFlags.REFRESH_CACHE || JDInitFlags.SWITCH_RETURNED_FROM_UPDATE) {
+            if (noCache) {
                 try {
                     /* do a fresh scan */
                     plugins = update();
@@ -156,7 +156,7 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
         if (list != null) return;
         synchronized (this) {
             if (list != null) return;
-            init();
+            init(JDInitFlags.REFRESH_CACHE || JDInitFlags.SWITCH_RETURNED_FROM_UPDATE);
         }
     }
 
@@ -166,10 +166,6 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
             if (p.getDisplayName().equalsIgnoreCase(displayName)) return p;
         }
         return null;
-    }
-
-    public void reInit() {
-        init();
     }
 
 }

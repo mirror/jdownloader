@@ -67,6 +67,7 @@ public class PluginClassLoader extends URLClassLoader {
         ClassLoader lastP = this;
         while ((p = this.getParent()) != null) {
             if (p == lastP) break;
+
             ret |= findLoadedClass.invoke(p, string) != null;
             lastP = p;
         }

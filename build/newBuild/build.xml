@@ -15,12 +15,7 @@
 	<property name="res" value="ressourcen" />
 	<property name="pluginres" value="${dist}/pluginressourcen" />
 
-	<loadfile property="svn.revision" srcFile=".svn/entries">
-		<filterchain>
-			<headfilter lines="1" skip="3" />
-			<striplinebreaks />
-		</filterchain>
-	</loadfile>
+
 
 	<path id="classpath">
 		<fileset dir="${cls}" />
@@ -105,7 +100,23 @@
 		</copy>
 		<mkdir dir="${dist}/java" />
 		<mkdir dir="${dist}/tmp" />
+		
+		<loadfile property="svn.revision" srcFile=".svn/entries">
+			<filterchain>
+				<headfilter lines="1" skip="3" />
+				<striplinebreaks />
+			</filterchain>
+		</loadfile>
+	
+		<loadfile property="updateclient.revision" srcFile="${dep.updateclient}/.svn/entries">
+				<filterchain>
+					<headfilter lines="1" skip="3" />
+					<striplinebreaks />
+				</filterchain>
+		</loadfile>
+		<echo file="${working}/version.nfo">${svn.revision}.${updateclient.revision}</echo>
 
+		
 	</target>
 
 	<!-- Make the default jar -->
@@ -115,40 +126,62 @@
 			<attribute name="Created-By" value="JD-Team and AppWork GmbH" />
 		</manifest>
 		<jar file="${dist}/libs/JDHttp.jar" manifest="${dist}/Manifest.MF">
+			<fileset dir="${working}">
+				<include name="version.nfo" />
+			</fileset>
+		
 			<fileset dir="${cls}">
 				<include name="jd/http/**/*" />
 			</fileset>
 		</jar>
 		<jar file="${dist}/libs/JDGUI.jar" manifest="${dist}/Manifest.MF">
+			<fileset dir="${working}">
+							<include name="version.nfo" />
+						</fileset>
 			<fileset dir="${cls}">
 				<include name="jd/gui/**" />
 			</fileset>
 		</jar>
 		<jar file="${dist}/libs/JAntiCaptcha.jar" manifest="${dist}/Manifest.MF">
+			<fileset dir="${working}">
+							<include name="version.nfo" />
+						</fileset>
 			<fileset dir="${cls}">
 				<include name="jd/captcha/**" />
 				<exclude name="jd/captcha/methods/**" />
 			</fileset>
 		</jar>
 		<jar file="${dist}/libs/JDUtils.jar" manifest="${dist}/Manifest.MF">
+			<fileset dir="${working}">
+							<include name="version.nfo" />
+						</fileset>
 			<fileset dir="${cls}">
 				<include name="jd/nutils/**" />
 			</fileset>
 		</jar>
 
 		<jar file="${dist}/libs/Dynamics.jar" manifest="${dist}/Manifest.MF">
+			<fileset dir="${working}">
+							<include name="version.nfo" />
+						</fileset>
 				<fileset dir="${cls}">
 					<include name="org/jdownloader/dynamic/**/*" />
 				</fileset>
 		</jar>
 		
 		<jar file="${dist}/libs/cons.jar" manifest="${dist}/Manifest.MF">
+			<fileset dir="${working}">
+							<include name="version.nfo" />
+						</fileset>
 					<fileset dir="${cls}">
 						<include name="org/jdownloader/container/**/*" />
 					</fileset>
 		</jar>
 	
 		<jar file="${dist}/libs/AppWorkUtilities.jar" manifest="${dist}/Manifest.MF">
+			<fileset dir="${working}">
+							<include name="version.nfo" />
+						</fileset>
 			<fileset dir="${cls}">
 				<include name="org/appwork/**/*" />
 				<exclude name="org/appwork/update/server/**/*" />
@@ -173,6 +206,9 @@
 			<attribute name="Class-Path" value="${class-path} extensions/Customizer.jar  extensions/JDScheduler.jar extensions/Extraction.jar extensions/JDTray.jar" />
 		</manifest>
 		<jar file="${dist}/JDownloader.jar" manifest="${dist}/Manifest.MF">
+			<fileset dir="${working}">
+							<include name="version.nfo" />
+						</fileset>
 			<fileset dir="${cls}">
 				<include name="**/*.class" />
 
@@ -222,6 +258,9 @@
 		</manifest>
 		<jar file="${working}/Updater.jar" manifest="${working}/Manifest.MF">
 			<zipfileset src="${dep.awu}/libs/miglayout.jar" excludes="META-INF/*" />
+			<fileset dir="${working}">
+							<include name="version.nfo" />
+						</fileset>
 			<fileset dir="${cls}">
 				<include name="org/jdownloader/update/**/*" />
 				<include name="org/appwork/update/**/*" />
