@@ -65,7 +65,7 @@ public class HdMxTpsCom extends PluginForDecrypt {
                 finallink = br.getRegex("<br class=\"clearfloat\">[\t\n\r ]+<a href=\"(http.*?)\"").getMatch(0);
             }
         }
-        if (br.containsHTML("<title> -  // Free Download @ HDMixtapes\\.com </title>")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+        if (br.containsHTML("<title> \\-  // Free Download @ HDMixtapes\\.com </title>")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
         if (finallink == null) {
             finallink = br.getRegex("<div style=\"margin-top:40px;\">[\t\n\r ]+<a href=\"(http.*?)\"").getMatch(0);
             if (finallink == null) {

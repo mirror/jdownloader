@@ -22,6 +22,7 @@ import java.util.Locale;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.PluginWrapper;
+import jd.config.Property;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
 import jd.plugins.Account;
@@ -56,6 +57,7 @@ public class FShareVn extends PluginForHost {
     }
 
     private static final String  SERVERERROR = "Tài nguyên bạn yêu cầu không tìm thấy";
+    private static final String  IPBLOCKED   = "Vui lòng chờ lượt download kế tiếp";
     private static AtomicInteger maxPrem     = new AtomicInteger(1);
 
     @Override
@@ -85,12 +87,17 @@ public class FShareVn extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        doFree(downloadLink);
+    }
+
+    public void doFree(DownloadLink downloadLink) throws Exception {
+        if (br.containsHTML(IPBLOCKED)) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l);
         br.setFollowRedirects(true);
         br.setDebug(true);
         final String fid = br.getRegex("name=\"file_id\" value=\"(\\d+)\"").getMatch(0);
         if (fid == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.postPage(downloadLink.getDownloadURL(), "link_file_pwd_dl=&action=download_file&file_id=" + fid);
-        if (br.containsHTML("Vui lòng chờ lượt download kế tiếp")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l); }
+        if (br.containsHTML(IPBLOCKED)) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l);
         if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
             PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
             jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
@@ -150,6 +157,7 @@ public class FShareVn extends PluginForHost {
             } catch (final Throwable e) {
             }
             ai.setStatus("Premium User");
+            account.setProperty("acctype", Property.NULL);
         } else {
             try {
                 maxPrem.set(1);
@@ -157,6 +165,7 @@ public class FShareVn extends PluginForHost {
             } catch (final Throwable e) {
             }
             ai.setStatus("Registered (free) User");
+            account.setProperty("acctype", "free");
         }
         account.setValid(true);
         return ai;
@@ -167,19 +176,23 @@ public class FShareVn extends PluginForHost {
         requestFileInformation(link);
         login(account);
         br.getPage(link.getDownloadURL());
-        if (br.getRedirectLocation() != null) {
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, br.getRedirectLocation(), true, 1);
+        if (account.getStringProperty("acctype") != null) {
+            doFree(link);
         } else {
-            Form dlForm = br.getFormbyProperty("name", "frm_download");
-            if (dlForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dlForm, true, 1);
+            if (br.getRedirectLocation() != null) {
+                dl = jd.plugins.BrowserAdapter.openDownload(br, link, br.getRedirectLocation(), true, 1);
+            } else {
+                Form dlForm = br.getFormbyProperty("name", "frm_download");
+                if (dlForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                dl = jd.plugins.BrowserAdapter.openDownload(br, link, dlForm, true, 1);
+            }
+            if (dl.getConnection().getContentType().contains("html")) {
+                br.followConnection();
+                if (br.containsHTML(SERVERERROR)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.fsharevn.Servererror", "Servererror!"), 60 * 60 * 1000l);
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            dl.startDownload();
         }
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            if (br.containsHTML(SERVERERROR)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.fsharevn.Servererror", "Servererror!"), 60 * 60 * 1000l);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
     }
 
     @Override

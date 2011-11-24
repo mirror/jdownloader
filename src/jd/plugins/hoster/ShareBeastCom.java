@@ -82,7 +82,18 @@ public class ShareBeastCom extends PluginForHost {
                             filename = new Regex(BRBEFORE, "File Name.*?nowrap>(.*?)</td").getMatch(0);
                             if (filename == null) {
                                 filename = new Regex(BRBEFORE, "style=\"margin:auto;width:640px;font-size:18px;font-weight:bold;text-align:left;\">(.*?)</span></div>").getMatch(0);
-                                if (filename == null) filename = new Regex(BRBEFORE, "<div class=\"innerBlockMid\">[\t\n\r ]+<h2>(.*?)</h2>").getMatch(0);
+                                if (filename == null) {
+                                    filename = new Regex(BRBEFORE, "<div class=\"innerBlockMid\">[\t\n\r ]+<h2>(.*?)</h2>").getMatch(0);
+                                    if (filename == null) {
+                                        filename = new Regex(BRBEFORE, "<meta property=\"og:audio:title\" content=\"(.*?)\"").getMatch(0);
+                                        if (filename == null) {
+                                            filename = new Regex(BRBEFORE, "<div class=\"tite\">[\t\n\r ]+<h1>(.*?)</h1>").getMatch(0);
+                                            if (filename == null) {
+                                                filename = new Regex(BRBEFORE, "<title>(.*?)</title>").getMatch(0);
+                                            }
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
@@ -94,6 +105,9 @@ public class ShareBeastCom extends PluginForHost {
             filesize = new Regex(BRBEFORE, "<small>\\((.*?)\\)</small>").getMatch(0);
             if (filesize == null) {
                 filesize = new Regex(BRBEFORE, "</font>[ ]+\\((.*?)\\)(.*?)</font>").getMatch(0);
+                if (filesize == null) {
+                    filesize = new Regex(BRBEFORE, ">Size</div><div class=\"inlinfo1\">(.*?)</div>").getMatch(0);
+                }
             }
         }
         if (filename == null || filename.equals("")) {

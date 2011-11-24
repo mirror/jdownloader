@@ -1,18 +1,18 @@
-//    jDownloader - Downloadmanager
-//    Copyright (C) 2009  JD-Team support@jdownloader.org
+//jDownloader - Downloadmanager
+//Copyright (C) 2009  JD-Team support@jdownloader.org
 //
-//    This program is free software: you can redistribute it and/or modify
-//    it under the terms of the GNU General Public License as published by
-//    the Free Software Foundation, either version 3 of the License, or
-//    (at your option) any later version.
+//This program is free software: you can redistribute it and/or modify
+//it under the terms of the GNU General Public License as published by
+//the Free Software Foundation, either version 3 of the License, or
+//(at your option) any later version.
 //
-//    This program is distributed in the hope that it will be useful,
-//    but WITHOUT ANY WARRANTY; without even the implied warranty of
-//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-//    GNU General Public License for more details.
+//This program is distributed in the hope that it will be useful,
+//but WITHOUT ANY WARRANTY; without even the implied warranty of
+//MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+//GNU General Public License for more details.
 //
-//    You should have received a copy of the GNU General Public License
-//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+//You should have received a copy of the GNU General Public License
+//along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package jd.plugins.hoster;
 
@@ -22,6 +22,7 @@ import java.util.GregorianCalendar;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.parser.html.HTMLParser;
 import jd.plugins.Account;
@@ -37,24 +38,21 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "Only4Devs2Test.com" }, urls = { "http://(www\\.)?Only4Devs2Test\\.com/((\\?d|download\\.php\\?id)=[A-Z0-9]+|((en|ru|fr|es)/)?file/[0-9]+/)" }, flags = { 0 })
-public class MhfScriptBasic extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "buploads.com" }, urls = { "http://(www\\.)?buploads\\.com/((\\?d|download\\.php\\?id)=[A-Z0-9]+|((en|ru|fr|es)/)?file/[0-9]+/)" }, flags = { 0 })
+public class BUploadsCom extends PluginForHost {
 
-    public MhfScriptBasic(PluginWrapper wrapper) {
+    public BUploadsCom(PluginWrapper wrapper) {
         super(wrapper);
         // this.enablePremium(COOKIE_HOST + "/register.php?g=3");
     }
 
-    // MhfScriptBasic 1.2
-    // This plugin is for developers to easily implement hosters using the MHF
-    // script, it's still just a beta but i will improve it till it works for
-    // nearly all of those hosters!
+    // MhfScriptBasic 1.2, added new filename/size regexes
     @Override
     public String getAGBLink() {
         return COOKIE_HOST + "/rules.php";
     }
 
-    private static final String COOKIE_HOST = "http://Only4Devs2Test.com";
+    private static final String COOKIE_HOST = "http://buploads.com";
     private static final String IPBLOCKED   = "(You have got max allowed bandwidth size per hour|You have got max allowed download sessions from the same IP)";
 
     public void correctDownloadLink(DownloadLink link) {
@@ -79,15 +77,24 @@ public class MhfScriptBasic extends PluginForHost {
             br.getPage(newlink);
         }
         if (br.containsHTML("(Your requested file is not found|No file found)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        Regex fileInfo = br.getRegex("class=\"cFFF\">Downloading:</span> (.*?) ([0-9\\.]+ .{0,4})</div>");
         String filename = br.getRegex("<b>File name:</b></td>[\r\t\n ]+<td align=([\r\t\n ]+|left width=\\d+px)>(.*?)</td>").getMatch(1);
         if (filename == null) {
             filename = br.getRegex("\"Click (this to report for|Here to Report)(.*?)\"").getMatch(1);
             if (filename == null) {
                 filename = br.getRegex("content=\"(.*?), The best file hosting service").getMatch(0);
+                if (filename == null) {
+                    filename = fileInfo.getMatch(0);
+                }
             }
         }
         String filesize = br.getRegex("<b>(File size|Filesize):</b></td>[\r\t\n ]+<td align=([\r\t\n ]+|(\")?left(\")?)>(.*?)</td>").getMatch(4);
-        if (filesize == null) filesize = br.getRegex("<b>\\&#4324;\\&#4304;\\&#4312;\\&#4314;\\&#4312;\\&#4321; \\&#4310;\\&#4317;\\&#4315;\\&#4304;:</b></td>[\t\r\n ]+<td align=left>(.*?)</td>").getMatch(0);
+        if (filesize == null) {
+            filesize = br.getRegex("<b>\\&#4324;\\&#4304;\\&#4312;\\&#4314;\\&#4312;\\&#4321; \\&#4310;\\&#4317;\\&#4315;\\&#4304;:</b></td>[\t\r\n ]+<td align=left>(.*?)</td>").getMatch(0);
+            if (filesize == null) {
+                filesize = fileInfo.getMatch(1);
+            }
+        }
         if (filename == null || filename.matches("")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         parameter.setFinalFileName(filename.trim());
         if (filesize != null) parameter.setDownloadSize(SizeFormatter.getSize(filesize));
@@ -171,7 +178,7 @@ public class MhfScriptBasic extends PluginForHost {
         }
         String finalLink = findLink();
         if (finalLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, finalLink, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, finalLink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

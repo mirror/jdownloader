@@ -28,7 +28,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "zero10.info" }, urls = { "http://(www\\.)?((zero10\\.info|save-link\\.info|share-link\\.info|h-link\\.us|zero10\\.us|(darkhorse|brg8)\\.fi5\\.us|arbforce\\.com/short|(get\\.(el3lam|sirtggp))\\.com|tanzel\\.eb2a\\.com/short|go4down\\.(com|net)/short|angel-tears\\.com/short|imzdb\\.com|dvd4arablinks\\.com|lionzlinks\\.com|mazajna\\.com/links|tvegy\\.info|forexurls\\.net|myurls\\.ca|zmelody\\.com|forexshare\\.net|link\\.arabda3m\\.com)/[0-9]+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "zero10.info" }, urls = { "http://(www\\.)?((zero10\\.info|save\\-link\\.info|share\\-link\\.info|h\\-link\\.us|zero10\\.us|(darkhorse|brg8)\\.fi5\\.us|arbforce\\.com/short|(get\\.(el3lam|sirtggp))\\.com|tanzel\\.eb2a\\.com/short|go4down\\.(com|net)/short|angel\\-tears\\.com/short|imzdb\\.com|dvd4arablinks\\.com|lionzlinks\\.com|mazajna\\.com/links|tvegy\\.info|forexurls\\.net|myurls\\.ca|zmelody\\.com|forexshare\\.net|link\\.arabda3m\\.com|wwenews\\.us)/[0-9]+)" }, flags = { 0 })
 public class Zro10BasicDecrypt extends PluginForDecrypt {
 
     public Zro10BasicDecrypt(PluginWrapper wrapper) {
@@ -38,9 +38,8 @@ public class Zro10BasicDecrypt extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-        // 3l3lam workaround, they got double redirect if i don't replace all
-        // their domains with the main domain!
-        parameter = parameter.replace("get.sirtggp.com", "get.el3lam.com");
+        /** Workarounds for changed domains */
+        parameter = parameter.replace("get.sirtggp.com", "get.el3lam.com").replace("save-link.info/", "wwenews.us/");
         br.setFollowRedirects(false);
         // finallink2 is used for unusual zero10 crypters like arbforce
         String finallink2 = null;
@@ -62,7 +61,7 @@ public class Zro10BasicDecrypt extends PluginForDecrypt {
             String m1link = "http://" + domain + "/m1.php?id=" + ID;
             br.getPage(m1link);
             // little errorhandling
-            if (br.getRedirectLocation() != null && !br.getRedirectLocation().contains(ID)) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+            if (br.getRedirectLocation() != null && !br.getRedirectLocation().contains(ID)) return decryptedLinks;
             if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
             finallink = br.getRegex("onclick=\"NewWindow\\(\\'(.*?)\\',\\'name\\'").getMatch(0);
         }
