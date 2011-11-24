@@ -16,6 +16,7 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.math.BigInteger;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -29,14 +30,73 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.JDHexUtils;
 
 import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision: 12761 $", interfaceVersion = 2, names = { "videobb.com" }, urls = { "http://(www\\.)?videobb\\.com/(video/|watch_video\\.php\\?v=|e/)\\w+" }, flags = { 2 })
 public class VideoBbCom extends PluginForHost {
 
+    private static class getTheFuckingCValue {
+
+        static BigInteger BI;
+
+        public static String convertBin2Str(final String s) {
+            /* 11111111 -> FF */
+            BI = new BigInteger(s, 2);
+            return BI.toString(16);
+        }
+
+        public static String convertStr2Bin(final String s) {
+            /* FF -> 11111111 */
+            BI = new BigInteger(1, JDHexUtils.getByteArray(s));
+            return BI.toString(2);
+        }
+
+        public static String decrypt32byte(final String cipher, int keyOne, int keyTwo) {
+            int x = 0, y = 0, z = 0;
+            final char[] C = convertStr2Bin(cipher).toCharArray();
+            final int[] B = new int[384];
+            final int[] A = new int[C.length];
+            int i = 0;
+            for (final char c : C) {
+                A[i++] = Character.digit(c, 10);
+            }
+            i = 0;
+            while (i < 384) {
+                keyOne = (keyOne * 11 + 77213) % 81371;
+                keyTwo = (keyTwo * 17 + 92717) % 192811;
+                B[i] = (keyOne + keyTwo) % 128;
+                i++;
+            }
+            i = 255;
+            while (i >= 0) {
+                x = B[i];
+                y = i % 128;
+                z = A[x];
+                A[x] = A[y];
+                A[y] = z;
+                i--;
+            }
+            i = 0;
+            while (i < 128) {
+                A[i] = A[i] ^ B[i + 256] & 1;
+                i++;
+            }
+            i = 0;
+            final StringBuilder sb = new StringBuilder();
+            while (i < A.length) {
+                sb.append(A[i]);
+                i++;
+            }
+            return convertBin2Str(sb.toString());
+        }
+
+    }
+
     private static final Object LOCK     = new Object();
     private static final String MAINPAGE = "http://www.videobb.com/";
+
     private final String        ua       = RandomUserAgent.generate();
 
     public VideoBbCom(final PluginWrapper wrapper) {
@@ -45,7 +105,8 @@ public class VideoBbCom extends PluginForHost {
         setStartIntervall(3000l);
     }
 
-    public void correctDownloadLink(DownloadLink link) {
+    @Override
+    public void correctDownloadLink(final DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replaceAll("/(video|e)/", "/watch_video.php?v="));
     }
 
@@ -88,9 +149,17 @@ public class VideoBbCom extends PluginForHost {
         final String setting = Encoding.Base64Decode(br.getRegex("<param value=\"setting=(.*?)\"").getMatch(0));
         if (setting == null || !setting.contains("http://")) { return null; }
         br.getPage(setting);
-        if (!br.containsHTML("token")) { return null; }
+        if (!br.containsHTML("(token|sece2|rkts)")) { return null; }
         String dllink = Encoding.Base64Decode(br.getRegex(token + "\":\"(.*?)\",").getMatch(0));
-        if (dllink == null) { return null; }
+        String cipher = br.getRegex("sece2\":\"?(.*?)\"?,").getMatch(0);
+        final String keyTwo = br.getRegex("rkts\":\"?(\\d+)\"?,").getMatch(0);
+        if (dllink == null || cipher == null || keyTwo == null) { return null; }
+        try {
+            cipher = getTheFuckingCValue.decrypt32byte(cipher, Integer.parseInt(keyTwo), 226593);
+        } catch (final Throwable e) {
+        }
+        if (cipher == null) { return null; }
+        dllink = dllink + "&c=" + cipher;
         if (isPremium()) {
             dllink = dllink + "&d=" + link.replaceFirst(":", Encoding.urlEncode(":"));
         }
@@ -181,10 +250,12 @@ public class VideoBbCom extends PluginForHost {
         } catch (final Exception e) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (br.containsHTML("(>The page or video you are looking for cannot be found|>Video is not available<|<title>videobb \\- Free Video Hosting \\- Your #1 Video Site</title>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("(>The page or video you are looking for cannot be found|>Video is not available<|<title>videobb \\- Free Video Hosting \\- Your #1 Video Site</title>)")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         String filename = br.getRegex("Content\\-Disposition: attachment; filename\\*= UTF\\-8\\'\\'(.*?)(<|\")").getMatch(0);
-        if (filename == null) filename = br.getRegex("content=\"videobb \\- (.*?)\"  name=\"title\"").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null) {
+            filename = br.getRegex("content=\"videobb \\- (.*?)\"  name=\"title\"").getMatch(0);
+        }
+        if (filename == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         downloadLink.setName(filename.trim());
         return AvailableStatus.TRUE;
 
