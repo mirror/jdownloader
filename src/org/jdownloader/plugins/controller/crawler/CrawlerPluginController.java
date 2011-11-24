@@ -168,4 +168,8 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
         return null;
     }
 
+    public void reInit() {
+        init();
+    }
+
 }

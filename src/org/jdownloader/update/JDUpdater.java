@@ -2,6 +2,7 @@ package org.jdownloader.update;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.zip.ZipException;
@@ -10,6 +11,7 @@ import javax.swing.JFrame;
 
 import jd.JDInitFlags;
 import jd.gui.swing.SwingGui;
+import jd.parser.Regex;
 import jd.utils.JDUtilities;
 
 import org.appwork.resources.AWUTheme;
@@ -45,6 +47,9 @@ import org.appwork.utils.zip.ZipIOException;
 import org.appwork.utils.zip.ZipIOReader;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.plugins.controller.PluginClassLoader;
+import org.jdownloader.plugins.controller.crawler.CrawlerPluginController;
+import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.update.gui.UpdateFoundDialog;
 import org.jdownloader.update.translate.T;
 
@@ -85,6 +90,53 @@ public class JDUpdater extends Updater implements Runnable {
 
     @Override
     public boolean canInstallDirect(File next, UpdateFile uf) {
+        String p = next.getAbsolutePath();
+        String[] matches = new Regex(p, ".*[\\\\/]jd[\\\\/]plugins[\\\\/](.*?)[\\\\/](.+?)\\.class").getRow(0);
+        if (matches != null && "hoster".equalsIgnoreCase(matches[0])) {
+            try {
+                String name = matches[1];
+
+                boolean loaded;
+
+                loaded = PluginClassLoader.getInstance().isClassLoaded("jd.plugins.hoster." + name);
+
+                // int index;
+                // while ((index = name.indexOf("$")) > 0) {
+                // name = name.substring(0, index);
+                // loaded |=
+                // PluginClassLoader.getInstance().isClassLoaded("jd.plugins.hoster."
+                // + name);
+                // }
+
+                //
+                return !loaded;
+            } catch (IllegalAccessException e) {
+            } catch (IllegalArgumentException e) {
+            } catch (InvocationTargetException e) {
+            }
+        } else if (matches != null && "decrypter".equalsIgnoreCase(matches[0])) {
+            try {
+                String name = matches[1];
+
+                boolean loaded;
+
+                loaded = PluginClassLoader.getInstance().isClassLoaded("jd.plugins.decrypter." + name);
+
+                // int index;
+                // while ((index = name.indexOf("$")) > 0) {
+                // name = name.substring(0, index);
+                // loaded |=
+                // PluginClassLoader.getInstance().isClassLoaded("jd.plugins.hoster."
+                // + name);
+                // }
+
+                //
+                return !loaded;
+            } catch (IllegalAccessException e) {
+            } catch (IllegalArgumentException e) {
+            } catch (InvocationTargetException e) {
+            }
+        }
         return super.canInstallDirect(next, uf);
     }
 
@@ -170,6 +222,22 @@ public class JDUpdater extends Updater implements Runnable {
 
             public void onStateEnter(UpdaterState arg0) {
 
+            }
+
+            public void onDirectInstalls(ArrayList<File> parameter) {
+                boolean hasPlugins = false;
+                for (File f : parameter) {
+                    if (f.getName().endsWith(".class")) {
+                        hasPlugins = true;
+                        break;
+                    }
+                }
+                if (hasPlugins) {
+                    JDInitFlags.REFRESH_CACHE = true;
+                    HostPluginController.getInstance().reInit();
+                    CrawlerPluginController.getInstance().reInit();
+                    JDInitFlags.REFRESH_CACHE = false;
+                }
             }
         });
 

@@ -49,6 +49,10 @@ public class HostPluginController extends PluginController<PluginForHost> {
         this.list = null;
     }
 
+    public void reInit() {
+        init();
+    }
+
     private void init() {
         List<LazyHostPlugin> plugins = new ArrayList<LazyHostPlugin>();
         final long t = System.currentTimeMillis();
@@ -193,6 +197,16 @@ public class HostPluginController extends PluginController<PluginForHost> {
             if (p.getDisplayName().equalsIgnoreCase(displayName)) return p;
         }
         return null;
+    }
+
+    public LazyHostPlugin getByClassName(String string) {
+        ensureLoaded();
+        List<LazyHostPlugin> llist = list;
+        for (LazyHostPlugin p : llist) {
+            if (p.getClassname().endsWith("." + string)) return p;
+        }
+        return null;
+
     }
 
 }

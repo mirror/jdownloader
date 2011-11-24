@@ -61,4 +61,8 @@ public class LazyHostPlugin extends LazyPlugin<PluginForHost> {
         return ret;
     }
 
+    public boolean isLoaded() {
+        return this.pluginClass != null;
+    }
+
 }
