@@ -195,7 +195,7 @@ public class RestartController implements ShutdownVetoListener {
                 UpdateFoundDialog dialog = new UpdateFoundDialog(null, new Runnable() {
 
                     public void run() {
-
+                        RestartController.getInstance().exitViaUpdater();
                     }
 
                 }, JDUpdater.getInstance());

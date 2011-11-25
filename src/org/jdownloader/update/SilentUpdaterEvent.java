@@ -24,20 +24,15 @@ public class SilentUpdaterEvent extends ShutdownEvent {
      * Access the only existing instance by using {@link #getInstance()}.
      */
     private SilentUpdaterEvent() {
-        this.setHookPriority(Integer.MAX_VALUE);
+        super();
+        this.setHookPriority(Integer.MIN_VALUE);
 
     }
 
     @Override
     public void run() {
 
-        final File root = Application.getResource(RestartController.JARNAME);
-        if (!root.exists()) {
-            System.err.println(root + " is missing");
-            return;
-        }
-
-        final String tiny[] = new String[] { CrossSystem.getJavaBinary(), "-jar", RestartController.UPDATER_JARNAME, "-restart", " " };
+        final String tiny[] = new String[] { CrossSystem.getJavaBinary(), "-jar", RestartController.UPDATER_JARNAME, "-autoclose", "10" };
         if (Application.getResource(RestartController.JARNAME).exists()) {
             System.out.println(Application.getResource(RestartController.JARNAME) + " exists");
         } else {

@@ -27,6 +27,7 @@ import org.appwork.utils.swing.SwingUtils;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
+import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.update.translate.T;
 
 public class UpdaterGUI extends JFrame implements ActionListener, UpdaterListener {
@@ -277,6 +278,7 @@ public class UpdaterGUI extends JFrame implements ActionListener, UpdaterListene
         System.out.println("        ::: " + state);
         if (JDUpdater.getInstance().isBreakPointed()) {
             // downloaded updates
+
             onInstallRequest();
         } else if (JDUpdater.getInstance().isFinal() && !JDUpdater.getInstance().isFailed()) {
             // error or done
@@ -308,13 +310,13 @@ public class UpdaterGUI extends JFrame implements ActionListener, UpdaterListene
             @Override
             protected void runInEDT() {
                 // setVisible(true);
-                panel.log(T._.updates_are_ready_for_install_now(installedFiles.size() + JDUpdater.getInstance().getFilesToRemove().size()));
+                panel.log(_GUI._.updates_are_ready_for_install_now(installedFiles.size() + JDUpdater.getInstance().getFilesToRemove().size()));
                 panel.getProgressLogo().setProgress(1.0f);
                 cancel.setText(T._.exit());
                 panel.getBar().setValue(100);
                 panel.getSubBar().setValue(100);
 
-                panel.getSubBar().setString(T._.updates_ready_for_install(installedFiles.size() + JDUpdater.getInstance().getFilesToRemove().size()));
+                panel.getSubBar().setString(_GUI._.updates_ready_for_install(installedFiles.size() + JDUpdater.getInstance().getFilesToRemove().size()));
                 panel.getBar().setString(T._.udpates_found());
 
                 panel.getBar().setIndeterminate(false);

@@ -3346,4 +3346,10 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Update & Restart now!" })
     String JDUpdater_start_restart_update_now_();
 
+    @Default(lngs = { "en", }, values = { "%s1 update(s) are ready for installation. A Restart is required to complete installation." })
+    String updates_are_ready_for_install_now(int size);
+
+    @Default(lngs = { "en", }, values = { "%s1 update(s) are ready for installation. A Restart is required to complete installation." })
+    String updates_ready_for_install(int i);
+
 }

@@ -25,18 +25,13 @@ public class RestartViaUpdaterEvent extends ShutdownEvent {
      * class. Access the only existing instance by using {@link #getInstance()}.
      */
     private RestartViaUpdaterEvent() {
-        this.setHookPriority(Integer.MAX_VALUE);
+        super();
+        this.setHookPriority(Integer.MIN_VALUE);
 
     }
 
     @Override
     public void run() {
-
-        final File root = Application.getResource(RestartController.JARNAME);
-        if (!root.exists()) {
-            System.err.println(root + " is missing");
-            // return;
-        }
 
         final String tiny[] = new String[] { CrossSystem.getJavaBinary(), "-jar", RestartController.UPDATER_JARNAME, "-restart", RestartController.getRestartCommandLine() };
         if (Application.getResource(RestartController.JARNAME).exists()) {
