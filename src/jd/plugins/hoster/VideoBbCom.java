@@ -37,7 +37,7 @@ import org.appwork.utils.formatter.TimeFormatter;
 @HostPlugin(revision = "$Revision: 12761 $", interfaceVersion = 2, names = { "videobb.com" }, urls = { "http://(www\\.)?videobb\\.com/(video/|watch_video\\.php\\?v=|e/)\\w+" }, flags = { 2 })
 public class VideoBbCom extends PluginForHost {
 
-    private static class getTheFuckingCValue {
+    protected static class getFinallinkValue {
 
         static BigInteger BI;
 
@@ -50,7 +50,11 @@ public class VideoBbCom extends PluginForHost {
         public static String convertStr2Bin(final String s) {
             /* FF -> 11111111 */
             BI = new BigInteger(1, JDHexUtils.getByteArray(s));
-            return BI.toString(2);
+            String result = BI.toString(2);
+            while (result.length() < 256) {
+                result = "0" + result;
+            }
+            return result;
         }
 
         public static String decrypt32byte(final String cipher, int keyOne, int keyTwo) {
@@ -69,7 +73,7 @@ public class VideoBbCom extends PluginForHost {
                 B[i] = (keyOne + keyTwo) % 128;
                 i++;
             }
-            i = 255;
+            i = 256;
             while (i >= 0) {
                 x = B[i];
                 y = i % 128;
@@ -96,7 +100,6 @@ public class VideoBbCom extends PluginForHost {
 
     private static final Object LOCK     = new Object();
     private static final String MAINPAGE = "http://www.videobb.com/";
-
     private final String        ua       = RandomUserAgent.generate();
 
     public VideoBbCom(final PluginWrapper wrapper) {
@@ -155,7 +158,7 @@ public class VideoBbCom extends PluginForHost {
         final String keyTwo = br.getRegex("rkts\":\"?(\\d+)\"?,").getMatch(0);
         if (dllink == null || cipher == null || keyTwo == null) { return null; }
         try {
-            cipher = getTheFuckingCValue.decrypt32byte(cipher, Integer.parseInt(keyTwo), 226593);
+            cipher = getFinallinkValue.decrypt32byte(cipher, Integer.parseInt(keyTwo), Integer.parseInt(Encoding.Base64Decode("MjI2NTkz")));
         } catch (final Throwable e) {
         }
         if (cipher == null) { return null; }

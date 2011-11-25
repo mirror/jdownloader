@@ -31,8 +31,13 @@ import jd.plugins.PluginForHost;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "videozer.com" }, urls = { "http://(www\\.)?videozer\\.com/(video|embed)/[A-Za-z0-9]+" }, flags = { 0 })
 public class VideozerCom extends PluginForHost {
 
-    public VideozerCom(PluginWrapper wrapper) {
+    public VideozerCom(final PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public void correctDownloadLink(final DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("/embed/", "/video/"));
     }
 
     @Override
@@ -40,39 +45,32 @@ public class VideozerCom extends PluginForHost {
         return "http://www.videozer.com/toc.php";
     }
 
-    public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("/embed/", "/video/"));
-    }
-
-    @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.setFollowRedirects(true);
-        // br.getPage(downloadLink.getDownloadURL());
-        br.getPage("http://www.videozer.com/player_control/settings.php?v=" + new Regex(downloadLink.getDownloadURL(), "videozer\\.com/video/(.+)").getMatch(0) + "&fv=v1.1.12");
-        if (br.containsHTML("(\"The page you have requested cannot be found|>The web page you were attempting to view may not exist or may have moved|>Please try to check the web address for typos)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("\"video\":\\{\"title\":\"(.*?)\"").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("<meta content=\"videozer \\- ([^\"\\']+)\"  name=\"\" property=\"og:title\"").getMatch(0);
-            if (filename == null) {
-                filename = br.getRegex("<title>VideoZer \\- Fast, Free and Reliable Video Hosting \\- (.*?)</title>").getMatch(0);
-            }
+    /* See videobbcom hoster plugin */
+    private String getFinalLink(final DownloadLink downloadLink, final String token) throws IOException {
+        if (!br.containsHTML("(token|sece2|rkts)")) { return null; }
+        String dllink = Encoding.Base64Decode(br.getRegex(token + "\":\"(.*?)\",").getMatch(0));
+        String cipher = br.getRegex("sece2\":\"?(.*?)\"?,").getMatch(0);
+        final String keyTwo = br.getRegex("rkts\":\"?(\\d+)\"?,").getMatch(0);
+        if (dllink == null || cipher == null || keyTwo == null) { return null; }
+        try {
+            cipher = VideoBbCom.getFinallinkValue.decrypt32byte(cipher, Integer.parseInt(keyTwo), Integer.parseInt(Encoding.Base64Decode("MjE1Njc4")));
+        } catch (final Throwable e) {
         }
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        filename = filename.trim();
-        downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ".flv");
-        return AvailableStatus.TRUE;
+        if (cipher == null) { return null; }
+        dllink = dllink + "&c=" + cipher;
+        return dllink;
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
+    }
+
+    @Override
+    public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        String dllink = br.getRegex("\"token1c\":\"(.*?)\"").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("\"token1\":\"(.*?)\"").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dllink = Encoding.Base64Decode(dllink);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dllink = Encoding.htmlDecode(dllink);
+        final String dllink = getFinalLink(downloadLink, "token1");
+        if (dllink == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
@@ -82,8 +80,23 @@ public class VideozerCom extends PluginForHost {
     }
 
     @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+        setBrowserExclusive();
+        br.setFollowRedirects(true);
+        // br.getPage(downloadLink.getDownloadURL());
+        br.getPage("http://www.videozer.com/player_control/settings.php?v=" + new Regex(downloadLink.getDownloadURL(), "videozer\\.com/video/(.+)").getMatch(0) + "&fv=v1.1.14");
+        if (br.containsHTML("(\"The page you have requested cannot be found|>The web page you were attempting to view may not exist or may have moved|>Please try to check the web address for typos)")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        String filename = br.getRegex("\"video\":\\{\"title\":\"(.*?)\"").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("<meta content=\"videozer \\- ([^\"\\']+)\"  name=\"\" property=\"og:title\"").getMatch(0);
+            if (filename == null) {
+                filename = br.getRegex("<title>VideoZer \\- Fast, Free and Reliable Video Hosting \\- (.*?)</title>").getMatch(0);
+            }
+        }
+        if (filename == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        filename = filename.trim();
+        downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ".flv");
+        return AvailableStatus.TRUE;
     }
 
     @Override
@@ -91,10 +104,10 @@ public class VideozerCom extends PluginForHost {
     }
 
     @Override
-    public void resetPluginGlobals() {
+    public void resetDownloadlink(final DownloadLink link) {
     }
 
     @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetPluginGlobals() {
     }
 }
