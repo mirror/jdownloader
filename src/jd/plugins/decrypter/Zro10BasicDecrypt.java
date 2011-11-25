@@ -64,14 +64,14 @@ public class Zro10BasicDecrypt extends PluginForDecrypt {
             if (br.getRedirectLocation() != null && !br.getRedirectLocation().contains(ID)) return decryptedLinks;
             if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
             finallink = br.getRegex("onclick=\"NewWindow\\(\\'(.*?)\\',\\'name\\'").getMatch(0);
+            if (finallink == null) finallink = br.getRegex("a href=\"(htt.*?)\"").getMatch(0);
         }
         if (finallink == null) {
             finallink = finallink2;
         }
         if (finallink == null) return null;
-        if (finallink.equals("")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+        if ("".equals(finallink)) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
         decryptedLinks.add(createDownloadlink(finallink));
-
         return decryptedLinks;
     }
 }

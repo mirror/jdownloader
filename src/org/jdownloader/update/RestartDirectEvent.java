@@ -5,6 +5,7 @@ import java.io.IOException;
 
 import org.appwork.shutdown.ShutdownEvent;
 import org.appwork.utils.Application;
+import org.appwork.utils.os.CrossSystem;
 
 public class RestartDirectEvent extends ShutdownEvent {
     private static final RestartDirectEvent INSTANCE = new RestartDirectEvent();
@@ -35,7 +36,7 @@ public class RestartDirectEvent extends ShutdownEvent {
             return;
         }
 
-        final String tiny[] = new String[] { RestartController.JAVA_INTERPRETER, "-jar", RestartController.UPDATER_JARNAME, "-noupdate", "-guiless", "-restart", RestartController.getRestartCommandLine() };
+        final String tiny[] = new String[] { CrossSystem.getJavaBinary(), "-jar", RestartController.UPDATER_JARNAME, "-noupdate", "-guiless", "-restart", RestartController.getRestartCommandLine() };
         if (Application.getResource(RestartController.JARNAME).exists()) {
             System.out.println(Application.getResource(RestartController.JARNAME) + " exists");
         } else {

@@ -1,6 +1,5 @@
 package org.jdownloader.update;
 
-import java.io.File;
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.util.ArrayList;
@@ -19,23 +18,11 @@ import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.update.gui.UpdateFoundDialog;
 
 public class RestartController implements ShutdownVetoListener {
-    private static final RestartController INSTANCE         = new RestartController();
-    public static String                   UPDATER_JARNAME  = "Updater.jar";
-    public static String                   EXENAME          = "JDownloader.exe";
-    public static String                   JARNAME          = "JDownloader.jar";
-    public static String                   APPNAME          = "JDownloader.app";
-    public static String                   JAVA_INTERPRETER = "java";
-    static {
-        try {
-            String javaInterpreter = new File(new File(System.getProperty("sun.boot.library.path")), "javaw.exe").getAbsolutePath();
-            if (new File(javaInterpreter).exists()) {
-                JAVA_INTERPRETER = javaInterpreter;
-            }
-        } catch (Throwable e) {
-            // nothing
-        }
-
-    }
+    private static final RestartController INSTANCE        = new RestartController();
+    public static String                   UPDATER_JARNAME = "Updater.jar";
+    public static String                   EXENAME         = "JDownloader.exe";
+    public static String                   JARNAME         = "JDownloader.jar";
+    public static String                   APPNAME         = "JDownloader.app";
 
     public static ArrayList<String> getRestartParameters() {
 
@@ -83,7 +70,7 @@ public class RestartController implements ShutdownVetoListener {
     private static ArrayList<String> getJVMParameters() {
         ArrayList<String> jvmParameter = new ArrayList<String>();
 
-        jvmParameter.add(JAVA_INTERPRETER);
+        jvmParameter.add(CrossSystem.getJavaBinary());
         jvmParameter.add("-jar");
 
         final List<String> lst = ManagementFactory.getRuntimeMXBean().getInputArguments();

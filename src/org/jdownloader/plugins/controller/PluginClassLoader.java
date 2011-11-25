@@ -50,18 +50,14 @@ public class PluginClassLoader extends URLClassLoader {
     private PluginClassLoader() {
         super(new URL[] { Application.getRootUrlByClass(jd.Main.class, null) }, PluginClassLoader.class.getClassLoader());
         try {
-
             findLoadedClass = ClassLoader.class.getDeclaredMethod("findLoadedClass", new Class[] { String.class });
             findLoadedClass.setAccessible(true);
-        } catch (NoSuchMethodException e) {
-            e.printStackTrace();
-        } catch (SecurityException e) {
+        } catch (Throwable e) {
             e.printStackTrace();
         }
     }
 
     public boolean isClassLoaded(String string) throws IllegalAccessException, IllegalArgumentException, InvocationTargetException {
-
         boolean ret = this.findLoadedClass(string) != null;
         ClassLoader p;
         ClassLoader lastP = this;
@@ -71,7 +67,6 @@ public class PluginClassLoader extends URLClassLoader {
             ret |= findLoadedClass.invoke(p, string) != null;
             lastP = p;
         }
-
         return ret;
     }
 

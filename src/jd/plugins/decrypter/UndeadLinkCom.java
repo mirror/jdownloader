@@ -67,7 +67,10 @@ public class UndeadLinkCom extends PluginForDecrypt {
         final Browser br2 = br.cloneBrowser();
         String unk = br.getRegex("<script src=\"(.*?)\"").getMatch(0);
         if (unk == null) { return; }
-        unk = br2.getPage("http://" + br.getHost() + unk).toString();
+        if (unk != null && !unk.startsWith("http")) {
+            unk = "http://" + br.getHost() + unk;
+        }
+        unk = br2.getPage(unk).toString();
 
         String beautifier = new Regex(br.toString().replaceAll("\n|\\\\|\\+|\\s", ""), "\\*/(eval\\('.*\\);)</script>").getMatch(0);
         beautifier = beautifier.replaceAll("''", "");
