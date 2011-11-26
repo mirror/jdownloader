@@ -29,7 +29,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "anime-loads.org" }, urls = { "http://[\\w\\.]*?anime-loads\\.org/redirect/\\d+/[a-z0-9]+|http://[\\w\\.]*?anime-loads\\.org/media/\\d+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "anime-loads.org" }, urls = { "http://[\\w\\.]*?anime-loads\\.org/(redirect/\\d+/[a-z0-9]+|media/\\d+)" }, flags = { 0 })
 public class NmLdsrg extends PluginForDecrypt {
 
     public NmLdsrg(PluginWrapper wrapper) {
@@ -68,6 +68,7 @@ public class NmLdsrg extends PluginForDecrypt {
         for (String link : links) {
             br.getPage(link);
             String dllink = Encoding.htmlDecode(br.getRegex("<meta http-equiv=\"refresh\" content=\"5;URL=(.*?)\" />").getMatch(0));
+            if (dllink == null) dllink = Encoding.htmlDecode(br.getRegex("redirect=(http://.*?)\"").getMatch(0));
             DownloadLink dl = createDownloadlink(dllink);
             dl.setSourcePluginPasswordList(passwords);
             dl.setDecrypterPassword(passwords.get(0));
