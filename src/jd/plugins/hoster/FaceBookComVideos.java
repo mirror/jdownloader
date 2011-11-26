@@ -180,6 +180,11 @@ public class FaceBookComVideos extends PluginForHost {
 
     @SuppressWarnings("unchecked")
     public void login(final Account account, final boolean force, Browser br) throws Exception {
+        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:8.0) Gecko/20100101 Firefox/8.0");
+        br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
+        br.getHeaders().put("Accept-Language", "de-de,de;q=0.8,en-us;q=0.5,en;q=0.3");
+        br.getHeaders().put("Accept-Encoding", "gzip, deflate");
+        br.getHeaders().put("Accept-Charset", "ISO-8859-1,utf-8;q=0.7,*;q=0.7");
         synchronized (LOCK) {
             // Load cookies
             br.setCookiesExclusive(false);
@@ -202,10 +207,24 @@ public class FaceBookComVideos extends PluginForHost {
             final Form loginForm = br.getForm(0);
             if (loginForm == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
             loginForm.remove("persistent");
+            loginForm.put("persistent", "1");
             loginForm.remove(null);
             loginForm.put("email", Encoding.urlEncode(account.getUser()));
             loginForm.put("pass", Encoding.urlEncode(account.getPass()));
             br.submitForm(loginForm);
+            /**
+             * Facebook thinks we're an unknown device, now we proove we're not
+             * ;)
+             */
+            if (br.containsHTML("/checkpoint/")) {
+                br.getPage("https://www.facebook.com/checkpoint/");
+                final String postFormID = br.getRegex("name=\"post_form_id\" value=\"(.*?)\"").getMatch(0);
+                final String nh = br.getRegex("name=\"nh\" value=\"(.*?)\"").getMatch(0);
+                br.postPage("https://www.facebook.com/checkpoint/", "post_form_id=" + postFormID + "&lsd=GT_Up&submit%5BContinue%5D=Weiter&nh=" + nh);
+                br.postPage("https://www.facebook.com/checkpoint/", "post_form_id=" + postFormID + "&lsd=GT_Up&submit%5BThis+is+Okay%5D=Das+ist+OK&nh=" + nh);
+                br.postPage("https://www.facebook.com/checkpoint/", "post_form_id=" + postFormID + "&lsd=GT_Up&machine_name=&submit%5BDon%27t+Save%5D=Nicht+speichern&nh=" + nh);
+                br.postPage("https://www.facebook.com/checkpoint/", "post_form_id=" + postFormID + "&lsd=GT_Up&machine_name=&submit%5BDon%27t+Save%5D=Nicht+speichern&nh=" + nh);
+            }
             if (br.getCookie(FACEBOOKMAINPAGE, "c_user") == null || br.getCookie(FACEBOOKMAINPAGE, "xs") == null) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE); }
             // Save cookies
             final HashMap<String, String> cookies = new HashMap<String, String>();

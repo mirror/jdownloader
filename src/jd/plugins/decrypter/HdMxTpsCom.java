@@ -29,7 +29,6 @@ import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.locale.JDL;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hdmixtapes.com" }, urls = { "http://(www\\.)?hdmixtapes\\.com/(newsingles|mixtape(s)?)/.+" }, flags = { 0 })
 public class HdMxTpsCom extends PluginForDecrypt {
@@ -65,7 +64,7 @@ public class HdMxTpsCom extends PluginForDecrypt {
                 finallink = br.getRegex("<br class=\"clearfloat\">[\t\n\r ]+<a href=\"(http.*?)\"").getMatch(0);
             }
         }
-        if (br.containsHTML("<title> \\-  // Free Download @ HDMixtapes\\.com </title>")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+        if (br.containsHTML("<title> \\-  // Free Download @ HDMixtapes\\.com </title>")) return decryptedLinks;
         if (finallink == null) {
             finallink = br.getRegex("<div style=\"margin-top:40px;\">[\t\n\r ]+<a href=\"(http.*?)\"").getMatch(0);
             if (finallink == null) {

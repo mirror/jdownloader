@@ -157,6 +157,7 @@ public class BitShareCom extends PluginForHost {
             if (failed) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         }
         br2.postPage(JSONHOST + fileID + "/request.html", "request=getDownloadURL&ajaxid=" + tempID);
+        if (br.containsHTML("Your Traffic is used up for today")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l);
         String dllink = br2.getRegex(DLLINKREGEX).getMatch(0);
         if (dllink == null) {
             logger.warning("The dllink couldn't be found!");
