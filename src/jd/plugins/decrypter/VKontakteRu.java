@@ -114,12 +114,16 @@ public class VKontakteRu extends PluginForDecrypt {
                     return decryptedLinks;
                 }
                 String numberOfPictures = br.getRegex("\\| (\\d+) zdj&#281").getMatch(0);
-                if (numberOfPictures == null) numberOfPictures = br.getRegex("count: (\\d+),").getMatch(0);
+                if (numberOfPictures == null) {
+                    numberOfPictures = br.getRegex("count: (\\d+),").getMatch(0);
+                    if (numberOfPictures == null) {
+                        numberOfPictures = br.getRegex("</a>(\\d+) zdj\\&#281;\\&#263;<span").getMatch(0);
+                    }
+                }
                 if (numberOfPictures == null) {
                     logger.warning("Decrypter broken for link: " + parameter);
                     return null;
                 }
-                if (numberOfPictures == null) numberOfPictures = br.getRegex("</a>(\\d+) zdj\\&#281;\\&#263;<span").getMatch(0);
                 /**
                  * Find out how many times we have to reload images. Take the
                  * number of pictures - 80 (because without any request we
@@ -152,9 +156,7 @@ public class VKontakteRu extends PluginForDecrypt {
                     for (String photoID : photoIDs) {
                         /** Pass those goodies over to the hosterplugin */
                         DownloadLink dl = createDownloadlink("http://vkontaktedecrypted.ru/picturelink/" + photoID);
-                        dl.setProperty("cookies", this.getPluginConfig().getProperty("cookies", null));
                         dl.setProperty("albumid", albumID);
-                        dl.setAvailable(true);
                         decryptedLinks.add(dl);
                     }
                     progress.increase(1);
