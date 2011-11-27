@@ -30,6 +30,7 @@ import jd.gui.UserIO;
 import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
+import jd.http.RandomUserAgent;
 import jd.nutils.encoding.Encoding;
 import jd.nutils.nativeintegration.LocalBrowser;
 import jd.parser.Regex;
@@ -53,8 +54,9 @@ import org.appwork.utils.formatter.TimeFormatter;
 public class FileServeCom extends PluginForHost {
 
     public String               FILEIDREGEX = "fileserve\\.com/file/([a-zA-Z0-9]+)(http:.*)?";
-    // public static String agent = RandomUserAgent.generate();
-    public static String        agent       = "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:8.0) Gecko/20100101 Firefox/8.0";
+    public static String        agent       = RandomUserAgent.generate();
+    // public static String agent =
+    // "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:8.0) Gecko/20100101 Firefox/8.0";
     private static final Object LOCK        = new Object();
     private static final String COOKIE_HOST = "http://fileserve.com/";
 

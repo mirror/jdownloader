@@ -58,6 +58,7 @@ public class Vipfilecom extends PluginForHost {
         String downloadURL = downloadLink.getDownloadURL();
         this.setBrowserExclusive();
         br.getHeaders().put("User-Agent", RandomUserAgent.generate());
+        br.setReadTimeout(2 * 60 * 1000);
         br.setCookie("http://vip-file.com/", "lang", "en");
         br.getPage(downloadURL);
         if (br.containsHTML("(This file not found|\">File not found)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -113,7 +114,12 @@ public class Vipfilecom extends PluginForHost {
         br.submitForm(premiumform);
         // Try to find the remaining traffic
         String trafficLeft = br.getRegex("You can download another: (.*?) with current password").getMatch(0);
-        if (trafficLeft != null) {
+        if (trafficLeft == null) {
+            /** 1 point = 1 Gigabyte */
+            trafficLeft = br.getRegex("\">Points:</acronym> (.*?)</li>").getMatch(0);
+            if (trafficLeft != null && !trafficLeft.equals("")) trafficLeft += "GB";
+        }
+        if (trafficLeft != null && !trafficLeft.equals("")) {
             AccountInfo ai = account.getAccountInfo();
             if (ai == null) ai = new AccountInfo();
             ai.setTrafficLeft(trafficLeft);
@@ -127,10 +133,6 @@ public class Vipfilecom extends PluginForHost {
             ai.setValidUntil(TimeFormatter.getMilliSeconds(expireDate, "yyyy-MM-dd", null));
             ai.setStatus("Premium User");
             account.setAccountInfo(ai);
-        }
-        if (br.containsHTML("(Your premium access is about to be over|Amount of Your points is close to zero\\.)")) {
-            logger.info("Password is wrong!");
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
         String url = Encoding.htmlDecode(br.getRegex(Pattern.compile("Your link to file download\" href=\"(http://.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0));
         if (url == null) {
@@ -149,7 +151,13 @@ public class Vipfilecom extends PluginForHost {
             logger.info("Downloadpassword seems to be wrong, disabeling account now!");
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
-        if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (url == null) {
+            if (br.containsHTML("(Your premium access is about to be over|Amount of Your points is close to zero\\.)")) {
+                logger.info("Password is wrong!");
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         /* we have to wait little because server too buggy */
         sleep(5000, downloadLink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, true, 0);

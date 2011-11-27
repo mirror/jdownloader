@@ -23,11 +23,11 @@ import jd.http.Browser;
 import jd.http.RandomUserAgent;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -130,11 +130,13 @@ public class U115Com extends PluginForHost {
             logger.warning("Only downloadable via account: " + link.getDownloadURL());
             throw new PluginException(LinkStatus.ERROR_FATAL, ACCOUNTNEEDEDUSERTEXT);
         }
+        if (!br.containsHTML("(<div class=\"download\\-box dl\\-hint\" id=\"|<div class=\"download\\-box\" style=\"display:none\")")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.U115Com.dlnotpossible", "Download not possible at the moment"), 30 * 60 * 1000l);
         String dllink = findLink(link);
         if (dllink == null) {
             logger.warning("dllink is null, seems like the regexes are defect!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        /** Don't do html decode, it can make the dllink invalid */
         // dllink = Encoding.htmlDecode(dllink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
