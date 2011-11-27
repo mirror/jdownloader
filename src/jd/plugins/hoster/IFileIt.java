@@ -23,6 +23,8 @@ import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
 import jd.PluginWrapper;
+import jd.config.Configuration;
+import jd.config.SubConfiguration;
 import jd.gui.UserIO;
 import jd.http.Browser;
 import jd.http.RandomUserAgent;
@@ -62,11 +64,9 @@ public class IFileIt extends PluginForHost {
     }
 
     public void doFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
         br.setFollowRedirects(true);
         // generating first request
-        String c = br.getRegex("<script type=\"text/javascript\">\r\n\r\n(.*?)</script>").getMatch(0);
-        c = new Regex(c, "(.*?)//onload").getMatch(0);
+        final String c = br.getRegex("(var.*?eval.*?\r?\n)").getMatch(0);
         final String fnName = br.getRegex("url\\s+=\\s+([0-9a-z]+)\\(").getMatch(0);
         final String dec = br.getRegex(fnName + "\\( \'(.*?)\' \\)").getMatch(0);
         Object result = new Object();
@@ -76,7 +76,7 @@ public class IFileIt extends PluginForHost {
         try {
             if (fnName == null || dec == null) {
                 engine.eval(c);
-                result = engine.get("__rurl");
+                result = engine.get("__rurl2");
             } else {
                 engine.eval(c);
                 result = inv.invokeFunction(fnName, dec);
@@ -96,6 +96,9 @@ public class IFileIt extends PluginForHost {
         br2.setReadTimeout(40 * 1000);
         xmlrequest(br2, finaldownlink, "");
         if (!br2.containsHTML("status\":\"ok\"")) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+
+        SubConfiguration.getConfig("JAC").setProperty(Configuration.PARAM_CAPTCHA_JAC_DISABLE, true);
+
         if (br2.containsHTML("download:captcha")) {
             // Old captcha handling
             for (int i = 0; i <= 5; i++) {

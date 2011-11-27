@@ -85,6 +85,7 @@ public class LdTTemp extends PluginForDecrypt {
         synchronized (LOCK) {
             final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
             final String parameter = param.toString();
+            br.setFollowRedirects(true);
             br.getPage(parameter);
             int i;
             for (i = 0; i < 5; i++) {
