@@ -52,9 +52,9 @@ public class OrderColumn extends ExtComponentColumn<PackagizerRule> {
             public void actionPerformed(ActionEvent e) {
                 ArrayList<PackagizerRule> pkgl = new ArrayList<PackagizerRule>();
                 pkgl.add(editing);
-                stopCellEditing();
-                getModel().move(pkgl, editingRow - 1);
 
+                getModel().move(pkgl, editingRow - 1);
+                getModel().fireTableDataChanged();
                 getModel().getTable().editCellAt(getModel().getRowforObject(editing), getIndex());
 
             }

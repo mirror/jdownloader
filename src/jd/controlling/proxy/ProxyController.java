@@ -109,7 +109,7 @@ public class ProxyController {
         }
     }
 
-    private static List<HTTPProxy> autoConfig() {
+    public static List<HTTPProxy> autoConfig() {
         ArrayList<HTTPProxy> ret = new ArrayList<HTTPProxy>();
         try {
             if (CrossSystem.isWindows()) { return ProxyController.checkReg(); }
@@ -497,6 +497,25 @@ public class ProxyController {
             proxies = nproxies;
         }
         eventSender.fireEvent(new ProxyEvent<ProxyInfo>(this, ProxyEvent.Types.ADDED, ret));
+    }
+
+    public void addProxy(List<HTTPProxy> proxy) {
+        if (proxy == null || proxy.size() == 0) return;
+        int changes = 0;
+        synchronized (LOCK) {
+            ArrayList<ProxyInfo> nproxies = new ArrayList<ProxyInfo>(proxies);
+            changes = nproxies.size();
+            main: for (HTTPProxy newP : proxy) {
+                for (ProxyInfo info : nproxies) {
+                    /* duplicate check */
+                    if (info.sameProxy(newP)) continue main;
+                }
+                nproxies.add(new ProxyInfo(newP));
+            }
+            proxies = nproxies;
+            if (changes != nproxies.size()) changes = -1;
+        }
+        if (changes == -1) eventSender.fireEvent(new ProxyEvent<ProxyInfo>(this, ProxyEvent.Types.REFRESH, null));
     }
 
     /**

@@ -22,6 +22,7 @@ import org.appwork.storage.config.JsonConfig;
 import org.appwork.update.exchange.UpdateFile;
 import org.appwork.update.exchange.UpdatePackage;
 import org.appwork.update.updateclient.InstalledFile;
+import org.appwork.update.updateclient.UpdateHttpClient;
 import org.appwork.update.updateclient.Updater;
 import org.appwork.update.updateclient.UpdaterState;
 import org.appwork.update.updateclient.event.UpdaterEvent;
@@ -434,7 +435,22 @@ public class JDUpdater extends Updater implements Runnable {
         updateRunning = true;
         this.silentCheck = silentCheck;
 
-        updaterThread = new Thread(this);
+        updaterThread = new Thread(this) {
+
+            @Override
+            public void interrupt() {
+                super.interrupt();
+                /*
+                 * make sure thread can interupt and does not block in any io
+                 * operation
+                 */
+                UpdateHttpClient client = getHttpClient();
+                if (client != null) {
+                    client.interrupt();
+                }
+            }
+
+        };
         updaterThread.setName("UpdaterThread");
         this.setThread(updaterThread);
         updaterThread.start();

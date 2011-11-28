@@ -2416,6 +2416,9 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Auto Setup Reconnect" })
     String AutoDetectAction_actionPerformed_d_title();
 
+    @Default(lngs = { "en" }, values = { "Automatic Proxy Detection" })
+    String ProxyAutoAction_actionPerformed_d_title();
+
     @Default(lngs = { "en" }, values = { "Please wait. JDownloader tries to find the correct settings for your internet connection. \r\nThis may take several minutes." })
     String AutoDetectAction_actionPerformed_d_msg();
 
