@@ -19,6 +19,8 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -27,19 +29,28 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bitoman.ru" }, urls = { "http://(www\\.)?bitoman\\.ru/download/\\d+\\.html" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bitoman.ru" }, urls = { "http://(www\\.)?bitoman\\.ru/download/\\d+\\.html" }, flags = { 2 })
 public class BitoManRu extends PluginForHost {
 
     public BitoManRu(PluginWrapper wrapper) {
         super(wrapper);
+        setConfigElements();
     }
+
+    private static final String WAIT1 = "WAIT1";
 
     @Override
     public String getAGBLink() {
         return "http://www.bitoman.ru/profile/rules.html";
+    }
+
+    private void setConfigElements() {
+        final ConfigEntry cond = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), WAIT1, JDL.L("plugins.hoster.bitomanru.waitInsteadOfReconnect", "Wait and download instead of reconnecting if wait time is under 30 minutes")).setDefaultValue(true);
+        getConfig().addEntry(cond);
     }
 
     @Override
@@ -77,11 +88,11 @@ public class BitoManRu extends PluginForHost {
         if (slowDL == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.getPage("http://www.bitoman.ru" + Encoding.htmlDecode(slowDL));
         if (!br.containsHTML("/download/get\\.html\\?fid=")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        final boolean waitReconnecttime = getPluginConfig().getBooleanProperty(WAIT1, true);
         int wait = 60;
         String waittime = br.getRegex("download\\.totalTime = (\\d+);").getMatch(0);
         if (waittime != null) wait = Integer.parseInt(waittime);
-        // if (wait > 361) throw new
-        // PluginException(LinkStatus.ERROR_IP_BLOCKED, wait * 1001l);
+        if ((wait > 600 && !waitReconnecttime) || wait > 1800) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l);
         sleep(wait * 1001l, downloadLink);
         final String captchaPage = "http://www.bitoman.ru/download/get.html?fid=" + new Regex(downloadLink.getDownloadURL(), "bitoman\\.ru/download/(\\d+)\\.html").getMatch(0);
         br.getPage(captchaPage);

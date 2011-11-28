@@ -1,18 +1,18 @@
-//    jDownloader - Downloadmanager
-//    Copyright (C) 2011  JD-Team support@jdownloader.org
+//jDownloader - Downloadmanager
+//Copyright (C) 2011  JD-Team support@jdownloader.org
 //
-//    This program is free software: you can redistribute it and/or modify
-//    it under the terms of the GNU General Public License as published by
-//    the Free Software Foundation, either version 3 of the License, or
-//    (at your option) any later version.
+//This program is free software: you can redistribute it and/or modify
+//it under the terms of the GNU General Public License as published by
+//the Free Software Foundation, either version 3 of the License, or
+//(at your option) any later version.
 //
-//    This program is distributed in the hope that it will be useful,
-//    but WITHOUT ANY WARRANTY; without even the implied warranty of
-//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-//    GNU General Public License for more details.
+//This program is distributed in the hope that it will be useful,
+//but WITHOUT ANY WARRANTY; without even the implied warranty of
+//MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+//GNU General Public License for more details.
 //
-//    You should have received a copy of the GNU General Public License
-//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+//You should have received a copy of the GNU General Public License
+//along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package jd.plugins.hoster;
 
@@ -43,11 +43,12 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "verzend.be" }, urls = { "https?://(www\\.)?verzend\\.be/[a-z0-9]{12}" }, flags = { 0 })
-public class VerZendBe extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fileshost.ws" }, urls = { "https?://(www\\.)?fileshost\\.ws/[a-z0-9]{12}" }, flags = { 0 })
+public class FilesHostWs extends PluginForHost {
 
-    public VerZendBe(PluginWrapper wrapper) {
+    public FilesHostWs(PluginWrapper wrapper) {
         super(wrapper);
+        this.setStartIntervall(20 * 1000l);
         // this.enablePremium(COOKIE_HOST + "/premium.html");
     }
 
@@ -59,10 +60,11 @@ public class VerZendBe extends PluginForHost {
 
     private String              BRBEFORE            = "";
     private static final String PASSWORDTEXT        = "(<br><b>Password:</b> <input|<br><b>Passwort:</b> <input)";
-    private static final String COOKIE_HOST         = "http://verzend.be";
+    private static final String COOKIE_HOST         = "http://fileshost.ws";
     private static final String MAINTENANCE         = ">This server is in maintenance mode";
     private static final String MAINTENANCEUSERTEXT = "This server is under Maintenance";
     private static final String ALLWAIT_SHORT       = "Waiting till new downloads can be started";
+    private static final Object LOCK                = new Object();
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
@@ -71,7 +73,7 @@ public class VerZendBe extends PluginForHost {
         br.setCookie(COOKIE_HOST, "lang", "english");
         br.getPage(link.getDownloadURL());
         doSomething();
-        if (new Regex(BRBEFORE, Pattern.compile("(No such file|>File Not Found<|>The file was removed by|Reason (of|for) deletion:\n)", Pattern.CASE_INSENSITIVE)).matches()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (new Regex(BRBEFORE, Pattern.compile("(No such file|>File Not Found<|>The file was removed by|Reason (of|for) deletion:\n|>The file was deleted by its owner|>The file expired|>The file you were looking for could not be found)", Pattern.CASE_INSENSITIVE)).matches()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (BRBEFORE.contains(MAINTENANCE)) {
             link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.xfilesharingprobasic.undermaintenance", MAINTENANCEUSERTEXT));
             return AvailableStatus.TRUE;
@@ -99,7 +101,7 @@ public class VerZendBe extends PluginForHost {
                 filesize = new Regex(BRBEFORE, "</font>[ ]+\\((.*?)\\)(.*?)</font>").getMatch(0);
             }
         }
-        if (filename == null) {
+        if (filename == null || filename.equals("")) {
             if (BRBEFORE.contains("You have reached the download-limit")) {
                 logger.warning("Waittime detected, please reconnect to make the linkchecker work!");
                 return AvailableStatus.UNCHECKABLE;
@@ -107,7 +109,6 @@ public class VerZendBe extends PluginForHost {
             logger.warning("The filename equals null, throwing \"plugin defect\" now...");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (filename.equals("")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         filename = filename.replaceAll("(</b>|<b>|\\.html)", "");
         link.setFinalFileName(filename.trim());
         if (filesize != null && !filesize.equals("")) link.setDownloadSize(SizeFormatter.getSize(filesize));
@@ -216,7 +217,7 @@ public class VerZendBe extends PluginForHost {
                 logger.info("Put captchacode " + c + " obtained by captcha metod \"Re Captcha\" in the form and submitted it.");
                 dlForm = rc.getForm();
                 // waittime is often skippable for reCaptcha handling
-                // skipWaittime = true;
+                skipWaittime = true;
             }
             /* Captcha END */
             if (password) passCode = handlePassword(passCode, dlForm, downloadLink);

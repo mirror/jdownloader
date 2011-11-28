@@ -41,7 +41,7 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "freakshare.net" }, urls = { "http://[\\w\\.]*?freakshare\\.(net|com)/file(s/|/)[\\w]+/(.*)" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "freakshare.net" }, urls = { "http://(www\\.)?freakshare\\.(net|com)/file(s/|/)[\\w]+/(.*)" }, flags = { 2 })
 public class Freaksharenet extends PluginForHost {
 
     private boolean             NOPREMIUM          = false;
@@ -56,6 +56,11 @@ public class Freaksharenet extends PluginForHost {
         setStartIntervall(100l);
         this.enablePremium("http://freakshare.com/shop.html");
         setConfigElements();
+    }
+
+    private void setConfigElements() {
+        final ConfigEntry cond = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), WAIT1, JDL.L("plugins.hoster.Freaksharenet.waitInsteadOfReconnect", "Wait and download instead of reconnecting if wait time is under 30 minutes")).setDefaultValue(true);
+        getConfig().addEntry(cond);
     }
 
     @Override
@@ -85,17 +90,8 @@ public class Freaksharenet extends PluginForHost {
         if (ttt != null) {
             tt = Integer.parseInt(ttt);
         }
-        if (tt > 180) {
-            if (waitReconnecttime && tt < 701) {
-                sleep((tt + 2) * 1001l, downloadLink);
-            } else {
-                // 10 Minutes reconnect-waittime is not enough, let's wait one
-                // hour
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l);
-            }
-        } else {
-            sleep((tt + 2) * 1001l, downloadLink);
-        }
+        if ((tt > 600 && !waitReconnecttime) || tt > 1800) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l);
+        sleep((tt + 2) * 1001l, downloadLink);
         br.submitForm(form);
         handleFreeErrors();
         Form[] forms = br.getForms();
@@ -328,10 +324,5 @@ public class Freaksharenet extends PluginForHost {
 
     @Override
     public void resetPluginGlobals() {
-    }
-
-    private void setConfigElements() {
-        final ConfigEntry cond = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), WAIT1, JDL.L("plugins.hoster.Freaksharenet.waitInsteadOfReconnect", "Wait 10 minutes instead of reconnecting")).setDefaultValue(true);
-        getConfig().addEntry(cond);
     }
 }

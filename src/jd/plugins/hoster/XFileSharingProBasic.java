@@ -38,12 +38,12 @@ import jd.parser.html.HTMLParser;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -58,10 +58,12 @@ public class XFileSharingProBasic extends PluginForHost {
         // this.enablePremium(COOKIE_HOST + "/premium.html");
     }
 
-    // XfileSharingProBasic Version 2.5.0.7
-    // This is only for developers to easily implement hosters using the
-    // "xfileshare(pro)" script (more informations can be found on
-    // xfilesharing.net)!
+    // XfileSharingProBasic Version 2.5.0.8
+    /**
+     * This is only for developers to easily implement hosters using the
+     * "xfileshare(pro)" script (more informations can be found on
+     * xfilesharing.net)!
+     */
     @Override
     public String getAGBLink() {
         return COOKIE_HOST + "/tos.html";
@@ -72,6 +74,7 @@ public class XFileSharingProBasic extends PluginForHost {
     private static final String COOKIE_HOST         = "http://ForDevsToPlayWith.com";
     private static final String MAINTENANCE         = ">This server is in maintenance mode";
     private static final String MAINTENANCEUSERTEXT = "This server is under Maintenance";
+    private static final String ALLWAIT_SHORT       = "Waiting till new downloads can be started";
     private static final Object LOCK                = new Object();
 
     @Override
@@ -149,8 +152,10 @@ public class XFileSharingProBasic extends PluginForHost {
                 }
             }
         }
-        // Videolinks can already be found here, if a link is found here we can
-        // skip waittimes and captchas
+        /**
+         * Videolinks can already be found here, if a link is found here we can
+         * skip waittimes and captchas
+         */
         if (dllink == null) {
             checkErrors(downloadLink, false, passCode);
             if (BRBEFORE.contains("\"download1\"")) {
@@ -174,7 +179,7 @@ public class XFileSharingProBasic extends PluginForHost {
             /* Captcha START */
             if (BRBEFORE.contains(";background:#ccc;text-align")) {
                 logger.info("Detected captcha method \"plaintext captchas\" for this host");
-                // Captcha method by ManiacMansion
+                /** Captcha method by ManiacMansion */
                 String[][] letters = new Regex(Encoding.htmlDecode(br.toString()), "<span style=\\'position:absolute;padding\\-left:(\\d+)px;padding\\-top:\\d+px;\\'>(\\d)</span>").getMatches();
                 if (letters == null || letters.length == 0) {
                     logger.warning("plaintext captchahandling broken!");
@@ -224,7 +229,7 @@ public class XFileSharingProBasic extends PluginForHost {
                 rc.prepareForm(c);
                 logger.info("Put captchacode " + c + " obtained by captcha metod \"Re Captcha\" in the form and submitted it.");
                 dlForm = rc.getForm();
-                // waittime is often skippable for reCaptcha handling
+                /** waittime is often skippable for reCaptcha handling */
                 // skipWaittime = true;
             }
             /* Captcha END */
@@ -268,7 +273,7 @@ public class XFileSharingProBasic extends PluginForHost {
     @SuppressWarnings("unchecked")
     private void login(Account account, boolean force) throws Exception {
         synchronized (LOCK) {
-            // Load cookies
+            /** Load cookies */
             br.setCookiesExclusive(false);
             final Object ret = account.getProperty("cookies", null);
             boolean acmatch = Encoding.urlEncode(account.getUser()).matches(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
@@ -296,7 +301,7 @@ public class XFileSharingProBasic extends PluginForHost {
             doSomething();
             if (!new Regex(BRBEFORE, "(Premium\\-Account expire|Upgrade to premium|>Renew premium<)").matches()) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
             if (!new Regex(BRBEFORE, "(Premium\\-Account expire|>Renew premium<)").matches()) account.setProperty("nopremium", "true");
-            // Save cookies
+            /** Save cookies */
             final HashMap<String, String> cookies = new HashMap<String, String>();
             final Cookies add = this.br.getCookies(COOKIE_HOST);
             for (final Cookie c : add.getCookies()) {
@@ -321,8 +326,10 @@ public class XFileSharingProBasic extends PluginForHost {
         if (space != null) ai.setUsedSpace(space.trim() + " Mb");
         String points = br.getRegex(Pattern.compile("<td>You have collected:</td.*?b>([^<>\"\\']+)premium points", Pattern.CASE_INSENSITIVE)).getMatch(0);
         if (points != null) {
-            // Who needs half points ? If we have a dot in the points, just
-            // remove it
+            /**
+             * Who needs half points ? If we have a dot in the points, just
+             * remove it
+             */
             if (points.contains(".")) {
                 String dot = new Regex(points, ".*?(\\.(\\d+))").getMatch(0);
                 points = points.replace(dot, "");
@@ -420,7 +427,7 @@ public class XFileSharingProBasic extends PluginForHost {
 
     private void waitTime(long timeBefore, DownloadLink downloadLink) throws PluginException {
         int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000) - 1;
-        // Ticket Time
+        /** Ticket Time */
         String ttt = new Regex(BRBEFORE, "countdown\">.*?(\\d+).*?</span>").getMatch(0);
         if (ttt == null) ttt = new Regex(BRBEFORE, "id=\"countdown_str\".*?<span id=\".*?\">.*?(\\d+).*?</span").getMatch(0);
         if (ttt != null) {
@@ -482,35 +489,16 @@ public class XFileSharingProBasic extends PluginForHost {
             }
             if (BRBEFORE.contains("\">Skipped countdown<")) throw new PluginException(LinkStatus.ERROR_FATAL, "Fatal countdown error (countdown skipped)");
         }
-        // Some waittimes...
-        if (BRBEFORE.contains("You have to wait")) {
-            int minutes = 0, seconds = 0, hours = 0;
-            String tmphrs = new Regex(BRBEFORE, "You have to wait.*?\\s+(\\d+)\\s+hours?").getMatch(0);
-            if (tmphrs != null) hours = Integer.parseInt(tmphrs);
-            String tmpmin = new Regex(BRBEFORE, "You have to wait.*?\\s+(\\d+)\\s+minutes?").getMatch(0);
-            if (tmpmin != null) minutes = Integer.parseInt(tmpmin);
-            String tmpsec = new Regex(BRBEFORE, "You have to wait.*?\\s+(\\d+)\\s+seconds?").getMatch(0);
-            if (tmpsec != null) seconds = Integer.parseInt(tmpsec);
-            int waittime = ((3600 * hours) + (60 * minutes) + seconds + 1) * 1000;
-            if (waittime != 0) {
-                logger.info("Detected waittime #1, waiting " + waittime + " milliseconds");
-                // Not enough waittime to reconnect->Wait and try again
-                if (waittime < 120000) {
-                    sleep(waittime, theLink);
-                    throw new PluginException(LinkStatus.ERROR_RETRY);
-                }
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, waittime);
-            } else {
-                logger.info("Waittime regexes seem to be broken");
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
-            }
-        }
-        if (BRBEFORE.contains("You have reached the download-limit")) {
+        /** Waittime reconnect handling */
+        if (new Regex(BRBEFORE, "(You have reached the download\\-limit|You have to wait)").matches()) {
             String tmphrs = new Regex(BRBEFORE, "\\s+(\\d+)\\s+hours?").getMatch(0);
+            if (tmphrs == null) tmphrs = new Regex(BRBEFORE, "You have to wait.*?\\s+(\\d+)\\s+hours?").getMatch(0);
             String tmpmin = new Regex(BRBEFORE, "\\s+(\\d+)\\s+minutes?").getMatch(0);
+            if (tmpmin == null) tmpmin = new Regex(BRBEFORE, "You have to wait.*?\\s+(\\d+)\\s+minutes?").getMatch(0);
             String tmpsec = new Regex(BRBEFORE, "\\s+(\\d+)\\s+seconds?").getMatch(0);
             String tmpdays = new Regex(BRBEFORE, "\\s+(\\d+)\\s+days?").getMatch(0);
             if (tmphrs == null && tmpmin == null && tmpsec == null && tmpdays == null) {
+                logger.info("Waittime regexes seem to be broken");
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 60 * 60 * 1000l);
             } else {
                 int minutes = 0, seconds = 0, hours = 0, days = 0;
@@ -520,17 +508,14 @@ public class XFileSharingProBasic extends PluginForHost {
                 if (tmpdays != null) days = Integer.parseInt(tmpdays);
                 int waittime = ((days * 24 * 3600) + (3600 * hours) + (60 * minutes) + seconds + 1) * 1000;
                 logger.info("Detected waittime #2, waiting " + waittime + "milliseconds");
-                // Not enough waittime to reconnect->Wait and try again
-                if (waittime < 120000) {
-                    sleep(waittime, theLink);
-                    throw new PluginException(LinkStatus.ERROR_RETRY);
-                }
+                /** Not enough waittime to reconnect->Wait and try again */
+                if (waittime < 180000) { throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.xfilesharingprobasic.allwait", ALLWAIT_SHORT), waittime); }
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, waittime);
             }
         }
         if (BRBEFORE.contains("You're using all download slots for IP")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l); }
         if (BRBEFORE.contains("Error happened when generating Download Link")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error!", 10 * 60 * 1000l);
-        // Errorhandling for only-premium links
+        /** Errorhandling for only-premium links */
         if (new Regex(BRBEFORE, "( can download files up to |Upgrade your account to download bigger files|>Upgrade your account to download larger files|>The file You requested  reached max downloads limit for Free Users|Please Buy Premium To download this file<|This file reached max downloads limit)").matches()) {
             String filesizelimit = new Regex(BRBEFORE, "You can download files up to(.*?)only").getMatch(0);
             if (filesizelimit != null) {
@@ -576,7 +561,7 @@ public class XFileSharingProBasic extends PluginForHost {
         return finallink;
     }
 
-    // Removed fake messages which can kill the plugin
+    /** This removes fake messages which can kill the plugin */
     public void doSomething() throws NumberFormatException, PluginException {
         BRBEFORE = br.toString();
         ArrayList<String> someStuff = new ArrayList<String>();
