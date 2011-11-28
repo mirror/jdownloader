@@ -79,6 +79,11 @@ public interface ExtractionConfig extends ExtensionConfigInterface {
     @DefaultBooleanValue(false)
     boolean isSubpathEnabledIfAllFilesAreInAFolder();
 
+    @AboutConfig
+    @DefaultBooleanValue(true)
+    @Description("Use original filedate if possible")
+    boolean isUseOriginalFileDate();
+
     void setAskForUnknownPasswordsEnabled(boolean enabled);
 
     void setBlacklistPatterns(String[] patterns);
@@ -101,7 +106,7 @@ public interface ExtractionConfig extends ExtensionConfigInterface {
 
     void setSubpathEnabled(boolean enabled);
 
-    void setSubpathEnabledIfAllFilesAreInAFolder(boolean b);
+    void setSubpathEnabledIfAllFilesAreInAFolder(boolean enabled);
 
     void setSubPathFilesTreshhold(int treshold);
 
@@ -112,4 +117,6 @@ public interface ExtractionConfig extends ExtensionConfigInterface {
     int getBufferSize();
 
     void setBufferSize(int buffer);
+
+    void setUseOriginalFileDate(boolean enabled);
 }

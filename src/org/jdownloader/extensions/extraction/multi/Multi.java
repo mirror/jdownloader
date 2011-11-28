@@ -415,10 +415,12 @@ public class Multi extends IExtraction {
                 }
 
                 // Set last write time
-                Date date = item.getLastWriteTime();
-                if (date != null && date.getTime() >= 0) {
-                    if (!extractTo.setLastModified(date.getTime())) {
-                        logger.warning("Could not set last write/modified time for " + item.getPath());
+                if (config.isUseOriginalFileDate()) {
+                    Date date = item.getLastWriteTime();
+                    if (date != null && date.getTime() >= 0) {
+                        if (!extractTo.setLastModified(date.getTime())) {
+                            logger.warning("Could not set last write/modified time for " + item.getPath());
+                        }
                     }
                 }
 

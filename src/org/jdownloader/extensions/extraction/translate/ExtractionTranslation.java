@@ -164,4 +164,7 @@ public interface ExtractionTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Low" })
     String settings_cpupriority_low();
+
+    @Default(lngs = { "en" }, values = { "Use original file date if possible" })
+    String settings_multi_use_original_file_date();
 }

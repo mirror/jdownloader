@@ -28,6 +28,7 @@ public class ExtractionConfigPanel extends ExtensionConfigPanel<ExtractionExtens
     private Pair<Checkbox>         toggleDeleteArchives;
     private Pair<Checkbox>         toggleOverwriteExisting;
     private Pair<TextArea>         blacklist;
+    private Pair<Checkbox>         toggleUseOriginalFileDate;
     private Pair<ComboBox<String>> cpupriority;
 
     public ExtractionConfigPanel(ExtractionExtension plg) {
@@ -54,6 +55,7 @@ public class ExtractionConfigPanel extends ExtensionConfigPanel<ExtractionExtens
         cpupriority = this.addPair(T._.settings_cpupriority(), null, new ComboBox<String>(T._.settings_cpupriority_high(), T._.settings_cpupriority_middle(), T._.settings_cpupriority_low()));
 
         this.addHeader(T._.settings_multi(), NewTheme.I().getIcon("settings", 32));
+        toggleUseOriginalFileDate = this.addPair(T._.settings_multi_use_original_file_date(), null, new Checkbox());
         blacklist = this.addPair(T._.settings_blacklist(), null, new TextArea());
     }
 
@@ -87,6 +89,8 @@ public class ExtractionConfigPanel extends ExtensionConfigPanel<ExtractionExtens
                 } else {
                     cpupriority.getComponent().setValue(T._.settings_cpupriority_low());
                 }
+
+                toggleUseOriginalFileDate.getComponent().setSelected(s.isUseOriginalFileDate());
             }
         };
     }
@@ -115,5 +119,7 @@ public class ExtractionConfigPanel extends ExtensionConfigPanel<ExtractionExtens
         } else {
             s.setCPUPriority(CPUPriority.LOW);
         }
+
+        s.setUseOriginalFileDate(toggleUseOriginalFileDate.getComponent().isSelected());
     }
 }
