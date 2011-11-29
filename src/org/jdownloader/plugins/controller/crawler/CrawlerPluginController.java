@@ -153,6 +153,7 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
     }
 
     public void setList(List<LazyCrawlerPlugin> list) {
+        if (list == null) return;
         this.list = list;
     }
 

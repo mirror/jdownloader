@@ -48,6 +48,7 @@ public class ContainerPluginController {
     }
 
     public void setList(List<PluginsC> list) {
+        if (list == null) return;
         this.list = list;
     }
 

@@ -179,6 +179,17 @@ public class HostPluginController extends PluginController<PluginForHost> {
     }
 
     public void setList(List<LazyHostPlugin> list) {
+        if (list == null) return;
+        try {
+            Collections.sort(list, new Comparator<LazyHostPlugin>() {
+
+                public int compare(LazyHostPlugin o1, LazyHostPlugin o2) {
+                    return o1.getDisplayName().compareTo(o2.getDisplayName());
+                }
+            });
+        } catch (final Throwable e) {
+            Log.exception(e);
+        }
         this.list = list;
     }
 
