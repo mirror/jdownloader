@@ -152,6 +152,10 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
         return list;
     }
 
+    public void setList(List<LazyCrawlerPlugin> list) {
+        this.list = list;
+    }
+
     private void lazyInit() {
         if (list != null) return;
         synchronized (this) {

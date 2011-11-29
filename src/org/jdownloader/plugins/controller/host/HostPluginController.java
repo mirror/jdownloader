@@ -178,6 +178,10 @@ public class HostPluginController extends PluginController<PluginForHost> {
         return list;
     }
 
+    public void setList(List<LazyHostPlugin> list) {
+        this.list = list;
+    }
+
     public void ensureLoaded() {
         if (list != null) return;
         synchronized (this) {

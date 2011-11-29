@@ -26,6 +26,7 @@ import java.util.logging.Logger;
 
 import jd.config.SubConfiguration;
 import jd.controlling.IOPermission;
+import jd.controlling.JDController;
 import jd.controlling.JDLogger;
 import jd.controlling.JDPluginLogger;
 import jd.controlling.proxy.ProxyInfo;
@@ -41,7 +42,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.DownloadInterface;
-import jd.utils.JDUtilities;
 
 import org.appwork.controlling.StateMachine;
 import org.appwork.controlling.StateMachineInterface;
@@ -158,11 +158,7 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
     }
 
     private void fireControlEvent(ControlEvent controlEvent) {
-        JDUtilities.getController().fireControlEvent(controlEvent);
-    }
-
-    private void fireControlEvent(int controlID, Object param) {
-        JDUtilities.getController().fireControlEvent(controlID, param);
+        JDController.getInstance().fireControlEvent(controlEvent);
     }
 
     public DownloadLink getDownloadLink() {
@@ -757,7 +753,7 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
         throw new UnsupportedOperationException("statemachine not accessible");
     }
 
-    protected void setIOPermission(IOPermission ioP) {
+    public void setIOPermission(IOPermission ioP) {
         this.ioP = ioP;
     }
 

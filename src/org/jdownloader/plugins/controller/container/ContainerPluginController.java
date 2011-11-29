@@ -47,6 +47,10 @@ public class ContainerPluginController {
         return list;
     }
 
+    public void setList(List<PluginsC> list) {
+        this.list = list;
+    }
+
     private void lazyInit() {
         if (list != null) return;
         synchronized (this) {
