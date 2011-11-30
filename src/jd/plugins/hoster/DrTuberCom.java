@@ -18,6 +18,9 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -43,6 +46,21 @@ public class DrTuberCom extends PluginForHost {
     @Override
     public String getAGBLink() {
         return "http://www.drtuber.com/static/terms";
+    }
+
+    private String getContinueLink(String fun) {
+        if (fun == null) { return null; }
+        fun = fun.replaceAll("s1\\.addVariable\\(\\'config\\',", "var result = ").replaceAll("params\\);", "params;");
+        Object result = new Object();
+        final ScriptEngineManager manager = new ScriptEngineManager();
+        final ScriptEngine engine = manager.getEngineByName("javascript");
+        try {
+            engine.eval(fun);
+            result = engine.get("result");
+        } catch (final Throwable e) {
+            return null;
+        }
+        return result.toString();
     }
 
     @Override
@@ -88,7 +106,7 @@ public class DrTuberCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         br.getHeaders().put("Accept-Language", "de-de,de;q=0.8,en-us;q=0.5,en;q=0.3");
-        String continueLink = br.getRegex("addVariable\\(\\'config\\', \\'(/.*?)\\'\\);").getMatch(0);
+        String continueLink = getContinueLink(br.getRegex("(var configPath.*?addVariable\\(\\'config\\',.*?;)").getMatch(0));
         if (continueLink == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         continueLink = "http://drtuber.com" + Encoding.htmlDecode(continueLink) + "&pkey=" + JDHash.getMD5(vKey + Encoding.Base64Decode("dHJhRHJ1YkVuMnpha3U="));
         br.getPage(continueLink);
