@@ -53,7 +53,11 @@ public class PackagizerController implements PackagizerInterface {
     private PackagizerController() {
         config = JsonConfig.create(PackagizerSettings.class);
         eventSender = new ChangeEventSender();
-        list = config.getRuleList();
+        try {
+            list = config.getRuleList();
+        } catch (Throwable e) {
+            // restoring list may fail.
+        }
         if (list == null) list = new ArrayList<PackagizerRule>();
         update();
         ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {

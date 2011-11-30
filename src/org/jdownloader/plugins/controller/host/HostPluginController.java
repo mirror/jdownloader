@@ -135,6 +135,7 @@ public class HostPluginController extends PluginController<PluginForHost> {
                             LazyHostPlugin l = new LazyHostPlugin(ap);
                             PluginForHost plg = l.getPrototype();
                             ap.setPremium(plg.isPremiumEnabled());
+
                             String purl = plg.getBuyPremiumUrl();
                             if (purl != null && purl.startsWith(HTTP_JDOWNLOADER_ORG_R_PHP_U)) {
                                 /* need to modify buy url */
@@ -143,6 +144,8 @@ public class HostPluginController extends PluginController<PluginForHost> {
                             ap.setPremiumUrl(purl);
                             ap.setHasConfig(plg.hasConfig());
                             l.setHasConfig(plg.hasConfig());
+                            l.setPremium(ap.isPremium());
+                            l.setPremiumUrl(purl);
                             ret.add(l);
                             save.add(ap);
                             Log.L.finer("@HostPlugin ok:" + simpleName + " " + names[i]);
