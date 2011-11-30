@@ -20,6 +20,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import jd.PluginWrapper;
+import jd.config.Property;
 import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
@@ -169,7 +170,7 @@ public class VimeoCom extends PluginForHost {
                 account.setProperty("pass", account.getPass());
                 account.setProperty("cookies", cookies);
             } catch (final PluginException e) {
-                account.setProperty("cookies", null);
+                account.setProperty("cookies", Property.NULL);
                 throw e;
             }
         }

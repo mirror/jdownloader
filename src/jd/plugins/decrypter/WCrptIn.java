@@ -24,6 +24,7 @@ import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
+import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
@@ -98,7 +99,24 @@ public class WCrptIn extends PluginForDecrypt {
         logger.info("Failed to get the links via DLC, trying webdecryption...");
         String[] links = br.getRegex("onclick=\\'mark_as_downloaded\\(\"\\d+\"\\);\\' href=\\'(http://wcrypt.in/.*?)\\'").getColumn(0);
         if (links == null || links.length == 0) links = br.getRegex("\\'(http://wcrypt\\.in/folder/file/[a-z0-9]+/[a-z0-9]+/)\\' ").getColumn(0);
-        if (links == null || links.length == 0) return null;
+        if (links == null || links.length == 0) {
+            /** CNL handling */
+            if (br.containsHTML("flash/addcrypted2")) {
+                final String jk = br.getRegex("type=\"hidden\" name=\"jk\" value=\"(.*?)\"").getMatch(0);
+                final String crypted = br.getRegex("type=\\'hidden\\' name=\\'crypted\\' value=\\'(.*?)\\'").getMatch(0);
+                if (jk != null && crypted != null) {
+                    final Browser cnlbr = new Browser();
+                    cnlbr.setConnectTimeout(5000);
+                    cnlbr.getHeaders().put("jd.randomNumber", System.getProperty("jd.randomNumber"));
+                    try {
+                        cnlbr.postPage("http://127.0.0.1:9666/flash/addcrypted2", "passwords=&source=" + Encoding.urlEncode(parameter) + "&jk=" + Encoding.urlEncode(jk) + "&crypted=" + Encoding.urlEncode(crypted));
+                        if (cnlbr.containsHTML("success")) { return decryptedLinks; }
+                    } catch (final Throwable e) {
+                    }
+                }
+            }
+            return null;
+        }
         progress.setRange(links.length);
         for (String singleLink : links) {
             br.getPage(singleLink);
