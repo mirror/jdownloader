@@ -23,8 +23,6 @@ import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
 import jd.PluginWrapper;
-import jd.config.Configuration;
-import jd.config.SubConfiguration;
 import jd.gui.UserIO;
 import jd.http.Browser;
 import jd.http.RandomUserAgent;
@@ -96,8 +94,6 @@ public class IFileIt extends PluginForHost {
         br2.setReadTimeout(40 * 1000);
         xmlrequest(br2, finaldownlink, "");
         if (!br2.containsHTML("status\":\"ok\"")) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-
-        SubConfiguration.getConfig("JAC").setProperty(Configuration.PARAM_CAPTCHA_JAC_DISABLE, true);
 
         if (br2.containsHTML("download:captcha")) {
             // Old captcha handling
