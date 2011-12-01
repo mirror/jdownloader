@@ -26,15 +26,14 @@ import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "protect-my-links.com" }, urls = { "http://[\\w\\.]*?protect-my-links\\.com/\\?id=[a-z0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "protect-my-links.com" }, urls = { "http://(www\\.)?protect-my-links\\.com/\\?id=[a-z0-9]+" }, flags = { 0 })
 public class PrtcMyLnksCm extends PluginForDecrypt {
 
     public PrtcMyLnksCm(PluginWrapper wrapper) {
@@ -45,11 +44,8 @@ public class PrtcMyLnksCm extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-        FilePackage fp = FilePackage.getInstance();
         br.setFollowRedirects(false);
         br.getPage(parameter);
-        boolean decrypterBroken = false;
-        if (decrypterBroken) return null;
 
         /* Error handling */
         if (br.containsHTML("This data has been removed by the owner")) {
@@ -61,11 +57,11 @@ public class PrtcMyLnksCm extends PluginForDecrypt {
         /* File package handling */
         for (int i = 0; i <= 5; i++) {
             Form captchaForm = br.getForm(1);
-            if (captchaForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (captchaForm == null) return null;
             String passCode = null;
             String captchalink0 = br.getRegex("src=\"(mUSystem.*?)\"").getMatch(0);
             String captchalink = "http://protect-my-links.com/" + captchalink0;
-            if (captchalink0.contains("null")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (captchalink0.contains("null")) return null;
             String code = getCaptchaCode(captchalink, param);
             captchaForm.put("captcha", code);
 
@@ -77,10 +73,9 @@ public class PrtcMyLnksCm extends PluginForDecrypt {
             if (br.containsHTML("Captcha is not valid") || br.containsHTML("Password is not valid")) continue;
             break;
         }
-        if (br.containsHTML("Captcha is not valid")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-        String fpName = br.getRegex("h1 class=\"pmclass\">(.*?)</h1></td>").getMatch(0).trim();
-        fp.setName(fpName);
-        String[] links = br.getRegex("><a href='(/\\?p=.*?)'").getColumn(0);
+        if (br.containsHTML("Captcha is not valid")) throw new DecrypterException(DecrypterException.CAPTCHA);
+        final String fpName = br.getRegex("h1 class=\"pmclass\">(.*?)</h1></td>").getMatch(0);
+        String[] links = br.getRegex("><a href=\\'(/\\?p=.*?)\\'").getColumn(0);
         if (links == null || links.length == 0) return null;
         progress.setRange(links.length);
         for (String psp : links) {
@@ -100,7 +95,11 @@ public class PrtcMyLnksCm extends PluginForDecrypt {
             decryptedLinks.add(createDownloadlink(finallink));
             progress.increase(1);
         }
-        fp.addLinks(decryptedLinks);
+        if (fpName != null) {
+            FilePackage fp = FilePackage.getInstance();
+            fp.setName(fpName.trim());
+            fp.addLinks(decryptedLinks);
+        }
         return decryptedLinks;
     }
 
