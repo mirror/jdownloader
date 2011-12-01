@@ -38,7 +38,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "4shared.com" }, urls = { "http://[\\w\\.]*?4shared(-china)?\\.com/(\"|\r*?\n*?$|dir/.+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "4shared.com" }, urls = { "http://[\\w\\.]*?4shared(-china)?\\.com/(\"|\r*?\n*?$|dir/.+|folder/.+)" }, flags = { 0 })
 public class FrShrdFldr extends PluginForDecrypt {
 
     private final static double RANDOM = Math.random();
@@ -50,7 +50,8 @@ public class FrShrdFldr extends PluginForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
+        String parameter = param.toString();
+        parameter = parameter.replaceFirst("com/folder/", "com/dir/");
         br.setFollowRedirects(true);
         try {
             br.setCookie(getHost(), "4langcookie", "en");
