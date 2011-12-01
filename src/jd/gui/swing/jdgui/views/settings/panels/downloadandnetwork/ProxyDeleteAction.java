@@ -50,6 +50,7 @@ public class ProxyDeleteAction extends AbstractRemoveAction {
         if (!isEnabled()) return;
         IOEQ.add(new Runnable() {
             public void run() {
+                if (selected == null) selected = table.getExtTableModel().getSelectedObjects();
                 for (ProxyInfo proxy : selected) {
                     ProxyController.getInstance().remove(proxy);
                 }

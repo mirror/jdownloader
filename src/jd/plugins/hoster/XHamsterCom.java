@@ -102,11 +102,9 @@ public class XHamsterCom extends PluginForHost {
 
     public String getDllink() throws IOException, PluginException {
         String server = br.getRegex("\\'srv\\': \\'(.*?)\\'").getMatch(0);
-        String type = br.getRegex("\\'type\\':\\'(.*?)\\'").getMatch(0);
-        if (type == null) type = "flv";
         String file = br.getRegex("\\'file\\': \\'(.*?)\\'").getMatch(0);
         if (server == null || file == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        String dllink = server + "/" + type + "2/" + file;
+        String dllink = server + "/key=" + file;
         return dllink;
     }
 
