@@ -28,13 +28,16 @@ public class PluginController<T extends Plugin> {
 
         final ArrayList<PluginInfo<T>> ret = new ArrayList<PluginInfo<T>>();
         final String pkg = hosterpath.replace("/", ".");
-        for (final File f : files) {
-            try {
-                String classFileName = f.getName().substring(0, f.getName().length() - 6);
-                ret.add(new PluginInfo<T>(f, (Class<T>) cl.loadClass(pkg + "." + classFileName)));
-                Log.L.finer("Loaded from: " + cl.getResource(hosterpath + "/" + f.getName()));
-            } catch (Throwable e) {
-                Log.exception(e);
+        if (files != null) {
+            for (final File f : files) {
+
+                try {
+                    String classFileName = f.getName().substring(0, f.getName().length() - 6);
+                    ret.add(new PluginInfo<T>(f, (Class<T>) cl.loadClass(pkg + "." + classFileName)));
+                    Log.L.finer("Loaded from: " + cl.getResource(hosterpath + "/" + f.getName()));
+                } catch (Throwable e) {
+                    Log.exception(e);
+                }
             }
         }
         return ret;
