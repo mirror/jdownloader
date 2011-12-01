@@ -238,21 +238,6 @@ public class ProxyTableModel extends ExtTableModel<ProxyInfo> {
             }
         });
 
-        this.addColumn(new ExtTextColumn<ProxyInfo>(_GUI._.gui_column_proxystatus(), this) {
-
-            private static final long serialVersionUID = -7209180150340921804L;
-
-            @Override
-            public boolean isHidable() {
-                return false;
-            }
-
-            @Override
-            public String getStringValue(ProxyInfo value) {
-                return "BAL";
-                // return value.getStatus().name();
-            }
-        });
         this.addColumn(new ExtCheckColumn<ProxyInfo>(_GUI._.gui_column_use(), this) {
 
             private static final long serialVersionUID = -4667150369226691276L;

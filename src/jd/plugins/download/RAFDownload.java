@@ -20,12 +20,11 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.util.Date;
 import java.util.logging.Level;
 
 import jd.controlling.JDLogger;
 import jd.http.Request;
-import jd.nutils.JDHash;
-import jd.nutils.io.JDIO;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
@@ -37,6 +36,8 @@ import org.appwork.utils.Exceptions;
 import org.appwork.utils.Hash;
 import org.appwork.utils.IO;
 import org.appwork.utils.Regex;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.logging.Log;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.translate._JDT;
 
@@ -63,23 +64,75 @@ public class RAFDownload extends DownloadInterface {
             } catch (Throwable e) {
             }
         }
-        /*
-         * workaround for old Idle bug when one chunk got idle but download is
-         * okay
-         */
         downloadLink.getLinkStatus().setStatusText(null);
         if (!handleErrors()) return;
         try {
-            downloadLink.getLinkStatus().setStatusText(null);
             File part = new File(downloadLink.getFileOutput() + ".part");
+            /* lets check the hash/crc/sfv */
+            if (JsonConfig.create(GeneralSettings.class).isHashCheckEnabled()) {
+                synchronized (HASHCHECKLOCK) {
+                    /*
+                     * we only want one hashcheck running at the same time. many
+                     * finished downloads can cause heavy diskusage here
+                     */
+                    String hash = null;
+                    String type = null;
+                    Boolean success = null;
+                    if ((hash = downloadLink.getMD5Hash()) != null) {
+                        /* MD5 Check */
+                        type = "MD5";
+                        downloadLink.getLinkStatus().setStatusText(_JDT._.system_download_doCRC2("MD5"));
+                        downloadLink.requestGuiUpdate();
+                        String hashFile = Hash.getMD5(part);
+                        success = hash.equalsIgnoreCase(hashFile);
+                    } else if ((hash = downloadLink.getSha1Hash()) != null) {
+                        /* SHA1 Check */
+                        type = "MD5";
+                        downloadLink.getLinkStatus().setStatusText(_JDT._.system_download_doCRC2("SHA1"));
+                        downloadLink.requestGuiUpdate();
+                        String hashFile = Hash.getSHA1(part);
+                        success = hash.equalsIgnoreCase(hashFile);
+                    } else {
+                        DownloadLink sfv = null;
+                        synchronized (downloadLink.getFilePackage()) {
+                            for (DownloadLink dl : downloadLink.getFilePackage().getChildren()) {
+                                if (dl.getFileOutput().toLowerCase().endsWith(".sfv")) {
+                                    sfv = dl;
+                                    break;
+                                }
+                            }
+                        }
+                        /* SFV File Available, lets use it */
+                        if (sfv != null && sfv.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
+                            String sfvText = IO.readFileToString(new File(sfv.getFileOutput()));
+                            if (sfvText != null) {
+                                /* Delete comments */
+                                sfvText = sfvText.replaceAll(";(.*?)[\r\n]{1,2}", "");
+                                if (sfvText != null && sfvText.contains(downloadLink.getName())) {
+                                    downloadLink.getLinkStatus().setStatusText(_JDT._.system_download_doCRC2("CRC32"));
+                                    downloadLink.requestGuiUpdate();
+                                    type = "CRC32";
+                                    String crc = Long.toHexString(Hash.getCRC32(part));
+                                    success = new Regex(sfvText, downloadLink.getName() + "\\s*" + crc).matches();
+                                }
+                            }
+                        }
+                    }
+                    if (success != null) {
+                        hashCheckFinished(type, success);
+                    }
+                }
+            }
             File complete = new File(downloadLink.getFileOutput());
             boolean renameOkay = false;
             int retry = 5;
+            /* rename part file to final filename */
             while (retry > 0) {
-                if (part.renameTo(complete)) {
-                    renameOkay = true;
+                /* first we try normal rename method */
+                if ((renameOkay = part.renameTo(complete)) == true) {
                     break;
                 }
+                /* this may fail because something might lock the file */
                 try {
                     Thread.sleep(1000);
                 } catch (InterruptedException e) {
@@ -87,17 +140,18 @@ public class RAFDownload extends DownloadInterface {
                 }
                 retry--;
             }
-
+            /* Fallback */
             if (renameOkay == false) {
+                /* rename failed, lets try fallback */
                 logger.severe("Could not rename file " + part + " to " + complete);
                 logger.severe("Try copy workaround!");
-                boolean workaroundOkay = false;
                 try {
                     if (Application.getJavaVersion() >= Application.JAVA16) {
-                        if (part.getParentFile().getFreeSpace() < part.length()) { throw new Throwable("not enough diskspace free to copy part to complete file"); }
+                        long free = 0;
+                        if ((free = part.getParentFile().getFreeSpace()) > 0 && free < part.length()) { throw new Throwable("not enough diskspace free to copy part to complete file"); }
                     }
                     IO.copyFile(part, complete);
-                    workaroundOkay = true;
+                    renameOkay = true;
                     part.deleteOnExit();
                     part.delete();
                 } catch (Throwable e) {
@@ -106,77 +160,25 @@ public class RAFDownload extends DownloadInterface {
                     complete.delete();
                     complete.deleteOnExit();
                 }
-                if (!workaroundOkay) {
+                if (!renameOkay) {
                     logger.severe("Copy workaround: :(");
                     error(LinkStatus.ERROR_LOCAL_IO, _JDT._.system_download_errors_couldnotrename());
                 } else {
                     logger.severe("Copy workaround: :)");
                 }
             }
-
-            /*
-             * CRC/SFV Check
-             */
-
-            if (JsonConfig.create(GeneralSettings.class).isHashCheckEnabled()) {
-                synchronized (HASHCHECKLOCK) {
-                    /*
-                     * we only want one hashcheck running at the same time. many
-                     * finished downloads can cause heavy diskusage here
-                     */
-                    String hashType = null;
-                    boolean success = false;
-                    DownloadLink sfv = null;
-                    synchronized (downloadLink.getFilePackage()) {
-                        for (DownloadLink dl : downloadLink.getFilePackage().getChildren()) {
-                            if (dl.getFileOutput().toLowerCase().endsWith(".sfv")) {
-                                sfv = dl;
-                                break;
-                            }
-                        }
-                    }
-                    if (sfv != null && sfv.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
-                        downloadLink.getLinkStatus().setStatusText(_JDT._.system_download_doCRC2("CRC32"));
-                        downloadLink.requestGuiUpdate();
-
-                        String sfvText = JDIO.readFileToString(new File(sfv.getFileOutput()));
-                        /* Delete comments */
-                        if (sfvText != null) sfvText = sfvText.replaceAll(";(.*?)[\r\n]{1,2}", "");
-                        File outputFile = new File(downloadLink.getFileOutput());
-                        if (sfvText != null && sfvText.contains(outputFile.getName())) {
-                            String crc = Long.toHexString(Hash.getCRC32(outputFile));
-
-                            hashType = "CRC32";
-                            success = new Regex(sfvText, outputFile.getName() + "\\s*" + crc).matches();
-                        } else {
-                            downloadLink.getLinkStatus().setStatusText(null);
-                            downloadLink.requestGuiUpdate();
-                        }
-                    }
-
-                    if (hashType == null) {
-                        if (downloadLink.getMD5Hash() != null) {
-                            downloadLink.getLinkStatus().setStatusText(_JDT._.system_download_doCRC2("MD5"));
-                            downloadLink.requestGuiUpdate();
-
-                            hashType = "MD5";
-                            success = downloadLink.getMD5Hash().equalsIgnoreCase(JDHash.getMD5(new File(downloadLink.getFileOutput())));
-                        } else if (downloadLink.getSha1Hash() != null) {
-                            downloadLink.getLinkStatus().setStatusText(_JDT._.system_download_doCRC2("SHA1"));
-                            downloadLink.requestGuiUpdate();
-
-                            hashType = "SHA1";
-                            success = downloadLink.getSha1Hash().equalsIgnoreCase(JDHash.getSHA1(new File(downloadLink.getFileOutput())));
-                        }
-                    }
-
-                    if (hashType != null) {
-                        hashCheckFinished(hashType, success);
-                    }
+            if (renameOkay) {
+                Date last = TimeFormatter.parseDateString(connection.getHeaderField("Last-Modified"));
+                if (last != null && JsonConfig.create(GeneralSettings.class).isUseOriginalLastModified()) {
+                    /* set original lastModified timestamp */
+                    complete.setLastModified(last.getTime());
+                } else {
+                    /* set current timestamp as lastModified timestamp */
+                    complete.setLastModified(System.currentTimeMillis());
                 }
             }
         } catch (Exception e) {
-            JDLogger.exception(e);
+            Log.exception(e);
             addException(e);
         }
     }
@@ -219,11 +221,9 @@ public class RAFDownload extends DownloadInterface {
 
     private void setupVirginStart() throws FileNotFoundException {
         Chunk chunk;
-
         totaleLinkBytesLoaded = 0;
         downloadLink.setDownloadCurrent(0);
         long partSize = fileSize / getChunkNum();
-
         if (connection.getRange() != null) {
             if ((connection.getRange()[1] == connection.getRange()[2] - 1) || (connection.getRange()[1] == connection.getRange()[2])) {
                 logger.warning("Chunkload protection. this may cause traffic errors");

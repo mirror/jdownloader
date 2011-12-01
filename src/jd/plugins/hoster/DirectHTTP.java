@@ -20,14 +20,9 @@ import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
-import java.util.Locale;
 
 import jd.PluginWrapper;
-import jd.config.ConfigContainer;
-import jd.config.ConfigEntry;
 import jd.controlling.HTACCESSController;
 import jd.controlling.JDLogger;
 import jd.http.Browser;
@@ -51,8 +46,6 @@ import jd.utils.locale.JDL;
  */
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "DirectHTTP", "http links" }, urls = { "directhttp://.+", "https?viajd://[\\d\\w\\.:\\-@]*/.*\\.(3gp|7zip|7z|abr|ac3|aiff|aifc|aif|ai|au|avi|bin|bat|bz2|cbr|cbz|ccf|cue|cvd|chm|dta|deb|divx|djvu|dlc|dmg|doc|docx|dot|eps|exe|ff|flv|flac|f4v|gsd|gif|gz|iwd|idx|iso|ipsw|java|jar|jpg|jpeg|jdeatme|load|mws|mv|m4v|m4a|mkv|mp2|mp3|mp4|mov|movie|mpeg|mpe|mpg|msi|msu|msp|nfo|npk|oga|ogg|ogv|otrkey|par2|pkg|png|pdf|pptx|ppt|pps|ppz|pot|psd|qt|rmvb|rm|rar|ram|ra|rev|rnd|r\\d+|rpm|run|rsdf|reg|rtf|shnf|sh(?!tml)|ssa|smi|sub|srt|snd|sfv|swf|tar|tiff|tif|ts|txt|viv|vivo|vob|webm|wav|wmv|wma|xla|xls|xpi|zeno|zip|z\\d+|_[_a-z]{2}|\\d+(?=$|\"|\r|\n))" }, flags = { 2, 0 })
 public class DirectHTTP extends PluginForHost {
-
-    private static final String LASTMODIFIED = "LASTMODIFIED";
 
     public static class Recaptcha {
 
@@ -348,7 +341,6 @@ public class DirectHTTP extends PluginForHost {
 
     public DirectHTTP(final PluginWrapper wrapper) {
         super(wrapper);
-        this.setConfigElements();
         if (hotFixSynthethica) {
             try {
                 /*
@@ -483,7 +475,7 @@ public class DirectHTTP extends PluginForHost {
         } else {
             this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, downloadLink.getDownloadURL(), resume, chunks);
         }
-        String lastModified = dl.getConnection().getHeaderField("Last-Modified");
+
         if (!this.dl.startDownload()) {
             try {
                 if (dl.externalDownloadStop()) return;
@@ -502,35 +494,7 @@ public class DirectHTTP extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_RETRY);
                 }
             }
-        } else {
-            try {
-                if (this.getPluginConfig().getBooleanProperty(LASTMODIFIED, true)) {
-                    Date last = parseDateString(lastModified);
-                    if (last != null) {
-                        new File(downloadLink.getFileOutput()).setLastModified(last.getTime());
-                    }
-                }
-            } catch (final Throwable e) {
-                /* stable 09581 does not have access to this function */
-            }
         }
-    }
-
-    private final String[] dateformats = new String[] { "EEE, dd-MMM-yy HH:mm:ss z", "EEE, dd-MMM-yyyy HH:mm:ss z", "EEE, dd MMM yyyy HH:mm:ss z", "EEE MMM dd HH:mm:ss z yyyy", "EEE, dd-MMM-yyyy HH:mm:ss z", "EEEE, dd-MMM-yy HH:mm:ss z" };
-
-    public Date parseDateString(final String date) {
-        Date expireDate = null;
-        for (final String format : dateformats) {
-            try {
-                final SimpleDateFormat sdf = new SimpleDateFormat(format, Locale.UK);
-                sdf.setLenient(false);
-                expireDate = sdf.parse(date);
-                break;
-            } catch (final Exception e2) {
-            }
-        }
-        if (expireDate == null) { return null; }
-        return expireDate;
     }
 
     private URLConnectionAdapter prepareConnection(final Browser br, final DownloadLink downloadLink) throws IOException {
@@ -657,27 +621,6 @@ public class DirectHTTP extends PluginForHost {
 
     @Override
     public void resetPluginGlobals() {
-    }
-
-    private boolean oldStyle() {
-        String prev = JDUtilities.getRevision();
-        if (prev == null || prev.length() < 3) {
-            prev = "0";
-        } else {
-            prev = prev.replaceAll(",|\\.", "");
-        }
-        int rev = Integer.parseInt(prev);
-        if (rev < 10000) return true;
-        return false;
-    }
-
-    private void setConfigElements() {
-        if (oldStyle()) {
-        } else {
-            ConfigEntry ce;
-            getConfig().addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), LASTMODIFIED, JDL.L("plugins.http.lastmodified", "Set file time to last modified time(server).")));
-            ce.setDefaultValue(true);
-        }
     }
 
     private void setCustomHeaders(final Browser br, final DownloadLink downloadLink) {

@@ -422,6 +422,8 @@ public class Multi extends IExtraction {
                             logger.warning("Could not set last write/modified time for " + item.getPath());
                         }
                     }
+                } else {
+                    extractTo.setLastModified(System.currentTimeMillis());
                 }
 
                 // TODO: Write an proper CRC check

@@ -90,6 +90,12 @@ public interface GeneralSettings extends ConfigInterface {
     void setHashCheckEnabled(boolean b);
 
     @AboutConfig
+    @DefaultBooleanValue(false)
+    boolean isUseOriginalLastModified();
+
+    void setUseOriginalLastModified(boolean b);
+
+    @AboutConfig
     @DefaultBooleanValue(true)
     boolean isAutoOpenContainerAfterDownload();
 

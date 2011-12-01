@@ -1309,7 +1309,6 @@ abstract public class DownloadInterface {
                 return false;
             }
             if (preDownloadCheckFailed(downloadLink)) return false;
-
             setupChunks();
             waitForChunks();
             onChunksReady();
