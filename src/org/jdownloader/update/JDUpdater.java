@@ -22,6 +22,7 @@ import org.appwork.storage.config.JsonConfig;
 import org.appwork.update.exchange.UpdateFile;
 import org.appwork.update.exchange.UpdatePackage;
 import org.appwork.update.updateclient.InstalledFile;
+import org.appwork.update.updateclient.RestartEvent;
 import org.appwork.update.updateclient.UpdateHttpClient;
 import org.appwork.update.updateclient.Updater;
 import org.appwork.update.updateclient.UpdaterState;
