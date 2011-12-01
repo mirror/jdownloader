@@ -31,7 +31,7 @@ import jd.plugins.PluginForHost;
 import jd.utils.JDHexUtils;
 
 // Altes Decrypterplugin bis Revision 14394 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "myvideo.de" }, urls = { "http://(www\\.)?myvideo\\.de/watch/\\d+/\\w+" }, flags = { PluginWrapper.DEBUG_ONLY })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "myvideo.de" }, urls = { "http://(www\\.)?myvideo\\.(de|at)/watch/\\d+(/\\w+)?" }, flags = { PluginWrapper.DEBUG_ONLY })
 public class MyVideo extends PluginForHost {
 
     private String       CLIPURL  = null;
@@ -54,6 +54,11 @@ public class MyVideo extends PluginForHost {
     @Override
     public String getAGBLink() {
         return "http://www.myvideo.de/AGB";
+    }
+
+    @Override
+    public void correctDownloadLink(DownloadLink link) throws Exception {
+        link.setUrlDownload(link.getDownloadURL().replaceFirst("myvideo.at/", "myvideo.de/"));
     }
 
     @Override
