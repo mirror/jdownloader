@@ -1,5 +1,7 @@
 package jd.controlling.authentication;
 
+import java.util.Locale;
+
 import org.appwork.storage.Storable;
 
 public class AuthenticationInfo implements Storable {
@@ -8,7 +10,8 @@ public class AuthenticationInfo implements Storable {
     }
 
     public static enum Type {
-        FTP, HTTP
+        FTP,
+        HTTP
     }
 
     private boolean enabled = true;
@@ -50,7 +53,11 @@ public class AuthenticationInfo implements Storable {
     }
 
     public void setHostmask(String hostmask) {
-        this.hostmask = hostmask;
+        if (hostmask == null) {
+            this.hostmask = null;
+        } else {
+            this.hostmask = hostmask.toLowerCase(Locale.ENGLISH);
+        }
     }
 
     private String username;

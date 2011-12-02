@@ -16,10 +16,7 @@
 
 package jd.controlling;
 
-import jd.http.Browser;
-import jd.nutils.encoding.Encoding;
-
-import org.appwork.utils.Regex;
+import jd.controlling.authentication.AuthenticationController;
 
 /**
  * @Deprecated Only here for stable plugin compatibility
@@ -31,36 +28,10 @@ public class HTACCESSController {
     private HTACCESSController() {
     }
 
-    public static String[] getUserDatafromBasicauth(String basicauth) {
-        if (basicauth == null || basicauth.length() == 0) return null;
-        if (basicauth.startsWith("Basic")) basicauth = new Regex(basicauth, "Basic (.*?)$").getMatch(0);
-        basicauth = Encoding.Base64Decode(basicauth);
-        final String[] dat = new Regex(basicauth, ("(.*?):(.*?)$")).getRow(0);
-        return new String[] { dat[0], dat[1] };
-    }
-
-    public void add(final String url, final String basicauth) {
-        if (url != null && url.length() > 0) {
-            final String host = Browser.getHost(url.trim()).toLowerCase();
-            final String[] user = getUserDatafromBasicauth(basicauth);
-            if (user == null) return;
-
-        }
-    }
-
     public String get(final String url) {
-        if (url != null && url.length() > 0) {
-            final String host = Browser.getHost(url.trim()).toLowerCase();
-
-            // return "Basic " + Encoding.Base64Encode(LIST.get(host)[0] + ":" +
-            // LIST.get(host)[1]);
-
-        }
-        return null;
-    }
-
-    public void remove(final String url) {
-
+        String[] ret = AuthenticationController.getInstance().getLogins(url);
+        if (ret == null) return null;
+        return ret[0] + ":" + ret[1];
     }
 
     @Deprecated

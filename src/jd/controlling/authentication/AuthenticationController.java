@@ -2,12 +2,16 @@ package jd.controlling.authentication;
 
 import java.util.ArrayList;
 
+import jd.controlling.authentication.AuthenticationInfo.Type;
+import jd.http.Browser;
+
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.event.predefined.changeevent.ChangeEvent;
 import org.appwork.utils.event.predefined.changeevent.ChangeEventSender;
+import org.appwork.utils.logging.Log;
 
 public class AuthenticationController {
     private static final AuthenticationController INSTANCE = new AuthenticationController();
@@ -37,9 +41,7 @@ public class AuthenticationController {
         ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
             @Override
             public void run() {
-                synchronized (AuthenticationController.this) {
-                    config.setList(list);
-                }
+                config.setList(list);
             }
 
             @Override
@@ -57,6 +59,7 @@ public class AuthenticationController {
         return new ArrayList<AuthenticationInfo>(list);
     }
 
+    /* remove invalid entries...without hostmask or without logins */
     private ArrayList<AuthenticationInfo> cleanup(ArrayList<AuthenticationInfo> input) {
         if (input == null) return null;
         ArrayList<AuthenticationInfo> ret = new ArrayList<AuthenticationInfo>(input.size());
@@ -71,7 +74,9 @@ public class AuthenticationController {
     public void add(AuthenticationInfo a) {
         if (a == null) return;
         synchronized (this) {
-            list.add(a);
+            ArrayList<AuthenticationInfo> newList = new ArrayList<AuthenticationInfo>(list);
+            newList.add(a);
+            list = newList;
             config.setList(list);
         }
         eventSender.fireEvent(new ChangeEvent(this));
@@ -80,7 +85,9 @@ public class AuthenticationController {
     public void remove(AuthenticationInfo a) {
         if (a == null) return;
         synchronized (this) {
-            list.remove(a);
+            ArrayList<AuthenticationInfo> newList = new ArrayList<AuthenticationInfo>(list);
+            newList.remove(a);
+            list = newList;
             config.setList(list);
         }
         eventSender.fireEvent(new ChangeEvent(this));
@@ -89,10 +96,55 @@ public class AuthenticationController {
     public void remove(ArrayList<AuthenticationInfo> selectedObjects) {
         if (selectedObjects == null) return;
         synchronized (this) {
-            list.removeAll(selectedObjects);
+            ArrayList<AuthenticationInfo> newList = new ArrayList<AuthenticationInfo>(list);
+            newList.removeAll(selectedObjects);
+            list = newList;
             config.setList(list);
         }
         eventSender.fireEvent(new ChangeEvent(this));
     }
 
+    public String[] getLogins(String url) {
+        if (StringUtils.isEmpty(url)) return null;
+        AuthenticationInfo.Type type = null;
+        if (url.startsWith("ftp")) {
+            type = Type.FTP;
+        } else if (url.startsWith("http")) {
+            type = Type.HTTP;
+        } else {
+            Log.L.info("Unknown Protocoll: " + url);
+            return null;
+        }
+        ArrayList<AuthenticationInfo> llist = list;
+        AuthenticationInfo bestMatch = null;
+        String urlHost = Browser.getHost(url, true);
+        for (AuthenticationInfo info : llist) {
+            if (!info.isEnabled()) continue;
+            String authHost = info.getHostmask();
+            if (info.getType().equals(type) && !StringUtils.isEmpty(authHost)) {
+                boolean contains = false;
+                if (authHost.length() > urlHost.length()) {
+                    /* hostMask of AuthenticationInfo is longer */
+                    contains = authHost.contains(urlHost);
+                } else {
+                    /* hostMask of urlHost is longer */
+                    contains = urlHost.contains(authHost);
+                }
+                if (contains) {
+                    if (bestMatch == null) {
+                        /* our first hit */
+                        bestMatch = info;
+                    } else if (authHost.length() <= urlHost.length() && info.getHostmask().length() > bestMatch.getHostmask().length()) {
+                        /*
+                         * best match in case we have a longer contains length
+                         * but the authHost must not be longer than urlHost
+                         */
+                        bestMatch = info;
+                    }
+                }
+            }
+        }
+        if (bestMatch == null) return null;
+        return new String[] { bestMatch.getUsername(), bestMatch.getPassword() };
+    }
 }

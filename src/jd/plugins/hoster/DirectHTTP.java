@@ -362,28 +362,6 @@ public class DirectHTTP extends PluginForHost {
         }
     }
 
-    @SuppressWarnings("deprecation")
-    private void BasicAuthfromURL(final DownloadLink link) {
-        String url = null;
-        final String basicauth = new Regex(link.getDownloadURL(), "http.*?/([^/]{1}.*?)@").getMatch(0);
-        if (basicauth != null && basicauth.contains(":")) {
-            /* https */
-            url = new Regex(link.getDownloadURL(), "https.*?@(.+)").getMatch(0);
-            if (url != null) {
-                link.setUrlDownload("https://" + url);
-            } else {
-                /* http */
-                url = new Regex(link.getDownloadURL(), "http.*?@(.+)").getMatch(0);
-                if (url != null) {
-                    link.setUrlDownload("http://" + url);
-                } else {
-                    logger.severe("Could not parse basicAuth from " + link.getDownloadURL());
-                }
-            }
-            HTACCESSController.getInstance().add(link.getDownloadURL(), Encoding.Base64Encode(basicauth));
-        }
-    }
-
     @Override
     public void correctDownloadLink(final DownloadLink link) {
         if (link.getDownloadURL().startsWith("directhttp")) {
@@ -393,7 +371,6 @@ public class DirectHTTP extends PluginForHost {
             /* this extension allows to manually add unknown extensions */
             link.setUrlDownload(link.getDownloadURL().replaceAll("\\.jdeatme$", ""));
         }
-        this.BasicAuthfromURL(link);
     }
 
     @Override
@@ -514,42 +491,53 @@ public class DirectHTTP extends PluginForHost {
         this.setBrowserExclusive();
         /* disable gzip, because current downloadsystem cannot handle it correct */
         this.br.getHeaders().put("Accept-Encoding", "");
-        String basicauth = HTACCESSController.getInstance().get(downloadLink.getDownloadURL());
-        if (basicauth == null) {
-            basicauth = downloadLink.getStringProperty("pass", null);
-            if (basicauth != null) {
-                basicauth = "Basic " + Encoding.Base64Encode(basicauth);
-            }
+        String authinURL = new Regex(downloadLink.getDownloadURL(), "http.*?/([^/]{1}.*?)@").getMatch(0);
+        String authSaved = null;
+        String authProperty = null;
+        ArrayList<String> pwTries = new ArrayList<String>();
+        String preAuth = downloadLink.getStringProperty("auth", null);
+        if (preAuth != null) pwTries.add(preAuth);
+        pwTries.add("");
+        if (authinURL != null) {
+            /* take auth from url */
+            pwTries.add("Basic " + Encoding.Base64Encode(authinURL));
         }
-        if (basicauth != null) {
-            this.br.getHeaders().put("Authorization", basicauth);
+        if ((authProperty = downloadLink.getStringProperty("pass", null)) != null) {
+            /* convert property to auth */
+            pwTries.add("Basic " + Encoding.Base64Encode(authProperty));
+        }
+        if ((authSaved = HTACCESSController.getInstance().get(downloadLink.getDownloadURL())) != null) {
+            /* use auth from saved ones */
+            pwTries.add("Basic " + Encoding.Base64Encode(authSaved));
         }
         this.br.setFollowRedirects(true);
         URLConnectionAdapter urlConnection = null;
         try {
-            urlConnection = this.prepareConnection(this.br, downloadLink);
-            if (urlConnection.getResponseCode() == 401) {
-                if (basicauth != null) {
-                    HTACCESSController.getInstance().remove(downloadLink.getDownloadURL());
+            String basicauth = null;
+            for (String pw : pwTries) {
+                if (pw != null && pw.length() > 0) {
+                    basicauth = pw;
+                    this.br.getHeaders().put("Authorization", pw);
+                } else {
+                    basicauth = null;
+                    this.br.getHeaders().remove("Authorization");
                 }
-                urlConnection.disconnect();
+                urlConnection = this.prepareConnection(this.br, downloadLink);
+                if (urlConnection.getResponseCode() == 401) {
+                    urlConnection.disconnect();
+                } else {
+                    break;
+                }
+            }
+            if (urlConnection.getResponseCode() == 401) {
                 basicauth = this.getBasicAuth(downloadLink);
                 if (basicauth == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, JDL.L("plugins.hoster.httplinks.errors.basicauthneeded", "BasicAuth needed")); }
                 this.br.getHeaders().put("Authorization", basicauth);
                 urlConnection = this.prepareConnection(this.br, downloadLink);
-                if (urlConnection.getResponseCode() == 401) {
-                    urlConnection.disconnect();
-                    HTACCESSController.getInstance().remove(downloadLink.getDownloadURL());
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, JDL.L("plugins.hoster.httplinks.errors.basicauthneeded", "BasicAuth needed"));
-                } else {
-                    HTACCESSController.getInstance().add(downloadLink.getDownloadURL(), basicauth);
-                }
+                if (urlConnection.getResponseCode() == 401) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, JDL.L("plugins.hoster.httplinks.errors.basicauthneeded", "BasicAuth needed")); }
             }
-            if (urlConnection.getResponseCode() == 404 || !urlConnection.isOK()) {
-                urlConnection.disconnect();
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-
+            if (urlConnection.getResponseCode() == 404 || !urlConnection.isOK()) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+            downloadLink.setProperty("auth", basicauth);
             this.contentType = urlConnection.getContentType();
             if (this.contentType.startsWith("text/html") && downloadLink.getBooleanProperty(DirectHTTP.TRY_ALL, false) == false) {
                 /* jd does not want to download html content! */
@@ -598,8 +586,9 @@ public class DirectHTTP extends PluginForHost {
         } catch (final Exception e) {
             JDLogger.exception(e);
         } finally {
-            if (urlConnection != null) {
+            try {
                 urlConnection.disconnect();
+            } catch (final Throwable e) {
             }
         }
         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
