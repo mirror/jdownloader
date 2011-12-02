@@ -14,6 +14,7 @@ import java.awt.event.WindowListener;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Iterator;
 
 import javax.swing.BorderFactory;
@@ -58,33 +59,33 @@ import org.jdownloader.settings.GeneralSettings;
 
 public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
 
-    private ExtTextArea            input;
+    private ExtTextArea                         input;
 
-    private SearchComboBox<String> destination;
-    private JButton                browseButton;
+    private SearchComboBox<DownloadPath>        destination;
+    private JButton                             browseButton;
 
-    private SearchComboBox<String> packagename;
+    private SearchComboBox<PackageHistoryEntry> packagename;
 
-    private JScrollPane            sp;
+    private JScrollPane                         sp;
 
-    private LinkgrabberSettings    config;
+    private LinkgrabberSettings                 config;
 
-    private ExtTextField           password;
+    private ExtTextField                        password;
 
-    private JButton                extractToggle;
+    private JButton                             extractToggle;
 
-    private JButton                confirmOptions;
+    private JButton                             confirmOptions;
 
-    private boolean                deepAnalyse = false;
+    private boolean                             deepAnalyse = false;
 
-    private ArrayList<String>      downloadDestinationHistory;
+    private ArrayList<DownloadPath>             downloadDestinationHistory;
 
-    private ArrayList<String>      packageHistory;
+    private ArrayList<PackageHistoryEntry>      packageHistory;
 
-    private JLabel                 errorLabel;
+    private JLabel                              errorLabel;
 
-    private DelayedRunnable        delayedValidate;
-    private WindowListener         listener    = null;
+    private DelayedRunnable                     delayedValidate;
+    private WindowListener                      listener    = null;
 
     public boolean isDeepAnalyse() {
         return deepAnalyse;
@@ -148,13 +149,38 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
         ret.setPackageName(packagename.getText());
         ret.setAutoExtract(config.isAutoExtractionEnabled());
         ret.setExtractPassword(password.getText());
-        if (ret.getPackageName() != null) {
-            packageHistory.add(ret.getPackageName());
+        if (!StringUtils.isEmpty(ret.getPackageName())) {
+            boolean found = false;
+            for (PackageHistoryEntry pe : packageHistory) {
+                if (pe.getName().equalsIgnoreCase(ret.getPackageName())) {
+                    pe.setTime(System.currentTimeMillis());
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                packageHistory.add(new PackageHistoryEntry(ret.getPackageName()));
+            }
             config.setPackageNameHistory(Lists.unique(packageHistory));
         }
-        downloadDestinationHistory.add(ret.getOutputFolder().getAbsolutePath());
+
+        boolean found = false;
+        for (DownloadPath pe : downloadDestinationHistory) {
+            if (pe.getPath().equalsIgnoreCase(ret.getOutputFolder().getAbsolutePath())) {
+                pe.setTime(System.currentTimeMillis());
+                found = true;
+                break;
+            }
+        }
+        if (!found) {
+            downloadDestinationHistory.add(new DownloadPath(ret.getOutputFolder().getAbsolutePath()));
+        }
+
         config.setDownloadDestinationHistory(Lists.unique(downloadDestinationHistory));
         config.setLatestDownloadDestinationFolder(ret.getOutputFolder().getAbsolutePath());
+
+        config.setAddDialogHeight(getDialog().getHeight());
+        config.setAddDialogWidth(getDialog().getWidth());
         return ret;
 
     }
@@ -164,16 +190,16 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
 
         MigPanel p = new MigPanel("ins 4,wrap 2", "[][grow,fill]", "[fill,grow][][][]");
 
-        destination = new SearchComboBox<String>() {
+        destination = new SearchComboBox<DownloadPath>() {
 
             @Override
-            protected Icon getIconForValue(String value) {
+            protected Icon getIconForValue(DownloadPath value) {
                 return null;
             }
 
             @Override
-            protected String getTextForValue(String value) {
-                return value;
+            protected String getTextForValue(DownloadPath value) {
+                return value == null ? null : value.getPath();
             }
 
             @Override
@@ -186,37 +212,56 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
         destination.setUnkownTextInputAllowed(true);
         destination.setBadColor(null);
         destination.setSelectedItem(null);
-        packagename = new SearchComboBox<String>() {
+        packagename = new SearchComboBox<PackageHistoryEntry>() {
 
             @Override
-            protected Icon getIconForValue(String value) {
+            protected Icon getIconForValue(PackageHistoryEntry value) {
                 return null;
             }
 
             @Override
-            protected String getTextForValue(String value) {
-                return value;
+            protected String getTextForValue(PackageHistoryEntry value) {
+                return value == null ? null : value.getName();
             }
         };
         packagename.setBadColor(null);
         packageHistory = config.getPackageNameHistory();
         if (packageHistory == null) {
-            packageHistory = new ArrayList<String>();
+            packageHistory = new ArrayList<PackageHistoryEntry>();
         }
-        Collections.sort(packageHistory);
+        for (Iterator<PackageHistoryEntry> it = packageHistory.iterator(); it.hasNext();) {
+            PackageHistoryEntry next = it.next();
+            if (next == null || StringUtils.isEmpty(next.getName())) {
+                it.remove();
+                continue;
+            }
+            if (packageHistory.size() > 25) {
+                // if list is very long, remove entries older than 30 days
+                if (System.currentTimeMillis() - next.getTime() > 60 * 60 * 24 * 30) {
+                    it.remove();
+                }
+            }
+
+        }
+        Collections.sort(packageHistory, new Comparator<PackageHistoryEntry>() {
+
+            public int compare(PackageHistoryEntry o1, PackageHistoryEntry o2) {
+                return o1.getName().compareToIgnoreCase(o2.getName());
+            }
+        });
         packagename.setList(packageHistory);
         packagename.setUnkownTextInputAllowed(true);
         packagename.setHelpText(_GUI._.AddLinksDialog_layoutDialogContent_packagename_help());
         packagename.setSelectedItem(null);
-        ArrayList<String> history = config.getDownloadDestinationHistory();
+        ArrayList<DownloadPath> history = config.getDownloadDestinationHistory();
         if (history == null) {
-            history = new ArrayList<String>();
+            history = new ArrayList<DownloadPath>();
         }
-        history.add(0, org.appwork.storage.config.JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder());
-        downloadDestinationHistory = history;
-        for (Iterator<String> it = downloadDestinationHistory.iterator(); it.hasNext();) {
-            String path = it.next();
-            if (!validateFolder(path)) it.remove();
+        history.add(0, new DownloadPath(org.appwork.storage.config.JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder()));
+        downloadDestinationHistory = Lists.unique(history);
+        for (Iterator<DownloadPath> it = downloadDestinationHistory.iterator(); it.hasNext();) {
+            DownloadPath path = it.next();
+            if (!validateFolder(path.getPath())) it.remove();
         }
 
         destination.setList(downloadDestinationHistory);
@@ -486,9 +531,19 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
 
     }
 
+    public void pack() {
+
+        this.getDialog().pack();
+
+    }
+
     @Override
     protected int getPreferredWidth() {
-        return 600;
+        return config.getAddDialogWidth();
+    }
+
+    protected int getPreferredHeight() {
+        return config.getAddDialogHeight();
     }
 
     protected boolean isResizable() {

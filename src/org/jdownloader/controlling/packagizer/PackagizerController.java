@@ -247,6 +247,11 @@ public class PackagizerController implements PackagizerInterface {
             } catch (NoDownloadLinkException e) {
                 throw new WTFException();
             }
+            try {
+                if (!lgr.checkPluginStatus(link)) continue;
+            } catch (NoDownloadLinkException e) {
+                throw new WTFException();
+            }
             if (!lgr.checkSource(link)) continue;
             if (lgr.isRequiresLinkcheck()) {
                 if (!lgr.checkOnlineStatus(link)) continue;
@@ -303,6 +308,12 @@ public class PackagizerController implements PackagizerInterface {
         for (PackagizerRuleWrapper lgr : lurlFilter) {
             try {
                 if (!lgr.checkHoster(link)) continue;
+            } catch (NoDownloadLinkException e) {
+                continue;
+            }
+
+            try {
+                if (!lgr.checkPluginStatus(link)) continue;
             } catch (NoDownloadLinkException e) {
                 continue;
             }

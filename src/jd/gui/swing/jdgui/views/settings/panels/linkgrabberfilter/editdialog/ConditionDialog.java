@@ -36,6 +36,8 @@ import javax.swing.event.ListSelectionListener;
 import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.ClickDelegater;
 import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.OnlineStatusFilter.OnlineStatus;
 import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.OnlineStatusFilter.OnlineStatusMatchtype;
+import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.PluginStatusFilter.PluginStatus;
+import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.PluginStatusFilter.PluginStatusMatchtype;
 import jd.gui.swing.laf.LookAndFeelController;
 
 import org.appwork.app.gui.MigPanel;
@@ -108,6 +110,14 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
 
     }
 
+    public void setPluginStatusFilter(PluginStatusFilter f) {
+        if (f == null) return;
+        cbPlugin.setSelected(f.isEnabled());
+        cobPlugin.setSelectedIndex(f.getMatchType().ordinal());
+        cobPluginOptions.setSelectedIndex(f.getPluginStatus().ordinal());
+
+    }
+
     public void setFilesizeFilter(FilesizeFilter f) {
         if (f == null) return;
         cbSize.setSelected(f.isEnabled());
@@ -140,6 +150,10 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
 
     public OnlineStatusFilter getOnlineStatusFilter() {
         return new OnlineStatusFilter(OnlineStatusMatchtype.values()[cobOnline.getSelectedIndex()], cbOnline.isSelected(), OnlineStatus.values()[cobOnlineOptions.getSelectedIndex()]);
+    }
+
+    public PluginStatusFilter getPluginStatusFilter() {
+        return new PluginStatusFilter(PluginStatusMatchtype.values()[cobPlugin.getSelectedIndex()], cbPlugin.isSelected(), PluginStatus.values()[cobPluginOptions.getSelectedIndex()]);
     }
 
     public void setSourceFilter(RegexFilter filter) {
@@ -210,6 +224,12 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
     private JButton            btnIcon;
 
     private String             iconKey;
+
+    private JComboBox          cobPlugin;
+
+    private JComboBox          cobPluginOptions;
+
+    private ExtCheckBox        cbPlugin;
 
     public String getIconKey() {
         return iconKey;
@@ -634,6 +654,28 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
         };
         cobOnline.addMouseListener(ml);
         cobOnlineOptions.addMouseListener(ml);
+
+        // plugin
+        cobPlugin = new JComboBox(new String[] { _GUI._.ConditionDialog_layoutDialogContent_online_has_(), _GUI._.ConditionDialog_layoutDialogContent_online_hasnot_() });
+        cobPluginOptions = new JComboBox(new String[] { _GUI._.ConditionDialog_layoutDialogContent_premium(), _GUI._.ConditionDialog_layoutDialogContent_captcha() });
+        cbPlugin = new ExtCheckBox(cobPlugin, cobPluginOptions);
+
+        panel.add(cbPlugin);
+        panel.add(new JLabel(_GUI._.FilterRuleDialog_layoutDialogContent_lbl_plugin()));
+        panel.add(cobPlugin);
+        panel.add(cobPluginOptions, "spanx,pushx,growx");
+        ml = new MouseAdapter() {
+
+            @Override
+            public void mousePressed(MouseEvent e) {
+                cbPlugin.setSelected(true);
+
+            }
+
+        };
+        cobPlugin.addMouseListener(ml);
+        cobPluginOptions.addMouseListener(ml);
+
         return panel;
     }
 

@@ -14,7 +14,6 @@ import jd.gui.swing.SwingGui;
 import jd.parser.Regex;
 import jd.utils.JDUtilities;
 
-import org.appwork.resources.AWUTheme;
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
 import org.appwork.storage.JSonStorage;
@@ -30,30 +29,21 @@ import org.appwork.update.updateclient.event.UpdaterEvent;
 import org.appwork.update.updateclient.event.UpdaterListener;
 import org.appwork.update.updateclient.http.ClientUpdateRequiredException;
 import org.appwork.utils.Application;
-import org.appwork.utils.Files;
-import org.appwork.utils.Hash;
 import org.appwork.utils.IO;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.locale._AWU;
 import org.appwork.utils.logging.Log;
-import org.appwork.utils.net.DownloadProgress;
 import org.appwork.utils.swing.EDTHelper;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
-import org.appwork.utils.swing.dialog.ProgressDialog;
-import org.appwork.utils.swing.dialog.ProgressDialog.ProgressGetter;
 import org.appwork.utils.zip.ZipIOException;
-import org.appwork.utils.zip.ZipIOReader;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.plugins.controller.PluginClassLoader;
 import org.jdownloader.plugins.controller.crawler.CrawlerPluginController;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.update.gui.UpdateFoundDialog;
-import org.jdownloader.update.translate.T;
 
 public class JDUpdater extends Updater implements Runnable {
     private static final JDUpdater INSTANCE = new JDUpdater();
@@ -293,90 +283,6 @@ public class JDUpdater extends Updater implements Runnable {
             if (isInterrupted()) { throw new InterruptedException(e.getMessage()); }
             throw e;
         }
-    }
-
-    public File downloadSelfUpdate(final ClientUpdateRequiredException e2) throws Exception, ZipIOException, ZipException, IOException {
-        final String url = e2.getUrl();
-        final String hash = e2.getHash();
-        final File file = Application.getResource("tmp/" + hash + ".zip");
-
-        if (!file.exists() || Hash.getSHA256(file).equals(hash)) {
-            if (file.exists() && !file.delete()) { throw new Exception(T._.could_not_update_updater()); }
-            file.delete();
-            downloadInDialog(file, url, hash);
-        }
-        final ZipIOReader zip = new ZipIOReader(file);
-        final File dest = Application.getResource("tmp/update/self");
-        Files.deleteRecursiv(dest);
-        dest.mkdirs();
-        zip.extractTo(dest);
-        file.delete();
-        file.deleteOnExit();
-        return dest;
-    }
-
-    public void downloadInDialog(final File file, final String url, final String hash) throws Exception {
-        if (file.exists()) { throw new Exception("File exists"); }
-        file.getParentFile().mkdirs();
-        Exception ret = null;
-
-        ret = new EDTHelper<Exception>() {
-
-            @Override
-            public Exception edtRun() {
-                try {
-
-                    final DownloadProgress progress = new DownloadProgress();
-                    final ProgressGetter pg = new ProgressGetter() {
-
-                        private long loaded = 0;
-                        private long total  = 0;
-
-                        public int getProgress() {
-
-                            this.total = progress.getTotal();
-                            this.loaded = progress.getLoaded();
-                            if (this.total == 0) { return 0; }
-                            return (int) (this.loaded * 100 / this.total);
-                        }
-
-                        public String getString() {
-                            this.total = progress.getTotal();
-                            this.loaded = progress.getLoaded();
-                            if (this.total <= 0) { return _AWU.T.connecting(); }
-                            return _AWU.T.progress(SizeFormatter.formatBytes(this.loaded), SizeFormatter.formatBytes(this.total), this.loaded * 10000f / this.total / 100.0);
-                        }
-
-                        public void run() throws Exception {
-                            getHttpClient().download(file, url, progress);
-                            System.out.println("Download finished");
-                        }
-
-                    };
-                    final ProgressDialog dialog = new ProgressDialog(pg, Dialog.BUTTONS_HIDE_CANCEL | Dialog.BUTTONS_HIDE_OK, _AWU.T.download_title(), _AWU.T.download_msg(), AWUTheme.getInstance().getIcon("download", 32)) {
-
-                        @Override
-                        public boolean closeAllowed() {
-
-                            Dialog.getInstance().showMessageDialog(_AWU.T.please_wait());
-
-                            return false;
-                        }
-                    };
-                    Dialog.getInstance().showDialog(dialog);
-                } catch (final Exception e) {
-                    return e;
-                }
-                return null;
-            }
-
-        }.getReturnValue();
-
-        if (hash != null && !hash.equalsIgnoreCase(Hash.getSHA256(file))) {
-            //
-            throw new Exception("Hash Mismatch");
-        }
-        if (ret != null) { throw ret; }
     }
 
     private void doUpdaterUpdate(ClientUpdateRequiredException e) {

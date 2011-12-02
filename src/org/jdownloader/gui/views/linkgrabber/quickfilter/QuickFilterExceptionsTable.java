@@ -187,6 +187,11 @@ public class QuickFilterExceptionsTable extends FilterTable {
 
                             throw new WTFException();
                         }
+                        try {
+                            if (!rule.checkPluginStatus(link)) return false;
+                        } catch (NoDownloadLinkException e) {
+                            throw new WTFException();
+                        }
                         if (!rule.checkSource(link)) return false;
                         if (!rule.checkOnlineStatus(link)) return false;
 

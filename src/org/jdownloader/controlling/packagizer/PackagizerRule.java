@@ -19,6 +19,7 @@ public class PackagizerRule extends FilterRule implements Storable {
         ret.setFilesizeFilter(getFilesizeFilter());
         ret.setFiletypeFilter(getFiletypeFilter());
         ret.setOnlineStatusFilter(getOnlineStatusFilter());
+        ret.setPluginStatusFilter(getPluginStatusFilter());
         ret.setHosterURLFilter(getHosterURLFilter());
         ret.setName(_JDT._.LinkgrabberFilterRule_duplicate(getName()));
         ret.setSourceURLFilter(getSourceURLFilter());

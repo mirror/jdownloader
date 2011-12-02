@@ -9,11 +9,22 @@ import org.appwork.utils.Files;
 
 public class RuleWrapper<T extends FilterRule> {
 
-    protected CompiledRegexFilter fileNameRule;
-    protected boolean             requiresLinkcheck = false;
+    protected CompiledRegexFilter     fileNameRule;
+    protected boolean                 requiresLinkcheck = false;
+    private CompiledPluginStatusFiler pluginStatusFilter;
+
+    public CompiledPluginStatusFiler getPluginStatusFilter() {
+        return pluginStatusFilter;
+    }
 
     public RuleWrapper(T rule2) {
         this.rule = rule2;
+
+        if (rule.getPluginStatusFilter().isEnabled()) {
+            pluginStatusFilter = new CompiledPluginStatusFiler(rule.getPluginStatusFilter());
+            requiresHoster = true;
+        }
+
         if (rule.getOnlineStatusFilter().isEnabled()) {
             onlineStatusFilter = new CompiledOnlineStatusFiler(rule.getOnlineStatusFilter());
             requiresLinkcheck = true;
@@ -178,6 +189,14 @@ public class RuleWrapper<T extends FilterRule> {
 
     public boolean checkOnlineStatus(CrawledLink link) {
         if (getOnlineStatusFilter() != null) { return getOnlineStatusFilter().matches(link.getLinkState()); }
+        return true;
+    }
+
+    public boolean checkPluginStatus(CrawledLink link) throws NoDownloadLinkException {
+        if (getPluginStatusFilter() != null) {
+            if (link.getDownloadLink() == null) { throw new NoDownloadLinkException(); }
+            return getPluginStatusFilter().matches(link.getLinkState());
+        }
         return true;
     }
 

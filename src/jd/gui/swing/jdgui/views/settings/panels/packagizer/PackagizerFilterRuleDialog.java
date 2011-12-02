@@ -151,6 +151,7 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
         rule.setAutoStartEnabled(cbStart.isSelected() ? cobAutostart.getSelectedIndex() == 0 : null);
         rule.setIconKey(getIconKey());
         rule.setOnlineStatusFilter(getOnlineStatusFilter());
+        rule.setPluginStatusFilter(getPluginStatusFilter());
 
     }
 
@@ -164,6 +165,7 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
         setSourceFilter(rule.getSourceURLFilter());
         setFiletypeFilter(rule.getFiletypeFilter());
         setOnlineStatusFilter(rule.getOnlineStatusFilter());
+        setPluginStatusFilter(rule.getPluginStatusFilter());
         txtPackagename.setText(rule.getPackageName());
         txtNewFilename.setText(rule.getFilename());
         fpDest.setPath(rule.getDownloadDestination());

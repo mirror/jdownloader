@@ -20,6 +20,7 @@ import jd.controlling.packagecontroller.PackageController;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.event.Eventsender;
 import org.appwork.utils.event.queue.Queue.QueuePriority;
 import org.appwork.utils.event.queue.QueueAction;
@@ -156,6 +157,19 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
             protected CrawledLink crawledLinkFactorybyURL(String url) {
                 CrawledLink ret = super.crawledLinkFactorybyURL(url);
                 ret.setSourceJob(job);
+                if (ret.getDesiredPackageInfo() == null || ret.getDesiredPackageInfo().getDestinationFolder() == null) {
+                    if (ret.getDesiredPackageInfo() == null) ret.setDesiredPackageInfo(new PackageInfo());
+                    ret.getDesiredPackageInfo().setDestinationFolder(job.getOutputFolder().getAbsolutePath());
+                }
+                if (!StringUtils.isEmpty(job.getPackageName()) && (ret.getDesiredPackageInfo() == null || StringUtils.isEmpty(ret.getDesiredPackageInfo().getName()))) {
+                    if (ret.getDesiredPackageInfo() == null) ret.setDesiredPackageInfo(new PackageInfo());
+                    ret.getDesiredPackageInfo().setName(job.getPackageName());
+                }
+
+                if (!StringUtils.isEmpty(job.getExtractPassword())) {
+                    if (ret.getDesiredPackageInfo() == null) ret.setDesiredPackageInfo(new PackageInfo());
+                    ret.getDesiredPackageInfo().getExtractionPasswords().add(job.getExtractPassword());
+                }
                 return ret;
             }
 
@@ -292,6 +306,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
     }
 
     private void addCrawledLink(final CrawledLink link) {
+
         /* try to find good matching package or create new one */
         IOEQ.getQueue().add(new QueueAction<Void, RuntimeException>() {
 

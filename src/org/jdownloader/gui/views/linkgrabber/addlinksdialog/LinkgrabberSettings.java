@@ -6,6 +6,7 @@ import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.appwork.storage.config.annotations.DefaultIntValue;
 import org.appwork.storage.config.annotations.DefaultJsonObject;
 import org.appwork.storage.config.annotations.Description;
 import org.appwork.storage.config.annotations.RequiresRestart;
@@ -49,20 +50,30 @@ public interface LinkgrabberSettings extends ConfigInterface {
 
     @DefaultJsonObject("[]")
     @AboutConfig
-    ArrayList<String> getDownloadDestinationHistory();
+    ArrayList<DownloadPath> getDownloadDestinationHistory();
 
-    void setDownloadDestinationHistory(ArrayList<String> value);
+    void setDownloadDestinationHistory(ArrayList<DownloadPath> value);
 
     @DefaultJsonObject("[]")
     @AboutConfig
-    ArrayList<String> getPackageNameHistory();
+    ArrayList<PackageHistoryEntry> getPackageNameHistory();
 
-    void setPackageNameHistory(ArrayList<String> value);
+    void setPackageNameHistory(ArrayList<PackageHistoryEntry> value);
 
     @DefaultBooleanValue(true)
     boolean isAutoExtractionEnabled();
 
     void setAutoExtractionEnabled(boolean b);
+
+    @DefaultIntValue(600)
+    int getAddDialogWidth();
+
+    void setAddDialogWidth(int width);
+
+    @DefaultIntValue(-1)
+    int getAddDialogHeight();
+
+    void setAddDialogHeight(int height);
 
     void setLatestDownloadDestinationFolder(String absolutePath);
 

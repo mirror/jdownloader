@@ -3355,4 +3355,31 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en", }, values = { "%s1 update(s) are ready for installation. A Restart is required to complete installation." })
     String updates_ready_for_install(int i);
 
+    @Default(lngs = { "en" }, values = { "has" })
+    String ConditionDialog_layoutDialogContent_online_has_();
+
+    @Default(lngs = { "en" }, values = { "hasn't" })
+    String ConditionDialog_layoutDialogContent_online_hasnot_();
+
+    @Default(lngs = { "en" }, values = { "a valid Premium Account" })
+    String ConditionDialog_layoutDialogContent_premium();
+
+    @Default(lngs = { "en" }, values = { "Plugin" })
+    String FilterRuleDialog_layoutDialogContent_lbl_plugin();
+
+    @Default(lngs = { "en" }, values = { "a Captcha Solver" })
+    String ConditionDialog_layoutDialogContent_captcha();
+
+    @Default(lngs = { "en" }, values = { "Valid Premiumaccount is available" })
+    String FilterRule_toString_premium();
+
+    @Default(lngs = { "en" }, values = { "Captchas are solved automatically" })
+    String FilterRule_toString_autocaptcha();
+
+    @Default(lngs = { "en" }, values = { "No valid Premiumaccount available" })
+    String FilterRule_toString_premium_not();
+
+    @Default(lngs = { "en" }, values = { "Captchas must be entered manually" })
+    String FilterRule_toString_autocaptcha_not();
+
 }

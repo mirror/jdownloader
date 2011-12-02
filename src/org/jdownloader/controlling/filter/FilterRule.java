@@ -4,6 +4,7 @@ import java.util.ArrayList;
 
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.OnlineStatusFilter;
+import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.PluginStatusFilter;
 
 import org.appwork.storage.Storable;
 import org.appwork.utils.Files;
@@ -16,6 +17,7 @@ public abstract class FilterRule implements Storable {
     private RegexFilter        sourceURLFilter;
     private OnlineStatusFilter onlineStatusFilter;
     private String             iconKey;
+    private PluginStatusFilter pluginStatusFilter;
 
     public String getIconKey() {
         return iconKey;
@@ -40,7 +42,7 @@ public abstract class FilterRule implements Storable {
      * @return
      */
     public boolean isValid() {
-        return getFilenameFilter().isEnabled() || getFilesizeFilter().isEnabled() || getFiletypeFilter().isEnabled() || getHosterURLFilter().isEnabled() || getSourceURLFilter().isEnabled() || getOnlineStatusFilter().isEnabled();
+        return getFilenameFilter().isEnabled() || getFilesizeFilter().isEnabled() || getFiletypeFilter().isEnabled() || getHosterURLFilter().isEnabled() || getSourceURLFilter().isEnabled() || getOnlineStatusFilter().isEnabled() || getPluginStatusFilter().isEnabled();
     }
 
     public String toString(CrawledLink link) {
@@ -50,6 +52,10 @@ public abstract class FilterRule implements Storable {
         if (getOnlineStatusFilter().isEnabled()) {
             cond.add(onlineStatusFilter.toString());
 
+        }
+
+        if (getPluginStatusFilter().isEnabled()) {
+            cond.add(pluginStatusFilter.toString());
         }
         if (getFilenameFilter().isEnabled()) {
             if (link != null && link.getName() != null) {
@@ -144,6 +150,15 @@ public abstract class FilterRule implements Storable {
     public OnlineStatusFilter getOnlineStatusFilter() {
         if (onlineStatusFilter == null) onlineStatusFilter = new OnlineStatusFilter();
         return onlineStatusFilter;
+    }
+
+    public void setPluginStatusFilter(PluginStatusFilter pluginStatusFilter) {
+        this.pluginStatusFilter = pluginStatusFilter;
+    }
+
+    public PluginStatusFilter getPluginStatusFilter() {
+        if (pluginStatusFilter == null) pluginStatusFilter = new PluginStatusFilter();
+        return pluginStatusFilter;
     }
 
     public RegexFilter getFilenameFilter() {
