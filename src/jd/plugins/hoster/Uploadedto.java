@@ -19,7 +19,6 @@ package jd.plugins.hoster;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.logging.Level;
 import java.util.regex.Pattern;
 
 import javax.crypto.Cipher;
@@ -46,7 +45,6 @@ import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.logging.Log;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploaded.to" }, urls = { "(http://[\\w\\.-]*?uploaded\\.to/.*?(file/|\\?id=|&id=)[\\w]+/?)|(http://[\\w\\.]*?ul\\.to/(?!folder)(\\?id=|&id=)?[\\w\\-]+/.+)|(http://[\\w\\.]*?ul\\.to/(?!folder)(\\?id=|&id=)?[\\w\\-]+/?)" }, flags = { 2 })
 public class Uploadedto extends PluginForHost {
@@ -230,14 +228,22 @@ public class Uploadedto extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException, InterruptedException {
         this.correctDownloadLink(downloadLink);
-        this.checkLinks(new DownloadLink[] { downloadLink });
-        if (!downloadLink.isAvailabilityStatusChecked()) {
-            return AvailableStatus.UNCHECKED;
-        } else if (!downloadLink.isAvailable()) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else {
-            return AvailableStatus.TRUE;
+        String id = getID(downloadLink);
+        boolean red = br.isFollowingRedirects();
+        br.setFollowRedirects(false);
+        try {
+            br.getPage("http://uploaded.to/file/" + id + "/status");
+            String ret = br.getRedirectLocation();
+            if (ret != null && ret.contains("/404")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            String name = br.getRegex("(.*?)(\r|\n)").getMatch(0);
+            String size = br.getRegex(".+[\r\n]{1,2}(.+)").getMatch(0);
+            if (name == null || size == null) return AvailableStatus.UNCHECKABLE;
+            downloadLink.setFinalFileName(name.trim());
+            downloadLink.setDownloadSize(SizeFormatter.getSize(size));
+        } finally {
+            br.setFollowRedirects(red);
         }
+        return AvailableStatus.TRUE;
     }
 
     private String getPassword(DownloadLink downloadLink) throws Exception {
@@ -378,7 +384,7 @@ public class Uploadedto extends PluginForHost {
                 cipher.init(Cipher.DECRYPT_MODE, skeySpec, ivSpec);
                 return new String(cipher.doFinal(b), "UTF-8");
             } catch (final Exception e) {
-                Log.exception(Level.WARNING, e);
+                e.printStackTrace();
                 final IvParameterSpec ivSpec = new IvParameterSpec(key);
                 final SecretKeySpec skeySpec = new SecretKeySpec(key, "AES");
 
@@ -388,7 +394,7 @@ public class Uploadedto extends PluginForHost {
                     cipher.init(Cipher.DECRYPT_MODE, skeySpec, ivSpec);
                     return new String(cipher.doFinal(b), "UTF-8");
                 } catch (final Exception e1) {
-                    Log.exception(Level.WARNING, e1);
+                    e.printStackTrace();
                 }
 
             }
