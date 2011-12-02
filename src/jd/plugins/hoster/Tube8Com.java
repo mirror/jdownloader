@@ -109,7 +109,7 @@ public class Tube8Com extends PluginForHost {
         br.setFollowRedirects(false);
         br.getPage(downloadLink.getDownloadURL());
         if (br.getRedirectLocation() != null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String verifyAge = br.getRegex("(<div class=\"enter-btn\">)").getMatch(0);
+        String verifyAge = br.getRegex("(<div class=\"enter\\-btn\">)").getMatch(0);
         if (verifyAge != null) {
             br.postPage(downloadLink.getDownloadURL(), "processdisclaimer=");
         }
@@ -135,15 +135,16 @@ public class Tube8Com extends PluginForHost {
             }
         }
         if (filename == null || dllink == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        dllink = Encoding.htmlDecode(dllink);
         filename = filename.trim();
-        if (!dllink.contains(".3gp")) {
-            downloadLink.setFinalFileName(filename + ".flv");
-        } else {
+        if (dllink.contains(".3gp")) {
             downloadLink.setFinalFileName((filename + ".3gp"));
+        } else {
+            downloadLink.setFinalFileName(filename + ".flv");
         }
         URLConnectionAdapter con = null;
         try {
-            con = br.openGetConnection(dllink);
+            con = br.openGetConnection(Encoding.htmlDecode(dllink));
             if (!con.getContentType().contains("html"))
                 downloadLink.setDownloadSize(con.getLongContentLength());
             else
@@ -169,7 +170,7 @@ public class Tube8Com extends PluginForHost {
     }
 
     public void findNormalLinks() throws NumberFormatException, PluginException {
-        dllink = br.getRegex("var videourl=\"(http.*?)\"").getMatch(0);
+        dllink = br.getRegex("\"video_url\":\"(http.*?)\"").getMatch(0);
         if (dllink == null) dllink = br.getRegex("\"(http://media[0-9]+\\.tube8\\.com/flv/.*?\\.flv)\"").getMatch(0);
     }
 

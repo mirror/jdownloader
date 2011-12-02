@@ -119,7 +119,7 @@ public class DecrypterForRedirectServicesWithoutDirectRedirects extends PluginFo
                 finallink = br.getRegex("var url = \\'(.*?)\\'").getMatch(0);
             }
             if (finallink == null) {
-                logger.warning("adf.ly single regex broken");
+                logger.warning("adf.ly single regex broken for link: " + parameter);
                 finallink = "dummytext";
             }
             if (finallink.contains("mooleech.co.cc")) {
