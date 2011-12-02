@@ -19,7 +19,12 @@ package jd.plugins.hoster;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.logging.Level;
 import java.util.regex.Pattern;
+
+import javax.crypto.Cipher;
+import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
 
 import jd.PluginWrapper;
 import jd.crypt.Base64;
@@ -40,8 +45,8 @@ import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.crypto.Crypto;
 import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.logging.Log;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploaded.to" }, urls = { "(http://[\\w\\.-]*?uploaded\\.to/.*?(file/|\\?id=|&id=)[\\w]+/?)|(http://[\\w\\.]*?ul\\.to/(?!folder)(\\?id=|&id=)?[\\w\\-]+/.+)|(http://[\\w\\.]*?ul\\.to/(?!folder)(\\?id=|&id=)?[\\w\\-]+/?)" }, flags = { 2 })
 public class Uploadedto extends PluginForHost {
@@ -363,9 +368,36 @@ public class Uploadedto extends PluginForHost {
             prep = Base64.decode("MC8O21gQXUaeSgMxxiOGugSrROkQHTbadlwDeJqHOpU4Q2o38bGWkm3/2zfS0N0s");
         }
 
+        public static String d(final byte[] b, final byte[] key) {
+            Cipher cipher;
+            try {
+                final IvParameterSpec ivSpec = new IvParameterSpec(key);
+                final SecretKeySpec skeySpec = new SecretKeySpec(key, "AES");
+
+                cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+                cipher.init(Cipher.DECRYPT_MODE, skeySpec, ivSpec);
+                return new String(cipher.doFinal(b), "UTF-8");
+            } catch (final Exception e) {
+                Log.exception(Level.WARNING, e);
+                final IvParameterSpec ivSpec = new IvParameterSpec(key);
+                final SecretKeySpec skeySpec = new SecretKeySpec(key, "AES");
+
+                try {
+                    cipher = Cipher.getInstance("AES/CBC/nopadding");
+
+                    cipher.init(Cipher.DECRYPT_MODE, skeySpec, ivSpec);
+                    return new String(cipher.doFinal(b), "UTF-8");
+                } catch (final Exception e1) {
+                    Log.exception(Level.WARNING, e1);
+                }
+
+            }
+            return null;
+        }
+
         public String run() {
 
-            return new String(new byte[] { 97, 112, 105, 107, 101, 121 }) + "=" + Crypto.decrypt(prep, key);
+            return new String(new byte[] { 97, 112, 105, 107, 101, 121 }) + "=" + d(prep, key);
 
         }
     }
