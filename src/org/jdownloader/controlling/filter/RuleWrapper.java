@@ -195,7 +195,7 @@ public class RuleWrapper<T extends FilterRule> {
     public boolean checkPluginStatus(CrawledLink link) throws NoDownloadLinkException {
         if (getPluginStatusFilter() != null) {
             if (link.getDownloadLink() == null) { throw new NoDownloadLinkException(); }
-            return getPluginStatusFilter().matches(link.getLinkState());
+            return getPluginStatusFilter().matches(link);
         }
         return true;
     }

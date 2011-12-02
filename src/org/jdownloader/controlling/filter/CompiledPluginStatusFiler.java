@@ -1,6 +1,7 @@
 package org.jdownloader.controlling.filter;
 
-import jd.controlling.linkcrawler.CrawledLink.LinkState;
+import jd.controlling.AccountController;
+import jd.controlling.linkcrawler.CrawledLink;
 import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.PluginStatusFilter;
 
 public class CompiledPluginStatusFiler extends PluginStatusFilter {
@@ -10,13 +11,13 @@ public class CompiledPluginStatusFiler extends PluginStatusFilter {
 
     }
 
-    public boolean matches(LinkState linkState) {
+    public boolean matches(CrawledLink link) {
         switch (getMatchType()) {
         case IS:
             switch (getPluginStatus()) {
             case PREMIUM:
                 // TODO
-                return true;
+                return AccountController.getInstance().hasAccounts(link.getHost());
             case AUTOCAPTCHA:
                 // TODO
                 return true;
@@ -27,7 +28,7 @@ public class CompiledPluginStatusFiler extends PluginStatusFilter {
             switch (getPluginStatus()) {
             case PREMIUM:
                 // TODO
-                return false;
+                return !AccountController.getInstance().hasAccounts(link.getHost());
             case AUTOCAPTCHA:
                 // TODO
                 return false;
