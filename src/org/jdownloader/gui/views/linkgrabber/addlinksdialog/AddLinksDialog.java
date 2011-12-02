@@ -329,6 +329,7 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
                                 protected void runInEDT() {
                                     input.setText(txt);
                                     input.setEditable(true);
+                                    sp.repaint();
                                     delayedValidate.run();
                                 }
                             };
@@ -338,6 +339,7 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
                                 protected void runInEDT() {
                                     input.setText("");
                                     input.setEditable(true);
+                                    sp.repaint();
                                 };
                             };
                         }
