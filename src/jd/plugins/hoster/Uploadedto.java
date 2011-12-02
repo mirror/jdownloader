@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
+import jd.crypt.Base64;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -39,6 +40,7 @@ import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
+import org.appwork.utils.crypto.Crypto;
 import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploaded.to" }, urls = { "(http://[\\w\\.-]*?uploaded\\.to/.*?(file/|\\?id=|&id=)[\\w]+/?)|(http://[\\w\\.]*?ul\\.to/(?!folder)(\\?id=|&id=)?[\\w\\-]+/.+)|(http://[\\w\\.]*?ul\\.to/(?!folder)(\\?id=|&id=)?[\\w\\-]+/?)" }, flags = { 2 })
@@ -352,6 +354,22 @@ public class Uploadedto extends PluginForHost {
     public void resetDownloadlink(DownloadLink link) {
     }
 
+    static class Sec {
+        private byte[] key;
+        private byte[] prep;
+
+        public Sec() {
+            key = new byte[] { 0x01, 0x02, 0x11, 0x01, 0x01, 0x54, 0x01, 0x01, 0x01, 0x01, 0x12, 0x01, 0x01, 0x01, 0x22, 0x01 };
+            prep = Base64.decode("MC8O21gQXUaeSgMxxiOGugSrROkQHTbadlwDeJqHOpU4Q2o38bGWkm3/2zfS0N0s");
+        }
+
+        public String run() {
+
+            return new String(new byte[] { 97, 112, 105, 107, 101, 121 }) + "=" + Crypto.decrypt(prep, key);
+
+        }
+    }
+
     @Override
     public boolean checkLinks(DownloadLink[] urls) {
         if (urls == null || urls.length == 0) { return false; }
@@ -371,7 +389,7 @@ public class Uploadedto extends PluginForHost {
                     index++;
                 }
                 sb.delete(0, sb.capacity());
-                sb.append("apikey=hP5Y37ulYfr8gSsS97LCT7kG5Gqp8Uug");
+                sb.append(new Sec().run());
                 int c = 0;
                 for (DownloadLink dl : links) {
                     sb.append("&id_" + c + "=" + getID(dl));
