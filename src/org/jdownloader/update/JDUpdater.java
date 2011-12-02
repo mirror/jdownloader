@@ -273,10 +273,10 @@ public class JDUpdater extends Updater implements Runnable {
     // return 4;
     // }
 
-    public void start() throws Exception {
+    public void runStateApp() throws Exception {
 
         try {
-            super.start();
+            super.runStateApp();
         } catch (ClientUpdateRequiredException e) {
             UpdaterGUI myGui = getExistingGUI();
             if (myGui != null) {
@@ -491,7 +491,7 @@ public class JDUpdater extends Updater implements Runnable {
                 }
             };
             updater.setBreakBeforePoint(updater.stateWaitForUnlock);
-            updater.start();
+            updater.runStateApp();
             final UpdatePackage updates = updater.getUpdates();
             ArrayList<File> filesToInstall = updater.getFilesToInstall();
             ArrayList<InstalledFile> filesToRemove = updater.getFilesToRemove();
@@ -567,7 +567,7 @@ public class JDUpdater extends Updater implements Runnable {
             // ask to restart if there are updates left in the
 
             updater.setBreakBeforePoint(updater.stateWaitForUnlock);
-            updater.start();
+            updater.runStateApp();
             final UpdatePackage updates = updater.getUpdates();
             ArrayList<File> filesToInstall = updater.getFilesToInstall();
             ArrayList<InstalledFile> filesToRemove = updater.getFilesToRemove();
