@@ -228,7 +228,7 @@ public class VeohCom extends PluginForHost {
                     try {
                         INPUTSTREAM = new org.appwork.utils.net.throttledconnection.MeteredThrottledInputStream(DL.getInputStream(), new org.appwork.utils.speedmeter.AverageSpeedMeter(10));
                         /* add inputstream to connectionmanager */
-                        jd.controlling.downloadcontroller.DownloadWatchDog.getInstance().getConnectionManager().addManagedThrottledInputStream(INPUTSTREAM);
+                        downloadLink.getDownloadLinkController().getConnectionManager().addManagedThrottledInputStream(INPUTSTREAM);
                     } catch (final Throwable e) {
                         /* 0.95xx comp */
                     }
@@ -292,7 +292,7 @@ public class VeohCom extends PluginForHost {
                         }
                         try {
                             /* remove inputstream from connectionmanager */
-                            jd.controlling.downloadcontroller.DownloadWatchDog.getInstance().getConnectionManager().removeManagedThrottledInputConnection(INPUTSTREAM);
+                            downloadLink.getDownloadLinkController().getConnectionManager().removeManagedThrottledInputConnection(INPUTSTREAM);
                         } catch (final Throwable e) {
                             /* 0.95xx comp */
                         }

@@ -49,6 +49,7 @@ import org.appwork.controlling.StateMonitor;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Exceptions;
 import org.appwork.utils.Regex;
+import org.appwork.utils.net.throttledconnection.ThrottledConnectionManager;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.settings.IfFileExistsAction;
 import org.jdownloader.translate._JDT;
@@ -62,35 +63,41 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
     // public static final String WAIT_TIME_ON_CONNECTION_LOSS =
     // "WAIT_TIME_ON_CONNECTION_LOSS";
 
-    private static final Object                       DUPELOCK      = new Object();
+    private static final Object             DUPELOCK          = new Object();
 
-    private boolean                                   aborted       = false;
+    private boolean                         aborted           = false;
 
     /**
      * Das Plugin, das den aktuellen Download steuert
      */
-    private PluginForHost                             currentPlugin = null;
+    private PluginForHost                   currentPlugin     = null;
 
-    private DownloadLink                              downloadLink;
+    private DownloadLink                    downloadLink;
 
-    private LinkStatus                                linkStatus;
+    private LinkStatus                      linkStatus;
 
     /**
      * Der Logger
      */
 
-    private long                                      startTime;
+    private long                            startTime;
 
-    private Account                                   account       = null;
-    private SingleDownloadControllerHandler           handler       = null;
+    private Account                         account           = null;
+    private SingleDownloadControllerHandler handler           = null;
 
-    private ProxyInfo                                 proxyInfo     = null;
+    private ProxyInfo                       proxyInfo         = null;
 
-    private StateMachine                              stateMachine;
+    private StateMachine                    stateMachine;
 
-    private StateMonitor                              stateMonitor;
+    private StateMonitor                    stateMonitor;
 
-    private IOPermission                              ioP           = null;
+    private IOPermission                    ioP               = null;
+
+    private ThrottledConnectionManager      connectionManager = null;
+
+    public ThrottledConnectionManager getConnectionManager() {
+        return connectionManager;
+    }
 
     public static final org.appwork.controlling.State IDLE_STATE    = new org.appwork.controlling.State("IDLE");
     public static final org.appwork.controlling.State RUNNING_STATE = new org.appwork.controlling.State("RUNNING");
@@ -117,11 +124,16 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
      *            Link, der heruntergeladen werden soll
      */
     public SingleDownloadController(DownloadLink dlink, Account account) {
-        this(dlink, account, null);
+        this(dlink, account, null, null);
     }
 
-    public SingleDownloadController(DownloadLink dlink, Account account, ProxyInfo proxy) {
+    public SingleDownloadController(DownloadLink dlink, Account account, ThrottledConnectionManager cmanager) {
+        this(dlink, account, null, cmanager);
+    }
+
+    public SingleDownloadController(DownloadLink dlink, Account account, ProxyInfo proxy, ThrottledConnectionManager manager) {
         super("JD-StartDownloads");
+        this.connectionManager = manager;
         stateMachine = new StateMachine(this, IDLE_STATE, FINAL_STATE);
         stateMonitor = new StateMonitor(stateMachine);
         downloadLink = dlink;

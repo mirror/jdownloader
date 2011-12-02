@@ -901,7 +901,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
      */
     private void activateSingleDownloadController(final DownloadControlInfo dci) {
         DownloadWatchDog.LOG.info("Start new Download: " + dci.link.getHost() + ":" + dci.link.getName() + ":" + dci.proxy);
-        final SingleDownloadController download = new SingleDownloadController(dci.link, dci.account, dci.proxy);
+        final SingleDownloadController download = new SingleDownloadController(dci.link, dci.account, dci.proxy, this.connectionManager);
         download.setIOPermission(this);
         registerSingleDownloadController(download);
         download.getStateMonitor().executeOnceOnState(new Runnable() {

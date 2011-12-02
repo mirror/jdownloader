@@ -45,6 +45,7 @@ import jd.gui.swing.jdgui.events.EDTEventQueue;
 import jd.gui.swing.laf.LookAndFeelController;
 import jd.http.Browser;
 import jd.http.ext.security.JSPermissionRestricter;
+import jd.nutils.SimpleFTP;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -431,6 +432,7 @@ public class Main {
                         // JDUpdater.getInstance().startChecker();
                         /* start downloadwatchdog */
                         DownloadWatchDog.getInstance();
+                        SimpleFTP.setCmanager(DownloadWatchDog.getInstance().getConnectionManager());
                         if (JsonConfig.create(GeneralSettings.class).isAutoStartDownloadsOnStartupEnabled()) {
                             /* autostart downloads when no autoupdate is enabled */
                             Log.exception(new WTFException("REIMPLEMENT ME:autostart on startup"));

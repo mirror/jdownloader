@@ -30,7 +30,6 @@ import java.util.logging.Logger;
 
 import jd.controlling.GarbageController;
 import jd.controlling.JDLogger;
-import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.http.Browser;
 import jd.http.Request;
 import jd.http.URLConnectionAdapter;
@@ -50,6 +49,7 @@ import org.appwork.utils.ReusableByteArrayOutputStreamPool;
 import org.appwork.utils.ReusableByteArrayOutputStreamPool.ReusableByteArrayOutputStream;
 import org.appwork.utils.net.httpconnection.HTTPConnection.RequestMethod;
 import org.appwork.utils.net.throttledconnection.MeteredThrottledInputStream;
+import org.appwork.utils.net.throttledconnection.ThrottledConnectionManager;
 import org.appwork.utils.speedmeter.AverageSpeedMeter;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.settings.IfFileExistsAction;
@@ -275,8 +275,11 @@ abstract public class DownloadInterface {
                 chunkinprogress = true;
                 connection.setReadTimeout(getReadTimeout());
                 connection.setConnectTimeout(getRequestTimeout());
+                ThrottledConnectionManager manager = downloadLink.getDownloadLinkController().getConnectionManager();
                 inputStream = new MeteredThrottledInputStream(connection.getInputStream(), new AverageSpeedMeter(10));
-                DownloadWatchDog.getInstance().getConnectionManager().addManagedThrottledInputStream(inputStream);
+                if (manager != null) {
+                    manager.addManagedThrottledInputStream(inputStream);
+                }
 
                 int towrite = 0;
                 int read = 0;

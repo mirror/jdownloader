@@ -52,11 +52,11 @@ import java.rmi.ConnectException;
 import java.util.StringTokenizer;
 
 import jd.controlling.JDLogger;
-import jd.controlling.downloadcontroller.DownloadWatchDog;
 
 import org.appwork.utils.Regex;
 import org.appwork.utils.event.Eventsender;
 import org.appwork.utils.net.throttledconnection.MeteredThrottledInputStream;
+import org.appwork.utils.net.throttledconnection.ThrottledConnectionManager;
 import org.appwork.utils.speedmeter.AverageSpeedMeter;
 
 /**
@@ -75,6 +75,15 @@ public class SimpleFTP {
     private String                             dir        = "/";
     private String                             host;
     private Eventsender<FtpListener, FtpEvent> broadcaster;
+    private static ThrottledConnectionManager  cmanager   = null;
+
+    public static ThrottledConnectionManager getCmanager() {
+        return cmanager;
+    }
+
+    public static void setCmanager(ThrottledConnectionManager cmanager) {
+        SimpleFTP.cmanager = cmanager;
+    }
 
     public Eventsender<FtpListener, FtpEvent> getBroadcaster() {
         return broadcaster;
@@ -671,7 +680,8 @@ public class SimpleFTP {
                 /* in case we do resume, reposition the writepointer */
                 fos.seek(resumePosition);
             }
-            DownloadWatchDog.getInstance().getConnectionManager().addManagedThrottledInputStream(input);
+            ThrottledConnectionManager lcmanager = cmanager;
+            if (lcmanager != null) lcmanager.addManagedThrottledInputStream(input);
 
             String response = readLines(new int[] { 150, 125 }, null);
             byte[] buffer = new byte[32767];
