@@ -9,4 +9,18 @@ import org.appwork.remoteapi.RemoteAPIInterface;
 public interface DownloadsAPI extends RemoteAPIInterface {
 
     public List<FilePackageAPIStorable> list();
+
+    public DownloadStatusAPIStorable status();
+
+    public boolean stop();
+
+    public boolean start();
+
+    public boolean reconnect();
+
+    @Deprecated
+    public boolean reconnectenabled(boolean enable);
+
+    @Deprecated
+    public boolean speedlimit(boolean enable, int limit);
 }

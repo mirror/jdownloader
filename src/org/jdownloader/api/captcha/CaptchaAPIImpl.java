@@ -46,7 +46,7 @@ public class CaptchaAPIImpl implements CaptchaAPI, CaptchaEventListener {
         return ret;
     }
 
-    public void getCaptcha(RemoteAPIRequest request, RemoteAPIResponse response, long id, final boolean returnAsDataURL) {
+    public void get(RemoteAPIRequest request, RemoteAPIResponse response, long id, final boolean returnAsDataURL) {
         CaptchaDialogQueueEntry captcha = CaptchaDialogQueue.getInstance().getCaptchabyID(id);
         if (captcha == null || captcha.getFile() == null || !captcha.getFile().exists()) { throw new RemoteAPIException(ResponseCode.ERROR_NOT_FOUND, "Captcha no longer available"); }
         try {
@@ -111,8 +111,8 @@ public class CaptchaAPIImpl implements CaptchaAPI, CaptchaEventListener {
         }
     }
 
-    public void getCaptcha(RemoteAPIRequest request, final RemoteAPIResponse response, final long id) {
-        getCaptcha(request, response, id, false);
+    public void get(RemoteAPIRequest request, final RemoteAPIResponse response, final long id) {
+        get(request, response, id, false);
     }
 
     public boolean solve(long id, String result) {

@@ -4,8 +4,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 import jd.controlling.downloadcontroller.DownloadController;
+import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.reconnect.ReconnectPluginController;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+
+import org.jdownloader.settings.GeneralSettings;
 
 public class DownloadsAPIImpl implements DownloadsAPI {
 
@@ -31,4 +35,38 @@ public class DownloadsAPIImpl implements DownloadsAPI {
         }
     }
 
+    public DownloadStatusAPIStorable status() {
+        return new DownloadStatusAPIStorable();
+    }
+
+    public boolean stop() {
+        DownloadWatchDog.getInstance().startDownloads();
+        return true;
+    }
+
+    public boolean start() {
+        DownloadWatchDog.getInstance().stopDownloads();
+        return true;
+    }
+
+    public boolean reconnect() {
+        try {
+            ReconnectPluginController.getInstance().doReconnect();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+        return true;
+    }
+
+    public boolean reconnectenabled(boolean enable) {
+        GeneralSettings.AUTO_RECONNECT_ENABLED.setValue(enable);
+        return true;
+    }
+
+    public boolean speedlimit(boolean enable, int limit) {
+        GeneralSettings.DOWNLOAD_SPEED_LIMIT_ENABLED.setValue(enable);
+        GeneralSettings.DOWNLOAD_SPEED_LIMIT.setValue(limit);
+        return true;
+    }
 }

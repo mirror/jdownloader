@@ -21,9 +21,9 @@ public interface CaptchaAPI extends RemoteAPIInterface {
     @ApiDoc("returns a list of all available captcha jobs")
     public List<CaptchaJob> list();
 
-    public void getCaptcha(RemoteAPIRequest request, final RemoteAPIResponse response, final long id);
+    public void get(RemoteAPIRequest request, final RemoteAPIResponse response, final long id);
 
-    public void getCaptcha(RemoteAPIRequest request, final RemoteAPIResponse response, final long id, final boolean returnAsDataURL);
+    public void get(RemoteAPIRequest request, final RemoteAPIResponse response, final long id, final boolean returnAsDataURL);
 
     public boolean solve(final long id, String result);
 

@@ -1,6 +1,5 @@
 package org.jdownloader.api;
 
-
 import org.appwork.utils.net.httpserver.session.HttpSession;
 import org.appwork.utils.net.httpserver.session.HttpSessionController;
 import org.jdownloader.controlling.UniqueID;
