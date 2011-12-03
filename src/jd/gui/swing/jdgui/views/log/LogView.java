@@ -34,9 +34,9 @@ import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 public class LogView extends ClosableView {
     private static final long serialVersionUID = -4440872942373187410L;
 
-    private static LogView    INSTANCE         = null;
+    private static LogView INSTANCE = null;
 
-    private LogInfoPanel      lip;
+    private LogInfoPanel lip;
 
     /**
      * Logview Singleton
@@ -44,49 +44,51 @@ public class LogView extends ClosableView {
      * @return
      */
     public synchronized static LogView getInstance() {
-        if (INSTANCE == null) INSTANCE = new LogView();
-        return INSTANCE;
+	if (INSTANCE == null)
+	    INSTANCE = new LogView();
+	return INSTANCE;
     }
 
     /**
      * @see #getLogView()
      */
     private LogView() {
-        super();
-        LogPane lp = new LogPane();
-        this.setContent(lp);
-        // this.setDefaultInfoPanel(lip = new LogInfoPanel());
-        lip.addActionListener(lp);
-        getBroadcaster().addListener(new SwitchPanelListener() {
-            @Override
-            public void onPanelEvent(SwitchPanelEvent event) {
-                if (event.getEventID() == SwitchPanelEvent.ON_REMOVE) {
+	super();
+	LogPane lp = new LogPane();
+	this.setContent(lp);
+	lp.add(lip = new LogInfoPanel(), "newline");
+	lip.addActionListener(lp);
+	getBroadcaster().addListener(new SwitchPanelListener() {
+	    @Override
+	    public void onPanelEvent(SwitchPanelEvent event) {
+		if (event.getEventID() == SwitchPanelEvent.ON_REMOVE) {
 
-                    JsonConfig.create(GraphicalUserInterfaceSettings.class).setLogViewVisible(false);
-                    getBroadcaster().removeListener(this);
-                    synchronized (LogView.this) {
-                        INSTANCE = null;
-                        GarbageController.requestGC();
-                    }
-                }
-            }
-        });
-        init();
+		    JsonConfig.create(GraphicalUserInterfaceSettings.class)
+			    .setLogViewVisible(false);
+		    getBroadcaster().removeListener(this);
+		    synchronized (LogView.this) {
+			INSTANCE = null;
+			GarbageController.requestGC();
+		    }
+		}
+	    }
+	});
+	init();
     }
 
     @Override
     public Icon getIcon() {
-        return NewTheme.I().getIcon("log", ICON_SIZE);
+	return NewTheme.I().getIcon("log", ICON_SIZE);
     }
 
     @Override
     public String getTitle() {
-        return _GUI._.jd_gui_swing_jdgui_views_log_tab_title();
+	return _GUI._.jd_gui_swing_jdgui_views_log_tab_title();
     }
 
     @Override
     public String getTooltip() {
-        return _GUI._.jd_gui_swing_jdgui_views_log_tab_tooltip();
+	return _GUI._.jd_gui_swing_jdgui_views_log_tab_tooltip();
     }
 
     @Override
@@ -95,11 +97,12 @@ public class LogView extends ClosableView {
 
     @Override
     protected void onShow() {
-        JsonConfig.create(GraphicalUserInterfaceSettings.class).setLogViewVisible(true);
+	JsonConfig.create(GraphicalUserInterfaceSettings.class)
+		.setLogViewVisible(true);
     }
 
     @Override
     public String getID() {
-        return "logview";
+	return "logview";
     }
 }
