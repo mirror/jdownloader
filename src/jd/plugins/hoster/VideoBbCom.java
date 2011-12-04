@@ -51,7 +51,7 @@ public class VideoBbCom extends PluginForHost {
             /* FF -> 11111111 */
             BI = new BigInteger(1, JDHexUtils.getByteArray(s));
             String result = BI.toString(2);
-            while (result.length() < 256) {
+            while (result.length() % 2 > 0) {
                 result = "0" + result;
             }
             return result;
