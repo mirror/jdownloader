@@ -27,7 +27,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "smtbe.com" }, urls = { "http://[\\w\\.]*?ashemaletube\\.com/.*?clipflv-[0-9]+.*?\\.html" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "smtbe.com" }, urls = { "http://(www\\.)?ashemaletube\\.com/videos/\\d+/.*?\\.html" }, flags = { 0 })
 public class ASheMaleTubeCom extends PluginForHost {
 
     public ASheMaleTubeCom(PluginWrapper wrapper) {
@@ -44,21 +44,15 @@ public class ASheMaleTubeCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
-        br.setFollowRedirects(false);
+        br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.getRedirectLocation() != null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<title>(.*?)Shemale Tube Video").getMatch(0);
+        if (br.containsHTML("(<title>aShemaleTube\\.com \\- Video Not Found</title>|>Video was not found</div>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("<h1>([^<>/]+)<div class=\"g\\-plusone\"").getMatch(0);
         if (filename == null) {
-            filename = br.getRegex("description\" content=\"You are watching(.*?)free shemale porn").getMatch(0);
-            if (filename == null) {
-                filename = br.getRegex("<strong>title: </strong>(.*?)</td>").getMatch(0);
-                if (filename == null) {
-                    filename = br.getRegex("<div class=\"full\" style=\"text-align:left\">(.*?)</div><").getMatch(0);
-                }
-            }
+            filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
         }
-        dllink = br.getRegex("file=(http.*?\\.flv)").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("(http://213\\.174\\.153\\.16/protect/[0-9]+/.*?/flvs/xxx/.*?\\.flv)").getMatch(0);
+        dllink = br.getRegex("\\'file\\': \"(http://.*?)\"").getMatch(0);
+        if (dllink == null) dllink = br.getRegex("\"(http://(www\\.)?vipstreamservice\\.com/key=.*?)\"").getMatch(0);
         if (filename == null || dllink == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         filename = filename.trim();
         downloadLink.setFinalFileName(filename + ".flv");
