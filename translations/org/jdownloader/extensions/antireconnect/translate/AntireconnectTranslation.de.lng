@@ -1,6 +1,6 @@
 {
   "gui_config_antireconnect_newreconnect" : "Reconnect:",
-  "gui_config_antireconnect_each" : "Prüfinterval (ms):",
+  "gui_config_antireconnect_each" : "Prüfintervall (ms):",
   "gui_config_antireconnect_oldspeed" : "Downloadgeschwindigkeit in kb/s",
   "gui_config_antireconnect_newgroup" : "Wenn Clienten online sind",
   "gui_config_antireconnect_newspeed" : "Downloadgeschwindigkeit in kb/s",
