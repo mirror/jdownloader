@@ -924,12 +924,13 @@ public class LnkCrptWs extends PluginForDecrypt {
         prepareBrowser(RandomUserAgent.generate());
         final String containerId = new Regex(parameter, "dir/([a-zA-Z0-9]+)").getMatch(0);
         br.getPage("http://linkcrypt.ws/dir/" + containerId);
-        if (br.containsHTML("Error 404 - Ordner nicht gefunden")) { throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore.")); }
+        /** Don't stop here as the text could be fake */
+        if (br.containsHTML(">Ordner nicht verfügbar\\!<") && br.containsHTML("linkcrypt\\.ws/image/Warning\\.png\"")) logger.info("This link might be offline: " + parameter);
         br.cloneBrowser().openGetConnection("http://linkcrypt.ws/js/jquery.js");
         // Different captcha types
         boolean valid = true;
 
-        if (br.containsHTML("<\\!-- KeyCAPTCHA code")) {
+        if (br.containsHTML("<\\!\\-\\- KeyCAPTCHA code")) {
             KeyCaptcha kc;
             for (int i = 0; i <= 3; i++) {
                 kc = new KeyCaptcha(br);
@@ -946,7 +947,7 @@ public class LnkCrptWs extends PluginForDecrypt {
                 }
             }
         }
-        if (br.containsHTML("<\\!-- KeyCAPTCHA code")) { throw new DecrypterException(DecrypterException.CAPTCHA); }
+        if (br.containsHTML("<\\!\\-\\- KeyCAPTCHA code")) { throw new DecrypterException(DecrypterException.CAPTCHA); }
         if (br.containsHTML("CaptX|TextX")) {
             final int max_attempts = 3;
             for (int attempts = 0; attempts < max_attempts; attempts++) {
