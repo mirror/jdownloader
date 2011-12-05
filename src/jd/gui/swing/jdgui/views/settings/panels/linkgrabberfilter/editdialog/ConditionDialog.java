@@ -267,7 +267,7 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
             private static final long serialVersionUID = 9217479913947520012L;
 
             @Override
-            protected void onChanged() {
+            public void onChanged() {
                 getDialog().setTitle(_GUI._.FilterRuleDialog_FilterRuleDialog_(txtName.getText()));
             }
 

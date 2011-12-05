@@ -42,7 +42,7 @@ public class MergeToPackageAction extends AppAction {
                 protected Void run() throws RuntimeException {
                     CrawledPackage newPackage = new CrawledPackage();
                     newPackage.setAllowAutoPackage(false);
-                    newPackage.setName(name);
+                    newPackage.setCustomName(name);
                     HashSet<CrawledLink> links = new HashSet<CrawledLink>();
                     for (AbstractNode node : selection) {
                         if (node instanceof CrawledLink) {

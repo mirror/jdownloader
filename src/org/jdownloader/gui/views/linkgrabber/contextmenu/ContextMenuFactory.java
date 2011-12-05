@@ -65,6 +65,8 @@ public class ContextMenuFactory {
         m.add(new RemoveOfflineAction().toContextMenuAction());
         m.add(new RemoveIncompleteArchives(selection).toContextMenuAction());
         p.add(m);
+        p.add(new JSeparator());
+        p.add(new PropertiesAction(link, pkg).toContextMenuAction());
         return p;
     }
 

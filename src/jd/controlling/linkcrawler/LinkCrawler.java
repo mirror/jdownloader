@@ -422,8 +422,14 @@ public class LinkCrawler implements IOPermission {
         try {
             if (possibleCryptedLinks == null || possibleCryptedLinks.size() == 0) return;
             mainloop: for (final CrawledLink possibleCryptedLink : possibleCryptedLinks) {
+                if (possibleCryptedLink.gethPlugin() != null) {
+                    // direct forward, if we already have a final link.
+                    this.handleCrawledLink(possibleCryptedLink);
+                    continue;
+                }
                 String url = possibleCryptedLink.getURL();
                 if (url == null) continue;
+
                 if (!url.startsWith("directhttp")) {
                     /*
                      * first we will walk through all available container

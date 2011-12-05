@@ -52,7 +52,7 @@ public class ImportAction extends AppAction {
                 @Override
                 public boolean accept(File f) {
 
-                    return StringUtils.endsWithCaseInsensitive(f.getName(), EXT);
+                    return f.isDirectory() || StringUtils.endsWithCaseInsensitive(f.getName(), EXT);
 
                 }
             }, true, FileChooserType.OPEN_DIALOG, null);

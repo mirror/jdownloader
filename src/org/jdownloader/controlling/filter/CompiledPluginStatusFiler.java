@@ -21,7 +21,7 @@ public class CompiledPluginStatusFiler extends PluginStatusFilter {
             case AUTOCAPTCHA:
                 // TODO
 
-                return link.hasAutoCaptcha();
+                return !link.hasCaptcha() || link.hasAutoCaptcha();
 
             }
         case ISNOT:
@@ -33,7 +33,7 @@ public class CompiledPluginStatusFiler extends PluginStatusFilter {
 
             case AUTOCAPTCHA:
                 // TODO
-                return !link.hasAutoCaptcha();
+                return link.hasCaptcha() && !link.hasAutoCaptcha();
 
             }
 

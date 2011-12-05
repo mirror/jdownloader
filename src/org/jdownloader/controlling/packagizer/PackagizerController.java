@@ -27,6 +27,7 @@ import org.appwork.utils.logging.Log;
 import org.jdownloader.controlling.UniqueID;
 import org.jdownloader.controlling.filter.NoDownloadLinkException;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.settings.GeneralSettings;
 
 public class PackagizerController implements PackagizerInterface {
     private PackagizerSettings                  config;
@@ -268,7 +269,12 @@ public class PackagizerController implements PackagizerInterface {
             PackageInfo fpi = link.getDesiredPackageInfo();
             if (fpi == null) fpi = new PackageInfo();
             FilePackage dp = link.getDownloadLink().getFilePackage();
-            fpi.setDestinationFolder(dp.getDownloadDirectory());
+
+            if (dp.getDownloadDirectory() != null && !dp.getDownloadDirectory().equals(org.appwork.storage.config.JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder())) {
+                // do not set downloadfolder if it is the defaultfolder
+                fpi.setDestinationFolder(dp.getDownloadDirectory());
+            }
+
             fpi.setAutoExtractionEnabled(dp.isPostProcessing());
             fpi.setName(dp.getName());
             if (Boolean.FALSE.equals(dp.getBooleanProperty(ALLOW_MERGE, false))) {

@@ -25,6 +25,7 @@ import org.appwork.utils.event.Eventsender;
 import org.appwork.utils.event.queue.Queue.QueuePriority;
 import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.logging.Log;
+import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.controlling.filter.LinkFilterController;
 import org.jdownloader.controlling.packagizer.PackagizerController;
 
@@ -157,7 +158,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
             protected CrawledLink crawledLinkFactorybyURL(String url) {
                 CrawledLink ret = super.crawledLinkFactorybyURL(url);
                 ret.setSourceJob(job);
-                if (ret.getDesiredPackageInfo() == null || ret.getDesiredPackageInfo().getDestinationFolder() == null) {
+                if (job.getOutputFolder() != null && (ret.getDesiredPackageInfo() == null || ret.getDesiredPackageInfo().getDestinationFolder() == null)) {
                     if (ret.getDesiredPackageInfo() == null) ret.setDesiredPackageInfo(new PackageInfo());
                     ret.getDesiredPackageInfo().setDestinationFolder(job.getOutputFolder().getAbsolutePath());
                 }
@@ -324,13 +325,22 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                 PackageInfo dpi = link.getDesiredPackageInfo();
                 String packageID = null;
                 CrawledPackage pkgMatch = null;
-                if (dpi != null) packageID = dpi.createPackageID();
+                if (dpi != null) {
+                    packageID = dpi.createPackageID();
+                }
                 if (packageID != null) {
                     /*
                      * packageID available, lets reuse an existing package with
                      * same id or create new one
                      */
                     pkgMatch = packageMap.get(packageID);
+
+                    // if(packageID!=null&&pkgMatch.getCustomName()==null){
+                    // pkgMatch.getChildren()
+                    //
+                    // LinknameCleaner.comparepackages(pkg.getAutoPackageName(),
+                    // packageName);
+
                     if (pkgMatch == null) {
                         pkgMatch = PackageInfo.createCrawledPackage(link);
                         if (pkgMatch != null) {
@@ -351,6 +361,14 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                     try {
                         for (CrawledPackage pkg : packages) {
                             if (pkg.isAllowAutoPackage() == false) continue;
+                            if (dpi != null && dpi.getDestinationFolder() != null) {
+                                boolean eq = pkg.isDownloadFolderSet() && (CrossSystem.isWindows() ? dpi.getDestinationFolder().equalsIgnoreCase(pkg.getRawDownloadFolder()) : dpi.getDestinationFolder().equals(pkg.getRawDownloadFolder()));
+                                if (!eq) continue;
+
+                            } else if (pkg.isDownloadFolderSet()) {
+                                continue;
+                            }
+
                             int sim = LinknameCleaner.comparepackages(pkg.getAutoPackageName(), packageName);
                             if (sim > bestMatch) {
                                 bestMatch = sim;
@@ -365,6 +383,11 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                         pkgMatch = new CrawledPackage();
                         pkgMatch.setCreated(link.getCreated());
                         pkgMatch.setAllowAutoPackage(true);
+                        if (dpi != null && dpi.getDestinationFolder() != null) {
+                            pkgMatch.setDownloadFolder(dpi.getDestinationFolder());
+
+                        }
+
                     } else {
                         /* rename existing one */
                         packageName = getSimString(pkgMatch.getAutoPackageName(), packageName);
@@ -373,8 +396,10 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                 }
                 List<CrawledLink> add = new ArrayList<CrawledLink>(1);
                 add.add(link);
+
                 /* add link to linkcollector */
                 LinkCollector.this.addmoveChildren(pkgMatch, add, -1);
+
                 return null;
             }
         });

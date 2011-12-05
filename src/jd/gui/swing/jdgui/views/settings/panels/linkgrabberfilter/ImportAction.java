@@ -56,7 +56,7 @@ public class ImportAction extends AppAction {
                 @Override
                 public boolean accept(File f) {
 
-                    return StringUtils.endsWithCaseInsensitive(f.getName(), ext);
+                    return f.isDirectory() || StringUtils.endsWithCaseInsensitive(f.getName(), ext);
 
                 }
             }, true, FileChooserType.OPEN_DIALOG, null);

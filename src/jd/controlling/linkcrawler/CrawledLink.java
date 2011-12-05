@@ -342,4 +342,13 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
         return true;
     }
 
+    public boolean hasCaptcha() {
+        if (gethPlugin() != null) {
+
+        return gethPlugin().hasCaptcha();
+
+        }
+        return false;
+    }
+
 }

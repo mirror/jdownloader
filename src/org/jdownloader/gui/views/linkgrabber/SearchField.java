@@ -52,7 +52,7 @@ public class SearchField<PackageType extends AbstractPackageNode<ChildType, Pack
     }
 
     @Override
-    protected void onChanged() {
+    public void onChanged() {
         delayedFilter.run();
     }
 

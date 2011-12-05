@@ -144,7 +144,7 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
     protected LinkCollectingJob createReturnValue() {
         LinkCollectingJob ret = new LinkCollectingJob();
         ret.setText(input.getText());
-        ret.setOutputFolder(new File(destination.getText()));
+        if (destination.getSelectedIndex() > 0) ret.setOutputFolder(new File(destination.getText()));
         ret.setDeepAnalyse(isDeepAnalyse());
         ret.setPackageName(packagename.getText());
         ret.setAutoExtract(config.isAutoExtractionEnabled());
@@ -163,22 +163,22 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
             }
             config.setPackageNameHistory(Lists.unique(packageHistory));
         }
-
-        boolean found = false;
-        for (DownloadPath pe : downloadDestinationHistory) {
-            if (pe.getPath().equalsIgnoreCase(ret.getOutputFolder().getAbsolutePath())) {
-                pe.setTime(System.currentTimeMillis());
-                found = true;
-                break;
+        if (ret.getOutputFolder() != null) {
+            boolean found = false;
+            for (DownloadPath pe : downloadDestinationHistory) {
+                if (pe != null && pe.getPath().equalsIgnoreCase(ret.getOutputFolder().getAbsolutePath())) {
+                    pe.setTime(System.currentTimeMillis());
+                    found = true;
+                    break;
+                }
             }
-        }
-        if (!found) {
-            downloadDestinationHistory.add(new DownloadPath(ret.getOutputFolder().getAbsolutePath()));
-        }
+            if (!found) {
+                downloadDestinationHistory.add(new DownloadPath(ret.getOutputFolder().getAbsolutePath()));
+            }
 
-        config.setDownloadDestinationHistory(Lists.unique(downloadDestinationHistory));
-        config.setLatestDownloadDestinationFolder(ret.getOutputFolder().getAbsolutePath());
-
+            config.setDownloadDestinationHistory(Lists.unique(downloadDestinationHistory));
+            config.setLatestDownloadDestinationFolder(ret.getOutputFolder().getAbsolutePath());
+        }
         config.setAddDialogHeight(getDialog().getHeight());
         config.setAddDialogWidth(getDialog().getWidth());
         return ret;
@@ -203,7 +203,7 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
             }
 
             @Override
-            protected void onChanged() {
+            public void onChanged() {
                 delayedValidate.run();
             }
 
@@ -274,7 +274,7 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
         input = new ExtTextArea() {
 
             @Override
-            protected void onChanged() {
+            public void onChanged() {
                 delayedValidate.run();
             }
 

@@ -62,9 +62,15 @@ public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledP
 
     private boolean         autoStartEnabled;
     private HashSet<String> extractionPasswords = new HashSet<String>();
+    private boolean         downloadFolderSet   = false;
+
+    public boolean isDownloadFolderSet() {
+        return downloadFolderSet;
+    }
 
     public void setDownloadFolder(String downloadFolder) {
         if (downloadFolder != null) {
+            downloadFolderSet = true;
             this.downloadFolder = downloadFolder;
         }
     }
@@ -147,7 +153,11 @@ public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledP
         return autoPackageName;
     }
 
-    public void setName(String name) {
+    public String getCustomName() {
+        return customName;
+    }
+
+    public void setCustomName(String name) {
         customName = name;
     }
 
@@ -195,6 +205,17 @@ public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledP
      */
     public String getComment() {
         return comment;
+    }
+
+    /**
+     * Returns the raw Downloadfolder String. This link may contain wildcards
+     * like <jd:packagename>. Use {@link #getDownloadFolder()} to return the
+     * actuall downloadloadfolder
+     * 
+     * @return
+     */
+    public String getRawDownloadFolder() {
+        return downloadFolder;
     }
 
 }

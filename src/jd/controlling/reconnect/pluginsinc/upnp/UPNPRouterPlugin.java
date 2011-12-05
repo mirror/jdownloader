@@ -147,7 +147,7 @@ public class UPNPRouterPlugin extends RouterPlugin implements IPCheckProvider {
         this.serviceTypeTxt = new ExtTextField() {
 
             @Override
-            protected void onChanged() {
+            public void onChanged() {
                 settings.setServiceType(UPNPRouterPlugin.this.serviceTypeTxt.getText());
                 UPNPRouterPlugin.this.setCanCheckIP(true);
             }
@@ -156,7 +156,7 @@ public class UPNPRouterPlugin extends RouterPlugin implements IPCheckProvider {
         this.controlURLTxt = new ExtTextField() {
 
             @Override
-            protected void onChanged() {
+            public void onChanged() {
                 settings.setControlURL(UPNPRouterPlugin.this.controlURLTxt.getText());
                 UPNPRouterPlugin.this.setCanCheckIP(true);
             }

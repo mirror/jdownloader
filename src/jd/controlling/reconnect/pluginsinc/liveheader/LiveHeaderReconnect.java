@@ -212,7 +212,7 @@ public class LiveHeaderReconnect extends RouterPlugin implements ControlListener
         });
 
         this.txtPassword = new ExtPasswordField() {
-            protected void onChanged() {
+            public void onChanged() {
                 settings.setPassword(new String(LiveHeaderReconnect.this.txtPassword.getPassword()));
             }
         };

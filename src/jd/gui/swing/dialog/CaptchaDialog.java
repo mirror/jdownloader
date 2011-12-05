@@ -229,7 +229,7 @@ public class CaptchaDialog extends AbstractDialog<String> implements ActionListe
             private static final long serialVersionUID = 1L;
 
             @Override
-            protected void onChanged() {
+            public void onChanged() {
                 cancel();
             }
 

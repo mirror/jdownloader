@@ -90,10 +90,17 @@ public class PackageInfo {
     public String createPackageID() {
         StringBuilder sb = new StringBuilder();
         if (getUniqueId() != null) {
+            if (sb.length() > 0) sb.append("_");
             sb.append(getUniqueId().toString());
         }
-        if (!StringUtils.isEmpty(getDestinationFolder())) sb.append(getDestinationFolder());
-        if (!StringUtils.isEmpty(getName())) sb.append(getName());
+        // if (!StringUtils.isEmpty(getDestinationFolder())) {
+        // if (sb.length() > 0) sb.append("_");
+        // sb.append(getDestinationFolder());
+        // }
+        if (!StringUtils.isEmpty(getName())) {
+            if (sb.length() > 0) sb.append("_");
+            sb.append(getName());
+        }
         return sb.length() == 0 ? null : sb.toString();
     }
 
@@ -106,8 +113,10 @@ public class PackageInfo {
         if (StringUtils.isEmpty(pkgName)) {
             /* no info available, so lets cleanup filename */
             pkgName = LinknameCleaner.cleanFileName(link.getName());
+            ret.setAutoPackageName(pkgName);
+        } else {
+            ret.setCustomName(pkgName);
         }
-        ret.setName(pkgName);
         ret.setCreated(link.getCreated());
         ret.setComment(dpi.getComment());
         if (dpi.isAutoExtractionEnabled() != null) ret.setAutoExtractionEnabled(dpi.isAutoExtractionEnabled());

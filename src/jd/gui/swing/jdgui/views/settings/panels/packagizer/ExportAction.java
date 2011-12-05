@@ -62,7 +62,7 @@ public class ExportAction extends AppAction {
 
                 @Override
                 public boolean accept(File f) {
-                    return StringUtils.endsWithCaseInsensitive(f.getName(), extension);
+                    return f.isDirectory() || StringUtils.endsWithCaseInsensitive(f.getName(), extension);
 
                 }
             }, true, FileChooserType.SAVE_DIALOG, null);
