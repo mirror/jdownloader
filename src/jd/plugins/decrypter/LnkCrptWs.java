@@ -942,7 +942,7 @@ public class LnkCrptWs extends PluginForDecrypt {
                 final Form kcform = br.getForm(0);
                 kcform.put("capcode", result);
                 br.submitForm(kcform);
-                if (!br.containsHTML("<\\!-- KeyCAPTCHA code")) {
+                if (!br.containsHTML("<\\!\\-\\- KeyCAPTCHA code")) {
                     break;
                 }
             }
@@ -1108,6 +1108,12 @@ public class LnkCrptWs extends PluginForDecrypt {
                                         versch = Encoding.Base64Decode(versch);
                                         versch = Encoding.htmlDecode(new Regex(versch, "100.*?src=\"(.*?)\"></iframe>").getMatch(0));
                                         if (versch != null) {
+                                            final DownloadLink dl = createDownloadlink(versch);
+                                            try {
+                                                distribute(dl);
+                                            } catch (final Throwable e) {
+                                                /* does not exist in 09581 */
+                                            }
                                             decryptedLinks.add(createDownloadlink(versch));
                                         }
                                     }
