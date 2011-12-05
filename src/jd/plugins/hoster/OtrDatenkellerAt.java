@@ -34,7 +34,8 @@ import org.appwork.utils.formatter.SizeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "otr.datenkeller.at" }, urls = { "http://(www\\.)?otr\\.datenkeller\\.at/\\?(file|getFile)=.+" }, flags = { 0 })
 public class OtrDatenkellerAt extends PluginForHost {
 
-    public static String agent = RandomUserAgent.generate();
+    public static String        agent             = RandomUserAgent.generate();
+    private static final String DOWNLOADAVAILABLE = "onclick=\"startCount";
 
     public OtrDatenkellerAt(PluginWrapper wrapper) {
         super(wrapper);
@@ -72,18 +73,24 @@ public class OtrDatenkellerAt extends PluginForHost {
         String dllink = null;
         String lowSpeedLink;
         Browser br2 = br.cloneBrowser();
-        if (br.containsHTML("klicken um den Download zu starten")) {
+        if (br.containsHTML(DOWNLOADAVAILABLE)) {
             dllink = getDllink();
         } else {
             downloadLink.getLinkStatus().setStatusText("Waiting for ticket...");
             for (int i = 0; i <= 410; i++) {
-                sleep(28 * 1000l, downloadLink);
+                br.getPage(dlPage);
+                String countMe = br.getRegex("\"(otrfuncs/countMe\\.js\\?r=\\d+)\"").getMatch(0);
+                if (countMe != null)
+                    countMe = "http://otr.datenkeller.at/" + countMe;
+                else
+                    countMe = "http://otr.datenkeller.at/otrfuncs/countMe.js?r=050210";
+                br2.getPage("http://otr.datenkeller.at/images/style.css");
+                br2.getPage(countMe);
+                sleep(27 * 1000l, downloadLink);
                 String position = br.getRegex("document\\.title = \"(\\d+/\\d+)").getMatch(0);
                 if (position == null) position = br.getRegex("<td>Deine Position in der Warteschlange: </td><td>~(\\d+)</td></tr>").getMatch(0);
                 if (position != null) downloadLink.getLinkStatus().setStatusText("Waiting for ticket...Position in der Warteschlange: " + position);
-                System.out.print("Waiting for ticket...Position in der Warteschlange: " + position + "\n");
-                br.getPage(dlPage);
-                if (br.containsHTML("klicken um den Download zu starten")) {
+                if (br.containsHTML(DOWNLOADAVAILABLE)) {
                     br.getPage(dlPage);
                     dllink = getDllink();
                     break;
@@ -126,6 +133,11 @@ public class OtrDatenkellerAt extends PluginForHost {
         link.setName(filename.trim().replaceAll("\\&referer=.*?", ""));
         if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize.replace("i", "")));
         return AvailableStatus.TRUE;
+    }
+
+    // do not add @Override here to keep 0.* compatibility
+    public boolean hasCaptcha() {
+        return true;
     }
 
     @Override

@@ -17,11 +17,18 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
+import jd.http.Cookie;
+import jd.http.Cookies;
 import jd.http.RandomUserAgent;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.plugins.Account;
+import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -32,27 +39,27 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "u.115.com" }, urls = { "http://(www\\.)?(u\\.)?115\\.com/file/[a-z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "u.115.com" }, urls = { "http://(www\\.)?(u\\.)?115\\.com/file/[a-z0-9]+" }, flags = { 2 })
 public class U115Com extends PluginForHost {
 
     private final String        ua                    = RandomUserAgent.generate();
-
+    private static final String MAINPAGE              = "http://115.com/";
     private static final String UNDERMAINTENANCEURL   = "http://u.115.com/weihu.html";
-
     private static final String UNDERMAINTENANCETEXT  = "The servers are under maintenance";
-
     private static final String NOFREESLOTS           = "网络繁忙时段，非登陆用户其它下载地址暂时关闭。推荐您使用优蛋下载";
-
     private static final String ACCOUNTNEEDED         = "(为加强知识产权的保护力度，营造健康有益的网络环境，115网盘暂时停止影视资源外链服务。|is_no_check=\"1\")";
-
     private static final String ACCOUNTNEEDEDUSERTEXT = "Account is needed to download this link";
     private static final String EXACTLINKREGEX        = "\"(http://\\d+\\.\\d+\\.\\d+\\.\\d+/down_group\\d+/[^<>\"\\']+)\"";
+    private static final Object LOCK                  = new Object();
 
     public U115Com(PluginWrapper wrapper) {
         super(wrapper);
-        // 10 seconds waittime between the downloadstart of simultan DLs of this
-        // host
+        /**
+         * 10 seconds waittime between the downloadstart of simultan DLs of this
+         * host
+         */
         this.setStartIntervall(10000l);
+        this.enablePremium();
     }
 
     public void correctDownloadLink(DownloadLink link) {
@@ -64,13 +71,23 @@ public class U115Com extends PluginForHost {
         if (linkToDownload == null) {
             linkToDownload = br.getRegex("<div class=\"btn\\-wrap\">[\t\n\r ]+<a href=\"(http://\\d+\\.\\d+\\.\\d+\\.\\d+/[^\"\\'<>]+)\"").getMatch(0);
             if (linkToDownload == null) {
-                final String pickLink = br.getRegex("\"(/\\?ct=pickcode\\&.*?)\"").getMatch(0);
+                /** First way: For freeusers */
+                String pickLink = br.getRegex("\"(/\\?ct=pickcode\\&.*?)\"").getMatch(0);
                 if (pickLink != null) {
                     int wait = 30;
                     String waittime = br.getRegex("id=\"js_get_download_second\">(\\d+)</b>").getMatch(0);
                     if (waittime == null) waittime = br.getRegex("var second = (\\d+);").getMatch(0);
                     if (waittime != null) wait = Integer.parseInt(waittime);
                     sleep(wait * 1001l, link);
+                    br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                    br.getPage("http://115.com" + pickLink);
+                    String correctedBR = br.toString().replace("\\", "");
+                    linkToDownload = new Regex(correctedBR, "\"url\":\"(http:.*?)\"").getMatch(0);
+                    if (linkToDownload == null) linkToDownload = new Regex(correctedBR, EXACTLINKREGEX).getMatch(0);
+                }
+                /** Second way: For logged in freeusers */
+                pickLink = br.getRegex("\\'(/\\?ct=download\\&ac=get\\&h=[^/<>\"\\']+)\\'").getMatch(0);
+                if (pickLink != null) {
                     br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                     br.getPage("http://115.com" + pickLink);
                     String correctedBR = br.toString().replace("\\", "");
@@ -96,17 +113,20 @@ public class U115Com extends PluginForHost {
     public void handleFree(DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         requestFileInformation(link);
+        doFree(link, false);
+    }
+
+    public void doFree(DownloadLink link, boolean accountActive) throws Exception {
         if (UNDERMAINTENANCEURL.equals(br.getRedirectLocation())) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.U115Com.undermaintenance", UNDERMAINTENANCETEXT));
         if (br.containsHTML(NOFREESLOTS)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "No free slots available at the moment");
         /**
          * I don't know what this text means (google couldn't help) so i handle
          * it like that
          */
-        if (br.containsHTML(ACCOUNTNEEDED)) {
+        if (!accountActive && br.containsHTML(ACCOUNTNEEDED)) {
             logger.warning("Only downloadable via account: " + link.getDownloadURL());
             throw new PluginException(LinkStatus.ERROR_FATAL, ACCOUNTNEEDEDUSERTEXT);
         }
-        if (!br.containsHTML("(<div class=\"download\\-box dl\\-hint\" id=\"|<div class=\"download\\-box\" style=\"display:none\")")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.U115Com.dlnotpossible", "Download not possible at the moment"), 5 * 60 * 1000l);
         String dllink = findLink(link);
         if (dllink == null) {
             logger.warning("dllink is null, seems like the regexes are defect!");
@@ -177,6 +197,73 @@ public class U115Com extends PluginForHost {
         if (sh1 != null) link.setSha1Hash(sh1.trim());
         if (br.containsHTML(ACCOUNTNEEDED)) link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.u115com.only4registered", ACCOUNTNEEDEDUSERTEXT));
         return AvailableStatus.TRUE;
+    }
+
+    @SuppressWarnings("unchecked")
+    private void login(Account account, boolean force) throws Exception {
+        synchronized (LOCK) {
+            // Load cookies
+            br.setCookiesExclusive(false);
+            final Object ret = account.getProperty("cookies", null);
+            boolean acmatch = Encoding.urlEncode(account.getUser()).matches(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
+            if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).matches(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+            if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
+                final HashMap<String, String> cookies = (HashMap<String, String>) ret;
+                if (account.isValid()) {
+                    for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
+                        final String key = cookieEntry.getKey();
+                        final String value = cookieEntry.getValue();
+                        this.br.setCookie(MAINPAGE, key, value);
+                    }
+                    return;
+                }
+            }
+            br.setFollowRedirects(false);
+            br.getPage(MAINPAGE);
+            br.postPage("http://passport.115.com/?ac=login", "login%5Baccount%5D=" + Encoding.urlEncode(account.getUser()) + "&login%5Bpasswd%5D=" + Encoding.urlEncode(account.getPass()) + "&login%5Btime%5D=on&back=http%3A%2F%2Fwww.115.com&goto=http%3A%2F%2F115.com");
+            if (br.getCookie(MAINPAGE, "LACK1") == null || br.getCookie(MAINPAGE, "LCCK") == null || br.getCookie(MAINPAGE, "OOFL") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            // Save cookies
+            final HashMap<String, String> cookies = new HashMap<String, String>();
+            final Cookies add = this.br.getCookies(MAINPAGE);
+            for (final Cookie c : add.getCookies()) {
+                cookies.put(c.getKey(), c.getValue());
+            }
+            account.setProperty("name", Encoding.urlEncode(account.getUser()));
+            account.setProperty("pass", Encoding.urlEncode(account.getPass()));
+            account.setProperty("cookies", cookies);
+        }
+    }
+
+    @Override
+    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+        AccountInfo ai = new AccountInfo();
+        try {
+            login(account, true);
+        } catch (PluginException e) {
+            account.setValid(false);
+            return ai;
+        }
+        ai.setUnlimitedTraffic();
+        account.setValid(true);
+        /**
+         * Didn't ever have a premium login, plugin is only designed for free
+         * accounts!
+         */
+        ai.setStatus("Registered (free) User");
+        return ai;
+    }
+
+    @Override
+    public void handlePremium(DownloadLink link, Account account) throws Exception {
+        requestFileInformation(link);
+        login(account, false);
+        br.getPage(link.getDownloadURL());
+        doFree(link, true);
+    }
+
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        return -1;
     }
 
     @Override

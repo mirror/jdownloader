@@ -28,7 +28,6 @@ import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.locale.JDL;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tinypaste.com" }, urls = { "http://[\\w\\.]*?tinypaste\\.com/([0-9a-z]+|.*?id=[0-9a-z]+)" }, flags = { 0 })
 public class Tnypst extends PluginForDecrypt {
@@ -60,12 +59,16 @@ public class Tnypst extends PluginForDecrypt {
             }
             if (br.containsHTML("(Enter the correct password|has been password protected)")) throw new DecrypterException(DecrypterException.PASSWORD);
         }
-
-        String allLinks = br.getRegex("<iframe frameborder='\\d+' id='pasteFrame(.*?)</iframe>").getMatch(0);
-        if (allLinks == null) return null;
-        String[] links = HTMLParser.getHttpLinks(allLinks, null);
-        if (links == null || links.length == 0) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
-        ArrayList<String> pws = HTMLParser.findPasswords(allLinks);
+        String pasteFrame = br.getRegex("frameborder=\\'0\\' id=\\'pasteFrame\\' src=\"(http://tinypaste\\.com/.*?)\"").getMatch(0);
+        if (pasteFrame == null) pasteFrame = br.getRegex("\"(http://tinypaste\\.com/[a-z0-9]+/fullscreen\\.php\\?hash=[a-z0-9]+\\&linenum=(false|true))\"").getMatch(0);
+        if (pasteFrame == null) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
+        }
+        br.getPage(pasteFrame.trim());
+        String[] links = HTMLParser.getHttpLinks(br.toString(), null);
+        if (links == null || links.length == 0) return decryptedLinks;
+        ArrayList<String> pws = HTMLParser.findPasswords(br.toString());
         for (String element : links) {
             /* prevent recursion */
             if (element.contains("tinypaste.com")) continue;
