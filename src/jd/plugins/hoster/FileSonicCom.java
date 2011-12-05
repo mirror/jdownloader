@@ -57,7 +57,7 @@ public class FileSonicCom extends PluginForHost implements ControlListener {
     private static final String  uaf                = "Mozilla/5.0 (JDF; X11; U; Linux i686; en-US; rv:1.9.0.10) Gecko/2009042523 Ubuntu/9.04 (jaunty) Firefox/3.0.10";
     private static final String  uap                = "Mozilla/5.0 (JDP; X11; U; Linux i686; en-US; rv:1.9.0.10) Gecko/2009042523 Ubuntu/9.04 (jaunty) Firefox/3.0.10";
 
-    private static final String RECAPTCHATEXT = "Recaptcha\\.create";
+    private static final String  RECAPTCHATEXT      = "Recaptcha\\.create";
 
     public FileSonicCom(final PluginWrapper wrapper) {
         super(wrapper);
@@ -67,16 +67,6 @@ public class FileSonicCom extends PluginForHost implements ControlListener {
                 initDone = true;
                 new Thread(new Runnable() {
 
-                    // do not add @Override here to keep 0.* compatibility
-                    public boolean hasAutoCaptcha() {
-                        return JACMethod.hasMethod("recaptcha");
-                    }
-
-                    // do not add @Override here to keep 0.* compatibility
-                    public boolean hasCaptcha() {
-                        return true;
-                    }
-
                     @SuppressWarnings("deprecation")
                     public void run() {
                         JDUtilities.getController().addControlListener(FileSonicCom.this);
@@ -85,6 +75,16 @@ public class FileSonicCom extends PluginForHost implements ControlListener {
                 }).start();
             }
         }
+    }
+
+    // do not add @Override here to keep 0.* compatibility
+    public boolean hasAutoCaptcha() {
+        return JACMethod.hasMethod("recaptcha");
+    }
+
+    // do not add @Override here to keep 0.* compatibility
+    public boolean hasCaptcha() {
+        return true;
     }
 
     @Override
