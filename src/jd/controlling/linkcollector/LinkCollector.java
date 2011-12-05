@@ -194,6 +194,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
     public void linkCheckDone(CrawledLink link) {
         if (crawlerFilter.dropByFileProperties(link)) {
             addFilteredStuff(link);
+
         } else {
             PackagizerInterface pc;
             if ((pc = getPackagizer()) != null) {
